@@ -448,7 +448,6 @@
                    :fill "var(--app-white)"}]))]))
 
 (mf/defc gradient-handlers-impl*
-  {::mf/props :obj}
   [{:keys [zoom stops gradient editing shape]}]
   (let [transform         (gsh/transform-matrix shape)
         transform-inverse (gsh/inverse-transform-matrix shape)
@@ -517,8 +516,7 @@
       :on-change-width on-change-width}]))
 
 (mf/defc gradient-handlers*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [id zoom]}]
   (let [shape-ref    (mf/use-memo (mf/deps id) #(refs/object-by-id id))
         shape        (mf/deref shape-ref)

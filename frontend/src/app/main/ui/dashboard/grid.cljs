@@ -84,8 +84,7 @@
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
 (mf/defc grid-item-thumbnail*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [can-edit file can-restore]}]
   (let [file-id      (get file :id)
         revn         (get file :revn)
@@ -97,7 +96,7 @@
         visible?     (h/use-visible container :once? true)]
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
-      (when (and visible? (not thumbnail-id))
+      (when (and can-edit visible? (not thumbnail-id))
         (let [subscription
               (->> (ask-for-thumbnail file-id revn)
                    (rx/subs! (fn [thumbnail-id]
@@ -120,10 +119,11 @@
                 :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
-         [:> loader* {:class (stl/css :grid-loader)
-                      :draggable (dm/str can-edit)
-                      :overlay true
-                      :title (tr "labels.loading")}]))]))
+         (when can-edit
+           [:> loader* {:class (stl/css :grid-loader)
+                        :draggable (dm/str can-edit)
+                        :overlay true
+                        :title (tr "labels.loading")}])))]))
 
 ;; --- Grid Item Library
 
@@ -131,7 +131,6 @@
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc grid-item-library*
-  {::mf/props :obj}
   [{:keys [file can-restore]}]
   (mf/with-effect [file]
     (when file
@@ -467,7 +466,6 @@
                             :can-restore can-restore}]])]]]]]))
 
 (mf/defc grid*
-  {::mf/props :obj}
   [{:keys [files project origin limit create-fn can-edit selected-files can-restore]}]
   (let [dragging?  (mf/use-state false)
         project-id (get project :id)

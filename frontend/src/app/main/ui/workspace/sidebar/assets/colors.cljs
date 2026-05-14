@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
-   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -29,11 +28,10 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc color-item
@@ -194,10 +192,10 @@
          (mf/deps color on-asset-click read-only? file-id)
          (fn [event]
            (when-not read-only?
-             (st/emit! (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-color"
-                                        ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+             (st/emit! (ev/event
+                        {::ev/name "use-library-color"
+                         ::ev/origin "sidebar"
+                         :external-library (not local?)}))
 
              (when-not (on-asset-click event (:id color))
                (st/emit! (dc/apply-color-from-assets file-id color (kbd/alt? event)))))))]
@@ -261,8 +259,7 @@
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-                   (when (and (not (or multi-colors? multi-assets?))
-                              (contains? cf/flags :canary))
+                   (when-not (or multi-colors? multi-assets?)
                      {:name    (tr "workspace.assets.duplicate")
                       :id      "assets-duplicate-color"
                       :handler duplicate-color})
@@ -280,7 +277,7 @@
 (mf/defc colors-group
   [{:keys [file-id prefix groups open-groups force-open? local? selected
            multi-colors? multi-assets? on-asset-click on-assets-delete
-           on-clear-selection on-group on-rename-group on-ungroup colors
+           on-clear-selection on-group on-rename-group on-ungroup on-delete-group colors
            selected-full]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -325,7 +322,8 @@
                                  :path prefix
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
-                                 :on-ungroup on-ungroup}]
+                                 :on-ungroup on-ungroup
+                                 :on-delete-group on-delete-group}]
      (when group-open?
        [:*
         (let [colors (get groups "" [])]
@@ -378,6 +376,7 @@
                               :on-group on-group
                               :on-rename-group on-rename-group
                               :on-ungroup on-ungroup
+                              :on-delete-group on-delete-group
                               :colors colors
                               :selected-full selected-full}]))])]))
 
@@ -421,8 +420,8 @@
                  y-position (:top bounds)]
 
              (st/emit! (dw/set-assets-section-open file-id :colors true)
-                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "color"})
+                       (ev/event {::ev/name "add-asset-to-library"
+                                  :asset-type "color"})
                        (modal/show :colorpicker
                                    {:x x-position
                                     :y y-position
@@ -499,6 +498,13 @@
                                 file-id))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-delete-group
+        (mf/with-memo [colors on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets colors
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [c] (dwl/delete-color {:id (:id c)})) %)}))
+
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
@@ -533,5 +539,6 @@
                         :on-group on-group
                         :on-rename-group on-rename-group
                         :on-ungroup on-ungroup
+                        :on-delete-group on-delete-group
                         :colors colors
                         :selected-full selected-full}]]]))

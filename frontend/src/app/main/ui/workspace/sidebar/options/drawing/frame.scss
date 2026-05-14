@@ -64,6 +64,23 @@
   margin-top: deprecated.$s-2;
   max-height: 70vh;
   width: deprecated.$s-252;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preset-search {
+  padding: deprecated.$s-4;
+  border-bottom: deprecated.$s-1 solid var(--menu-border-color-rest, transparent);
+}
+
+.preset-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 
   .dropdown-element {
     @extend %dropdown-element-base;

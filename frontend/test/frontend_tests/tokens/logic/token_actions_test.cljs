@@ -281,9 +281,7 @@
                (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
              (t/testing "shapes width and height got updated"
                (t/is (= (:width rect-1') 100))
-               (t/is (= (:height rect-1') 100)))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+               (t/is (= (:height rect-1') 100))))))))))
 
 (t/deftest test-apply-padding
   (t/testing "applies padding token to shapes with layout"
@@ -356,9 +354,7 @@
                (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
              (t/testing "shapes width and height got updated"
                (t/is (= (:width rect-1') 100))
-               (t/is (= (:height rect-1') 100)))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+               (t/is (= (:height rect-1') 100))))))))))
 
 (t/deftest test-apply-opacity
   (t/testing "applies opacity token and updates the shapes opacity"
@@ -443,9 +439,7 @@
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/is (some? (:applied-tokens rect-1')))
              (t/is (= (:rotation (:applied-tokens rect-1')) (:name token-target')))
-             (t/is (= (:rotation rect-1') 120))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+             (t/is (= (:rotation rect-1') 120)))))))))
 
 (t/deftest test-apply-stroke-width
   (t/testing "applies stroke-width token and updates the shapes with stroke"

@@ -74,7 +74,7 @@
            "This release has been shaped by our amazing community. A huge thank-you to everyone who shared ideas, feedback, and insights to make Penpot Variants possible <3"]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -113,7 +113,7 @@
            " now to join us 8-10 October, in Madrid!"]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -143,7 +143,7 @@
            "This latest update brings—no more no less than—six new token types, significantly boosting your ability to manage design decisions, particularly in typography: Font Family, Font Weight, Text Case, Text Decoration, Letter Spacing token, and Number token (for unitless values)."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -174,7 +174,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]

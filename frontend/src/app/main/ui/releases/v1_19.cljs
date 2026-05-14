@@ -72,7 +72,7 @@
            " in particular and the Penpot community as a whole!"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 2}]]]]]]
@@ -99,7 +99,7 @@
            "to the Penpot’s plugins system."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 2}]]]]]])))

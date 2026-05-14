@@ -41,4 +41,22 @@ tmux select-window -t penpot:3
 tmux send-keys -t penpot 'cd penpot/backend' enter C-l
 tmux send-keys -t penpot './scripts/start-dev' enter
 
+if echo "$PENPOT_FLAGS" | grep -q "enable-mcp"; then
+    pushd ~/penpot/mcp/
+    ./scripts/setup;
+    pnpm run build;
+    popd
+
+    tmux new-window -t penpot:4 -n 'mcp'
+    tmux select-window -t penpot:4
+    tmux send-keys -t penpot 'cd penpot/mcp' enter C-l
+    tmux send-keys -t penpot './scripts/start-mcp-devenv' enter
+fi
+
+if [ "${SERENA_ENABLED:-false}" = "true" ]; then
+    tmux new-window -t penpot:5 -n 'serena'
+    tmux select-window -t penpot:5
+    tmux send-keys -t penpot "serena start-mcp-server --transport streamable-http --port 14281 --project penpot --context ${SERENA_CONTEXT} --host 0.0.0.0" enter
+fi
+
 tmux -2 attach-session -t penpot

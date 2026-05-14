@@ -143,6 +143,12 @@
   (when wasm/context-initialized?
     (h/call wasm/internal-module "_text_editor_set_cursor_from_point" x y)))
 
+(defn text-editor-toggle-overtype-mode
+  "Toggles overtype mode"
+  []
+  (when wasm/context-initialized?
+    (h/call wasm/internal-module "_text_editor_toggle_overtype_mode")))
+
 (defn text-editor-pointer-down
   [{:keys [x y]}]
   (when wasm/context-initialized?

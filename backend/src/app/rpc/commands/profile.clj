@@ -48,6 +48,7 @@
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
+   [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]
    [:mcp-enabled {:optional true} ::sm/boolean]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]
@@ -109,8 +110,10 @@
         (nitrate/add-nitrate-licence-to-profile cfg profile)
         profile))
 
-    (catch Throwable _
-      {:id uuid/zero :fullname "Anonymous User"})))
+    (catch Throwable cause
+      (if (= :not-found (-> cause ex-data :type))
+        {:id uuid/zero :fullname "Anonymous User"}
+        (throw cause)))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
@@ -264,6 +267,7 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo

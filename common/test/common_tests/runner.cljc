@@ -15,6 +15,7 @@
    [common-tests.files-builder-test]
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
+   [common-tests.files.shapes-builder-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-map-test]
    [common-tests.geom-flex-layout-test]
@@ -66,6 +67,7 @@
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
    [common-tests.types.modifiers-test]
+   [common-tests.types.nitrate-permissions-test]
    [common-tests.types.objects-map-test]
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
@@ -146,6 +148,7 @@
    'common-tests.types.container-test
    'common-tests.types.fill-test
    'common-tests.types.modifiers-test
+   'common-tests.types.nitrate-permissions-test
    'common-tests.types.objects-map-test
    'common-tests.types.path-data-test
    'common-tests.types.shape-decode-encode-test

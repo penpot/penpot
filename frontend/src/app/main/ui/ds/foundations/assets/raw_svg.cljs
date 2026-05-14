@@ -39,3 +39,4 @@
   (assert (contains? raw-svg-list id) "invalid raw svg id")
   [:> "svg" props
    [:use {:href (dm/str "#asset-" id)}]])
+

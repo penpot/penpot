@@ -45,7 +45,7 @@
           [:p "Use the export window to manage your multiple exports and be informed about the download progress. Big exports will happen in the background so you can keep designing in the meantime ;)"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "This opens endless graphic possibilities such as combining gradients and blending modes in the same element to create sophisticated visual effects."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -83,7 +83,7 @@
           [:p "A refreshed interface and two new features! The Invitations section allows you to check the status of current team invites plus you now have the ability to invite multiple members at the same time."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -102,7 +102,7 @@
           [:p "As a side effect, this can give you a performance boost in massive designs."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

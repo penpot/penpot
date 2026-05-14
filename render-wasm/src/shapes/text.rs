@@ -26,7 +26,6 @@ use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
-use crate::STATE;
 
 // TODO: maybe move this to the wasm module?
 pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
@@ -199,6 +198,12 @@ pub struct TextContentLayout {
     cached_extrect: Cell<Option<CachedExtrect>>,
 }
 
+impl Default for TextContentLayout {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Clone for TextContentLayout {
     fn clone(&self) -> Self {
         Self {
@@ -328,13 +333,26 @@ pub fn calculate_normalized_line_height(
     normalized_line_height
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
     pub size: TextContentSize,
     pub layout: TextContentLayout,
+    content_version: u64,
+    layout_version: u64,
+    layout_width: Option<f32>,
+}
+
+impl PartialEq for TextContent {
+    fn eq(&self, other: &Self) -> bool {
+        self.paragraphs == other.paragraphs
+            && self.bounds == other.bounds
+            && self.grow_type == other.grow_type
+            && self.size == other.size
+            && self.layout == other.layout
+    }
 }
 
 impl TextContent {
@@ -345,6 +363,9 @@ impl TextContent {
             grow_type,
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 
@@ -357,6 +378,9 @@ impl TextContent {
             grow_type,
             size: TextContentSize::new_with_size(bounds.width(), bounds.height()),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 
@@ -380,6 +404,7 @@ impl TextContent {
 
     pub fn add_paragraph(&mut self, paragraph: Paragraph) {
         self.paragraphs.push(paragraph);
+        self.content_version = self.content_version.wrapping_add(1);
     }
 
     pub fn paragraphs(&self) -> &[Paragraph] {
@@ -387,6 +412,7 @@ impl TextContent {
     }
 
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
+        self.content_version = self.content_version.wrapping_add(1);
         &mut self.paragraphs
     }
 
@@ -403,7 +429,10 @@ impl TextContent {
     }
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
-        self.grow_type = grow_type;
+        if self.grow_type != grow_type {
+            self.grow_type = grow_type;
+            self.content_version = self.content_version.wrapping_add(1);
+        }
     }
 
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
@@ -886,6 +915,15 @@ impl TextContent {
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        if !self.layout.needs_update()
+            && self.layout_version == self.content_version
+            && self
+                .layout_width
+                .is_some_and(|w| (w - selrect.width()).abs() < f32::EPSILON)
+        {
+            return self.size;
+        }
+
         self.size.set_size(selrect.width(), selrect.height());
 
         match self.grow_type() {
@@ -909,6 +947,9 @@ impl TextContent {
             self.size.height = placeholder_height;
             self.size.max_width = placeholder_width;
         }
+
+        self.layout_version = self.content_version;
+        self.layout_width = Some(selrect.width());
 
         self.size
     }
@@ -1043,6 +1084,9 @@ impl Default for TextContent {
             grow_type: GrowType::Fixed,
             size: TextContentSize::default(),
             layout: TextContentLayout::new(),
+            content_version: 0,
+            layout_version: 0,
+            layout_width: None,
         }
     }
 }
@@ -1424,11 +1468,14 @@ pub fn calculate_text_layout_data(
     let mut previous_line_height = text_content.normalized_line_height();
     let text_paragraphs = text_content.paragraphs();
 
-    // 1. Calculate paragraph heights
+    // 1. Build + layout each paragraph once, recording heights as we go.
     let mut paragraph_heights: Vec<f32> = Vec::new();
+    let mut built_groups: Vec<Vec<skia::textlayout::Paragraph>> =
+        Vec::with_capacity(paragraph_builder_groups.len());
     for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
         let group_len = paragraph_builder_group.len();
         let mut paragraph_offset_y = previous_line_height;
+        let mut group_paragraphs: Vec<skia::textlayout::Paragraph> = Vec::with_capacity(group_len);
         for (builder_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut skia_paragraph = paragraph_builder.build();
             skia_paragraph.layout(text_width);
@@ -1442,11 +1489,13 @@ pub fn calculate_text_layout_data(
             if builder_index == 0 {
                 paragraph_heights.push(skia_paragraph.height());
             }
+            group_paragraphs.push(skia_paragraph);
         }
         previous_line_height = paragraph_offset_y;
+        built_groups.push(group_paragraphs);
     }
 
-    // 2. Calculate vertical offset and build paragraphs with positions
+    // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
     let vertical_offset = match shape.vertical_align() {
         VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
@@ -1455,12 +1504,9 @@ pub fn calculate_text_layout_data(
     };
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
-    for (i, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
+    for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
-        for paragraph_builder in paragraph_builder_group.iter_mut() {
-            let mut skia_paragraph = paragraph_builder.build();
-            skia_paragraph.layout(text_width);
-
+        for skia_paragraph in group_paragraphs.into_iter() {
             let spans = if let Some(text_para) = text_paragraphs.get(i) {
                 text_para.children().to_vec()
             } else {

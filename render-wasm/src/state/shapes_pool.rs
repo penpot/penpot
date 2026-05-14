@@ -140,6 +140,18 @@ impl ShapesPoolImpl {
         Some(&mut self.shapes[idx])
     }
 
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
+
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
+    }
+
     /// Get a shape by UUID. Returns the modified shape if modifiers/structure
     /// are applied, otherwise returns the base shape.
     pub fn get(&self, id: &Uuid) -> Option<&Shape> {
@@ -309,6 +321,24 @@ impl ShapesPoolImpl {
         modified_uuids
     }
 
+    /// UUIDs of all shapes that currently have a transform modifier.
+    /// Used by the throttled drag path so per-rAF tile invalidation can
+    /// be done once with the current modifier set instead of once per
+    /// pointer move.
+    pub fn modifier_ids(&self) -> Vec<Uuid> {
+        if self.modifiers.is_empty() {
+            return Vec::new();
+        }
+        let mut idx_to_uuid: HashMap<usize, Uuid> = HashMap::with_capacity(self.uuid_to_idx.len());
+        for (uuid, idx) in self.uuid_to_idx.iter() {
+            idx_to_uuid.insert(*idx, *uuid);
+        }
+        self.modifiers
+            .keys()
+            .filter_map(|idx| idx_to_uuid.get(idx).copied())
+            .collect()
+    }
+
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
         let Some(shape) = self.get(id) else {
             panic!("Subtree not found");
@@ -360,5 +390,27 @@ impl ShapesPoolImpl {
                 .unwrap_or(default);
             !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Clone for ShapesPoolImpl {
+    fn clone(&self) -> Self {
+        ShapesPoolImpl {
+            shapes: self.shapes.clone(),
+            counter: self.counter,
+            uuid_to_idx: self.uuid_to_idx.clone(),
+            // The modified_shape_cache is a derived/computed cache; reset it on clone
+            // so it gets lazily rebuilt on demand rather than cloning OnceCell state.
+            modified_shape_cache: HashMap::default(),
+            modifiers: self.modifiers.clone(),
+            structure: self.structure.clone(),
+            scale_content: self.scale_content.clone(),
+        }
     }
 }
