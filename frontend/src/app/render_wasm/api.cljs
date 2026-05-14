@@ -53,6 +53,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -398,7 +399,7 @@
       (when-not @pending-render
         (reset! pending-render true)
         (let [frame-id
-              (js/requestAnimationFrame
+              (timers/raf
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
@@ -1708,7 +1709,7 @@
   []
   (p/create
    (fn [resolve _reject]
-     (js/requestAnimationFrame (fn [] (resolve nil))))))
+     (timers/raf (fn [] (resolve nil))))))
 
 (def ^:private default-context-options
   #js {:antialias false
@@ -1878,7 +1879,7 @@
 
      ;; Cancel any pending animation frame to prevent race conditions.
      (when wasm/internal-frame-id
-       (js/cancelAnimationFrame wasm/internal-frame-id))
+       (timers/cancel-af! wasm/internal-frame-id))
 
      ;; Reset render flags to prevent new renders from being scheduled.
      (reset! pending-render false)
