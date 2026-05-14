@@ -809,7 +809,19 @@ impl RenderState {
     }
 
     pub fn flush_and_submit(&mut self) {
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
+    /// Copy the clean (no UI overlay) Backbuffer to Target, draw UI/debug overlays
+    /// on top of Target, then present. Backbuffer is left clean so it can be reused
+    /// as-is across interactive-transform frames without stale overlay pixels.
+    pub fn present_frame(&mut self, tree: ShapesPoolRef) {
         self.surfaces.copy_backbuffer_to_target();
+        if self.options.is_debug_visible() {
+            debug::render(self);
+        }
+        ui::render(self, tree);
+        debug::render_wasm_label(self);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
@@ -1771,14 +1783,7 @@ impl RenderState {
             self.surfaces
                 .draw_atlas_to_backbuffer(self.viewbox, self.options.dpr, bg_color);
 
-            if self.options.is_debug_visible() {
-                debug::render(self);
-            }
-
-            ui::render(self, shapes);
-            debug::render_wasm_label(self);
-
-            self.flush_and_submit();
+            self.present_frame(shapes);
             performance::end_measure!("render_from_cache");
             performance::end_timed_log!("render_from_cache", _start);
             return;
@@ -1843,13 +1848,7 @@ impl RenderState {
                             bg_color,
                         );
 
-                        if self.options.is_debug_visible() {
-                            debug::render(self);
-                        }
-
-                        ui::render(self, shapes);
-                        debug::render_wasm_label(self);
-                        self.flush_and_submit();
+                        self.present_frame(shapes);
                         performance::end_measure!("render_from_cache");
                         performance::end_timed_log!("render_from_cache", _start);
                         return;
@@ -1902,14 +1901,7 @@ impl RenderState {
                 }
             }
 
-            if self.options.is_debug_visible() {
-                debug::render(self);
-            }
-
-            ui::render(self, shapes);
-            debug::render_wasm_label(self);
-
-            self.flush_and_submit();
+            self.present_frame(shapes);
         }
 
         performance::end_measure!("render_from_cache");
@@ -2103,17 +2095,21 @@ impl RenderState {
         self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
 
         if self.render_in_progress {
+            // Partial frame: just flush GPU work. The display shows the last
+            // fully submitted frame; no need to copy or draw UI overlays here.
             self.flush();
             self.cancel_animation_frame();
             self.render_request_id = Some(wapi::request_animation_frame!());
         } else {
-            // A full-quality frame is now complete. Refresh Backbuffer and regenerate
-            // the per-shape crop cache so interactive drags can reuse pixels.
+            // A full-quality frame is now complete. Rebuild the per-shape crop
+            // cache from the clean Backbuffer (no UI overlay yet) so that
+            // interactive drag backgrounds don't include the grid overlay.
             if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                self.surfaces.copy_backbuffer_to_target();
                 self.rebuild_backbuffer_crop_cache(tree);
             }
-            self.flush_and_submit();
+            // present_frame: copy clean Backbuffer → Target, draw UI/debug
+            // overlays on Target only, then flush. Backbuffer stays overlay-free.
+            self.present_frame(tree);
             wapi::notify_tiles_render_complete!();
             performance::end_measure!("render");
         }
@@ -2129,7 +2125,7 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<()> {
         self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
-        self.flush_and_submit();
+        self.present_frame(tree);
         Ok(())
     }
 
@@ -3414,13 +3410,6 @@ impl RenderState {
         if !self.options.is_fast_mode() {
             self.cached_viewbox = self.viewbox;
         }
-
-        if self.options.is_debug_visible() {
-            debug::render(self);
-        }
-
-        ui::render(self, tree);
-        debug::render_wasm_label(self);
 
         Ok(())
     }
