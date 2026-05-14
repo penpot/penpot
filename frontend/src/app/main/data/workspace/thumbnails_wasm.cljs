@@ -25,6 +25,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
+   [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -58,7 +59,7 @@
   (rx/create
    (fn [subs]
      (let [req-id
-           (js/requestAnimationFrame
+           (timers/raf
             (fn [_]
               (try
                 (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
@@ -83,7 +84,7 @@
                     (rx/error! subs "Frame not found")))
                 (catch :default err
                   (rx/error! subs err)))))]
-       #(js/cancelAnimationFrame req-id)))))
+       #(timers/cancel-af! req-id)))))
 
 (defn render-thumbnail
   "Renders a component thumbnail via WASM and updates the UI immediately.

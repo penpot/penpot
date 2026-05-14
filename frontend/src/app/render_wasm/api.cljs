@@ -53,6 +53,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -207,6 +208,8 @@
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
+
+(defonce ^:private view-interaction-active? (atom false))
 
 ;; Time budget (ms) per chunk of shape processing before yielding to browser
 (def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
@@ -396,7 +399,7 @@
       (when-not @pending-render
         (reset! pending-render true)
         (let [frame-id
-              (js/requestAnimationFrame
+              (timers/raf
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
@@ -1140,14 +1143,26 @@
       (= result 1))
     false))
 
+(defn view-interaction-start!
+  []
+  (when-not @view-interaction-active?
+    (h/call wasm/internal-module "_set_view_start")
+    (reset! view-interaction-active? true)))
+
+(defn view-interaction-end!
+  []
+  (when @view-interaction-active?
+    (perf/begin-measure "render-finish")
+    (h/call wasm/internal-module "_set_view_end")
+    (perf/end-measure "render-finish")
+    (reset! view-interaction-active? false)))
+
 (def render-finish
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when (and wasm/context-initialized? (not @wasm/context-lost?))
-              (perf/begin-measure "render-finish")
-              (h/call wasm/internal-module "_set_view_end")
-              (perf/end-measure "render-finish")
+              (view-interaction-end!)
               ;; Use async _render: visible tiles render synchronously
               ;; (no yield), interest-area tiles render progressively
               ;; via rAF.  _set_view_end already rebuilt the tile
@@ -1161,7 +1176,7 @@
 (defn set-view-box
   [zoom vbox]
   (perf/begin-measure "set-view-box")
-  (h/call wasm/internal-module "_set_view_start")
+  (view-interaction-start!)
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (perf/end-measure "set-view-box")
 
@@ -1169,6 +1184,16 @@
   (h/call wasm/internal-module "_render_from_cache" 0)
   (render-finish)
   (perf/end-measure "render-from-cache"))
+
+(defn sync-workspace-local-viewport!
+  "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
+  [state]
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?))
+    (let [zoom (get-in state [:workspace-local :zoom])
+          vbox (get-in state [:workspace-local :vbox])]
+      (when (and zoom vbox)
+        (set-view-box zoom vbox)))))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
@@ -1338,6 +1363,7 @@
                      ;; Rebuild the tile index so _render knows which shapes
                      ;; map to which tiles after a page switch.
                      (h/call wasm/internal-module "_set_view_end")
+                     (reset! view-interaction-active? false)
 
                      ;; Text layouts must run after _end_loading (they
                      ;; depend on state that is only correct when loading
@@ -1396,6 +1422,7 @@
     ;; Rebuild the tile index so _render knows which shapes
     ;; map to which tiles after a page switch.
     (h/call wasm/internal-module "_set_view_end")
+    (reset! view-interaction-active? false)
     (process-pending shapes thumbnails full
                      (fn []
                        (if render-callback
@@ -1676,7 +1703,7 @@
   []
   (p/create
    (fn [resolve _reject]
-     (js/requestAnimationFrame (fn [] (resolve nil))))))
+     (timers/raf (fn [] (resolve nil))))))
 
 (def ^:private default-context-options
   #js {:antialias false
@@ -1846,7 +1873,7 @@
 
      ;; Cancel any pending animation frame to prevent race conditions.
      (when wasm/internal-frame-id
-       (js/cancelAnimationFrame wasm/internal-frame-id))
+       (timers/cancel-af! wasm/internal-frame-id))
 
      ;; Reset render flags to prevent new renders from being scheduled.
      (reset! pending-render false)
