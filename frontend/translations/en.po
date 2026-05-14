@@ -169,7 +169,7 @@ msgstr "Create an account"
 #: src/app/main/ui/auth.cljs
 #, unused
 msgid "auth.sidebar-tagline"
-msgstr "The open-source solution for design and prototyping."
+msgstr "Penpot is the open-source design platform for teams that build digital products at scale."
 
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
@@ -5432,7 +5432,7 @@ msgstr "Shared Libraries - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
-msgstr "Penpot - Design Freedom for Teams"
+msgstr "Penpot | Full-stack design"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
