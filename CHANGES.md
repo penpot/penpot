@@ -10,7 +10,6 @@
 
 - Enhance readability of applied tokens in plugins API [Taiga #13714](https://tree.taiga.io/project/penpot/issue/13714)
 - Add "Delete group" option to the assets panel context menu for components, colors and typographies (by @FairyPigDev) [Github #9141](https://github.com/penpot/penpot/issues/9141)
-- Add `Alt+click` on a layer's disclosure arrow to recursively expand the entire subtree in the Layers sidebar (by @MilosM348) [Github #9179](https://github.com/penpot/penpot/pull/9179)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
 - Add "Clear artboard guides" option to right-click context menu for frames (by @eureka0928) [Github #6987](https://github.com/penpot/penpot/issues/6987)
 - Add loader feedback while importing and exporting files (by @moorsecopers99) [Github #9024](https://github.com/penpot/penpot/pull/9024)
