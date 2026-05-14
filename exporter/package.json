@@ -11,22 +11,22 @@
   },
   "type": "module",
   "dependencies": {
-    "archiver": "^7.0.1",
+    "archiver": "^8.0.0",
     "cookies": "^0.9.1",
     "date-fns": "^4.1.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
-    "ioredis": "^5.8.2",
-    "playwright": "^1.57.0",
+    "ioredis": "^5.10.1",
+    "playwright": "^1.60.0",
     "raw-body": "^3.0.2",
     "source-map-support": "^0.5.21",
     "svgo": "penpot/svgo#v3.1",
-    "undici": "^7.16.0",
+    "undici": "^8.2.0",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.2"
   },
   "devDependencies": {
-    "ws": "^8.18.3"
+    "ws": "^8.20.1"
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
