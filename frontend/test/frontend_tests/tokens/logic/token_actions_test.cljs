@@ -20,7 +20,8 @@
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
-   [frontend-tests.tokens.helpers.tokens :as toht]))
+   [frontend-tests.tokens.helpers.tokens :as toht]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before (fn []
@@ -85,6 +86,45 @@
                (t/is (= (:r1 (:applied-tokens rect-1')) (:name token))))
 
              (t/testing "shape radius got update to the resolved token value."
+               (t/is (= (:r1 rect-1') 24))))))))))
+
+;; Regression for #9620 — the "Tokens can't be applied while editing
+;; text" toast used to fire whenever `(and (some? token) (not
+;; text-editing?))` was false, conflating "no token to apply" with
+;; "text editor is open". Setting `:workspace-local :edition` to a
+;; non-text shape (which can happen mid-flow on rectangles, e.g.
+;; after switching token sets) must NOT trigger the toast — the token
+;; should still apply normally.
+
+(defn- set-edition
+  "Test-only event: pre-populate `:workspace-local :edition` so we can
+  exercise the text-editing? branch of `apply-token`."
+  [shape-id]
+  (ptk/reify ::set-edition
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :edition] shape-id))))
+
+(t/deftest test-apply-token-with-non-text-edition-still-applies
+  (t/testing "edition pointing at a rectangle does NOT short-circuit apply-token (#9620)"
+    (t/async
+      done
+      (let [file   (setup-file-with-tokens)
+            store  (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(set-edition (:id rect-1))
+                    (dwta/apply-token {:shape-ids [(:id rect-1)]
+                                       :attributes #{:r1 :r2 :r3 :r4}
+                                       :token (toht/get-token file "borderRadius.md")
+                                       :on-update-shape dwta/update-shape-radius})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 token   (toht/get-token file' "borderRadius.md")
+                 rect-1' (cths/get-shape file' :rect-1)]
+             (t/testing "token was applied (text-editing? must be false on a rectangle)"
+               (t/is (= (:r1 (:applied-tokens rect-1')) (:name token)))
                (t/is (= (:r1 rect-1') 24))))))))))
 
 (t/deftest test-apply-multiple-tokens

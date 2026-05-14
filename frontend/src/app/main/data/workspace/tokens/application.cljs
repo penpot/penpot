@@ -667,6 +667,16 @@
             objects       (dsh/lookup-page-objects state)
             text-editing? (and (some? edition)
                                (= :text (:type (get objects edition))))]
+        ;; Three outcomes:
+        ;; - text-editing?  -> show the "editing text" toast (this is the
+        ;;                     only case where that wording is accurate).
+        ;; - token is nil   -> skip silently; the assertion above catches
+        ;;                     it in development. Previously this path
+        ;;                     also showed the editing-text toast, which
+        ;;                     was misleading when, e.g., the user
+        ;;                     clicked a pill whose set had been
+        ;;                     deactivated. See #9620.
+        ;; - otherwise      -> apply.
         (if (and (some? token)
                  (not text-editing?))
           (let [attributes-to-remove
@@ -726,10 +736,11 @@
                                (rx/of res))))
                          (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
-          (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                            :type :toast
-                            :level :warning
-                            :timeout 3000})))))))
+          (when text-editing?
+            (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                              :type :toast
+                              :level :warning
+                              :timeout 3000}))))))))
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
