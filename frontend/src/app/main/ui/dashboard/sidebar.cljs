@@ -624,7 +624,12 @@
                      (dom/click!)))))
 
         close-teams-menu
-        (mf/use-fn #(reset! show-teams-menu* false))]
+        (mf/use-fn #(reset! show-teams-menu* false))
+
+        ;; SSO forward-auth setups provision teams via backend (auto-join). Hide dashboard
+        ;; "Create team" when enable-x-auth-request-headers is present in PENPOT_FLAGS (frontend config).
+        allow-dashboard-create-team?
+        (not (contains? cf/flags :x-auth-request-headers))]
 
     [:div {:class (stl/css :sidebar-team-switch)}
      [:div {:class (stl/css :switch-content)}
@@ -677,7 +682,7 @@
                                    :profile profile
                                    :teams teams
                                    :show-default-team true
-                                   :allow-create-teams true
+                                   :allow-create-teams allow-dashboard-create-team?
                                    :allow-create-org false}]
 
      [:> team-options-dropdown* {:show show-team-options-menu?

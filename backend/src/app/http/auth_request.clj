@@ -15,7 +15,10 @@
 
   Optional: enable-x-auth-request-auto-register (parsed as :x-auth-request-auto-register)
   automatically creates a Penpot profile (with a default team) for email addresses
-  that are not yet registered."
+  that are not yet registered. After resolving a profile (new or existing), users
+  with no membership in any non-default team are joined to the shared team matching
+  PENPOT_SMB_DEFAULT_WORKSPACE_NAME (team.name); no fallback to another team."
+
   (:require
    [app.common.logging :as l]
    [app.config :as cf]
@@ -50,6 +53,36 @@
              :domain domain)
       (str (first (str/split email-claim #"@")) "@" domain))))
 
+(defn- auto-join-team!
+  "_auto_join_workspace: ensure a ``team_profile_rel`` row for
+  the non-default team whose ``name`` matches PENPOT_SMB_DEFAULT_WORKSPACE_NAME
+  (:smb-default-workspace-name). Runs even when the profile already belongs to another
+  shared team (multi-team parity with Plane workspaces).
+
+  If config is unset or no such team exists, does nothing — no fallback. Idempotent
+  INSERT ON CONFLICT DO NOTHING."
+
+  [conn {:keys [id] :as _profile}]
+  (let [preferred (some-> (cf/get :smb-default-workspace-name) str/trim not-empty)]
+    (when-not (str/blank? preferred)
+      (when-let [team (db/exec-one! conn
+                                    ["SELECT id FROM team
+                                      WHERE is_default = false
+                                        AND deleted_at IS NULL
+                                        AND name = ?
+                                      LIMIT 1"
+                                     preferred])]
+        (db/insert! conn :team-profile-rel
+                     {:team-id    (:id team)
+                      :profile-id id
+                      :is-owner   false
+                      :is-admin   false
+                      :can-edit   true}
+                     {::db/on-conflict-do-nothing? true})
+        (l/inf :hint "x-auth-request: ensured SMB shared team membership"
+               :profile-id (str id)
+               :team-id    (str (:id team)))))))
+
 (defn- get-or-register-profile
   "Looks up a profile by email. If not found and the
   :x-auth-request-auto-register flag is enabled, creates a new active
@@ -58,19 +91,29 @@
   [cfg email fullname]
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
-                (or (profile/get-profile-by-email conn email)
-                    (when (contains? cf/flags :x-auth-request-auto-register)
-                      (let [display-name (or (not-empty fullname)
-                                             (first (str/split email #"@")))
-                            profile      (auth/create-profile cfg
-                                                              {:email    email
-                                                               :fullname display-name
-                                                               :backend  "x-auth-request"
-                                                               :is-active true})]
-                        (l/inf :hint "x-auth-request: auto-registered profile"
-                               :email email
-                               :profile-id (str (:id profile)))
-                        (auth/create-profile-rels conn profile)))))))
+                (let [profile (or (profile/get-profile-by-email conn email)
+                                  (when (contains? cf/flags :x-auth-request-auto-register)
+                                    (let [display-name (or (not-empty fullname)
+                                                           (first (str/split email #"@")))
+                                          profile      (auth/create-profile cfg
+                                                                            {:email    email
+                                                                             :fullname display-name
+                                                                             :backend  "x-auth-request"
+                                                                             :is-active true})]
+                                      (l/inf :hint "x-auth-request: auto-registered profile"
+                                             :email email
+                                             :profile-id (str (:id profile)))
+                                      (auth/create-profile-rels conn profile))))]
+                  ;; Same semantics as Plane: join only provisioned SMB team by name — no fallback.
+                  ;; Never fail auth if join fails (e.g. quotas, constraints).
+                  (when profile
+                    (try
+                      (auto-join-team! conn profile)
+                      (catch Throwable cause
+                        (l/err :hint "x-auth-request: auto-join to shared team failed"
+                               :profile-id (:id profile)
+                               :cause cause))))
+                  profile))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MIDDLEWARE

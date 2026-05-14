@@ -238,3 +238,32 @@
         (t/is (some? profile))
         (t/is (true? (:is-active profile)))
         (t/is (= (::session/profile-id @captured) (:id profile)))))))
+
+(t/deftest x-auth-request-auto-register-joins-named-smb-team
+  (let [orig-get cf/get]
+    (binding [cf/flags (conj cf/flags :x-auth-request-auto-register)
+              cf/get (fn
+                       ([k] (if (= k :smb-default-workspace-name)
+                              "team1"
+                              (orig-get k)))
+                       ([k d] (if (= k :smb-default-workspace-name)
+                                "team1"
+                                (orig-get k d))))]
+      (let [owner    (th/create-profile* 1 {:is-active true})
+            ;; Matches :smb-default-workspace-name "team1" from create-team* default name.
+            _        (th/create-team* 1 {:profile-id (:id owner)})
+            email    "xauth-autojoin@example.com"
+            captured (volatile! nil)
+            cfg      (make-xauth-cfg)
+            handler  (#'app.http.auth-request/wrap-authz
+                      (fn [req] (vreset! captured req) {::yres/status 200})
+                      cfg)
+            _        (handler (->DummyRequest {"x-auth-request-email" email
+                                               "x-auth-request-user"  "Shared Team Join"} {}))
+            profile  (db/tx-run! cfg
+                                 (fn [{:keys [::db/conn]}]
+                                   (profile/get-profile-by-email conn email)))
+            rels     (db/query th/*pool* :team-profile-rel {:profile-id (:id profile)})]
+        (t/is (uuid? (:id profile)))
+        (t/is (some #(not= (:team-id %) (:default-team-id profile)) rels)
+              "profile should have a membership on the provisioned SMB (shared) team")))))

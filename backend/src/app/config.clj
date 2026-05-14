@@ -185,6 +185,7 @@
     [:oidc-email-attr {:optional true} :string]
     [:oidc-name-attr {:optional true} :string]
     [:default-email-domain {:optional true} :string]
+    [:smb-default-workspace-name {:optional true} :string]
 
     [:ldap-attrs-email {:optional true} :string]
     [:ldap-attrs-fullname {:optional true} :string]

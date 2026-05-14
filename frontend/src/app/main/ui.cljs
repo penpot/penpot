@@ -153,6 +153,23 @@
         section (get data :name)
         team    (mf/deref refs/team)
 
+        ;; Dashboard / workspace pass ?team-id=… while `initialize-team`
+        ;; applies it asynchronously. On the first render `refs/team` can still
+        ;; be the personal default team, spuriously satisfying (:is-default team).
+        ;; Until state catches up, skip forcing team onboarding.
+        route-team-id       (some-> (:query params) :team-id uuid/parse*)
+        current-team-id     (:current-team-id (mf/deref st/state))
+        team-route-synced?  (or (nil? route-team-id)
+                                (= route-team-id current-team-id))
+
+        ;; Forward-auth installs use :x-auth-request-headers and typically
+        ;; provision users onto a shared team; don't push "create a team".
+        ;; Also skip when get-teams has already populated a workspace team —
+        ;; URL ?team-id= often repeats the personal default id, which kept
+        ;; (:is-default team) true despite membership elsewhere.
+        user-has-shared-team?
+        (some #(and (some? %) (not (:is-default %)))
+              (vals (:teams (mf/deref st/state))))
 
         show-question-modal?
         (and (contains? cf/flags :onboarding)
@@ -163,7 +180,10 @@
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
-             (:is-default team))
+             (not (contains? cf/flags :x-auth-request-headers))
+             (not user-has-shared-team?)
+             (:is-default team)
+             team-route-synced?)
 
         show-release-modal?
         (and (contains? cf/flags :onboarding)
