@@ -70,9 +70,8 @@
 (def ^:private group-icon
   (deprecated-icon/icon-xref :group (stl/css :group-icon)))
 
-(mf/defc header
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc header*
+  {::mf/wrap [mf/memo]}
   [{:keys [section team]}]
   (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
         on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
@@ -268,8 +267,7 @@
 ;; MEMBERS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc member-info
-  {::mf/props :obj}
+(mf/defc member-info*
   [{:keys [member profile]}]
   (let [is-you? (= (:id profile) (:id member))]
     [:*
@@ -481,7 +479,7 @@
 
     [:div {:class (stl/css :table-row)}
      [:div {:class (stl/css :table-field :field-name)}
-      [:& member-info {:member member :profile profile}]]
+      [:> member-info* {:member member :profile profile}]]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> rol-info*  {:member member
@@ -551,7 +549,7 @@
     (st/emit! (dtm/fetch-members)))
 
   [:*
-   [:& header {:section :dashboard-team-members :team team}]
+   [:> header* {:section :dashboard-team-members :team team}]
    [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
 
     [:> team-members*
@@ -1074,8 +1072,8 @@
     (st/emit! (dtm/fetch-invitations)))
 
   [:*
-   [:& header {:section :dashboard-team-invitations
-               :team team}]
+   [:> header* {:section :dashboard-team-invitations
+                :team team}]
    [:section {:class (stl/css :dashboard-team-invitations)}
 
     [:> invitation-section* {:team team}]
@@ -1353,7 +1351,7 @@
       (st/emit! (dtm/fetch-webhooks)))
 
     [:*
-     [:& header {:team team :section :dashboard-team-webhooks}]
+     [:> header* {:team team :section :dashboard-team-webhooks}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-webhooks)}
       [:*
        [:> webhooks-hero* {}]
@@ -1475,7 +1473,7 @@
                 (dtm/fetch-stats)))
 
     [:*
-     [:& header {:section :dashboard-team-settings :team team}]
+     [:> header* {:section :dashboard-team-settings :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
       [:div {:class (stl/css :settings-container)}
        [:div {:class (stl/css :block :info-block)}

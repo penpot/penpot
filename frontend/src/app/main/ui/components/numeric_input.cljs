@@ -14,7 +14,6 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.simple-math :as smt]
    [cljs.core :as c]
    [cuerdas.core :as str]
@@ -22,30 +21,23 @@
    [rumext.v2 :as mf]))
 
 (mf/defc numeric-input*
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props external-ref]
-  (let [value-str   (unchecked-get props "value")
-        min-value   (unchecked-get props "min")
-        max-value   (unchecked-get props "max")
-        step-value  (unchecked-get props "step")
-        wrap-value? (unchecked-get props "data-wrap")
-        on-change   (unchecked-get props "onChange")
-        on-blur     (unchecked-get props "onBlur")
-        on-focus    (unchecked-get props "onFocus")
-
-        title       (unchecked-get props "title")
-        default     (unchecked-get props "default")
-        nillable?   (unchecked-get props "nillable")
-        class       (d/nilv (unchecked-get props "className") "")
+  {::mf/forward-ref true}
+  [{:keys [value min max step data-wrap on-change on-blur on-focus title default
+           select-on-focus class class-name disabled nillable integer]
+    :rest props} external-ref]
+  (let [value-str   value
+        min-value   min
+        max-value   max
+        step-value  step
+        wrap-value? data-wrap
+        class       (d/nilv (or class class-name) "")
 
         min-value   (d/parse-double min-value)
         max-value   (d/parse-double max-value)
         step-value  (d/parse-double step-value 1)
-        default     (d/parse-double default (when-not nillable? 0))
+        default     (d/parse-double default (when-not nillable 0))
 
-        integer?         (unchecked-get props "integer")
-        select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
+        select-on-focus? (d/nilv select-on-focus true)
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -70,7 +62,7 @@
 
         parse-value
         (mf/use-fn
-         (mf/deps min-value max-value value nillable? default integer?)
+         (mf/deps min-value max-value value nillable default integer)
          (fn []
            (when-let [node (mf/ref-val ref)]
              (let [new-value (-> (dom/get-value node)
@@ -79,7 +71,7 @@
                (cond
                  (d/num? new-value)
                  (-> new-value
-                     (cond-> integer? mth/round)
+                     (cond-> integer mth/round)
                      (d/max (/ sm/min-safe-int 2))
                      (d/min (/ sm/max-safe-int 2))
                      (cond-> (d/num? min-value)
@@ -87,7 +79,7 @@
                      (cond-> (d/num? max-value)
                        (d/min max-value)))
 
-                 nillable?
+                 nillable
                  default
 
                  :else value)))))
@@ -155,7 +147,7 @@
                                  max-value
 
                                  :else new-value)
-                     new-value (if integer? (mth/round new-value) new-value)]
+                     new-value (if integer (mth/round new-value) new-value)]
 
                  (apply-value event new-value))))))
 
@@ -202,7 +194,7 @@
          (fn [event]
            (when (mf/ref-val dirty-ref)
              (let [new-value (or @last-value* default)]
-               (if (or nillable? new-value)
+               (if (or nillable new-value)
                  (apply-value event new-value)
                  (update-input new-value)))
              (when (fn? on-blur)
@@ -238,10 +230,9 @@
         (mf/use-fn
          (mf/deps value value-str min-value max-value default)
          (fn [event]
-           (let [disabled? (unchecked-get props "disabled")
-                 node      (mf/ref-val ref)
+           (let [node      (mf/ref-val ref)
                  is-focused (and (some? node) (dom/active? node))]
-             (when-not (or disabled? is-focused (= :multiple value-str))
+             (when-not (or disabled is-focused (= :multiple value-str))
                (let [client-x  (.-clientX event)
                      start-val (or value default 0)]
                  (mf/set-ref-val! drag-state* :maybe-dragging)
@@ -297,24 +288,21 @@
            (mf/set-ref-val! drag-state* :idle)
            (dom/remove-class! (dom/get-body) "cursor-drag-scrub")))
 
-        props (-> (obj/clone props)
-                  (obj/unset! "selectOnFocus")
-                  (obj/unset! "nillable")
-                  (obj/unset! "integer")
-                  (obj/set! "value" mf/undefined)
-                  (obj/set! "onChange" handle-change)
-                  (obj/set! "className" class)
-                  (obj/set! "type" "text")
-                  (obj/set! "ref" ref)
-                  (obj/set! "defaultValue" (fmt/format-number value))
-                  (obj/set! "title" title)
-                  (obj/set! "onKeyDown" handle-key-down)
-                  (obj/set! "onBlur" handle-blur)
-                  (obj/set! "onFocus" handle-focus)
-                  (obj/set! "onPointerDown" on-scrub-pointer-down)
-                  (obj/set! "onPointerMove" on-scrub-pointer-move)
-                  (obj/set! "onPointerUp" on-scrub-pointer-up)
-                  (obj/set! "onLostPointerCapture" on-scrub-lost-pointer-capture))]
+        props (mf/spread-props props
+                               {:value mf/undefined
+                                :on-change handle-change
+                                :class class
+                                :type "text"
+                                :ref ref
+                                :default-value (fmt/format-number value)
+                                :title title
+                                :on-key-down handle-key-down
+                                :on-blur handle-blur
+                                :on-focus handle-focus
+                                :on-pointer-down on-scrub-pointer-down
+                                :on-pointer-move on-scrub-pointer-move
+                                :on-pointer-up on-scrub-pointer-up
+                                :on-lost-pointer-capture on-scrub-lost-pointer-capture})]
 
     (mf/with-effect [value]
       (when-let [input-node (mf/ref-val ref)]

@@ -22,8 +22,7 @@
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(mf/defc svg-root
-  {::mf/wrap-props false}
+(mf/defc svg-root*
   [props]
 
   (let [shape       (unchecked-get props "shape")
@@ -53,8 +52,7 @@
      [:g.svg-raw {:transform (gsh/transform-str shape)}
       [:> "svg" props children]]]))
 
-(mf/defc svg-element
-  {::mf/wrap-props false}
+(mf/defc svg-element*
   [props]
   (let [shape       (unchecked-get props "shape")
         children    (unchecked-get props "children")
@@ -119,13 +117,13 @@
         [:style style-content]
 
         ^boolean svg-root?
-        [:& svg-root {:shape shape}
+        [:> svg-root* {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
         (and ^boolean svg-tag?
              ^boolean valid-tag?)
-        [:& svg-element {:shape shape}
+        [:> svg-element* {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 

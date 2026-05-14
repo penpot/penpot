@@ -48,7 +48,7 @@
 
 (mf/defc tab-nav*
   {::mf/private true
-   ::mf/memo true}
+   ::mf/wrap [mf/memo]}
   [{:keys [ref tabs selected on-click button-position action-button] :rest props}]
   (let [nav-class
         (stl/css-case :tab-nav true

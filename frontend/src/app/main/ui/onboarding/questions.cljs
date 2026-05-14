@@ -20,8 +20,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc step-container
-  {::mf/props :obj}
+(mf/defc step-container*
   [{:keys [form step on-next on-prev children class label]}]
 
   (let [on-next*
@@ -69,8 +68,7 @@
           (and (= role "other")
                (not (str/blank? role-other)))))]])
 
-(mf/defc step-1
-  {::mf/props :obj}
+(mf/defc step-1*
   [{:keys [on-next form show-step-3]}]
   (let [use-options
         (mf/with-memo []
@@ -94,11 +92,11 @@
         (dm/get-in @form [:data :role])]
 
 
-    [:& step-container {:form form
-                        :step 1
-                        :label "questions:about-you"
-                        :on-next on-next
-                        :class (stl/css :step-1)}
+    [:> step-container* {:form form
+                         :step 1
+                         :label "questions:about-you"
+                         :on-next on-next
+                         :class (stl/css :step-1)}
 
      [:div {:class (stl/css :paginator)} (str/ffmt "1/%" (if @show-step-3 4 3))]
 
@@ -147,8 +145,7 @@
             (and (= experience "other")
                  (not (str/blank? experience-other))))))]])
 
-(mf/defc step-2
-  {::mf/props :obj}
+(mf/defc step-2*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [design-tool-options
         (mf/with-memo []
@@ -175,12 +172,12 @@
              (swap! form d/dissoc-in [:data :experience-design-tool-other])
              (swap! form d/dissoc-in [:errors :experience-design-tool-other]))))]
 
-    [:& step-container {:form form
-                        :step 2
-                        :label "questions:experience-design-tool"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-2)}
+    [:> step-container* {:form form
+                         :step 2
+                         :label "questions:experience-design-tool"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step-2)}
 
      [:div {:class (stl/css :paginator)} (str/ffmt "2/%" (if @show-step-3 4 3))]
 
@@ -221,8 +218,7 @@
           (and (= planning "other")
                (not (str/blank? planning-other)))))]])
 
-(mf/defc step-3
-  {::mf/props :obj}
+(mf/defc step-3*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [team-size-options
         (mf/with-memo []
@@ -256,12 +252,12 @@
         current-planning
         (dm/get-in @form [:data :planning])]
 
-    [:& step-container {:form form
-                        :step 3
-                        :label "questions:about-your-job"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-3)}
+    [:> step-container* {:form form
+                         :step 3
+                         :label "questions:about-your-job"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step-3)}
 
      [:div {:class (stl/css :paginator)} (str/ffmt "3/%" (if @show-step-3 4 3))]
 
@@ -305,8 +301,7 @@
           (and (= start-with "other")
                (not (str/blank? start-with-other)))))]])
 
-(mf/defc step-4
-  {::mf/props :obj}
+(mf/defc step-4*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [start-options
         (mf/with-memo []
@@ -332,12 +327,12 @@
              (swap! form d/dissoc-in [:data :start-with-other])
              (swap! form d/dissoc-in [:errors :start-with-other]))))]
 
-    [:& step-container {:form form
-                        :step 4
-                        :label "questions:how-start"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-4)}
+    [:> step-container* {:form form
+                         :step 4
+                         :label "questions:how-start"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step-4)}
 
      [:div {:class (stl/css :paginator)} (str/ffmt "%/%" (if @show-step-3 4 3) (if @show-step-3 4 3))]
 
@@ -412,10 +407,10 @@
             :ref container}
 
       (case @step
-        1 [:& step-1 {:on-next on-next :on-prev on-prev :form step-1-form :show-step-3 show-step-3}]
-        2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
+        1 [:> step-1* {:on-next on-next :on-prev on-prev :form step-1-form :show-step-3 show-step-3}]
+        2 [:> step-2* {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
         3 (if @show-step-3
-            [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
-            [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
+            [:> step-3* {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
+            [:> step-4* {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
         (when @show-step-3
-          4 [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
+          4 [:> step-4* {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
