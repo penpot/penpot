@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.15.4
+
+### :bug: Bugs fixed
+
+- Emit `create-shape-layout` for flex/grid layout creation from plugins and MCP (same event as workspace) [Github #9652](https://github.com/penpot/penpot/issues/9652)
+
 ## 2.15.3
 
 ### :bug: Bugs fixed
