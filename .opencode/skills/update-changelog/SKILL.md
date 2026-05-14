@@ -7,7 +7,7 @@ description: Update the project CHANGES.md with issues from a given GitHub miles
 
 Update `CHANGES.md` with entries for all issues and PRs in a given GitHub
 milestone. Each entry references the user-facing issue (not the PR) as the
-primary link, with the fix PR on a sub-line.
+primary link, with the fix PR inline on the same line.
 
 ## When to Use
 
@@ -19,7 +19,8 @@ primary link, with the fix PR on a sub-line.
 ## Prerequisites
 
 - `gh` CLI authenticated (`gh auth status`)
-- Read access to the penpot/penpot repository
+- Python 3.8+
+- `tools/gh.py` helper script available
 
 ## Workflow
 
@@ -28,58 +29,64 @@ primary link, with the fix PR on a sub-line.
 The version is typically a semver string like `2.15.3`. Confirm with the user
 if not specified.
 
-### 2. Fetch all issues and PRs in the milestone
+### 2. Fetch all issues in the milestone
 
-Find the milestone number:
-
-```bash
-gh api repos/penpot/penpot/milestones --paginate \
-  --jq '.[] | select(.title=="<VERSION>") | {number: .number, title: .title, open_issues: .open_issues, closed_issues: .closed_issues}'
-```
-
-Then fetch all items:
+Use the helper script. It uses GraphQL for efficient single-pass fetching
+(closing PRs are included in the same query — no N+1):
 
 ```bash
-MILESTONE_NUMBER=<NUMBER>
-gh api "repos/penpot/penpot/issues?milestone=$MILESTONE_NUMBER&state=all&per_page=100" \
-  --jq '.[] | {number: .number, title: .title, state: .state, labels: [.labels[].name], pull_request: .pull_request != null}'
+# All closed issues (default)
+python3 tools/gh.py issues "2.16.0"
+
+# Include open issues too
+python3 tools/gh.py issues "2.16.0" --state all
+
+# Exclude entries that should not go in the changelog
+python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 ```
 
-### 3. Identify issue ↔ PR relationships
+**Label exclusion rules:**
+- `release blocker` — Internal release-blocking bugs not relevant to end users
+- `no changelog` — Chore/refactor work that doesn't need a changelog entry
 
-For each item, determine the relationship:
+The script outputs JSON with each entry containing `number`, `title`, `state`,
+`labels`, and `closing_prs` (the PRs that fix each issue).
 
-- **Issue** (`pull_request: false`): This is the user-facing issue. It
-  becomes the primary link in the changelog.
-- **PR** (`pull_request: true`): Check if it has `Fixes #<NUMBER>` in its
-  body to find which issue it closes.
+### 3. Identify missing entries (optional)
 
-To find the linked issue for a PR:
+If updating from an existing `CHANGES.md`, find issues in the milestone that
+are NOT yet referenced in the changelog:
 
 ```bash
-gh pr view <PR_NUMBER> --repo penpot/penpot \
-  --json body,closingIssuesReferences --jq '{closingIssues: [.closingIssuesReferences[].number]}'
+python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog" --compare CHANGES.md
 ```
 
-**Only closed issues are included.** An issue must have `state: "closed"` to
-appear in the changelog. Open/unresolved issues are omitted, even if they are
-tracked in the milestone.
+This returns a filtered JSON array with only the missing issues.
 
-**Pairing rules:**
+### 4. Fetch additional PR details when needed
 
-| Pattern | Changelog format |
-|---------|-----------------|
-| Closed issue + one or more PRs fix it | Primary link = issue, sub-line with PRs comma-separated |
-| PR exists with no linked issue | If a corresponding closed issue exists in the same milestone, link the issue. Otherwise, skip the entry (the issue must be the changelog unit). |
-| Closed issue with no fix PR in milestone | Link the issue directly, without a PR sub-line. |
-
-### 4. Categorize entries
-
-Check the labels on each issue/PR:
+When you need more context for specific PRs (e.g. to find the PR author for
+community contribution attribution, or to read the PR body for
+"Fixes/Closes #NNN" patterns):
 
 ```bash
-gh issue view <NUMBER> --repo penpot/penpot --json labels --jq '[.labels[].name]'
+# One or more PR numbers
+python3 tools/gh.py prs 9179 9204 9311
+
+# From a file
+python3 tools/gh.py prs --file prs.txt
+
+# From stdin
+cat prs.txt | python3 tools/gh.py prs --stdin
 ```
+
+The `prs` command returns JSON with `number`, `title`, `body`, `state`,
+`merged_at`, `author`, `labels`, and `closing_issues`. PRs are fetched in
+batches of 50 via GraphQL to stay within API limits.
+
+### 5. Categorize entries
+
+Check the labels on each issue to determine which section it belongs to:
 
 | Label / Title prefix | Changelog section |
 |----------------------|-------------------|
@@ -90,19 +97,32 @@ gh issue view <NUMBER> --repo penpot/penpot --json labels --jq '[.labels[].name]
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
 on the changelog entry line, **before** the GitHub issue/PR references.
-Fetch the author:
+
+The attribution should reference the **PR author**, not the issue author.
+The `prs` subcommand includes the `author` field — use that:
 
 ```bash
-gh issue view <NUMBER> --repo penpot/penpot --json author --jq '.author.login'
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['author'])"
 ```
 
 Placement in the entry line:
 ```markdown
-- Fix description of the bug (by @username) [Github #<ISSUE>](...)
-  (PR: [#<PR>](...))
+- Fix description of the bug (by @username) [#<ISSUE>](...) (PR: [#<PR>](...))
 ```
 
-### 5. Read the current CHANGES.md
+**Only closed issues are included.** An issue must have `state: "closed"` to
+appear in the changelog. Open/unresolved issues are omitted, even if they are
+tracked in the milestone.
+
+**Pairing rules:**
+
+| Pattern | Changelog format |
+|---------|-----------------|
+| Closed issue + one or more PRs fix it | Primary link = issue, PR inline comma-separated |
+| PR exists with no linked issue | If a corresponding closed issue exists in the same milestone, link the issue. Otherwise, skip the entry (the issue must be the changelog unit). |
+| Closed issue with no fix PR in milestone | Link the issue directly, without a PR reference. |
+
+### 6. Read the current CHANGES.md
 
 Read the top of `CHANGES.md` to understand the existing format and find the
 insertion point (newest version goes at the top, after the `# CHANGELOG`
@@ -115,30 +135,29 @@ Key format rules from the existing file:
 
 ### :bug: Bugs fixed
 
-- Fix description of the bug [Github #<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>)
-  (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
-- Fix another bug (by @contributor) [Github #<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>)
-  (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- Fix description of the bug [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- Fix another bug (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 
 ### :sparkles: New features & Enhancements
 
-- Add new feature description [Github #<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>)
-  (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- Add new feature description [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 ```
 
 Format details:
 - Entries start with `- ` followed by a short description in imperative mood
 - Primary link is **always the issue** (user-facing artifact)
-- PR references are on an indented sub-line: `  (PR: [#<N>](<url>))`
-  If an issue has multiple fix PRs, they are comma-separated on one line:
-  `  (PR: [#<N>](<url>), [#<M>](<url>))`
+- PR references are inline on the same line: `(PR: [#<N>](<url>))`
+  If an issue has multiple fix PRs, they are comma-separated:
+  `(PR: [#<N>](<url>), [#<M>](<url>))`
 - The description should describe the fix/feature from the user's perspective
-- Community contributions get `(by @<username>)` **before** the GitHub link
+- Community contributions get `(by @<username>)` **before** the issue link
 - Sections are separated by a blank line between the last entry and the next
   section title
 - Only include a section if there are entries for it
+- When an entry already exists in an earlier version section, it must be removed
+  from the current version to avoid duplicates
 
-### 6. Build the description text
+### 7. Build the description text
 
 Derive the description from the issue title, not the PR title. Strip leading
 emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`) and focus on the
@@ -152,13 +171,13 @@ Examples:
 | `Comment content is not sanitized before rendering, enabling stored XSS` | `Sanitize comment content on rendering` |
 | `Custom uploaded font family names are not sanitized` | `Sanitize font family names on custom uploaded fonts` |
 
-### 7. Insert the section into CHANGES.md
+### 8. Insert the section into CHANGES.md
 
 Insert the new version section right after the `# CHANGELOG` header (before
 the previous version entry). Use the `edit` tool with enough context to make
 a unique match.
 
-### 8. Verify
+### 9. Verify
 
 Read the top of `CHANGES.md` and confirm:
 - The version header is correct
@@ -174,17 +193,15 @@ Read the top of `CHANGES.md` and confirm:
 
 ### :bug: Bugs fixed
 
-- <fix description> [Github #<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>)
-  (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
-- <fix description> (by @contributor) [Github #<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>)
-  (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- <fix description> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
+- <fix description> (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 ```
 
 ## Key Principles
 
 - **Issue = changelog unit.** The primary link always points to the
   user-facing issue, not the implementation PR.
-- **PR = implementation detail.** Reference the PR on a sub-line so readers
+- **PR = implementation detail.** Reference the PR inline so readers
   can find the code changes.
 - **Latest version first.** New sections are inserted at the top of the
   changelog, below the `# CHANGELOG` header.
@@ -192,10 +209,24 @@ Read the top of `CHANGES.md` and confirm:
   what broke and what was fixed, not internal implementation details.
 - **Community attribution.** When the issue or fix PR has the
   `community contribution` label, add `(by @<username>)` on the entry line
-  between the description and the GitHub link.
+  between the description and the issue link. Use the **PR author** (not the
+  issue author) for the attribution.
 - **Only closed issues.** An issue must have `state: "closed"` to appear in
   the changelog. Open unresolved issues are omitted.
+- **Excluded labels.** Issues with `release blocker` or `no changelog` labels
+  must be excluded from the changelog.
 - **Multiple PRs per issue.** If multiple PRs fix the same issue, list them
-  comma-separated on the same sub-line: `(PR: [#A](url), [#B](url))`.
+  comma-separated inline: `(PR: [#A](url), [#B](url))`.
+- **Duplicate removal.** If an entry already exists in a prior version section,
+  remove it from the current version. Check for text-level duplicates (after
+  stripping links and attributions) across version sections.
+- **Taiga references.** If a changelog entry references a Taiga URL
+  (`tree.taiga.io`), attempt to find a corresponding GitHub issue via the
+  Taiga description text or by searching GitHub PRs that reference the Taiga
+  URL. Replace the Taiga reference with the GitHub issue link and add the PR
+  reference if applicable.
 - **Re-fetch before editing.** Milestones can change — always re-fetch issues
   before making edits, don't rely on cached data.
+- **Use `tools/gh.py`.** Prefer the helper script over raw `gh api` calls for
+  milestone issue listing and PR detail fetching. It handles GraphQL
+  pagination, batching, and label filtering automatically.
