@@ -37,19 +37,26 @@ export class ImageContent implements ImageItem {
 
     /**
      * Utility function for ensuring a consistent Uint8Array representation of byte data.
-     * Input can be either a Uint8Array or an object (as obtained from JSON conversion of Uint8Array
-     * from the plugin).
+     * Input can be one of:
+     *   - a `Uint8Array` (already in the desired form);
+     *   - a base64 envelope `{ __type: "base64", data: <base64 string> }` produced by the plugin
+     *     to avoid the ~10x JSON expansion of typed arrays (see penpot/penpot#9420);
+     *   - a numeric-keyed object obtained from `JSON.stringify`-ing a `Uint8Array` (legacy fallback).
      *
-     * @param data - data as Uint8Array or as object (from JSON conversion of Uint8Array)
-     * @return data as Uint8Array
+     * @param data - data as `Uint8Array`, base64 envelope, or numeric-keyed object
+     * @return data as `Uint8Array`
      */
     public static byteData(data: Uint8Array | object): Uint8Array {
-        if (typeof data === "object") {
-            // convert object (as obtained from JSON conversion of Uint8Array) back to Uint8Array
-            return new Uint8Array(Object.values(data) as number[]);
-        } else {
+        if (data instanceof Uint8Array) {
             return data;
         }
+        // recognize the base64 envelope produced by the plugin's ExecuteCodeTaskHandler
+        const envelope = data as { __type?: unknown; data?: unknown };
+        if (envelope.__type === "base64" && typeof envelope.data === "string") {
+            return new Uint8Array(Buffer.from(envelope.data, "base64"));
+        }
+        // legacy fallback: object (as obtained from JSON conversion of Uint8Array) back to Uint8Array
+        return new Uint8Array(Object.values(data) as number[]);
     }
 }
 

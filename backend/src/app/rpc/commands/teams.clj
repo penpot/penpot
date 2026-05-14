@@ -789,9 +789,9 @@
 
     ;; Check delete permissions based on organization settings.
     ;; For non-org teams or when nitrate is disabled, only owners can delete.
-    (if (and (:organization-id team) (contains? cf/flags :nitrate))
-      (let [org-perms {:owner-id    (:organization-owner-id team)
-                       :permissions (:organization-permissions team)}]
+    (if (and (:organization team) (contains? cf/flags :nitrate))
+      (let [org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
+                       :permissions (dm/get-in team [:organization :permissions])}]
         (when-not (nitrate-perms/allowed? :delete-team
                                           {:org-perms  org-perms
                                            :profile-id profile-id
@@ -950,6 +950,7 @@
   ;; Validate incoming mime type
 
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

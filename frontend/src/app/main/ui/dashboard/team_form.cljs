@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.team-form
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.types.team :as ctt]
    [app.main.data.common :as dcm]
@@ -14,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as deprecated-icon]
@@ -42,20 +44,19 @@
               (modal/hide))))
 
 (defn- on-error
-  [form organization-name response]
+  [form response]
   (let [id   (get-in @form [:clean-data :id])
         code (-> response ex-data :code)]
     (if (= code :not-allowed)
-      (rx/of (modal/show :no-permission-modal {:type :create-team
-                                               :organization-name organization-name}))
+      (rx/of (modal/show :no-permission-modal {:type :create-team}))
       (if id
         (rx/of (ntf/error "Error on updating team."))
         (rx/of (ntf/error "Error on creating team."))))))
 
 (defn- on-create-submit
-  [form organization-name]
+  [form]
   (let [mdata  {:on-success (partial on-create-success form)
-                :on-error   (partial on-error form organization-name)}
+                :on-error   (partial on-error form)}
         data   (:clean-data @form)
         params (cond-> {:name (:name data)}
                  (:organization-id data) (assoc :organization-id (:organization-id data)))]
@@ -65,23 +66,23 @@
 (defn- on-update-submit
   [form]
   (let [mdata  {:on-success (partial on-update-success form)
-                :on-error   (partial on-error form nil)}
+                :on-error   (partial on-error form)}
         data   (:clean-data @form)
         team   (select-keys data [:id :name])]
     (st/emit! (dtm/update-team (with-meta team mdata))
               (modal/hide))))
 
 (defn- on-submit
-  [organization-name form _]
+  [form _]
   (let [data (:clean-data @form)]
     (if (:id data)
       (on-update-submit form)
-      (on-create-submit form organization-name))))
+      (on-create-submit form))))
 
 (mf/defc team-form-modal
   {::mf/register modal/components
    ::mf/register-as :team-form}
-  [{:keys [team organization-id organization-name] :as props}]
+  [{:keys [team organization-id] :as props}]
   (let [initial (mf/use-memo
                  (mf/deps team organization-id)
                  (fn []
@@ -94,16 +95,15 @@
         form    (fm/use-form :schema schema:team-form
                              :initial initial)
         on-submit* (mf/use-fn
-                    (mf/deps organization-name)
-                    (partial on-submit organization-name))
+                    (partial on-submit form))
         handle-keydown
         (mf/use-fn
-         (mf/deps organization-name)
+         (mf/deps form)
          (fn [e]
            (when (kbd/enter? e)
              (dom/prevent-default e)
              (dom/stop-propagation e)
-             (on-submit organization-name form e))))]
+             (on-submit form e))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -144,8 +144,10 @@
   "Generic modal for displaying permission-related messages based on error type"
   {::mf/register modal/components
    ::mf/register-as :no-permission-modal}
-  [{:keys [type organization-name]}]
-  (let [[title message] (case type
+  [{:keys [type]}]
+  (let [team             (mf/deref refs/team)
+        organization-name (dm/get-in team [:organization :name])
+        [title message] (case type
                           :create-team [(tr "labels.create-team")
                                         (tr "dashboard.no-permission-create-team.message" organization-name)]
                           :delete-team [(tr "dashboard.delete-team")

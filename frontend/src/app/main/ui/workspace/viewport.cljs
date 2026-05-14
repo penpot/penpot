@@ -200,7 +200,7 @@
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -410,7 +410,9 @@
         ;; Render root shape
         [:& shapes/root-shape {:key (str page-id)
                                :objects base-objects
-                               :active-frames @active-frames}]]]]
+                               :active-frames @active-frames
+                               ;; disable thumbnails when previewing a version
+                               :disable-thumbnails (some? preview-id)}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -499,6 +501,14 @@
           {:shape (get base-objects edition)
            :zoom zoom
            :modifiers modifiers}])
+
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
+           :zoom zoom}])
 
        (when show-measures?
          [:> msr/measurement*
