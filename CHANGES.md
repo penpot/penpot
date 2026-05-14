@@ -17,6 +17,7 @@
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
 - Fix two plugin error i18n keys broken by leading whitespace before `msgid` in `en.po` (by @MilosM348)
+- Use the noun "copia" instead of the verb "copiar" as the Spanish duplicate-suffix when duplicating design tokens [Github #9623](https://github.com/penpot/penpot/issues/9623)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Expose Source Sans Pro semibold (weight 600) variants in the builtin fonts list, matching the bundled font assets and CSS @font-face declarations [Github #7378](https://github.com/penpot/penpot/issues/7378)
 - Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
