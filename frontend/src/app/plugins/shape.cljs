@@ -31,6 +31,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -1357,12 +1358,52 @@
               (let [applied-tokens
                     (-> (u/locate-shape file-id page-id id)
                         (get :applied-tokens)
-                        (applied-tokens-plugin->applied-tokens))]
-                (reduce
-                 (fn [acc [prop name]]
-                   (obj/set! acc (json/write-camel-key prop) name))
-                 #js {}
-                 applied-tokens)))}
+                        (applied-tokens-plugin->applied-tokens))
+
+                    target
+                    (reduce
+                     (fn [acc [prop name]]
+                       (obj/set! acc (json/write-camel-key prop) name))
+                     #js {}
+                     applied-tokens)]
+                ;; Wrap the plain object in a Proxy so that
+                ;; `shape.tokens.fill = "tokenName"` actually applies
+                ;; the token instead of silently failing (#9561).
+                ;; Reads continue to fall through to the underlying
+                ;; object built from the current shape state.
+                ;; The handler always returns `true` so strict-mode
+                ;; assignment from SES-sandboxed plugins doesn't throw
+                ;; a TypeError on invalid input. Validation failures are
+                ;; surfaced through the plugin's standard `u/not-valid`
+                ;; channel (console / throw-validation-errors flag).
+                (js/Proxy.
+                 target
+                 #js {:set
+                      (fn [target-obj prop value]
+                        (let [attr (token-attr-plugin->token-attr prop)
+                              tokens-lib (u/locate-tokens-lib file-id)
+                              token (when (and tokens-lib (string? value))
+                                      (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                                          (get value)))]
+                          (cond
+                            (not (token-attr? prop))
+                            (u/not-valid plugin-id :tokens
+                                         (str "unknown token property: " prop))
+
+                            (nil? token)
+                            (u/not-valid plugin-id :tokens
+                                         (str "token not found in active sets: " value))
+
+                            :else
+                            (do
+                              (st/emit!
+                               (-> (dwta/toggle-token {:token token
+                                                       :attrs #{attr}
+                                                       :shape-ids [id]
+                                                       :expand-with-children false})
+                                   (se/add-event plugin-id)))
+                              (obj/set! target-obj prop value)))
+                          true))})))}
 
            :applyToken
            {:enumerable false

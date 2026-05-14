@@ -20,6 +20,7 @@
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Expose Source Sans Pro semibold (weight 600) variants in the builtin fonts list, matching the bundled font assets and CSS @font-face declarations [Github #7378](https://github.com/penpot/penpot/issues/7378)
 - Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
+- Fix plugin API `token.applyToShapes()` failing with "Doesn't support name: 0" and `shape.tokens` per-property assignment being silently discarded [Github #9561](https://github.com/penpot/penpot/issues/9561)
 - Fix `get-profile` masking transient DB errors as anonymous user (by @jack-stormentswe) [Github #9253](https://github.com/penpot/penpot/issues/9253)
 - Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)

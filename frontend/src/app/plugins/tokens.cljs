@@ -55,13 +55,16 @@
 
   Accepts either a Clojure keyword (the canonical form, e.g. `:r1`,
   `:fill`) or a string (the natural shape that arrives from a JS plugin
-  call such as `shape.applyToken(token, [\"fill\"])`). Converts strings
-  to keywords first, then maps verbose plugin-side aliases (e.g.
-  `:border-radius-top-left`) to their internal short form (e.g. `:r1`).
-  Inputs that are already in canonical form (`:r1`, `:fill`, `\"fill\"`,
-  …) pass through unchanged."
+  call such as `shape.applyToken(token, [\"fill\"])`). String input is
+  kebab-cased so that camelCase property names produced by the read
+  side of `shape.tokens` (e.g. `\"borderRadiusTopLeft\"` via
+  `json/write-camel-key`) round-trip correctly. After normalisation,
+  verbose plugin-side aliases (e.g. `:border-radius-top-left`) are
+  mapped to their internal short form (e.g. `:r1`). Inputs already in
+  canonical form (`:r1`, `:fill`, `\"fill\"`, …) pass through
+  unchanged."
   [k]
-  (let [k (cond-> k (string? k) keyword)]
+  (let [k (cond-> k (string? k) json/read-kebab-key)]
     (get map:token-attr-plugin->token-attr k k)))
 
 (defn applied-tokens-plugin->applied-tokens
@@ -203,11 +206,33 @@
 
     :applyToShapes
     {:enumerable false
-     :schema [:tuple
-              [:vector [:fn shape-proxy?]]
-              [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
+     ;; NOTE: We deliberately bypass the `:schema` coercion pipeline
+     ;; here. Validating shapes through `[:vector [:fn shape-proxy?]]`
+     ;; sent the JS array of hardened SES shape proxies through
+     ;; `json/->clj` and the malli json-transformer, which surfaced as a
+     ;; spurious validation failure. The error formatter then crashed
+     ;; with "Doesn't support name: 0" on the tuple-index path,
+     ;; obscuring the real cause and making the method completely
+     ;; unusable (#9561). Manual validation mirrors the pattern used by
+     ;; `penpot.selection` / `replaceColor` and works reliably for
+     ;; JS-array inputs.
      :fn (fn [shapes attrs]
-           (apply-token-to-shapes plugin-id file-id set-id id (map #(obj/get % "$id") shapes) attrs))}
+           (cond
+             (or (not (array? shapes)) (not (every? shape-proxy? shapes)))
+             (u/not-valid plugin-id :applyToShapes
+                          "shapes must be an array of shape proxies")
+
+             (and (some? attrs)
+                  (or (not (array? attrs))
+                      (not (every? token-attr? attrs))))
+             (u/not-valid plugin-id :applyToShapes
+                          "properties must be an array of token attribute names")
+
+             :else
+             (apply-token-to-shapes
+              plugin-id file-id set-id id
+              (map #(obj/get % "$id") shapes)
+              attrs)))}
 
     :applyToSelected
     {:enumerable false
