@@ -1161,7 +1161,10 @@ msgid "dashboard.select-org-modal.accept"
 msgstr "AÑADIR A UNA ORGANIZACIÓN"
 
 msgid "dashboard.change-org-modal.title"
-msgstr "CAMBIAR EL EQUIPO DE ORGANIZACIÓN"
+msgstr "Cambiar el equipo de organización"
+
+msgid "dashboard.change-org-modal.text"
+msgstr "Los miembros del equipo seguirán teniendo acceso a los proyectos y ficheros. El equipo tendrá la configuración de la nueva organización."
 
 msgid "dashboard.change-org-modal.choose"
 msgstr "Mover a:"
@@ -1640,6 +1643,10 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/library_edit.cljs:125, src/app/main/data/workspace/tokens/library_edit.cljs:144
 msgid "errors.token-theme-already-exists"
 msgstr "Ya existe un theme con este nombre"
+
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "El tema referencia sets que no existen: %s"
 
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
@@ -5081,6 +5088,24 @@ msgstr "Invita a personas mientras estás en el plan Unlimited"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Desbloquea las funciones Enterprise"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Establece permisos detallados y garantiza la seguridad de tus operaciones de diseño, sin renunciar a la libertad del código abierto que tanto valora tu equipo."
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Empieza a utilizar Enterprise"
+
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "El pago no se completó. Inténtalo de nuevo cuando quieras."
+
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr "No hemos podido iniciar el proceso de pago. Inténtalo de nuevo. Si el problema persiste, contáctanos: support@penpot.app."
+
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr "No hemos podido confirmar tu suscripción. Revisa el estado de tu suscripción en la página de Suscripciones. Puedes volver a intentarlo si lo necesitas."
+
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
 msgstr "Suscripción"
@@ -5210,6 +5235,9 @@ msgstr "editor por mes"
 #: src/app/main/ui/settings/subscription.cljs:569
 msgid "subscription.settings.price-organization-month"
 msgstr "organización por mes"
+
+msgid "subscription.settings.organization-member-month"
+msgstr "miembro organización por mes"
 
 #: src/app/main/ui/dashboard/subscription.cljs:140, src/app/main/ui/settings/subscription.cljs:102, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:538
 msgid "subscription.settings.professional"
@@ -6239,6 +6267,10 @@ msgstr "Mostrar/ocultar desenfoque"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Color de la rejilla de pixeles"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -8229,12 +8261,20 @@ msgstr "Error al importar: Datos de token no válidos en JSON."
 msgid "errors.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Error al importar: Nombre de token duplicado en JSON."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" no es un nombre de token válido.\n"
 "Los nombres de token solo pueden contener letras y dígitos separados por "
 "caracteres . y no pueden empezar con un signo $."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr "Existe un token en la ruta '%s' o en un prefijo del mismo, en otro set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
 msgid "errors.tokens.invalid-shadow-type-token-value"
@@ -8691,6 +8731,12 @@ msgstr "Hecho"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspeccionando código** (View only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Renderizado no disponible. Recarga la página para restaurar la edición."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Recargar"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "Todavía no hay cambios en el histórico"
@@ -8932,6 +8978,14 @@ msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
 
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "Se perdió el contexto WebGL"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "Se recuperó el contexto WebGL"
+
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Vaya, WebGL no está disponible"
 
@@ -9010,22 +9064,31 @@ msgid "nitrate.activation-success.create-org"
 msgstr "Crear organización"
 
 msgid "nitrate.form.title"
-msgstr "Desbloquea las funciones de Nitrate"
+msgstr "Desbloquea las funciones Enterprise"
 
-msgid "nitrate.form.billing-monthly"
-msgstr "Precio mensual"
+msgid "nitrate.form.enterprise-intro"
+msgstr "Todo lo que tus equipos necesitan para trabajar de forma segura a escala:"
 
-msgid "nitrate.form.billing-yearly"
-msgstr "Precio anual (descuento)"
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Permisos globales y granulares en equipos y proyectos"
 
-msgid "nitrate.form.upgrade"
-msgstr "Actualizar a Nitrate"
+msgid "nitrate.form.enterprise-feature-2"
+msgstr "Control centralizado sobre quién hace qué y dónde, desde una consola de administración dedicada"
+
+msgid "nitrate.form.enterprise-feature-3"
+msgstr "Total libertad open-source, con la gobernanza que tu organización necesita"
+
+msgid "nitrate.form.enterprise.price"
+msgstr "$25 / miembro por mes"
+
+msgid "nitrate.form.start-enterprise"
+msgstr "Empieza a utilizar Enterprise"
 
 msgid "nitrate.form.try-free"
 msgstr "Pruébalo gratis durante 14 días"
 
 msgid "nitrate.form.cancel-anytime"
-msgstr "Cancela en cualquier momento antes de tu próximo ciclo de facturación."
+msgstr "El pago se procesará al finalizar el periodo de prueba. Puedes cancelar en cualquier momento."
 
 msgid "nitrate.form.have-code"
 msgstr "¿Tienes un código de activación?"
@@ -9037,10 +9100,10 @@ msgid "nitrate.form.see-plan"
 msgstr "Ver mi plan actual"
 
 msgid "nitrate.form.contact-upgrade"
-msgstr "Contáctanos para actualizar a Nitrate:"
+msgstr "Contáctanos para actualizar a Enterprise:"
 
 msgid "nitrate.form.contact-trial"
-msgstr "Contáctanos para probar Nitrate durante 14 días:"
+msgstr "Contáctanos para probar Enterprise durante 14 días:"
 
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Código inválido."
@@ -9072,6 +9135,12 @@ msgstr "Contactar con ventas"
 msgid "nitrate.subscription.active-until"
 msgstr "Activo hasta el %s"
 
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Cancelar subscripción"
+
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renovar con código de activación"
+
 msgid "subscription.settings.more-information"
 msgstr "Más información"
 
@@ -9091,10 +9160,28 @@ msgid "subscription.current-plan.unlimited-trial"
 msgstr "Unlimited (Prueba)"
 
 msgid "subscription.current-plan.nitrate"
-msgstr "Nitrate"
+msgstr "Enterprise"
 
 msgid "subscription.current-plan.nitrate-trial"
-msgstr "Nitrate (Prueba)"
+msgstr "Enterprise (Prueba)"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "subscription.banner.see-enterprise"
+msgstr "Vea Enterprise en acción"
+
+msgid "subscription.banner.create-org-info"
+msgstr "Crea una organización y descubre exactamente cómo funciona Enterprise. Establece normas, gestiona tus equipos y disfruta de un nuevo nivel de control sobre tu flujo de trabajo de diseño."
+
+msgid "dashboard.no-permission-create-team.message"
+msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario."
+
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
+
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
+
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."

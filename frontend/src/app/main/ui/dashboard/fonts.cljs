@@ -109,7 +109,7 @@
         (mf/use-fn
          (fn [{:keys [id] :as item}]
            (swap! uploading* conj id)
-           (->> (rp/cmd! :create-font-variant item)
+           (->> (df/upload-font-variant item)
                 (rx/delay-at-least 2000)
                 (rx/subs! (fn [font]
                             (swap! fonts* dissoc id)
@@ -263,10 +263,9 @@
                   [{:name    (tr "labels.edit")
                     :id      "font-edit"
                     :handler on-edit}
-                   (when (contains? cf/flags :canary)
-                     {:name    (tr "labels.download-simple")
-                      :id      "font-download"
-                      :handler on-download})
+                   {:name    (tr "labels.download-simple")
+                    :id      "font-download"
+                    :handler on-download}
                    {:name    (tr "labels.delete")
                     :id      "font-delete"
                     :handler on-delete}])]

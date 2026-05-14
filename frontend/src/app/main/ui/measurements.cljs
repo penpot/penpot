@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.measurements
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -42,6 +43,13 @@
 (def distance-pill-width 50)
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
+
+(def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-height 16)
+(def ^:private ^:const selection-badge-padding-x 6)
+(def ^:private ^:const selection-badge-vertical-gap 8)
+(def ^:private ^:const selection-badge-border-radius 2)
+(def ^:private ^:const selection-badge-char-width 6.5)
 
 
 ;; ------------------------------------------------
@@ -96,7 +104,7 @@
 ;; COMPONENTS
 ;; ------------------------------------------------
 
-(mf/defc size-display [{:keys [selrect zoom]}]
+(mf/defc size-display* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         size-label (dm/str (fmt/format-number width) " x " (fmt/format-number height))
 
@@ -123,7 +131,7 @@
                      :font-size (/ font-size zoom)}}
       size-label]]))
 
-(mf/defc distance-display-pill [{:keys [x y zoom distance bounds]}]
+(mf/defc distance-display-pill* [{:keys [x y zoom distance bounds]}]
   (let [distance-pill-width (/ distance-pill-width zoom)
         distance-pill-height (/ distance-pill-height zoom)
         font-size (/ font-size zoom)
@@ -167,7 +175,7 @@
                      :font-size font-size}}
       (fmt/format-pixels distance)]]))
 
-(mf/defc selection-rect [{:keys [selrect zoom]}]
+(mf/defc selection-rect* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
         selection-rect-width (/ selection-rect-width zoom)]
     [:g.selection-rect
@@ -179,7 +187,36 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
-(mf/defc distance-display [{:keys [from to zoom bounds]}]
+(mf/defc selection-size-badge*
+  [{:keys [selrect zoom]}]
+  (let [{:keys [x y width height]} selrect
+        size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
+        badge-height (/ selection-badge-height zoom)
+        padding-x    (/ selection-badge-padding-x zoom)
+        gap          (/ selection-badge-vertical-gap zoom)
+        radius       (/ selection-badge-border-radius zoom)
+        text-width   (* (count size-label) (/ selection-badge-char-width zoom))
+        badge-width  (+ text-width (* 2 padding-x))
+        center-x     (+ x (/ width 2))
+        badge-x      (- center-x (/ badge-width 2))
+        badge-y      (+ y height gap)
+        text-y       (+ badge-y (/ badge-height 2))]
+    [:g.selection-size-badge {:pointer-events "none"}
+     [:rect {:x badge-x
+             :y badge-y
+             :width badge-width
+             :height badge-height
+             :rx radius
+             :ry radius
+             :style {:fill selection-badge-bg-color}}]
+     [:text {:class (stl/css :badge-text)
+             :x center-x
+             :y text-y
+             :text-anchor "middle"
+             :dominant-baseline "middle"}
+      size-label]]))
+
+(mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
                   (+ (:x to) (/ (:width to) 2))
                   (+ (:x from) (/ (:width from) 2)))
@@ -211,14 +248,14 @@
              :style {:stroke distance-color
                      :stroke-width distance-line-stroke}}]
 
-           [:& distance-display-pill
+           [:> distance-display-pill*
             {:x center-x
              :y center-y
              :zoom zoom
              :distance distance
              :bounds bounds}]])))))
 
-(mf/defc selection-guides [{:keys [bounds selrect zoom]}]
+(mf/defc selection-guides* [{:keys [bounds selrect zoom]}]
   [:g.selection-guides
    (for [[idx [x1 y1 x2 y2]] (d/enumerate (calculate-guides bounds selrect))]
      [:line {:key (dm/str "guide-" idx)
@@ -230,7 +267,7 @@
                      :stroke-width (/ select-guide-width zoom)
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
-(mf/defc measurement
+(mf/defc measurement*
   [{:keys [bounds frame selected-shapes hover-shape zoom]}]
   (let [selected-ids          (into #{} (map :id) selected-shapes)
         selected-selrect      (gsh/shapes->rect selected-shapes)
@@ -240,23 +277,24 @@
 
     (when (seq selected-shapes)
       [:g.measurement-feedback {:pointer-events "none"}
-       [:& selection-guides {:selrect selected-selrect
-                             :bounds bounds
-                             :zoom zoom}]
-       [:& size-display {:selrect selected-selrect :zoom zoom}]
+       [:> selection-guides* {:selrect selected-selrect
+                              :bounds bounds
+                              :zoom zoom}]
+       [:> size-display* {:selrect selected-selrect :zoom zoom}]
+       [:> selection-size-badge* {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
            (let [frame-bb (-> (:points frame) (grc/points->rect))]
              [:g.hover-shapes
-              [:& selection-rect {:type :hover :selrect frame-bb :zoom zoom}]
-              [:& distance-display {:from frame-bb
-                                    :to selected-selrect
-                                    :zoom zoom
-                                    :bounds bounds-selrect}]]))
+              [:> selection-rect* {:type :hover :selrect frame-bb :zoom zoom}]
+              [:> distance-display* {:from frame-bb
+                                     :to selected-selrect
+                                     :zoom zoom
+                                     :bounds bounds-selrect}]]))
 
          [:g.hover-shapes
-          [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
-          [:& size-display {:selrect hover-selrect :zoom zoom}]
-          [:& distance-display {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
+          [:> selection-rect* {:type :hover :selrect hover-selrect :zoom zoom}]
+          [:> size-display* {:selrect hover-selrect :zoom zoom}]
+          [:> distance-display* {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
 

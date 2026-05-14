@@ -24,10 +24,6 @@
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]))
 
-;; Size of each upload chunk in bytes. Reads the penpotUploadChunkSize global
-;; variable at startup; defaults to 25 MiB (overridden in production).
-(def ^:private chunk-size cf/upload-chunk-size)
-
 (def ^:private max-parallel-chunk-uploads
   "Maximum number of chunk upload requests that may be in-flight at the
   same time within a single chunked upload session."
@@ -44,8 +40,11 @@
   Returns an observable that emits exactly one map:
     `{:session-id <uuid>}`
 
-  The caller is responsible for the final step (assemble / import)."
-  [blob]
+  The caller is responsible for the final step (assemble / import).
+
+  The optional `opts` map accepts:
+    `:chunk-size` – size in bytes of each chunk (default: `cf/upload-chunk-size`, 25 MiB)."
+  [blob & {:keys [chunk-size] :or {chunk-size cf/upload-chunk-size}}]
   (let [total-size   (.-size blob)
         total-chunks (js/Math.ceil (/ total-size chunk-size))]
     (->> (rp/cmd! :create-upload-session

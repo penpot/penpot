@@ -1,8 +1,8 @@
+use crate::get_render_state;
 use crate::skia::textlayout::FontCollection;
 use crate::skia::Image;
 use crate::uuid::Uuid;
-use crate::with_state_mut;
-use crate::STATE;
+use crate::with_state;
 use std::collections::HashSet;
 
 pub fn uuid_from_u32_quartet(a: u32, b: u32, c: u32, d: u32) -> Uuid {
@@ -25,16 +25,16 @@ pub fn uuid_from_u32(id: [u32; 4]) -> Uuid {
 }
 
 pub fn get_image(image_id: &Uuid) -> Option<&Image> {
-    with_state_mut!(state, { state.render_state_mut().images.get(image_id) })
+    get_render_state().images.get(image_id)
 }
 
 // FIXME: move to a different place ?
 pub fn get_fallback_fonts() -> &'static HashSet<String> {
-    with_state_mut!(state, { state.render_state().fonts().get_fallback() })
+    get_render_state().fonts().get_fallback()
 }
 
 pub fn get_font_collection() -> &'static FontCollection {
-    with_state_mut!(state, { state.font_collection() })
+    with_state!(state, { state.font_collection() })
 }
 
 #[derive(Debug, Clone, Copy)]

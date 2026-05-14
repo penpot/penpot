@@ -24,8 +24,7 @@
               (str transform-matrix " " val)
               (str transform-matrix)))))
 
-(mf/defc svg-node
-  {::mf/wrap-props false}
+(mf/defc svg-node*
   [{:keys [type node prefix-id transform bounds]}]
   (cond
     (string? node) node
@@ -91,12 +90,12 @@
       [:> (name tag) props
        [:> wrapper wrapper-props
         (for [[index node] (d/enumerate content)]
-          [:& svg-node {:key (dm/str "node-" index)
-                        :type type
-                        :node node
-                        :prefix-id prefix-id
-                        :transform transform
-                        :bounds bounds}])]])))
+          [:> svg-node* {:key (dm/str "node-" index)
+                         :type type
+                         :node node
+                         :prefix-id prefix-id
+                         :transform transform
+                         :bounds bounds}])]])))
 
 (defn- get-svg-def-bounds
   [{:keys [tag attrs] :as node} shape transform]
@@ -108,8 +107,7 @@
             (gsh/transform-rect transform))
     (gsb/get-shape-filter-bounds shape)))
 
-(mf/defc svg-defs
-  {::mf/wrap-props false}
+(mf/defc svg-defs*
   [{:keys [shape render-id]}]
   (let [defs      (:svg-defs shape)
 
@@ -131,9 +129,9 @@
                        (contains? defs id) (str render-id "-"))))]
 
     (for [[key node] defs]
-      [:& svg-node {:key (dm/str key)
-                    :type (:type shape)
-                    :node node
-                    :prefix-id prefix-id
-                    :transform transform
-                    :bounds (get-svg-def-bounds node shape transform)}])))
+      [:> svg-node* {:key (dm/str key)
+                     :type (:type shape)
+                     :node node
+                     :prefix-id prefix-id
+                     :transform transform
+                     :bounds (get-svg-def-bounds node shape transform)}])))

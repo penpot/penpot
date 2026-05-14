@@ -273,6 +273,7 @@
              (->> (dwm/upload-media-url name file-id url)
                   (rx/take 1)
                   (rx/map format/format-image)
+                  (rx/tap #(st/emit! (se/event plugin-id "add-media")))
                   (rx/subs! resolve reject)))))))
 
     :uploadMediaData
@@ -305,6 +306,7 @@
                   :on-svg identity})
                 (rx/take 1)
                 (rx/map format/format-image)
+                (rx/tap #(st/emit! (se/event plugin-id "add-media")))
                 (rx/subs! resolve reject))))))
 
     :group
@@ -478,6 +480,7 @@
                           (conj acc (cg/generate-formatted-markup-code objects type resolved-shapes))))
                       []))]
 
+            (st/emit! (se/event plugin-id "copy-inspect-code"))
             (->> resolved-code (str/join "\n"))))))
 
     :generateStyle
@@ -524,6 +527,7 @@
                            (cg/generate-style-code
                             objects type shapes resolved-shapes {:with-prelude? prelude?}))))
                       []))]
+            (st/emit! (se/event plugin-id "copy-inspect-style"))
             (dm/str
              (if prelude? (cg/prelude type) "")
              (->> resolved-styles
@@ -558,7 +562,8 @@
     (fn []
       (let [file-id (:current-file-id @st/state)
             id (uuid/next)]
-        (st/emit! (dw/create-page {:page-id id :file-id file-id}))
+        (st/emit! (-> (dw/create-page {:page-id id :file-id file-id})
+                      (se/add-event plugin-id)))
         (page/page-proxy plugin-id file-id id)))
 
     :openPage
@@ -664,9 +669,10 @@
                ids)]
           (if valid?
             (let [variant-id (uuid/next)]
-              (st/emit! (dwv/combine-as-variants
-                         ids
-                         {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+              (st/emit! (-> (dwv/combine-as-variants
+                             ids
+                             {:trigger "plugin:combine-as-variants" :variant-id variant-id})
+                            (se/add-event plugin-id)))
               (shape/shape-proxy plugin-id variant-id))
 
             (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))
