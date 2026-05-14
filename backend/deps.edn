@@ -72,11 +72,11 @@
  :aliases
  {:dev
   {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+   {com.bhauman/rebel-readline {:mvn/version "0.1.5"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
-    org.clojure/data.csv {:mvn/version "RELEASE"}
-    com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
-    mockery/mockery {:mvn/version "RELEASE"}}
+    org.clojure/data.csv {:mvn/version "1.1.1"}
+    com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
+    mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["test" "dev"]}
 
   :build
@@ -92,7 +92,7 @@
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
    :main-opts ["-m" "antq.core"]}
 
   :jmx-remote
