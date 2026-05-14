@@ -26,6 +26,12 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 const MAX_ATLAS_TEXTURE_SIZE: i32 = 4096;
 const DEFAULT_MAX_ATLAS_TEXTURE_SIZE: i32 = 1024;
 
+#[derive(Debug, PartialEq)]
+pub enum DrawOnCache {
+    Yes,
+    No,
+}
+
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
@@ -396,6 +402,58 @@ impl Surfaces {
         Ok(())
     }
 
+    /// Clears a doc-space rect from the atlas **without** growing it.
+    ///
+    /// Unlike [`clear_doc_rect_in_atlas`], this method clips `doc_rect` to the
+    /// current atlas bounds and skips silently if there is no overlap. Use this
+    /// when evicting stale shape content (e.g. before a drag re-render) where
+    /// growing the atlas to accommodate an out-of-range rect would be wasteful.
+    pub fn clear_doc_rect_in_atlas_clipped(&mut self, doc_rect: skia::Rect) {
+        if !self.has_atlas() || doc_rect.is_empty() {
+            return;
+        }
+
+        let atlas_scale = self.atlas_scale.max(0.01);
+        let atlas_doc_right = self.atlas_origin.x + (self.atlas_size.width as f32) / atlas_scale;
+        let atlas_doc_bottom = self.atlas_origin.y + (self.atlas_size.height as f32) / atlas_scale;
+
+        // Intersect with current atlas bounds in doc space.
+        let mut clipped = doc_rect;
+        let atlas_bounds = skia::Rect::from_ltrb(
+            self.atlas_origin.x,
+            self.atlas_origin.y,
+            atlas_doc_right,
+            atlas_doc_bottom,
+        );
+        if !clipped.intersect(atlas_bounds) {
+            return;
+        }
+
+        // Apply atlas_doc_bounds clamping.
+        if let Some(bounds) = self.atlas_doc_bounds {
+            if !clipped.intersect(bounds) {
+                return;
+            }
+        }
+
+        if clipped.is_empty() {
+            return;
+        }
+
+        let dst = skia::Rect::from_xywh(
+            (clipped.left - self.atlas_origin.x) * atlas_scale,
+            (clipped.top - self.atlas_origin.y) * atlas_scale,
+            clipped.width() * atlas_scale,
+            clipped.height() * atlas_scale,
+        );
+
+        let canvas = self.atlas.canvas();
+        canvas.save();
+        canvas.clip_rect(dst, None, true);
+        canvas.clear(skia::Color::TRANSPARENT);
+        canvas.restore();
+    }
+
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
     }
@@ -404,16 +462,21 @@ impl Surfaces {
         self.atlas_size.width > 0 && self.atlas_size.height > 0
     }
 
-    /// Draw the persistent atlas onto the target using the current viewbox transform.
+    /// Draw the persistent atlas onto the backbuffer using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
-    /// Clears Target to `background` first so atlas-uncovered regions don't
+    /// Clears Backbuffer to `background` first so atlas-uncovered regions don't
     /// show stale content when the atlas only partially covers the viewport.
-    pub fn draw_atlas_to_target(&mut self, viewbox: Viewbox, dpr: f32, background: skia::Color) {
+    pub fn draw_atlas_to_backbuffer(
+        &mut self,
+        viewbox: Viewbox,
+        dpr: f32,
+        background: skia::Color,
+    ) {
         if !self.has_atlas() {
             return;
         }
 
-        let canvas = self.target.canvas();
+        let canvas = self.backbuffer.canvas();
         canvas.save();
         canvas.reset_matrix();
         let size = canvas.base_layer_size();
@@ -545,6 +608,12 @@ impl Surfaces {
         self.dirty_surfaces = 0;
     }
 
+    pub fn flush(&mut self, id: SurfaceId) {
+        let gpu_state = get_gpu_state();
+        let surface = self.get_mut(id);
+        gpu_state.context.flush_surface(surface);
+    }
+
     pub fn flush_and_submit(&mut self, id: SurfaceId) {
         let gpu_state = get_gpu_state();
         let surface = self.get_mut(id);
@@ -562,12 +631,12 @@ impl Surfaces {
         );
     }
 
-    /// Draws the cache surface directly to the target canvas.
+    /// Draws the cache surface directly to the backbuffer canvas.
     /// This avoids creating an intermediate snapshot, reducing GPU stalls.
-    pub fn draw_cache_to_target(&mut self) {
+    pub fn draw_cache_to_backbuffer(&mut self) {
         let sampling_options = self.sampling_options;
-        self.cache.clone().draw(
-            self.target.canvas(),
+        self.cache.draw(
+            self.backbuffer.canvas(),
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),
@@ -663,7 +732,7 @@ impl Surfaces {
         });
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
@@ -683,6 +752,7 @@ impl Surfaces {
         }
     }
 
+    #[inline(always)]
     fn get(&self, id: SurfaceId) -> &skia::Surface {
         match id {
             SurfaceId::Target => &self.target,
@@ -707,23 +777,23 @@ impl Surfaces {
         (s.width(), s.height())
     }
 
-    /// Copy the current `Target` contents into the persistent `Backbuffer`.
+    /// Copy the current `Backbuffer` contents into `Target`.
     /// This is a GPU→GPU copy via Skia (no ReadPixels).
-    pub fn copy_target_to_backbuffer(&mut self) {
+    pub fn copy_backbuffer_to_target(&mut self) {
         let sampling_options = self.sampling_options;
-        self.target.clone().draw(
-            self.backbuffer.canvas(),
+        self.backbuffer.draw(
+            self.target.canvas(),
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),
         );
     }
 
-    /// Seed `Target` from `Backbuffer` (last presented frame).
-    pub fn seed_target_from_backbuffer(&mut self) {
+    /// Seed `Backbuffer` from `Target` (last presented frame).
+    pub fn seed_backbuffer_from_target(&mut self) {
         let sampling_options = self.sampling_options;
-        self.backbuffer.clone().draw(
-            self.target.canvas(),
+        self.target.draw(
+            self.backbuffer.canvas(),
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),
@@ -749,7 +819,6 @@ impl Surfaces {
             .target
             .new_surface_with_dimensions(dim)
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
-        // The rest are tile size surfaces
 
         Ok(())
     }
@@ -1000,17 +1069,17 @@ impl Surfaces {
             let mut paint = skia::Paint::default();
             paint.set_color(color);
 
-            self.target.canvas().draw_rect(rect, &paint);
+            self.backbuffer.canvas().draw_rect(rect, &paint);
 
-            self.target
+            self.backbuffer
                 .canvas()
                 .draw_image_rect(&image, None, rect, &skia::Paint::default());
         }
     }
 
-    /// Draws a cached tile texture to the Cache surface at the given
+    /// Draws a cached tile texture to the Cache self.backbuffer at the given
     /// cache-aligned rect.  This keeps the Cache surface in sync with
-    /// Target so that `render_from_cache` (used during pan) has the
+    /// Backbuffer so that `render_from_cache` (used during pan) has the
     /// full scene including tiles served from the texture cache.
     pub fn draw_cached_tile_to_cache(
         &mut self,
@@ -1031,53 +1100,14 @@ impl Surfaces {
         }
     }
 
-    /// Draws the current tile directly to the target and cache surfaces without
+    /// Draws the current tile directly to the backbuffer and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
-    pub fn draw_current_tile_direct(&mut self, tile_rect: &skia::Rect, color: skia::Color) {
-        let sampling_options = self.sampling_options;
-        let src_rect = IRect::from_xywh(
-            self.margins.width,
-            self.margins.height,
-            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
-        );
-        let src_rect_f = skia::Rect::from(src_rect);
-
-        // Draw background
-        let mut paint = skia::Paint::default();
-        paint.set_color(color);
-        self.target.canvas().draw_rect(tile_rect, &paint);
-
-        // Draw current surface directly to target (no snapshot)
-        self.current.clone().draw(
-            self.target.canvas(),
-            (
-                tile_rect.left - src_rect_f.left,
-                tile_rect.top - src_rect_f.top,
-            ),
-            sampling_options,
-            None,
-        );
-
-        // Also draw to cache for render_from_cache
-        self.current.clone().draw(
-            self.cache.canvas(),
-            (
-                tile_rect.left - src_rect_f.left,
-                tile_rect.top - src_rect_f.top,
-            ),
-            sampling_options,
-            None,
-        );
-    }
-
-    /// Same as `draw_current_tile_direct` but draws only into Target.
-    /// Useful during interactive transforms to reduce extra GPU work.
-    pub fn draw_current_tile_direct_target_only(
+    pub fn draw_current_tile_direct(
         &mut self,
         tile_rect: &skia::Rect,
         color: skia::Color,
+        draw_on_cache: DrawOnCache,
     ) {
         let sampling_options = self.sampling_options;
         let src_rect = IRect::from_xywh(
@@ -1088,12 +1118,15 @@ impl Surfaces {
         );
         let src_rect_f = skia::Rect::from(src_rect);
 
+        let backbuffer_canvas = self.backbuffer.canvas();
+        // Draw background
         let mut paint = skia::Paint::default();
         paint.set_color(color);
-        self.target.canvas().draw_rect(tile_rect, &paint);
+        backbuffer_canvas.draw_rect(tile_rect, &paint);
 
-        self.current.clone().draw(
-            self.target.canvas(),
+        // Draw current surface directly to target (no snapshot)
+        self.current.draw(
+            backbuffer_canvas,
             (
                 tile_rect.left - src_rect_f.left,
                 tile_rect.top - src_rect_f.top,
@@ -1101,6 +1134,19 @@ impl Surfaces {
             sampling_options,
             None,
         );
+
+        // Also draw to cache for render_from_cache
+        if draw_on_cache == DrawOnCache::Yes {
+            self.current.draw(
+                self.cache.canvas(),
+                (
+                    tile_rect.left - src_rect_f.left,
+                    tile_rect.top - src_rect_f.top,
+                ),
+                sampling_options,
+                None,
+            );
+        }
     }
 
     /// Full cache reset: clears both the tile texture cache and the cache canvas.

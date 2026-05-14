@@ -18,7 +18,6 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc left-sidebar
@@ -121,13 +120,13 @@
                  params {:name name}]
              (st/emit! (-> (dtm/create-team (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-without-invitations}))
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-step"
-                                        :label "team:create-team-and-invite-later"
-                                        :team-name name
-                                        :step 8})
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-finish"})))))
+                       (ev/event
+                        {::ev/name "onboarding-step"
+                         :label "team:create-team-and-invite-later"
+                         :team-name name
+                         :step 8})
+                       (ev/event
+                        {::ev/name "onboarding-finish"})))))
 
         on-invite-now
         (mf/use-fn
@@ -137,15 +136,15 @@
 
              (st/emit! (-> (dtm/create-team-with-invitations (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-with-invitations}))
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-step"
-                                        :label "team:create-team-and-invite"
-                                        :invites (count emails)
-                                        :team-name name
-                                        :role (:role params)
-                                        :step 8})
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-finish"})))))
+                       (ev/event
+                        {::ev/name "onboarding-step"
+                         :label "team:create-team-and-invite"
+                         :invites (count emails)
+                         :team-name name
+                         :role (:role params)
+                         :step 8})
+                       (ev/event
+                        {::ev/name "onboarding-finish"})))))
 
         on-submit*
         (mf/use-fn
@@ -160,12 +159,12 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:onboarding-viewed true})
-                     (ptk/data-event ::ev/event
-                                     {::ev/name "onboarding-step"
-                                      :label "team:skip-team-creation"
-                                      :step 7})
-                     (ptk/data-event ::ev/event
-                                     {::ev/name "onboarding-finish"}))))]
+                     (ev/event
+                      {::ev/name "onboarding-step"
+                       :label "team:skip-team-creation"
+                       :step 7})
+                     (ev/event
+                      {::ev/name "onboarding-finish"}))))]
     [:*
      [:div {:class (stl/css :modal-right)}
       [:div {:class (stl/css :first-block)}

@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::shapes::{ConstraintH, ConstraintV};
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]

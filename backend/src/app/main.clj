@@ -61,21 +61,15 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
-   :rpc-mutation-timing
-   {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timing."
+   :rpc-main-timing
+   {::mdef/name "penpot_rpc_main_timing"
+    ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-command-timing
-   {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-query-timing
-   {::mdef/name "penpot_rpc_query_timing"
-    ::mdef/help "RPC query method call timing."
+   :rpc-management-timing
+   {::mdef/name "penpot_rpc_management_timing"
+    ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
