@@ -376,7 +376,12 @@
     ;; Initialize colorpicker state
     (mf/with-effect []
       (st/emit! (dc/initialize-colorpicker on-change active-fill-tab))
-      (partial st/emit! (dc/finalize-colorpicker)))
+      ;; Always deactivate picking mode on unmount so that :picking-color? never
+      ;; stays true if the modal closes for any reason other than the normal
+      ;; pointer-up path (e.g. ESC, navigation, programmatic hide).
+      (fn []
+        (st/emit! (dc/stop-picker)
+                  (dc/finalize-colorpicker))))
 
     ;; Update colorpicker with external color changes
     (mf/with-effect [data]

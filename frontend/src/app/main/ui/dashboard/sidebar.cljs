@@ -467,9 +467,6 @@
               :owner-cant-leave-team
               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
 
-              :not-allowed
-              (rx/of (modal/show :no-permission-modal {:type :delete-team}))
-
               (rx/throw error))))
 
         leave-fn
@@ -577,20 +574,11 @@
                                 :class    (stl/css :team-options-item)}
         (tr "dashboard.leave-team")])
 
-     (let [is-owner?    (get-in team [:permissions :is-owner])
-           is-admin?    (get-in team [:permissions :is-admin])
-           organization (:organization team)
-           is-org-team? (some? organization)
-           in-org?      (and (contains? cf/flags :nitrate) is-org-team?)
-           show-delete? (if in-org?
-                          (or is-owner? is-admin?)
-                          is-owner?)]
-
-       (when show-delete?
-         [:> dropdown-menu-item* {:on-click    on-delete-clicked
-                                  :class       (stl/css :team-options-item :warning)
-                                  :data-testid "delete-team"}
-          (tr "dashboard.delete-team")]))]))
+     (when (get-in team [:permissions :is-owner])
+       [:> dropdown-menu-item* {:on-click    on-delete-clicked
+                                :class       (stl/css :team-options-item :warning)
+                                :data-testid "delete-team"}
+        (tr "dashboard.delete-team")])]))
 
 (mf/defc org-options-dropdown*
   {::mf/private true}

@@ -3,7 +3,7 @@
 
  :deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.12.4"}
+  org.clojure/clojure {:mvn/version "1.12.5"}
   org.clojure/tools.namespace {:mvn/version "1.5.0"}
 
   com.github.luben/zstd-jni {:mvn/version "1.5.7-4"}
@@ -17,7 +17,7 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.8.1.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "7.5.1.RELEASE"}
   ;; Minimal dependencies required by lettuce, we need to include them
   ;; explicitly because clojure dependency management does not support
   ;; yet the BOM format.
@@ -28,18 +28,18 @@
   com.google.guava/guava {:mvn/version "33.4.8-jre"}
 
   funcool/yetti
-  {:git/tag "v11.9"
-   :git/sha "5fad7a9"
+  {:git/tag "v11.10"
+   :git/sha "88701f4"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
   com.github.seancorfield/next.jdbc
-  {:mvn/version "1.3.1070"}
+  {:mvn/version "1.3.1093"}
 
   metosin/reitit-core {:mvn/version "0.9.1"}
-  nrepl/nrepl {:mvn/version "1.4.0"}
+  nrepl/nrepl {:mvn/version "1.7.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.9"}
+  org.postgresql/postgresql {:mvn/version "42.7.11"}
   org.xerial/sqlite-jdbc {:mvn/version "3.50.3.0"}
 
   com.zaxxer/HikariCP {:mvn/version "7.0.2"}
@@ -49,7 +49,7 @@
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.6.1-359"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.3"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.4"}
 
   org.jsoup/jsoup {:mvn/version "1.21.2"}
   org.im4java/im4java
@@ -57,7 +57,8 @@
    :git/sha "e2b3e16"
    :git/url "https://github.com/penpot/im4java"}
 
-  org.lz4/lz4-java {:mvn/version "1.8.0"}
+  at.yawk.lz4/lz4-java
+  {:mvn/version "1.11.0"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
 
@@ -66,17 +67,17 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.41.21"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.44.4"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
  {:dev
   {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+   {com.bhauman/rebel-readline {:mvn/version "0.1.5"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
-    org.clojure/data.csv {:mvn/version "RELEASE"}
-    com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
-    mockery/mockery {:mvn/version "RELEASE"}}
+    org.clojure/data.csv {:mvn/version "1.1.1"}
+    com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
+    mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["test" "dev"]}
 
   :build
@@ -92,7 +93,7 @@
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
    :main-opts ["-m" "antq.core"]}
 
   :jmx-remote

@@ -109,7 +109,7 @@
         (mf/use-fn
          (fn [{:keys [id] :as item}]
            (swap! uploading* conj id)
-           (->> (rp/cmd! :create-font-variant item)
+           (->> (df/upload-font-variant item)
                 (rx/delay-at-least 2000)
                 (rx/subs! (fn [font]
                             (swap! fonts* dissoc id)
