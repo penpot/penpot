@@ -214,7 +214,7 @@
                (dom/blur! node)))))
 
         handle-focus
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-focus select-on-focus?)
          (fn [event]
            (reset! last-value* (parse-value))
@@ -223,9 +223,9 @@
                (mf/set-ref-val! dirty-ref true)
                (on-focus event))
              (when select-on-focus?
-                  (dom/select-text! target)
-                  ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-                  (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
+               (dom/select-text! target)
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
 
         props (-> (obj/clone props)
                   (obj/unset! "selectOnFocus")
