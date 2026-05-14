@@ -714,19 +714,35 @@
         (set-wasm-props! objects prev-wasm-props wasm-props)
         (when-not translation?
           (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree)))
-        (let [geometry-entries (parse-geometry-modifiers modif-tree)
-              modifiers
-              (if (and translation? (not snap-pixel?))
+        (let [geometry-entries    (parse-geometry-modifiers modif-tree)
+              translation-fast?   (and translation? (not snap-pixel?))
+
+              ;; WASM only needs the directly-selected root shapes during a
+              ;; pure translation: children move as a captured backbuffer-crop
+              ;; unit so per-child entries are unused by the renderer.
+              ;; Sending all N descendants caused O(N) heap malloc/free in
+              ;; ShapesPool::set_modifiers on every pointer-move event.
+              wasm-modifiers
+              (if translation-fast?
+                (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
+                (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+
+              ;; The CLJS SVG overlay (outlines / highlights) still needs the
+              ;; full per-descendant expansion so hover/highlighted children
+              ;; render at the correct moved position.
+              cljs-modifiers
+              (if translation-fast?
                 (expand-translation-modifiers geometry-entries objects subtree-ids-by-id)
-                (wasm.api/propagate-modifiers geometry-entries snap-pixel?))]
-          (wasm.api/set-modifiers modifiers)
+                wasm-modifiers)]
+
+          (wasm.api/set-modifiers wasm-modifiers)
           (let [ids (into [] xf:map-key geometry-entries)
                 selrect
-                (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
-                  (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                (if (and translation-fast? selection-rect-cache (seq wasm-modifiers))
+                  (cached-translation-selrect ids (second (first wasm-modifiers)) selection-rect-cache)
                   (wasm.api/get-selection-rect ids))]
             (rx/of (set-temporary-selrect selrect)
-                   (set-temporary-modifiers modifiers))))))))
+                   (set-temporary-modifiers cljs-modifiers))))))))
 
 (defn propagate-structure-modifiers
   [modif-tree objects]
