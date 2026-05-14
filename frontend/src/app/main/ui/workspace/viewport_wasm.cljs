@@ -420,7 +420,6 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
-            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
@@ -437,7 +436,8 @@
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))))
+        (wasm.api/resize-viewbox (:width vport) (:height vport))
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -467,10 +467,6 @@
         (ts/asap #(if (empty? focus)
                     (wasm.api/clear-focus-mode)
                     (wasm.api/set-focus-mode focus)))))
-
-    (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
       (when (and @canvas-init? @initialized?)

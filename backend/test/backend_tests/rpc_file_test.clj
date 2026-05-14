@@ -918,6 +918,72 @@
       (t/is (th/ex-info? error))
       (t/is (th/ex-of-type? error :not-found)))))
 
+(t/deftest link-file-to-library-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :link-file-to-library
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        rel     (th/db-get :file-library-rel {:file-id (:id file2)
+                                              :library-file-id (:id file1)})
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? rel))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
+
+(t/deftest update-file-library-sync-status-updates-sync-row
+  (let [profile  (th/create-profile* 1)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)})
+        _        (th/link-file-to-library* {:file-id (:id file2)
+                                            :library-id (:id file1)})
+        before   (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})
+        _        (th/sleep 10)
+        data     {::th/type :update-file-library-sync-status
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file2)
+                  :library-id (:id file1)}
+        out      (th/command! data)
+        after    (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? before))
+    (t/is (some? after))
+    (t/is (pos? (compare (:synced-at after) (:synced-at before))))))
+
+(t/deftest update-file-library-sync-status-without-link-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :update-file-library-sync-status
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
+
 
 (t/deftest deletion
   (let [profile1 (th/create-profile* 1)

@@ -72,6 +72,7 @@
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
@@ -120,6 +121,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:font-max-file-size  {:optional true} ::sm/int]
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]

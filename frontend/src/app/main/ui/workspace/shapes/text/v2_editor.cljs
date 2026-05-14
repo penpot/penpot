@@ -290,8 +290,8 @@
       :data-testid "text-editor-container"
       :style {:width "var(--editor-container-width)"
               :height "var(--editor-container-height)"
-              :min-width "1px"
-              :min-height "1px"}}
+              :min-width "var(--editor-container-min-width, 1px)"
+              :min-height "var(--editor-container-min-height, 1px)"}}
      ;; We hide the editor when is blurred because otherwise the
      ;; selection won't let us see the underlying text. Use opacity
      ;; because display or visibility won't allow to recover focus
@@ -381,7 +381,7 @@
 
         render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-        [{:keys [x y width height]} transform]
+        [{:keys [x y width height selrect-width selrect-height]} transform]
         (if render-wasm?
           (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
@@ -403,7 +403,8 @@
                     "bottom" (+ y (- selrect-height height))
                     "center" (+ y (/ (- selrect-height height) 2))
                     y)]
-            [(assoc selrect :y y :width overlay-width :height max-height) transform])
+            [(assoc selrect :y y :width overlay-width :height max-height
+                    :selrect-width selrect-width :selrect-height selrect-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -422,6 +423,8 @@
           (obj/merge!
            #js {"--editor-container-width" "auto"
                 "--editor-container-height" "auto"
+                "--editor-container-min-width" (dm/str selrect-width "px")
+                "--editor-container-min-height" (dm/str selrect-height "px")
                 "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
                 :display "flex"})
 
