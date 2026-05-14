@@ -521,7 +521,8 @@ impl Surfaces {
     pub fn resize(&mut self, new_width: i32, new_height: i32) -> Result<()> {
         let gpu_state = get_gpu_state();
 
-        self.reset_from_target(gpu_state.create_target_surface(new_width, new_height)?)?;
+        let new_target = gpu_state.create_target_surface(new_width, new_height)?;
+        self.reset_from_target(gpu_state, new_target)?;
         Ok(())
     }
 
@@ -809,21 +810,25 @@ impl Surfaces {
         );
     }
 
-    fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
+    fn reset_from_target(&mut self, gpu_state: &mut GpuState, target: skia::Surface) -> Result<()> {
         let dim = (target.width(), target.height());
         self.target = target;
+        gpu_state.delete_surface(&mut self.filter);
         self.filter = self
             .target
             .new_surface_with_dimensions(dim)
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        gpu_state.delete_surface(&mut self.backbuffer);
         self.backbuffer = self
             .target
             .new_surface_with_dimensions(dim)
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        gpu_state.delete_surface(&mut self.debug);
         self.debug = self
             .target
             .new_surface_with_dimensions(dim)
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
+        gpu_state.delete_surface(&mut self.ui);
         self.ui = self
             .target
             .new_surface_with_dimensions(dim)
@@ -837,6 +842,8 @@ impl Surfaces {
         cache_dims: skia::ISize,
         interest_area_threshold: i32,
     ) -> Result<()> {
+        let gpu_state = get_gpu_state();
+        gpu_state.delete_surface(&mut self.cache);
         self.cache = self
             .target
             .new_surface_with_dimensions(cache_dims)
