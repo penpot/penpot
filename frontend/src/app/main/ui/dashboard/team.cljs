@@ -1393,6 +1393,14 @@
                                  (filter :organization)
                                  (map dtm/team->organization)))
 
+        current-organization-id (dm/get-in team [:organization :id])
+
+        can-change-organization? (mf/with-memo [all-organizations current-organization-id]
+                                   (->> all-organizations
+                                        (remove #(= (:id %) current-organization-id))
+                                        seq
+                                        some?))
+
         ;; Filter to orgs where user is allowed to create/add teams
         organizations (mf/with-memo [all-organizations profile-id]
                         (->> all-organizations
