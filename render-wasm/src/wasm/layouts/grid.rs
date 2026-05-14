@@ -4,7 +4,7 @@ use crate::get_render_state;
 use crate::mem;
 use crate::shapes::{GridCell, GridDirection, GridTrack, GridTrackType};
 use crate::uuid::Uuid;
-use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, STATE};
+use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state};
 
 use super::align;
 

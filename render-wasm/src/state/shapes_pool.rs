@@ -398,3 +398,19 @@ impl Default for ShapesPoolImpl {
         Self::new()
     }
 }
+
+impl Clone for ShapesPoolImpl {
+    fn clone(&self) -> Self {
+        ShapesPoolImpl {
+            shapes: self.shapes.clone(),
+            counter: self.counter,
+            uuid_to_idx: self.uuid_to_idx.clone(),
+            // The modified_shape_cache is a derived/computed cache; reset it on clone
+            // so it gets lazily rebuilt on demand rather than cloning OnceCell state.
+            modified_shape_cache: HashMap::default(),
+            modifiers: self.modifiers.clone(),
+            structure: self.structure.clone(),
+            scale_content: self.scale_content.clone(),
+        }
+    }
+}

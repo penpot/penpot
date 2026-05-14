@@ -77,17 +77,20 @@
   [{:keys [::rpc/request-at ::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (inet/parse-request request)
-        xform   (map (fn [event]
-                       {:id (uuid/next)
-                        :type (:type event)
-                        :name (:name event)
-                        :props (:props event)
-                        :context (:context event)
-                        :profile-id profile-id
-                        :ip-addr ip-addr
-                        :source "frontend"
-                        :tracked-at (:timestamp event)
-                        :created-at request-at}))]
+        xform   (comp
+                 (map (fn [event]
+                        {:id (uuid/next)
+                         :type (:type event)
+                         :name (:name event)
+                         :props (:props event)
+                         :context (:context event)
+                         :profile-id profile-id
+                         :ip-addr ip-addr
+                         :source "frontend"
+                         :tracked-at (:timestamp event)
+                         :created-at request-at}))
+                 (map (fn [item]
+                        (with-meta item {::audit/event true}))))]
 
     (sequence xform events)))
 

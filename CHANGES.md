@@ -16,6 +16,7 @@
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
+- Fix two plugin error i18n keys broken by leading whitespace before `msgid` in `en.po` (by @MilosM348)
 - Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
 - Expose Source Sans Pro semibold (weight 600) variants in the builtin fonts list, matching the bundled font assets and CSS @font-face declarations [Github #7378](https://github.com/penpot/penpot/issues/7378)
 - Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
@@ -23,7 +24,7 @@
 - Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
-
+- Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
 
 ## 2.16.0 (Unreleased)
 
@@ -89,6 +90,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix render-wasm atlas corruption when dragging large shapes after a zoom or pan change (stale multi-zoom-level pixels no longer appear at the old shape position).
 - Fix Alt/Option to draw shapes from center point (by @offreal) [Github #8361](https://github.com/penpot/penpot/pull/8361)
 - Add token name on broken token pill on sidebar [Taiga #13527](https://tree.taiga.io/project/penpot/issue/13527)
 - Fix tooltip activated when tab change [Taiga #13627](https://tree.taiga.io/project/penpot/issue/13627)
@@ -150,34 +152,72 @@
 - Fix plugin parse-point returning plain map instead of Point record (by @FairyPigDev) [Github #9129](https://github.com/penpot/penpot/pull/9129)
 - Fix `:heigth` typo in clipboard frame-same-size? (by @iot2edge) [Github #9250](https://github.com/penpot/penpot/pull/9250)
 - Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
+- Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
+- Fix dependency libraries remaining visible in UI after unlinking main library [Taiga #14020](https://tree.taiga.io/project/penpot/issue/14020)
 
-## 2.15.0 (Unreleased)
-
-### :sparkles: New features & Enhancements
-
-- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174) 
-- Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #8909](https://github.com/penpot/penpot/pull/8909)
-- Improve team name validation [Github #9176](https://github.com/penpot/penpot/pull/9176)
+## 2.15.2
 
 ### :bug: Bugs fixed
 
-- Fix MCP integrations URL copy action to match the URL displayed in settings [Github #9238](https://github.com/penpot/penpot/issues/9238)
-- Fix Plugin API token methods rejecting JS array of strings [Github #9162](https://github.com/penpot/penpot/issues/9162)
-- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
-- Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9435](https://github.com/penpot/penpot/pull/9435)
-- Fix MCP "active in another tab" notification not clearing (by @Dexterity104) [Github #9321](https://github.com/penpot/penpot/pull/9321)
-- Fix swapped analytics event names on MCP tab-switch dialog (by @Dexterity104) [Github #9322](https://github.com/penpot/penpot/pull/9322)
-- Fix MCP ReplServer binding to all interfaces (0.0.0.0) instead of localhost, allowing unauthenticated RCE [Github #9400] (https://github.com/penpot/penpot/pull/9400)
-- Fix incorrect handling of version restore operation [Github #9041](https://github.com/penpot/penpot/pull/9041)
-- Fix SSRF in media URL import and restrict unauthenticated asset access to public buckets only [Github #9390](https://github.com/penpot/penpot/pull/9390)
+- Fix mcp related internal config for docker images [Github #9565](https://github.com/penpot/penpot/pull/9565)
+
+
+## 2.15.1
+
+### :sparkles: New features & Enhancements
+
+- Add support for chunked uploading of fonts [Github #9560](https://github.com/penpot/penpot/issues/9560)
+
+
+## 2.15.0
+
+### :sparkles: New features & Enhancements
+
+- Add MCP server integration [Github #9174](https://github.com/penpot/penpot/issues/9174)
+  (PR: [#9032](https://github.com/penpot/penpot/pull/9032), [#9321](https://github.com/penpot/penpot/pull/9321))
+- Add chunked upload API for large media and binary files (removes previous upload size limits) [Github #9516](https://github.com/penpot/penpot/issues/9516)
+  (PR: [#8909](https://github.com/penpot/penpot/pull/8909))
+- Add anonymous telemetry event collection [Github #9467](https://github.com/penpot/penpot/issues/9467)
+  (PR: [#9065](https://github.com/penpot/penpot/pull/9065), [#9483](https://github.com/penpot/penpot/pull/9483))
+- Improve team name validation [Github #9517](https://github.com/penpot/penpot/issues/9517)
+  (PR: [#9176](https://github.com/penpot/penpot/pull/9176))
+- Enhance readability of applied tokens in plugins API [Github #9175](https://github.com/penpot/penpot/issues/9175)
+  (PR: [#8607](https://github.com/penpot/penpot/pull/8607))
+- Encourage use of flex/grid layouts in designs generated via MCP [Github #9081](https://github.com/penpot/penpot/issues/9081)
+  (PR: [#9084](https://github.com/penpot/penpot/pull/9084))
+- Improve MCP server logging, adding Loki support [Github #9415](https://github.com/penpot/penpot/issues/9415)
+  (PR: [#9425](https://github.com/penpot/penpot/pull/9425))
+- Add security headers to Nginx on Docker images [Github #9519](https://github.com/penpot/penpot/issues/9519)
+  (PR: [#9473](https://github.com/penpot/penpot/pull/9473))
+
+### :bug: Bugs fixed
+
 - Fix text edition mode not exited when changing selection, blocking token application [Github #9346](https://github.com/penpot/penpot/issues/9346)
-- Use base64 envelope for Uint8Array task results to avoid JSON expansion (by @opcode81) [Github #9431](https://github.com/penpot/penpot/pull/9431)
-- Fix empty warning on login [Github #9056](https://github.com/penpot/penpot/pull/9056)
-- Fix layer hierarchy to match old and new SCSS [Github #9126](https://github.com/penpot/penpot/pull/9126)
-- Fix multiple selection on shapes with token applied to stroke color [Github #9110](https://github.com/penpot/penpot/pull/9110)
-- Fix onboarding modals appearing behind libraries and templates panel [Github #9178](https://github.com/penpot/penpot/pull/9178)
+  (PR: [#9355](https://github.com/penpot/penpot/pull/9355))
+- Reduce memory usage of MCP server when handling images (by @opcode81) [Github #9420](https://github.com/penpot/penpot/issues/9420)
+  (PR: [#9431](https://github.com/penpot/penpot/pull/9431))
+- Fix Plugin API token methods rejecting JS array of strings (by @boskodev790) [Github #9162](https://github.com/penpot/penpot/issues/9162)
+  (PR: [#9166](https://github.com/penpot/penpot/pull/9166))
 - Fix release notes modal appearing behind the dashboard sidebar (by @RenzoMXD) [Github #8296](https://github.com/penpot/penpot/issues/8296)
+  (PR: [#9126](https://github.com/penpot/penpot/pull/9126), [#9233](https://github.com/penpot/penpot/pull/9233))
+- Fix empty warning on login [Github #9520](https://github.com/penpot/penpot/issues/9520)
+  (PR: [#9056](https://github.com/penpot/penpot/pull/9056))
 - Fix maximum call stack size exceeded in SSE read-stream [Github #9470](https://github.com/penpot/penpot/issues/9470)
+  (PR: [#9484](https://github.com/penpot/penpot/pull/9484))
+- Fix incorrect handling of version restore operation [Github #9515](https://github.com/penpot/penpot/issues/9515)
+  (PR: [#9041](https://github.com/penpot/penpot/pull/9041))
+- Fix MCP ReplServer binding to all interfaces (0.0.0.0) instead of localhost, allowing unauthenticated RCE [Github #9518](https://github.com/penpot/penpot/issues/9518)
+  (PR: [#9400](https://github.com/penpot/penpot/pull/9400))
+- Fix MCP integrations URL copy action to match the URL displayed in settings [Github #9238](https://github.com/penpot/penpot/issues/9238)
+  (PR: [#9239](https://github.com/penpot/penpot/pull/9239))
+- Fix swapped analytics event names on MCP tab-switch dialog (by @Dexterity104) [Github #9496](https://github.com/penpot/penpot/issues/9496)
+  (PR: [#9322](https://github.com/penpot/penpot/pull/9322))
+- Fix multiple selection on shapes with token applied to stroke color [Github #9522](https://github.com/penpot/penpot/issues/9522)
+  (PR: [#9110](https://github.com/penpot/penpot/pull/9110))
+- Fix onboarding modals appearing behind libraries and templates panel [Github #9521](https://github.com/penpot/penpot/issues/9521)
+  (PR: [#9178](https://github.com/penpot/penpot/pull/9178))
+- Fix keep-alive interval leak in PluginBridge (by @opcode81) [Github #9430](https://github.com/penpot/penpot/issues/9430)
+  (PR: [#9435](https://github.com/penpot/penpot/pull/9435))
 
 ## 2.14.5
 
@@ -192,7 +232,6 @@
 - Fix email validation [Taiga #14006](https://tree.taiga.io/project/penpot/issue/14006)
 - Fix email blacklisting [Github #9122](https://github.com/penpot/penpot/pull/9122)
 - Fix removeChild errors from unmount race conditions [Github #8927](https://github.com/penpot/penpot/pull/8927)
-
 
 ## 2.14.3
 
@@ -222,7 +261,6 @@
 - Fix stale accumulator in `get-children-in-instance` recursion
 - Fix typo `:podition` in swap-shapes grid cell
 - Fix multiple selection on shapes with token applied to stroke color
-
 
 ## 2.14.2
 

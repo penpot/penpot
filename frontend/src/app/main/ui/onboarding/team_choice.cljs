@@ -82,10 +82,9 @@
          (fn [response]
            (let [team-id (:id response)]
              (st/emit! (du/update-profile-props {:onboarding-team-id team-id
-                                                 :onboarding-viewed true})
-                       (println go-to-team)
-                       (when go-to-team
-                         (dcm/go-to-dashboard-recent :team-id team-id))))))
+                                                 :onboarding-viewed true}))
+             (when go-to-team
+               (st/emit! (dcm/go-to-dashboard-recent :team-id team-id))))))
 
         on-error
         (mf/use-fn
