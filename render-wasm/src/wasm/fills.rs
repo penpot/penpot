@@ -3,7 +3,6 @@ use macros::{wasm_error, ToJs};
 use crate::mem;
 use crate::shapes;
 use crate::with_current_shape_mut;
-use crate::STATE;
 
 mod gradient;
 mod image;

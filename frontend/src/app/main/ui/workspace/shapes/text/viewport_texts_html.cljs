@@ -130,10 +130,10 @@
            (when (some? node)
              (on-update shape node))))]
 
-    [:& html/text-shape {:key (str "shape-" (:id shape))
-                         :ref handle-update
-                         :shape shape
-                         :grow-type (:grow-type shape)}]))
+    [:> html/text-shape* {:key (str "shape-" (:id shape))
+                          :ref handle-update
+                          :shape shape
+                          :grow-type (:grow-type shape)}]))
 
 (defn text-properties-equal?
   [shape other]

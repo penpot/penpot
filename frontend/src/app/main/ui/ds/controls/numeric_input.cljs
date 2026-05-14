@@ -531,7 +531,6 @@
                    (when (and (= state :maybe-dragging)
                               (>= (js/Math.abs delta-x) 3))
                      (mf/set-ref-val! drag-state* :dragging)
-                     (dom/add-class! (dom/get-body) "cursor-drag-scrub")
                      (when (fn? on-change-start)
                        (on-change-start)))
                    (when (= (mf/ref-val drag-state*) :dragging)
@@ -559,7 +558,6 @@
                    (dom/focus! node)))
                (when (= state :dragging)
                  (mf/set-ref-val! drag-state* :idle)
-                 (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                  (dom/release-pointer event)
                  (when (fn? on-change-end)
                    (on-change-end)))))))
@@ -571,7 +569,6 @@
            (when-not is-token-applied?
              (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
                (mf/set-ref-val! drag-state* :idle)
-               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                (when (and was-dragging (fn? on-change-end))
                  (on-change-end))))))
 

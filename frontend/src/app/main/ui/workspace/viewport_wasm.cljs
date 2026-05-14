@@ -254,10 +254,11 @@
 
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
+        context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -419,7 +420,6 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
-            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
@@ -436,7 +436,8 @@
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))))
+        (wasm.api/resize-viewbox (:width vport) (:height vport))
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -466,10 +467,6 @@
         (ts/asap #(if (empty? focus)
                     (wasm.api/clear-focus-mode)
                     (wasm.api/set-focus-mode focus)))))
-
-    (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
       (when (and @canvas-init? @initialized?)
@@ -544,8 +541,9 @@
                :style {:background-color background
                        :pointer-events "none"}}]
 
-     ;; Show the transition image when we are opening a new file or switching to a new page
-     (when (and page-transition? (some? transition-image-url))
+     ;; Show the transition image when switching pages or recovering from WebGL context loss.
+     (when (and (or page-transition? context-loss-overlay?)
+                (some? transition-image-url))
        (let [src transition-image-url]
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
@@ -556,6 +554,7 @@
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
+                        ;; use (when page-transition? "blur(4px)") if we don't want the blur on context loss
                         :filter "blur(4px)"}}]))
 
 
@@ -651,6 +650,15 @@
        (when show-text-editor?
          [:> text-edition-outline*
           {:shape (get base-objects edition)
+           :zoom zoom}])
+
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition)
+                  (not page-transition?))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
            :zoom zoom}])
 
        (when show-measures?
@@ -782,37 +790,37 @@
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
-         [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
-                                   :objects base-objects
-                                   :hover-top-frame-id @hover-top-frame-id
-                                   :zoom zoom}])
-
-       (when (dbg/enabled? :layout-content-bounds)
-         [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
-                                       :objects base-objects
-                                       :hover-top-frame-id @hover-top-frame-id
-                                       :zoom zoom}])
-
-       (when (dbg/enabled? :layout-lines)
-         [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
-                                     :objects base-objects
-                                     :hover-top-frame-id @hover-top-frame-id
-                                     :zoom zoom}])
-
-       (when (dbg/enabled? :parent-bounds)
-         [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
-                                      :objects base-objects
-                                      :hover-top-frame-id @hover-top-frame-id
-                                      :zoom zoom}])
-
-       (when (dbg/enabled? :grid-layout)
-         [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
+         [:> wvd/debug-drop-zones* {:selected-shapes selected-shapes
                                     :objects base-objects
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :layout-content-bounds)
+         [:> wvd/debug-content-bounds* {:selected-shapes selected-shapes
+                                        :objects base-objects
+                                        :hover-top-frame-id @hover-top-frame-id
+                                        :zoom zoom}])
+
+       (when (dbg/enabled? :layout-lines)
+         [:> wvd/debug-layout-lines* {:selected-shapes selected-shapes
+                                      :objects base-objects
+                                      :hover-top-frame-id @hover-top-frame-id
+                                      :zoom zoom}])
+
+       (when (dbg/enabled? :parent-bounds)
+         [:> wvd/debug-parent-bounds* {:selected-shapes selected-shapes
+                                       :objects base-objects
+                                       :hover-top-frame-id @hover-top-frame-id
+                                       :zoom zoom}])
+
+       (when (dbg/enabled? :grid-layout)
+         [:> wvd/debug-grid-layout* {:selected-shapes selected-shapes
+                                     :objects base-objects
+                                     :hover-top-frame-id @hover-top-frame-id
+                                     :zoom zoom}])
+
        (when (dbg/enabled? :text-outline)
-         [:& wvd/debug-text-wasm-position-data
+         [:> wvd/debug-text-wasm-position-data*
           {:selected-shapes selected-shapes
            :objects base-objects
            :zoom zoom}])

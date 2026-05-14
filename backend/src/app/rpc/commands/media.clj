@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -58,8 +59,8 @@
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  ;; We get the minimal file for proper checking if
                  ;; file is not already deleted
-                 (let [_     (files/get-minimal-file conn file-id)
-                       mobj  (create-file-media-object cfg params)]
+                 (let [_      (files/get-minimal-file conn file-id)
+                       mobj   (create-file-media-object cfg params)]
 
                    (db/update! conn :file
                                {:modified-at (ct/now)
@@ -149,20 +150,49 @@
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
-   {:keys [id file-id is-local name content]}]
-  (let [result (process-image content)
-        image  (sto/put-object! storage (::image result))
-        thumb  (when-let [params (::thumb result)]
-                 (sto/put-object! storage params))]
+   {:keys [id file-id is-local name content from-url? from-chunks?]}]
 
-    (db/exec-one! conn [sql:create-file-media-object
-                        (or id (uuid/next))
-                        file-id is-local name
-                        (:id image)
-                        (:id thumb)
-                        (:width result)
-                        (:height result)
-                        (:mtype result)])))
+  (let [tpoint (ct/tpoint)
+        id     (or id (uuid/next))
+        origin (cond
+                 from-url?
+                 "url"
+                 from-chunks?
+                 "chunks"
+                 :else
+                 "direct")]
+
+    (l/dbg :hint "create file-media-object"
+           :step "init"
+           :id (str id)
+           :mtype (:mtype content)
+           :size (:size content)
+           :path (str (:path content))
+           :origin origin)
+
+    (let [result  (process-image content)
+          image   (sto/put-object! storage (::image result))
+          thumb   (when-let [params (::thumb result)]
+                    (sto/put-object! storage params))
+          elapsed (tpoint)]
+
+      (l/dbg :hint "create file-media-object"
+             :step "end"
+             :id (str id)
+             :mtype (:mtype content)
+             :size (:size content)
+             :path (str (:path content))
+             :origin origin
+             :elapsed (ct/format-duration elapsed))
+
+      (db/exec-one! conn [sql:create-file-media-object
+                          id
+                          file-id is-local name
+                          (:id image)
+                          (:id thumb)
+                          (:width result)
+                          (:height result)
+                          (:mtype result)]))))
 
 ;; --- Create File Media Object (from URL)
 
@@ -198,6 +228,7 @@
   [cfg {:keys [url name] :as params}]
   (let [content (media/download-image cfg url)
         params  (-> params
+                    (assoc :from-url? true)
                     (assoc :content content)
                     (assoc :name (d/nilv name "unknown")))]
 
@@ -305,7 +336,14 @@
                 :hint "chunk index is out of range for this session"
                 :session-id session-id
                 :total-chunks (:total-chunks session)
-                :index index)))
+                :index index))
+
+
+    (l/trc :hint "upload-chunk"
+           :session-id session-id
+           :chunk (str index "/" (:total-chunks session))
+           :size (:size content)
+           :path (:path content)))
 
   (let [storage (sto/resolve cfg)
         data    (sto/content (:path content))]
@@ -399,14 +437,15 @@
 
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
-                (let [{:keys [path size]} (assemble-chunks cfg session-id)
-                      content {:filename "upload"
-                               :size     size
-                               :path     path
-                               :mtype    mtype}
-                      _       (media/validate-media-type! content)
+                (let [content (assemble-chunks cfg session-id)
+                      content (-> content
+                                  (assoc :filename (str "upload:" name))
+                                  (assoc :mtype mtype)
+                                  (media/validate-media-type!)
+                                  (media/validate-media-size!))
                       mobj    (create-file-media-object cfg (assoc params
-                                                                   :id (or id (uuid/next))
+                                                                   :id id
+                                                                   :from-chunks? true
                                                                    :content content))]
 
                   (db/update! conn :file
