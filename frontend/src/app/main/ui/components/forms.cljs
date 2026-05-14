@@ -24,7 +24,7 @@
 (def form-ctx (mf/create-context nil))
 (def use-form fm/use-form)
 
-(mf/defc input
+(mf/defc input*
   [{:keys [label help-icon disabled form hint trim children data-testid on-change-value placeholder show-success? show-error]
     :or {show-error true}
     :as props}]
@@ -199,7 +199,7 @@
         (string? hint)
         [:div {:class (stl/css :hint)} hint])]]))
 
-(mf/defc textarea
+(mf/defc textarea*
   [{:keys [label disabled form hint trim] :as props}]
   (let [input-name (get props :name)
 
@@ -256,7 +256,7 @@
        (string? hint)
        [:span {:class (stl/css :hint)} hint])]))
 
-(mf/defc select
+(mf/defc select*
   [{:keys [options disabled form default dropdown-class select-class] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
@@ -269,7 +269,7 @@
             (fm/on-input-change form input-name value)))]
 
     [:div {:class (stl/css :select-wrapper)}
-     [:& cs/select
+     [:> cs/select
       {:default-value value
        :disabled disabled
        :options options
@@ -277,7 +277,7 @@
        :dropdown-class dropdown-class
        :on-change handle-change}]]))
 
-(mf/defc radio-buttons
+(mf/defc radio-buttons*
   {::mf/wrap-props false}
   [props]
   (let [form          (or (unchecked-get props "form")
@@ -439,7 +439,7 @@
        children
        [:span label])]))
 
-(mf/defc form
+(mf/defc form*
   {::mf/wrap-props false}
   [{:keys [on-submit form children class]}]
   (let [on-submit' (mf/use-fn
@@ -450,6 +450,12 @@
                         (on-submit form event))))]
     [:> (mf/provider form-ctx) {:value form}
      [:form {:class class :on-submit on-submit'} children]]))
+
+(def input input*)
+(def textarea textarea*)
+(def select select*)
+(def radio-buttons radio-buttons*)
+(def form form*)
 
 (defn- conj-dedup
   "A helper that adds item into a vector and removes possible

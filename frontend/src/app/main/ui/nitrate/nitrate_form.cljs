@@ -69,10 +69,10 @@
         [:p {:class (stl/css :modal-text-large)}
          "Deadlights jack lad schooner scallywag dance the hempen jig carouser broadside cable strike colors."]
         (if online?
-          [:& fm/form {:form form}
+          [:> fm/form* {:form form}
            [:p {:class (stl/css :modal-text-large)}
 
-            [:& fm/radio-buttons
+            [:> fm/radio-buttons*
              {:options [{:label (tr "nitrate.form.billing-monthly") :value "monthly"}
                         {:label (tr "nitrate.form.billing-yearly") :value "yearly"}]
               :name :subscription

@@ -25,7 +25,7 @@
         (rx/of (ntf/error msg)))
       (rx/throw cause))))
 
-(mf/defc delete-account-modal
+(mf/defc delete-account-modal*
   {::mf/register modal/components
    ::mf/register-as :delete-account}
   []
@@ -45,7 +45,7 @@
                  :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
-       [:& context-notification
+       [:> context-notification
         {:level :warning
          :content (tr "modals.delete-account.info")}]]
 
@@ -60,3 +60,4 @@
                   :data-testid "delete-account-btn"}
          (tr "modals.delete-account.confirm")]]]]]))
 
+(def delete-account-modal delete-account-modal*)
