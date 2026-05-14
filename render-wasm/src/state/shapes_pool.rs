@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::iter;
 
 use crate::performance;
@@ -191,6 +192,15 @@ impl ShapesPoolImpl {
                 Some(shape)
             }
         } else {
+            if let Some(cell) = self.modified_shape_cache.get(&idx) {
+                return Some(cell.get_or_init(|| {
+                    if let Some(m) = self.find_nearest_ancestor_modifier(idx) {
+                        shape.transformed(Some(&m), None)
+                    } else {
+                        shape.clone()
+                    }
+                }));
+            }
             Some(shape)
         }
     }
@@ -230,9 +240,6 @@ impl ShapesPoolImpl {
     }
 
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
-        // Convert HashMap<Uuid, V> to HashMap<usize, V> using indices
-        // Initialize the cache cells for affected shapes
-
         let mut ids = Vec::<Uuid>::new();
         let mut modifiers_with_idx = HashMap::with_capacity(modifiers.len());
 
@@ -242,12 +249,47 @@ impl ShapesPoolImpl {
                 ids.push(uuid);
             }
         }
+
+        // Expand every root modifier to its full descendant subtree.
+        // When CLJS sends only root shapes (translation on drag), descendants
+        // need the same matrix.
+        // For resize/rotate, propagate-modifiers already includes all descendants.
+        // Descendants are NOT pushed into `ids` / `modifier_uuids`: tile invalidation
+        // via rebuild_modifier_tiles only runs for roots, which is sufficient because
+        // descendants always lie inside the parent's bounding box and are therefore
+        // covered by the parent's old/new tile ranges.
+        let root_pairs: Vec<(usize, skia::Matrix)> = ids
+            .iter()
+            .filter_map(|uuid| {
+                let idx = self.uuid_to_idx.get(uuid).copied()?;
+                let matrix = modifiers_with_idx.get(&idx).copied()?;
+                Some((idx, matrix))
+            })
+            .collect();
+
+        let mut descendants_idxs: Vec<usize> = Vec::new();
+        for (root_idx, matrix) in root_pairs {
+            for descendant_idx in self.collect_all_descendants(root_idx) {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    modifiers_with_idx.entry(descendant_idx)
+                {
+                    e.insert(matrix);
+                    descendants_idxs.push(descendant_idx);
+                }
+            }
+        }
+
         self.modifiers = modifiers_with_idx;
+
+        for descendant_idx in descendants_idxs {
+            self.modified_shape_cache
+                .insert(descendant_idx, OnceCell::new());
+        }
 
         // Compute ancestors before consuming `ids` so we can move it into
         // `modifier_uuids` without a clone.
         let all_ids = shapes::all_with_ancestors(&ids, self, true);
-        // Keep modifier_uuids in sync so modifier_ids() is O(K) not O(N_shapes).
+        // rebuild_modifier_tiles doesn't process every descendant individually.
         self.modifier_uuids = ids;
         for uuid in all_ids {
             if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
@@ -360,6 +402,41 @@ impl ShapesPoolImpl {
             modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
+        }
+    }
+
+    fn collect_all_descendants(&self, idx: usize) -> Vec<usize> {
+        let mut result = Vec::new();
+        let mut queue: VecDeque<&Uuid> = VecDeque::new();
+        let shape = &self.shapes[idx];
+        for child_id in shape.children_ids_iter(false) {
+            queue.push_back(child_id);
+        }
+        while let Some(child_id) = queue.pop_front() {
+            if let Some(&child_idx) = self.uuid_to_idx.get(child_id) {
+                result.push(child_idx);
+                let child_shape = &self.shapes[child_idx];
+                for grandchild_id in child_shape.children_ids_iter(false) {
+                    queue.push_back(grandchild_id);
+                }
+            }
+        }
+        result
+    }
+
+    fn find_nearest_ancestor_modifier(&self, idx: usize) -> Option<Matrix> {
+        let mut current_idx = idx;
+        loop {
+            let shape = &self.shapes[current_idx];
+            let parent_id = shape.parent_id?;
+            if parent_id == Uuid::nil() {
+                return None;
+            }
+            let &parent_idx = self.uuid_to_idx.get(&parent_id)?;
+            if let Some(matrix) = self.modifiers.get(&parent_idx) {
+                return Some(*matrix);
+            }
+            current_idx = parent_idx;
         }
     }
 
