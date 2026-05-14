@@ -821,7 +821,12 @@
           l.vern,
           l.synced_at,
           l.is_shared,
-          l.version
+          l.version,
+          NOT EXISTS (
+            SELECT 1 FROM file_library_rel AS direct
+             WHERE direct.file_id = ?::uuid
+               AND direct.library_file_id = l.id
+          ) AS is_indirect
      FROM libs AS l
     INNER JOIN project AS p ON (p.id = l.project_id)
     WHERE l.deleted_at IS NULL;")
@@ -829,12 +834,8 @@
 (defn get-file-libraries
   [conn file-id]
   (into []
-        (comp
-         ;; FIXME: :is-indirect set to false to all rows looks
-         ;; completly useless
-         (map #(assoc % :is-indirect false))
-         (map decode-row-features))
-        (db/exec! conn [sql:get-file-libraries file-id])))
+        (map decode-row-features)
+        (db/exec! conn [sql:get-file-libraries file-id file-id])))
 
 (defn get-resolved-file-libraries
   "Get all file libraries including itself. Returns an instance of
