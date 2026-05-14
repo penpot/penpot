@@ -1739,18 +1739,41 @@ impl RenderState {
         }
 
         // Filter out any candidate that overlaps with any other candidate.
-        let mut non_overlapping: Vec<(Uuid, Rect, Rect)> = Vec::new();
-        'outer: for (i, (id, bounds, selrect)) in candidates.iter().enumerate() {
-            for (j, (_id2, bounds2, _sel2)) in candidates.iter().enumerate() {
-                if i == j {
-                    continue;
+        // Sort by left edge so the inner loop can break early once no further
+        // x-overlap is possible, reducing comparisons from O(N²) to O(N log N)
+        // in typical layouts where shapes are spread out.
+        candidates.sort_unstable_by(|a, b| {
+            a.1.left
+                .partial_cmp(&b.1.left)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        let n = candidates.len();
+        let mut is_overlapping = vec![false; n];
+        for i in 0..n {
+            for j in (i + 1)..n {
+                if candidates[j].1.left >= candidates[i].1.right {
+                    break; // sorted: no further x-overlap possible for i
                 }
-                if bounds.intersects(*bounds2) {
-                    continue 'outer;
+                if is_overlapping[i] && is_overlapping[j] {
+                    continue; // both already excluded, skip check
+                }
+                if candidates[i].1.intersects(candidates[j].1) {
+                    is_overlapping[i] = true;
+                    is_overlapping[j] = true;
                 }
             }
-            non_overlapping.push((*id, *bounds, *selrect));
         }
+        let non_overlapping: Vec<(Uuid, Rect, Rect)> = candidates
+            .iter()
+            .zip(is_overlapping.iter())
+            .filter_map(|((id, bounds, selrect), ov)| {
+                if !ov {
+                    Some((*id, *bounds, *selrect))
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         let vb_left = self.viewbox.area.left;
         let vb_top = self.viewbox.area.top;
