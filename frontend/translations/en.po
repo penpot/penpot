@@ -5176,6 +5176,15 @@ msgstr "Inviting people while on the Unlimited plan"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Unlock Enterprise features"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Set fine-grained permissions and keep your design operations secure, without compromising the open-source freedom your team already loves."
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Get started with Enterprise"
+
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Payment was not completed. Try again whenever you're ready."
 
@@ -9363,22 +9372,31 @@ msgid "nitrate.activation-success.create-org"
 msgstr "Create organization"
 
 msgid "nitrate.form.title"
-msgstr "Unlock Nitrate Features"
+msgstr "Unlock Enterprise features"
 
-msgid "nitrate.form.billing-monthly"
-msgstr "Price Tag Monthly"
+msgid "nitrate.form.enterprise-intro"
+msgstr "Everything your teams need to work securely at scale:"
 
-msgid "nitrate.form.billing-yearly"
-msgstr "Price Tag Yearly (Discount)"
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Global to fine-grained permissions across teams and projects"
 
-msgid "nitrate.form.upgrade"
-msgstr "Upgrade to Nitrate"
+msgid "nitrate.form.enterprise-feature-2"
+msgstr "Centralized control over who does what and where, from a dedicated Admin Console"
+
+msgid "nitrate.form.enterprise-feature-3"
+msgstr "Full open-source freedom, with the governance your org needs"
+
+msgid "nitrate.form.enterprise.price"
+msgstr "$25 / member per month"
+
+msgid "nitrate.form.start-enterprise"
+msgstr "Get started with Enterprise"
 
 msgid "nitrate.form.try-free"
 msgstr "Try it free for 14 days"
 
 msgid "nitrate.form.cancel-anytime"
-msgstr "Cancel anytime before your next billing cycle."
+msgstr "Payment will be processed at the end of the trial. Cancel anytime."
 
 msgid "nitrate.form.have-code"
 msgstr "Have an activation code?"
@@ -9390,10 +9408,10 @@ msgid "nitrate.form.see-plan"
 msgstr "See my current plan"
 
 msgid "nitrate.form.contact-upgrade"
-msgstr "Contact us to upgrade to Nitrate:"
+msgstr "Contact us to upgrade to Enterprise:"
 
 msgid "nitrate.form.contact-trial"
-msgstr "Contact us to try Nitrate for 14 days:"
+msgstr "Contact us to try Enterprise for 14 days:"
 
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Invalid code."
@@ -9447,13 +9465,19 @@ msgid "subscription.current-plan.unlimited-trial"
 msgstr "Unlimited Trial"
 
 msgid "subscription.current-plan.nitrate"
-msgstr "Nitrate"
+msgstr "Enterprise"
 
 msgid "subscription.current-plan.nitrate-trial"
-msgstr "Nitrate Trial"
+msgstr "Enterprise Trial"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "subscription.banner.see-enterprise"
+msgstr "See Enterprise in action"
+
+msgid "subscription.banner.create-org-info"
+msgstr "Create an organization and see exactly how Enterprise works. Set rules, manage your teams and discover a new level of control over your design workflow."
 
 msgid "dashboard.no-permission-create-team.message"
 msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
