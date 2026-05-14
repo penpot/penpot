@@ -200,6 +200,24 @@
             :data-tool "path"
             :data-testid "path-btn"}
            deprecated-icon/path]]
+         [:li
+          [:button
+           {:title (str "Line (" (sc/get-tooltip :draw-line) ")")
+            :aria-label (str "Line (" (sc/get-tooltip :draw-line) ")")
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :line))
+            :on-click select-drawtool
+            :data-tool "line"
+            :data-testid "line-btn"}
+           deprecated-icon/easing-linear]]
+         [:li
+          [:button
+           {:title (str "Arrow (" (sc/get-tooltip :draw-arrow) ")")
+            :aria-label (str "Arrow (" (sc/get-tooltip :draw-arrow) ")")
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :arrow))
+            :on-click select-drawtool
+            :data-tool "arrow"
+            :data-testid "arrow-btn"}
+           deprecated-icon/stroke-arrow]]
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
