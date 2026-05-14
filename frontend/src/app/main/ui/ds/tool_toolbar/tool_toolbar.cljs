@@ -73,12 +73,12 @@
   {::mf/wrap [mf/memo]}
   [{:keys [selected has-flyout title icon on-click aria-haspopup aria-expanded role data-tool]}]
   [:> icon-button* {:variant "ghost"
-                    :title title
                     :aria-haspopup aria-haspopup
                     :aria-expanded aria-expanded
                     :aria-pressed selected
                     :role role
                     :aria-label title
+                    :tooltip-placement "top"
                     :class (stl/css :main-toolbar-options-button)
                     :on-click on-click
                     :icon icon
