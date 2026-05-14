@@ -26,7 +26,7 @@
    [:tooltip-placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]
    ;; Indicates that the button has a flyout menu, and should display an indicator
-   [:flyout-indicator {:optional true} :boolean]
+   [:flyout-indicator {:optional true} [:maybe :boolean]]
    [:variant {:optional true}
     [:maybe [:enum "primary" "secondary" "ghost" "destructive" "action"]]]])
 
