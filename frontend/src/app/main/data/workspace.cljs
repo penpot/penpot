@@ -1578,6 +1578,7 @@
 (dm/export dwv/initialize-viewport)
 (dm/export dwv/update-viewport-position)
 (dm/export dwv/update-viewport-size)
+(dm/export dwv/sync-wasm-workspace-viewport)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
 

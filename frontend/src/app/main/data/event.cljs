@@ -23,6 +23,7 @@
    [app.util.object :as obj]
    [app.util.perf :as perf]
    [app.util.storage :as storage]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
    [cuerdas.core :as str]
@@ -216,7 +217,7 @@
       (rx/create
        (fn [subs]
          (let [start (perf/now)]
-           (js/requestAnimationFrame
+           (timers/raf
             #(.postTask js/scheduler
                         (fn []
                           (let [time (- (perf/now) start)]
