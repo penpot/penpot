@@ -55,12 +55,12 @@
  :aliases
  {:dev
   {:extra-deps
-   {org.clojure/tools.namespace {:mvn/version "RELEASE"}
+   {org.clojure/tools.namespace {:mvn/version "1.5.0"}
     thheller/shadow-cljs {:mvn/version "3.2.0"}
-    com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
-    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+    com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
+    com.bhauman/rebel-readline {:mvn/version "0.1.5"}
     criterium/criterium {:mvn/version "0.4.6"}
-    mockery/mockery {:mvn/version "RELEASE"}}
+    mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["test" "dev"]}
 
   :build
