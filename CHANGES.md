@@ -19,7 +19,7 @@
 - Option to download custom fonts (by @dfelinto) [Github #8320](https://github.com/penpot/penpot/issues/8320)
 - Add copy as image to clipboard option to workspace context menu (by @dfelinto) [Github #8313](https://github.com/penpot/penpot/pull/8313)
 - Add Tab/Shift+Tab navigation to rename layers sequentially (by @bittoby) [Github #8474](https://github.com/penpot/penpot/pull/8474)
-- Copy and paste entire rows in existing table (by @bittoby) [Github #8498](https://github.com/penpot/penpot/pull/8498)
+- Copy and paste entire rows in existing table (by @bittoby) [Github #8498](https://github.com/penpot/penpot/pull/84r98)
 - Rename token group [Taiga #13137](https://tree.taiga.io/project/penpot/us/13137)
 - Duplicate token group [Taiga #10653](https://tree.taiga.io/project/penpot/us/10653)
 - Copy token name from contextual menu [Taiga #13568](https://tree.taiga.io/project/penpot/issue/13568)
@@ -125,6 +125,17 @@
 - Fix Settings and Notifications "Update Settings" button enabled state when form has no changes (by @moorsecopers99) [Github #9090](https://github.com/penpot/penpot/issues/9090)
 - Fix library updates reappear after being applied and the file is reloaded [Taiga #14040](https://tree.taiga.io/project/penpot/issue/14040)
 - Fix dependency libraries remaining visible in UI after unlinking main library [Taiga #14020](https://tree.taiga.io/project/penpot/issue/14020)
+
+## 2.15.3
+
+### :bug: Bugs fixed
+
+- Fix Plugin API token methods failing with schema validation error on PRO [Github #9641](https://github.com/penpot/penpot/issues/9641)
+  (PR: [#9632](https://github.com/penpot/penpot/pull/9632))
+- Sanitize comment content on rendering [Github #9642](https://github.com/penpot/penpot/issues/9642)
+  (PR: [#9605](https://github.com/penpot/penpot/pull/9605))
+- Sanitize font family names on custom uploaded fonts [Github #9643](https://github.com/penpot/penpot/issues/9643)
+  (PR: [#9601](https://github.com/penpot/penpot/pull/9601))
 
 ## 2.15.2
 
