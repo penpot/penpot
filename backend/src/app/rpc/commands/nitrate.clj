@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.nitrate-permissions :as nitrate-perms]
@@ -20,8 +21,45 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.notifications :as notifications]
-   [app.util.services :as sv]))
+   [app.util.services :as sv]
+   [clojure.string :as cstr]))
 
+
+(def ^:private already-redeemed-nitrate-error-codes
+  #{:already-redeemed :activation-code-already-redeemed :code-already-used
+    :activation-code-fully-redeemed :fully-redeemed})
+
+(defn- json-code-keyword
+  [c]
+  (when c
+    (if (keyword? c)
+      (keyword (cstr/lower-case (name c)))
+      (keyword (cstr/lower-case (str c))))))
+
+(defn- already-redeemed-activation-body?
+  [body-str]
+  (when (seq body-str)
+    (let [sl (cstr/lower-case body-str)]
+      (or (cstr/includes? sl "already redeemed")
+          (cstr/includes? sl "already been redeemed")
+          (cstr/includes? sl "fully redeemed")
+          (cstr/includes? sl "activation code has already")
+          (cstr/includes? sl "code has already been used")
+          (cstr/includes? sl "code was already")
+          (try
+            (let [data (json/decode body-str :key-fn json/read-kebab-key)
+                  code (json-code-keyword (:code data))]
+              (contains? already-redeemed-nitrate-error-codes code))
+            (catch Throwable _ false))))))
+
+(defn- redeem-nitrate-http-validation-code
+  [status body]
+  (or (cond
+        (= status 410) :expired-activation-code
+        (= status 409) :already-redeemed-activation-code
+        :else nil)
+      (when (and (string? body) (already-redeemed-activation-body? body))
+        :already-redeemed-activation-code)))
 
 (defn assert-is-owner [cfg profile-id team-id]
   (let [perms (teams/get-permissions cfg profile-id team-id)]
@@ -85,12 +123,11 @@
                     :hint "The activation code is invalid, expired or fully redeemed"))
         result)
       (catch Exception cause
-        (let [{:keys [type status]} (ex-data cause)]
+        (let [{:keys [type status body]} (ex-data cause)]
           (if (= type :nitrate-http-error)
             (ex/raise :type :validation
-                      :code (case status
-                              410 :expired-activation-code
-                              :invalid-activation-code)
+                      :code (or (redeem-nitrate-http-validation-code status body)
+                                :invalid-activation-code)
                       :cause cause)
             (throw cause)))))))
 

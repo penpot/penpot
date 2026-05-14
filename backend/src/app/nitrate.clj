@@ -20,11 +20,22 @@
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [clojure.core :as c]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:import java.io.InputStream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- http-error-body-string
+  [body]
+  (cond
+    (nil? body) nil
+    (string? body) body
+    (instance? InputStream body) (slurp body :encoding "UTF-8")
+    (instance? CharSequence body) (str body)
+    (bytes? body) (String. ^bytes body "UTF-8")
+    :else nil))
 
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
@@ -77,6 +88,7 @@
           (if throw-on-error?
             (ex/raise :type :nitrate-http-error
                       :status status
+                      :body (http-error-body-string (:body response))
                       :hint (str "nitrate HTTP " status " at " uri))
             nil))
         (= status 204) ;; 204 doesn't return any body

@@ -10,6 +10,7 @@
 
 - Show a read-only W × H size badge below the bounding box of the current selection (by @bittoby) [Github #9205](https://github.com/penpot/penpot/issues/9205)
 - Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
+- Nitrate activation codes: map HTTP 409, structured error `code`, and known reuse phrases from Nitrate to a dedicated `:already-redeemed-activation-code` validation and user-visible message (instead of only “invalid” or “expired”).
 
 ### :bug: Bugs fixed
 
