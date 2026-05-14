@@ -21,6 +21,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
+use crate::math;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
@@ -452,7 +453,8 @@ impl RenderState {
             };
             // Only allow using the cached pixels for pure translations.
             // For non-translation transforms (scale/rotate/skew), cached pixels won't match.
-            if !crate::math::is_move_only_matrix(m) {
+            // If the transform is the identity means a reflow, we need to redraw as well.
+            if math::identitish(m) || !math::is_move_only_matrix(m) {
                 return false;
             }
 
@@ -802,7 +804,24 @@ impl RenderState {
         Ok(())
     }
 
+    pub fn flush(&mut self) {
+        self.surfaces.flush(SurfaceId::Backbuffer);
+    }
+
     pub fn flush_and_submit(&mut self) {
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
+    /// Copy the clean (no UI overlay) Backbuffer to Target, draw UI/debug overlays
+    /// on top of Target, then present. Backbuffer is left clean so it can be reused
+    /// as-is across interactive-transform frames without stale overlay pixels.
+    pub fn present_frame(&mut self, tree: ShapesPoolRef) {
+        self.surfaces.copy_backbuffer_to_target();
+        if self.options.is_debug_visible() {
+            debug::render(self);
+        }
+        ui::render(self, tree);
+        debug::render_wasm_label(self);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
@@ -814,7 +833,7 @@ impl RenderState {
     /// This is currently not being used, but it's set there for testing purposes on
     /// upcoming tasks
     pub fn render_loading_overlay(&mut self) {
-        let canvas = self.surfaces.canvas(SurfaceId::Target);
+        let canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
         let skia::ISize { width, height } = canvas.base_layer_size();
 
         canvas.save();
@@ -861,8 +880,11 @@ impl RenderState {
         // the interaction ends.
         if self.options.is_interactive_transform() {
             let tile_rect = self.get_current_aligned_tile_bounds()?;
-            self.surfaces
-                .draw_current_tile_direct_target_only(&tile_rect, self.background_color);
+            self.surfaces.draw_current_tile_direct(
+                &tile_rect,
+                self.background_color,
+                surfaces::DrawOnCache::No,
+            );
             return Ok(());
         }
 
@@ -877,10 +899,12 @@ impl RenderState {
         // In fast mode the viewport is moving (pan/zoom) so Cache surface
         // positions would be wrong — only save to the tile HashMap.
         let tile_rect = self.get_current_aligned_tile_bounds()?;
+
         let current_tile = *self
             .current_tile
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
+
         self.surfaces.cache_current_tile_texture(
             &self.tile_viewbox,
             &current_tile,
@@ -1719,6 +1743,16 @@ impl RenderState {
                 && doc_bounds.top >= viewport.top
                 && doc_bounds.right <= viewport.right
                 && doc_bounds.bottom <= viewport.bottom;
+
+            // When the shape extends beyond the viewport to the left or top,
+            // `left`/`top` are negative. Skia clamps `makeImageSnapshot` to the
+            // surface bounds, so the returned image actually starts at pixel 0 —
+            // not at the negative coordinate. Store the clamped value so that
+            // `doc_left`/`doc_top` computed during the drag reflects the true
+            // image origin in the backbuffer.
+            let capture_src_left = left.max(0);
+            let capture_src_top = top.max(0);
+
             self.backbuffer_crop_cache.insert(
                 id,
                 InteractiveDragCrop {
@@ -1727,8 +1761,8 @@ impl RenderState {
                     fits_viewport_at_capture,
                     capture_vb_left: vb_left,
                     capture_vb_top: vb_top,
-                    capture_src_left: src_irect.left,
-                    capture_src_top: src_irect.top,
+                    capture_src_left,
+                    capture_src_top,
                     image,
                 },
             );
@@ -1747,16 +1781,9 @@ impl RenderState {
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
         if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
             self.surfaces
-                .draw_atlas_to_target(self.viewbox, self.options.dpr, bg_color);
+                .draw_atlas_to_backbuffer(self.viewbox, self.options.dpr, bg_color);
 
-            if self.options.is_debug_visible() {
-                debug::render(self);
-            }
-
-            ui::render(self, shapes);
-            debug::render_wasm_label(self);
-
-            self.flush_and_submit();
+            self.present_frame(shapes);
             performance::end_measure!("render_from_cache");
             performance::end_timed_log!("render_from_cache", _start);
             return;
@@ -1815,19 +1842,13 @@ impl RenderState {
                 if !cache_covers {
                     // Early return only if atlas exists; otherwise keep cache path.
                     if self.surfaces.has_atlas() {
-                        self.surfaces.draw_atlas_to_target(
+                        self.surfaces.draw_atlas_to_backbuffer(
                             self.viewbox,
                             self.options.dpr,
                             bg_color,
                         );
 
-                        if self.options.is_debug_visible() {
-                            debug::render(self);
-                        }
-
-                        ui::render(self, shapes);
-                        debug::render_wasm_label(self);
-                        self.flush_and_submit();
+                        self.present_frame(shapes);
                         performance::end_measure!("render_from_cache");
                         performance::end_timed_log!("render_from_cache", _start);
                         return;
@@ -1837,7 +1858,7 @@ impl RenderState {
 
             // Setup canvas transform
             {
-                let canvas = self.surfaces.canvas(SurfaceId::Target);
+                let canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
                 canvas.save();
                 canvas.scale((navigate_zoom, navigate_zoom));
                 canvas.translate((translate_x, translate_y));
@@ -1845,10 +1866,10 @@ impl RenderState {
             }
 
             // Draw directly from cache surface, avoiding snapshot overhead
-            self.surfaces.draw_cache_to_target();
+            self.surfaces.draw_cache_to_backbuffer();
 
             // Restore canvas state
-            self.surfaces.canvas(SurfaceId::Target).restore();
+            self.surfaces.canvas(SurfaceId::Backbuffer).restore();
 
             // During pure pan (same zoom), draw tiles from the HashMap
             // on top of the scaled Cache surface.  Cached tile textures
@@ -1880,14 +1901,7 @@ impl RenderState {
                 }
             }
 
-            if self.options.is_debug_visible() {
-                debug::render(self);
-            }
-
-            ui::render(self, shapes);
-            debug::render_wasm_label(self);
-
-            self.flush_and_submit();
+            self.present_frame(shapes);
         }
 
         performance::end_measure!("render_from_cache");
@@ -1955,7 +1969,6 @@ impl RenderState {
             if !self.interactive_target_seeded {
                 // Seed from the last presented frame; this is stable even when
                 // fast_mode skips cache updates and regardless of atlas coverage.
-                self.surfaces.seed_target_from_backbuffer();
                 self.interactive_target_seeded = true;
             }
         } else {
@@ -2015,6 +2028,7 @@ impl RenderState {
         self.nested_shadows.clear();
         // reorder by distance to the center.
         self.current_tile = None;
+
         self.render_in_progress = true;
 
         self.apply_drawing_to_render_canvas(None, SurfaceId::Current);
@@ -2078,38 +2092,28 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<()> {
         performance::begin_measure!("process_animation_frame");
+        self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+
         if self.render_in_progress {
-            if tree.len() != 0 {
-                self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+            // Partial frame: just flush GPU work. The display shows the last
+            // fully submitted frame; no need to copy or draw UI overlays here.
+            self.flush();
+            self.cancel_animation_frame();
+            self.render_request_id = Some(wapi::request_animation_frame!());
+        } else {
+            // A full-quality frame is now complete. Rebuild the per-shape crop
+            // cache from the clean Backbuffer (no UI overlay yet) so that
+            // interactive drag backgrounds don't include the grid overlay.
+            if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                self.rebuild_backbuffer_crop_cache(tree);
             }
-
-            // In a pure viewport interaction (pan/zoom), render_from_cache
-            // owns the Target surface — skip flush so we don't present
-            // stale tile positions.  The rAF still populates the Cache
-            // surface and tile HashMap so render_from_cache progressively
-            // shows more complete content.
-            //
-            // During interactive shape transforms (drag/resize/rotate) we
-            // still need to flush every rAF so the user sees the updated
-            // shape position — render_from_cache is not in the loop here.
-            if !self.options.is_viewport_interaction() {
-                self.flush_and_submit();
-            }
-
-            if self.render_in_progress {
-                self.cancel_animation_frame();
-                self.render_request_id = Some(wapi::request_animation_frame!());
-            } else {
-                // A full-quality frame is now complete. Refresh Backbuffer and regenerate
-                // the per-shape crop cache so interactive drags can reuse pixels.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.surfaces.copy_target_to_backbuffer();
-                    self.rebuild_backbuffer_crop_cache(tree);
-                }
-                wapi::notify_tiles_render_complete!();
-                performance::end_measure!("render");
-            }
+            // present_frame: copy clean Backbuffer → Target, draw UI/debug
+            // overlays on Target only, then flush. Backbuffer stays overlay-free.
+            self.present_frame(tree);
+            wapi::notify_tiles_render_complete!();
+            performance::end_measure!("render");
         }
+
         performance::end_measure!("process_animation_frame");
         Ok(())
     }
@@ -2120,10 +2124,8 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
     ) -> Result<()> {
-        if tree.len() != 0 {
-            self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
-        }
-        self.flush_and_submit();
+        self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
+        self.present_frame(tree);
         Ok(())
     }
 
@@ -3008,6 +3010,7 @@ impl RenderState {
                     &tree.modifier_ids(),
                     moved_bounds,
                 );
+
                 if use_cached {
                     if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
                         let crop_image = &crop.image;
@@ -3295,6 +3298,7 @@ impl RenderState {
                         return Ok(());
                     }
                     performance::end_measure!("render_shape_tree::uncached");
+
                     let tile_rect = self.get_current_tile_bounds()?;
                     // Composite if the walker did work in this PAF (`!is_empty`) OR
                     // the tile has unfinished work from a previous PAF
@@ -3304,8 +3308,11 @@ impl RenderState {
                         if self.options.is_interactive_transform() {
                             // During drag, avoid snapshot-based caching. Draw Current directly
                             // into Target (and Cache) to reduce stalls.
-                            self.surfaces
-                                .draw_current_tile_direct(&tile_rect, self.background_color);
+                            self.surfaces.draw_current_tile_direct(
+                                &tile_rect,
+                                self.background_color,
+                                surfaces::DrawOnCache::Yes,
+                            );
                         } else {
                             self.apply_render_to_final_canvas(tile_rect)?;
                         }
@@ -3317,25 +3324,6 @@ impl RenderState {
                                 current_tile,
                                 tile_rect,
                             );
-                        }
-                    } else {
-                        self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
-                            let mut paint = skia::Paint::default();
-                            paint.set_color(self.background_color);
-                            s.canvas().draw_rect(tile_rect, &paint);
-                        });
-                        // Keep Cache surface coherent for render_from_cache.
-                        if !self.options.is_fast_mode() {
-                            if !self.cache_cleared_this_render {
-                                self.surfaces.clear_cache(self.background_color);
-                                self.cache_cleared_this_render = true;
-                            }
-                            let aligned_rect = self.get_aligned_tile_bounds(current_tile);
-                            self.surfaces.apply_mut(SurfaceId::Cache as u32, |s| {
-                                let mut paint = skia::Paint::default();
-                                paint.set_color(self.background_color);
-                                s.canvas().draw_rect(aligned_rect, &paint);
-                            });
                         }
                     }
                 }
@@ -3409,7 +3397,6 @@ impl RenderState {
         }
 
         self.render_in_progress = false;
-
         self.surfaces.gc();
 
         // Mark cache as valid for render_from_cache.
@@ -3423,13 +3410,6 @@ impl RenderState {
         if !self.options.is_fast_mode() {
             self.cached_viewbox = self.viewbox;
         }
-
-        if self.options.is_debug_visible() {
-            debug::render(self);
-        }
-
-        ui::render(self, tree);
-        debug::render_wasm_label(self);
 
         Ok(())
     }
@@ -3493,6 +3473,25 @@ impl RenderState {
             .map_or(Vec::new(), |t| t.iter().copied().collect());
 
         let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
+
+        // When the shape has an active modifier (i.e. is being moved/resized),
+        // clear its OLD doc-space extent from the atlas using the raw
+        // (pre-modifier) shape.  The per-tile clearing done later via
+        // `clear_tile_in_atlas` only covers tiles tracked in `atlas_tile_doc_rects`
+        // at the current zoom level. However, the atlas may also contain stale
+        // pixels from previous zoom levels (tiles are larger / smaller in doc
+        // space at different zoom scales) that were never re-tracked after a zoom
+        // change.  Clearing the full raw extrect here removes all such residual
+        // content without growing the atlas.
+        //
+        // We intentionally skip this when there is NO modifier so that plain
+        // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
+        if tree.get_modifier(&shape.id).is_some() {
+            if let Some(raw_shape) = tree.get_raw(&shape.id) {
+                let old_extrect = raw_shape.extrect(tree, 1.0);
+                self.surfaces.clear_doc_rect_in_atlas_clipped(old_extrect);
+            }
+        }
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {

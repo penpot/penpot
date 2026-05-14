@@ -93,3 +93,5 @@
 /.pnpm-store
 /.vscode
 /.idea
+/.claude
+/.playwright-mcp

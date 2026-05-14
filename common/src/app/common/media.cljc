@@ -13,8 +13,7 @@
   #{"font/ttf"
     "font/woff"
     "font/woff2"
-    "font/otf"
-    "font/opentype"})
+    "font/otf"})
 
 (def image-types
   #{"image/jpeg"

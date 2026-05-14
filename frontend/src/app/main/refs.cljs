@@ -588,6 +588,12 @@
              (cf/resolve-media)))
    st/state))
 
+(defn workspace-thumbnail-rendered-at
+  [object-id]
+  (l/derived
+   #(dm/get-in % [:thumbnails-meta object-id :rendered-at])
+   st/state))
+
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))
 

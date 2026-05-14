@@ -2,12 +2,12 @@
  :deps
  {penpot/common       {:local/root "../common"}
   org.clojure/clojure {:mvn/version "1.12.2"}
-  binaryage/devtools  {:mvn/version "RELEASE"}
+  binaryage/devtools  {:mvn/version "1.0.7"}
   metosin/reitit-core {:mvn/version "0.9.1"}
   }
  :aliases
  {:outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version"2.11.1276"}
                 ;; org.slf4j/slf4j-nop {:mvn/version "RELEASE"}
                 }
    :main-opts ["-m" "antq.core"]}

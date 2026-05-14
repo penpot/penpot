@@ -63,8 +63,9 @@
               (try
                 (let [objects (dsh/lookup-page-objects @st/state file-id page-id)]
                   (if-let [frame (get objects frame-id)]
-                    (let [{:keys [width height]} (:selrect frame)
-                          max-size (mth/max width height)
+                    (let [{ext-w :width ext-h :height} (wasm.api/get-shape-extrect frame-id)
+                          {sel-w :width sel-h :height} (:selrect frame)
+                          max-size (mth/max (or ext-w sel-w) (or ext-h sel-h))
                           scale (mth/max 1 (/ target-size max-size))
                           png-bytes (wasm.api/render-shape-pixels frame-id scale)]
                       (if (or (nil? png-bytes) (zero? (.-length png-bytes)))
