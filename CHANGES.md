@@ -58,6 +58,7 @@
 - Add new numeric inputs for token management on the right sidebar [Taiga #12109](https://tree.taiga.io/project/penpot/us/12109?milestone=513226)
 - Restore deleted team files in bulk instead of per file (by @Dexterity104) [Github #9248](https://github.com/penpot/penpot/pull/9248)
 - Preserve Inkscape labels when pasting SVGs (by @jeffrey701) [Github #9252](https://github.com/penpot/penpot/pull/9252)
+- Update Open Graph link preview title, description, and thumbnail [Github #9555](https://github.com/penpot/penpot/issues/9555)
 - Fix library update button freezes and does not apply updates [Taiga #14030](https://tree.taiga.io/project/penpot/issue/14030)
 
 ### :bug: Bugs fixed
