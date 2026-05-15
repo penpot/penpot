@@ -153,7 +153,7 @@
                  :on-click toggle-advanced-options}
         deprecated-icon/menu]
        [:div {:class (stl/css :type-select-wrapper)}
-        [:& select
+        [:> select
          {:class (stl/css :grid-type-select)
           :default-value type
           :options [{:value :square :label (tr "workspace.options.grid.square")}
@@ -170,7 +170,7 @@
                               :on-change (handle-change :params :size)}]]
 
          [:div {:class (stl/css :editable-select-wrapper)}
-          [:& editable-select {:value (:size params)
+          [:> editable-select {:value (:size params)
                                :type  "number"
                                :class (stl/css :column-select)
                                :input-class (stl/css :numeric-input)
@@ -225,7 +225,7 @@
           [:div {:class (stl/css :column-row)}
            [:div {:class (stl/css :advanced-row)}
             [:div {:class (stl/css :orientation-select-wrapper)}
-             [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
+             [:> select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
                          :default-value (:type params)
                          :class (stl/css :orientation-select)
                          :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
@@ -339,4 +339,5 @@
                              :frame-height (:height shape)
                              :default-grid-params default-grid-params}])])]))
 
+(def frame-grid frame-grid*)
 

@@ -99,7 +99,7 @@
        (or selected-preset-name
            (tr "workspace.options.size-presets"))]
       [:span {:class (stl/css :collapsed-icon)} deprecated-icon/arrow]
-      [:& dropdown {:show show?
+      [:> dropdown {:show show?
                     :on-close on-close
                     :container container-ref}
        [:div {:class (stl/css :custom-select-dropdown)
@@ -137,15 +137,14 @@
                   (when preset-match
                     [:span {:class (stl/css :check-icon)} deprecated-icon/tick])]))))]]]]
 
-     [:& radio-buttons {:selected (or (d/name orientation) "")
+     [:> radio-buttons {:selected (or (d/name orientation) "")
                         :on-change on-orientation-change
                         :name "frame-orientation"
                         :wide true
                         :class (stl/css :radio-buttons)}
-      [:& radio-button {:icon i/size-vertical
+      [:> radio-button {:icon i/size-vertical
                         :value "vertical"
                         :id "size-vertical"}]
-      [:& radio-button {:icon i/size-horizontal
+      [:> radio-button {:icon i/size-horizontal
                         :value "horizontal"
                         :id "size-horizontal"}]]]))
-

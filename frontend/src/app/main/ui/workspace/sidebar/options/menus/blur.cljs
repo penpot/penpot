@@ -129,7 +129,7 @@
                     :on-click toggle-more-options}
            deprecated-icon/menu]
           (if bg-blur?
-            [:& select {:class (stl/css :blur-type-select)
+            [:> select {:class (stl/css :blur-type-select)
                         :default-value (d/name (:type blur))
                         :options type-options
                         :disabled hidden?
@@ -157,3 +157,5 @@
              :min "0"
              :on-change handle-change
              :value (:value blur)}]])])]))
+
+(def blur-menu blur-menu*)
