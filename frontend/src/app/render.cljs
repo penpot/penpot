@@ -62,8 +62,7 @@
 (def ^:private ref:objects
   (l/derived :objects st/state))
 
-(mf/defc object-svg
-  {::mf/wrap-props false}
+(mf/defc object-svg*
   [{:keys [object-id embed skip-children wasm scale]}]
   (let [objects (mf/deref ref:objects)]
 
@@ -93,8 +92,7 @@
            :embed embed
            :skip-children skip-children}]]))))
 
-(mf/defc objects-svg
-  {::mf/wrap-props false}
+(mf/defc objects-svg*
   [{:keys [object-ids embed skip-children wasm scale]}]
   (let [limit
         (mf/use-state (if wasm (min 1 (count object-ids)) (count object-ids)))
@@ -168,7 +166,7 @@
       (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
       (if (uuid? object-id)
         (mf/html
-         [:& object-svg
+         [:> object-svg*
           {:file-id file-id
            :page-id page-id
            :share-id share-id
@@ -179,7 +177,7 @@
            :scale scale}])
 
         (mf/html
-         [:& objects-svg
+         [:> objects-svg*
           {:file-id file-id
            :page-id page-id
            :share-id share-id
@@ -196,8 +194,7 @@
 
 ;; ---- COMPONENTS SPRITE
 
-(mf/defc components-svg
-  {::mf/wrap-props false}
+(mf/defc components-svg*
   [{:keys [embed component-id]}]
   (let [file-ref (mf/with-memo [] (l/derived :file st/state))
         state    (mf/use-state {:component-id component-id})]
@@ -291,7 +288,7 @@
                           (rx/map fetch-components-bundle))))))
 
       (mf/html
-       [:& components-svg
+       [:> components-svg*
         {:component-id component-id
          :embed embed}]))
 
