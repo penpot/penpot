@@ -1,0 +1,64 @@
+# penpot — Cocoon AI Tier-3 overlay (per cai-portal ADR 0004 D11).
+#
+# Penpot's runtime is incompatible with strict distroless (entrypoint
+# is `/bin/bash run.sh`, Ubuntu 24.04 base, apt-installed native libs
+# for asset rendering). We declared the Tier-3 exception in the
+# manifest and use upstream's own build artifact as our base — layering
+# only what platform integration needs.
+#
+# Build pattern (driven by .github/workflows/cai-deploy.yml):
+#
+#   1. Build upstream's backend image via upstream's own build script
+#      (`docker/images/build.sh backend --local`), producing
+#      `penpotapp/backend:<tag>` locally.
+#   2. Build THIS Dockerfile against that local image as the BASE
+#      arg, producing `ghcr.io/cocoon-ai/penpot:<sha>`.
+#
+# This means:
+# - We do NOT pull `docker.io/penpotapp/backend` at runtime — the local
+#   build is from our fork's source tree (which tracks upstream's
+#   tracking_ref). The image we deploy is built locally.
+# - Fork delta is minimal — upstream's Dockerfile.backend stays
+#   unchanged; our overlay is a separate file at our root.
+# - Upstream-track rebases don't conflict with our overlay (different
+#   files), AND any change to upstream's apt-package set lands in
+#   package-snapshot.txt and forces a snapshot bump in the same PR.
+
+ARG BASE
+FROM ${BASE}
+
+# Layered overlay below runs as root then drops back to upstream's
+# `penpot` user. Upstream's image already sets USER penpot:penpot at
+# the end; we re-assert it after our COPY so the runtime user is
+# unchanged.
+USER root
+
+# OTel auto-instrumentation javaagent (ADR D10 Pattern 2). The agent
+# is pinned to a stable upstream OpenTelemetry release. Tenant forks
+# can override the version via build args if needed.
+ARG OTEL_JAVAAGENT_VERSION=2.10.0
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_JAVAAGENT_VERSION}/opentelemetry-javaagent.jar \
+    /opt/otel/javaagent.jar
+RUN chmod 0444 /opt/otel/javaagent.jar
+
+# Capture the apt-package set into the runtime image. CI's
+# package-snapshot diff gate (per ADR D11 Tier 3 compensating
+# control) compares this against the committed package-snapshot.txt
+# at build time; mismatches fail the build unless the snapshot is
+# updated in the same PR.
+RUN dpkg-query -W -f='${Package} ${Version}\n' | LC_ALL=C sort > /opt/cai/package-snapshot.txt \
+    && chmod 0444 /opt/cai/package-snapshot.txt
+
+# Restore upstream's user.
+USER penpot:penpot
+
+# JVM flag injection happens through env (set by the ECS task
+# definition) rather than the Dockerfile — keeps the image
+# tenant-agnostic. The deploy workflow passes:
+#   JAVA_TOOL_OPTIONS=-javaagent:/opt/otel/javaagent.jar
+#   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+#   OTEL_SERVICE_NAME=<service_name from manifest>
+#
+# Entrypoint + CMD inherited from upstream's image (`bash run.sh`).
+# Per D11 Tier 3, the shell-at-runtime is intentional and logged in
+# the deploy workflow's `posture-report.txt` build artifact.

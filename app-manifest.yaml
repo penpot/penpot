@@ -32,6 +32,25 @@ auth:
 backend:
   health_path: /api/health-check
 
+# Container posture (ADR 0004 D11 Tier 3 exception).
+#
+# Penpot's runtime is incompatible with strict distroless (entrypoint
+# is `/bin/bash run.sh`, Ubuntu 24.04 base, apt-installed native libs
+# for asset rendering). We declare the exception explicitly. The
+# package-snapshot.txt + Trivy CRITICAL gate + non-root assertion
+# are the compensating controls.
+container_posture:
+  exception: true
+  runtime_base: ubuntu:24.04
+  rationale: |
+    Penpot's backend startup is `/bin/bash run.sh` — JVM-flag assembly
+    + env-var preprocessing. The runtime image apt-installs imagemagick,
+    libwebp, libpoppler, woff-tools, and python3 for asset rendering
+    (SVG → image, PDF export, font conversion). Force-fitting distroless
+    would require replacing run.sh with a JVM main class and vendoring
+    these libs into a distroless-Ubuntu derivative — fork delta we
+    cannot maintain across upstream rebases. See cai-portal ADR 0004 D11.
+
 # Observability (ADR D10 — cai-otel-collector sidecar).
 observability:
   enabled: true
