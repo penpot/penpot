@@ -129,6 +129,8 @@
 
          font (some->> font-id (get fontsdb))
 
+         font-variation-settings (:font-variation-settings data)
+
          [font-family font-style font-weight]
          (when (some? font)
            (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
@@ -152,6 +154,9 @@
        (-> (obj/set! "fontFamily" font-family)
            (obj/set! "fontStyle" font-style)
            (obj/set! "fontWeight" font-weight))
+
+       (and (string? font-variation-settings) (pos? (alength font-variation-settings)))
+       (obj/set! "fontVariationSettings" font-variation-settings)
 
        (= grow-type :auto-width)
        (obj/set! "whiteSpace" "pre")))))

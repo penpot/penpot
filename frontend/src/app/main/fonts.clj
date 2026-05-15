@@ -29,18 +29,29 @@
        :style (if (str/empty? style) "normal" style)
        :ttf-url (get files id)})))
 
+(defn- parse-gfont-axes
+  [axes]
+  (when (seq axes)
+    (mapv (fn [axis]
+            {:tag (get axis "tag")
+             :min (get axis "min")
+             :max (get axis "max")})
+          axes)))
+
 (defn- parse-gfont
   [font]
   (let [family (get font "family")
         variants (get font "variants")
-        files (get font "files")]
-    {:id (str "gfont-" (str/slug family))
-     :uuid (uuid/random)
-     :family family
-     :name family
-     :variants (into [] (comp (map (fn [variant] (parse-gfont-variant variant files)))
-                              (filter identity))
-                     variants)}))
+        files (get font "files")
+        axes (parse-gfont-axes (get font "axes"))]
+    (cond-> {:id (str "gfont-" (str/slug family))
+             :uuid (uuid/random)
+             :family family
+             :name family
+             :variants (into [] (comp (map (fn [variant] (parse-gfont-variant variant files)))
+                                      (filter identity))
+                             variants)}
+      (some? axes) (assoc :axes axes))))
 
 (defmacro preload-gfonts
   [path]

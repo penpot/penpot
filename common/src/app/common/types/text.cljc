@@ -34,7 +34,8 @@
    :font-variant-id
    :font-size
    :font-weight
-   :font-style])
+   :font-style
+   :font-variation-settings])
 
 (def text-align-attrs
   [:text-align])
