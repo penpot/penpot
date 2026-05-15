@@ -17,7 +17,7 @@
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.viewer.comments :refer [comments-menu]]
+   [app.main.ui.viewer.comments :refer [comments-menu*]]
    [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -33,17 +33,15 @@
   []
   (modal/show! :login-register {}))
 
-(mf/defc zoom-widget
-  {::mf/memo true
-   ::mf/props :obj}
+(mf/defc zoom-widget*
+  {::mf/wrap [mf/memo]}
   [{:keys [zoom
            on-increase
            on-decrease
            on-zoom-reset
            on-fullscreen
            on-zoom-fit
-           on-zoom-fill]
-    :as props}]
+           on-zoom-fill]}]
 
   (let [open*           (mf/use-state false)
         open?           (deref open*)
@@ -119,7 +117,7 @@
            [:span {:class (stl/css :shortcut-key)
                    :key (dm/str "zoom-fullscreen-" sc)} sc])]]]]]))
 
-(mf/defc header-options
+(mf/defc header-options*
   [{:keys [section zoom page file index permissions interactions-mode share]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
 
@@ -175,10 +173,10 @@
                         [:> flows-menu* {:page page :index index}])
                       [:> interactions-menu*
                        {:interactions-mode interactions-mode}]]
-       :comments [:& comments-menu]
+       :comments [:> comments-menu*]
        [:div {:class (stl/css :view-options)}])
 
-     [:& zoom-widget
+     [:> zoom-widget*
       {:zoom zoom
        :on-increase handle-increase
        :on-decrease handle-decrease
@@ -207,8 +205,8 @@
        [:span {:on-click open-login-dialog
                :class (stl/css :go-log-btn)} (tr "labels.log-or-sign")])]))
 
-(mf/defc header-sitemap
-  [{:keys [project file page frame toggle-thumbnails] :as props}]
+(mf/defc header-sitemap*
+  [{:keys [project file page frame toggle-thumbnails]}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)
@@ -317,12 +315,12 @@
                    :pointer-events (when-not (:in-team permissions) "none")}}
        penpot-logo-icon]
 
-      [:& header-sitemap {:project project
-                          :file file
-                          :page page
-                          :frame frame
-                          :toggle-thumbnails toggle-thumbnails
-                          :index index}]]
+      [:> header-sitemap* {:project project
+                           :file file
+                           :page page
+                           :frame frame
+                           :toggle-thumbnails toggle-thumbnails
+                           :index index}]]
 
      [:div {:class (stl/css :mode-zone)}
       [:button {:on-click navigate
@@ -350,11 +348,11 @@
                   :title (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
          deprecated-icon/code])]
 
-     [:& header-options {:section section
-                         :permissions permissions
-                         :page page
-                         :file file
-                         :index index
-                         :zoom zoom
-                         :interactions-mode interactions-mode
-                         :share share}]]))
+     [:> header-options* {:section section
+                          :permissions permissions
+                          :page page
+                          :file file
+                          :index index
+                          :zoom zoom
+                          :interactions-mode interactions-mode
+                          :share share}]]))
