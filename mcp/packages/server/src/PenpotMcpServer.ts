@@ -15,6 +15,7 @@ import { CljsReplTool } from "./tools/CljsReplTool";
 import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
 import { CljsCompilerOutputTool } from "./tools/CljsCompilerOutputTool";
 import { CljCheckParentheses } from "./tools/CljCheckParentheses";
+import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -198,6 +199,7 @@ export class PenpotMcpServer {
             toolInstances.push(new ImportPenpotFileTool(this, nreplClient));
             toolInstances.push(new CljsCompilerOutputTool(this, nreplClient));
             toolInstances.push(new CljCheckParentheses(this));
+            toolInstances.push(new ReadTaigaIssueTool(this));
         }
 
         return toolInstances.map((instance) => {

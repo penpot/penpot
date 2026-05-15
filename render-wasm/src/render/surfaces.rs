@@ -314,6 +314,7 @@ impl Surfaces {
         self.atlas_origin = skia::Point::new(new_left, new_top);
         self.atlas_size = skia::ISize::new(new_w, new_h);
         self.atlas_scale = new_scale;
+        gpu_state.delete_surface(&mut self.atlas);
         self.atlas = new_atlas;
         Ok(())
     }
