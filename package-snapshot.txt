@@ -1,0 +1,14 @@
+# Penpot Tier-3 package-snapshot baseline (cai-portal ADR 0004 D11).
+#
+# This file captures the apt-package set installed in the runtime
+# image. CI rebuilds the image, extracts /opt/cai/package-snapshot.txt
+# from the layer (`docker run ... cat ...`), and diffs against this
+# committed copy. Build fails if the diff is non-empty unless the
+# same PR updates this file.
+#
+# To regenerate after a legitimate change (e.g. upstream Penpot
+# release adds libavif): CI emits the new snapshot as a build
+# artifact when the diff fails; copy that artifact into this file,
+# commit with a one-line rationale, push.
+#
+# Baseline is empty until the first successful build populates it.
