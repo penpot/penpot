@@ -31,7 +31,7 @@
    :grid-column
    :grid-row])
 
-(mf/defc layout-element-block
+(mf/defc layout-element-block*
   [{:keys [objects shape]}]
   (for [property properties]
     (when-let [value (css/get-css-value objects shape property)]
@@ -44,7 +44,7 @@
           [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} value]]]]))))
 
-(mf/defc layout-element-panel
+(mf/defc layout-element-panel*
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
         only-flex? (every? #(ctl/flex-layout-immediate-child? objects %) shapes)
@@ -76,6 +76,8 @@
                             :class (stl/css :copy-btn-title)}])]
 
        (for [shape shapes]
-         [:& layout-element-block {:shape shape
-                                   :objects objects
-                                   :key (:id shape)}])])))
+         [:> layout-element-block* {:shape shape
+                                    :objects objects
+                                    :key (:id shape)}])])))
+
+(def layout-element-panel layout-element-panel*)

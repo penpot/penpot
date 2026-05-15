@@ -27,7 +27,7 @@
   [color format]
   (format-color-value color {:format format}))
 
-(mf/defc shadow-block [{:keys [shadow]}]
+(mf/defc shadow-block* [{:keys [shadow]}]
   (let [color-format (mf/use-state :hex)
         color-format* (deref color-format)
         label (cmm/get-css-rule-humanized (:style shadow))
@@ -51,12 +51,12 @@
          (str (:blur shadow) "px") " "
          (str (:spread shadow) "px")]]]]
 
-     [:& cmm/color-row {:color (:color shadow)
+     [:> cmm/color-row {:color (:color shadow)
                         :format @color-format
                         :copy-data (copy-color-data (:color shadow) color-format*)
                         :on-change-format on-change-format}]]))
 
-(mf/defc shadow-panel [{:keys [shapes]}]
+(mf/defc shadow-panel* [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]
 
     (when (and (seq shapes) (> (count shapes) 0))
@@ -69,6 +69,8 @@
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
           (for [shadow (:shadow shape)]
-            [:& shadow-block {:shape shape
-                              :key   (dm/str "block-" (:id shape) "-shadow")
-                              :shadow shadow}]))]])))
+            [:> shadow-block* {:shape shape
+                               :key   (dm/str "block-" (:id shape) "-shadow")
+                               :shadow shadow}]))]])))
+
+(def shadow-panel shadow-panel*)

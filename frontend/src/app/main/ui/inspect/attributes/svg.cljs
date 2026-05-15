@@ -19,7 +19,7 @@
        (map (fn [[attr-key attr-value]] (str (d/name attr-key) ":" attr-value)))
        (str/join "; ")))
 
-(mf/defc svg-attr [{:keys [attr value]}]
+(mf/defc svg-attr* [{:keys [attr value]}]
   (if (map? value)
     [:*
      [:div {:class (stl/css :attributes-subtitle)}
@@ -27,7 +27,7 @@
       [:> copy-button* {:data (map->css value)}]]
 
      (for [[attr-key attr-value] value]
-       [:& svg-attr {:attr  attr-key :value attr-value :key (str/join "svg-key-" (d/name attr-key))}])]
+       [:> svg-attr* {:attr  attr-key :value attr-value :key (str/join "svg-key-" (d/name attr-key))}])]
 
     (let [attr-name (as-> attr $
                       (d/name $)
@@ -41,13 +41,13 @@
                           :class (stl/css :copy-btn-title)}
          [:div {:class (stl/css :button-children)} (str value)]]]])))
 
-(mf/defc svg-block
+(mf/defc svg-block*
   [{:keys [shape]}]
   [:*
    (for [[attr-key attr-value] (:svg-attrs shape)]
-     [:& svg-attr {:attr attr-key :value attr-value :key (str/join "svg-block-key-" (d/name attr-key))}])])
+     [:> svg-attr* {:attr attr-key :value attr-value :key (str/join "svg-block-key-" (d/name attr-key))}])])
 
-(mf/defc svg-panel
+(mf/defc svg-panel*
   [{:keys [shapes]}]
   (let [shape (first shapes)]
     (when (seq (:svg-attrs shape))
@@ -56,4 +56,6 @@
         {:title (tr "workspace.sidebar.options.svg-attrs.title")
          :class (stl/css :title-wrapper)
          :title-class (stl/css :svg-attr-title)}]
-       [:& svg-block {:shape shape}]])))
+       [:> svg-block* {:shape shape}]])))
+
+(def svg-panel svg-panel*)

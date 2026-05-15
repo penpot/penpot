@@ -31,7 +31,7 @@
        (map #(dm/str (d/name %) ": " (get style %) ";"))
        (str/join "\n")))
 
-(mf/defc typography-block
+(mf/defc typography-block*
   [{:keys [text style]}]
   (let [color-format*       (mf/use-state :hex)
         color-format        (deref color-format*)
@@ -41,7 +41,7 @@
     [:div {:class (stl/css :attributes-content)}
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
-         [:& color-row {:key idx
+         [:> color-row {:key idx
                         :format color-format
                         :color (types.fills/fill->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
@@ -139,19 +139,19 @@
        (str/trim text)]]]))
 
 
-(mf/defc text-block [{:keys [shape]}]
+(mf/defc text-block* [{:keys [shape]}]
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
                                (mapv (fn [[style text]] (vector (merge (types.text/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
-      [:& typography-block {:key idx
-                            :shape shape
-                            :style full-style
-                            :text text}])))
+      [:> typography-block* {:key idx
+                             :shape shape
+                             :style full-style
+                             :text text}])))
 
-(mf/defc text-panel
+(mf/defc text-panel*
   [{:keys [shapes]}]
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div {:class (stl/css :attributes-block)}
@@ -161,5 +161,7 @@
        :title-class (stl/css :text-atrr-title)}]
 
      (for [shape shapes]
-       [:& text-block {:shape shape
-                       :key (dm/str "text-block" (:id shape))}])]))
+       [:> text-block* {:shape shape
+                        :key (dm/str "text-block" (:id shape))}])]))
+
+(def text-panel text-panel*)
