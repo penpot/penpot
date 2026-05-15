@@ -474,10 +474,10 @@
          #(st/emit! (dw/select-all)))
 
         find
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find {:force? true}))))
 
         find-and-replace
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace {:force? true}))))
 
         undo
         (mf/use-fn
