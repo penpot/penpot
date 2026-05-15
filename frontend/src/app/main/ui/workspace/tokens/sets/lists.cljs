@@ -240,7 +240,7 @@
 
         on-checkbox-click
         (mf/use-fn
-         (mf/deps id on-toggle)
+         (mf/deps set on-toggle)
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
