@@ -8097,7 +8097,7 @@ msgstr "Copiar ruta de token"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
-msgstr "copiar"
+msgstr "copia"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.edit"
