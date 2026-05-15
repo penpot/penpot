@@ -1,0 +1,111 @@
+# Cocoon AI base-fork upstream-track workflow.
+#
+# Per cai-portal ADR 0004 D8: "upgrade" means rebase the fork on
+# upstream, not bump a Docker tag. This workflow runs weekly +
+# workflow_dispatch (from `cai foreign upgrade`).
+#
+# Filename `cai-upstream-track.yml` to avoid colliding with any
+# upstream Penpot workflow.
+
+name: cai-upstream-track
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'   # Mondays 14:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebase-on-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Resolve upstream + current ref
+        id: refs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          parent=$(yq '.upstream.parent_repo' app-manifest.yaml)
+          current=$(yq '.upstream.tracking_ref' app-manifest.yaml)
+          latest=$(gh release list -R "$parent" --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName')
+          echo "parent=$parent" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Exit if already at latest
+        if: steps.refs.outputs.current == steps.refs.outputs.latest
+        run: |
+          echo "Already at latest (${{ steps.refs.outputs.latest }}). Nothing to do."
+          exit 0
+
+      - name: Configure git
+        run: |
+          git config user.name "cai-upstream-track"
+          git config user.email "cai-upstream-track@cocoon-ai.com"
+
+      - name: Add upstream remote + fetch
+        run: |
+          git remote add upstream "https://github.com/${{ steps.refs.outputs.parent }}.git"
+          git fetch upstream "refs/tags/${{ steps.refs.outputs.latest }}:refs/tags/${{ steps.refs.outputs.latest }}"
+
+      - name: Create rebase branch + merge
+        id: merge
+        run: |
+          set -euo pipefail
+          branch="upstream-track/${{ steps.refs.outputs.latest }}"
+          git checkout -b "$branch"
+          if git merge --no-ff --no-edit "${{ steps.refs.outputs.latest }}"; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            git status --short > CONFLICTS.md
+            git add -A
+            git commit -m "WIP: conflicts merging ${{ steps.refs.outputs.latest }} — see CONFLICTS.md"
+          fi
+          yq -i ".upstream.tracking_ref = \"${{ steps.refs.outputs.latest }}\"" app-manifest.yaml
+          git add app-manifest.yaml
+          git commit -m "manifest: bump upstream.tracking_ref → ${{ steps.refs.outputs.latest }}" || true
+          git push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          title="Rebase on upstream ${{ steps.refs.outputs.latest }}"
+          notes_url="https://github.com/${{ steps.refs.outputs.parent }}/releases/tag/${{ steps.refs.outputs.latest }}"
+          if [ "${{ steps.merge.outputs.conflict }}" = "true" ]; then
+            gh pr create \
+              --base main \
+              --head "${{ steps.merge.outputs.branch }}" \
+              --title "$title (CONFLICTS)" \
+              --body "Conflicts during merge of \`${{ steps.refs.outputs.latest }}\` into our fork. See \`CONFLICTS.md\` in this branch.
+
+Upstream release notes: $notes_url
+
+Resolve locally, remove the \`do-not-merge\` label, and merge. See cai-portal/docs/runbooks/foreign-app-upgrade.md." \
+              --label do-not-merge
+          else
+            gh pr create \
+              --base main \
+              --head "${{ steps.merge.outputs.branch }}" \
+              --title "$title" \
+              --body "Clean merge of upstream \`${{ steps.refs.outputs.latest }}\`.
+
+Upstream release notes: $notes_url
+
+CI must pass before merge."
+          fi

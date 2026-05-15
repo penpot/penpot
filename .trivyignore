@@ -1,0 +1,11 @@
+# Trivy CRITICAL allowlist for penpot (Cocoon AI base fork).
+#
+# Per cai-portal ADR 0003 + foreign-apps rule. Allowlist-by-exception.
+# Every entry MUST carry a comment block: package, date added, why
+# the CVE is unexploitable, upstream tracking link.
+#
+# Empty = baseline clean. CI's Trivy job in deploy.yml fails on any
+# unannotated CRITICAL.
+#
+# Tenant forks inherit this baseline; tenant-specific exceptions can
+# layer on top (commits on tenant-fork main, not rebased here).

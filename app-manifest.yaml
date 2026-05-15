@@ -1,0 +1,54 @@
+# Penpot — Cocoon AI base fork.
+#
+# Per cai-portal ADR 0004 D14 Phase 5a + D15. This is the **base fork**:
+# carries only platform integration on top of penpot/penpot. Tenant
+# forks (Cocoon-AI/cai-penpot, future Cocoon-AI/<tenant>-penpot)
+# descend from this repo.
+#
+# Base forks are NOT deployed directly. The deployment fields below
+# reflect the future tenant-fork shape, not a live target.
+
+schema_version: 2
+kind: foreign
+name: penpot
+
+# Fork lineage (ADR 0004 D15). Base fork: parent + source both point
+# at upstream.
+upstream:
+  parent_repo: penpot/penpot
+  tracking_ref: 2.15.3            # bumped by .github/workflows/upstream-track.yml
+  source_repo: penpot/penpot
+
+# Auth (ADR D4 / D5 / D13). Native OIDC; ALB OIDC carved out at host level.
+auth:
+  alb_oidc: false
+  oidc_provider: cai-portal
+  role_mapping:
+    penpot-admin: admin
+    penpot-member: editor
+    penpot-viewer: viewer
+
+# Backend / health.
+backend:
+  health_path: /api/health-check
+
+# Observability (ADR D10 — cai-otel-collector sidecar).
+observability:
+  enabled: true
+  service_name: penpot              # tenant forks override (cai-penpot, etc.)
+  log_format: text                  # Penpot defaults to text logs;
+                                    # PENPOT_LOG_FORMAT=json is configurable on
+                                    # recent versions but not guaranteed for all.
+  metrics_path: /api/metrics
+  metrics_port: 6060                # Penpot's default metrics port
+  auto_instrument: jvm              # Pattern 2: JVM OTel javaagent
+
+# Deployment target — placeholder; tenant forks set real values.
+deployment:
+  account: cai-apps
+  database: postgres-on-ec2
+
+# Penpot sends transactional mail (invites, password resets,
+# notifications). SMTP-relay sidecar per ADR D12.
+mailer:
+  smtp_relay: true

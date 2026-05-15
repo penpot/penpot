@@ -1,0 +1,89 @@
+# Cocoon AI base-fork build + image-publish workflow.
+#
+# Per cai-portal ADR 0004: base forks (Cocoon-AI/penpot) are not
+# deployed directly — tenant forks (Cocoon-AI/cai-penpot, etc.) are.
+# But the base fork still builds + pushes an image to GHCR so tenant
+# forks have a stable reference image when their own build path is
+# the same.
+#
+# Filename is `cai-deploy.yml` (not `deploy.yml`) to avoid colliding
+# with any future upstream Penpot workflow of the same name.
+
+name: cai-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag (commit SHA or 'latest')."
+        required: false
+        default: latest
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tag
+        id: tag
+        run: |
+          set -euo pipefail
+          input_tag="${{ inputs.image_tag || 'latest' }}"
+          if [ "$input_tag" = "latest" ] || [ -z "$input_tag" ]; then
+            short_sha="${GITHUB_SHA::7}"
+            echo "tag=sha-${short_sha}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$input_tag" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build image (load locally for scan)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: scan-target:latest
+
+      - name: Trivy CRITICAL scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: scan-target:latest
+          severity: CRITICAL
+          exit-code: '1'
+          ignore-unfixed: false
+          trivyignores: .trivyignore
+
+      - name: Container posture assertion — no shell at runtime
+        run: |
+          set -euo pipefail
+          if docker run --rm --entrypoint /bin/sh scan-target:latest -c "echo hi" 2>/dev/null; then
+            echo "ERROR: image has a shell at runtime (ADR 0003 violation)"
+            exit 1
+          fi
+          echo "OK: no shell at runtime"
+
+      - name: Build + push to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/cocoon-ai/penpot:${{ steps.tag.outputs.tag }}
+            ghcr.io/cocoon-ai/penpot:latest
