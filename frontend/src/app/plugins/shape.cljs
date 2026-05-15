@@ -1018,7 +1018,7 @@
                  :else
                  (do (st/emit!
                       (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false)
-                      (se/event plugin-id "create-layout" :layout "flex"))
+                      (se/event plugin-id "create-shape-layout" :layout "flex"))
                      (flex/flex-layout-proxy plugin-id file-id page-id id)))))
 
            :addGridLayout
@@ -1033,7 +1033,7 @@
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
-                     (se/event plugin-id "create-layout" :layout "grid")
+                     (se/event plugin-id "create-shape-layout" :layout "grid")
                      (grid/grid-layout-proxy plugin-id file-id page-id id)))))
 
            ;; Make masks for groups
