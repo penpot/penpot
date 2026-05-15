@@ -445,9 +445,8 @@
     [:& component {:state state
                    :change-view change-view}]))
 
-(mf/defc token-themes-modal
-  {::mf/wrap-props false
-   ::mf/register modal/components
+(mf/defc token-themes-modal*
+  {::mf/register modal/components
    ::mf/register-as :tokens/themes}
   []
   [:div {:class (stl/css :modal-overlay)}

@@ -633,8 +633,7 @@
                          :on-click do-combine-as-variants}]])]))
 
 (mf/defc context-menu-guides*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [shapes]}]
   (let [frame-ids    (into #{} (comp (filter cfh/frame-shape?) d/xf:map-id) shapes)
         guides       (mf/deref refs/workspace-page-guides)
@@ -883,8 +882,7 @@
   ["#ff3277" "#4dabf7" "#51cf66" "#fcc419" "#ff922b" "#cc5de8" "#ffffff" "#868e96"])
 
 (mf/defc guide-color-context-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [guide]} mdata
         guide-id (:id guide)
