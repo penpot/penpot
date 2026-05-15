@@ -57,6 +57,16 @@
    {:error/code :error.token/number-too-large
     :error/fn #(str (tr "errors.tokens.number-too-large" %))}
 
+   ;; Surfaced when a token name conflicts with a token-group prefix
+   ;; across the active sets (e.g. one set defines `a`, another set
+   ;; defines `a.b`). DTCG/StyleDictionary cannot represent both as
+   ;; resolvable leaves, so the colliding token is preserved with this
+   ;; error rather than silently disappearing from the sidebar — see
+   ;; #9584.
+   :error.token/name-collision
+   {:error/code :error.token/name-collision
+    :error/fn #(str (tr "errors.tokens.name-collision" %))}
+
    :error.style-dictionary/missing-reference
    {:error/code :error.style-dictionary/missing-reference
     :error/fn #(str (tr "errors.tokens.missing-references") (str/join " " %))}
