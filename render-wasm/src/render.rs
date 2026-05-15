@@ -3457,6 +3457,9 @@ impl RenderState {
                                 tile_rect,
                             );
                         }
+                    } else {
+                        // Tile is uncached and has no shapes to render
+                        self.apply_render_to_final_canvas(tile_rect)?;
                     }
                 }
             }
