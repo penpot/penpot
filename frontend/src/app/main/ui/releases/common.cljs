@@ -18,3 +18,5 @@
      [:li {:class (stl/css-case :dot true
                                 :current (= slide i))
            :on-click #(navigate i)}])])
+
+(def navigation-bullets navigation-bullets*)
