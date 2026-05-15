@@ -243,7 +243,7 @@
 
     [:g.paddings {:pointer-events "visible"}
      (for [[padding-num rect-data] padding-rect-data]
-       [:& padding-display
+       [:> padding-display
         {:key (:key rect-data)
          :frame-id frame-id
          :zoom zoom
@@ -264,7 +264,7 @@
          :rect-data rect-data}])
 
      (when @hover
-       [:& fcc/flex-display-pill
+       [:> fcc/flex-display-pill
         {:height pill-height
          :width pill-width
          :font-size (/ fcc/font-size zoom)
@@ -279,7 +279,7 @@
   (when frame
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& padding-rects
+      [:> padding-rects
        {:frame frame
         :zoom zoom
         :alt? alt?

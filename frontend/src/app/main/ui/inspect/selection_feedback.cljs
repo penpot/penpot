@@ -63,7 +63,7 @@
     (when (d/not-empty? selected-shapes)
       [:g.selection-feedback {:pointer-events "none"}
        [:g.selected-shapes
-        [:& selection-rect {:selrect selrect :zoom zoom}]
+        [:> selection-rect {:selrect selrect :zoom zoom}]
         [:> size-display* {:selrect selrect :zoom zoom}]]
 
        [:> measurement* {:bounds (assoc size :x 0 :y 0)

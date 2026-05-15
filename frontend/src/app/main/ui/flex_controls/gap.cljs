@@ -320,7 +320,7 @@
     [:g.gaps {:pointer-events "visible"}
      (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
        (let [gap-type (:gap-type display-item)]
-         [:& gap-display
+         [:> gap-display
           {:key (str frame-id index)
            :frame-id frame-id
            :zoom zoom
@@ -338,7 +338,7 @@
            :hover-value hover-value}]))
 
      (when @hover
-       [:& fcc/flex-display-pill
+       [:> fcc/flex-display-pill
         {:height pill-height
          :width pill-width
          :font-size (/ fcc/font-size zoom)
@@ -354,7 +354,7 @@
   (when frame
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& gap-rects
+      [:> gap-rects
        {:frame frame
         :zoom zoom
         :on-move-selected on-move-selected

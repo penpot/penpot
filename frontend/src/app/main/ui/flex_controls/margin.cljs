@@ -202,7 +202,7 @@
 
     [:g.margins {:pointer-events "visible"}
      (for [[margin-num rect-data] margin-display-data]
-       [:& margin-display
+       [:> margin-display
         {:key (:key rect-data)
          :shape-id shape-id
          :zoom zoom
@@ -221,7 +221,7 @@
          :hover-value hover-value}])
 
      (when @hover
-       [:& fcc/flex-display-pill
+       [:> fcc/flex-display-pill
         {:height pill-height
          :width pill-width
          :font-size (/ fcc/font-size zoom)
@@ -236,7 +236,7 @@
   (when shape
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& margin-rects
+      [:> margin-rects
        {:shape shape
         :frame parent
         :zoom zoom

@@ -163,8 +163,8 @@
                  :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
-       [:& fm/form {:form form :on-submit on-accept}
-        [:& fm/input {:name :name
+       [:> fm/form {:form form :on-submit on-accept}
+        [:> fm/input {:name :name
                       :class (stl/css :input-wrapper)
                       :auto-focus? true
                       :label (tr "workspace.assets.group-name")
