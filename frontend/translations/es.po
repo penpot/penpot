@@ -9111,6 +9111,9 @@ msgstr "Código inválido."
 msgid "nitrate.activation-code.expired-error"
 msgstr "Este código ha caducado."
 
+msgid "nitrate.activation-code.already-redeemed-error"
+msgstr "Este código ya se ha utilizado. Si cree que es un error, contacte con soporte."
+
 msgid "nitrate.contact-sales.title"
 msgstr "¿Cambiar al plan %s?"
 

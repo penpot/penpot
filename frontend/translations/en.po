@@ -9419,6 +9419,9 @@ msgstr "Invalid code."
 msgid "nitrate.activation-code.expired-error"
 msgstr "This code has expired."
 
+msgid "nitrate.activation-code.already-redeemed-error"
+msgstr "This code has already been used. If you believe this is a mistake, contact support."
+
 msgid "nitrate.contact-sales.title"
 msgstr "Switch to %s plan?"
 
