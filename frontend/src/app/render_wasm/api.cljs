@@ -56,6 +56,7 @@
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -425,6 +426,39 @@
     ;; This ensures shapes are displayed even if no deferred render was requested
     (when was-loading
       (request-render "set-objects:flush"))))
+
+;; --- Font load → text re-layout safety net
+;;
+;; When a font's TTF arrives in WASM after the initial paint, cached tiles
+;; still hold text drawn with the fallback font. The set-objects pipeline
+;; does refresh text layouts when its pending-fetch streams resolve, but if
+;; anything along that chain is skipped or its render gets coalesced into
+;; an earlier frame, the canvas keeps the fallback rendering until an
+;; unrelated invalidation clears the tiles (typical: hovering moves the
+;; mouse over a shape and forces a repaint).
+;;
+;; Subscribe globally to :font-loaded data-events. When one fires, re-run
+;; the text layouts for the current page's text shapes (touches them so
+;; tiles get rebuilt) and request a render. request-render coalesces via
+;; requestAnimationFrame so multiple font loads in the same frame produce
+;; a single paint.
+(defn- relayout-page-text-shapes-and-render!
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (let [state   @st/state
+          file-id (:current-file-id state)
+          page-id (:current-page-id state)]
+      (when (and file-id page-id)
+        (let [objects  (dsh/lookup-page-objects state file-id page-id)
+              text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) (vals objects))]
+          (when (seq text-ids)
+            (run! f/update-text-layout text-ids)
+            (request-render "font-loaded")))))))
+
+(defonce ^:private font-loaded-listener
+  (->> st/stream
+       (rx/filter (ptk/type? :font-loaded))
+       (rx/subs! (fn [_] (relayout-page-text-shapes-and-render!)))))
 
 (declare get-text-dimensions)
 
