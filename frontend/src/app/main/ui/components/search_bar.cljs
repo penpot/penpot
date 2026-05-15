@@ -13,7 +13,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc search-bar*
-  [{:keys [id class value placeholder icon-id auto-focus on-change on-clear on-submit children]}]
+  [{:keys [id class value placeholder icon-id auto-focus on-change on-clear on-submit on-escape children]}]
   (let [handle-change
         (mf/use-fn
          (mf/deps on-change)
@@ -31,7 +31,7 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps on-submit)
+         (mf/deps on-submit on-escape)
          (fn [event]
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
@@ -42,7 +42,10 @@
                  (let [value (dom/get-target-val event)]
                    (on-submit value event))))
 
-             (when ^boolean esc? (dom/blur! node)))))]
+             (when ^boolean esc?
+               (dom/blur! node)
+               (when (fn? on-escape)
+                 (on-escape event))))))]
 
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}

@@ -8,6 +8,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Dismiss the workspace layers search panel with the Escape key while the search field is focused (by @dhgoal) [Github #9540](https://github.com/penpot/penpot/issues/9540)
 - Show a read-only W × H size badge below the bounding box of the current selection (by @bittoby) [Github #9205](https://github.com/penpot/penpot/issues/9205)
 - Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
 
