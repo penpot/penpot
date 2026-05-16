@@ -248,12 +248,32 @@
               (binding [ct/*clock* (clock/get-clock (:profile-id session))]
                 (handler request))]
 
-          (if (and session (renew-session? session))
-            (let [session (->> session
-                               (update-session manager)
-                               (assign-token cfg))]
-              (assign-session-cookie response session))
-            response))
+          ;; Renewal runs after the inner handler. Two cases where it
+          ;; MUST step aside:
+          ;;
+          ;; 1. The response already carries the auth-token cookie —
+          ;;    e.g. wrap-authz re-keyed the session to a new user.
+          ;;    Renewing alice's cookie on top of bob's freshly-issued
+          ;;    one would silently undo the re-key.
+          ;;
+          ;; 2. The response is an error (status >= 400) — e.g. proxy
+          ;;    identity mismatch with a blocked/inactive incoming
+          ;;    profile produced a 403. Renewing alice's cookie on the
+          ;;    denial response would EXTEND her session lifetime even
+          ;;    though the upstream identity has changed. Better to let
+          ;;    her cookie age out naturally (or get cleared on the next
+          ;;    successful flow) than to refresh it on a mismatch.
+          (let [status (::yres/status response)]
+            (if (and session
+                     (renew-session? session)
+                     (or (nil? status) (< status 400))
+                     (not (contains? (::yres/cookies response)
+                                     (cf/get :auth-token-cookie-name))))
+              (let [session (->> session
+                                 (update-session manager)
+                                 (assign-token cfg))]
+                (assign-session-cookie response session))
+              response)))
 
         (= type :bearer)
         (let [session (case (:ver metadata)

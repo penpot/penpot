@@ -23,6 +23,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
+   [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.http.session :as session]
    [app.rpc.commands.auth :as auth]
@@ -119,63 +120,121 @@
 ;; MIDDLEWARE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Perf note: this middleware removes the previous fast-path that
+;; short-circuited whenever wrap-session had already set
+;; ::session/profile-id. With the fix in place, every authenticated
+;; SSO request resolves the header email's profile (a transaction
+;; with get-profile-by-email + an idempotent auto-join check). The
+;; cost is intentional — correctness over throughput on the steady-
+;; state path. If profiling shows this is hot, a follow-up can
+;; reintroduce a fast-path by pre-loading the session profile's
+;; email (so we can compare without get-or-register-profile) or by
+;; caching email→profile-id in a short-lived in-memory map.
+
 (defn- wrap-authz
   [handler cfg]
   (fn [request]
-    ;; Skip when a prior middleware (session or access-token) already
-    ;; resolved a profile — we only act as a fallback.
-    (if (or (some? (::session/profile-id request))
-            (some? (::actoken/profile-id request)))
-      (handler request)
-      (let [email-claim (yreq/get-header request "x-auth-request-email")]
-        (if (str/blank? email-claim)
-          (handler request)
-          (let [local-part (first (str/split email-claim #"@"))
-                email      (resolve-email email-claim)
-                fullname   (or (not-empty (yreq/get-header request "x-auth-request-user"))
-                               local-part)
-                profile    (try
+    (let [atoken-pid  (::actoken/profile-id request)
+          session-pid (::session/profile-id request)
+          email-claim (yreq/get-header request "x-auth-request-email")]
+      (cond
+        ;; Access-token (API key) — programmatic identity issued out-of-band
+        ;; by the user. Not a browser SSO session, so the header is not
+        ;; meaningful here. Pass through unconditionally.
+        (some? atoken-pid)
+        (handler request)
+
+        ;; No proxy header — trust whatever wrap-session decided. Without a
+        ;; header we have no upstream identity to compare against.
+        (str/blank? email-claim)
+        (handler request)
+
+        :else
+        (let [local-part (first (str/split email-claim #"@"))
+              email      (resolve-email email-claim)
+              fullname   (or (not-empty (yreq/get-header request "x-auth-request-user"))
+                             local-part)
+              profile    (try
                            (get-or-register-profile cfg email fullname)
                            (catch Throwable cause
                              (l/err :hint "x-auth-request: error resolving profile"
                                     :email email
                                     :cause cause)
                              nil))]
-            (cond
-              (nil? profile)
-              (do
-                (l/wrn :hint "x-auth-request: no profile found for email, passing through unauthenticated"
-                       :email email)
-                (handler request))
+          (cond
+            (nil? profile)
+            ;; Header email doesn't resolve to a profile (and auto-register
+            ;; is off). No identity to switch *to* — pass through with
+            ;; whatever wrap-session set.
+            (do
+              (l/wrn :hint "x-auth-request: no profile found for email, passing through unauthenticated"
+                     :email email)
+              (handler request))
 
-              (:is-blocked profile)
-              (do
-                (l/wrn :hint "x-auth-request: profile is blocked, denying access"
-                       :email email
-                       :profile-id (str (:id profile)))
-                {::yres/status 403})
+            (:is-blocked profile)
+            (do
+              (l/wrn :hint "x-auth-request: profile is blocked, denying access"
+                     :email email
+                     :profile-id (str (:id profile)))
+              {::yres/status 403})
 
-              (not (:is-active profile))
-              (do
-                (l/wrn :hint "x-auth-request: profile is not active, denying access"
-                       :email email
-                       :profile-id (str (:id profile)))
-                {::yres/status 403})
+            (not (:is-active profile))
+            (do
+              (l/wrn :hint "x-auth-request: profile is not active, denying access"
+                     :email email
+                     :profile-id (str (:id profile)))
+              {::yres/status 403})
 
-              :else
-              (do
-                (l/dbg :hint "x-auth-request: authenticating via forwarded header"
-                       :email email
-                       :profile-id (str (:id profile)))
-                (let [create-session! (session/create-fn cfg profile)
-                      ;; Inject profile-id into the request so this very
-                      ;; request is also treated as authenticated downstream.
-                      response        (-> request
-                                          (assoc ::session/profile-id (:id profile))
-                                          handler)]
-                  ;; Attach a session cookie so the browser is authenticated
-                  ;; for all subsequent requests without needing to log in.
-                  (create-session! request response))))))))))
+            ;; Steady state — existing browser session matches the proxy-
+            ;; asserted identity. No work to do.
+            (and session-pid (= session-pid (:id profile)))
+            (handler request)
+
+            ;; Either no existing session, or the session points at a
+            ;; *different* profile than oauth2-proxy is asserting. Re-key.
+            ;;
+            ;; This is the fix for the session-sharing bug: portal "log out
+            ;; of all apps" clears the shared _oauth2_proxy cookie + Cognito
+            ;; session but NOT Penpot's auth-token cookie on its subdomain.
+            ;; Without this branch, wrap-session resolves the previous
+            ;; user's profile-id from the stale cookie and this middleware
+            ;; (under the previous always-skip-when-session rule) never
+            ;; overrode it.
+            :else
+            (do
+              (when session-pid
+                (l/inf :hint "x-auth-request: proxy identity differs from existing session — re-keying"
+                       :session-profile-id (str session-pid)
+                       :header-profile-id  (str (:id profile))))
+              (l/dbg :hint "x-auth-request: authenticating via forwarded header"
+                     :email email
+                     :profile-id (str (:id profile)))
+              (let [create-session! (session/create-fn cfg profile)
+                    response        (-> request
+                                        (assoc ::session/profile-id (:id profile))
+                                        ;; Drop stale identity-carrying keys
+                                        ;; so downstream code does not see the
+                                        ;; previous user's data after re-key.
+                                        ;;
+                                        ;; ::http/auth-data — errors.clj logs
+                                        ;; auth-data.claims.uid as
+                                        ;; :request/profile-id; rpc/helpers
+                                        ;; exposes the map to RPC handlers via
+                                        ;; get-auth-data.
+                                        ;;
+                                        ;; ::session/session — read indirectly
+                                        ;; by session/get-session, which is
+                                        ;; called in update-profile-password's
+                                        ;; invalidate-others path. Leaving
+                                        ;; alice's session here means a
+                                        ;; password-change RPC made on the
+                                        ;; re-keyed request would invalidate
+                                        ;; alice's sessions instead of bob's.
+                                        (dissoc ::http/auth-data ::session/session)
+                                        handler)]
+                ;; Fresh auth-token cookie; replaces the stale one the
+                ;; browser still has (if any).
+                (create-session! request response)))))))))
 
 (def authz
   {:name ::authz
