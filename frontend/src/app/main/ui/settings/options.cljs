@@ -40,8 +40,7 @@
     (st/emit! (du/update-profile data)
               (du/persist-profile {:on-success on-success}))))
 
-(mf/defc options-form
-  {::mf/wrap-props false}
+(mf/defc options-form*
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
@@ -111,7 +110,7 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
-(mf/defc options-page
+(mf/defc options-page*
   []
   (let [profile (mf/deref refs/profile)
         renderer (or (-> profile :props :renderer) :svg)]
@@ -122,7 +121,6 @@
      [:*
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
        [:h2 (tr "labels.settings")]
-       [:& options-form {}]]
+       [:> options-form*]]
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))
-
