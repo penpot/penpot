@@ -11,6 +11,6 @@
    [app.main.ui.flex-controls.margin :as fcm]
    [app.main.ui.flex-controls.padding :as fcp]))
 
-(dm/export fcg/gap-control)
-(dm/export fcm/margin-control)
-(dm/export fcp/padding-control)
+(dm/export fcg/gap-control*)
+(dm/export fcm/margin-control*)
+(dm/export fcp/padding-control*)
