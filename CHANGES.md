@@ -4,7 +4,10 @@
 
 ### :bug: Bugs fixed
 
-- Emit `create-shape-layout` for flex/grid layout creation from plugins and MCP (same event as workspace) [Github #9652](https://github.com/penpot/penpot/issues/9652)
+- Emit `create-shape-layout` for flex/grid layout creation from plugins and MCP (same event as workspace) [#9652](https://github.com/penpot/penpot/issues/9652) (PR: [#9654](https://github.com/penpot/penpot/pull/9654))
+- Fix broken authentication on /assets handlers [#9677](https://github.com/penpot/penpot/issues/9677) (PR: [#9679](https://github.com/penpot/penpot/pull/9679))
+- Fix API doc endpoint returning HTML as text/plain [#9680](https://github.com/penpot/penpot/issues/9680) (PR: [#9681](https://github.com/penpot/penpot/pull/9681))
+- Fix unexpected error when opening the export dialog [#9721](https://github.com/penpot/penpot/issues/9721) (PR: [#9704](https://github.com/penpot/penpot/pull/9704))
 
 ## 2.15.3
 
