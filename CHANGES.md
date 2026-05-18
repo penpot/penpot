@@ -123,6 +123,7 @@
 - Fix several color picker issues [#9556](https://github.com/penpot/penpot/issues/9556) (PR: [#9558](https://github.com/penpot/penpot/pull/9558))
 - Fix asset icon broken on Asset tab [#9587](https://github.com/penpot/penpot/issues/9587) (PR: [#9612](https://github.com/penpot/penpot/pull/9612))
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
+- Fix editing a legacy text element silently detaches its color token [Taiga #13958](https://tree.taiga.io/project/penpot/issue/13958)
 
 ## 2.15.4 (Unreleased)
 
