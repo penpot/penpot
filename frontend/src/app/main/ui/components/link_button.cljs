@@ -9,8 +9,7 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc link-button
-  {::mf/wrap-props false}
+(mf/defc link-button*
   [{:keys [on-click class value data-testid]}]
   (let [on-key-down (mf/use-fn
                      (mf/deps on-click)

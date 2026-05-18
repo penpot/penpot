@@ -29,6 +29,20 @@
 ;; When we're rendering in a sync way we want to stop the asynchrous `request-render`
 (defonce disable-request-render? (atom false))
 
+(defn module-ready?
+  []
+  (and internal-module (fn? (unchecked-get internal-module "_init"))))
+
+(defn reset-context-state!
+  []
+  (set! internal-frame-id nil)
+  (set! canvas nil)
+  (set! canvas-snapshot-url nil)
+  (set! gl-context-handle nil)
+  (set! gl-context nil)
+  (set! context-initialized? false)
+  (reset! context-lost? false))
+
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType

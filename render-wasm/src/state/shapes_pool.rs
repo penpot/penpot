@@ -140,6 +140,18 @@ impl ShapesPoolImpl {
         Some(&mut self.shapes[idx])
     }
 
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
+
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
+    }
+
     /// Get a shape by UUID. Returns the modified shape if modifiers/structure
     /// are applied, otherwise returns the base shape.
     pub fn get(&self, id: &Uuid) -> Option<&Shape> {
@@ -378,5 +390,27 @@ impl ShapesPoolImpl {
                 .unwrap_or(default);
             !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Clone for ShapesPoolImpl {
+    fn clone(&self) -> Self {
+        ShapesPoolImpl {
+            shapes: self.shapes.clone(),
+            counter: self.counter,
+            uuid_to_idx: self.uuid_to_idx.clone(),
+            // The modified_shape_cache is a derived/computed cache; reset it on clone
+            // so it gets lazily rebuilt on demand rather than cloning OnceCell state.
+            modified_shape_cache: HashMap::default(),
+            modifiers: self.modifiers.clone(),
+            structure: self.structure.clone(),
+            scale_content: self.scale_content.clone(),
+        }
     }
 }

@@ -4,7 +4,7 @@ use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 use crate::wasm::blend::RawBlendMode;
 use crate::wasm::layouts::constraints::{RawConstraintH, RawConstraintV};
-use crate::{with_state_mut, STATE};
+use crate::with_state;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
@@ -128,7 +128,7 @@ pub extern "C" fn set_shape_base_props() -> Result<()> {
     let parent_id = raw.parent_id();
     let shape_type = RawShapeType::from(raw.shape_type);
 
-    with_state_mut!(state, {
+    with_state!(state, {
         state.use_shape(id);
         state.set_parent_for_current_shape(parent_id);
         state.touch_current();

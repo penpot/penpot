@@ -554,10 +554,17 @@
    :opacity            [:opacity]
    :stroke-width       [:stroke-width :dimensions]
    :font-size          [:font-size]
+   :font-weight        [:font-weight]
+   :text-decoration    [:text-decoration]
+   :text-case          [:text-case]
    :letter-spacing     [:letter-spacing]
+   :dimensions         [:dimensions]
    :fill               [:color]
    :stroke-color       [:color]
-   :typography         [:typography]})
+   :typography         [:typography]
+   :number             [:number]
+   :sizing             [:sizing :dimensions]
+   :spacing            [:spacing :dimensions]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application

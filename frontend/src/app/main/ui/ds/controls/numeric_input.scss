@@ -22,8 +22,10 @@
   inline-size: 100%;
   position: relative;
 
-  &:not(:focus-within) {
-    cursor: ew-resize;
+  &.resizable {
+    &:not(:focus-within) {
+      cursor: ew-resize;
+    }
   }
 
   &:hover {

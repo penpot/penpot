@@ -96,14 +96,6 @@
       height: deprecated.$s-32;
       width: deprecated.$s-24;
       padding: 0 deprecated.$s-4 0 deprecated.$s-8;
-
-      svg {
-        @extend %button-icon-small;
-
-        color: transparent;
-        fill: none;
-        stroke: var(--icon-foreground);
-      }
     }
 
     .page-actions {

@@ -47,6 +47,8 @@
   background: var(--combobox-background-color);
   color: var(--combobox-text-color);
   appearance: none;
+  align-content: center;
+  place-items: center start;
 }
 
 .arrow {
