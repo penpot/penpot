@@ -321,7 +321,7 @@
         show-selrect?            (and selrect (empty? drawing) (not text-editing?) (not page-transition?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
-                                      (or show-distances? mode-inspect?)
+                                      (or show-distances? mode-inspect? read-only?)
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)

@@ -726,10 +726,11 @@
                                (rx/of res))))
                          (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
-          (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                            :type :toast
-                            :level :warning
-                            :timeout 3000})))))))
+          (when text-editing?
+            (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                              :type :toast
+                              :level :warning
+                              :timeout 3000}))))))))
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
