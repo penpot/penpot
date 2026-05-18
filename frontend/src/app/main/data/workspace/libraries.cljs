@@ -1310,7 +1310,8 @@
                                             nil
                                             (:id library)
                                             libraries
-                                            file-id))))
+                                            file-id
+                                            true))))
                                    libraries-need-sync))))
                (rx/filter seq)
                (rx/map (fn [libraries-with-changes]
