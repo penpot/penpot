@@ -270,8 +270,8 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_SERVER_PORT`           | Port for the HTTP/SSE server                                               | `4401`       |
 | `PENPOT_MCP_WEBSOCKET_PORT`        | Port for the WebSocket server (plugin connection)                          | `4402`       |
 | `PENPOT_MCP_REPL_PORT`             | Port for the REPL server (development/debugging)                           | `4403`       |
-| `PENPOT_MCP_SERVER_ADDRESS`        | Hostname or IP address via which clients can reach the MCP server          | `localhost`  |
 | `PENPOT_MCP_REMOTE_MODE`           | Enable remote mode (disables file system access). Set to `true` to enable. | `false`      |
+| `PENPOT_MCP_DEVENV`                | Enable Penpot development environment tools. Set to `true` to enable.      | `false`      |
 
 ### Logging Configuration
 

@@ -16,14 +16,11 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
-
-(defn- render-context-lost?
-  [state]
-  (true? (get-in state [:render-state :lost])))
 
 (defn impl-update-zoom
   [{:keys [vbox] :as local} center zoom]
@@ -47,11 +44,15 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (if (render-context-lost? state)
+       (if (dwvw/render-context-lost? state)
          state
          (let [center (if (= center ::auto) @ms/mouse-position center)]
            (update state :workspace-local
-                   #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200))))))))))
+                   #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (defn decrease-zoom
   ([]
@@ -62,11 +63,15 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (if (render-context-lost? state)
+       (if (dwvw/render-context-lost? state)
          state
          (let [center (if (= center ::auto) @ms/mouse-position center)]
            (update state :workspace-local
-                   #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01))))))))))
+                   #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (defn set-zoom
   ([scale]
@@ -77,7 +82,7 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (if (render-context-lost? state)
+       (if (dwvw/render-context-lost? state)
          state
          (let [vp (dm/get-in state [:workspace-local :vbox])
                x (+ (:x vp) (/ (:width vp) 2))
@@ -86,22 +91,30 @@
            (update state :workspace-local
                    #(impl-update-zoom % center (fn [z] (-> (* z scale)
                                                            (max 0.01)
-                                                           (min 200)))))))))))
+                                                           (min 200))))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (if (render-context-lost? state)
+      (if (dwvw/render-context-lost? state)
         state
         (update state :workspace-local
-                #(impl-update-zoom % nil 1))))))
+                #(impl-update-zoom % nil 1))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (def zoom-to-fit-all
   (ptk/reify ::zoom-to-fit-all
     ptk/UpdateEvent
     (update [_ state]
-      (if (render-context-lost? state)
+      (if (dwvw/render-context-lost? state)
         state
         (let [page-id (:current-page-id state)
               objects (dsh/lookup-page-objects state page-id)
@@ -116,13 +129,17 @@
                         (-> local
                             (assoc :zoom zoom)
                             (assoc :zoom-inverse (/ 1 zoom))
-                            (update :vbox merge srect)))))))))))
+                            (update :vbox merge srect)))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (def zoom-to-selected-shape
   (ptk/reify ::zoom-to-selected-shape
     ptk/UpdateEvent
     (update [_ state]
-      (if (render-context-lost? state)
+      (if (dwvw/render-context-lost? state)
         state
         (let [selected (dsh/lookup-selected state)]
           (if (empty? selected)
@@ -139,14 +156,18 @@
                           (-> local
                               (assoc :zoom zoom)
                               (assoc :zoom-inverse (/ 1 zoom))
-                              (update :vbox merge srect))))))))))))
+                              (update :vbox merge srect))))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn fit-to-shapes
   [ids]
   (ptk/reify ::fit-to-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (if (or (render-context-lost? state) (empty? ids))
+      (if (or (dwvw/render-context-lost? state) (empty? ids))
         state
         (let [page-id (:current-page-id state)
               objects (dsh/lookup-page-objects state page-id)
@@ -164,16 +185,21 @@
                       (-> local
                           (assoc :zoom zoom)
                           (assoc :zoom-inverse (/ 1 zoom))
-                          (update :vbox merge srect))))))))))
+                          (update :vbox merge srect))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn start-zooming [pt]
   (ptk/reify ::start-zooming
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-zooming)))]
-        (when (and (not (render-context-lost? state))
+        (when (and (not (dwvw/render-context-lost? state))
                    (not (get-in state [:workspace-local :zooming])))
           (rx/concat
+           (rx/of (fn [s] (dwvw/maybe-view-interaction-start! s) s))
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream
                 (rx/filter mse/pointer-event?)
@@ -189,4 +215,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :zooming)))))
+          (update :workspace-local dissoc :zooming)))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-view-interaction-end! state))))

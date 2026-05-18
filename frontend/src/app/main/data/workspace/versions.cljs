@@ -180,6 +180,12 @@
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Clear preview state if we're restoring from preview mode
+      (-> state
+          (update :workspace-versions dissoc :backup)
+          (update :workspace-global dissoc :read-only? :preview-id)))
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]

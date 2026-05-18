@@ -19,7 +19,7 @@
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
-             [:delete-teams {:optional true} [:maybe [:enum "ownersAndAdmins" "onlyOwners"]]]]]]])
+             [:delete-teams {:optional true} [:maybe [:enum "onlyMe" "onlyOwners"]]]]]]])
 
 
 (def schema:team-with-organization
