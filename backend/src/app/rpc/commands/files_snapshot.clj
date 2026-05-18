@@ -43,10 +43,9 @@
 
 (sv/defmethod ::create-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:create-file-snapshot
-   ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id label]}]
-  (files/check-edition-permissions! conn profile-id file-id)
+   ::sm/params schema:create-file-snapshot}
+  [cfg {:keys [::rpc/profile-id file-id label]}]
+  (files/check-edition-permissions! cfg profile-id file-id)
   (let [file    (bfc/get-file cfg file-id :realize? true)
         project (db/get-by-id cfg :project (:project-id file))]
 
@@ -58,10 +57,10 @@
         (quotes/check! {::quotes/id ::quotes/snapshots-per-file}
                        {::quotes/id ::quotes/snapshots-per-team}))
 
-    (fsnap/create! cfg file
-                   {:label label
-                    :profile-id profile-id
-                    :created-by "user"})))
+    (db/tx-run! cfg fsnap/create! file
+                {:label label
+                 :profile-id profile-id
+                 :created-by "user"})))
 
 (def ^:private schema:restore-file-snapshot
   [:map {:title "restore-file-snapshot"}
