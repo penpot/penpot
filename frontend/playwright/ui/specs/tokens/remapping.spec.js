@@ -696,3 +696,75 @@ test.describe("Remapping group of tokens", () => {
     await expect(tokenReference).toBeVisible();
   });
 });
+
+test.describe("Token rename validation across sets", () => {
+  test("Renaming a token to a name present in another active set fails validation", async ({
+    page,
+  }) => {
+    const {
+      tokensUpdateCreateModal,
+      tokensSidebar,
+      tokenContextMenuForToken,
+      tokenThemesSetsSidebar,
+    } = await setupTokensFileRender(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    // Create "base-color" in the default active set (theme)
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    await tokensUpdateCreateModal.getByLabel("Name").fill("base-color");
+    await tokensUpdateCreateModal.getByLabel("Value").fill("#FFFFFF");
+    await tokensUpdateCreateModal
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+    // Create a new set-b, select it, and enable it
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+    const setBInput = tokenThemesSetsSidebar.locator("input:focus");
+    await setBInput.fill("set-b");
+    await setBInput.press("Enter");
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "set-b" })
+      .click();
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "set-b" })
+      .getByRole("checkbox")
+      .click();
+
+    // Create "unique-name" in set-b
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    await tokensUpdateCreateModal.getByLabel("Name").fill("unique-name");
+    await tokensUpdateCreateModal.getByLabel("Value").fill("#000000");
+    await tokensUpdateCreateModal
+      .getByRole("button", { name: "Save" })
+      .click();
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+    // Try to rename "unique-name" (in set-b) to "base-color" (which exists in the active theme set)
+    await tokensSidebar
+      .getByRole("button", { name: "unique-name" })
+      .click({ button: "right" });
+    await tokenContextMenuForToken.getByText("Edit token").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("base-color");
+
+    // The validation error should appear reactively and the Save button should be disabled
+    await expect(
+      tokensUpdateCreateModal.getByText(/already exists at the path/i),
+    ).toBeVisible();
+    await expect(
+      tokensUpdateCreateModal.getByRole("button", { name: "Save" }),
+    ).toBeDisabled();
+  });
+});

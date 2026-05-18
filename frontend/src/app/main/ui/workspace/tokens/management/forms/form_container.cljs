@@ -27,13 +27,16 @@
         tokens-in-selected-set
         (mf/deref refs/workspace-all-tokens-in-selected-set)
 
+        active-tokens
+        (mf/deref refs/workspace-active-theme-sets-tokens)
+
         token-path
         (mf/with-memo [token]
           (ctob/get-token-path token))
 
         tokens-tree-in-selected-set
-        (mf/with-memo [token-path tokens-in-selected-set]
-          (-> (ctob/tokens-tree tokens-in-selected-set)
+        (mf/with-memo [token-path tokens-in-selected-set active-tokens]
+          (-> (ctob/tokens-tree (merge active-tokens tokens-in-selected-set))
               (d/dissoc-in token-path)))
         props
         (mf/spread-props props {:token-type token-type
