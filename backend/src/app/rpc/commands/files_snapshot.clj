@@ -17,6 +17,7 @@
    [app.main :as-alias main]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -70,7 +71,9 @@
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot
-   ::db/transaction true}
+   ::db/transaction true
+   ::climit/id [[:restore-file-snapshot/by-profile ::rpc/profile-id]
+                [:restore-file-snapshot/global]]}
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)

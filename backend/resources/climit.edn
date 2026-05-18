@@ -27,4 +27,10 @@
  {:permits 2}
 
  :submit-audit-events/by-profile
- {:permits 1 :queue 3}}
+ {:permits 1 :queue 3}
+
+ :restore-file-snapshot/global
+ {:permits 3}
+
+ :restore-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}}
