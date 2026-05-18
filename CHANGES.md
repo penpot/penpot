@@ -125,6 +125,8 @@
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
 - Fix editing a legacy text element silently detaches its color token [#9255](https://github.com/penpot/penpot/issues/9255)
 - Fix token application to grid paddings [#9494](https://github.com/penpot/penpot/issues/9494)
+- Fix file crashing when switching a variant [#9259](https://github.com/penpot/penpot/issues/9259)
+
 
 ## 2.15.4 (Unreleased)
 
