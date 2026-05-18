@@ -33,4 +33,10 @@
  {:permits 3}
 
  :restore-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ :create-file-snapshot/global
+ {:permits 3}
+
+ :create-file-snapshot/by-profile
  {:permits 1 :queue 2 :timeout 60000}}

@@ -43,7 +43,9 @@
 
 (sv/defmethod ::create-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:create-file-snapshot}
+   ::sm/params schema:create-file-snapshot
+   ::climit/id [[:create-file-snapshot/by-profile ::rpc/profile-id]
+                [:create-file-snapshot/global]]}
   [cfg {:keys [::rpc/profile-id file-id label]}]
   (files/check-edition-permissions! cfg profile-id file-id)
   (let [file    (bfc/get-file cfg file-id :realize? true)
