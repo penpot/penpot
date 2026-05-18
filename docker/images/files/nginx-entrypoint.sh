@@ -48,6 +48,11 @@ export PENPOT_MCP_URI_WS=${PENPOT_MCP_URI_WS:-http://penpot-mcp:4402}
 export PENPOT_HTTP_SERVER_MAX_BODY_SIZE=${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-367001600} # Default to 350MiB
 envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI,\$PENPOT_NITRATE_URI,\$PENPOT_MCP_URI,\$PENPOT_MCP_URI_WS,\$PENPOT_HTTP_SERVER_MAX_BODY_SIZE" \
          < /tmp/nginx.conf.template > /etc/nginx/nginx.conf
+if [ "${PENPOT_DISABLE_IPV6_LISTEN}" = "true" ]; then
+  sed -i '/__PENPOT_IPV6_LISTEN_DIRECTIVE__/d' /etc/nginx/nginx.conf
+else
+  sed -i 's|__PENPOT_IPV6_LISTEN_DIRECTIVE__|        listen [::]:8080 default_server;|' /etc/nginx/nginx.conf
+fi
 
 PENPOT_DEFAULT_INTERNAL_RESOLVER="$(awk 'BEGIN{ORS=" "} $1=="nameserver" { sub(/%.*$/,"",$2); print ($2 ~ ":")? "["$2"]": $2}' /etc/resolv.conf)"
 export PENPOT_INTERNAL_RESOLVER=${PENPOT_INTERNAL_RESOLVER:-$PENPOT_DEFAULT_INTERNAL_RESOLVER}
