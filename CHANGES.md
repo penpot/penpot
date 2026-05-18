@@ -91,6 +91,7 @@
 - Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
 ### :bug: Bugs fixed
 
+- Fix plugin API `Board.addRulerGuide` attaching guides to the page instead of the board due to a shadowed `id` binding; also correct the `'content:write'` permission error message and the `RulerGuideProxy` name (by @girafic) [#8225](https://github.com/penpot/penpot/issues/8225) (PR: [#8632](https://github.com/penpot/penpot/pull/8632))
 - Fix Alt/Option to draw shapes from center point (by @offreal) [#8360](https://github.com/penpot/penpot/issues/8360) (PR: [#8361](https://github.com/penpot/penpot/pull/8361))
 - Add token name on broken token pill on sidebar [#9534](https://github.com/penpot/penpot/issues/9534) (PR: [#8527](https://github.com/penpot/penpot/pull/8527))
 - Fix tooltip activated when tab change [#9539](https://github.com/penpot/penpot/issues/9539) (PR: [#8719](https://github.com/penpot/penpot/pull/8719))
