@@ -172,19 +172,19 @@ query { repository(owner: "penpot", name: "penpot") {
 
 ### 8. Link the PR to the issue
 
-Append `Fixes #<ISSUE_NUMBER>` to the PR body:
+Append `Closes #<ISSUE_NUMBER>` to the PR body:
 
 ```bash
 gh pr view <PR_NUMBER> --repo penpot/penpot --json body --jq '.body' > /tmp/pr-body.md
-printf "\n\nFixes #<ISSUE_NUMBER>\n" >> /tmp/pr-body.md
+printf "\n\nCloses #<ISSUE_NUMBER>\n" >> /tmp/pr-body.md
 gh pr edit <PR_NUMBER> --repo penpot/penpot --body-file /tmp/pr-body.md
 
 # Verify
 gh pr view <PR_NUMBER> --repo penpot/penpot --json body \
-  --jq '.body | test("Fixes #<ISSUE_NUMBER>")'
+  --jq '.body | test("Closes #<ISSUE_NUMBER>")'
 ```
 
-**Note:** If the PR is already merged, `Fixes` won't auto-close the issue
+**Note:** If the PR is already merged, `Closes` won't auto-close the issue
 — it only creates the "Development" sidebar link. This is the desired
 behavior since the issue is a tracking artifact.
 
@@ -222,7 +222,7 @@ rm -f /tmp/issue-body.md /tmp/pr-body.md
 - **Copy the milestone from the PR.** Don't guess based on branch names.
   If the PR has no milestone, create the issue without one.
 - **Set Issue Type via GraphQL** — `gh issue create` can't set it.
-- **Link via PR body** — `Fixes #<NUMBER>` creates the "Development"
+- **Link via PR body** — `Closes #<NUMBER>` creates the "Development"
   sidebar link automatically.
 - **One issue per PR** — even if a PR fixes multiple things, create a
   single issue that summarizes the overall change.
