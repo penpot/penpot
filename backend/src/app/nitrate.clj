@@ -29,14 +29,16 @@
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
   (fn []
-    (http/req cfg (cond-> {:method method
-                           :headers {"content-type" "application/json"
-                                     "accept" "application/json"
-                                     "x-shared-key" shared-key
-                                     "x-profile-id" (str profile-id)}
-                           :uri uri
-                           :version :http1.1}
-                    (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
+    (http/req cfg
+              (cond-> {:method method
+                       :headers {"content-type" "application/json"
+                                 "accept" "application/json"
+                                 "x-shared-key" shared-key
+                                 "x-profile-id" (str profile-id)}
+                       :uri uri
+                       :version :http1.1}
+                (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key)))
+              {:skip-ssrf-check? true})))
 
 (defn- with-retries
   [handler max-retries]
@@ -60,12 +62,13 @@
   (fn []
     (let [response (handler)
           status (:status response)]
-      (when-not status
-        (l/error :hint "could't do the nitrate request, it is probably down"
-                 :uri uri)
-        ;; TODO decide what to do when Nitrate is inaccesible
-        nil)
       (cond
+        (nil? status)
+        (do
+          (l/error :hint "could't do the nitrate request, it is probably down"
+                   :uri uri)
+          ;; TODO decide what to do when Nitrate is inaccesible
+          nil)
         (>= status 400)
         ;; For error status codes (4xx, 5xx), fail immediately without validation
         (do
