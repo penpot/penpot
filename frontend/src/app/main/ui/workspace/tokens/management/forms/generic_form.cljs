@@ -183,11 +183,12 @@
         on-submit
         (mf/use-fn
          (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
-         (fn [form _event]
+         (fn [form event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
+             (dom/stop-propagation event)
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
