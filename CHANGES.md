@@ -125,6 +125,7 @@
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
 - Fix editing a legacy text element silently detaches its color token [Taiga #13958](https://tree.taiga.io/project/penpot/issue/13958)
 - Fix token application to grid paddings [Taiga #14136](https://tree.taiga.io/project/penpot/issue/14136)
+- Fix incorrect warning shown when token applied [Taiga #14191](https://tree.taiga.io/project/penpot/issue/14191)
 
 ## 2.15.4 (Unreleased)
 

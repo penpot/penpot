@@ -1080,6 +1080,59 @@ test("BUG: 14136 Apply grid layout padding token to a shape from the sidebar doe
   ).toBe("16");
 });
 
+test("BUG: 14191, Apply tokens from different set", async ({ page }) => {
+  const {
+    workspacePage,
+    tokensSidebar,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+    tokenSetGroupItems,
+  } = await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  // Apply border radius token from core set
+  await tokensSidebar.getByRole("button", { name: "borderRadius.xl" }).click();
+
+  const borderRadiusSection = page.getByRole("region", {
+    name: "Border radius section",
+  });
+  await expect(borderRadiusSection).toBeVisible();
+
+  // Check if token pill is visible on design tab on right sidebar
+  const brTokenPillxl = borderRadiusSection.getByRole("button", {
+    name: "borderRadius.xl",
+  });
+  await expect(brTokenPillxl).toBeVisible();
+
+  // Change active token set
+  await expect(
+    tokenThemesSetsSidebar.getByRole("button", { name: "theme" }),
+  ).toBeVisible();
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "theme" }).click();
+  // Apply border radius token from theme set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+
+  await tokensSidebar
+    .getByRole("button", { name: "card.borderRadius" })
+    .click();
+
+  const brTokenPillCard = borderRadiusSection.getByRole("button", {
+    name: "card.borderRadius",
+  });
+  await expect(brTokenPillCard).toBeVisible();
+});
+
 test.describe("Numeric Input and Token Integration Tests", () => {
   test("Token pill persists after blur in gap inputs", async ({ page }) => {
     // Setup the workspace with token features enabled
@@ -1436,8 +1489,13 @@ test.describe("Numeric Input and Token Integration Tests", () => {
       flags: ["enable-token-combobox", "enable-feature-token-input"],
     });
     // Create a token with a reference value in other set.
-    await createToken(page, "Dimensions", "reference-token", "Value", "{card.padding}");
-
+    await createToken(
+      page,
+      "Dimensions",
+      "reference-token",
+      "Value",
+      "{card.padding}",
+    );
 
     // Apply this token to a shape
     await page.getByRole("tab", { name: "Layers" }).click();
@@ -1460,11 +1518,16 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     });
     await expect(measuresSection).toBeVisible();
 
-    await expect(measuresSection.getByRole('button', { name: 'reference-token' })).toBeVisible();
+    await expect(
+      measuresSection.getByRole("button", { name: "reference-token" }),
+    ).toBeVisible();
 
     // Deactivate token set where reference token exist to make token broken
-    await tokenThemesSetsSidebar.getByRole('button', { name: 'theme' }).getByRole('checkbox').click();
-    
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "theme" })
+      .getByRole("checkbox")
+      .click();
+
     // Check if token pill show broken reference state
     const brokenPill = measuresSection.getByRole("button", {
       name: "is not in any active set",

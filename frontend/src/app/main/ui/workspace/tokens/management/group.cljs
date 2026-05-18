@@ -147,7 +147,7 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps not-editing? selected-ids tokens-lib)
+         (mf/deps not-editing? selected-ids tokens-lib selected-token-set-id)
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)
