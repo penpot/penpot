@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+
 - WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR:[9113](https://github.com/penpot/penpot/pull/9113))
 - Design Tokens at the design tab: numeric fields with token selection in place [#9358](https://github.com/penpot/penpot/issues/9358)
 
@@ -64,6 +65,7 @@
 - Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 
 ### :bug: Bugs fixed
+
 - Fix Alt/Option to draw shapes from center point (by @offreal) [#8360](https://github.com/penpot/penpot/issues/8360) (PR: [#8361](https://github.com/penpot/penpot/pull/8361))
 - Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
 - Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
@@ -125,6 +127,7 @@
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
 - Fix editing a legacy text element silently detaches its color token [Taiga #13958](https://tree.taiga.io/project/penpot/issue/13958)
 - Fix token application to grid paddings [Taiga #14136](https://tree.taiga.io/project/penpot/issue/14136)
+- Fix copying and pasting a swapped component causes a referential integrity error [Github #9547](https://github.com/penpot/penpot/issues/9547)
 
 ## 2.15.4 (Unreleased)
 
@@ -149,7 +152,6 @@
 
 - Fix mcp related internal config for docker images [GH #9565](https://github.com/penpot/penpot/pull/9565)
 
-
 ## 2.15.1
 
 ### :sparkles: New features & Enhancements
@@ -159,7 +161,6 @@
 ### :bug: Bugs fixed
 
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [#9137](https://github.com/penpot/penpot/issues/9137) (PR: [#9138](https://github.com/penpot/penpot/pull/9138))
-
 
 ## 2.15.0
 
