@@ -32,6 +32,8 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+- WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR:[9113](https://github.com/penpot/penpot/pull/9113))
+- Design Tokens at the design tab: numeric fields with token selection in place [#9358](https://github.com/penpot/penpot/issues/9358)
 
 ### :sparkles: New features & Enhancements
 
@@ -49,11 +51,8 @@
 - Rename token group [#9637](https://github.com/penpot/penpot/issues/9637) (PR: [#8275](https://github.com/penpot/penpot/pull/8275))
 - Duplicate token group [#9638](https://github.com/penpot/penpot/issues/9638) (PR: [#8886](https://github.com/penpot/penpot/pull/8886))
 - Copy token name from contextual menu [#9639](https://github.com/penpot/penpot/issues/9639) (PR: [#8566](https://github.com/penpot/penpot/pull/8566))
-- Add natural sorting on token names [#8635](https://github.com/penpot/penpot/issues/8635) (PR: [#8672](https://github.com/penpot/penpot/pull/8672))
 - Add drag-to-change for numeric inputs in workspace sidebar (by @RenzoMXD) [#2466](https://github.com/penpot/penpot/issues/2466) (PR: [#8536](https://github.com/penpot/penpot/pull/8536))
 - Add CSS linter [#9636](https://github.com/penpot/penpot/issues/9636) (PR: [#8592](https://github.com/penpot/penpot/pull/8592))
-- Save and restore selection state in undo/redo (by @eureka0928) [#6007](https://github.com/penpot/penpot/issues/6007) (PR: [#8652](https://github.com/penpot/penpot/pull/8652))
-- Fix warnings for unsupported token $type (by @Dexterity104) [#8790](https://github.com/penpot/penpot/issues/8790) (PR: [#8873](https://github.com/penpot/penpot/pull/8873))
 - Add per-group add button for typographies (by @eureka0928) [#5275](https://github.com/penpot/penpot/issues/5275) (PR: [#8895](https://github.com/penpot/penpot/pull/8895))
 - Add Find & Replace for text content and layer names (by @statxc) [#7108](https://github.com/penpot/penpot/issues/7108) (PR: [#8899](https://github.com/penpot/penpot/pull/8899))
 - Use page name for multi-export ZIP/PDF downloads (by @Dexterity104) [#8773](https://github.com/penpot/penpot/issues/8773) (PR: [#8874](https://github.com/penpot/penpot/pull/8874))
@@ -62,8 +61,6 @@
 - Sort asset library subfolders alphabetically at every nesting level (by @eureka0928) [#2572](https://github.com/penpot/penpot/issues/2572) (PR: [#8952](https://github.com/penpot/penpot/pull/8952))
 - Add Paste to replace (Cmd+Shift+V) for selected shapes (by @eureka0928) [#4240](https://github.com/penpot/penpot/issues/4240) (PR: [#9033](https://github.com/penpot/penpot/pull/9033))
 - Differentiate incoming and outgoing interaction link colors (by @claytonlin1110) [#7794](https://github.com/penpot/penpot/issues/7794) (PR: [#8923](https://github.com/penpot/penpot/pull/8923))
-- Add guide locking and fix locked element selection in viewer (by @Dexterity104) [#8358](https://github.com/penpot/penpot/issues/8358) (PR: [#8949](https://github.com/penpot/penpot/pull/8949))
-- Apply styles to selection (by @AzazelN28) [#9661](https://github.com/penpot/penpot/issues/9661) (PR: [#8625](https://github.com/penpot/penpot/pull/8625))
 - Reorder prototyping overlay options to show Position before Relative to (by @rockchris099) [#2910](https://github.com/penpot/penpot/issues/2910)
 - Add customizable colors for ruler guides (by @Dexterity104) [#5199](https://github.com/penpot/penpot/issues/5199) (PR: [#8986](https://github.com/penpot/penpot/pull/8986))
 - Persist asset search and section filter across sidebar tabs (by @eureka0928) [#2913](https://github.com/penpot/penpot/issues/2913) (PR: [#8985](https://github.com/penpot/penpot/pull/8985))
@@ -74,7 +71,6 @@
 - Allow customising the OIDC login button label (by @wdeveloper16) [#7027](https://github.com/penpot/penpot/issues/7027) (PR: [#9026](https://github.com/penpot/penpot/pull/9026))
 - Add page separators in Workspace [#9180](https://github.com/penpot/penpot/issues/9180) (PR: [#8561](https://github.com/penpot/penpot/pull/8561))
 - Preserve vector content when pasting SVG from external tools (by @RenzoMXD) [#546](https://github.com/penpot/penpot/issues/546) (PR: [#9182](https://github.com/penpot/penpot/pull/9182))
-- Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
 - Add pixel grid color picker in viewport settings (by @jack-stormentswe) [#7750](https://github.com/penpot/penpot/issues/7750) (PR: [#9155](https://github.com/penpot/penpot/pull/9155))
 - Add HEX/HSB/HSL support to color picker with persistent model switcher (by @edwin-rivera-dev) [#9133](https://github.com/penpot/penpot/issues/9133) (PR: [#9134](https://github.com/penpot/penpot/pull/9134))
 - Show specific invitation-link error messages (by @niwinz) [#9220](https://github.com/penpot/penpot/issues/9220) (PR: [#9223](https://github.com/penpot/penpot/pull/9223))
@@ -83,15 +79,21 @@
 - Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [#6980](https://github.com/penpot/penpot/issues/6980) (PR: [#9053](https://github.com/penpot/penpot/pull/9053))
 - Update auth hero illustration on login screen [#9532](https://github.com/penpot/penpot/issues/9532) (PR: [#9552](https://github.com/penpot/penpot/pull/9552))
 - Update Open Graph link preview metadata [#9555](https://github.com/penpot/penpot/issues/9555) (PR: [#9557](https://github.com/penpot/penpot/pull/9557))
-- Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
-- Add new numeric inputs for token management on the right sidebar [#9358](https://github.com/penpot/penpot/issues/9358)
 - Restore deleted team files in bulk instead of per file (by @Dexterity104) [#9246](https://github.com/penpot/penpot/issues/9246) (PR: [#9248](https://github.com/penpot/penpot/pull/9248))
 - Preserve Inkscape labels when pasting SVGs (by @jeffrey701) [#7869](https://github.com/penpot/penpot/issues/7869) (PR: [#9252](https://github.com/penpot/penpot/pull/9252))
 - Add Alt+click to expand layer subtree (by @MilosM348) [#7736](https://github.com/penpot/penpot/issues/7736) (PR: [#9179](https://github.com/penpot/penpot/pull/9179))
-- Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
-### :bug: Bugs fixed
 
+### :bug: Bugs fixed
+- Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
+- Save and restore selection state in undo/redo (by @eureka0928) [#6007](https://github.com/penpot/penpot/issues/6007) (PR: [#8652](https://github.com/penpot/penpot/pull/8652))
+- Add guide locking and fix locked element selection in viewer (by @Dexterity104) [#8358](https://github.com/penpot/penpot/issues/8358) (PR: [#8949](https://github.com/penpot/penpot/pull/8949))
+- Add natural sorting on token names [#8635](https://github.com/penpot/penpot/issues/8635) (PR: [#8672](https://github.com/penpot/penpot/pull/8672))
+- Fix warnings for unsupported token $type (by @Dexterity104) [#8790](https://github.com/penpot/penpot/issues/8790) (PR: [#8873](https://github.com/penpot/penpot/pull/8873))
+- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
+- Apply styles to selection (by @AzazelN28) [#9661](https://github.com/penpot/penpot/issues/9661) (PR: [#8625](https://github.com/penpot/penpot/pull/8625))
 - Fix Alt/Option to draw shapes from center point (by @offreal) [#8360](https://github.com/penpot/penpot/issues/8360) (PR: [#8361](https://github.com/penpot/penpot/pull/8361))
+- Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
+- Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
 - Add token name on broken token pill on sidebar [#9534](https://github.com/penpot/penpot/issues/9534) (PR: [#8527](https://github.com/penpot/penpot/pull/8527))
 - Fix tooltip activated when tab change [#9539](https://github.com/penpot/penpot/issues/9539) (PR: [#8719](https://github.com/penpot/penpot/pull/8719))
 - Fix title on shared button [#9541](https://github.com/penpot/penpot/issues/9541) (PR: [#8696](https://github.com/penpot/penpot/pull/8696))
@@ -127,7 +129,6 @@
 - Fix app crash on multiselection with hidden shapes and opacity mixed value [#9666](https://github.com/penpot/penpot/issues/9666) (PR: [#8932](https://github.com/penpot/penpot/pull/8932))
 - Fix gap input throwing an error [#9667](https://github.com/penpot/penpot/issues/9667) (PR: [#8984](https://github.com/penpot/penpot/pull/8984))
 - Fix copy to be more specific [#9668](https://github.com/penpot/penpot/issues/9668) (PR: [#9028](https://github.com/penpot/penpot/pull/9028))
-- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [#8516](https://github.com/penpot/penpot/issues/8516) (PR: [#9094](https://github.com/penpot/penpot/pull/9094))
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [#8479](https://github.com/penpot/penpot/issues/8479) (PR: [#9121](https://github.com/penpot/penpot/pull/9121))
 - Fix colorpicker layout hiding eyedropper button [#9669](https://github.com/penpot/penpot/issues/9669) (PR: [#9125](https://github.com/penpot/penpot/pull/9125))
@@ -149,6 +150,10 @@
 - Fix several color picker issues [#9556](https://github.com/penpot/penpot/issues/9556) (PR: [#9558](https://github.com/penpot/penpot/pull/9558))
 - Fix asset icon broken on Asset tab [#9587](https://github.com/penpot/penpot/issues/9587) (PR: [#9612](https://github.com/penpot/penpot/pull/9612))
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
+- Fix editing a legacy text element silently detaches its color token [#9255](https://github.com/penpot/penpot/issues/9255)
+- Fix token application to grid paddings [#9494](https://github.com/penpot/penpot/issues/9494)
+- Fix file crashing when switching a variant [#9259](https://github.com/penpot/penpot/issues/9259)
+
 
 ## 2.15.4 (Unreleased)
 

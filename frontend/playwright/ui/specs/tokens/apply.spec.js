@@ -1030,6 +1030,56 @@ test("BUG: 13930, Token colors are shown on selected colors section", async ({
   ).toBeVisible();
 });
 
+test("BUG: 14136 Apply grid layout padding token to a shape from the sidebar does not change values", async ({
+  page,
+}) => {
+  // Setup the workspace with token features enabled
+  const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+
+  // Transform a rectangle into a grid container to expose gap properties
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+  const layoutSection = page.getByTestId("inspect-layout");
+  await expect(layoutSection).toBeVisible();
+
+  const addLayoutButton = layoutSection
+    .getByRole("button", { name: "Add layout" })
+    .first();
+  await addLayoutButton.click();
+  await page.getByText("Grid layout").click();
+
+  // Apply a dimension token to the vertical padding property
+  await layoutSection.getByLabel("Open token list").nth(2).click();
+  const tokenDimensionMd = layoutSection.getByRole("option", {
+    name: "dimension.md",
+  });
+  await expect(tokenDimensionMd).toBeVisible();
+  await tokenDimensionMd.click();
+
+  // Expand padding to all sides
+  await layoutSection.getByRole('button', { name: 'Show 4 sided padding options' }).click();
+  const topPaddingSection = layoutSection.getByLabel("Top padding");
+  const bottomPaddingSection = layoutSection.getByLabel("Bottom padding");
+  await expect(topPaddingSection).toBeVisible();
+
+  // Check if token is still applied to top and bottom padding
+  await expect(topPaddingSection.getByLabel("Detach token")).toBeVisible();
+  await expect(bottomPaddingSection.getByLabel("Detach token")).toBeVisible();
+
+  // Check if the value of the attribute is still correct
+  await expect(
+    await topPaddingSection.getByRole("button", { name: "dimension.md" }).textContent()
+  ).toBe("16");
+  await expect(
+    await bottomPaddingSection.getByRole("button", { name: "dimension.md" }).textContent()
+  ).toBe("16");
+});
+
 test.describe("Numeric Input and Token Integration Tests", () => {
   test("Token pill persists after blur in gap inputs", async ({ page }) => {
     // Setup the workspace with token features enabled
