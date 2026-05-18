@@ -302,7 +302,9 @@
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
     ::sto/storage                   (ig/ref ::sto/storage)
-    ::session/manager               (ig/ref ::session/manager)}
+    ::session/manager               (ig/ref ::session/manager)
+    ::setup/props                   (ig/ref ::setup/props)
+    ::db/pool                       (ig/ref ::db/pool)}
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)
