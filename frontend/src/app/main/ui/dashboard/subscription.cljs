@@ -134,7 +134,7 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-cc-create-org)]
+        (mf/use-fn dnt/go-to-nitrate-ac-create-org)]
 
     ;; TODO add translations for this texts when we have the definitive ones
     (if (and nitrate? no-orgs-created?)
