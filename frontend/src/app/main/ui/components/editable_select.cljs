@@ -184,7 +184,7 @@
              :on-click toggle-dropdown}
       deprecated-icon/arrow]
 
-     [:& dropdown {:show (or is-open? false)
+     [:> dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
       [:ul {:class (stl/css :custom-select-dropdown)
             :ref font-size-wrapper-ref}

@@ -113,7 +113,7 @@
              (tr "labels.go-back")]]]]
 
          :recovery-request
-         [:& recovery-request-page {:go-back-callback go-back-to-login
+         [:> recovery-request-page {:go-back-callback go-back-to-login
                                     :on-success-callback success-email-sent}]
          :email-sent
          [:div {:class (stl/css :form-container)}
