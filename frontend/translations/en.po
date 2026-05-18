@@ -5346,6 +5346,15 @@ msgstr "10GB of storage"
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Unlimited teams. Up to 8 editors across your owned teams."
 
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Complete control over data and infrastructure."
+
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Unlimited users, teams and files."
+
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "All design and prototyping features Community support."
+
 #: src/app/main/ui/settings/subscription.cljs:50
 msgid "subscription.settings.recommended"
 msgstr "Recommended"
