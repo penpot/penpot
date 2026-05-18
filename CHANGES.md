@@ -5,6 +5,8 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+- WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR:[9113](https://github.com/penpot/penpot/pull/9113))
+- Design Tokens at the design tab: numeric fields with token selection in place [#9358](https://github.com/penpot/penpot/issues/9358)
 
 ### :sparkles: New features & Enhancements
 
@@ -56,15 +58,15 @@
 - Add clipboard read/write permissions to the plugin system (by @wdeveloper16) [#6980](https://github.com/penpot/penpot/issues/6980) (PR: [#9053](https://github.com/penpot/penpot/pull/9053))
 - Update auth hero illustration on login screen [#9532](https://github.com/penpot/penpot/issues/9532) (PR: [#9552](https://github.com/penpot/penpot/pull/9552))
 - Update Open Graph link preview metadata [#9555](https://github.com/penpot/penpot/issues/9555) (PR: [#9557](https://github.com/penpot/penpot/pull/9557))
-- Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
-- Add new numeric inputs for token management on the right sidebar [#9358](https://github.com/penpot/penpot/issues/9358)
 - Restore deleted team files in bulk instead of per file (by @Dexterity104) [#9246](https://github.com/penpot/penpot/issues/9246) (PR: [#9248](https://github.com/penpot/penpot/pull/9248))
 - Preserve Inkscape labels when pasting SVGs (by @jeffrey701) [#7869](https://github.com/penpot/penpot/issues/7869) (PR: [#9252](https://github.com/penpot/penpot/pull/9252))
 - Add Alt+click to expand layer subtree (by @MilosM348) [#7736](https://github.com/penpot/penpot/issues/7736) (PR: [#9179](https://github.com/penpot/penpot/pull/9179))
-- Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
-### :bug: Bugs fixed
+- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 
+### :bug: Bugs fixed
 - Fix Alt/Option to draw shapes from center point (by @offreal) [#8360](https://github.com/penpot/penpot/issues/8360) (PR: [#8361](https://github.com/penpot/penpot/pull/8361))
+- Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
+- Fix typo in subscription settings success key (by @jack-stormentswe) [#9203](https://github.com/penpot/penpot/issues/9203) (PR: [#9204](https://github.com/penpot/penpot/pull/9204))
 - Add token name on broken token pill on sidebar [#9534](https://github.com/penpot/penpot/issues/9534) (PR: [#8527](https://github.com/penpot/penpot/pull/8527))
 - Fix tooltip activated when tab change [#9539](https://github.com/penpot/penpot/issues/9539) (PR: [#8719](https://github.com/penpot/penpot/pull/8719))
 - Fix title on shared button [#9541](https://github.com/penpot/penpot/issues/9541) (PR: [#8696](https://github.com/penpot/penpot/pull/8696))
@@ -100,7 +102,6 @@
 - Fix app crash on multiselection with hidden shapes and opacity mixed value [#9666](https://github.com/penpot/penpot/issues/9666) (PR: [#8932](https://github.com/penpot/penpot/pull/8932))
 - Fix gap input throwing an error [#9667](https://github.com/penpot/penpot/issues/9667) (PR: [#8984](https://github.com/penpot/penpot/pull/8984))
 - Fix copy to be more specific [#9668](https://github.com/penpot/penpot/issues/9668) (PR: [#9028](https://github.com/penpot/penpot/pull/9028))
-- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [#8516](https://github.com/penpot/penpot/issues/8516) (PR: [#9094](https://github.com/penpot/penpot/pull/9094))
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [#8479](https://github.com/penpot/penpot/issues/8479) (PR: [#9121](https://github.com/penpot/penpot/pull/9121))
 - Fix colorpicker layout hiding eyedropper button [#9669](https://github.com/penpot/penpot/issues/9669) (PR: [#9125](https://github.com/penpot/penpot/pull/9125))
