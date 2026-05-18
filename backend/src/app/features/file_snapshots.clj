@@ -66,11 +66,6 @@
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     WHERE f.id = ?")
 
-(defn- get-minimal-file
-  [cfg id & {:as opts}]
-  (-> (db/get-with-sql cfg [sql:get-minimal-file id] opts)
-      (d/update-when :metadata fdata/decode-metadata)))
-
 (def ^:private sql:get-snapshot-without-data
   (str "WITH snapshots AS (" sql:snapshots ")"
        "SELECT c.id,
