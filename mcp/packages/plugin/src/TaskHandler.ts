@@ -35,7 +35,29 @@ export class Task<TParams = any> {
         };
 
         // Send to main.ts which will forward to MCP server via WebSocket
-        penpot.ui.sendMessage(response);
+        try {
+            // TODO: Remove ts-ignore once Penpot types have been updated
+            // @ts-ignore
+            penpot.ui.sendMessage(response, true);
+        } catch (sendError) {
+            console.error("Failed to transfer task response for transmission to MCP server", sendError);
+            if (success) {
+                console.info("Original response was a success response, sending an error response instead.");
+                // If we were trying to send a success response, send an error response instead
+                let cause = sendError instanceof Error ? sendError.message : String(sendError);
+                this.sendError(
+                    "Unexpected error sending task response: " +
+                        cause +
+                        " If you are an LLM and tried to serialize a regular object (shape, token, etc.), " +
+                        "tell the user to report this error, providing information on the request you made."
+                );
+            } else {
+                console.info(
+                    "Original response was an error response, abandoning attempt to send alternative response to avoid infinite error loop."
+                );
+            }
+            return;
+        }
         console.log("Sent task response:", response);
         this.isResponseSent = true;
     }

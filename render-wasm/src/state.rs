@@ -38,26 +38,26 @@ impl State {
 
     // Creates a new temporary shapes pool.
     // Will panic if a previous temporary pool exists.
-    pub fn start_temp_objects(mut self) -> Result<Self> {
+    pub fn start_temp_objects(&mut self) -> Result<()> {
         if self.saved_shapes.is_some() {
             return Err(Error::CriticalError(
                 "Tried to start a temp objects while the previous have not been restored"
                     .to_string(),
             ));
         }
-        self.saved_shapes = Some(self.shapes);
+        self.saved_shapes = Some(self.shapes.clone());
         self.shapes = ShapesPool::new();
-        Ok(self)
+        Ok(())
     }
 
     // Disposes of the temporary shapes pool restoring the normal pool
     // Will panic if a there is no temporary pool.
-    pub fn end_temp_objects(mut self) -> Result<Self> {
-        self.shapes = self.saved_shapes.ok_or(Error::CriticalError(
+    pub fn end_temp_objects(&mut self) -> Result<()> {
+        self.shapes = self.saved_shapes.clone().ok_or(Error::CriticalError(
             "Tried to end temp objects but not content to be restored is present".to_string(),
         ))?;
         self.saved_shapes = None;
-        Ok(self)
+        Ok(())
     }
 
     pub fn render_from_cache(&mut self) {

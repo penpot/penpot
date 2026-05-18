@@ -4,8 +4,7 @@ use crate::mem;
 use crate::shapes::Fill;
 use crate::state::State;
 use crate::uuid::Uuid;
-use crate::with_state_mut;
-use crate::STATE;
+use crate::with_state;
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 use macros::wasm_error;
 
@@ -106,7 +105,7 @@ pub extern "C" fn store_image() -> Result<()> {
 
     let image_bytes = &bytes[IMAGE_HEADER_SIZE..];
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if let Err(msg) = get_render_state().add_image(ids.image_id, is_thumbnail, image_bytes) {
             eprintln!("{}", msg);
         }
@@ -176,7 +175,7 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
             .map_err(|_| Error::CriticalError("Invalid bytes for height".to_string()))?,
     );
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if let Err(msg) = get_render_state().add_image_from_gl_texture(
             ids.image_id,
             is_thumbnail,

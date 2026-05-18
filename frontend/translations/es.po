@@ -5088,6 +5088,15 @@ msgstr "Invita a personas mientras estás en el plan Unlimited"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Desbloquea las funciones Enterprise"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Establece permisos detallados y garantiza la seguridad de tus operaciones de diseño, sin renunciar a la libertad del código abierto que tanto valora tu equipo."
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Empieza a utilizar Enterprise"
+
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "El pago no se completó. Inténtalo de nuevo cuando quieras."
 
@@ -5245,6 +5254,15 @@ msgstr "10 GB de almacenamiento"
 #: src/app/main/ui/settings/subscription.cljs:472, src/app/main/ui/settings/subscription.cljs:543
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Equipos ilimitados. Hasta 8 editores en todos tus equipos."
+
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Control total sobre los datos y la infraestructura."
+
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Número ilimitado de usuarios, equipos y archivos."
+
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "Todas las funciones de diseño y creación de prototipos. Asistencia de la comunidad."
 
 #: src/app/main/ui/settings/subscription.cljs:50
 msgid "subscription.settings.recommended"
@@ -8088,7 +8106,7 @@ msgstr "Copiar ruta de token"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
-msgstr "copiar"
+msgstr "copia"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.edit"
@@ -9055,22 +9073,31 @@ msgid "nitrate.activation-success.create-org"
 msgstr "Crear organización"
 
 msgid "nitrate.form.title"
-msgstr "Desbloquea las funciones de Nitrate"
+msgstr "Desbloquea las funciones Enterprise"
 
-msgid "nitrate.form.billing-monthly"
-msgstr "Precio mensual"
+msgid "nitrate.form.enterprise-intro"
+msgstr "Todo lo que tus equipos necesitan para trabajar de forma segura a escala:"
 
-msgid "nitrate.form.billing-yearly"
-msgstr "Precio anual (descuento)"
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Permisos globales y granulares en equipos y proyectos"
 
-msgid "nitrate.form.upgrade"
-msgstr "Actualizar a Nitrate"
+msgid "nitrate.form.enterprise-feature-2"
+msgstr "Control centralizado sobre quién hace qué y dónde, desde una consola de administración dedicada"
+
+msgid "nitrate.form.enterprise-feature-3"
+msgstr "Total libertad open-source, con la gobernanza que tu organización necesita"
+
+msgid "nitrate.form.enterprise.price"
+msgstr "$25 / miembro por mes"
+
+msgid "nitrate.form.start-enterprise"
+msgstr "Empieza a utilizar Enterprise"
 
 msgid "nitrate.form.try-free"
 msgstr "Pruébalo gratis durante 14 días"
 
 msgid "nitrate.form.cancel-anytime"
-msgstr "Cancela en cualquier momento antes de tu próximo ciclo de facturación."
+msgstr "El pago se procesará al finalizar el periodo de prueba. Puedes cancelar en cualquier momento."
 
 msgid "nitrate.form.have-code"
 msgstr "¿Tienes un código de activación?"
@@ -9082,10 +9109,10 @@ msgid "nitrate.form.see-plan"
 msgstr "Ver mi plan actual"
 
 msgid "nitrate.form.contact-upgrade"
-msgstr "Contáctanos para actualizar a Nitrate:"
+msgstr "Contáctanos para actualizar a Enterprise:"
 
 msgid "nitrate.form.contact-trial"
-msgstr "Contáctanos para probar Nitrate durante 14 días:"
+msgstr "Contáctanos para probar Enterprise durante 14 días:"
 
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Código inválido."
@@ -9142,13 +9169,19 @@ msgid "subscription.current-plan.unlimited-trial"
 msgstr "Unlimited (Prueba)"
 
 msgid "subscription.current-plan.nitrate"
-msgstr "Nitrate"
+msgstr "Enterprise"
 
 msgid "subscription.current-plan.nitrate-trial"
-msgstr "Nitrate (Prueba)"
+msgstr "Enterprise (Prueba)"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "subscription.banner.see-enterprise"
+msgstr "Vea Enterprise en acción"
+
+msgid "subscription.banner.create-org-info"
+msgstr "Crea una organización y descubre exactamente cómo funciona Enterprise. Establece normas, gestiona tus equipos y disfruta de un nuevo nivel de control sobre tu flujo de trabajo de diseño."
 
 msgid "dashboard.no-permission-create-team.message"
 msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario."
@@ -9161,3 +9194,6 @@ msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso pa
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario."
