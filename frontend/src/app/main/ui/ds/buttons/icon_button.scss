@@ -53,8 +53,8 @@
 
 .flyout-indicator {
   position: absolute;
-  inset-block-end: 4px;
-  inset-inline-end: 4px;
+  inset-block-end: var(--sp-xs);
+  inset-inline-end: var(--sp-xs);
   stroke: currentcolor;
   fill: none;
   inline-size: $sz-6;

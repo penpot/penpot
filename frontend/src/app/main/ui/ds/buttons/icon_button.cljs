@@ -15,10 +15,10 @@
 
 (def ^:private schema:icon-button
   [:map
-   [:class {:optional true} [:maybe :string]]
+   [:class {:optional true} :string]
    [:tooltip-class {:optional true} [:maybe :string]]
    [:type {:optional true} [:maybe [:enum "button" "submit" "reset"]]]
-   [:icon-class {:optional true} [:maybe :string]]
+   [:icon-class {:optional true} :string]
    [:icon-size {:optional true} [:maybe [:enum "s" "m" "l"]]]
    [:icon
     [:and :string [:fn #(contains? icon-list %)]]]
