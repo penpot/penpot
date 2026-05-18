@@ -205,7 +205,7 @@
                      :on-blur-input on-name-input-blur
                      :on-key-down-input on-name-input-key-down}]
 
-     [:& dropdown {:show @show-menu?
+     [:> dropdown {:show @show-menu?
                    :on-close on-close-menu}
       (let [current-user-id  (:id current-profile)
             locked-by-id     (:locked-by entry)
@@ -297,7 +297,7 @@
        :snapshots (mapv :created-at (:snapshots entry))
        :on-menu-click on-open-snapshot-menu}]
 
-     [:& dropdown {:show (some? @open-menu*)
+     [:> dropdown {:show (some? @open-menu*)
                    :on-close #(reset! open-menu* nil)}
       [:ul {:class (stl/css :version-options-dropdown)
             :style {"--offset" (dm/str (:offset @open-menu*) "px")}}
@@ -402,7 +402,7 @@
       (st/emit! (dwv/init-versions-state)))
 
     [:div {:class (stl/css :version-toolbox)}
-     [:& select
+     [:> select
       {:default-value :all
        :aria-label (tr "workspace.versions.filter.label")
        :options options

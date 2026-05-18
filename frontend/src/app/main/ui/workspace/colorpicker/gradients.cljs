@@ -335,7 +335,7 @@
                  :style {"--position" (dm/str (* offset 100) "%")}}]])]]
 
      [:div {:class (stl/css :gradient-options)}
-      [:& select
+      [:> select
        {:default-value type
         :options [{:value :linear-gradient :label "Linear"}
                   {:value :radial-gradient :label "Radial"}]
