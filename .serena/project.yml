@@ -104,7 +104,8 @@ default_modes:
 # initial prompt for the project. It will always be given to the LLM upon activating the project
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: |
-  CRITICAL: Always read the memory `critical-info` before you do anything else.
+  CRITICAL: Read the memory `critical-info` IMMEDIATELY. It is absolutely critical for your work on this project - as is
+  the Serena Instructions Manual. Do NOT wait for further instructions, read these critical items NOW!
 
 # time budget (seconds) per tool call for the retrieval of additional symbol information
 # such as docstrings or parameter information.
