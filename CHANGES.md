@@ -150,9 +150,14 @@
 - Fix several color picker issues [#9556](https://github.com/penpot/penpot/issues/9556) (PR: [#9558](https://github.com/penpot/penpot/pull/9558))
 - Fix asset icon broken on Asset tab [#9587](https://github.com/penpot/penpot/issues/9587) (PR: [#9612](https://github.com/penpot/penpot/pull/9612))
 - Fix text fill color stops updating in multiselect with texts [#9608](https://github.com/penpot/penpot/issues/9608) (PR: [#9549](https://github.com/penpot/penpot/pull/9549))
-- Fix editing a legacy text element silently detaches its color token [#9255](https://github.com/penpot/penpot/issues/9255)
-- Fix token application to grid paddings [#9494](https://github.com/penpot/penpot/issues/9494)
-- Fix file crashing when switching a variant [#9259](https://github.com/penpot/penpot/issues/9259)
+- Fix editing a legacy text element silently detaches its color token [#9255](https://github.com/penpot/penpot/issues/9255) (PR: [#9525](https://github.com/penpot/penpot/pull/9525))
+- Fix token application to grid paddings [#9494](https://github.com/penpot/penpot/issues/9494) (PR: [#9630](https://github.com/penpot/penpot/pull/9630))
+- Fix file crashing when switching a variant [#9259](https://github.com/penpot/penpot/issues/9259) (PR: [#9147](https://github.com/penpot/penpot/pull/9147))
+- Fix set activation after renaming [#9329](https://github.com/penpot/penpot/issues/9329) (PR: [#9545](https://github.com/penpot/penpot/pull/9545))
+- Fix font selection position hiding available fonts [#9489](https://github.com/penpot/penpot/issues/9489) (PR: [#9499](https://github.com/penpot/penpot/pull/9499))
+- Fix numeric input changes not saved when clicking on viewport [#9491](https://github.com/penpot/penpot/issues/9491) (PR: [#9548](https://github.com/penpot/penpot/pull/9548))
+- Fix resize cursor appearing on login and register buttons [#9505](https://github.com/penpot/penpot/issues/9505) (PR: [#9590](https://github.com/penpot/penpot/pull/9590))
+- Fix version restore restoring first previewed version instead of selected one [#9588](https://github.com/penpot/penpot/issues/9588) (PR: [#9626](https://github.com/penpot/penpot/pull/9626))
 
 
 ## 2.15.4 (Unreleased)
