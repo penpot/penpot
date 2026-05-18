@@ -71,31 +71,43 @@
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot
-   ::db/transaction true
    ::climit/id [[:restore-file-snapshot/by-profile ::rpc/profile-id]
                 [:restore-file-snapshot/global]]}
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
-  (files/check-edition-permissions! conn profile-id file-id)
+  [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
+
+  ;; Check permissions and read current file state (short-lived, outside restore transaction)
+  (files/check-edition-permissions! pool profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)
-        team  (teams/get-team conn
+        team  (teams/get-team pool
                               :profile-id profile-id
                               :file-id file-id)
-        delay (ldel/get-deletion-delay team)]
+        delay (ldel/get-deletion-delay team)
+        file-revn (:revn file)]
 
+    ;; Create backup snapshot of the current state (committed immediately
+    ;; independently of the restore outcome)
     (fsnap/create! cfg file
                    {:profile-id profile-id
                     :deleted-at (ct/in-future delay)
                     :created-by "system"})
 
-    (let [vern (fsnap/restore! cfg file-id id)]
-      ;; Send to the clients a notification to reload the file
-      (mbus/pub! msgbus
-                 :topic (:id file)
-                 :message {:type :file-restored
-                           :session-id session-id
-                           :file-id (:id file)
-                           :vern vern})
-      nil)))
+    ;; Restore snapshot inside its own transaction; the revn check
+    ;; ensures no data is lost if the file was edited concurrently
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as cfg}]
+                  (let [current (bfc/get-minimal-file conn file-id {::db/for-update true})]
+                    (when (not= (:revn current) file-revn)
+                      (ex/raise :type :conflict
+                                :code :file-modified
+                                :hint "the file was modified during the restore process, please retry")))
+                  (let [vern (fsnap/restore! cfg file-id id)]
+                    (mbus/pub! msgbus
+                               :topic (:id file)
+                               :message {:type :file-restored
+                                         :session-id session-id
+                                         :file-id (:id file)
+                                         :vern vern})
+                    nil)))))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
