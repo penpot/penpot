@@ -576,8 +576,8 @@
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
                                     "Loren ipsum"]
-                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Control Center")
-                         :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-cc)
+                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Admin Console")
+                         :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-ac)
                          :cta-text (if (and (:licenses connectivity) (not (:manual nitrate-license)))
                                      (tr "subscription.settings.manage-your-subscription")
                                      (tr "nitrate.subscription.settings.manual-cancel"))
@@ -723,7 +723,7 @@
                          :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
-                                    "Acceso exclusivo al Control Center"
+                                    "Acceso exclusivo a la Admin Console"
                                     "Lorem ipsum"]
                          :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
                          :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))

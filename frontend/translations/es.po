@@ -389,8 +389,8 @@ msgstr "+ Crear org"
 msgid "dashboard.create-new-org"
 msgstr "Crear org"
 
-msgid "dashboard.go-to-control-center"
-msgstr "Ir al centro de control"
+msgid "dashboard.go-to-admin-console"
+msgstr "Ir a la Admin Console"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"

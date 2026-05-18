@@ -51,28 +51,28 @@
             (rx/map (fn [connectivity]
                       (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
 
-(defn go-to-nitrate-cc
+(defn go-to-nitrate-ac
   ([]
-   (st/emit! (rt/nav-raw :href "/control-center/")))
+   (st/emit! (rt/nav-raw :href "/admin-console/")))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
-     (let [href (dm/str "/control-center/org/"
+     (let [href (dm/str "/admin-console/org/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
                         "/people/")]
        (st/emit! (rt/nav-raw :href href)))
-     (st/emit! (rt/nav-raw :href "/control-center/")))))
+     (st/emit! (rt/nav-raw :href "/admin-console/")))))
 
-(defn go-to-nitrate-cc-create-org
+(defn go-to-nitrate-ac-create-org
   []
-  (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
+  (st/emit! (rt/nav-raw :href "/admin-console/?action=create-org")))
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
 (defn go-to-nitrate-billing
   []
-  (let [href (dm/str "/control-center/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
+  (let [href (dm/str "/admin-console/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
     (st/emit! (rt/nav-raw :href href))))
 
 (def nitrate-checkout-error-token "nitrate-checkout-error")
@@ -115,7 +115,7 @@
                 :error_callback error-callback
                 :finish_error_callback finish-error-callback
                 :cancel_callback cancel-callback}
-        href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
+        href   (dm/str "/admin-console/licenses/start?" (u/map->query-string params))]
     (st/emit! (rt/nav-raw :href href))))
 
 (defn fetch-connectivity
