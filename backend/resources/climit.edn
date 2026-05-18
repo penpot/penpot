@@ -19,7 +19,7 @@
  {:permits 40}
 
  :root/by-profile
- {:permits 10}
+ {:permits 10 :queue 30 :timeout 30000}
 
  :file-thumbnail-ops/global
  {:permits 20}
