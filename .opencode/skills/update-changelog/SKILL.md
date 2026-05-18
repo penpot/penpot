@@ -86,13 +86,32 @@ batches of 50 via GraphQL to stay within API limits.
 
 ### 5. Categorize entries
 
-Check the labels on each issue to determine which section it belongs to:
+Use the **Issue Type** field (GitHub's native issue type, accessible via GraphQL
+`issueType { name }`) to determine which section an entry belongs to.
+**Do not** use labels or title emoji prefixes as the source of truth — they are
+often inaccurate or missing.
 
-| Label / Title prefix | Changelog section |
-|----------------------|-------------------|
-| `bug` label or `:bug:` title prefix | `### :bug: Bugs fixed` |
-| `enhancement` label or `:sparkles:` prefix | `### :sparkles: New features & Enhancements` |
-| No label | Infer from title convention, default to bug fix |
+| Issue Type (`issueType.name`) | Changelog section |
+|------------------------------|-------------------|
+| `Bug` | `### :bug: Bugs fixed` |
+| `Feature` or `Enhancement` | `### :sparkles: New features & Enhancements` |
+| No type set | Fetch the issue and check its labels as a fallback: `bug` label → bugs section, otherwise default to enhancements |
+
+To fetch Issue Types for all issues in a milestone efficiently, use a single
+GraphQL query with aliases rather than N+1 REST calls:
+
+```graphql
+query {
+  repository(owner: "penpot", name: "penpot") {
+    i123: issue(number: 123) {
+      number state milestone { number } issueType { name }
+    }
+    i456: issue(number: 456) {
+      number state milestone { number } issueType { name }
+    }
+  }
+}
+```
 
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
@@ -205,6 +224,7 @@ Read the top of `CHANGES.md` and confirm:
   can find the code changes.
 - **Latest version first.** New sections are inserted at the top of the
   changelog, below the `# CHANGELOG` header.
+- **Issue Type determines section.** Use GitHub's `issueType` field (Bug → `:bug:`, Feature/Enhancement → `:sparkles:`) to categorize entries. Ignore labels and title emoji prefixes — they are unreliable for categorization.
 - **User-facing descriptions.** Write from the user's perspective — describe
   what broke and what was fixed, not internal implementation details.
 - **Community attribution.** When the issue or fix PR has the
