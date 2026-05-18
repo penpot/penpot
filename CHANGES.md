@@ -13,6 +13,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix Plugin API `theme.addSet()` and `theme.removeSet()` always throwing "Field message is invalid" by accepting the set ID directly (string UUID, proxy, or `{id}` shape) instead of relying on a Symbol-keyed type tag that doesn't survive the plugin sandbox boundary [Github #9369](https://github.com/penpot/penpot/issues/9369)
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
