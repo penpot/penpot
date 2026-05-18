@@ -214,6 +214,11 @@ test("Multiselection of text and typographies", async ({ page }) => {
     pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
   });
 
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
   const plainTextLayer = workspacePage.layers.getByTestId("layer-row").nth(5);
   const plainTextLayerTwo = workspacePage.layers
     .getByTestId("layer-row")
