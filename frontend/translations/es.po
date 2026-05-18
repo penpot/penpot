@@ -5255,6 +5255,15 @@ msgstr "10 GB de almacenamiento"
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Equipos ilimitados. Hasta 8 editores en todos tus equipos."
 
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Control total sobre los datos y la infraestructura."
+
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Número ilimitado de usuarios, equipos y archivos."
+
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "Todas las funciones de diseño y creación de prototipos. Asistencia de la comunidad."
+
 #: src/app/main/ui/settings/subscription.cljs:50
 msgid "subscription.settings.recommended"
 msgstr "Recomendado"
@@ -8097,7 +8106,7 @@ msgstr "Copiar ruta de token"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:240, src/app/main/data/workspace/tokens/library_edit.cljs:509
 msgid "workspace.tokens.duplicate-suffix"
-msgstr "copiar"
+msgstr "copia"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.edit"

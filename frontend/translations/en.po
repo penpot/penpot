@@ -169,7 +169,7 @@ msgstr "Create an account"
 #: src/app/main/ui/auth.cljs
 #, unused
 msgid "auth.sidebar-tagline"
-msgstr "The open-source solution for design and prototyping."
+msgstr "Penpot is the open-source design platform for teams that build digital products at scale."
 
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
@@ -1547,6 +1547,10 @@ msgstr "Invalid text"
 #: common/src/app/common/types/team.cljc:26
 msgid "errors.team-name-invalid-chars"
 msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
+
+#: common/src/app/common/types/font.cljc
+msgid "errors.font-family-invalid-chars"
+msgstr "The font family name can only contain letters, numbers, spaces, hyphens, underscores, and dots."
 
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
@@ -5342,6 +5346,15 @@ msgstr "10GB of storage"
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Unlimited teams. Up to 8 editors across your owned teams."
 
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Complete control over data and infrastructure."
+
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Unlimited users, teams and files."
+
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "All design and prototyping features Community support."
+
 #: src/app/main/ui/settings/subscription.cljs:50
 msgid "subscription.settings.recommended"
 msgstr "Recommended"
@@ -5458,7 +5471,7 @@ msgstr "Shared Libraries - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
-msgstr "Penpot - Design Freedom for Teams"
+msgstr "Penpot | Full-stack design"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
