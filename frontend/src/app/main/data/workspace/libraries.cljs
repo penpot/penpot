@@ -25,6 +25,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
@@ -38,6 +39,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.selection :as dws]
@@ -723,6 +725,23 @@
         (rx/of (when can-detach?
                  (dch/commit-changes changes)))))))
 
+(defn- reflow-synced-layout
+  [state page-id ids undo-group]
+  (let [page-id (or page-id (:current-page-id state))
+        objects (dsh/lookup-page-objects state page-id)
+        ids     (->> ids (remove uuid/zero?) (filter #(contains? objects %)))]
+    (when (d/not-empty? ids)
+      (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+        ;; Library sync already knows exactly which layout frames changed. Running
+        ;; the reflow in this event chain persists child geometry immediately;
+        ;; the generic :layout/update signal is buffered and can otherwise leave
+        ;; component copies with updated padding but stale flex child positions.
+        (dwm/apply-modifiers {:page-id page-id
+                              :modifiers modif-tree
+                              :stack-undo? true
+                              :ignore-touched true
+                              :undo-group undo-group})))))
+
 (defn go-to-component-file
   [file-id component update-layout?]
 
@@ -1209,14 +1228,10 @@
               (let [frames-by-page (->> updated-frames
                                         (group-by :page-id))]
                 (rx/merge
-                 ;; Emit one layout/update event for each page
                  (rx/from
-                  (map (fn [[page-id frames]]
-                         (ptk/data-event :layout/update
-                                         {:page-id page-id
-                                          :ids (map :id frames)
-                                          :undo-group undo-group}))
-                       frames-by-page))
+                  (keep (fn [[page-id frames]]
+                          (reflow-synced-layout state page-id (map :id frames) undo-group))
+                        frames-by-page))
                  (->> (rx/from updated-frames)
                       (rx/mapcat
                        (fn [shape]
