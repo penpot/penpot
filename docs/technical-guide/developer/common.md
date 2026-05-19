@@ -292,6 +292,9 @@ pnpm run test -- --focus frontend-tests.logic.components-and-tokens
 
 # To run a single frontend test
 pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main
+
+# To quiet app-level logging during the run (trace|debug|info|warn|error)
+pnpm run test -- --focus frontend-tests.logic.components-and-tokens --log-level warn
 ```
 
 For non-interactive runs (CI, scripted invocations, agent loops), use the quiet

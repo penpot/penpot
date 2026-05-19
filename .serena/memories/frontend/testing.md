@@ -10,6 +10,7 @@ From `frontend/`:
 - Full unit test run: `pnpm run test:quiet`.
 - Focus a frontend CLJS test namespace: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens`.
 - Focus one frontend CLJS test var: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
+- Quiet `app.*` logging during a run: append `--log-level warn` (or `trace|debug|info|warn|error`).
 - Build test target only: `pnpm run build:test`.
 - After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Watch tests: `pnpm run watch:test`.
