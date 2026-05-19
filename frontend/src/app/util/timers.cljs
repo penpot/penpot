@@ -65,11 +65,20 @@
     #(.requestAnimationFrame js/globalThis %)
     #(js/setTimeout % 16)))
 
+(def ^:private cancel-animation-frame
+  (if (and (exists? js/globalThis)
+           (exists? (.-cancelAnimationFrame js/globalThis)))
+    #(.cancelAnimationFrame js/globalThis %)
+    #(js/clearTimeout %)))
+
 (defn raf
   [f]
   (^function request-animation-frame f))
 
+(defn cancel-af!
+  [frame-id]
+  (^function cancel-animation-frame frame-id))
+
 (defn idle-then-raf
   [f]
   (schedule-on-idle #(^function raf f)))
-

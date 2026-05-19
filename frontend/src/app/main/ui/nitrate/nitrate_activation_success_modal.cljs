@@ -36,7 +36,7 @@
         (mf/use-fn
          (fn []
            (modal/hide!)
-           (dnt/go-to-nitrate-cc-create-org)))]
+           (dnt/go-to-nitrate-ac-create-org)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}

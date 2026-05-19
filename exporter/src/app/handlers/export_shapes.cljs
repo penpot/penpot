@@ -64,7 +64,7 @@
 (defn- handle-single-export
   [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children is-wasm] :as params}]
   (let [resource (rsc/create (:type export) (or name (:name export)))
-        export   (assoc export :skip-children skip-children :is-wasm is-wasm)]
+        export   (assoc export :skip-children skip-children :is-wasm (boolean is-wasm))]
 
     (->> (rd/render export
                     (fn [{:keys [path] :as object}]
@@ -112,7 +112,7 @@
                       (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (->> exports
-                         (map (fn [export] (rd/render (assoc export :is-wasm is-wasm) append)))
+                         (map (fn [export] (rd/render (assoc export :is-wasm (boolean is-wasm)) append)))
                          (p/all)
                          (p/mcat (fn [_] (rsc/close-zip zip)))
                          (p/fmap (constantly resource))

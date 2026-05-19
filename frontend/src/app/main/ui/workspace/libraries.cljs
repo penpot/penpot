@@ -510,12 +510,13 @@
                         (mf/deps file-id)
                         (fn [event]
                           (when-not updating?
-                            (let [library-id (some-> (dom/get-target event)
+                            (let [library-id (some-> (dom/get-current-target event)
                                                      (dom/get-data "library-id")
                                                      (uuid/parse))]
-                              (st/emit!
-                               (dwl/set-updating-library true)
-                               (dwl/sync-file file-id library-id))))))]
+                              (when library-id
+                                (st/emit!
+                                 (dwl/set-updating-library true)
+                                 (dwl/sync-file file-id library-id)))))))]
 
     [:div {:class (stl/css :updates-content)}
      [:div {:class (stl/css :update-section)}
