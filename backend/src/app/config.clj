@@ -72,6 +72,7 @@
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
@@ -120,6 +121,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:font-max-file-size  {:optional true} ::sm/int]
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
@@ -259,11 +261,16 @@
   [config]
   (let [public-uri  (c/get config :public-uri)
         public-uri  (some-> public-uri (u/uri))
-        extra-flags (if (and public-uri
-                             (= (:scheme public-uri) "http")
-                             (not= (:host public-uri) "localhost"))
-                      #{:disable-secure-session-cookies}
-                      #{})]
+        extra-flags (cond-> #{}
+                      ;; When public-uri is http (non-localhost), disable secure cookies
+                      (and public-uri
+                           (= (:scheme public-uri) "http")
+                           (not= (:host public-uri) "localhost"))
+                      (conj :disable-secure-session-cookies)
+
+                      ;; When telemetry-enabled config is true, add :telemetry flag
+                      (true? (c/get config :telemetry-enabled))
+                      (conj :enable-telemetry))]
     (flags/parse flags/default extra-flags (:flags config))))
 
 (defn read-env

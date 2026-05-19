@@ -61,21 +61,15 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
-   :rpc-mutation-timing
-   {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timing."
+   :rpc-main-timing
+   {::mdef/name "penpot_rpc_main_timing"
+    ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-command-timing
-   {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-query-timing
-   {::mdef/name "penpot_rpc_query_timing"
-    ::mdef/help "RPC query method call timing."
+   :rpc-management-timing
+   {::mdef/name "penpot_rpc_management_timing"
+    ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
@@ -308,7 +302,9 @@
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
     ::sto/storage                   (ig/ref ::sto/storage)
-    ::session/manager               (ig/ref ::session/manager)}
+    ::session/manager               (ig/ref ::session/manager)
+    ::setup/props                   (ig/ref ::setup/props)
+    ::db/pool                       (ig/ref ::db/pool)}
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)
@@ -659,9 +655,8 @@
   [& _args]
   (try
     (let [p (promise)]
-      (when (contains? cf/flags :nrepl-server)
-        (l/inf :hint "start nrepl server" :port 6064)
-        (nrepl/start-server :bind "0.0.0.0" :port 6064))
+      (l/inf :hint "start nrepl server" :port 6064)
+      (nrepl/start-server :bind "0.0.0.0" :port 6064)
 
       (start)
       (deref p))

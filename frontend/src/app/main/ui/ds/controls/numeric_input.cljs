@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as h]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -393,6 +394,8 @@
              (on-blur event))
            (dom/blur! (mf/ref-val ref))))
 
+        handle-unmount (h/use-ref-callback handle-blur)
+
         on-key-down
         (mf/use-fn
          (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change)
@@ -531,7 +534,6 @@
                    (when (and (= state :maybe-dragging)
                               (>= (js/Math.abs delta-x) 3))
                      (mf/set-ref-val! drag-state* :dragging)
-                     (dom/add-class! (dom/get-body) "cursor-drag-scrub")
                      (when (fn? on-change-start)
                        (on-change-start)))
                    (when (= (mf/ref-val drag-state*) :dragging)
@@ -559,7 +561,6 @@
                    (dom/focus! node)))
                (when (= state :dragging)
                  (mf/set-ref-val! drag-state* :idle)
-                 (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                  (dom/release-pointer event)
                  (when (fn? on-change-end)
                    (on-change-end)))))))
@@ -571,7 +572,6 @@
            (when-not is-token-applied?
              (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
                (mf/set-ref-val! drag-state* :idle)
-               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                (when (and was-dragging (fn? on-change-end))
                  (on-change-end))))))
 
@@ -770,6 +770,8 @@
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
+
+    (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
                                        :resizable (not is-token-applied?))]
