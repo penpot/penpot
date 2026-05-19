@@ -73,7 +73,7 @@ http {
 
     server {
         listen 8080 default_server;
-__PENPOT_IPV6_LISTEN_DIRECTIVE__
+        ${PENPOT_IPV6_LISTEN_DIRECTIVE}
         server_name _;
 
         client_max_body_size $PENPOT_HTTP_SERVER_MAX_BODY_SIZE;
