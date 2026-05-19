@@ -16,7 +16,7 @@ test.skip("BUG 10867 - Crash when loading comments", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("BUG 13541 - Shows error page when WebGL context is lost", async ({
+test("Shows toast when WebGL context is lost", async ({
   page,
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -31,12 +31,9 @@ test("BUG 13541 - Shows error page when WebGL context is lost", async ({
   });
 
   await expect(
-    page.getByText("Oops! The canvas context was lost"),
+    page.getByText("WebGL context was lost"),
   ).toBeVisible();
-  await expect(
-    page.getByText("WebGL has stopped working"),
-  ).toBeVisible();
-  await expect(page.getByText("Reload page")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Refresh" })).toBeVisible();
 });
 
 test.skip("BUG 12164 - Crash when trying to fetch a missing font", async ({

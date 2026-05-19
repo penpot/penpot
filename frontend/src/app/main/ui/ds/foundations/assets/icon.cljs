@@ -325,13 +325,16 @@
   (let [size-px (cond (= size "l") icon-size-l
                       (= size "s") icon-size-s
                       :else        icon-size-m)
-
+        offset  (if (or (= size "s") (= size "m"))
+                  (/ (- icon-size-m size-px) 2)
+                  0)
         props   (mf/spread-props props
                                  {:class [class (stl/css :icon)]
-                                  :width size-px
-                                  :height size-px})]
-
+                                  :width (max icon-size-m size-px)
+                                  :height (max icon-size-m size-px)})]
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)
+            :x offset
+            :y offset
             :width size-px
             :height size-px}]]))

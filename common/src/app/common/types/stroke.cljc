@@ -6,7 +6,7 @@
 
 (ns app.common.types.stroke
   (:require
-   [app.common.colors :as clr]))
+   [app.common.types.color :as clr]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS

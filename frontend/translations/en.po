@@ -169,7 +169,7 @@ msgstr "Create an account"
 #: src/app/main/ui/auth.cljs
 #, unused
 msgid "auth.sidebar-tagline"
-msgstr "The open-source solution for design and prototyping."
+msgstr "Penpot is the open-source design platform for teams that build digital products at scale."
 
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
@@ -380,8 +380,8 @@ msgstr "+ Create org"
 msgid "dashboard.create-new-org"
 msgstr "Create org"
 
-msgid "dashboard.go-to-control-center"
-msgstr "Go to Control Center"
+msgid "dashboard.go-to-admin-console"
+msgstr "Go to Admin Console"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1413,6 +1413,10 @@ msgstr "Your browser cannot do this operation"
 msgid "errors.clipboard-permission-denied"
 msgstr "Clipboard access denied. Please allow clipboard permissions in your browser to paste content"
 
+#: src/app/main/data/workspace/clipboard.cljs
+msgid "errors.clipboard-api-unavailable"
+msgstr "Clipboard API is unavailable. Serve Penpot over HTTPS to enable clipboard access"
+
 #: src/app/main/errors.cljs:235
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
@@ -1543,6 +1547,10 @@ msgstr "Invalid text"
 #: common/src/app/common/types/team.cljc:26
 msgid "errors.team-name-invalid-chars"
 msgstr "The team name can't contain any of the following characters:'.', ':' or '/'"
+
+#: common/src/app/common/types/font.cljc
+msgid "errors.font-family-invalid-chars"
+msgstr "The font family name can only contain letters, numbers, spaces, hyphens, underscores, and dots."
 
 #: src/app/main/ui/static.cljs:74
 msgid "errors.invite-invalid"
@@ -1679,6 +1687,10 @@ msgstr "Cannot complete drop, a set with same name already exists at path."
 msgid "errors.token-theme-already-exists"
 msgstr "Theme Option with the same name exists"
 
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "The theme refers to some not existing sets: %s"
+
 #: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "An unexpected error occurred."
@@ -1714,6 +1726,8 @@ msgstr "WebGL has stopped working. Please reload the page to reset it"
 #: src/app/main/ui/static.cljs:314
 msgid "errors.webgl-context-lost.main-message"
 msgstr "Oops! The canvas context was lost"
+
+
 
 #: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
@@ -2000,6 +2014,10 @@ msgstr "Typography"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
 msgid "inspect.attributes.typography.font-family"
 msgstr "Font Family"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Mixed Font Families"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
@@ -3505,6 +3523,18 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organizations that will be deleted"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s teams"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s members"
 
 #: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
@@ -5166,6 +5196,15 @@ msgstr "Inviting people while on the Unlimited plan"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Unlock Enterprise features"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Set fine-grained permissions and keep your design operations secure, without compromising the open-source freedom your team already loves."
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Get started with Enterprise"
+
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Payment was not completed. Try again whenever you're ready."
 
@@ -5173,7 +5212,7 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr "We couldn't start the checkout. Please try again. If the problem persists, contact us: support@penpot.app."
 
 msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr "We’re having trouble activating your subscription. Please try again. If the problem persists, contact us: support@penpot.app."
+msgstr "We couldn’t confirm your subscription. Please check your subscription status on the Subscription page. You may try again if needed."
 
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:425, src/app/main/ui/settings/subscription.cljs:462
 msgid "subscription.labels"
@@ -5323,6 +5362,15 @@ msgstr "10GB of storage"
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Unlimited teams. Up to 8 editors across your owned teams."
 
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Complete control over data and infrastructure."
+
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Unlimited users, teams and files."
+
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "All design and prototyping features Community support."
+
 #: src/app/main/ui/settings/subscription.cljs:50
 msgid "subscription.settings.recommended"
 msgstr "Recommended"
@@ -5439,7 +5487,7 @@ msgstr "Shared Libraries - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
-msgstr "Penpot - Design Freedom for Teams"
+msgstr "Penpot | Full-stack design"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
@@ -6303,9 +6351,33 @@ msgstr "Connect library"
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Multiple typographies"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Mixed assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Mixed tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Mixed assets and tokens"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Unlink all typographies"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Unlink all assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Detach all tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Detach all tokens & unlink all typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
 msgid "workspace.libraries.typography"
@@ -6372,6 +6444,10 @@ msgstr "Toggle blur"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.pixel grid-color"
+msgstr "Pixel grid color"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567
 msgid "workspace.options.clip-content"
@@ -7682,14 +7758,14 @@ msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
 #: src/app/main/ui/workspace/plugins.cljs:193
- msgid "workspace.plugins.error.manifest"
- msgstr "The plugin manifest is incorrect."
+msgid "workspace.plugins.error.manifest"
+msgstr "The plugin manifest is incorrect."
 
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
 
 #: src/app/main/data/plugins.cljs:105, src/app/main/ui/workspace/main_menu.cljs:766, src/app/main/ui/workspace/plugins.cljs:84
- msgid "workspace.plugins.error.need-editor"
+msgid "workspace.plugins.error.need-editor"
 msgstr "You need to be an editor to use this plugin"
 
 #: src/app/main/ui/workspace/plugins.cljs:189
@@ -8457,12 +8533,20 @@ msgstr "Import Error: Invalid token data in JSON."
 msgid "errors.tokens.invalid-json-token-name"
 msgstr "Import Error: Invalid token name in JSON."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Import Error: Duplicated token name in JSON."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" is not a valid token name.\n"
 "Token names should only contain letters and digits separated by . "
 "characters and must not start with a $ sign."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr "A token already exists at the path '%s' or at a prefix thereof, in another set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
 msgid "errors.tokens.invalid-shadow-type-token-value"
@@ -8904,6 +8988,10 @@ msgstr "Duplicate Tokens Group"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/colorpicker/color_tokens.cljs
+msgid "workspace.tokens.search-by-token"
+msgstr "Search by token name"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -8982,9 +9070,19 @@ msgstr "Done"
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspecting code** (View Only)"
 
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Rendering unavailable. Refresh to restore editing."
+
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Refresh"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:333
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.by"
+msgstr "by %s"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
@@ -9243,6 +9341,14 @@ msgstr ""
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
 
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL context was lost"
+
+#: src/app/render_wasm/api.cljs
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL context was recovered"
+
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "Oops! WebGL is not available"
 
@@ -9323,22 +9429,31 @@ msgid "nitrate.activation-success.create-org"
 msgstr "Create organization"
 
 msgid "nitrate.form.title"
-msgstr "Unlock Nitrate Features"
+msgstr "Unlock Enterprise features"
 
-msgid "nitrate.form.billing-monthly"
-msgstr "Price Tag Monthly"
+msgid "nitrate.form.enterprise-intro"
+msgstr "Everything your teams need to work securely at scale:"
 
-msgid "nitrate.form.billing-yearly"
-msgstr "Price Tag Yearly (Discount)"
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Global to fine-grained permissions across teams and projects"
 
-msgid "nitrate.form.upgrade"
-msgstr "Upgrade to Nitrate"
+msgid "nitrate.form.enterprise-feature-2"
+msgstr "Centralized control over who does what and where, from a dedicated Admin Console"
+
+msgid "nitrate.form.enterprise-feature-3"
+msgstr "Full open-source freedom, with the governance your org needs"
+
+msgid "nitrate.form.enterprise.price"
+msgstr "$25 / member per month"
+
+msgid "nitrate.form.start-enterprise"
+msgstr "Get started with Enterprise"
 
 msgid "nitrate.form.try-free"
 msgstr "Try it free for 14 days"
 
 msgid "nitrate.form.cancel-anytime"
-msgstr "Cancel anytime before your next billing cycle."
+msgstr "Payment will be processed at the end of the trial. Cancel anytime."
 
 msgid "nitrate.form.have-code"
 msgstr "Have an activation code?"
@@ -9350,10 +9465,10 @@ msgid "nitrate.form.see-plan"
 msgstr "See my current plan"
 
 msgid "nitrate.form.contact-upgrade"
-msgstr "Contact us to upgrade to Nitrate:"
+msgstr "Contact us to upgrade to Enterprise:"
 
 msgid "nitrate.form.contact-trial"
-msgstr "Contact us to try Nitrate for 14 days:"
+msgstr "Contact us to try Enterprise for 14 days:"
 
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Invalid code."
@@ -9407,13 +9522,19 @@ msgid "subscription.current-plan.unlimited-trial"
 msgstr "Unlimited Trial"
 
 msgid "subscription.current-plan.nitrate"
-msgstr "Nitrate"
+msgstr "Enterprise"
 
 msgid "subscription.current-plan.nitrate-trial"
-msgstr "Nitrate Trial"
+msgstr "Enterprise Trial"
 
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
+
+msgid "subscription.banner.see-enterprise"
+msgstr "See Enterprise in action"
+
+msgid "subscription.banner.create-org-info"
+msgstr "Create an organization and see exactly how Enterprise works. Set rules, manage your teams and discover a new level of control over your design workflow."
 
 msgid "dashboard.no-permission-create-team.message"
 msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
@@ -9426,3 +9547,6 @@ msgstr "Here you find all your organizations where you are allowed to create or 
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."

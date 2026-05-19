@@ -7,6 +7,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
@@ -28,14 +29,14 @@
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
   (fn []
-    (http/req! cfg (cond-> {:method method
-                            :headers {"content-type" "application/json"
-                                      "accept" "application/json"
-                                      "x-shared-key" shared-key
-                                      "x-profile-id" (str profile-id)}
-                            :uri uri
-                            :version :http1.1}
-                     (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
+    (http/req cfg (cond-> {:method method
+                           :headers {"content-type" "application/json"
+                                     "accept" "application/json"
+                                     "x-shared-key" shared-key
+                                     "x-profile-id" (str profile-id)}
+                           :uri uri
+                           :version :http1.1}
+                    (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
 
 (defn- with-retries
   [handler max-retries]
@@ -257,6 +258,35 @@
                         [:vector schema:org-summary]
                         params)))
 
+(def ^:private schema:org-summary-counts
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]
+   [:team-count ::sm/int]
+   [:member-count ::sm/int]])
+
+(defn- get-owned-orgs-summary-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/owned-organizations-summary")
+                        [:vector schema:org-summary-counts]
+                        params)))
+
+(defn- delete-owned-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/delete-owned-organizations")
+                        nil params)))
+
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
@@ -268,7 +298,7 @@
                                       organization-id
                                       "/add-team")
                                  cto/schema:team-with-organization params)
-        custom-photo (when-let [logo-id (get-in team [:organization :logo-id])]
+        custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
                        (str (cf/get :public-uri) "/assets/by-id/" logo-id))]
     (cond-> team
       custom-photo
@@ -384,6 +414,8 @@
      :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
      :get-org-summary              (partial get-org-summary-api cfg)
      :get-owned-orgs               (partial get-owned-orgs-api cfg)
+     :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
+     :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
