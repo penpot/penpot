@@ -89,6 +89,7 @@
     "@angular/platform-browser-dynamic": "21.1.1",
     "@angular/router": "21.1.1",
     "axios": "^1.13.2",
+    "basic-ftp": "5.2.0",
     "feather-icons": "^4.29.2",
     "puppeteer": "^24.35.0",
     "rxjs": "~7.8.2",
