@@ -629,33 +629,9 @@
   (ptk/reify ::set-temporary-modifiers
     ptk/EffectEvent
     (effect [_ _ _]
-      (rx/push! ms/wasm-modifiers modifiers))))
+      (rx/push! ms/wasm-modifiers (into {} modifiers)))))
 
 (def ^:private xf:map-key (map key))
-
-(defn- expand-translation-entry
-  "Expand one translation-only geometry entry into [descendant-id matrix]
-   pairs covering the moved shape's full subtree (every descendant gets
-   the same matrix)."
-  [[id data] objects subtree-ids-by-id]
-  (let [m   (:transform data)
-        sub (or (get subtree-ids-by-id id)
-                (cfh/get-children-ids-with-self objects id))]
-    (map (fn [sid] [sid m]) sub)))
-
-(defn- expand-translation-modifiers
-  "Pure translation propagates as identity to descendants: every shape in
-   the subtree gets the same matrix. Builds the flat [id matrix] list
-   directly, skipping the WASM tree walk + FFI roundtrip used by
-   `propagate-modifiers` for the general (resize/rotate) case.
-
-   Only safe when pixel-snap is off: WASM applies pixel correction
-   per-shape (different scale/translation per descendant), which we
-   can't replicate cheaply on the CLJS side."
-  [geometry-entries objects subtree-ids-by-id]
-  (into []
-        (mapcat #(expand-translation-entry % objects subtree-ids-by-id))
-        geometry-entries))
 
 (defn- translate-selrect
   "Shift `selrect`'s center by (tx, ty). Width/height/transform are
@@ -688,11 +664,12 @@
   (ptk/reify ::set-wasm-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [property-changes
-            (extract-property-changes modif-tree)]
-        (-> state
-            (assoc :prev-wasm-props (:wasm-props state))
-            (assoc :wasm-props property-changes))))
+      (let [property-changes (extract-property-changes modif-tree)]
+        (if (d/not-empty? property-changes)
+          (-> state
+              (assoc :prev-wasm-props (:wasm-props state))
+              (assoc :wasm-props property-changes))
+          state)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -702,29 +679,26 @@
       ;; thread is not blocked. The pair is closed in
       ;; `clear-local-transform`.
       (ensure-interactive-transform-start!)
-      (wasm.api/clean-modifiers)
-      (let [prev-wasm-props (:prev-wasm-props state)
-            wasm-props      (:wasm-props state)
-            objects         (dsh/lookup-page-objects state)
-            snap-pixel?
-            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+      (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+            translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
 
-            translation?
-            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
-        (set-wasm-props! objects prev-wasm-props wasm-props)
+        ;; Only geometry (transform matrix) changes during drag.
         (when-not translation?
-          (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree)))
+          (let [objects (dsh/lookup-page-objects state)]
+            (set-wasm-props! objects (:prev-wasm-props state) (:wasm-props state))
+            (wasm.api/clean-modifiers)
+            (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))))
         (let [geometry-entries (parse-geometry-modifiers modif-tree)
+              root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
               modifiers
               (if (and translation? (not snap-pixel?))
-                (expand-translation-modifiers geometry-entries objects subtree-ids-by-id)
+                root-modifiers
                 (wasm.api/propagate-modifiers geometry-entries snap-pixel?))]
           (wasm.api/set-modifiers modifiers)
-          (let [ids (into [] xf:map-key geometry-entries)
-                selrect
-                (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
-                  (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
-                  (wasm.api/get-selection-rect ids))]
+          (let [ids     (into [] xf:map-key geometry-entries)
+                selrect (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
+                          (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                          (wasm.api/get-selection-rect ids))]
             (rx/of (set-temporary-selrect selrect)
                    (set-temporary-modifiers modifiers))))))))
 
