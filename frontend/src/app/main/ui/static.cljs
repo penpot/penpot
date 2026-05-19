@@ -320,6 +320,16 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
 
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
+
 (mf/defc webgl-context-lost*
   []
   (let [on-reload (mf/use-fn #(js/location.reload))]
@@ -490,6 +500,9 @@
 
       :service-unavailable
       [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 

@@ -86,6 +86,10 @@
     (= 502 status)
     (rx/throw (ex-info "http error" {:type :bad-gateway}))
 
+    (and (= 503 status)
+         (= :nitrate-unavailable (:type body)))
+    (rx/throw (ex-info "http error" {:type :nitrate-unavailable}))
+
     (= 503 status)
     (rx/throw (ex-info "http error" {:type :service-unavailable}))
 

@@ -18,6 +18,7 @@
 (def ^:svg-id brand-google "brand-google")
 (def ^:svg-id loader "loader")
 (def ^:svg-id logo-error-screen "logo-error-screen")
+(def ^:svg-id logo-nitrate-unavailable "logo-nitrate-unavailable")
 (def ^:svg-id logo-subscription "logo-subscription")
 (def ^:svg-id logo-subscription-light "logo-subscription-light")
 (def ^:svg-id nitrate-welcome "nitrate-welcome")

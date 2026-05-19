@@ -61,13 +61,26 @@
     (let [response (handler)
           status (:status response)]
       (when-not status
-        (l/error :hint "could't do the nitrate request, it is probably down"
+        (l/error :hint "couldn't do the nitrate request, it is probably down"
                  :uri uri)
-        ;; TODO decide what to do when Nitrate is inaccesible
-        nil)
+        (ex/raise :type :nitrate-unavailable
+                  :hint (str "nitrate is unreachable at " uri)))
       (cond
+        (>= status 500)
+        ;; Nitrate is up enough to answer (or the proxy is) but the
+        ;; service itself is failing; treat as unavailable so callers
+        ;; surface the static error page.
+        (do
+          (l/error :hint "nitrate request failed with server error status"
+                   :uri uri
+                   :status status
+                   :body (:body response))
+          (ex/raise :type :nitrate-unavailable
+                    :status status
+                    :hint (str "nitrate is unavailable, HTTP " status " at " uri)))
+
         (>= status 400)
-        ;; For error status codes (4xx, 5xx), fail immediately without validation
+        ;; For client error status codes (4xx), fail immediately without validation
         (do
           (when (not= status 404) ;; Don't need to log 404
             (l/error :hint "nitrate request failed with error status"
@@ -434,21 +447,27 @@
 (defn add-nitrate-licence-to-profile
   "Enriches a profile map with subscription information from Nitrate.
   Adds a :subscription field containing the user's license details.
-  Returns the original profile unchanged if the request fails."
+  Returns the original profile unchanged if the request fails for a reason
+  other than Nitrate being unreachable. When Nitrate is unreachable the
+  `:nitrate-unavailable` exception propagates so the request is rejected."
   [cfg profile]
   (try
     (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
       (assoc profile :subscription subscription))
     (catch Throwable cause
-      (l/error :hint "failed to get nitrate licence"
-               :profile-id (:id profile)
-               :cause cause)
-      profile)))
+      (if (= :nitrate-unavailable (-> cause ex-data :type))
+        (throw cause)
+        (do
+          (l/error :hint "failed to get nitrate licence"
+                   :profile-id (:id profile)
+                   :cause cause)
+          profile)))))
 
 (defn add-org-info-to-team
   "Enriches a team map with organization information from Nitrate.
   Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
-  Returns the original team unchanged if the request fails or org data is nil."
+  Returns the original team unchanged if the request fails or org data is nil.
+  Propagates `:nitrate-unavailable` so the request is rejected when Nitrate is unreachable."
   [cfg team params]
   (try
     (let [params        (assoc (or params {}) :team-id (:id team))
@@ -461,10 +480,13 @@
             (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-org)))))
         team))
     (catch Throwable cause
-      (l/error :hint "failed to get team organization info"
-               :team-id (:id team)
-               :cause cause)
-      team)))
+      (if (= :nitrate-unavailable (-> cause ex-data :type))
+        (throw cause)
+        (do
+          (l/error :hint "failed to get team organization info"
+                   :team-id (:id team)
+                   :cause cause)
+          team)))))
 
 (defn set-team-organization
   "Associates a team with an organization in Nitrate.
