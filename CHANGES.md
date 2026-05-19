@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## 2.15.4 (Unreleased)
+## 2.15.4
+
+### :sparkles: New features & Enhancements
+
+- Add rate limiting and concurrency safety for file snapshot operations [#9723](https://github.com/penpot/penpot/issues/9723) (PR: [#9722](https://github.com/penpot/penpot/pull/9722))
 
 ### :bug: Bugs fixed
 
@@ -8,6 +12,7 @@
 - Fix broken authentication on /assets handlers [#9677](https://github.com/penpot/penpot/issues/9677) (PR: [#9679](https://github.com/penpot/penpot/pull/9679))
 - Fix API doc endpoint returning HTML as text/plain [#9680](https://github.com/penpot/penpot/issues/9680) (PR: [#9681](https://github.com/penpot/penpot/pull/9681))
 - Fix unexpected error when opening the export dialog [#9721](https://github.com/penpot/penpot/issues/9721) (PR: [#9704](https://github.com/penpot/penpot/pull/9704))
+
 
 ## 2.15.3
 
