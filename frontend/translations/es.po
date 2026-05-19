@@ -5897,6 +5897,14 @@ msgstr "Rehacer"
 msgid "workspace.header.menu.select-all"
 msgstr "Seleccionar todo"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find"
+msgstr "Buscar"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Buscar y reemplazar"
+
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
@@ -7967,6 +7975,9 @@ msgstr "Máscaras"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
 msgid "workspace.sidebar.layers.search"
 msgstr "Buscar capas"
+
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Buscar y reemplazar"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"

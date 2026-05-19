@@ -1493,18 +1493,47 @@
     (update [_ state]
       (assoc-in state [:workspace-global :clipboard-style] style))))
 
-(defn open-layers-search
+(defn- layers-search-config
   [mode]
-  (ptk/reify ::open-layers-search
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :layers-panel-search] mode))))
+  {:open? true
+   :mode mode
+   :scope (if (= mode :find-and-replace) :canvas :layers)
+   :find-replace-mode? (= mode :find-and-replace)})
 
-(def clear-layers-search
-  (ptk/reify ::clear-layers-search
+(defn- layers-search-active?
+  [current target]
+  (and (:open? current false)
+       (= (:scope current) (:scope target))
+       (= (:find-replace-mode? current) (:find-replace-mode? target))))
+
+(defn open-layers-search
+  ([mode] (open-layers-search mode nil))
+  ([mode options]
+   (let [force? (boolean (:force? options))]
+     (ptk/reify ::open-layers-search
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [target  (layers-search-config mode)
+               current (get-in state [:workspace-local :layers-search])]
+           (if (and (not force?)
+                    (layers-search-active? current target))
+             (update state :workspace-local dissoc :layers-search)
+             (assoc-in state [:workspace-local :layers-search] target))))))))
+
+(def close-layers-search
+  (ptk/reify ::close-layers-search
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local dissoc :layers-panel-search))))
+      (update state :workspace-local dissoc :layers-search))))
+
+(defn update-layers-search-scope
+  [scope]
+  (ptk/reify ::update-layers-search-scope
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (get-in state [:workspace-local :layers-search])
+        (assoc-in state [:workspace-local :layers-search :scope] scope)
+        state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
@@ -1565,6 +1594,8 @@
 ;; Highlight
 (dm/export dwh/highlight-shape)
 (dm/export dwh/dehighlight-shape)
+(dm/export dwh/set-search-match-highlight)
+(dm/export dwh/clear-search-match-highlight)
 
 ;; Shape flags
 (dm/export dwsh/update-shape-flags)

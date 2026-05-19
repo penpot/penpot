@@ -30,6 +30,7 @@
    [app.util.keyboard :as kbd]
    [app.util.rxops :refer [throttle-fn]]
    [app.util.shape-icon :as usi]
+   [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -175,14 +176,16 @@
   {::mf/wrap [mf/memo #(mf/throttle % 300)]
    ::mf/private true}
   [{:keys [objects parent-size]}]
-  (let [selected (use-selected-shapes)
-        root     (get objects uuid/zero)]
+  (let [selected    (use-selected-shapes)
+        highlighted (mf/deref ref:highlighted-shapes)
+        root        (get objects uuid/zero)]
     [:ul {:class (stl/css :element-list)}
      (for [[index id] (d/enumerate (:shapes root))]
        (when-let [obj (get objects id)]
          [:> layer-item*
           {:item obj
            :selected selected
+           :highlighted highlighted
            :index index
            :objects objects
            :key id
@@ -208,8 +211,8 @@
 
 ;; --- Layers Toolbox
 
-(def ^:private ref:layers-panel-search
-  (l/derived (l/key :layers-panel-search) refs/workspace-local))
+(def ^:private ref:layers-search
+  (l/derived (l/key :layers-search) refs/workspace-local))
 
 ;; FIXME: optimize
 (defn- match-filters?
@@ -254,7 +257,7 @@
                                      :filters #{}
                                      :num-items 100
                                      :current-match-idx 0}))
-        layers-search-request (mf/deref ref:layers-panel-search)
+        layers-search         (mf/deref ref:layers-search)
         state                 (deref state*)
         current-filters       (:filters state)
         current-items         (:num-items state)
@@ -265,6 +268,7 @@
         find-replace-mode?    (:find-replace-mode? state)
         search-scope          (:search-scope state)
         current-match-idx     (:current-match-idx state)
+        search-input-ref      (mf/use-ref nil)
 
         clear-search-text
         (mf/use-fn
@@ -296,22 +300,48 @@
         clear-replace-text
         (mf/use-fn #(swap! state* assoc :replace-text ""))
 
+        f-key? (kbd/is-key-ignore-case? "f")
+        h-key? (kbd/is-key-ignore-case? "h")
+
+        handle-find-shortcut-keydown
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/mod? event)
+             (cond
+               (f-key? event)
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (st/emit! (dw/open-layers-search :find)))
+
+               (h-key? event)
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (st/emit! (dw/open-layers-search :find-and-replace)))))))
+
         set-search-scope
         (mf/use-fn
          (fn [scope]
-           (swap! state* assoc :search-scope scope :num-items 100 :current-match-idx 0)))
+           (swap! state* assoc :search-scope scope :num-items 100 :current-match-idx 0)
+           (st/emit! (dw/update-layers-search-scope scope))))
+
+        toggle-mode
+        (mf/use-fn
+         (mf/deps find-replace-mode?)
+         (fn []
+           (let [mode (if find-replace-mode? :find :find-and-replace)]
+             (st/emit! (dw/open-layers-search mode {:force? true})))))
 
         toggle-search
         (mf/use-fn
+         (mf/deps show-search?)
          (fn [event]
            (let [node (dom/get-current-target event)]
              (dom/blur! node)
-             (swap! state* (fn [state]
-                             (-> state
-                                 (assoc :search-text "" :replace-text "" :filters #{})
-                                 (assoc :show-menu false :find-replace-mode? false)
-                                 (assoc :search-scope :layers :num-items 100 :current-match-idx 0)
-                                 (update :show-search not)))))))
+             (if show-search?
+               (st/emit! dw/close-layers-search)
+               (st/emit! (dw/open-layers-search :find {:force? true}))))))
 
         remove-filter
         (mf/use-fn
@@ -403,6 +433,24 @@
                (st/emit! (dwt/replace-text-in-shapes text-match-ids current-search replace-text))
                (st/emit! (dwt/replace-layer-names-in-shapes text-match-ids current-search replace-text))))))
 
+        on-replace-keydown
+        (mf/use-fn
+         (mf/deps handle-replace)
+         (fn [event]
+           (when (or (kbd/enter? event) (kbd/space? event))
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (handle-replace event))))
+
+        on-replace-all-keydown
+        (mf/use-fn
+         (mf/deps handle-replace-all)
+         (fn [event]
+           (when (or (kbd/enter? event) (kbd/space? event))
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (handle-replace-all event))))
+
         filtered-objects
         (mf/with-memo [active? filtered-objects-all current-items]
           (when active?
@@ -424,15 +472,44 @@
           (events/unlistenByKey key1)
           (events/unlistenByKey key2))))
 
-    (mf/with-effect [layers-search-request]
-      (when (some? layers-search-request)
-        (let [replace-mode? (= layers-search-request :find-and-replace)]
+    (mf/with-effect [layers-search]
+      (if-let [{:keys [open? find-replace-mode? scope]} layers-search]
+        (when open?
           (swap! state* (fn [s]
-                          (-> s
-                              (assoc :show-search true :find-replace-mode? replace-mode?)
-                              (assoc :search-scope (if replace-mode? :canvas :layers))
-                              (assoc :search-text "" :replace-text "" :current-match-idx 0)))))
-        (st/emit! dw/clear-layers-search)))
+                          (let [mode-changed? (not= (:find-replace-mode? s) find-replace-mode?)
+                                opening?      (not (:show-search s))]
+                            (-> s
+                                (assoc :show-search true
+                                       :find-replace-mode? find-replace-mode?
+                                       :search-scope scope)
+                                (cond-> (or opening? mode-changed?)
+                                  (assoc :search-text "" :replace-text "" :current-match-idx 0)))))))
+        (swap! state* (fn [state]
+                        (-> state
+                            (assoc :search-text "" :replace-text "" :filters #{})
+                            (assoc :show-menu false :find-replace-mode? false)
+                            (assoc :search-scope :layers :num-items 100 :current-match-idx 0)
+                            (assoc :show-search false))))))
+
+    (mf/with-effect [(get layers-search :scope)]
+      (when (and layers-search (:open? layers-search))
+        (swap! state* assoc :search-scope (:scope layers-search))))
+
+    (mf/with-effect [layers-search show-search?]
+      (when (and layers-search (:open? layers-search) show-search?)
+        (ts/raf
+         (fn []
+           (when-let [node (mf/ref-val search-input-ref)]
+             (dom/focus! node))))))
+
+    (mf/with-effect [find-replace-mode? show-search? safe-match-idx text-match-ids]
+      (let [match-ids text-match-ids]
+        (when (and find-replace-mode? show-search? (seq match-ids))
+          (let [current-id (nth match-ids safe-match-idx)]
+            (st/emit! (dw/set-search-match-highlight current-id match-ids))))
+        (fn []
+          (when (seq match-ids)
+            (st/emit! (dw/clear-search-match-highlight match-ids))))))
 
     [filtered-objects
      handle-show-more
@@ -440,33 +517,40 @@
        (if show-search?
          [:*
           [:div {:class (stl/css :tool-window-bar :search)}
-           [:> search-bar* {:on-change update-search-text
+           [:> search-bar* {:input-ref search-input-ref
+                            :on-change update-search-text
                             :value current-search
                             :on-clear clear-search-text
+                            :on-key-down handle-find-shortcut-keydown
                             :placeholder (tr "workspace.sidebar.layers.search")}
             [:button {:on-click on-toggle-filters-click
                       :class (stl/css-case :filter-button true :opened show-menu? :active active?)}
              [:> icon* {:icon-id i/filter}]]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-pressed find-replace-mode?
+                             :aria-label (tr "workspace.sidebar.layers.search-and-replace")
+                             :on-click toggle-mode
+                             :icon i/menu}]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
                              :icon i/close}]]
 
           [:div {:class (stl/css :search-scope-row)}
-           [:label {:class (stl/css-case :scope-option true :scope-selected (= :canvas search-scope))}
-            [:span {:class (stl/css-case :scope-radio true :scope-radio-checked (= :canvas search-scope))}]
-            [:input {:type "radio" :name "search-scope" :class (stl/css :scope-radio-input)
-                     :checked (= :canvas search-scope)
-                     :on-change (fn [_] (set-search-scope :canvas))}]
-            [:span {:class (stl/css :scope-label)}
-             (tr "workspace.sidebar.layers.search-scope-canvas")]]
            [:label {:class (stl/css-case :scope-option true :scope-selected (= :layers search-scope))}
             [:span {:class (stl/css-case :scope-radio true :scope-radio-checked (= :layers search-scope))}]
             [:input {:type "radio" :name "search-scope" :class (stl/css :scope-radio-input)
                      :checked (= :layers search-scope)
                      :on-change (fn [_] (set-search-scope :layers))}]
             [:span {:class (stl/css :scope-label)}
-             (tr "workspace.sidebar.layers.search-scope-layers")]]]
+             (tr "workspace.sidebar.layers.search-scope-layers")]]
+           [:label {:class (stl/css-case :scope-option true :scope-selected (= :canvas search-scope))}
+            [:span {:class (stl/css-case :scope-radio true :scope-radio-checked (= :canvas search-scope))}]
+            [:input {:type "radio" :name "search-scope" :class (stl/css :scope-radio-input)
+                     :checked (= :canvas search-scope)
+                     :on-change (fn [_] (set-search-scope :canvas))}]
+            [:span {:class (stl/css :scope-label)}
+             (tr "workspace.sidebar.layers.search-scope-canvas")]]]
 
           (when ^boolean find-replace-mode?
             [:*
@@ -476,7 +560,8 @@
                         :value replace-text
                         :placeholder (tr "workspace.sidebar.layers.replace-placeholder")
                         :on-change (fn [event]
-                                     (update-replace-text (dom/get-target-val event) event))}]
+                                     (update-replace-text (dom/get-target-val event) event))
+                        :on-key-down handle-find-shortcut-keydown}]
                (when (not= "" replace-text)
                  [:button {:class (stl/css :clear-icon) :on-click clear-replace-text}
                   [:> icon* {:icon-id i/delete-text :size "s"}]])]
@@ -492,12 +577,16 @@
                   [:span {:class (stl/css :no-matches)}
                    (tr "workspace.sidebar.layers.no-matches")]))]
              [:div {:class (stl/css :replace-actions-row)}
-              [:button {:class (stl/css :replace-button)
+              [:button {:type "button"
+                        :class (stl/css :replace-button)
                         :on-click handle-replace
+                        :on-key-down on-replace-keydown
                         :disabled (or (zero? text-match-count) (str/empty? current-search))}
                (tr "workspace.sidebar.layers.replace")]
-              [:button {:class (stl/css :replace-button)
+              [:button {:type "button"
+                        :class (stl/css :replace-button)
                         :on-click handle-replace-all
+                        :on-key-down on-replace-all-keydown
                         :disabled (or (zero? text-match-count) (str/empty? current-search))}
                (tr "workspace.sidebar.layers.replace-all")]]])
 
