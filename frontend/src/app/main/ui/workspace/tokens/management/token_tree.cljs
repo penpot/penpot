@@ -69,7 +69,9 @@
          [:div {:class (stl/css :folder-children-wrapper)
                 :id (str "folder-children-" (:path node))}
           (when (seq children)
-            (let [sorted-children (d/natural-sort-by :name children)]
+            (let [leaf-children   (->> children (filter :leaf) (d/natural-sort-by :name))
+                  group-children  (->> children (remove :leaf) (d/natural-sort-by :name))
+                  sorted-children (concat leaf-children group-children)]
               (for [child sorted-children]
                 (if (not (:leaf child))
                   [:ul {:class (stl/css :node-parent)
@@ -124,19 +126,19 @@
            on-pill-context-menu
            on-node-context-menu]}]
   (let [separator "."
-        tree (mf/use-memo
-              (mf/deps tokens)
-              (fn []
-                (->> (cpn/build-tree-root tokens separator)
-                     (d/natural-sort-by :name))))
-        can-edit? (:can-edit (deref refs/permissions))
+        raw-tree      (mf/with-memo [tokens]
+                        (cpn/build-tree-root tokens separator))
+        can-edit?     (:can-edit (deref refs/permissions))
         on-node-context-menu (mf/use-fn
                               (mf/deps can-edit? on-node-context-menu)
                               (fn [event node]
                                 (when can-edit?
-                                  (on-node-context-menu event node))))]
+                                  (on-node-context-menu event node))))
+        leaf-nodes    (->> raw-tree (filter :leaf) (d/natural-sort-by :name))
+        group-nodes   (->> raw-tree (remove :leaf) (d/natural-sort-by :name))
+        ordered-nodes (concat leaf-nodes group-nodes)]
     [:div {:class (stl/css :token-tree-wrapper)}
-     (for [node tree]
+     (for [node ordered-nodes]
        (if (:leaf node)
          (let [token (ctob/get-token tokens-lib selected-token-set-id (get-in node [:leaf :id]))]
            [:> token-pill*
