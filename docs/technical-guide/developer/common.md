@@ -294,6 +294,18 @@ pnpm run test -- --focus frontend-tests.logic.components-and-tokens
 pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main
 ```
 
+For non-interactive runs (CI, scripted invocations, agent loops), use the quiet
+variant. It runs the same `build:wasm && build:test && node target/tests/test.js`
+pipeline but buffers each build step's output and only replays it on failure;
+test-runner output streams through normally. Short progress hints
+(`Building wasm...`, `Running tests...`) go to `stderr`, so capturing `stdout`
+gives you just the test results.
+
+```bash
+# Quiet run (same arguments as `pnpm run test`)
+pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens
+```
+
 #### Test output
 
 The default kaocha reporter outputs a summary for the test run. There is a pair
