@@ -8,8 +8,10 @@ Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.tes
 
 From `frontend/`:
 - Full unit test run: `pnpm run test`.
-- Focused unit tests: edit `test/frontend_tests/runner.cljs` to narrow the suite, then run `pnpm run test`.
+- Focus a frontend CLJS test namespace: `pnpm run test -- --focus frontend-tests.logic.components-and-tokens`.
+- Focus one frontend CLJS test var: `pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Build test target only: `pnpm run build:test`.
+- After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Watch tests: `pnpm run watch:test`.
 
 ## Playwright integration tests
