@@ -1,5 +1,6 @@
 (ns frontend-tests.runner
   (:require
+   [app.common.logging :as l]
    [cljs.test :as t]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
@@ -93,8 +94,14 @@
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")
 
+(def ^:private log-levels
+  #{:trace :debug :info :warn :error})
+
 (def cli-options
   [["-f" "--focus FOCUS" "Run one test namespace or one test var, e.g. frontend-tests.logic.components-and-tokens/change-token-in-main"]
+   ["-l" "--log-level LEVEL" "Set app logger level: trace|debug|info|warn|error"
+    :parse-fn keyword
+    :validate [log-levels "must be one of trace, debug, info, warn, error"]]
    ["-h" "--help"]])
 
 (defn- argv
@@ -114,7 +121,9 @@
        summary "\n\n"
        "Focus examples:\n"
        "  pnpm run test -- --focus frontend-tests.logic.components-and-tokens\n"
-       "  pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main"))
+       "  pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main\n\n"
+       "Log level example (quiets app logging during the run):\n"
+       "  pnpm run test -- --focus frontend-tests.logic.groups-test --log-level warn"))
 
 (defn- fail!
   [message]
@@ -218,8 +227,10 @@
         (println (usage summary))
         (.exit js/process 0))
 
-      (:focus options)
-      (run-focused-test! (:focus options))
-
       :else
-      (run-test-vars! (map #(selected-tests {:ns %}) test-namespaces)))))
+      (do
+        (when-let [level (:log-level options)]
+          (l/setup! {:app level}))
+        (if (:focus options)
+          (run-focused-test! (:focus options))
+          (run-test-vars! (map #(selected-tests {:ns %}) test-namespaces)))))))
