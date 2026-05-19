@@ -313,6 +313,20 @@
                                  (assoc :search-scope :layers :num-items 100 :current-match-idx 0)
                                  (update :show-search not)))))))
 
+        close-search
+        (mf/use-fn
+         (fn [_event]
+           ;; Progressive Escape: when the filter menu is open, leave the
+           ;; existing document keydown handler to close just the menu;
+           ;; only dismiss the whole search panel once the menu is closed.
+           (when-not (:show-menu @state*)
+             (swap! state* (fn [state]
+                             (-> state
+                                 (assoc :search-text "" :replace-text "" :filters #{})
+                                 (assoc :show-menu false :find-replace-mode? false)
+                                 (assoc :search-scope :layers :num-items 100 :current-match-idx 0)
+                                 (assoc :show-search false)))))))
+
         remove-filter
         (mf/use-fn
          (fn [event]
@@ -443,6 +457,7 @@
            [:> search-bar* {:on-change update-search-text
                             :value current-search
                             :on-clear clear-search-text
+                            :on-escape close-search
                             :placeholder (tr "workspace.sidebar.layers.search")}
             [:button {:on-click on-toggle-filters-click
                       :class (stl/css-case :filter-button true :opened show-menu? :active active?)}
