@@ -141,9 +141,11 @@
   :error/value to produce the message.  Falls back to :message for
   errors that originate from schema-validation (which have no :error/fn)."
   [error]
-  (if-let [f (:error/fn error)]
-    (f (:error/value error))
-    (:message error)))
+  (if error
+    (if-let [f (:error/fn error)]
+      (f (:error/value error))
+      (:message error))
+    (tr "labels.unknown-error")))
 
 (defn resolve-error-assoc-message
   "Returns the error map with a :message key set to the resolved human-
@@ -151,9 +153,11 @@
   is called with :error/value; otherwise the map is returned unchanged
   (it is expected to already carry a :message from schema-validation)."
   [error]
-  (if-let [f (:error/fn error)]
-    (assoc error :message (f (:error/value error)))
-    error))
+  (if error
+    (if-let [f (:error/fn error)]
+      (assoc error :message (f (:error/value error)))
+      error)
+    (assoc error :message (tr "labels.unknown-error"))))
 
 (defn humanize-errors [errors]
   (->> errors

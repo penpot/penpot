@@ -348,10 +348,10 @@ const createToken = async (page, type, name, textFieldName, value) => {
   const nameField = tokensUpdateCreateModal.getByLabel("Name");
   await nameField.fill(name);
 
-  const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+  const valueField = tokensUpdateCreateModal.getByRole("textbox", {
     name: textFieldName,
   });
-  await colorField.fill(value);
+  await valueField.fill(value);
 
   const submitButton = tokensUpdateCreateModal.getByRole("button", {
     name: "Save",

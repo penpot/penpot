@@ -9,7 +9,6 @@
    [app.config :as cf]
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
-   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
@@ -111,9 +110,6 @@
         tokens
         (mf/with-memo [active-tokens selected-token-set-tokens]
           (merge active-tokens selected-token-set-tokens))
-
-        tokens
-        (sd/use-resolved-tokens* tokens)
 
         ;; Group tokens by their type
         tokens-by-type
