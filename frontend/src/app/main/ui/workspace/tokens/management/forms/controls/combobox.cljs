@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :as ds]
@@ -60,7 +61,9 @@
                                    resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+                (rx/of {:error (if errors
+                                 (first errors)
+                                 (wte/error-with-value :error/unknown value))}))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
