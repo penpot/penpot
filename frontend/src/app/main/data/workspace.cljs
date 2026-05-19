@@ -562,6 +562,7 @@
                (dwsl/finalize-shape-layout)
                (dwcl/stop-picker)
                (dwc/set-workspace-visited)
+               (mcp/clear-mcp-activity)
                (modal/hide)
                (ntf/hide))))))
 

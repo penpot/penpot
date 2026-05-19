@@ -11,6 +11,7 @@
    [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
+   [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.errors-test]
    [frontend-tests.helpers-shapes-test]
@@ -62,6 +63,7 @@
    'frontend-tests.data.workspace-media-test
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
+   'frontend-tests.data.workspace-mcp-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test

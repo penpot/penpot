@@ -5907,6 +5907,27 @@ msgstr "Conectar"
 msgid "workspace.header.menu.mcp.plugin.status.disconnect"
 msgstr "Desconectar"
 
+msgid "workspace.header.menu.mcp.activity.view"
+msgstr "Ver actividad MCP"
+
+msgid "workspace.mcp.activity.title"
+msgstr "Actividad MCP"
+
+msgid "workspace.mcp.activity.empty"
+msgstr "Aún no se ha registrado actividad MCP en esta sesión."
+
+msgid "workspace.mcp.activity.clear"
+msgstr "Borrar registro"
+
+msgid "workspace.mcp.activity.phase.received"
+msgstr "Recibido"
+
+msgid "workspace.mcp.activity.phase.completed"
+msgstr "Completado"
+
+msgid "workspace.mcp.activity.phase.failed"
+msgstr "Fallido"
+
 msgid "workspace.header.menu.mcp.server.status.enabled"
 msgstr "Gestionar (estado: habilitado)"
 
