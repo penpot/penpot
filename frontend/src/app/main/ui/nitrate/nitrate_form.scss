@@ -56,7 +56,7 @@
 }
 
 .modal-info {
-  margin-block-start: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-l);
   width: 40%;
 }
 
@@ -103,7 +103,7 @@
 }
 
 .contact {
-  margin-block-start: $sz-96;
+  margin-block-start: $sz-48;
   color: var(--color-foreground-primary);
 }
 

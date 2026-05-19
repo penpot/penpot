@@ -267,6 +267,7 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-size! file)
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
@@ -484,8 +485,15 @@
                 {:deleted-at deleted-at}
                 {:id profile-id})
 
-    ;; Api call to nitrate
-    (nitrate/call cfg :remove-profile-from-all-orgs {:profile-id profile-id})
+    ;; Delete owned organizations on the fly (no grace period).
+    ;; Nitrate iterates the user's owned orgs and, per org, calls
+    ;; Penpot back via ::notify-organization-deletion which renames
+    ;; the org's teams (prefixed with "[OrgName] ", including the
+    ;; user's "Your Penpot" team) and soft-deletes empty ones.
+    (when (contains? cf/flags :nitrate)
+      (nitrate/call cfg :delete-owned-orgs {:profile-id profile-id})
+      ;; Remove the user from any remaining org memberships.
+      (nitrate/call cfg :remove-profile-from-all-orgs {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
     (wrk/submit! {::db/conn conn
@@ -493,7 +501,6 @@
                   ::wrk/params {:object :profile
                                 :deleted-at deleted-at
                                 :id profile-id}})
-
 
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))
@@ -520,6 +527,29 @@
   [cfg {:keys [::rpc/profile-id]}]
   (let [editors (db/exec! cfg [sql:get-subscription-editors profile-id])]
     {:editors editors}))
+
+;; --- QUERY: Owned Organizations Summary (for delete-account modal)
+
+(def ^:private schema:owned-organization-summary
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]
+   [:team-count ::sm/int]
+   [:member-count ::sm/int]])
+
+(def ^:private schema:get-owned-organizations-summary-result
+  [:vector schema:owned-organization-summary])
+
+(sv/defmethod ::get-owned-organizations-summary
+  "List organizations owned by the current profile with team and member counts.
+   Used by the delete-account modal to warn the user about cascading deletion."
+  {::doc/added "2.18"
+   ::sm/result schema:get-owned-organizations-summary-result}
+  [cfg {:keys [::rpc/profile-id]}]
+  (if (contains? cf/flags :nitrate)
+    (or (nitrate/call cfg :get-owned-orgs-summary {:profile-id profile-id}) [])
+    []))
 
 ;; --- HELPERS
 

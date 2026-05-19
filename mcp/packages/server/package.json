@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build:server": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:pino-loki --external:js-yaml --external:sharp",
+    "build:server": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@modelcontextprotocol/* --external:ws --external:express --external:class-transformer --external:class-validator --external:reflect-metadata --external:pino --external:pino-pretty --external:pino-loki --external:js-yaml --external:sharp --external:nrepl-client",
     "build": "pnpm run build:server && node scripts/copy-resources.js",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "start": "node dist/index.js",
@@ -29,6 +29,7 @@
     "class-validator": "^0.14.3",
     "express": "^5.1.0",
     "js-yaml": "^4.1.1",
+    "nrepl-client": "^0.3.0",
     "penpot-mcp": "file:..",
     "pino": "^9.10.0",
     "pino-loki": "^2.6.0",

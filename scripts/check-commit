@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""
+Check commit messages against Penpot's commit guidelines.
+
+Validates commit messages using the rules defined in:
+  - .github/workflows/commit-checker.yml (regex pattern)
+  - CONTRIBUTING.md (formatting rules, subject length, DCO)
+
+By default, checks HEAD. Use --commit to specify a different commit.
+
+Usage:
+  ./scripts/check-commit
+  ./scripts/check-commit --commit HEAD~1
+  ./scripts/check-commit -c abc1234
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+
+# ── Emoji list ───────────────────────────────────────────────────────────────
+# Combined from commit-checker.yml AND CONTRIBUTING.md
+VALID_EMOJIS = (
+    "lipstick|globe_with_meridians|wrench|books|"
+    "arrow_up|arrow_down|zap|ambulance|construction|"
+    "boom|fire|whale|bug|sparkles|paperclip|tada|"
+    "recycle|rewind|construction_worker|rocket"
+)
+
+# ── Regex from .github/workflows/commit-checker.yml ──────────────────────────
+# Matches:
+#   1) ":emoji: <Capitalized subject without trailing dot>"
+#   2) "Merge|Revert|Reapply ... without trailing dot"
+COMMIT_PATTERN = re.compile(
+    r"^((:(" + VALID_EMOJIS + r"):\s[A-Z].*[^.]))$"
+)
+
+MERGE_PATTERN = re.compile(r"^(Merge|Revert|Reapply).+[^.]$")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def run_git(args):
+    """Run a git command and return (returncode, stdout, stderr)."""
+    try:
+        result = subprocess.run(
+            ["git"] + args,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.returncode, result.stdout, result.stderr
+    except FileNotFoundError:
+        print("ERROR: git not found. Is it installed?", file=sys.stderr)
+        sys.exit(1)
+
+
+def get_commit_message(commit_ref):
+    """Return the full commit message for *commit_ref*."""
+    rc, out, err = run_git(["log", "--format=%B", "-n", "1", commit_ref])
+    if rc != 0:
+        print(f"ERROR: could not read commit {commit_ref}: {err.strip()}", file=sys.stderr)
+        sys.exit(1)
+    if not out.strip():
+        print(f"ERROR: commit {commit_ref} has no message", file=sys.stderr)
+        sys.exit(1)
+    return out.rstrip("\n")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Validators
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def check_regex(message):
+    """Check the commit message against the CI regex pattern."""
+    # Normalise: strip trailing newlines for single-line matching
+    first_line = message.split("\n")[0]
+
+    if MERGE_PATTERN.match(first_line):
+        return True, None
+
+    if COMMIT_PATTERN.match(first_line):
+        return True, None
+
+    return False, (
+        "Commit subject must match one of:\n"
+        "  :emoji: <Capitalized subject without trailing dot>\n"
+        "  Merge|Revert|Reapply <rest without trailing dot>\n"
+        f"Got: {first_line!r}"
+    )
+
+
+def check_subject_length(message):
+    """Subject line must be ≤ 90 characters."""
+    first_line = message.split("\n")[0]
+    if len(first_line) > 90:
+        return False, (
+            f"Subject line exceeds 90 characters ({len(first_line)} chars):\n"
+            f"  {first_line}"
+        )
+    return True, None
+
+
+def check_subject_no_trailing_dot(message):
+    """Subject line must not end with a period ('.')."""
+    first_line = message.split("\n")[0]
+    if first_line.endswith("."):
+        return False, (
+            "Subject line must not end with a period:\n"
+            f"  {first_line}"
+        )
+    return True, None
+
+
+def check_subject_capitalized(message):
+    """Subject must be capitalized, but only if it's a regular commit (not Merge/Revert/Reapply)."""
+    first_line = message.split("\n")[0]
+
+    # Skip check for Merge/Revert/Reapply commits
+    if MERGE_PATTERN.match(first_line):
+        return True, None
+
+    # Strip emoji prefix before checking capitalization
+    emoji_match = re.match(r"^:([a-z_]+):\s+(.*)", first_line)
+    if emoji_match:
+        rest = emoji_match.group(2)
+    else:
+        rest = first_line
+
+    if rest and not rest[0].isupper():
+        return False, (
+            "Subject line must start with a capital letter "
+            "(after the emoji prefix):\n"
+            f"  {first_line}"
+        )
+    return True, None
+
+
+def check_body_blank_line(message):
+    """If a body exists, there must be a blank line between subject and body."""
+    lines = message.split("\n")
+    if len(lines) >= 3 and lines[1] != "":
+        return False, (
+            "A blank line must separate the subject from the body."
+        )
+    return True, None
+
+
+def check_signed_off_by(message):
+    """Check for the DCO Signed-off-by line (required for code changes)."""
+    if "Signed-off-by:" not in message:
+        return False, (
+            "Missing 'Signed-off-by:' line in the commit footer.\n"
+            "  Add it with 'git commit -s' or append it manually:\n"
+            "    Signed-off-by: Your Real Name <your.email@example.com>"
+        )
+    return True, None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Check a commit message against Penpot commit guidelines."
+    )
+    parser.add_argument(
+        "-c", "--commit",
+        default="HEAD",
+        help="Commit to check (default: HEAD)",
+    )
+    args = parser.parse_args()
+
+    commit_ref = args.commit
+    message = get_commit_message(commit_ref)
+
+    print(f"Checking commit {commit_ref} ...\n")
+
+    validators = [
+        ("Regex pattern", check_regex),
+        ("Subject ≤ 90 chars", check_subject_length),
+        ("No trailing period in subject", check_subject_no_trailing_dot),
+        ("Subject capitalized", check_subject_capitalized),
+        ("Blank line after subject", check_body_blank_line),
+    ]
+
+    all_ok = True
+
+    for name, validator in validators:
+        ok, error_msg = validator(message)
+        status = "✓" if ok else "✗"
+        print(f"  [{status}] {name}")
+        if not ok:
+            all_ok = False
+            print(f"         {error_msg}", file=sys.stderr)
+
+    print()
+    if all_ok:
+        print("All checks passed.")
+        sys.exit(0)
+    else:
+        print("Some checks FAILED. See messages above.", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -17,6 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -320,7 +321,7 @@
         show-selrect?            (and selrect (empty? drawing) (not text-editing?) (not page-transition?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
-                                      (or show-distances? mode-inspect?)
+                                      (or show-distances? mode-inspect? read-only?)
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
@@ -420,7 +421,6 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
-            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
     (mf/with-effect [show-text-editor? workspace-editor-state edition]
@@ -437,7 +437,8 @@
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))))
+        (wasm.api/resize-viewbox (:width vport) (:height vport))
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -455,7 +456,10 @@
             ;; blank canvas (first load) visible while shapes load.
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+            (wasm.api/initialize-viewport base-objects zoom vbox
+                                          :background background
+                                          :on-shapes-ready
+                                          #(st/emit! (dw/check-file-position-data file-id)))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
@@ -467,10 +471,6 @@
         (ts/asap #(if (empty? focus)
                     (wasm.api/clear-focus-mode)
                     (wasm.api/set-focus-mode focus)))))
-
-    (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
       (when (and @canvas-init? @initialized?)
