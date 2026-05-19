@@ -11,7 +11,7 @@
   },
   "type": "module",
   "dependencies": {
-    "archiver": "^8.0.0",
+    "archiver": "7.0.1",
     "cookies": "^0.9.1",
     "date-fns": "^4.1.0",
     "generic-pool": "^3.9.0",

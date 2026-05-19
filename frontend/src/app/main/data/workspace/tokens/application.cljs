@@ -726,10 +726,11 @@
                                (rx/of res))))
                          (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
-          (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
-                            :type :toast
-                            :level :warning
-                            :timeout 3000})))))))
+          (when text-editing?
+            (rx/of (ntf/show {:content (tr "workspace.tokens.error-text-edition")
+                              :type :toast
+                              :level :warning
+                              :timeout 3000}))))))))
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
@@ -775,6 +776,19 @@
           shape-ids
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
+
+(defn unapply-multiple-tokens
+  "Removes `attributes` for `shape-ids` without knowing the token, used when a token is deleted."
+  [{:keys [attributes shape-ids] :as _props}]
+
+  (ptk/reify ::unapply-multiple-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (dwsh/update-shapes
+        shape-ids
+        (fn [shape]
+          (update shape :applied-tokens #(when % (apply dissoc % attributes)))))))))
 
 
 (defn toggle-token

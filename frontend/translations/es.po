@@ -389,8 +389,8 @@ msgstr "+ Crear org"
 msgid "dashboard.create-new-org"
 msgstr "Crear org"
 
-msgid "dashboard.go-to-control-center"
-msgstr "Ir al centro de control"
+msgid "dashboard.go-to-admin-console"
+msgstr "Ir a la Admin Console"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -1958,6 +1958,10 @@ msgstr "Tipografía"
 msgid "inspect.attributes.typography.font-family"
 msgstr "Familia tipográfica"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Varias Familias tipográficas"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
 msgstr "Tamaño de fuente"
@@ -3422,6 +3426,18 @@ msgstr "Si borras tu cuenta perderás todos tus proyectos y archivos."
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "¿Seguro que quieres borrar tu cuenta?"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organizaciones que se eliminarán"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s equipos"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s miembros"
 
 #: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
@@ -6204,12 +6220,32 @@ msgid "workspace.libraries.shared-library-btn"
 msgstr "Conectar biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
-msgid "workspace.libraries.text.multiple-typography"
-msgstr "Varias tipografías"
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Varios recursos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Varios tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Varios tokens y recursos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Desvincular todas las tipografías"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Desvincular todos los recursos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Desvincular todos los tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Desvincular todos los tokens y recursos"
 
 #: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
 msgid "workspace.libraries.typography"
@@ -8662,6 +8698,10 @@ msgstr "Duplicar grupo de tokens"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Tus tokens serán automáticamente renombrados a %s.(sufijo).(token)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/colorpicker/color_tokens.cljs
+msgid "workspace.tokens.search-by-token"
+msgstr "Buscar por el nombre del token"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
@@ -9194,3 +9234,6 @@ msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso pa
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario."

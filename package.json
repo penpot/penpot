@@ -20,6 +20,6 @@
     "@types/node": "^25.6.2",
     "esbuild": "^0.28.0",
     "nrepl-client": "^0.3.0",
-    "opencode-ai": "^1.14.46"
+    "opencode-ai": "^1.15.4"
   }
 }

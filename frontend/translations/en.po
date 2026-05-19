@@ -380,8 +380,8 @@ msgstr "+ Create org"
 msgid "dashboard.create-new-org"
 msgstr "Create org"
 
-msgid "dashboard.go-to-control-center"
-msgstr "Go to Control Center"
+msgid "dashboard.go-to-admin-console"
+msgstr "Go to Admin Console"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:340
 msgid "dashboard.create-new-team"
@@ -2015,6 +2015,10 @@ msgstr "Typography"
 msgid "inspect.attributes.typography.font-family"
 msgstr "Font Family"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Mixed Font Families"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:332
 msgid "inspect.attributes.typography.font-size"
 msgstr "Font Size"
@@ -3519,6 +3523,18 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organizations that will be deleted"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s teams"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s members"
 
 #: src/app/main/ui/comments.cljs:889
 msgid "modals.delete-comment-thread.accept"
@@ -6335,9 +6351,33 @@ msgstr "Connect library"
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Multiple typographies"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Mixed assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Mixed tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:332
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Mixed assets and tokens"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Unlink all typographies"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Unlink all assets"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Detach all tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Detach all tokens & unlink all typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:130
 msgid "workspace.libraries.typography"
@@ -8948,6 +8988,10 @@ msgstr "Duplicate Tokens Group"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/colorpicker/color_tokens.cljs
+msgid "workspace.tokens.search-by-token"
+msgstr "Search by token name"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -9503,3 +9547,6 @@ msgstr "Here you find all your organizations where you are allowed to create or 
 
 msgid "dashboard.no-permission-delete-team.message"
 msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.no-permission-move-team.message"
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."

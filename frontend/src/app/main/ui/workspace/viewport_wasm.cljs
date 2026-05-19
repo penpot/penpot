@@ -17,6 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -320,7 +321,7 @@
         show-selrect?            (and selrect (empty? drawing) (not text-editing?) (not page-transition?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
-                                      (or show-distances? mode-inspect?)
+                                      (or show-distances? mode-inspect? read-only?)
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
@@ -455,7 +456,10 @@
             ;; blank canvas (first load) visible while shapes load.
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+            (wasm.api/initialize-viewport base-objects zoom vbox
+                                          :background background
+                                          :on-shapes-ready
+                                          #(st/emit! (dw/check-file-position-data file-id)))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
