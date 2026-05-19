@@ -28,6 +28,7 @@
 (def ^:svg-id marketing-layers "marketing-layers")
 (def ^:svg-id penpot-logo "penpot-logo")
 (def ^:svg-id penpot-logo-icon "penpot-logo-icon")
+(def ^:svg-id penpot-logo-subtle "penpot-logo-subtle")
 (def ^:svg-id empty-placeholder-1-left "empty-placeholder-1-left")
 (def ^:svg-id empty-placeholder-1-right "empty-placeholder-1-right")
 (def ^:svg-id empty-placeholder-2-left "empty-placeholder-2-left")

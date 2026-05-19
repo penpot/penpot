@@ -225,7 +225,7 @@
 }
 
 .team-separator {
-  border-top: $b-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--color-background-quaternary);
   margin: 0;
 }
 
@@ -642,6 +642,17 @@
     fill: var(--icon-stroke-color);
     width: var(--sp-xl);
     height: var(--sp-xl);
+  }
+}
+
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
   }
 }
 
