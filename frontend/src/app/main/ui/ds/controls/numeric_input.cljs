@@ -433,7 +433,8 @@
                        token (get-option-by-name options name)]
                    (if token
                      (apply-token (:resolved-value token) name)
-                     (apply-value (mf/ref-val last-value*)))))
+                     (apply-value (mf/ref-val last-value*))))
+                 (reset! is-open* false))
 
                enter?
                (if is-open
@@ -705,7 +706,9 @@
         token-props
         (when (and token-applied-name (not= :multiple token-applied-name))
           (let [token       (get-option-by-name dropdown-options token-applied-name)
-                id          (get token :id)
+                id          (or (get token :id)
+                                (some-> (get token-applied :id)
+                                        (dm/str)))
                 label       (or (get token :name) applied-token-name)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
