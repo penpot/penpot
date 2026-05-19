@@ -27,8 +27,7 @@
 ;; FIXME: this clearly should be renamed to something different, this
 ;; namespace has also fill related code
 
-(mf/defc inner-stroke-clip-path
-  {::mf/wrap-props false}
+(mf/defc inner-stroke-clip-path*
   [{:keys [shape render-id index]}]
   (let [shape-id (dm/get-prop shape :id)
         suffix   (if (some? index) (dm/str "-" index) "")
@@ -37,8 +36,7 @@
     [:> "clipPath" {:id clip-id}
      [:use {:href href}]]))
 
-(mf/defc outer-stroke-mask
-  {::mf/wrap-props false}
+(mf/defc outer-stroke-mask*
   [{:keys [shape stroke render-id index]}]
   (let [shape-id       (dm/get-prop shape :id)
         suffix         (if (some? index) (dm/str "-" index) "")
@@ -82,8 +80,7 @@
        :style {:fill "black"
                :stroke "none"}}]]))
 
-(mf/defc cap-markers
-  {::mf/wrap-props false}
+(mf/defc cap-markers*
   [{:keys [stroke render-id index]}]
   (let [id-prefix (dm/str "marker-" render-id)
 
@@ -201,8 +198,7 @@
                  :fillOpacity opacity}
         [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
 
-(mf/defc stroke-defs
-  {::mf/wrap-props false}
+(mf/defc stroke-defs*
   [{:keys [shape stroke render-id index]}]
   (let [open-path?    (and ^boolean (cfh/path-shape? shape)
                            ^boolean (path/shape-with-open-path? shape))
@@ -210,10 +206,6 @@
         alignment     (:stroke-alignment stroke :center)
         width         (:stroke-width stroke 0)
 
-        props         #js {:id (dm/str "stroke-color-gradient-" render-id "-" index)
-                           :gradient gradient
-                           :shape shape
-                           :force-transform (cfh/path-shape? shape)}
         stroke-image  (:stroke-image stroke)
         uri           (when stroke-image (cf/resolve-file-media stroke-image))
         embed         (embed/use-data-uris [uri])
@@ -240,9 +232,13 @@
                            :id (dm/str "stroke-image-" render-id "-" index)}]
     [:*
      (when (some? gradient)
-       (case (:type gradient)
-         :linear [:> grad/linear-gradient props]
-         :radial [:> grad/radial-gradient props]))
+       (let [props {:id (dm/str "stroke-color-gradient-" render-id "-" index)
+                    :gradient gradient
+                    :shape shape
+                    :force-transform (cfh/path-shape? shape)}]
+         (case (:type gradient)
+           :linear [:> grad/linear-gradient* props]
+           :radial [:> grad/radial-gradient* props])))
 
      (when (:stroke-image stroke)
        ;; We need to make the pattern size and the image fit so it's not repeated
@@ -261,31 +257,30 @@
        (and (not open-path?)
             (= :inner alignment)
             (> width 0))
-       [:& inner-stroke-clip-path {:shape shape
-                                   :render-id render-id
-                                   :index index}]
+       [:> inner-stroke-clip-path* {:shape shape
+                                    :render-id render-id
+                                    :index index}]
 
        (and (not open-path?)
             (= :outer alignment)
             (> width 0))
-       [:& outer-stroke-mask {:shape shape
-                              :stroke stroke
-                              :render-id render-id
-                              :index index}]
+       [:> outer-stroke-mask* {:shape shape
+                               :stroke stroke
+                               :render-id render-id
+                               :index index}]
 
        (or (some? (:stroke-cap-start stroke))
            (some? (:stroke-cap-end stroke)))
-       [:& cap-markers {:stroke stroke
-                        :render-id render-id
-                        :index index}])]))
+       [:> cap-markers* {:stroke stroke
+                         :render-id render-id
+                         :index index}])]))
 
 ;; Outer alignment: display the shape in two layers. One without
 ;; stroke (only fill), and another one only with stroke at double
 ;; width (transparent fill) and passed through a mask that shows the
 ;; whole shape, but hides the original shape without stroke
 
-(mf/defc outer-stroke
-  {::mf/wrap-props false}
+(mf/defc outer-stroke*
   [{:keys [children shape stroke index]}]
   (let [shape-id     (dm/get-prop shape :id)
         render-id    (mf/use-ctx muc/render-id)
@@ -302,7 +297,7 @@
 
     [:g.outer-stroke-shape
      [:defs
-      [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]
+      [:> stroke-defs* {:shape shape :stroke stroke :render-id render-id :index index}]
       (let [type  (obj/get children "type")
             style (-> (obj/clone style)
                       (obj/unset! "fill")
@@ -333,20 +328,14 @@
 ;; Inner alignment: display the shape with double width stroke, and
 ;; clip the result with the original shape without stroke.
 
-(mf/defc inner-stroke
-  {::mf/wrap-props false}
-  [props]
-  (let [child        (unchecked-get props "children")
-        shape        (unchecked-get props "shape")
-        stroke       (unchecked-get props "stroke")
-        index        (unchecked-get props "index")
-
-        shape-id     (dm/get-prop shape :id)
+(mf/defc inner-stroke*
+  [{:keys [children shape stroke index]}]
+  (let [shape-id     (dm/get-prop shape :id)
         render-id    (mf/use-ctx muc/render-id)
 
-        type         (obj/get child "type")
+        type         (obj/get children "type")
 
-        props        (-> (obj/get child "props") obj/clone)
+        props        (-> (obj/get children "props") obj/clone)
         ;; FIXME: check if style need to be cloned
         style        (-> (obj/get props "style") obj/clone)
         transform    (obj/get props "transform")
@@ -368,7 +357,7 @@
     [:g.inner-stroke-shape
      {:transform transform}
      [:defs
-      [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]
+      [:> stroke-defs* {:shape shape :stroke stroke :render-id render-id :index index}]
       [:> type props]]
 
      [:use {:href (dm/str "#" shape-id)
@@ -380,16 +369,10 @@
 ;; able to draw the stroke in the three cases. See discussion at:
 ;; https://stackoverflow.com/questions/7241393/can-you-control-how-an-svgs-stroke-width-is-drawn
 
-(mf/defc shape-custom-stroke
-  {::mf/wrap-props false}
-  [props]
-  (let [child           (unchecked-get props "children")
-        shape           (unchecked-get props "shape")
-        stroke          (unchecked-get props "stroke")
-        index           (unchecked-get props "index")
-
-        render-id       (mf/use-ctx muc/render-id)
-        render-id       (d/nilv (unchecked-get props "render-id") render-id)
+(mf/defc shape-custom-stroke*
+  [{:keys [children shape stroke index render-id]}]
+  (let [ctx-render-id   (mf/use-ctx muc/render-id)
+        render-id       (d/nilv render-id ctx-render-id)
 
         stroke-width    (:stroke-width stroke 0)
         stroke-style    (:stroke-style stroke :none)
@@ -404,16 +387,16 @@
 
     (cond
       (and has-stroke? inner? closed?)
-      [:& inner-stroke {:shape shape :stroke stroke :index index} child]
+      [:> inner-stroke* {:shape shape :stroke stroke :index index} children]
 
       (and has-stroke? outer? closed?)
-      [:& outer-stroke {:shape shape :stroke stroke :index index} child]
+      [:> outer-stroke* {:shape shape :stroke stroke :index index} children]
 
       :else
       [:g.stroke-shape
        [:defs
-        [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]]
-       child])))
+        [:> stroke-defs* {:shape shape :stroke stroke :render-id render-id :index index}]]
+       children])))
 
 (defn- build-fill-element
   [shape child position render-id]
@@ -445,32 +428,24 @@
 
     (mf/html [:> type props])))
 
-(mf/defc shape-fills
-  {::mf/wrap-props false}
-  [props]
-  (let [child      (unchecked-get props "children")
-        shape      (unchecked-get props "shape")
+(mf/defc shape-fills*
+  [{:keys [children shape position render-id]}]
+  (let [shape-id   (dm/get-prop shape :id)
 
-        shape-id   (dm/get-prop shape :id)
+        position   (d/nilv position 0)
 
-        position   (d/nilv (unchecked-get props "position") 0)
-
-        render-id  (mf/use-ctx muc/render-id)
-        render-id  (d/nilv (unchecked-get props "render-id") render-id)]
+        ctx-render-id (mf/use-ctx muc/render-id)
+        render-id  (d/nilv render-id ctx-render-id)]
 
     [:g.fills {:id (dm/fmt "fills-%" shape-id)}
-     (build-fill-element shape child position render-id)]))
+     (build-fill-element shape children position render-id)]))
 
-(mf/defc shape-strokes
-  {::mf/wrap-props false}
-  [props]
-  (let [child         (unchecked-get props "children")
-        shape         (unchecked-get props "shape")
+(mf/defc shape-strokes*
+  [{:keys [children shape render-id style]}]
+  (let [shape-id      (dm/get-prop shape :id)
 
-        shape-id      (dm/get-prop shape :id)
-
-        render-id     (mf/use-ctx muc/render-id)
-        render-id     (d/nilv (unchecked-get props "render-id") render-id)
+        ctx-render-id (mf/use-ctx muc/render-id)
+        render-id     (d/nilv render-id ctx-render-id)
 
         strokes       (get shape :strokes)
 
@@ -487,11 +462,10 @@
 
         svg-attrs     (attrs/get-svg-props shape render-id)
 
-        style         (-> (obj/get props "style")
-                          (obj/clone)
+        style         (-> (obj/clone style)
                           (obj/merge! (obj/get svg-attrs "style")))
 
-        props        (mf/spread-props svg-attrs
+        g-props      (mf/spread-props svg-attrs
                                       {:id stroke-id
                                        :className "strokes"
                                        :style style})
@@ -501,25 +475,24 @@
     (when-not ^boolean (cfh/frame-shape? shape)
       (when (and (some? shape-blur)
                  (not ^boolean (:hidden shape-blur)))
-        (obj/set! props "filter" (dm/fmt "url(#filter-blur-%)" render-id)))
+        (obj/set! g-props "filter" (dm/fmt "url(#filter-blur-%)" render-id)))
 
       (when (and (empty? shape-fills)
                  (some? (->> shape-shadow (remove :hidden) not-empty)))
-        (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))))
+        (obj/set! g-props "filter" (dm/fmt "url(#filter-%)" render-id))))
 
     (when (some? shape-strokes)
-      [:> :g props
+      [:> :g g-props
        (for [[index value] (reverse (d/enumerate shape-strokes))
              :when (not (:hidden value))]
-         [:& shape-custom-stroke {:shape shape
-                                  :stroke value
-                                  :index index
-                                  :key (dm/str index "-" stroke-id)}
-          (build-stroke-element child value index render-id open-path?)])])))
+         [:> shape-custom-stroke* {:shape shape
+                                   :stroke value
+                                   :index index
+                                   :key (dm/str index "-" stroke-id)}
+          (build-stroke-element children value index render-id open-path?)])])))
 
-(mf/defc shape-custom-strokes
-  {::mf/wrap-props false}
-  [props]
+(mf/defc shape-custom-strokes*
+  [{:keys [children shape position render-id style]}]
   [:*
-   [:> shape-fills props]
-   [:> shape-strokes props]])
+   [:> shape-fills* {:children children :shape shape :position position :render-id render-id}]
+   [:> shape-strokes* {:children children :shape shape :render-id render-id :style style}]])

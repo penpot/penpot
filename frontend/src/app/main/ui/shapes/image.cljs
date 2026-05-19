@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes*]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
@@ -36,7 +36,7 @@
 
         path?     (some? (.-d props))]
 
-    [:& shape-custom-strokes {:shape shape}
+    [:> shape-custom-strokes* {:shape shape}
      (if ^boolean path?
        [:> :path props]
        [:> :rect props])]))
