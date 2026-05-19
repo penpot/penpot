@@ -30,7 +30,7 @@ required for sentences).
 ## Project Structure (Excerpt)
 
 ```
-/ (project root)
+mcp/
 ├── packages/common/           # Shared type definitions
 │   ├── src/
 │   │   ├── index.ts           # exports for shared types
@@ -58,7 +58,7 @@ required for sentences).
 
 ### Adjusting the Prompts
 
-The system prompt file (aka Penpot High-Level Overview) is located in
+The system prompt file (aka Penpot High-Level Overview) is located in 
 `packages/server/data/initial_instructions.md`.
 
 ### Adding a new Tool
@@ -81,7 +81,7 @@ Many tools build on `ExecuteCodePluginTask`, as many operations can be reduced t
 
 ## Dev Tooling
 
-From the project root directory, run
+From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all package
 * `pnpm run fmt` to apply the auto-formatter
