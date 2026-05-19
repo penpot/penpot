@@ -3731,6 +3731,41 @@ msgstr "Edit webhook"
 msgid "modals.edit-webhook.title"
 msgstr "Edit webhook"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.title"
+msgstr "Some invitations can't be sent"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.description"
+msgstr "Only existing members of the organization can be invited."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.warning"
+msgstr "Some people on your list won't receive the invitations."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Addresses that won't receive an invitation"
+
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "No invitations were sent"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr "Only existing members of the organization can be invited. Because none of the people on your list are members, no invitations were sent."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr "Only existing members of the organization can be invited to this team, and they are all already team members. If you need more information, contact the organization's owner."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Cancel"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.send"
+msgstr "Send invites"
+
 #: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
 msgstr "Send invitation"

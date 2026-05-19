@@ -675,6 +675,102 @@
       (t/is (nil? (:result out)))
       (t/is (empty? remaining)))))
 
+(t/deftest cleanup-org-team-invitations-removes-orphaned-invitations
+  (let [member1     (th/create-profile* 1 {:is-active true :email "member1@example.com"})
+        member2     (th/create-profile* 2 {:is-active true :email "member2@example.com"})
+        profile     (th/create-profile* 4 {:is-active true})
+        team-1      (th/create-team* 1 {:profile-id (:id profile)})
+        team-2      (th/create-team* 2 {:profile-id (:id profile)})
+        outside-team (th/create-team* 3 {:profile-id (:id profile)})
+        org-id      (uuid/random)
+        params      {::th/type :cleanup-org-team-invitations
+                     ::rpc/profile-id (:id profile)
+                     :organization-id org-id
+                     :team-ids [(:id team-1) (:id team-2)]
+                     :member-ids [(:id member1) (:id member2)]}]
+
+    ;; Should remain: member1 is an org member.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "member1@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should remain: has org-level invitation (not an org member yet).
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "pending@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "pending@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should be deleted: not an org member and no org-level invitation.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "nonmember@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should be deleted: orphaned invitation (no org member, no org invitation).
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "orphan@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should remain: expired invitation (should not be cleaned up).
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "expired@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-past "1h")})
+
+    ;; Should remain: outside org scope.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id outside-team)
+                    :org-id nil
+                    :email-to "outsider@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [out     (management-command-with-nitrate! params)]
+
+      (t/is (th/success? out))
+      (t/is (nil? (:result out)))
+
+      ;; Verify remaining invitations.
+      (t/is (= 1 (count (th/db-query :team-invitation {:email-to "member1@example.com"}))))
+      (t/is (= 2 (count (th/db-query :team-invitation {:email-to "pending@example.com"}))))
+      (t/is (= 0 (count (th/db-query :team-invitation {:email-to "nonmember@example.com"}))))
+      (t/is (= 0 (count (th/db-query :team-invitation {:email-to "orphan@example.com"}))))
+      (t/is (= 1 (count (th/db-query :team-invitation {:email-to "expired@example.com"}))))
+      (t/is (= 1 (count (th/db-query :team-invitation {:email-to "outsider@example.com"})))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests: remove-from-org
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

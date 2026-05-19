@@ -372,3 +372,75 @@
     ;; Notify connected users
     (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
   nil)
+
+(def ^:private sql:get-profiles-by-emails
+  "SELECT id, email
+     FROM profile
+    WHERE email = ANY(?)
+      AND deleted_at IS NULL")
+
+(def ^:private sql:get-org-direct-invitation-emails
+  "SELECT DISTINCT email_to
+     FROM team_invitation
+    WHERE org_id = ?
+      AND team_id IS NULL
+      AND valid_until >= now()")
+
+(defn get-org-direct-invitation-emails
+  "Returns the set of emails that have a pending direct org-level invitation
+  (i.e. invited to the org itself, not to a specific team)."
+  [conn org-id]
+  (->> (db/exec! conn [sql:get-org-direct-invitation-emails org-id])
+       (map :email-to)
+       (into #{})))
+
+(def ^:private schema:check-org-members-params
+  [:map {:title "CheckOrgMembersParams"}
+   [:organization-id ::sm/uuid]
+   [:emails [:vector ::sm/email]]])
+
+(sv/defmethod ::check-org-members
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:check-org-members-params
+   ::sm/result [:map-of :string :boolean]
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
+  (or (when (contains? cf/flags :nitrate)
+        (assert-membership cfg profile-id organization-id)
+        (let [emails-array   (db/create-array conn "text" emails)
+              profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
+              email->id      (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
+              org-member-ids (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+              invited-emails (get-org-direct-invitation-emails conn organization-id)]
+          (into {}
+                (map (fn [email]
+                       (let [pid (get email->id email)]
+                         [email (boolean (or (and pid (contains? org-member-ids pid))
+                                             (contains? invited-emails email)))])))
+                emails)))
+      {}))
+
+(def ^:private schema:all-org-members-in-team-params
+  [:map {:title "CheckOrgMembersInTeamParams"}
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::all-org-members-in-team
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:all-org-members-in-team-params
+   ::sm/result ::sm/boolean}
+  [cfg {:keys [::rpc/profile-id team-id organization-id]}]
+  (if (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+      (assert-membership cfg profile-id organization-id)
+      (let [org-members     (nitrate/call cfg :get-org-members {:organization-id organization-id})
+            org-member-ids  (into #{} org-members)
+            team-members    (db/query cfg :team-profile-rel {:team-id team-id})
+            team-member-ids (into #{} (map :profile-id team-members))]
+        (every? #(contains? team-member-ids %) org-member-ids)))
+    false))
