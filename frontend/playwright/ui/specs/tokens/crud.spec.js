@@ -1687,29 +1687,58 @@ test.describe("Tokens - creation", () => {
     // Submit button should remain disabled when value is empty
     await expect(submitButton).toBeDisabled();
   });
+});
 
-  test("User duplicate color token", async ({ page }) => {
-    const { tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page);
+test("User cannot create token with a conflicting name in other set", async ({ page }) => {
+  const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page);
 
-    await expect(tokensSidebar).toBeVisible();
+  await expect(tokensSidebar).toBeVisible();
 
-    await unfoldTokenType(tokensSidebar, "color");
+  await tokenThemesSetsSidebar.getByRole('button', { name: 'light', exact: true }).click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
-      name: "colors.blue.100",
-    });
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+  await tokensTabPanel
+    .getByRole("button", { name: "Add Token: Color" })
+    .click();
 
-    await colorToken.click({ button: "right" });
-    await expect(tokenContextMenuForToken).toBeVisible();
+  await expect(tokensUpdateCreateModal).toBeVisible();
 
-    await tokenContextMenuForToken.getByText("Duplicate token").click();
-    await expect(tokenContextMenuForToken).not.toBeVisible();
-
-    await expect(
-      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
-    ).toBeVisible();
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  const valueField = tokensUpdateCreateModal.getByLabel("Value");
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
   });
+
+  // Initially submit button should be disabled
+  await expect(submitButton).toBeDisabled();
+
+  await nameField.click();
+
+  // Fill in the name of an existing token in the current set
+  await nameField.fill("accent.default");
+
+  // An error message should appear and submit button should be disabled
+  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: accent.default'))
+    .toBeVisible()
+
+  await expect(submitButton).toBeDisabled();
+
+  // Fill in a name that clashes with tokens like colors.red.600 in set core
+  await nameField.fill("colors.red");
+
+  // An error message should appear and submit button should be disabled
+  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: colors.red'))
+    .toBeVisible()
+
+  await expect(submitButton).toBeDisabled();
+
+  // Fill in a name that matches exactly a token in another set
+  await nameField.fill("colors.red.600");
+  await valueField.fill("#6000000");
+
+  // Submit button should be enabled now
+  await expect(submitButton).toBeEnabled();
 });
 
 test("User creates grouped color token", async ({ page }) => {

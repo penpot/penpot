@@ -62,7 +62,16 @@
    [:undo-group ::sm/uuid]
    [:tags [:set :keyword]]
    [:selected-before {:optional true} [:maybe [:set ::sm/uuid]]]
-   [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]])
+   [:selected-after {:optional true} [:maybe [:set ::sm/uuid]]]
+   ;; When the entry was pushed onto the stack; used by the actions
+   ;; history panel to show a relative timestamp next to each entry.
+   ;; Issue #7660.
+   [:timestamp {:optional true} [:maybe some?]]
+   ;; Display name of the profile that created the entry. The undo
+   ;; stack is client-side per profile, so this is always the current
+   ;; user; still stored explicitly so the UI does not need to reach
+   ;; into profile state while rendering. Issue #7660.
+   [:by {:optional true} [:maybe :string]]])
 
 (def check-undo-entry
   (sm/check-fn schema:undo-entry))
@@ -87,6 +96,26 @@
     (update [_ state]
       (update state :workspace-undo assoc :index index))))
 
+(defn- profile-display-name
+  "Best-effort display name for the current profile. Prefers the full
+  name, falls back to the email, and finally to nil so the UI can
+  simply skip the 'by …' suffix when we have nothing useful to show.
+  Issue #7660."
+  [state]
+  (let [profile (get state :profile)]
+    (or (:fullname profile)
+        (:email profile))))
+
+(defn- stamp-entry
+  "Attach creation metadata to an undo entry. We only stamp the timestamp
+  and author when they are missing so already-enriched entries (e.g.
+  coming from an accumulated transaction that was opened earlier) keep
+  their original creation time and attribution. Issue #7660."
+  [state entry]
+  (cond-> entry
+    (nil? (:timestamp entry)) (assoc :timestamp (ct/now))
+    (nil? (:by entry))        (assoc :by (profile-display-name state))))
+
 (defn- add-undo-entry
   [state entry]
   (if (and entry
@@ -95,7 +124,7 @@
     (let [index (get-in state [:workspace-undo :index] -1)
           items (get-in state [:workspace-undo :items] [])
           items (->> items (take (inc index)) (into []))
-          items (conj-undo-entry items entry)]
+          items (conj-undo-entry items (stamp-entry state entry))]
       (-> state
           (update :workspace-undo assoc :items items
                   :index (min (inc index)
@@ -104,7 +133,9 @@
 
 (defn- stack-undo-entry
   "Extends the current undo entry in the workspace with new changes if it
-   exists, or creates a new entry if it doesn't."
+   exists, or creates a new entry if it doesn't. When stacking onto an
+   existing entry, the entry's original timestamp is preserved so the
+   history panel keeps showing when the action originated. Issue #7660."
   [state {:keys [undo-changes redo-changes selected-after] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)

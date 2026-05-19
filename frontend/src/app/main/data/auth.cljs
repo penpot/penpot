@@ -61,25 +61,29 @@
                     (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))]
 
     (ptk/reify ::logged-in
-      ev/Event
-      (-data [_]
-        {::ev/name "signin"
-         ::ev/type "identify"
-         :email (:email profile)
-         :auth-backend (:auth-backend profile)
-         :fullname (:fullname profile)
-         :is-muted (:is-muted profile)
-         :default-team-id (:default-team-id profile)
-         :default-project-id (:default-project-id profile)})
-
       ptk/WatchEvent
       (watch [_ _ stream]
         (cf/initialize-external-context-info)
+
 
         (->> (rx/merge
               (rx/of (dp/set-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
+
+              ;; We schedule this event to be executed a bit later,
+              ;; when the profile is already set
+              (->> (rx/of (ev/event {::ev/name "signin"
+                                     ::ev/type "identify"
+                                     :id (:id profile)
+                                     :email (:email profile)
+                                     :auth-backend (:auth-backend profile)
+                                     :fullname (:fullname profile)
+                                     :is-muted (:is-muted profile)
+                                     :default-team-id (:default-team-id profile)
+                                     :default-project-id (:default-project-id profile)}))
+                   (rx/observe-on :async))
+
 
               (->> stream
                    (rx/filter (ptk/type? ::dtm/teams-fetched))

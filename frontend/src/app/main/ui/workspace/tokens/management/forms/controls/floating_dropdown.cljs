@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.management.forms.controls.floating-dropdown
   (:require
    [app.util.dom :as dom]
+   [app.util.timers :as timers]
    [rumext.v2 :as mf]))
 
 (defn use-floating-dropdown [is-open input-wrapper-ref outer-wrapper-ref dropdown-ref]
@@ -48,7 +49,7 @@
       (when is-open
         (let [recalculate
               (fn []
-                (js/requestAnimationFrame
+                (timers/raf
                  (fn []
                    (let [input-node (mf/ref-val input-wrapper-ref)]
                      (calculate-position input-node)))))

@@ -51,6 +51,10 @@
   visibility: var(--actions-visibility);
 }
 
+.font-family-mixed {
+  color: var(--color-foreground-secondary);
+}
+
 .typography-selection-wrapper {
   display: grid;
   grid-template-columns: $sz-24 auto 1fr;
