@@ -13,6 +13,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix the MCP plugin's WebSocket URL default to use the `ws://` scheme and build it from the documented `PENPOT_MCP_SERVER_ADDRESS` + `PENPOT_MCP_WEBSOCKET_PORT` env vars instead of the hard-coded `http://localhost:4402`; drop stale references to the pre-release `PENPOT_MCP_SERVER_LISTEN_ADDRESS` / `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS` env var names from `mcp/README.md` so the docs match what the server actually reads [Github #9202](https://github.com/penpot/penpot/issues/9202)
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
