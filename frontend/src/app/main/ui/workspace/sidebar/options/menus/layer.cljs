@@ -125,9 +125,14 @@
 
         handle-blend-mode-leave
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids current-blend-mode wasm-renderer-enabled?)
          (fn [_value]
            (swap! state* assoc :preview-complete? true)
+           (when wasm-renderer-enabled?
+             (doseq [id ids]
+               (wasm.api/use-shape id)
+               (wasm.api/set-shape-blend-mode current-blend-mode)
+               (wasm.api/request-render "preview-blend-mode")))
            (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change

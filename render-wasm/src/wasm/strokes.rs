@@ -3,7 +3,6 @@ use macros::ToJs;
 use crate::mem;
 use crate::shapes::{self, StrokeCap, StrokeStyle};
 use crate::with_current_shape_mut;
-use crate::STATE;
 
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]

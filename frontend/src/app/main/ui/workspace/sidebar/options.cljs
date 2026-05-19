@@ -219,6 +219,7 @@
   [{:keys [objects selected page-id file-id on-change-section on-expand]}]
   (let [permissions
         (mf/use-ctx ctx/permissions)
+        render-context-lost? (mf/deref refs/render-context-lost?)
 
         options-mode
         (mf/deref refs/options-mode-global)
@@ -228,7 +229,7 @@
           (sequence (keep (d/getf objects)) selected))]
 
     [:div {:class (stl/css :tool-window)}
-     (if (:can-edit permissions)
+     (if (and (:can-edit permissions) (not render-context-lost?))
        [:> tab-switcher* {:tabs options-tabs
                           :on-change on-option-tab-change
                           :selected (name options-mode)

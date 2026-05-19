@@ -156,6 +156,7 @@
         (ts/asap #(.reload ^js location true))
         true))))
 
+(def saas?                (obj/get global "penpotIsSaas" false))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def oidc-name            (obj/get global "penpotOIDCName"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))

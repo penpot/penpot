@@ -78,6 +78,32 @@ test("User draws a rect", async ({ page }) => {
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
+test("Selection size badge appears on selection and hides on deselect", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  const badge = page.locator(".selection-size-badge");
+
+  await expect(badge).toHaveCount(0);
+
+  await workspacePage.clickLeafLayer("Rectangle");
+  await expect(badge).toBeVisible();
+
+  await workspacePage.page.keyboard.press("Escape");
+  await expect(badge).toHaveCount(0);
+});
+
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();

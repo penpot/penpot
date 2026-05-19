@@ -27,6 +27,7 @@
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -601,6 +602,10 @@
                 (assoc :workspace-focus-selected selected)
                 (assoc :workspace-pre-focus (:workspace-local state)))
             state))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))
 
     ptk/WatchEvent
     (watch [_ state stream]

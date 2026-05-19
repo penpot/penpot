@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::shapes::{FillRule, StrokeLineCap, StrokeLineJoin, SvgAttrs};
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 
 #[derive(PartialEq, ToJs)]
 #[repr(u8)]
