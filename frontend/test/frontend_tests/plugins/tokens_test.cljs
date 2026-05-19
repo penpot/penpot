@@ -6,7 +6,12 @@
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.store :as st]
    [app.plugins.tokens :as ptok]
+   [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]))
 
 ;; Regression coverage for issue #9162.
@@ -80,3 +85,44 @@
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))
   (t/is (false? (boolean (ptok/token-attr? "not-a-real-attr"))))
   (t/is (false? (boolean (ptok/token-attr? nil)))))
+
+(t/deftest token-theme-add-set-accepts-token-set-id
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        token-set (ctob/make-token-set :id set-id :name "Core")
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn [event] (swap! emitted conj event))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.addSet theme-proxy (str set-id))
+        (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
+        (t/is (empty? @invalid))))))
+
+(t/deftest token-theme-add-set-preserves-validation-errors
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (constantly nil)
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn [event] (swap! emitted conj event))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.addSet theme-proxy 42)
+        (.removeSet theme-proxy nil)
+        (.addSet theme-proxy #js {:name "Core"})
+        (t/is (empty? @emitted))
+        (t/is (= [[:addSet "Expected a valid TokenSet or token set id"]
+                  [:removeSet "Expected a valid TokenSet or token set id"]
+                  [:addSet "Expected a valid TokenSet or token set id"]]
+                 @invalid))))))

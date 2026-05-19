@@ -355,13 +355,15 @@
 
 (defn- resolve-token-set-name
   [file-id set-arg]
-  (or (when (and (some? set-arg) (not (string? set-arg)))
-        (let [n (obj/get set-arg "name")]
-          (when (string? n) n)))
-      (when-let [id (cond
-                      (string? set-arg) (uuid/parse* set-arg)
-                      (some? set-arg)   (some-> (obj/get set-arg "id") uuid/parse*))]
-        (some-> (u/locate-token-set file-id id) ctob/get-name))))
+  (when-let [id (cond
+                  (string? set-arg) (uuid/parse* set-arg)
+                  (some? set-arg)   (some-> (obj/get set-arg "id") uuid/parse*))]
+    (or (some-> (u/locate-token-set file-id id) ctob/get-name)
+        ;; Freshly-created set proxies can be passed back before the async
+        ;; state update makes them locatable by id.
+        (when-not (string? set-arg)
+          (let [n (obj/get set-arg "name")]
+            (when (string? n) n))))))
 
 (defn token-theme-proxy
   [plugin-id file-id id]
@@ -448,7 +450,11 @@
      :fn (fn [set-arg]
            (let [set-name (resolve-token-set-name file-id set-arg)
                  theme    (u/locate-token-theme file-id id)]
-             (when (and set-name theme)
+             (cond
+               (nil? set-name)
+               (u/not-valid plugin-id :addSet "Expected a valid TokenSet or token set id")
+
+               theme
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
 
     :removeSet
@@ -456,7 +462,11 @@
      :fn (fn [set-arg]
            (let [set-name (resolve-token-set-name file-id set-arg)
                  theme    (u/locate-token-theme file-id id)]
-             (when (and set-name theme)
+             (cond
+               (nil? set-name)
+               (u/not-valid plugin-id :removeSet "Expected a valid TokenSet or token set id")
+
+               theme
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
     :duplicate
@@ -545,4 +555,3 @@
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
                (token-set-proxy plugin-id file-id set-id))))}))
-
