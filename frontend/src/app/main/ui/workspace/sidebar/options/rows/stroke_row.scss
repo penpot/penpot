@@ -77,6 +77,27 @@
   column-gap: var(--sp-xs);
 }
 
+.stroke-dash-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--sp-xs);
+}
+
+.stroke-dash-input {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding-inline-start: var(--sp-s);
+}
+
+.stroke-dash-label {
+  color: var(--input-foreground-color);
+  text-transform: lowercase;
+}
+
 .stroke-options-tokens {
   @include sidebar.option-grid-structure;
 

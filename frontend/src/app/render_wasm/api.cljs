@@ -724,13 +724,18 @@
                   style     (-> stroke :stroke-style sr/translate-stroke-style)
                   cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                   cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                  ;; Sentinel -1 means "unset" on the Rust side — keeps the
+                  ;; FFI signature flat while letting the renderer fall back
+                  ;; to its default dash pattern when no override is stored.
+                  dash      (or (:stroke-dash stroke) -1)
+                  gap       (or (:stroke-gap stroke) -1)
                   offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
                   heap      (mem/get-heap-u8)
                   dview     (js/DataView. (.-buffer heap))]
               (case align
-                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
-                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
-                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
+                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
+                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
 
               (cond
                 (some? gradient)
