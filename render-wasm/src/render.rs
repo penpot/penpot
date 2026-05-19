@@ -2215,8 +2215,9 @@ impl RenderState {
         performance::begin_measure!("process_animation_frame");
         self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
 
-        self.surfaces.draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
-        self.flush_and_submit();
+        if !self.options.is_interactive_transform() {
+            self.surfaces.draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
+        }
 
         if self.render_in_progress {
             // Partial frame: just flush GPU work. The display shows the last
