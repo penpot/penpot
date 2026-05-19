@@ -23,8 +23,8 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc themes-list
-  [{:keys [themes active-theme-paths on-close grouped?]}]
+(mf/defc themes-list*
+  [{:keys [themes active-theme-paths on-close is-grouped]}]
   (when (seq themes)
     [:ul {:class (stl/css :theme-options)}
      (for [[_ {:keys [id name] :as theme}] themes
@@ -39,7 +39,7 @@
              :aria-selected selected?
              :class (stl/css-case
                      :checked-element true
-                     :sub-item grouped?
+                     :sub-item is-grouped
                      :is-selected selected?)
              :on-click select-theme}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :label) :title name} name]
@@ -52,7 +52,7 @@
   []
   (modal/show! :tokens/themes {}))
 
-(mf/defc theme-options
+(mf/defc theme-options*
   [{:keys [active-theme-paths themes on-close]}]
   [:ul {:class (stl/css :theme-options :custom-select-dropdown)
         :role "listbox"}
@@ -62,10 +62,10 @@
            :role "group"}
       (when (seq group)
         [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
-      [:& themes-list {:themes themes
-                       :active-theme-paths active-theme-paths
-                       :on-close on-close
-                       :grouped? true}]])
+      [:> themes-list* {:themes themes
+                        :active-theme-paths active-theme-paths
+                        :on-close on-close
+                        :is-grouped true}]])
    [:li {:class (stl/css :separator)
          :aria-hidden true}]
    [:li {:class (stl/css-case :checked-element true
@@ -75,7 +75,7 @@
     [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
     [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])
 
-(mf/defc theme-selector
+(mf/defc theme-selector*
   [{:keys []}]
   (let [;; Store
         active-theme-paths (mf/deref refs/workspace-active-theme-paths-no-hidden)
@@ -140,7 +140,7 @@
 
           [:& dropdown {:show is-open?
                         :on-close on-close-dropdown}
-           [:& theme-options {:active-theme-paths active-theme-paths
-                              :themes themes
-                              :on-close on-close-dropdown}]]])
+           [:> theme-options* {:active-theme-paths active-theme-paths
+                               :themes themes
+                               :on-close on-close-dropdown}]]])
         container))]))
