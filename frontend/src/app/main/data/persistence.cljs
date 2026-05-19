@@ -121,9 +121,11 @@
                         :features features}
               permissions (:permissions state)]
 
-          ;; Prevent saving changes when in version preview (read-only) mode
-          ;; or when the user does not have edition permission.
-          (when (and (:can-edit permissions)
+          ;; Prevent saving changes when in version preview (read-only) mode,
+          ;; when the user does not have edition permission, or when file-id is nil
+          ;; (race condition: navigation can clear :current-file-id before commit fires).
+          (when (and file-id
+                     (:can-edit permissions)
                      (not (get-in state [:workspace-global :read-only?])))
             (->> (rp/cmd! :update-file params)
                  (rx/mapcat (fn [{:keys [revn lagged] :as response}]

@@ -209,7 +209,8 @@
             permissions (get state :permissions)]
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
-        (when (:can-edit permissions)
+        ;; or if there is no file
+        (when (and (:can-edit permissions) file-id)
           (log/trace :hint "commit-changes" :redo-changes redo-changes)
           (let [selected (dm/get-in state [:workspace-local :selected])]
             (rx/of (-> params
