@@ -66,11 +66,6 @@
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     WHERE f.id = ?")
 
-(defn- get-minimal-file
-  [cfg id & {:as opts}]
-  (-> (db/get-with-sql cfg [sql:get-minimal-file id] opts)
-      (d/update-when :metadata fdata/decode-metadata)))
-
 (def ^:private sql:get-snapshot-without-data
   (str "WITH snapshots AS (" sql:snapshots ")"
        "SELECT c.id,
@@ -319,79 +314,87 @@
 
 (defn restore!
   [{:keys [::db/conn] :as cfg} file-id snapshot-id]
-  (let [file (get-minimal-file conn file-id {::db/for-update true})
-        vern (rand-int Integer/MAX_VALUE)
+  (let [lock-sql (str sql:get-minimal-file " FOR UPDATE OF f SKIP LOCKED")
+        row      (db/exec-one! conn [lock-sql file-id])]
 
-        storage
-        (sto/resolve cfg {::db/reuse-conn true})
+    (when-not row
+      (ex/raise :type :conflict
+                :code :file-locked
+                :hint "the file is currently locked by another operation, retry later"))
 
-        snapshot
-        (get-snapshot cfg file-id snapshot-id)]
+    (let [file (d/update-when row :metadata fdata/decode-metadata)
+          vern (rand-int Integer/MAX_VALUE)
 
-    (when-not snapshot
-      (ex/raise :type :not-found
-                :code :snapshot-not-found
-                :hint "unable to find snapshot with the provided label"
-                :snapshot-id snapshot-id
-                :file-id file-id))
+          storage
+          (sto/resolve cfg {::db/reuse-conn true})
 
-    (when-not (:data snapshot)
-      (ex/raise :type :internal
-                :code :snapshot-without-data
-                :hint "snapshot has no data"
-                :label (:label snapshot)
-                :file-id file-id))
+          snapshot
+          (get-snapshot cfg file-id snapshot-id)]
 
-    (let [;; If the snapshot has applied migrations stored, we reuse
-          ;; them, if not, we take a safest set of migrations as
-          ;; starting point. This is because, at the time of
-          ;; implementing snapshots, migrations were not taken into
-          ;; account so we need to make this backward compatible in
-          ;; some way.
-          migrations
-          (or (:migrations snapshot)
-              (fmg/generate-migrations-from-version 67))
+      (when-not snapshot
+        (ex/raise :type :not-found
+                  :code :snapshot-not-found
+                  :hint "unable to find snapshot with the provided label"
+                  :snapshot-id snapshot-id
+                  :file-id file-id))
 
-          file
-          (-> file
-              (update :revn inc)
-              (assoc :migrations migrations)
-              (assoc :data (:data snapshot))
-              (assoc :vern vern)
-              (assoc :version (:version snapshot))
-              (assoc :has-media-trimmed false)
-              (assoc :modified-at (:modified-at snapshot))
-              (assoc :features (:features snapshot)))]
+      (when-not (:data snapshot)
+        (ex/raise :type :internal
+                  :code :snapshot-without-data
+                  :hint "snapshot has no data"
+                  :label (:label snapshot)
+                  :file-id file-id))
 
-      (l/dbg :hint "restoring snapshot"
-             :file-id (str file-id)
-             :label (:label snapshot)
-             :snapshot-id (str (:id snapshot)))
+      (let [;; If the snapshot has applied migrations stored, we reuse
+            ;; them, if not, we take a safest set of migrations as
+            ;; starting point. This is because, at the time of
+            ;; implementing snapshots, migrations were not taken into
+            ;; account so we need to make this backward compatible in
+            ;; some way.
+            migrations
+            (or (:migrations snapshot)
+                (fmg/generate-migrations-from-version 67))
 
-      ;; In the same way, on reseting the file data, we need to restore
-      ;; the applied migrations on the moment of taking the snapshot
-      (bfc/update-file! cfg file ::bfc/reset-migrations? true)
+            file
+            (-> file
+                (update :revn inc)
+                (assoc :migrations migrations)
+                (assoc :data (:data snapshot))
+                (assoc :vern vern)
+                (assoc :version (:version snapshot))
+                (assoc :has-media-trimmed false)
+                (assoc :modified-at (:modified-at snapshot))
+                (assoc :features (:features snapshot)))]
 
-      ;; FIXME: this should be separated functions, we should not have
-      ;; inline sql here.
+        (l/dbg :hint "restoring snapshot"
+               :file-id (str file-id)
+               :label (:label snapshot)
+               :snapshot-id (str (:id snapshot)))
 
-      ;; clean object thumbnails
-      (let [sql (str "update file_tagged_object_thumbnail "
-                     "   set deleted_at = now() "
-                     " where file_id=? returning media_id")
-            res (db/exec! conn [sql file-id])]
-        (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/touch-object! storage media-id)))
+        ;; In the same way, on reseting the file data, we need to restore
+        ;; the applied migrations on the moment of taking the snapshot
+        (bfc/update-file! cfg file ::bfc/reset-migrations? true)
 
-      ;; clean file thumbnails
-      (let [sql (str "update file_thumbnail "
-                     "   set deleted_at = now() "
-                     " where file_id=? returning media_id")
-            res (db/exec! conn [sql file-id])]
-        (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/touch-object! storage media-id)))
+        ;; FIXME: this should be separated functions, we should not have
+        ;; inline sql here.
 
-      vern)))
+        ;; clean object thumbnails
+        (let [sql (str "update file_tagged_object_thumbnail "
+                       "   set deleted_at = now() "
+                       " where file_id=? returning media_id")
+              res (db/exec! conn [sql file-id])]
+          (doseq [media-id (into #{} (keep :media-id) res)]
+            (sto/touch-object! storage media-id)))
+
+        ;; clean file thumbnails
+        (let [sql (str "update file_thumbnail "
+                       "   set deleted_at = now() "
+                       " where file_id=? returning media_id")
+              res (db/exec! conn [sql file-id])]
+          (doseq [media-id (into #{} (keep :media-id) res)]
+            (sto/touch-object! storage media-id)))
+
+        vern))))
 
 (defn delete!
   [cfg & {:keys [id file-id deleted-at]}]
