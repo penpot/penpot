@@ -203,7 +203,22 @@
                        (remove-path path paths)
                        (add-path path paths))))))))
 
-
+(defn toggle-nested-token-path
+  [token-type new-name]
+  (ptk/reify ::toggle-nested-token-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [type-str (name token-type)
+            segments (str/split new-name ".")
+            n-groups (dec (count segments))]
+        (if (pos? n-groups)
+          (update-in state [:workspace-tokens :folded-token-paths]
+                     (fn [paths]
+                       (reduce (fn [ps i]
+                                 (remove-path (str type-str "." (str/join "." (take i segments))) ps))
+                               (or paths [])
+                               (range 1 (inc n-groups)))))
+          state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
@@ -523,7 +538,8 @@
                                           token))]
 
            (rx/of (dch/commit-changes changes)
-                  (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
+                  (ev/event (-> {::ev/name "create-token" :type token-type}
+                                (merge (meta it))))))
 
          (rx/of (create-token-with-set token)))))))
 
@@ -581,8 +597,10 @@
                            (pcb/set-token (ctob/get-id token-set)
                                           id
                                           token'))]
+         (toggle-token-path (str (name token-type) "." (:name token)))
          (rx/of (dch/commit-changes changes)
-                (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type})))))))
+                (ev/event (-> {::ev/name "edit-token" :type token-type}
+                              (merge (meta it))))))))))
 
 (defn bulk-update-tokens
   [set-id token-ids type old-path new-path]
@@ -631,7 +649,8 @@
                         (pcb/with-library-data data)
                         (pcb/set-token set-id token-id nil))]
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "delete-token" :type token-type}))))))
+               (ev/event (-> {::ev/name "delete-token" :type token-type}
+                             (merge (meta it)))))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
@@ -647,7 +666,7 @@
                                 (pcb/with-library-data data))
                             token-ids)]
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "delete-token-node"}))))))
+               (ev/event {::ev/name "delete-token-node"}))))))
 
 (defn duplicate-token
   [token-id]

@@ -1,7 +1,11 @@
 use super::{tiles, RenderState, SurfaceId};
-use crate::with_state_mut;
-use crate::STATE;
+
+#[cfg(target_arch = "wasm32")]
 use macros::wasm_error;
+
+#[cfg(target_arch = "wasm32")]
+use crate::get_render_state;
+
 use skia_safe::{self as skia, Rect};
 
 #[cfg(target_arch = "wasm32")]
@@ -183,8 +187,52 @@ pub fn render_debug_shape(
     }
 }
 
-#[cfg(target_arch = "wasm32")]
 #[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
+pub fn trap() {
+    run_script!("debugger");
+}
+
+#[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug, PartialEq)]
+pub enum SurfaceBackendKind {
+    BackendTexture,      // GPU Framebuffer (Texture)
+    BackendRenderTarget, // GPU Framebuffer (Renderbuffer)
+    Raster,              // CPU
+    Unknown,
+}
+
+#[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
+pub fn classify_surface_backend(surface: &mut skia::Surface) -> SurfaceBackendKind {
+    if skia::gpu::surfaces::get_backend_texture(
+        surface,
+        skia_safe::surface::BackendHandleAccess::FlushRead,
+    )
+    .is_some()
+    {
+        return SurfaceBackendKind::BackendTexture;
+    }
+
+    if skia::gpu::surfaces::get_backend_render_target(
+        surface,
+        skia_safe::surface::BackendHandleAccess::FlushRead,
+    )
+    .is_some()
+    {
+        return SurfaceBackendKind::BackendRenderTarget;
+    }
+
+    if surface.peek_pixels().is_some() {
+        return SurfaceBackendKind::Raster;
+    }
+
+    SurfaceBackendKind::Unknown
+}
+
+#[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state
         .surfaces
@@ -194,6 +242,8 @@ pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
+#[allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_base64(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state
         .surfaces
@@ -227,9 +277,7 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_cache_console() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface(state.render_state_mut(), SurfaceId::Cache);
-    });
+    console_debug_surface(get_render_state(), SurfaceId::Cache);
     Ok(())
 }
 
@@ -237,9 +285,7 @@ pub extern "C" fn debug_cache_console() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_cache_base64() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Cache);
-    });
+    console_debug_surface_base64(get_render_state(), SurfaceId::Cache);
     Ok(())
 }
 
@@ -247,9 +293,7 @@ pub extern "C" fn debug_cache_base64() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_atlas_console() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface(state.render_state_mut(), SurfaceId::Atlas);
-    });
+    console_debug_surface(get_render_state(), SurfaceId::Atlas);
     Ok(())
 }
 
@@ -257,8 +301,14 @@ pub extern "C" fn debug_atlas_console() -> Result<()> {
 #[wasm_error]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn debug_atlas_base64() -> Result<()> {
-    with_state_mut!(state, {
-        console_debug_surface_base64(state.render_state_mut(), SurfaceId::Atlas);
-    });
+    console_debug_surface_base64(get_render_state(), SurfaceId::Atlas);
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn debug_surface_console(id: SurfaceId) -> Result<()> {
+    console_debug_surface(get_render_state(), id);
     Ok(())
 }

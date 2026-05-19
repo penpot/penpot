@@ -17,13 +17,16 @@ export class ReplServer {
     private readonly logger = createLogger("ReplServer");
     private readonly app: express.Application;
     private readonly port: number;
+    private readonly host: string;
     private server: any;
 
     constructor(
         private readonly pluginBridge: PluginBridge,
-        port: number = 4403
+        port: number = 4403,
+        host: string = "localhost"
     ) {
         this.port = port;
+        this.host = host;
         this.app = express();
         this.setupMiddleware();
         this.setupRoutes();
@@ -86,9 +89,9 @@ export class ReplServer {
      */
     public async start(): Promise<void> {
         return new Promise((resolve) => {
-            this.server = this.app.listen(this.port, () => {
+            this.server = this.app.listen(this.port, this.host, () => {
                 this.logger.info(`REPL server started on port ${this.port}`);
-                this.logger.info(`REPL interface URL: http://${this.pluginBridge.mcpServer.host}:${this.port}`);
+                this.logger.info(`REPL interface URL: http://${this.host}:${this.port}`);
                 resolve();
             });
         });

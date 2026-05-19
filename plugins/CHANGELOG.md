@@ -1,8 +1,10 @@
 ## 1.5.0 (Unreleased)
 
 - **plugins-runtime**: Added `version` field that returns the current version
+- **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
 - **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
+- **plugin-types:** Change `LibraryComponent.isVariant()` return type to type guard `this is LibraryVariantComponent`
 - **plugin-types**: Added `createVariantFromComponents`
 - **plugin-types**: Change return type of `combineAsVariants`
 - **plugin-types**: Added `textBounds` property for text shapes
