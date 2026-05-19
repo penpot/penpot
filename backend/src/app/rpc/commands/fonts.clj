@@ -13,6 +13,7 @@
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.font :as types.font]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -99,7 +100,7 @@
    [:map {:title "create-font-variant"}
     [:team-id    ::sm/uuid]
     [:font-id    ::sm/uuid]
-    [:font-family ::sm/text]
+    [:font-family types.font/schema:font-family]
     [:font-weight [::sm/one-of {:format "number"} valid-weight]]
     [:font-style  [::sm/one-of {:format "string"} valid-style]]
     [:data    {:optional true} [:map-of ::sm/text [:or ::sm/bytes [::sm/vec ::sm/bytes]]]]
@@ -107,9 +108,6 @@
    [:fn {:error/message "one of :data or :uploads is required"}
     (fn [{:keys [data uploads]}]
       (or (seq data) (seq uploads)))]])
-
-;; FIXME: IMPORTANT: refactor this, we should not hold a whole db
-;; connection around the font creation
 
 (defn- prepare-font-data-from-uploads
   "Assembles each chunked-upload session in `uploads` (a `{mtype →
@@ -170,20 +168,18 @@
                 [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
-  [cfg {:keys [::rpc/profile-id team-id uploads] :as params}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (teams/check-edition-permissions! conn profile-id team-id)
-                (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
-                                    ::quotes/profile-id profile-id
-                                    ::quotes/team-id team-id})
-                (let [params (if (some? uploads)
-                               (prepare-font-data-from-uploads cfg params)
-                               (prepare-font-data-from-legacy params))]
-                  (create-font-variant cfg (assoc params :profile-id profile-id))))))
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id uploads] :as params}]
+  (teams/check-edition-permissions! pool profile-id team-id)
+  (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
+                      ::quotes/profile-id profile-id
+                      ::quotes/team-id team-id})
+  (let [params (if (some? uploads)
+                 (db/tx-run! cfg prepare-font-data-from-uploads params)
+                 (prepare-font-data-from-legacy params))]
+    (create-font-variant cfg (assoc params :profile-id profile-id))))
 
 (defn create-font-variant
-  [{:keys [::sto/storage ::db/conn]} {:keys [data] :as params}]
+  [{:keys [::sto/storage] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-missing [data]
             (let [data (media/run {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
@@ -208,22 +204,15 @@
                  :bucket "team-font-variant"})))
 
           (persist-fonts-files! [data]
-            (let [otf-params (prepare-font data "font/otf")
-                  ttf-params (prepare-font data "font/ttf")
-                  wf1-params (prepare-font data "font/woff")
-                  wf2-params (prepare-font data "font/woff2")]
+            (into {} (keep (fn [[kind mtype]]
+                             (when-let [params (prepare-font data mtype)]
+                               [kind (sto/put-object! storage params)])))
+                  [[:otf "font/otf"]
+                   [:ttf "font/ttf"]
+                   [:woff1 "font/woff"]
+                   [:woff2 "font/woff2"]]))
 
-              (cond-> {}
-                (some? otf-params)
-                (assoc :otf (sto/put-object! storage otf-params))
-                (some? ttf-params)
-                (assoc :ttf (sto/put-object! storage ttf-params))
-                (some? wf1-params)
-                (assoc :woff1 (sto/put-object! storage wf1-params))
-                (some? wf2-params)
-                (assoc :woff2 (sto/put-object! storage wf2-params)))))
-
-          (insert-font-variant! [{:keys [woff1 woff2 otf ttf]}]
+          (insert-font-variant! [conn {:keys [woff1 woff2 otf ttf]}]
             (db/insert! conn :team-font-variant
                         {:id (uuid/next)
                          :team-id (:team-id params)
@@ -237,14 +226,14 @@
                          :otf-file-id (:id otf)
                          :ttf-file-id (:id ttf)}))]
 
-    (let [tpoint      (ct/tpoint)
-          mtypes      (vec (keys data))
-          total-size  (reduce-kv (fn [acc _ content]
-                                   (+ acc (if (bytes? content)
-                                            (alength ^bytes content)
-                                            (fs/size content))))
-                                 0
-                                 data)]
+    (let [tpoint     (ct/tpoint)
+          mtypes     (vec (keys data))
+          total-size (reduce-kv (fn [acc _ content]
+                                  (+ acc (if (bytes? content)
+                                           (alength ^bytes content)
+                                           (fs/size content))))
+                                0
+                                data)]
 
       (l/dbg :hint "create-font-variant"
              :step "init"
@@ -256,7 +245,7 @@
 
       (let [data    (generate-missing data)
             assets  (persist-fonts-files! data)
-            result  (insert-font-variant! assets)
+            result  (db/tx-run! cfg #(insert-font-variant! (::db/conn %) assets))
             elapsed (tpoint)]
 
         (l/dbg :hint "create-font-variant"
@@ -277,7 +266,7 @@
   [:map {:title "update-font"}
    [:team-id ::sm/uuid]
    [:id ::sm/uuid]
-   [:name :string]])
+   [:name types.font/schema:font-family]])
 
 (sv/defmethod ::update-font
   {::doc/added "1.18"

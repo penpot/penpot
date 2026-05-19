@@ -149,7 +149,15 @@
      (watch [_ state _]
        (when-let [team-id (or team-id (:current-team-id state))]
          (->> (rp/cmd! :get-team-members {:team-id team-id})
-              (rx/map (partial members-fetched team-id))))))))
+              (rx/map (partial members-fetched team-id))
+              (rx/catch (fn [cause]
+                          (let [{:keys [type]} (ex-data cause)]
+                            (if (= :not-found type)
+                              (do
+                                (log/warn :hint "fetch-members: team not found, skipping"
+                                          :team-id (str team-id))
+                                (rx/empty))
+                              (rx/throw cause)))))))))))
 
 (defn- invitations-fetched
   [team-id invitations]

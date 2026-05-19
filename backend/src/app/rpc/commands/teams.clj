@@ -194,7 +194,9 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params))
+      (contains? cf/flags :nitrate)
+      (remove #(get-in % [:organization :expired-license])))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,

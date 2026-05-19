@@ -155,7 +155,7 @@
                           :no-orgs-create [(tr "dashboard.select-org-modal.title")
                                            (tr "dashboard.no-org-allows-create-team.message")]
                           :no-orgs-change [(tr "dashboard.change-org-modal.title")
-                                           (tr "dashboard.no-org-allows-create-team.message")])]
+                                           (tr "dashboard.no-permission-move-team.message" organization-name)])]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
