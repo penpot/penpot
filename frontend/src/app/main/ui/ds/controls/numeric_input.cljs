@@ -332,6 +332,7 @@
          (fn [event]
            (let [text (dom/get-target-val event)]
              (mf/set-ref-val! raw-value* text)
+             (mf/set-ref-val! dirty-ref true)
              (reset! filter-id* text))))
 
         on-token-apply
@@ -389,12 +390,21 @@
                (reset! is-open* false)))
 
            (when (mf/ref-val dirty-ref)
-             (apply-value (mf/ref-val raw-value*)))
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))
            (when (fn? on-blur)
              (on-blur event))
            (dom/blur! (mf/ref-val ref))))
 
-        handle-unmount (h/use-ref-callback handle-blur)
+        commit-pending-on-unmount
+        (mf/use-fn
+         (mf/deps apply-value)
+         (fn []
+           (when (mf/ref-val dirty-ref)
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))))
+
+        handle-unmount (h/use-ref-callback commit-pending-on-unmount)
 
         on-key-down
         (mf/use-fn
