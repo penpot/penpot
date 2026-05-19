@@ -16,6 +16,7 @@
    [:owner-id ::sm/uuid]
    [:avatar-bg-url ::sm/uri]
    [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:expired-license {:optional true} [:maybe :boolean]]
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
@@ -30,7 +31,7 @@
 
 (def organization->team-keys
   "Organization field keys to include in the nested :organization map."
-  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :permissions])
+  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions])
 
 (defn apply-organization
   "Updates a team map with organization fields in a nested :organization map.

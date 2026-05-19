@@ -55,6 +55,10 @@
   margin-bottom: deprecated.$s-12;
 }
 
+.page-delete-button-icon {
+  color: transparent;
+}
+
 .page-element {
   @include deprecated.body-small-typography;
 
@@ -102,23 +106,6 @@
       height: deprecated.$s-32;
       display: flex;
       align-items: center;
-
-      button {
-        @include deprecated.button-style;
-        @include deprecated.flex-center;
-
-        width: deprecated.$s-24;
-        height: 100%;
-        opacity: deprecated.$op-0;
-
-        svg {
-          @extend %button-icon-small;
-
-          color: transparent;
-          fill: none;
-          stroke: var(--icon-foreground);
-        }
-      }
     }
 
     .element-name {
