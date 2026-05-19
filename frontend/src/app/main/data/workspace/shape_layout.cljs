@@ -305,11 +305,11 @@
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)
                 (when (or (:layout-align-content changes) (:layout-justify-content changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-alignment"}))
+                  (ev/event
+                   {::ev/name "layout-change-alignment"}))
                 (when (or (:layout-padding changes) (:layout-gap changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-margin"}))))))))
+                  (ev/event
+                   {::ev/name "layout-change-margin"}))))))))
 
 (defn add-layout-track
   ([ids type value]
@@ -555,10 +555,9 @@
       ;; change parent to fixed
       (and row? auto-height? (every? ctl/fill-height? all-children))
       (assoc :layout-item-v-sizing :fix))))
-
 (defn update-layout-child
-  ([ids changes] (update-layout-child ids changes nil))
-  ([ids changes options]
+  ([ids attrs] (update-layout-child ids attrs nil))
+  ([ids attrs options]
    (ptk/reify ::update-layout-child
      ptk/WatchEvent
      (watch [_ state _]
@@ -568,20 +567,20 @@
              children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
              parent-ids   (->> ids (map #(cfh/get-parent-id objects %)))
              undo-id      (js/Symbol)
-             margin-attrs (-> (get changes :layout-item-margin)
+             margin-attrs (-> (get attrs :layout-item-margin)
                               keys
                               set)]
          (rx/of (dwu/start-undo-transaction undo-id)
-                (dwsh/update-shapes ids (d/patch-object changes)
+                (dwsh/update-shapes ids (d/patch-object attrs)
                                     (cond-> options
                                       (seq margin-attrs)
                                       (assoc :changed-sub-attr margin-attrs)))
-                (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes) options)
+                (dwsh/update-shapes children-ids (partial fix-child-sizing objects attrs) options)
                 (dwsh/update-shapes
                  parent-ids
                  (fn [parent objects]
                    (-> parent
-                       (fix-parent-sizing objects (set ids) changes)
+                       (fix-parent-sizing objects (set ids) attrs)
                        (cond-> (ctl/grid-layout? parent)
                          (ctl/assign-cells objects))))
                  (merge options {:with-objects? true}))

@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.path-names :as cpn]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -29,7 +28,6 @@
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def lens:typography-section-state
@@ -98,10 +96,10 @@
          (mf/deps typography on-asset-click read-only? local?)
          (fn [event]
            (when-not read-only?
-             (st/emit! (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-typography"
-                                        ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+             (st/emit! (ev/event
+                        {::ev/name "use-library-typography"
+                         ::ev/origin "sidebar"
+                         :external-library (not local?)}))
              (when-not (on-asset-click event (:id typography))
                (st/emit! (dwt/apply-typography typography file-id))))))]
 
@@ -469,8 +467,7 @@
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
 
-                     (when (and (not (or multi-typographies? multi-assets?))
-                                (contains? cf/flags :canary))
+                     (when-not (or multi-typographies? multi-assets?)
                        {:name    (tr "workspace.assets.duplicate")
                         :id      "assets-duplicate-typography"
                         :handler handle-duplicate-typography})

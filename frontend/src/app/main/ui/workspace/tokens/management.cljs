@@ -327,4 +327,5 @@
                          :type type
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens}])]))
+                         :active-theme-tokens resolved-active-tokens
+                         :selected-token-set-id selected-token-set-id}])]))

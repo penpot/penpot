@@ -205,9 +205,9 @@
                          organization "create-org-invitation"
                          :else "create-team-invitation")
                 event (-> (audit/event-from-rpc-params params)
-                          (assoc ::audit/name evname)
-                          (assoc ::audit/props props))]
-            (audit/submit! cfg event))
+                          (assoc :name evname)
+                          (assoc :props props))]
+            (audit/submit cfg event))
 
           (when (allow-invitation-emails? member)
             (if organization
@@ -232,7 +232,7 @@
                             :to email
                             :invited-by (:fullname profile)
                             :team (:name team)
-                            :organization (:organization-name team)
+                            :organization (dm/get-in team [:organization :name])
                             :token itoken
                             :extra-data ptoken}))))
 
@@ -487,9 +487,9 @@
 
     (let [props {:name name :features features}
           event (-> (audit/event-from-rpc-params params)
-                    (assoc ::audit/name "create-team")
-                    (assoc ::audit/props props))]
-      (audit/submit! cfg event))
+                    (assoc :name "create-team")
+                    (assoc :props props))]
+      (audit/submit cfg event))
 
     ;; Create invitations for all provided emails.
     (let [profile     (db/get-by-id conn :profile profile-id)

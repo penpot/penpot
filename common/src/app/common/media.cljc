@@ -13,8 +13,7 @@
   #{"font/ttf"
     "font/woff"
     "font/woff2"
-    "font/otf"
-    "font/opentype"})
+    "font/otf"})
 
 (def image-types
   #{"image/jpeg"
@@ -114,3 +113,15 @@
     800 "Extra Bold"
     900 "Black"
     950 "Extra Black"))
+
+(defn font-display-variant
+  [variant-name weight style]
+  (cond
+    (and (string? variant-name) (not (str/blank? variant-name)))
+    (str/trim variant-name)
+
+    :else
+    (let [base (font-weight->name weight)
+          italic? (= "italic" style)]
+      (cond-> base
+        italic? (str " Italic")))))

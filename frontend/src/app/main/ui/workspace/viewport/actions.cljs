@@ -196,10 +196,10 @@
              (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
+  [hover hover-ids selected hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
+   (mf/deps @hover @hover-ids selected @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (when-not @z?
@@ -208,7 +208,16 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
 
-             {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
+             selected-id-under-cursor
+             (->> @hover-ids
+                  (filter selected)
+                  last)
+
+             {:keys [id type] :as shape}
+             (or (when selected-id-under-cursor
+                   (get objects selected-id-under-cursor))
+                 @hover
+                 (get objects (first @hover-ids)))
 
              editable? (contains? #{:text :rect :path :image :circle} type)
 
@@ -360,16 +369,14 @@
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
-         (st/emit! (mse/->PointerEvent :delta delta
-                                       (kbd/ctrl? event)
-                                       (kbd/shift? event)
-                                       (kbd/alt? event)
-                                       (kbd/meta? event)))
+         ;; Single store emit per move: viewport `pt` + `movement` (old :delta `pt`) avoids
+         ;; doubling Potok + `st/stream` work on every pointermove.
          (st/emit! (mse/->PointerEvent :viewport pt
                                        (kbd/ctrl? event)
                                        (kbd/shift? event)
                                        (kbd/alt? event)
-                                       (kbd/meta? event))))))))
+                                       (kbd/meta? event)
+                                       delta)))))))
 
 (defn- schedule-zoom!
   "Accumulate a compound zoom scale and a cursor point into `state`, scheduling

@@ -433,7 +433,7 @@
   ([id-ref ids]
    (ptk/reify ::add-component
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [it state _]
        (let [objects            (dsh/lookup-page-objects state)
              selected           (->> (d/nilv ids (dsh/lookup-selected state))
                                      (cfh/clean-loops objects))
@@ -442,7 +442,8 @@
              can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
 
          (when can-make-component
-           (rx/of (add-component2 id-ref selected))))))))
+           (rx/of (-> (add-component2 id-ref selected)
+                      (with-meta (meta it))))))))))
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."
@@ -644,11 +645,12 @@
          (when id-ref
            (reset! id-ref (:id new-shape)))
 
-         (rx/of (ptk/event ::ev/event
-                           {::ev/name "use-library-component"
-                            ::ev/origin origin
-                            :external-library (not= file-id current-file-id)
-                            :is-variant (ctk/is-variant? component)})
+         (rx/of (ev/event
+                 (-> {::ev/name "use-library-component"
+                      ::ev/origin origin
+                      :external-library (not= file-id current-file-id)
+                      :is-variant (ctk/is-variant? component)}
+                     (merge (meta it))))
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
@@ -696,7 +698,7 @@
       (let [page-id          (:current-page-id state)
             file-id          (:current-file-id state)
 
-            ;; FIXME: revisit, innefficient access
+            ;; FIXME: revisit, inefficient access
             objects          (dsh/lookup-page-objects state page-id)
 
             libraries        (dsh/lookup-libraries state)
@@ -1382,8 +1384,14 @@
 
             check-changes
             (fn [[event old-data]]
-              (if (nil? old-data)
+              (cond
+                (nil? old-data)
                 (rx/empty)
+
+                (:translation? event)
+                (rx/empty)
+
+                :else
                 (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components
@@ -1480,7 +1488,7 @@
                                     vals
                                     (some ctk/is-variant?))]
              (if has-variants?
-               (rx/of (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "workspace"}))
+               (rx/of (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "workspace"}))
                (rx/empty)))))))))
 
 ;; --- Link and unlink Files
@@ -1544,11 +1552,32 @@
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ptk/event ::ev/event {::ev/name "attach-library-variants"
-                                                 :file-id file-id
-                                                 :library-id library-id
-                                                 :variants-count variants-count
-                                                 :library-used-in (:used-in library-usage)}))))))))))
+                          (ev/event {::ev/name "attach-library-variants"
+                                     :file-id file-id
+                                     :library-id library-id
+                                     :variants-count variants-count
+                                     :library-used-in (:used-in library-usage)}))))))))))
+
+(defn cleanup-unlinked-libraries
+  "Remove libraries from state that are no longer linked to the given file.
+  This is used after unlinking a library to clean up transitive dependencies."
+  [file-id libraries]
+  (ptk/reify ::cleanup-unlinked-libraries
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [linked-ids (into #{} (map :id) libraries)]
+        (update state :files
+                (fn [files]
+                  (reduce-kv
+                   (fn [acc id file]
+                     (if (and (= (:library-of file) file-id)
+                              (not (contains? linked-ids id))
+                              (not= id file-id))
+                       (dissoc acc id)
+                       acc))
+                   files
+                   files)))))))
+
 
 (defn unlink-file-from-library
   [file-id library-id]
@@ -1565,7 +1594,11 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
-        (->> (rp/cmd! :unlink-file-from-library params)
-             (rx/ignore))))))
+      ;; Unlink the library, then fetch the current list of linked libraries
+      ;; and remove any that are no longer linked (e.g., transitive dependencies)
+      (->> (rp/cmd! :unlink-file-from-library {:file-id file-id :library-id library-id})
+           (rx/mapcat (fn [_]
+                        (rp/cmd! :get-file-libraries {:file-id file-id})))
+           (rx/map (partial cleanup-unlinked-libraries file-id))))))
+
+
