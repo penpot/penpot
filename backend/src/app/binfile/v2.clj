@@ -314,10 +314,10 @@
   (doseq [rel (read-obj cfg :file-rels file-id)]
     (let [rel (-> rel
                   (update :file-id bfc/lookup-index)
-                  (update :library-file-id bfc/lookup-index)
-                  (assoc :synced-at timestamp))]
+                  (update :library-file-id bfc/lookup-index))]
       (db/insert! conn :file-library-rel rel
-                  ::db/return-keys false)))
+                  ::db/return-keys false)
+      (bfc/upsert-file-library-sync! conn (assoc rel :synced-at timestamp))))
 
   (doseq [media (read-seq cfg :file-media-object file-id)]
     (let [media (-> media

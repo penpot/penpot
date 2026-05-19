@@ -20,6 +20,7 @@
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -2079,25 +2080,34 @@
            (grc/rect->center selrect)
            (or (:transform current-shape) (gmt/matrix)))))))
 
-
 (defn- equal-geometry?
   "Returns true when the value of `attr` in `shape` is considered equal
    to the corresponding value in `origin-shape`, ignoring positional
    displacement (x/y).
    For :selrect we compare width/height only;
    for :points we normalise each vector so the first point is the
-   origin before comparing."
+   origin before comparing.
+
+   Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
+   exact `=` because `previous-shape` here may carry sub-pixel drift from
+   interactive transform modifiers (e.g. an alt-drag duplicate of a
+   variant whose children are component instances). Without tolerance
+   this guard would miss equivalent geometries and let the `:else` branch
+   in `update-attrs-on-switch` carry stale `:selrect`/`:points` from the
+   pre-switch shape onto the freshly instantiated target."
   [shape origin-shape attr]
   (or (and (= attr :selrect)
-           (= (-> shape :selrect :width)  (-> origin-shape :selrect :width))
-           (= (-> shape :selrect :height) (-> origin-shape :selrect :height)))
+           (mth/close? (-> shape :selrect :width)  (-> origin-shape :selrect :width))
+           (mth/close? (-> shape :selrect :height) (-> origin-shape :selrect :height)))
       (and (= attr :points)
            (let [normalize-pts (fn [pts]
                                  (when (seq pts)
                                    (let [f (first pts)]
-                                     (mapv #(gpt/subtract % f) pts))))]
-             (= (normalize-pts (get shape :points))
-                (normalize-pts (get origin-shape :points)))))))
+                                     (mapv #(gpt/subtract % f) pts))))
+                 a (normalize-pts (get shape :points))
+                 b (normalize-pts (get origin-shape :points))]
+             (and (= (count a) (count b))
+                  (every? identity (map gpt/close? a b)))))))
 
 
 (defn update-attrs-on-switch
@@ -2119,8 +2129,8 @@
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched previous-shape)}]
-           uoperations (list {:type :set-touched :touched (:touched current-shape)})]
+           roperations []
+           uoperations '()]
       (if-let [attr (first attrs)]
         (let [sync-group
               (ctk/resolve-sync-group (:type previous-shape) attr)
@@ -2262,7 +2272,13 @@
 
         (let [updated-attrs (into #{} (comp (filter #(= :set (:type %)))
                                             (map :attr))
-                                  roperations)]
+                                  roperations)
+              updated-sync-groups (into #{}
+                                        (keep #(ctk/resolve-sync-group (:type previous-shape) %))
+                                        updated-attrs)
+              new-touched (set/union (or (:touched current-shape) #{}) updated-sync-groups)
+              roperations (into [{:type :set-touched :touched new-touched}] roperations)
+              uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
             (> (count roperations) 1)
             (-> (add-update-attr-changes current-shape container roperations uoperations)

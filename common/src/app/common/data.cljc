@@ -177,7 +177,9 @@
 
 (defn not-empty?
   [coll]
-  (boolean (seq coll)))
+  (if (coll? coll)
+    (boolean (seq coll))
+    (not (nil? coll))))
 
 (defn editable-collection?
   [m]
@@ -379,7 +381,7 @@
                :else
                (assoc object key value)))
            object))
-     changes)))
+     (without-nils changes))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the

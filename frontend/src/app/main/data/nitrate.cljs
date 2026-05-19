@@ -51,28 +51,28 @@
             (rx/map (fn [connectivity]
                       (modal/show popup-type (merge (or connectivity {}) extra-props)))))))))
 
-(defn go-to-nitrate-cc
+(defn go-to-nitrate-ac
   ([]
-   (st/emit! (rt/nav-raw :href "/control-center/")))
+   (st/emit! (rt/nav-raw :href "/admin-console/")))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
-     (let [href (dm/str "/control-center/org/"
+     (let [href (dm/str "/admin-console/org/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
                         "/people/")]
        (st/emit! (rt/nav-raw :href href)))
-     (st/emit! (rt/nav-raw :href "/control-center/")))))
+     (st/emit! (rt/nav-raw :href "/admin-console/")))))
 
-(defn go-to-nitrate-cc-create-org
+(defn go-to-nitrate-ac-create-org
   []
-  (st/emit! (rt/nav-raw :href "/control-center/?action=create-org")))
+  (st/emit! (rt/nav-raw :href "/admin-console/?action=create-org")))
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
 (defn go-to-nitrate-billing
   []
-  (let [href (dm/str "/control-center/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
+  (let [href (dm/str "/admin-console/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
     (st/emit! (rt/nav-raw :href href))))
 
 (def nitrate-checkout-error-token "nitrate-checkout-error")
@@ -115,7 +115,7 @@
                 :error_callback error-callback
                 :finish_error_callback finish-error-callback
                 :cancel_callback cancel-callback}
-        href   (dm/str "/control-center/licenses/start?" (u/map->query-string params))]
+        href   (dm/str "/admin-console/licenses/start?" (u/map->query-string params))]
     (st/emit! (rt/nav-raw :href href))))
 
 (defn fetch-connectivity
@@ -187,9 +187,9 @@
              (rx/mapcat
               (fn [teams]
                 (let [all-orgs (map dt/team->organization
-                                    (filter #(and (:is-default %) (:organization-id %)) teams))
+                                    (filter #(and (:is-default %) (:organization %)) teams))
                       orgs     (filter (fn [org]
-                                         (let [perm    (get-in org [:permissions :create-teams])
+                                         (let [perm    (dm/get-in org [:permissions :create-teams])
                                                is-own? (= profile-id (:owner-id org))]
                                            (or (= perm "any") is-own?))) all-orgs)
                       team     (first (filter #(= (:id %) team-id) teams))
@@ -204,7 +204,7 @@
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
                              (modal/show :select-organization-modal
                                          (merge {:organizations           orgs
-                                                 :current-organization-id (:organization-id team)
+                                                 :current-organization-id (dm/get-in team [:organization :id])
                                                  :on-confirm              on-confirm
                                                  :title-key               "dashboard.select-org-modal.title"
                                                  :choose-key              "dashboard.select-org-modal.choose"
@@ -225,25 +225,40 @@
         (->> (rp/cmd! :get-teams)
              (rx/mapcat
               (fn [teams]
-                (let [all-orgs (map dt/team->organization
-                                    (filter #(and (:is-default %) (:organization-id %)) teams))
-                      orgs     (filter (fn [org]
-                                         (let [perm    (get-in org [:permissions :create-teams])
-                                               is-own? (= profile-id (:owner-id org))]
-                                           (or (= perm "any") is-own?))) all-orgs)
-                      team     (first (filter #(= (:id %) team-id) teams))
+                (let [all-orgs     (map dt/team->organization
+                                        (filter #(and (:is-default %) (:organization %)) teams))
+                      team         (first (filter #(= (:id %) team-id) teams))
+                      source-org   (:organization team)
+                      current-org-id (:id source-org)
+                      move-perm    (dm/get-in source-org [:permissions :move-teams])
+                      source-owner-id (:owner-id source-org)
+                      can-create?  (fn [org]
+                                     (let [perm    (dm/get-in org [:permissions :create-teams])
+                                           is-own? (= profile-id (:owner-id org))]
+                                       (or (= perm "any") is-own?)))
+                      orgs-by-move (case move-perm
+                                     "never"
+                                     []
+
+                                     "myOrganizations"
+                                     (filter #(= source-owner-id (:owner-id %)) all-orgs)
+
+                                     ;; Default to always-allowed behavior.
+                                     all-orgs)
+                      orgs         (filter can-create? orgs-by-move)
+                      selectable-orgs (remove #(= current-org-id (:id %)) orgs)
                       on-confirm (fn [organization-id]
                                    (st/emit! (add-team-to-org {:team-id team-id
                                                                :organization-id organization-id})))]
                   (rx/of (dt/teams-fetched teams)
-                         (if (empty? orgs)
+                         (if (empty? selectable-orgs)
                            (modal/show :no-permission-modal {:type :no-orgs-change})
                            (let [has-filtered? (< (count orgs) (count all-orgs))
                                  extra-props   (when has-filtered?
                                                  {:info-message-key "dashboard.select-org-modal.permission-info"})]
                              (modal/show :select-organization-modal
-                                         (merge {:organizations           orgs
-                                                 :current-organization-id (:organization-id team)
+                                         (merge {:organizations           selectable-orgs
+                                                 :current-organization-id current-org-id
                                                  :on-confirm              on-confirm
                                                  :title-key               "dashboard.change-org-modal.title"
                                                  :choose-key              "dashboard.change-org-modal.choose"

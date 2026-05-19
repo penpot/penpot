@@ -77,7 +77,8 @@
          (mf/deps vport)
          (fn [resize-type size]
            (when (and vport (not= size vport))
-             (st/emit! (dw/update-viewport-size resize-type size)))))
+             (st/emit! (dw/update-viewport-size resize-type size)
+                       (dw/sync-wasm-workspace-viewport)))))
 
         on-resize-palette
         (mf/use-fn

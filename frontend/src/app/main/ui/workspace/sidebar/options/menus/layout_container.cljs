@@ -1377,6 +1377,7 @@
           [:div {:class (stl/css :padding-row)}
            [:> padding-section* {:value (:layout-padding values)
                                  :type (:layout-padding-type values)
+                                 :ids ids
                                  :applied-tokens applied-tokens
                                  :on-type-change on-padding-type-change
                                  :on-change on-padding-change}]]]

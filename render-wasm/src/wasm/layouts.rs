@@ -1,5 +1,5 @@
 use crate::shapes::Sizing;
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 use macros::ToJs;
 
 mod align;
