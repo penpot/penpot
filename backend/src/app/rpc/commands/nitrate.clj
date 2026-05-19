@@ -372,3 +372,61 @@
     ;; Notify connected users
     (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
   nil)
+
+(def ^:private sql:get-profiles-by-emails
+  "SELECT id, email
+     FROM profile
+    WHERE email = ANY(?)
+      AND deleted_at IS NULL")
+
+(def ^:private schema:check-org-members-params
+  [:map {:title "CheckOrgMembersParams"}
+   [:organization-id ::sm/uuid]
+   [:emails [:vector ::sm/email]]])
+
+(sv/defmethod ::check-org-members
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:check-org-members-params
+   ::sm/result [:map-of :string :boolean]
+   ::db/transaction true}
+  [{:keys [::db/conn ::rpc/profile-id] :as cfg} {:keys [organization-id emails]}]
+  (when (contains? cf/flags :nitrate)
+    (assert-membership cfg profile-id organization-id)
+    (let [emails-array (db/create-array conn "text" emails)
+          profiles     (db/exec! conn [sql:get-profiles-by-emails emails-array])
+          email->id    (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
+          org-members  (nitrate/call cfg :get-org-members {:organization-id organization-id})
+          member-ids   (into #{} org-members)]
+      (into {}
+            (map (fn [email]
+                   (let [pid     (get email->id email)
+                         member? (when pid
+                                   (contains? member-ids pid))]
+                     [email (boolean member?)])))
+            emails))))
+
+(def ^:private schema:all-org-members-in-team-params
+  [:map {:title "CheckOrgMembersInTeamParams"}
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::all-org-members-in-team
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:all-org-members-in-team-params
+   ::sm/result ::sm/boolean}
+  [{:keys [::rpc/profile-id] :as cfg} {:keys [team-id organization-id]}]
+  (when (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions)))
+    (assert-membership cfg profile-id organization-id)
+    (let [org-members     (nitrate/call cfg :get-org-members {:organization-id organization-id})
+          org-member-ids  (into #{} org-members)
+          team-members    (db/query cfg :team-profile-rel {:team-id team-id})
+          team-member-ids (into #{} (map :profile-id team-members))]
+      (every? #(contains? team-member-ids %) org-member-ids))))
+
+

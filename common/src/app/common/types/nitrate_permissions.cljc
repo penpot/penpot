@@ -9,7 +9,8 @@
 (def ^:private defaults
   {:create-teams "any"
    :delete-teams "onlyOwners"
-   :move-teams "always"})
+   :move-teams "always"
+   :new-team-members "anyone"})
 
 (defn- can-create-team?
   [{:keys [is-org-owner? permission-value]}]
@@ -36,13 +37,19 @@
     (true? target-org-same-owner?)
     :else false))
 
+(defn- can-add-anybody-to-team?
+  [{:keys [permission-value]}]
+  (= permission-value "anyone"))
+
 (def ^:private action-rules
-  {:create-team {:permission-key :create-teams
-                 :check-fn       can-create-team?}
-   :delete-team {:permission-key :delete-teams
-                 :check-fn       can-delete-team?}
-   :move-team {:permission-key :move-teams
-               :check-fn       can-move-team?}})
+  {:create-team          {:permission-key :create-teams
+                          :check-fn       can-create-team?}
+   :delete-team          {:permission-key :delete-teams
+                          :check-fn       can-delete-team?}
+   :move-team            {:permission-key :move-teams
+                          :check-fn       can-move-team?}
+   :add-anybody-to-team  {:permission-key :new-team-members
+                          :check-fn       can-add-anybody-to-team?}})
 
 (defn- normalize-org-permissions
   [org-perms]
@@ -67,3 +74,5 @@
                                 :team-perms team-perms
                                 :allow-org-owner-delete? allow-org-owner-delete?
                                 :target-org-same-owner? target-org-same-owner?})))))
+
+
