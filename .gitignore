@@ -84,3 +84,4 @@
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
+/tools/__pycache__

@@ -80,14 +80,15 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
       issues(first: 100, after: $cursor, states: __STATES__) {
         totalCount
         pageInfo { hasNextPage endCursor }
-        nodes {
-          ... on Issue {
-            number
-            title
-            state
-            labels(first: 20) { nodes { name } }
-            closedByPullRequestsReferences(first: 5) { nodes { number } }
-          }
+          nodes {
+            ... on Issue {
+              number
+              title
+              state
+              issueType { name }
+              labels(first: 20) { nodes { name } }
+              closedByPullRequestsReferences(first: 5) { nodes { number } }
+            }
         }
       }
     }
@@ -120,7 +121,7 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
         states: GraphQL states enum array literal, e.g. ``"[CLOSED]"`` or ``"[OPEN CLOSED]"``
 
     Returns:
-        List of {number, title, state, labels: [str], closing_prs: [int]}
+        List of {number, title, state, issue_type: str|None, labels: [str], closing_prs: [int]}
     """
     query = GQL_ISSUES_QUERY.replace("__STATES__", states)
     all_nodes: list[dict] = []
@@ -140,10 +141,12 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
         for node in issues["nodes"]:
             if node is None:
                 continue
+            issue_type = node.get("issueType")
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
                 "state": node["state"],
+                "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
             })
