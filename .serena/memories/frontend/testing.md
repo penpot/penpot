@@ -7,9 +7,9 @@ Frontend validation: CLJS + React/Rumext + RxJS/Potok; SCSS modules; shared CLJC
 Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access.
 
 From `frontend/`:
-- Full unit test run: `pnpm run test`.
-- Focus a frontend CLJS test namespace: `pnpm run test -- --focus frontend-tests.logic.components-and-tokens`.
-- Focus one frontend CLJS test var: `pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
+- Full unit test run: `pnpm run test:quiet`.
+- Focus a frontend CLJS test namespace: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens`.
+- Focus one frontend CLJS test var: `pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Build test target only: `pnpm run build:test`.
 - After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Watch tests: `pnpm run watch:test`.
