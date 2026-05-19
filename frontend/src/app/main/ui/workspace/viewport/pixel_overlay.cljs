@@ -102,13 +102,9 @@
                (st/emit! (dwc/pick-color color))))))))))
 
 
-(mf/defc pixel-overlay
-  {::mf/wrap-props false}
-  [props]
-  (let [vport             (unchecked-get props "vport")
-
-        viewport-ref      (unchecked-get props "viewport-ref")
-        viewport-node     (mf/ref-val viewport-ref)
+(mf/defc pixel-overlay*
+  [{:keys [vport viewport-ref]}]
+  (let [viewport-node     (mf/ref-val viewport-ref)
 
         canvas            (get-offscreen-canvas (:width vport) (:height vport))
         canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})
@@ -310,7 +306,6 @@
                (st/emit! (dwc/pick-color color))))))))))
 
 (mf/defc pixel-overlay-wasm*
-  {::mf/wrap-props false}
   [{:keys [viewport-ref canvas-ref]}]
   (let [viewport-node     (mf/ref-val viewport-ref)
         canvas            (mf/ref-val canvas-ref)
