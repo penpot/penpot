@@ -8162,6 +8162,9 @@ msgstr "Masks"
 msgid "workspace.sidebar.layers.search"
 msgstr "Find…"
 
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Find and replace"
+
 #: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Shapes"

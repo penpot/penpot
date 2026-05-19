@@ -326,6 +326,13 @@
            (swap! state* assoc :search-scope scope :num-items 100 :current-match-idx 0)
            (st/emit! (dw/update-layers-search-scope scope))))
 
+        toggle-mode
+        (mf/use-fn
+         (mf/deps find-replace-mode?)
+         (fn []
+           (let [mode (if find-replace-mode? :find :find-and-replace)]
+             (st/emit! (dw/open-layers-search mode {:force? true})))))
+
         toggle-search
         (mf/use-fn
          (mf/deps show-search?)
@@ -519,6 +526,11 @@
             [:button {:on-click on-toggle-filters-click
                       :class (stl/css-case :filter-button true :opened show-menu? :active active?)}
              [:> icon* {:icon-id i/filter}]]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-pressed find-replace-mode?
+                             :aria-label (tr "workspace.sidebar.layers.search-and-replace")
+                             :on-click toggle-mode
+                             :icon i/menu}]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
