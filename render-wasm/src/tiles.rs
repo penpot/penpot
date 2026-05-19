@@ -1,8 +1,8 @@
+use std::collections::{HashMap, HashSet};
+use skia_safe as skia;
 use crate::render::Surfaces;
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
-use skia_safe as skia;
-use std::collections::{HashMap, HashSet};
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
@@ -10,11 +10,25 @@ impl Tile {
     pub fn from(x: i32, y: i32) -> Self {
         Tile(x, y)
     }
+
+    #[inline(always)]
     pub fn x(&self) -> i32 {
         self.0
     }
+
+    #[inline(always)]
     pub fn y(&self) -> i32 {
         self.1
+    }
+
+    #[inline(always)]
+    pub fn get_rect_with_offset(&self, offset: &skia::Point) -> skia::Rect {
+        skia::Rect::from_xywh(
+            self.0 as f32 * TILE_SIZE - offset.x,
+            self.1 as f32 * TILE_SIZE - offset.y,
+            TILE_SIZE,
+            TILE_SIZE,
+        )
     }
 }
 
@@ -106,7 +120,7 @@ pub struct TileViewbox {
 }
 
 impl TileViewbox {
-    pub fn new_with_interest(viewbox: Viewbox, interest: i32) -> Self {
+    pub fn new_with_interest(viewbox: &Viewbox, interest: i32) -> Self {
         Self {
             visible_rect: get_tiles_for_viewbox(viewbox),
             interest_rect: get_tiles_for_viewbox_with_interest(viewbox, interest),
@@ -115,7 +129,7 @@ impl TileViewbox {
         }
     }
 
-    pub fn update(&mut self, viewbox: Viewbox) {
+    pub fn update(&mut self, viewbox: &Viewbox) {
         self.visible_rect = get_tiles_for_viewbox(viewbox);
         self.interest_rect = get_tiles_for_viewbox_with_interest(viewbox, self.interest);
         self.center = get_tile_center_for_viewbox(viewbox);
@@ -133,6 +147,7 @@ impl TileViewbox {
 
 pub const TILE_SIZE: f32 = 512.;
 
+#[inline(always)]
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
 }
@@ -147,17 +162,17 @@ pub fn get_tiles_for_rect(rect: skia::Rect, tile_size: f32) -> TileRect {
     TileRect(sx, sy, ex, ey)
 }
 
-pub fn get_tiles_for_viewbox(viewbox: Viewbox) -> TileRect {
+pub fn get_tiles_for_viewbox(viewbox: &Viewbox) -> TileRect {
     let tile_size = get_tile_size(viewbox.get_scale());
     get_tiles_for_rect(viewbox.area, tile_size)
 }
 
-pub fn get_tiles_for_viewbox_with_interest(viewbox: Viewbox, interest: i32) -> TileRect {
+pub fn get_tiles_for_viewbox_with_interest(viewbox: &Viewbox, interest: i32) -> TileRect {
     let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
     TileRect(sx - interest, sy - interest, ex + interest, ey + interest)
 }
 
-pub fn get_tile_center_for_viewbox(viewbox: Viewbox) -> Tile {
+pub fn get_tile_center_for_viewbox(viewbox: &Viewbox) -> Tile {
     let TileRect(sx, sy, ex, ey) = get_tiles_for_viewbox(viewbox);
     Tile((ex - sx) / 2, (ey - sy) / 2)
 }
@@ -179,7 +194,7 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
     skia::Rect::from_xywh(tx, ty, ts, ts)
 }
 
-// This structure is usseful to keep all the shape uuids by shape id.
+// This structure is useful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
     grid: HashMap<Tile, HashSet<Uuid>>,
     index: HashMap<Uuid, HashSet<Tile>>,
@@ -233,7 +248,7 @@ impl TileHashMap {
 }
 
 const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
-const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = 64;
+const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = VIEWPORT_DEFAULT_CAPACITY;
 
 /// Cached spiral of tile offsets for a given grid size.
 ///
@@ -370,10 +385,10 @@ impl PendingTiles {
         // 2. visible + uncached (user sees these, render next)
         // 3. interest + cached (pre-rendered area, blit from cache)
         // 4. interest + uncached (lowest priority - background pre-render)
-        let mut visible_cached = Vec::new();
-        let mut visible_uncached = Vec::new();
-        let mut interest_cached = Vec::new();
-        let mut interest_uncached = Vec::new();
+        self.visible_cached.clear();
+        self.visible_uncached.clear();
+        self.interest_cached.clear();
+        self.interest_uncached.clear();
 
         // Compute the scheduling center explicitly (inclusive range).
         // This avoids relying on `TileRect::center_x/center_y` semantics, which may be used
@@ -388,19 +403,19 @@ impl PendingTiles {
             let is_cached = surfaces.has_cached_tile_surface(tile);
 
             match (is_visible, is_cached) {
-                (true, true) => visible_cached.push(tile),
-                (true, false) => visible_uncached.push(tile),
-                (false, true) => interest_cached.push(tile),
-                (false, false) => interest_uncached.push(tile),
+                (true, true) => self.visible_cached.push(tile),
+                (true, false) => self.visible_uncached.push(tile),
+                (false, true) => self.interest_cached.push(tile),
+                (false, false) => self.interest_uncached.push(tile),
             }
         }
 
         // Build final list with lowest priority first (they get popped last)
         // Order: interest_uncached, interest_cached, visible_uncached, visible_cached
-        self.list.extend(interest_uncached);
-        self.list.extend(interest_cached);
-        self.list.extend(visible_uncached);
-        self.list.extend(visible_cached);
+        self.list.extend(self.interest_uncached.iter());
+        self.list.extend(self.interest_cached.iter());
+        self.list.extend(self.visible_uncached.iter());
+        self.list.extend(self.visible_cached.iter());
     }
 
     pub fn pop(&mut self) -> Option<Tile> {
