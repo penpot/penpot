@@ -5,6 +5,7 @@ import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
 import { FileUtils } from "../utils/FileUtils";
+import { Semaphore } from "../utils/Semaphore";
 import sharp from "sharp";
 
 /**
@@ -50,6 +51,24 @@ export class ExportShapeArgs {
  */
 export class ExportShapeTool extends Tool<ExportShapeArgs> {
     /**
+     * Maximum number of image-export operations that may run concurrently in multi-user mode.
+     * Combined with the plugin-side per-response cap (MAX_TASK_RESPONSE_SIZE_REMOTE_MCP,
+     * ~15 MB JSON), this caps the in-flight memory footprint of image exports at
+     * roughly N x cap on the centrally hosted MCP server.
+     */
+    private static readonly MAX_PARALLEL_EXPORTS = 50;
+
+    /**
+     * Gates concurrent export operations across all tool instances (one per session in
+     * multi-user mode). Static because instances are per-session, but the bound has to
+     * apply across the whole process. Permits beyond the maximum queue in FIFO order.
+     */
+    private static readonly parallelismSemaphore = new Semaphore(
+        "ExportShapeTool",
+        ExportShapeTool.MAX_PARALLEL_EXPORTS
+    );
+
+    /**
      * Creates a new ExecuteCode tool instance.
      *
      * @param mcpServer - The MCP server instance
@@ -79,6 +98,24 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
     }
 
     protected async executeCore(args: ExportShapeArgs): Promise<ToolResponse> {
+        // bound concurrent exports in multi-user mode to keep peak server memory under control;
+        // in single-user mode the gate is irrelevant and the export runs directly
+        if (!this.mcpServer.isMultiUserMode()) {
+            return this.exportImage(args);
+        } else {
+            return ExportShapeTool.parallelismSemaphore.withPermit(() => this.exportImage(args));
+        }
+    }
+
+    /**
+     * Performs the actual image export: requests the image via the plugin and either
+     * returns it as a tool response or saves it to the requested file path. The bulk
+     * of the memory pressure (parsed plugin response, decoded image buffer, optional
+     * re-encoding via sharp) lives here, which is why executeCore gates the call.
+     *
+     * @param args - the validated tool arguments
+     */
+    private async exportImage(args: ExportShapeArgs): Promise<ToolResponse> {
         // check arguments
         if (args.filePath) {
             FileUtils.checkPathIsAbsolute(args.filePath);
