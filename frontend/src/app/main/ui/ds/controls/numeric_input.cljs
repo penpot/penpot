@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as h]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -392,6 +393,8 @@
            (when (fn? on-blur)
              (on-blur event))
            (dom/blur! (mf/ref-val ref))))
+
+        handle-unmount (h/use-ref-callback handle-blur)
 
         on-key-down
         (mf/use-fn
@@ -767,6 +770,8 @@
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
+
+    (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
                                        :resizable (not is-token-applied?))]

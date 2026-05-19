@@ -929,14 +929,17 @@ impl TextContent {
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();
+                self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::AutoWidth => {
                 let result = self.text_layout_auto_width();
+                self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::Fixed => {
                 let result = self.text_layout_fixed();
+                self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }
@@ -949,8 +952,6 @@ impl TextContent {
         }
 
         self.layout_version = self.content_version;
-        self.layout_width = Some(selrect.width());
-
         self.size
     }
 

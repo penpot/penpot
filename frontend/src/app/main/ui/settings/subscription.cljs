@@ -576,8 +576,8 @@
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
                                     "Loren ipsum"]
-                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Control Center")
-                         :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-cc)
+                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Admin Console")
+                         :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-ac)
                          :cta-text (if (and (:licenses connectivity) (not (:manual nitrate-license)))
                                      (tr "subscription.settings.manage-your-subscription")
                                      (tr "nitrate.subscription.settings.manual-cancel"))
@@ -588,9 +588,15 @@
          (case subscription-type
            "professional"
            [:> plan-card* {:card-title (tr "subscription.settings.professional")
-                           :benefits [(tr "subscription.settings.professional.storage-benefit"),
-                                      (tr "subscription.settings.professional.autosave-benefit"),
-                                      (tr "subscription.settings.professional.teams-editors-benefit")]}]
+                           :benefits [(if cf/saas?
+                                        (tr "subscription.settings.professional.storage-benefit")
+                                        (tr "subscription.settings.professional.selfhost.control-over-data")),
+                                      (if cf/saas?
+                                        (tr "subscription.settings.professional.autosave-benefit")
+                                        (tr "subscription.settings.professional.selfhost.unlimited-users")),
+                                      (if cf/saas?
+                                        (tr "subscription.settings.professional.teams-editors-benefit")
+                                        (tr "subscription.settings.professional.selfhost.community-support"))]}]
 
            "unlimited"
            (if subscription-is-trial?
@@ -660,19 +666,25 @@
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
                          :price-period (tr "subscription.settings.price-editor-month")
-                         :benefits [(tr "subscription.settings.professional.storage-benefit"),
-                                    (tr "subscription.settings.professional.autosave-benefit"),
-                                    (tr "subscription.settings.professional.teams-editors-benefit")]
+                         :benefits [(if cf/saas?
+                                      (tr "subscription.settings.professional.storage-benefit")
+                                      (tr "subscription.settings.professional.selfhost.control-over-data")),
+                                    (if cf/saas?
+                                      (tr "subscription.settings.professional.autosave-benefit")
+                                      (tr "subscription.settings.professional.selfhost.unlimited-users")),
+                                    (if cf/saas?
+                                      (tr "subscription.settings.professional.teams-editors-benefit")
+                                      (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
                          :cta-link (if (and (contains? cf/flags :nitrate) nitrate? (= subscription-type "nitrate"))
-                                     (if (:licenses connectivity)
+                                     (if (and (:licenses connectivity) (not (:manual nitrate-license)))
                                        dnt/go-to-nitrate-billing
                                        open-cancel-contact-sales-modal)
                                      go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-type "unlimited")
+       (when (and (not= subscription-type "unlimited") cf/saas?)
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
@@ -688,7 +700,7 @@
                          :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")}])
 
-       (when (and (not= subscription-type "enterprise") (not (contains? cf/flags :nitrate)))
+       (when (and (not= subscription-type "enterprise") cf/saas? (not (contains? cf/flags :nitrate)))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
@@ -711,7 +723,7 @@
                          :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
-                                    "Acceso exclusivo al Control Center"
+                                    "Acceso exclusivo a la Admin Console"
                                     "Lorem ipsum"]
                          :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
                          :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))

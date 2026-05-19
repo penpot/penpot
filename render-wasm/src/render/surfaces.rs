@@ -5,7 +5,10 @@ use crate::{get_gpu_state, performance};
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
-use super::{gpu_state::GpuState, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
+use super::{
+    gpu_state::GpuState,
+    tiles::{self, Tile, TileViewbox, TILE_SIZE},
+};
 
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
@@ -183,6 +186,11 @@ impl Surfaces {
         self.max_atlas_texture_size = max_px.clamp(TILE_SIZE as i32, MAX_ATLAS_TEXTURE_SIZE);
     }
 
+    #[inline]
+    pub fn max_texture_dimension_px(&self) -> i32 {
+        self.max_atlas_texture_size
+    }
+
     /// Sets the document-space bounds used to clamp atlas updates.
     /// Pass `None` to disable clamping.
     pub fn set_atlas_doc_bounds(&mut self, bounds: Option<skia::Rect>) {
@@ -306,6 +314,7 @@ impl Surfaces {
         self.atlas_origin = skia::Point::new(new_left, new_top);
         self.atlas_size = skia::ISize::new(new_w, new_h);
         self.atlas_scale = new_scale;
+        gpu_state.delete_surface(&mut self.atlas);
         self.atlas = new_atlas;
         Ok(())
     }
@@ -1051,6 +1060,118 @@ impl Surfaces {
 
     pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
         self.tiles.has(tile)
+    }
+
+    /// Returns a snapshot of the atlas together with its scale and origin, so the
+    /// caller can take it **once** per `rebuild_backbuffer_crop_cache` and share it
+    /// across all shapes that need the tile/atlas fallback path — avoiding an
+    /// `image_snapshot` (and potential GPU flush) per shape.
+    pub fn atlas_snapshot_for_drag_crop(&mut self) -> Option<(skia::Image, f32, skia::Point)> {
+        if !self.has_atlas() {
+            return None;
+        }
+        Some((
+            self.atlas.image_snapshot(),
+            self.atlas_scale.max(0.01),
+            self.atlas_origin,
+        ))
+    }
+
+    /// Builds a 1:1 workspace-pixel snapshot for `src_doc_bounds` / `src_irect` into
+    /// `scratch`, then returns the sub-region `[0, out_w) × [0, out_h)` as an image.
+    ///
+    /// `scratch` must be at least `out_w × out_h` pixels — the caller is responsible
+    /// for allocating (and **reusing across shapes**) a surface large enough to hold
+    /// the largest window needed in one `rebuild_backbuffer_crop_cache` pass.
+    ///
+    /// `atlas_snap` is a pre-snapshotted view of the persistent atlas produced by
+    /// [`Surfaces::atlas_snapshot_for_drag_crop`]; pass `None` when no atlas exists.
+    ///
+    /// For each tile cell intersecting `src_doc_bounds`: draws from
+    /// [`TileTextureCache`] when present; otherwise samples the atlas.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_snapshot_doc_rect_from_tiles_and_atlas(
+        &mut self,
+        scratch: &mut skia::Surface,
+        atlas_snap: Option<&(skia::Image, f32, skia::Point)>,
+        src_doc_bounds: skia::Rect,
+        src_irect: IRect,
+        out_w: i32,
+        out_h: i32,
+        vb_left: f32,
+        vb_top: f32,
+        scale: f32,
+    ) -> Option<skia::Image> {
+        if out_w <= 0 || out_h <= 0 || src_doc_bounds.is_empty() {
+            return None;
+        }
+
+        let canvas = scratch.canvas();
+        canvas.clear(skia::Color::TRANSPARENT);
+
+        let tile_size = tiles::get_tile_size(scale);
+        let tr = tiles::get_tiles_for_rect(src_doc_bounds, tile_size);
+        let ix0 = src_irect.left as f32;
+        let iy0 = src_irect.top as f32;
+        let paint = skia::Paint::default();
+
+        for ty in tr.y1()..=tr.y2() {
+            for tx in tr.x1()..=tr.x2() {
+                let tile = Tile(tx, ty);
+                let tile_doc = tiles::get_tile_rect(tile, scale);
+                let mut clip_doc = tile_doc;
+                if !clip_doc.intersect(src_doc_bounds) || clip_doc.is_empty() {
+                    continue;
+                }
+
+                let dst = skia::Rect::from_ltrb(
+                    (clip_doc.left - vb_left) * scale - ix0,
+                    (clip_doc.top - vb_top) * scale - iy0,
+                    (clip_doc.right - vb_left) * scale - ix0,
+                    (clip_doc.bottom - vb_top) * scale - iy0,
+                );
+
+                if let Some(tile_image) = self.tiles.get(tile) {
+                    let iw = tile_image.width() as f32;
+                    let ih = tile_image.height() as f32;
+                    let td_w = tile_doc.width().max(1e-6);
+                    let td_h = tile_doc.height().max(1e-6);
+
+                    let src = skia::Rect::from_ltrb(
+                        ((clip_doc.left - tile_doc.left) / td_w) * iw,
+                        ((clip_doc.top - tile_doc.top) / td_h) * ih,
+                        ((clip_doc.right - tile_doc.left) / td_w) * iw,
+                        ((clip_doc.bottom - tile_doc.top) / td_h) * ih,
+                    );
+
+                    canvas.draw_image_rect(
+                        tile_image,
+                        Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+                        dst,
+                        &paint,
+                    );
+                } else {
+                    let snap = atlas_snap?;
+                    let (atlas, a_scale, atlas_origin) = (&snap.0, snap.1, snap.2);
+                    let sx = (clip_doc.left - atlas_origin.x) * a_scale;
+                    let sy = (clip_doc.top - atlas_origin.y) * a_scale;
+                    let sw = clip_doc.width() * a_scale;
+                    let sh = clip_doc.height() * a_scale;
+                    if sw <= 0.0 || sh <= 0.0 {
+                        continue;
+                    }
+                    let src = skia::Rect::from_xywh(sx, sy, sw, sh);
+                    canvas.draw_image_rect(
+                        atlas,
+                        Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+                        dst,
+                        &paint,
+                    );
+                }
+            }
+        }
+
+        scratch.image_snapshot_with_bounds(IRect::new(0, 0, out_w, out_h))
     }
 
     pub fn remove_cached_tile_surface(&mut self, tile: Tile) {

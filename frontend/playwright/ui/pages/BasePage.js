@@ -99,14 +99,14 @@ export class BasePage {
     }
   }
 
-  static async mockConfigFlags(page, flags) {
+  static async mockConfigFlags(page, flags, extras = {}) {
     const url = "**/js/config.js*";
+    const config = { penpotFlags: flags.join(" "), ...extras };
+    const body = Object.entries(config)
+      .map(([key, value]) => `var ${key} = ${JSON.stringify(value)};`)
+      .join("\n");
     return await page.route(url, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/javascript",
-        body: `var penpotFlags = "${flags.join(" ")}";`,
-      }),
+      route.fulfill({ status: 200, contentType: "application/javascript", body }),
     );
   }
 
@@ -128,8 +128,8 @@ export class BasePage {
     return BasePage.mockRPC(this.page, path, jsonFilename, options);
   }
 
-  async mockConfigFlags(flags) {
-    return BasePage.mockConfigFlags(this.page, flags);
+  async mockConfigFlags(flags, extras = {}) {
+    return BasePage.mockConfigFlags(this.page, flags, extras);
   }
 
   async mockFileMediaAsset(
