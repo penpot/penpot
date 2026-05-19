@@ -1062,7 +1062,9 @@ test("BUG: 14136 Apply grid layout padding token to a shape from the sidebar doe
   await tokenDimensionMd.click();
 
   // Expand padding to all sides
-  await layoutSection.getByRole('button', { name: 'Show 4 sided padding options' }).click();
+  await layoutSection
+    .getByRole("button", { name: "Show 4 sided padding options" })
+    .click();
   const topPaddingSection = layoutSection.getByLabel("Top padding");
   const bottomPaddingSection = layoutSection.getByLabel("Bottom padding");
   await expect(topPaddingSection).toBeVisible();
@@ -1073,11 +1075,129 @@ test("BUG: 14136 Apply grid layout padding token to a shape from the sidebar doe
 
   // Check if the value of the attribute is still correct
   await expect(
-    await topPaddingSection.getByRole("button", { name: "dimension.md" }).textContent()
+    await topPaddingSection
+      .getByRole("button", { name: "dimension.md" })
+      .textContent(),
   ).toBe("16");
   await expect(
-    await bottomPaddingSection.getByRole("button", { name: "dimension.md" }).textContent()
+    await bottomPaddingSection
+      .getByRole("button", { name: "dimension.md" })
+      .textContent(),
   ).toBe("16");
+});
+
+test("BUG: 14200, Tokens in sets are applied when clicking on Save during creation", async ({
+  page,
+}) => {
+  // Setup the workspace with token features enabled
+  const {
+    workspacePage,
+    tokensSidebar,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+    tokenSetGroupItems,
+    tokensUpdateCreateModal,
+  } = await setupTokensFileRender(page, {
+    flags: ["enable-token-combobox", "enable-feature-token-input"],
+  });
+
+  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
+    const setInput = sidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill(setName);
+    await setInput.press(finalKey);
+  };
+
+  const createSet = async (sidebar, setName, finalKey = "Enter") => {
+    const tokensTabButton = sidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
+  };
+
+  // Select rectangle layer
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  // Create nested token set and activate it
+  await createSet(tokenThemesSetsSidebar, "set/first");
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "first" })
+    .getByRole("checkbox")
+    .click();
+
+  // Create token in nested set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+
+  // Create border token
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: Border radius` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill("border");
+
+  const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+    name: "Value",
+  });
+  await valueField.fill("20");
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+  // Check "border" token is not applied while creating.
+
+  const borderRadiusSection = page.getByRole("region", {
+    name: "Border radius section",
+  });
+  await expect(borderRadiusSection).toBeVisible();
+
+  // Check if token pill is visible on design tab on right sidebar
+  const borderTokenPill = borderRadiusSection.getByRole("button", {
+    name: "border",
+    exact: true,
+  });
+  await expect(borderTokenPill).not.toBeVisible();
+
+  //Create new set and activate it
+
+  await createSet(tokenThemesSetsSidebar, "set/other");
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "other" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "other" })
+    .getByRole("checkbox")
+    .click();
+
+  //Create the same token in new set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: Border radius` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+  await nameField.fill("border");
+  await valueField.fill("50");
+  await valueField.press("Enter");
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+  await expect(borderRadiusSection).toBeVisible();
+  await expect(borderTokenPill).not.toBeVisible();
 });
 
 test("BUG: 14191, Apply tokens from different set", async ({ page }) => {
