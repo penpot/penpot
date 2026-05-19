@@ -96,6 +96,7 @@
               context (assoc @context :param-style pstyle)]
 
           {::yres/status 200
+           ::yres/headers {"content-type" "text/html; charset=utf-8"}
            ::yres/body (-> (io/resource template)
                            (tmpl/render context))})))
     (fn [_]

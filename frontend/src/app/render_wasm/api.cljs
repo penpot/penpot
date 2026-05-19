@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -22,6 +23,9 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
+   [app.main.data.render-wasm :as drw]
    [app.main.data.workspace.texts-v3 :as texts]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -32,6 +36,7 @@
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
+   [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.mem.heap32 :as mem.h32]
@@ -45,8 +50,10 @@
    [app.util.dom :as dom]
    [app.util.functions :as fns]
    [app.util.globals :as ug]
+   [app.util.i18n :refer [tr]]
    [app.util.modules :as mod]
    [app.util.text.content :as tc]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -69,27 +76,13 @@
 ;; - `transition-tiles-handler*`: the currently installed DOM event handler for
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
+(defonce context-loss-overlay? (atom false))
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
+(defonce snapshot-tiles-handler* (atom nil))
 
-(def ^:private transition-blur-css "blur(4px)")
-
-(defn- set-transition-blur!
-  []
-  (when-let [canvas ^js wasm/canvas]
-    (dom/set-style! canvas "filter" transition-blur-css))
-  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
-    (doseq [^js node (array-seq nodes)]
-      (dom/set-style! node "filter" transition-blur-css))))
-
-(defn- clear-transition-blur!
-  []
-  (when-let [canvas ^js wasm/canvas]
-    (dom/set-style! canvas "filter" ""))
-  (when-let [nodes (.querySelectorAll ^js ug/document ".blurrable")]
-    (doseq [^js node (array-seq nodes)]
-      (dom/set-style! node "filter" ""))))
+(def ^:private snapshot-capture-debounce-ms 250)
 
 (defn set-transition-image-from-background!
   "Sets `transition-image-url*` to a data URL representing a solid background color."
@@ -112,10 +105,7 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image-url* nil)
-  (clear-transition-blur!)
-  ;; Clear captured pixels so future transitions must explicitly capture again.
-  (set! wasm/canvas-snapshot-url nil))
+  (reset! transition-image-url* nil))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -147,6 +137,16 @@
     (let [epoch (begin-page-transition!)]
       (set-transition-tiles-complete-handler! epoch end-page-transition!))))
 
+(defn- start-context-loss-overlay!
+  []
+  (reset! context-loss-overlay? true))
+
+(defn- end-context-loss-overlay!
+  []
+  (reset! context-loss-overlay? false)
+  (when-not @page-transition?
+    (reset! transition-image-url* nil)))
+
 (defn listen-tiles-render-complete-once!
   "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
   when a full tile pass finishes."
@@ -156,6 +156,32 @@
                      (fn [_]
                        (f))
                      #js {:once true}))
+
+(defonce ^:private schedule-canvas-snapshot-capture!
+  (fns/debounce
+   (fn []
+     (when (and wasm/context-initialized?
+                (not @wasm/context-lost?)
+                (some? wasm/canvas))
+       (-> (webgl/capture-canvas-snapshot-url)
+           (p/catch (fn [_] nil)))))
+   snapshot-capture-debounce-ms))
+
+(defn- start-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
+    (reset! snapshot-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn- stop-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! snapshot-tiles-handler* nil)
+  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
+    (cancel)))
 
 (defn text-editor-wasm?
   []
@@ -182,6 +208,8 @@
 (def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
+
+(defonce ^:private view-interaction-active? (atom false))
 
 ;; Time budget (ms) per chunk of shape processing before yielding to browser
 (def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
@@ -267,6 +295,36 @@
 ;; forward declare helpers so render can call them
 (declare request-render)
 (declare set-shape-vertical-align fonts-from-text-content)
+(declare reload-renderer!)
+
+(defn- build-reload-payload
+  "Builds renderer reload payload from current application state.
+   Avoids keeping heavyweight object snapshots in memory."
+  []
+  (let [state      @st/state
+        file-id    (:current-file-id state)
+        page-id    (:current-page-id state)
+        page       (dsh/lookup-page state file-id page-id)
+        objects    (dsh/lookup-page-objects state file-id page-id)
+        focus      (:workspace-focus-selected state)
+        local      (:workspace-local state)
+        zoom       (:zoom local)
+        vbox       (:vbox local)
+        canvas     wasm/canvas
+        background (get page :background)]
+    {:canvas canvas
+     :base-objects (cpf/focus-objects objects focus)
+     :zoom zoom
+     :vbox vbox
+     :background background}))
+
+(defn free-gpu-resources
+  []
+  ;; check if the context has not been lost already or we will get warnings about
+  ;; removing objects from a non-current context
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_free_gpu_resources")))
 
 ;; This should never be called from the outside.
 (defn- render
@@ -341,7 +399,7 @@
       (when-not @pending-render
         (reset! pending-render true)
         (let [frame-id
-              (js/requestAnimationFrame
+              (timers/raf
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
@@ -1091,14 +1149,26 @@
       (= result 1))
     false))
 
+(defn view-interaction-start!
+  []
+  (when-not @view-interaction-active?
+    (h/call wasm/internal-module "_set_view_start")
+    (reset! view-interaction-active? true)))
+
+(defn view-interaction-end!
+  []
+  (when @view-interaction-active?
+    (perf/begin-measure "render-finish")
+    (h/call wasm/internal-module "_set_view_end")
+    (perf/end-measure "render-finish")
+    (reset! view-interaction-active? false)))
+
 (def render-finish
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when (and wasm/context-initialized? (not @wasm/context-lost?))
-              (perf/begin-measure "render-finish")
-              (h/call wasm/internal-module "_set_view_end")
-              (perf/end-measure "render-finish")
+              (view-interaction-end!)
               ;; Use async _render: visible tiles render synchronously
               ;; (no yield), interest-area tiles render progressively
               ;; via rAF.  _set_view_end already rebuilt the tile
@@ -1112,7 +1182,7 @@
 (defn set-view-box
   [zoom vbox]
   (perf/begin-measure "set-view-box")
-  (h/call wasm/internal-module "_set_view_start")
+  (view-interaction-start!)
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (perf/end-measure "set-view-box")
 
@@ -1120,6 +1190,16 @@
   (h/call wasm/internal-module "_render_from_cache" 0)
   (render-finish)
   (perf/end-measure "render-from-cache"))
+
+(defn sync-workspace-local-viewport!
+  "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
+  [state]
+  (when (and wasm/context-initialized?
+             (not @wasm/context-lost?))
+    (let [zoom (get-in state [:workspace-local :zoom])
+          vbox (get-in state [:workspace-local :vbox])]
+      (when (and zoom vbox)
+        (set-view-box zoom vbox)))))
 
 (defn- ensure-text-content
   "Guarantee that the shape always sends a valid text tree to WASM. When the
@@ -1289,6 +1369,7 @@
                      ;; Rebuild the tile index so _render knows which shapes
                      ;; map to which tiles after a page switch.
                      (h/call wasm/internal-module "_set_view_end")
+                     (reset! view-interaction-active? false)
 
                      ;; Text layouts must run after _end_loading (they
                      ;; depend on state that is only correct when loading
@@ -1347,6 +1428,7 @@
     ;; Rebuild the tile index so _render knows which shapes
     ;; map to which tiles after a page switch.
     (h/call wasm/internal-module "_set_view_end")
+    (reset! view-interaction-active? false)
     (process-pending shapes thumbnails full
                      (fn []
                        (if render-callback
@@ -1578,6 +1660,57 @@
     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects on-render on-shapes-ready force-sync)))
 
+(defn- run-resource-callbacks!
+  [entries]
+  (if (seq entries)
+    (p/create
+     (fn [resolve _reject]
+       (->> (rx/from (vals (d/index-by :key :callback entries)))
+            (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+            (rx/reduce conj [])
+            (rx/subs! (fn [_] (resolve nil))
+                      (fn [_cause] (resolve nil))
+                      (fn [] (resolve nil))))))
+    (p/resolved nil)))
+
+(defn- replay-font-resources!
+  [fonts]
+  (let [pending (into [] (f/store-fonts fonts))]
+    (run-resource-callbacks! pending)))
+
+(defn- derive-font-resources
+  [base-objects payload-fonts]
+  (let [object-fonts
+        (->> (vals base-objects)
+             (filter cfh/text-shape?)
+             (mapcat (fn [shape]
+                       (let [content (ensure-text-content (:content shape))
+                             direct-fonts (f/get-content-fonts content)
+                             ;; `true` would call `write-shape-text`, which requires
+                             ;; an active current shape in WASM and can panic during
+                             ;; reload pre-processing. We only need fallback font
+                             ;; discovery here, so use side-effect free mode.
+                             fallback-fonts (fonts-from-text-content content false)]
+                         (concat direct-fonts fallback-fonts))))
+             (into #{}))]
+    (into [] (set (concat payload-fonts object-fonts)))))
+
+(defn- replay-image-resources!
+  [image-resources]
+  (let [pending
+        (into []
+              (keep (fn [{:keys [shape-id image-id thumbnail?]}]
+                      (when (and (uuid? image-id) (or (nil? shape-id) (uuid? shape-id)))
+                        (fetch-image (or shape-id uuid/zero) image-id (boolean thumbnail?)))))
+              image-resources)]
+    (run-resource-callbacks! pending)))
+
+(defn- wait-next-frame!
+  []
+  (p/create
+   (fn [resolve _reject]
+     (timers/raf (fn [] (resolve nil))))))
+
 (def ^:private default-context-options
   #js {:antialias false
        :depth true
@@ -1654,96 +1787,202 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; Keep the last rendered pixels visible while context is lost/recovering.
+  (start-context-loss-overlay!)
+  (when-let [url wasm/canvas-snapshot-url]
+    (when (string? url)
+      (reset! transition-image-url* url)))
   (reset! wasm/context-lost? true)
-  (ex/raise :type :wasm-error
-            :code :webgl-context-lost
-            :hint "WASM Error: WebGL context lost"))
+  (st/async-emit!
+   (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
+              :type :toast
+              :level :warning
+              :timeout 5000}))
+  (st/emit! (drw/context-lost)))
+
+(defn- on-webgl-context-restored
+  [event]
+  (dom/prevent-default event)
+  (reset! wasm/context-lost? false)
+  (st/emit! (drw/context-restored))
+  (let [payload (build-reload-payload)]
+    (-> (reload-renderer! payload)
+        (p/then (fn [_]
+                  (listen-tiles-render-complete-once! end-context-loss-overlay!)
+                  (st/async-emit!
+                   (ntf/show {:content (tr "webgl.webgl-context-recovered.toast")
+                              :type :toast
+                              :level :success
+                              :timeout 3000}))))
+        (p/catch (fn [cause]
+                   (end-context-loss-overlay!)
+                   (log/error :hint "wasm reload after context restore failed"
+                              :cause cause)
+                   nil)))))
 
 (defn init-canvas-context
   [canvas]
-  (let [gl      (unchecked-get wasm/internal-module "GL")
-        flags   (debug-flags)
-        context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
-        context (.getContext ^js canvas context-id default-context-options)
-        context-init? (not (nil? context))
-        browser (sr/translate-browser cf/browser)]
-    (when-not (nil? context)
-      (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
-        (.makeContextCurrent ^js gl handle)
-        (set! wasm/gl-context-handle handle)
-        (set! wasm/gl-context context)
+  (if-not (wasm/module-ready?)
+    false
+    (let [gl      (unchecked-get wasm/internal-module "GL")
+          flags   (debug-flags)
+          context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
+          context (.getContext ^js canvas context-id default-context-options)
+          context-init? (not (nil? context))
+          browser (sr/translate-browser cf/browser)]
+      (when-not (nil? context)
+        (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
+          (.makeContextCurrent ^js gl handle)
+          (set! wasm/gl-context-handle handle)
+          (set! wasm/gl-context context)
 
-        ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
-        (.getExtension context "WEBGL_debug_renderer_info")
+          ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+          (.getExtension context "WEBGL_debug_renderer_info")
 
-        ;; Initialize Wasm Render Engine
-        (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-        (h/call wasm/internal-module "_set_render_options" flags dpr)
-        (when-let [t (wasm-aa-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_antialias_threshold" t))
-        (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
-        (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
-          (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
-        (when-let [t (wasm-node-batch-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_node_batch_threshold" t))
-        (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
-          (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
-        (when-let [max-tex (webgl/max-texture-size context)]
-          (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+          ;; Initialize Wasm Render Engine
+          (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+          (h/call wasm/internal-module "_set_render_options" flags dpr)
+          (when-let [t (wasm-aa-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_antialias_threshold" t))
+          (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
+          (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
+            (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
+          (when-let [t (wasm-node-batch-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_node_batch_threshold" t))
+          (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
+            (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
+          (when-let [max-tex (webgl/max-texture-size context)]
+            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
 
-        ;; Set browser and canvas size only after initialization
-        (h/call wasm/internal-module "_set_browser" browser)
-        (set-canvas-size canvas)
+          ;; Set browser and canvas size only after initialization
+          (h/call wasm/internal-module "_set_browser" browser)
+          (set-canvas-size canvas)
 
-        ;; Add event listeners for WebGL context lost
-        (set! wasm/canvas canvas)
-        (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-        (set! wasm/context-initialized? true)))
+          ;; Add event listeners for WebGL context lost
+          (set! wasm/canvas canvas)
+          (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
+          (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
+          (start-canvas-snapshot-listener!)
+          (reset! wasm/context-lost? false)
+          (set! wasm/context-initialized? true)))
 
-    context-init?))
+      context-init?)))
 
 (defn clear-canvas
-  []
-  (when wasm/context-initialized?
-    (try
-      (set! wasm/context-initialized? false)
+  ([]
+   (clear-canvas {}))
+  ([{:keys [lose-browser-context?]
+     :or {lose-browser-context? true}}]
+   (try
+     (set! wasm/context-initialized? false)
 
-      ;; Cancel any pending animation frame to prevent race conditions
-      (when wasm/internal-frame-id
-        (js/cancelAnimationFrame wasm/internal-frame-id)
-        (set! wasm/internal-frame-id nil))
+     ;; Cancel any pending animation frame to prevent race conditions.
+     (when wasm/internal-frame-id
+       (timers/cancel-af! wasm/internal-frame-id))
 
-      ;; Reset render flags to prevent new renders from being scheduled
-      (reset! pending-render false)
-      (reset! shapes-loading? false)
-      (reset! deferred-render? false)
+     ;; Reset render flags to prevent new renders from being scheduled.
+     (reset! pending-render false)
+     (reset! shapes-loading? false)
+     (reset! deferred-render? false)
 
-      (h/call wasm/internal-module "_clean_up")
+     ;; Remove listener before losing/deleting context.
+     (when wasm/canvas
+       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
+       (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
+     (stop-canvas-snapshot-listener!)
 
-      ;; Remove event listener for WebGL context lost
-      (when wasm/canvas
-        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
-        (set! wasm/canvas nil))
+     (when (wasm/module-ready?)
+       (free-gpu-resources)
+       (h/call wasm/internal-module "_clean_up"))
 
-      ;; Ensure the WebGL context is properly disposed so browsers do not keep
-      ;; accumulating active contexts between page switches.
-      (when-let [gl (unchecked-get wasm/internal-module "GL")]
-        (when-let [handle wasm/gl-context-handle]
-          (try
-            ;; Ask the browser to release resources explicitly if available.
-            (when-let [ctx wasm/gl-context]
-              (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-                (.loseContext ^js lose-ext)))
-            (.deleteContext ^js gl handle)
-            (finally
-              (set! wasm/gl-context-handle nil)
-              (set! wasm/gl-context nil)))))
+     ;; Ensure the WebGL context is properly disposed so browsers do not keep
+     ;; accumulating active contexts between page switches.
+     (when-let [gl (unchecked-get wasm/internal-module "GL")]
+       (when-let [handle wasm/gl-context-handle]
+         (try
+           ;; For hard teardown we can explicitly lose browser context.
+           ;; For reload->reinit flows we skip this because immediate context
+           ;; recreation may fail on some browsers/GPUs while context is lost.
+           (when lose-browser-context?
+             (when-let [ctx wasm/gl-context]
+               (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+                 (.loseContext ^js lose-ext))))
+           (.deleteContext ^js gl handle)
+           (catch :default dispose-error
+             (.error js/console dispose-error)))))
 
-      ;; If this calls panics we don't want to crash. This happens sometimes
-      ;; with hot-reload in develop
-      (catch :default error
-        (.error js/console error)))))
+     (wasm-gesture/reset-after-wasm-reload!)
+     (wasm/reset-context-state!)
+     true
+
+     ;; If this panics we don't want to crash. This happens sometimes with
+     ;; hot-reload in development.
+     (catch :default error
+       (.error js/console error)
+       (wasm-gesture/reset-after-wasm-reload!)
+       (wasm/reset-context-state!)
+       false))))
+
+(defn reload-renderer!
+  [{:keys [canvas
+           base-objects
+           zoom
+           vbox
+           fonts
+           image-resources
+           background
+           background-opacity
+           on-render
+           on-shapes-ready
+           force-sync]
+    :or {fonts []
+         image-resources []
+         background-opacity 1
+         force-sync false}
+    :as payload}]
+  (ug/dispatch! (ug/event "penpot:wasm:reload-start"))
+  (let [fonts (derive-font-resources base-objects fonts)]
+    (-> (p/resolved nil)
+        ;; Keep teardown strict (`_clean_up` + deleteContext) but do not
+        ;; force `loseContext` because we immediately create a new context.
+        (p/then (fn [_]
+                  (let [was-cleared? (clear-canvas {:lose-browser-context? false})]
+                    (when-not was-cleared?
+                      (ex/raise :type :wasm-error
+                                :code :wasm-reload-context-failure
+                                :hint "WASM renderer cleanup failed")))))
+        ;; Give browser a frame to settle context deletion before init.
+        (p/then (fn [_] (wait-next-frame!)))
+        (p/then (fn [_]
+                  (let [context-ready? (init-canvas-context canvas)]
+                    (when-not context-ready?
+                      (ex/raise :type :wasm-error
+                                :code :wasm-reload-context-failure
+                                :hint "WASM renderer could not create a new WebGL context"))
+                    ;; Gesture bookkeeping (`modifiers.cljs`) uses compare-and-set on an atom
+                    ;; that survives WASM teardown; reset so it matches fresh `_init` state.
+                    (wasm-gesture/reset-after-wasm-reload!))))
+        ;; Ensure render surfaces are blank before replay to avoid overpainting.
+        (p/then (fn [_] (h/call wasm/internal-module "_reset_canvas")))
+        (p/then (fn [_] (replay-font-resources! fonts)))
+        (p/then (fn [_] (replay-image-resources! image-resources)))
+        (p/then
+         (fn []
+           (initialize-viewport base-objects zoom vbox
+                                :background background
+                                :background-opacity background-opacity
+                                :on-render on-render
+                                :on-shapes-ready on-shapes-ready
+                                :force-sync force-sync)
+           (request-render "reload-renderer")
+           (ug/dispatch! (ug/event "penpot:wasm:reload-complete"))
+           payload))
+        (p/catch
+         (fn [cause]
+           (ug/dispatch! (ug/event "penpot:wasm:reload-failed"))
+           (clear-canvas)
+           (p/rejected cause))))))
 
 (defn show-grid
   [id]
@@ -1931,33 +2170,15 @@
   (let [already? @page-transition?
         epoch    (begin-page-transition!)]
     (set-transition-tiles-complete-handler! epoch end-page-transition!)
-    ;; Two-phase transition:
-    ;; - Apply CSS blur to the live canvas immediately (no async wait), so the user
-    ;;   sees the transition right away.
-    ;; - In parallel, capture a `blob:` snapshot URL; once ready, switch the overlay
-    ;;   to that fixed image (and guard with `epoch` to avoid stale async updates).
-    (set-transition-blur!)
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
-    ;; the final target page finishes rendering.
-    (if already?
-      (p/resolved nil)
-      (do
-        ;; If we already have a snapshot URL, use it immediately.
-        (when-let [url wasm/canvas-snapshot-url]
-          (when (string? url)
-            (reset! transition-image-url* url)))
-
-        ;; Capture a fresh snapshot asynchronously and update the overlay as soon
-        ;; as it is ready (guarded by `epoch` to avoid stale async updates).
-        (-> (capture-canvas-snapshot-url)
-            (p/then (fn [url]
-                      (when (and (string? url)
-                                 @page-transition?
-                                 (= epoch @transition-epoch*))
-                        (reset! transition-image-url* url))
-                      url))
-            (p/catch (fn [_] nil)))))))
+    ;; the final target page finishes rendering. The caller (sitemap on-click) is
+    ;; responsible for ensuring `wasm/canvas-snapshot-url` was freshly captured
+    ;; before invoking us.
+    (when-not already?
+      (when-let [url wasm/canvas-snapshot-url]
+        (when (string? url)
+          (reset! transition-image-url* url))))))
 
 (defn render-shape-pixels
   [shape-id scale]
@@ -1977,6 +2198,24 @@
         result (dr/read-image-bytes heap (+ offset 12) length)]
     (mem/free)
     result))
+
+(defn get-shape-extrect
+  [shape-id]
+  (let [buffer (uuid/get-u32 shape-id)
+        offset (h/call wasm/internal-module "_get_shape_extrect"
+                       (aget buffer 0)
+                       (aget buffer 1)
+                       (aget buffer 2)
+                       (aget buffer 3))]
+    (when (and (number? offset) (pos? offset))
+      (let [heapf32 (mem/get-heap-f32)
+            base    (mem/->offset-32 offset)
+            x       (aget heapf32 base)
+            y       (aget heapf32 (+ base 1))
+            w       (aget heapf32 (+ base 2))
+            h       (aget heapf32 (+ base 3))]
+        (mem/free)
+        {:x x :y y :width w :height h}))))
 
 (defn init-wasm-module
   [module]

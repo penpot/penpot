@@ -63,7 +63,7 @@ jobs:
 
           echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
 
-          IMAGES=("frontend" "backend" "exporter" "storybook")
+          IMAGES=("frontend" "backend" "exporter" "mcp" "storybook")
           SHORT_TAG=${TAG%.*}
 
           for image in "${IMAGES[@]}"; do

@@ -54,13 +54,14 @@ export interface Penpot extends Omit<
      * Sends a message to the plugin UI.
      *
      * @param message content usually is an object
+     * @param throwOnError if true, throws an error when the message cannot be cloned instead of logging to console (default: false)
      *
      * @example
      * ```js
      * this.sendMessage({ type: 'example-type', content: 'data we want to share' });
      * ```
      */
-    sendMessage: (message: unknown) => void;
+    sendMessage: (message: unknown, throwOnError?: boolean) => void;
     /**
      * This is usually used in the `plugin.ts` file in order to handle the data sent by our plugin
      *
@@ -2672,9 +2673,11 @@ export interface LibraryComponent extends LibraryElement {
   mainInstance(): Shape;
 
   /**
-   * @return true when this component is a VariantComponent
+   * Checks whether this component is a variant component.
+   * If true, the component can be used as a `LibraryVariantComponent`,
+   * which provides additional attributes (e.g. `variants`) and methods.
    */
-  isVariant(): boolean;
+  isVariant(): this is LibraryVariantComponent;
 
   /**
    * Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a

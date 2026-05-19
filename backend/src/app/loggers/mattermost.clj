@@ -52,12 +52,12 @@
                          trace
                          "```")))
 
-        resp (http/req! cfg
-                        {:uri (cf/get :error-report-webhook)
-                         :method :post
-                         :headers {"content-type" "application/json"}
-                         :body (json/encode-str {:text text})}
-                        {:sync? true})]
+        resp (http/req cfg
+                       {:uri (cf/get :error-report-webhook)
+                        :method :post
+                        :headers {"content-type" "application/json"}
+                        :body (json/encode-str {:text text})}
+                       {:sync? true})]
 
     (when (not= 200 (:status resp))
       (l/warn :hint "error on sending data"
@@ -83,7 +83,7 @@
      :trace            (ex/format-throwable cause :detail? false :header? false)}))
 
 (defn- audit-event->report
-  [{:keys [::audit/context ::audit/props ::audit/id] :as event}]
+  [{:keys [context props id] :as event}]
   {:id               id
    :type             "exception"
    :origin           "audit-log"
@@ -92,7 +92,7 @@
    :host             (cf/get :host)
    :backend-version  (:full cf/version)
    :frontend-version (:version context)
-   :profile-id       (:audit/profile-id event)
+   :profile-id       (:profile-id event)
    :href             (get props :href)})
 
 (defn- rlimit-event->report
@@ -148,11 +148,11 @@
                              (::l/id item)
                              (handle-event cfg item log-record->report)
 
-                             (::audit/id item)
-                             (handle-event cfg item audit-event->report)
-
                              (::rlimit/id item)
                              (handle-event cfg item rlimit-event->report)
+
+                             (-> item meta ::audit/event)
+                             (handle-event cfg item audit-event->report)
 
                              :else
                              (l/warn :hint "received unexpected item" :item item)))

@@ -43,7 +43,7 @@
 (defn- discover-oidc-config
   [cfg {:keys [base-uri] :as provider}]
   (let [uri (u/join base-uri ".well-known/openid-configuration")
-        rsp (http/req! cfg {:method :get :uri (dm/str uri)})]
+        rsp (http/req cfg {:method :get :uri (dm/str uri)})]
 
     (if (= 200 (:status rsp))
       (let [data       (-> rsp :body json/decode)
@@ -108,7 +108,7 @@
 
 (defn- fetch-oidc-jwks
   [cfg jwks-uri]
-  (let [{:keys [status body]} (http/req! cfg {:method :get :uri jwks-uri})]
+  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri})]
     (if (= 200 status)
       (-> body json/decode :keys process-oidc-jwks)
       (ex/raise :type ::internal
@@ -247,7 +247,7 @@
                     :timeout 6000
                     :method :get}
 
-            {:keys [status body]} (http/req! cfg params)]
+            {:keys [status body]} (http/req cfg params)]
 
         (when-not (int-in-range? status 200 300)
           (ex/raise :type :internal
@@ -466,7 +466,7 @@
            :grant-type (:grant_type params)
            :redirect-uri (:redirect_uri params))
 
-    (let [{:keys [status body]} (http/req! cfg req)]
+    (let [{:keys [status body]} (http/req cfg req)]
       (if (= status 200)
         (let [data (json/decode body)
               data {:token/access (get data :access_token)
@@ -521,7 +521,7 @@
                   :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
                   :timeout 6000
                   :method :get}
-        response (http/req! cfg params)]
+        response (http/req cfg params)]
 
     (l/trc :hint "user info response"
            :status (:status response)
@@ -831,12 +831,12 @@
                 props   (audit/profile->props profile)
                 context (d/without-nils {:external-session-id (:external-session-id info)})]
 
-            (audit/submit! cfg {::audit/type "action"
-                                ::audit/name "login-with-oidc"
-                                ::audit/profile-id (:id profile)
-                                ::audit/ip-addr (inet/parse-request request)
-                                ::audit/props props
-                                ::audit/context context})
+            (audit/submit cfg {:type "action"
+                               :name "login-with-oidc"
+                               :profile-id (:id profile)
+                               :ip-addr (inet/parse-request request)
+                               :props props
+                               :context context})
 
             (->> (redirect-to-verify-token token)
                  (sxf request)))))
