@@ -16,6 +16,7 @@
 
   display: grid;
   place-content: center;
+  position: relative;
 }
 
 .icon-button-primary {
@@ -48,4 +49,14 @@
   --button-focus-outer-ring-color: var(--color-accent-primary);
   --button-width: #{$sz-24};
   --button-height: #{$sz-24};
+}
+
+.flyout-indicator {
+  position: absolute;
+  inset-block-end: var(--sp-xs);
+  inset-inline-end: var(--sp-xs);
+  stroke: currentcolor;
+  fill: none;
+  inline-size: $sz-6;
+  block-size: $sz-6;
 }

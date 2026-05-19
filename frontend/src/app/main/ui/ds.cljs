@@ -40,6 +40,7 @@
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.tool-toolbar.tool-toolbar :refer [tool-toolbar*]]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
@@ -83,6 +84,7 @@
     :MilestoneGroup milestone-group*
     :Date date*
     :PanelTitle panel-title*
+    :ToolToolbar tool-toolbar*
 
     :set-default-translations
     (fn [data]

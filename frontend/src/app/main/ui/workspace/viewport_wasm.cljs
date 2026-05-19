@@ -24,6 +24,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.tool-toolbar.tool-toolbar :refer [tool-toolbar*]]
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
@@ -32,7 +33,6 @@
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline*]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.v3-editor :as editor-v3]
-   [app.main.ui.workspace.top-toolbar :refer [top-toolbar*]]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -51,7 +51,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -511,7 +513,7 @@
        :else
        [:*
         (when-not hide-ui?
-          [:> top-toolbar* {:layout layout}])
+          [:> tool-toolbar* {:layout layout}])
 
         (when (and ^boolean path-editing?
                    ^boolean single-select?)

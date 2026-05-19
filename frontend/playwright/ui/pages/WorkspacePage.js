@@ -108,8 +108,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     async waitForIdle(options) {
       await this.page.evaluate(
-        (options) => new Promise(
-          (resolve) => globalThis.requestIdleCallback(resolve, options)), options);
+        (options) =>
+          new Promise((resolve) =>
+            globalThis.requestIdleCallback(resolve, options),
+          ),
+        options,
+      );
     }
   };
 
@@ -228,7 +232,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
+    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 });
   }
 
   async sendPresenceMessage(fixture) {
@@ -445,6 +449,33 @@ export class WorkspacePage extends BaseWebSocketPage {
   async togglePages() {
     const pagesToggle = this.page.getByText("Pages");
     await pagesToggle.click();
+  }
+
+  async selectToolbarTool(workspacePage, toolName) {
+    await workspacePage.page
+      .getByRole("button", { name: toolName })
+      .first()
+      .click();
+  }
+
+  async selectToolFromFlyout(
+    workspacePage,
+    { triggerToolName, targetToolName },
+  ) {
+    const trigger = workspacePage.page
+      .getByRole("button", { name: triggerToolName })
+      .first();
+
+    const option = workspacePage.page
+      .getByRole("menuitemradio", { name: targetToolName })
+      .first();
+
+    await trigger.hover();
+    // Flyout opening is delayed by 350ms in the toolbar component.
+    await workspacePage.page.waitForTimeout(450);
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await option.waitFor({ state: "visible" });
+    await option.click();
   }
 
   async moveSelectionToShape(name) {
