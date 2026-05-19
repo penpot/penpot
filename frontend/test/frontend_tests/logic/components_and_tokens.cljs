@@ -5,7 +5,9 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.components-and-tokens
   (:require
+   [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as geom]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
@@ -70,6 +72,55 @@
   []
   (-> (setup-file-with-main)
       (cthc/instantiate-component :component1 :c-frame1)))
+
+(def flex-layout-attrs
+  {:layout                 :flex
+   :layout-flex-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-justify-content :start
+   :layout-align-content   :stretch
+   :layout-wrap-type       :nowrap
+   :layout-padding-type    :simple})
+
+(defn- setup-spacing-file-with-copy
+  []
+  (let [file       (-> (cthf/sample-file :file1)
+                       (ctht/add-tokens-lib)
+                       (ctht/update-tokens-lib #(-> %
+                                                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                                                       :name "test-token-set"))
+                                                    (ctob/add-theme (ctob/make-token-theme :name "test-theme"
+                                                                                           :sets #{"test-token-set"}))
+                                                    (ctob/set-active-themes #{"/test-theme"})
+                                                    (ctob/add-token (cthi/id :test-token-set)
+                                                                    (ctob/make-token :id (cthi/new-id! :space-s)
+                                                                                     :name "space.s"
+                                                                                     :type :spacing
+                                                                                     :value 12))
+                                                    (ctob/add-token (cthi/id :test-token-set)
+                                                                    (ctob/make-token :id (cthi/new-id! :space-m)
+                                                                                     :name "space.m"
+                                                                                     :type :spacing
+                                                                                     :value 36))))
+                       (ctho/add-frame-with-text :frame1
+                                                 :text1
+                                                 "Original text"
+                                                 :frame-params (merge flex-layout-attrs
+                                                                      {:layout-padding {:p1 12 :p2 12 :p3 12 :p4 12}})
+                                                 :child-params {:x 12 :y 12})
+                       (ctht/apply-token-to-shape :frame1 "space.s" [:p1 :p2 :p3 :p4] [:layout-padding] {:p1 12 :p2 12 :p3 12 :p4 12})
+                       (cthc/make-component :component1 :frame1)
+                       (cthc/instantiate-component :component1 :c-frame1 {:children-labels [:c-text1]}))
+        page       (cthf/current-page file)
+        copy-child (cths/get-shape file :c-text1)
+        changes    (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                               #{(:id copy-child)}
+                                               #(assoc-in % [:content :children 0 :children 0 :text] "Overridden text")
+                                               (:objects page)
+                                               {})]
+    (cthf/apply-changes file changes)))
 
 (t/deftest create-component-with-token
   (t/async
@@ -167,6 +218,50 @@
                          (t/is (= (get c-frame1' :r2) 50))
                          (t/is (= (get c-frame1' :r3) 50))
                          (t/is (= (get c-frame1' :r4) 50)))))))]
+
+      (tohs/run-store-async
+       store step2 events identity))))
+
+(t/deftest change-spacing-token-in-main-updates-copy-layout
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (setup-spacing-file-with-copy)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwta/apply-token {:shape-ids [(cthi/id :frame1)]
+                                     :attributes #{:p1 :p2 :p3 :p4}
+                                     :token (toht/get-token file "space.m")
+                                     :on-update-shape dwta/apply-spacing-token})]
+
+          step2 (fn [_]
+                  ;; Reset the WASM call tracking so the assertions below only
+                  ;; account for the reflow triggered by the library sync, not
+                  ;; the earlier token application on the main component.
+                  (thw/reset-call-counts!)
+                  (let [events2 [(dwl/sync-file (:id file) (:id file))]]
+                    (ths/run-store
+                     store done events2
+                     (fn [new-state]
+                       (let [;; ==== Get
+                             file'     (ths/get-file-from-state new-state)
+                             c-frame1' (cths/get-shape file' :c-frame1)]
+
+                         ;; ==== Check
+                         (t/is (= (:applied-tokens c-frame1') {:p1 "space.m"
+                                                               :p2 "space.m"
+                                                               :p3 "space.m"
+                                                               :p4 "space.m"}))
+                         (t/is (= (:layout-padding c-frame1') {:p1 36 :p2 36 :p3 36 :p4 36}))
+
+                         ;; The library sync reflows the copied layout through
+                         ;; the WASM pipeline. With the render-wasm renderer the
+                         ;; final child geometry is computed by the Rust engine
+                         ;; (mocked here), so we assert the reflow path was
+                         ;; exercised rather than the resulting coordinates.
+                         (t/is (pos? (thw/call-count :set-structure-modifiers)))
+                         (t/is (pos? (thw/call-count :propagate-modifiers))))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
