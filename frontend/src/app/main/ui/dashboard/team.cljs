@@ -19,6 +19,7 @@
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.alert]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
@@ -153,6 +154,14 @@
    [:emails [::sm/set {:min 1} ::sm/email]]
    [:team-id ::sm/uuid]])
 
+
+(defn- do-invite-members!
+  [params origin]
+  (st/emit! (-> (dtm/create-invitations params)
+                (with-meta {::ev/origin origin}))
+            (dtm/fetch-invitations)
+            (dtm/fetch-members)))
+
 (mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members
@@ -222,11 +231,7 @@
           (let [params (:clean-data @form)
                 mdata  {:on-success (partial on-success form)
                         :on-error   (partial on-error form)}]
-            (st/emit! (-> (dtm/create-invitations (with-meta params mdata))
-                          (with-meta {::ev/origin origin}))
-                      ;; FIXME: looks duplicate
-                      (dtm/fetch-invitations)
-                      (dtm/fetch-members))))]
+            (st/emit! (dtm/check-and-submit-invite-members (with-meta params mdata) origin do-invite-members!))))]
 
     [:div {:class (stl/css-case :modal-team-container true
                                 :modal-team-container-workspace (= origin :workspace)
@@ -268,6 +273,63 @@
          :class (stl/css :accept-btn)
          :disabled (and (boolean (some current-data-emails current-members-emails))
                         (empty? (remove current-members-emails current-data-emails)))}]]]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INVITE RESTRICTED MEMBERS MODAL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(mf/defc invite-restricted-members-modal
+  {::mf/register modal/components
+   ::mf/register-as :invite-restricted-members}
+  [{:keys [on-accept blocked-emails]}]
+  (let [expanded* (mf/use-state false)
+        expanded? (deref expanded*)
+        on-toggle (mf/use-fn #(swap! expanded* not))]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-restricted-container :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2 {:class (stl/css :modal-title)}
+        (tr "modals.invite-restricted-members.title")]
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click modal/hide!} deprecated-icon/close]]
+
+      [:div {:class (stl/css :modal-content)}
+       [:p (tr "modals.invite-restricted-members.description")]
+       [:& context-notification {:content (tr "modals.invite-restricted-members.warning")
+                                 :level :warning}]
+       [:div {:class (stl/css :restricted-emails-section)}
+        [:button {:class (stl/css :restricted-emails-toggle)
+                  :type "button"
+                  :aria-expanded expanded?
+                  :on-click on-toggle}
+         [:span {:class (stl/css :restricted-email-summary)}
+          (tr "modals.invite-restricted-members.blocked-addresses")]
+         [:> icon* {:icon-id i/arrow
+                    :size "s"
+                    :class (stl/css-case :restricted-emails-arrow true
+                                         :expanded expanded?)}]]
+        (when expanded?
+          [:ul {:class (stl/css :restricted-email-list)}
+           (for [email blocked-emails]
+             [:li {:key email} email])])]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
+        [:> button*
+         {:class (stl/css :cancel-button)
+          :variant "secondary"
+          :type "button"
+          :on-click modal/hide!}
+         (tr "modals.invite-restricted-members.cancel")]
+        [:> button*
+         {:class (stl/css :accept-btn)
+          :variant "primary"
+          :type "button"
+          :on-click (fn []
+                      (modal/hide!)
+                      (on-accept))}
+         (tr "modals.invite-restricted-members.send")]]]]]))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION

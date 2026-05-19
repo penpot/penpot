@@ -410,6 +410,17 @@
                          [:permissions [:map-of :keyword :string]]]
                         params)))
 
+(defn- get-org-members-api
+  [cfg {:keys [organization-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/members-list")
+                        [:vector ::sm/uuid]
+                        params)))
+
 (defn- redeem-activation-code-api
   [cfg params]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -432,6 +443,7 @@
      :get-org-summary              (partial get-org-summary-api cfg)
      :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
+     :get-org-members              (partial get-org-members-api cfg)
      :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
@@ -508,7 +520,6 @@
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
-
 
 
 
