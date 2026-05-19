@@ -125,7 +125,7 @@
                (not ^boolean (:hidden shape)))
       [:> wrapper-elem wrapper-props
        (case shape-type
-         :path    [:> path/path-wrapper props]
+         :path    [:> path/path-wrapper* props]
          :text    [:> text/text-wrapper props]
          :group   [:> group-wrapper props]
          :rect    [:> rect-wrapper props]
