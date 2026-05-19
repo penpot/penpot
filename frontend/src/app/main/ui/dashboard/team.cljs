@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.config :as cfg]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -18,7 +19,9 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.alert]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
@@ -70,6 +73,31 @@
 (def ^:private group-icon
   (deprecated-icon/icon-xref :group (stl/css :group-icon)))
 
+(defn- show-invite-members-modal!
+  [team invite-email]
+  (let [show-invite-modal
+        #(st/emit! (modal/show {:type :invite-members
+                                :team team
+                                :origin :team
+                                :invite-email invite-email}))]
+    (if (and (contains? cfg/flags :nitrate)
+             (not (nitrate-perms/allowed? :add-anybody-to-team
+                                          {:org-perms (:organization team)})))
+      (->> (rp/cmd! :all-org-members-in-team
+                    {:team-id (:id team)
+                     :organization-id (get-in team [:organization :id])})
+           (rx/subs! (fn [all-org-members-in-team?]
+                       (if all-org-members-in-team?
+                         (st/emit!
+                          (modal/show
+                           {:type :alert
+                            :message (tr "modals.invite-restricted-members.all-org-members-in-team")
+                            :accept-label (tr "labels.accept")
+                            :accept-style :primary
+                            :title (tr "modals.invite-team-member.title")}))
+                         (show-invite-modal)))))
+      (show-invite-modal))))
+
 (mf/defc header
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
@@ -92,11 +120,7 @@
         on-invite-member
         (mf/use-fn
          (mf/deps team invite-email)
-         (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :team
-                                  :invite-email invite-email}))))]
+         (partial show-invite-members-modal! team invite-email))]
 
     (mf/with-effect [team invite-email]
       (when invite-email
@@ -147,6 +171,48 @@
    [:role :keyword]
    [:emails [::sm/set {:min 1} ::sm/email]]
    [:team-id ::sm/uuid]])
+
+(defn- do-invite-members!
+  [params origin]
+  (st/emit! (-> (dtm/create-invitations params)
+                (with-meta {::ev/origin origin}))
+            (dtm/fetch-invitations)
+            (dtm/fetch-members)))
+
+(defn- submit-invite-members!
+  [params origin team]
+  (if (and (contains? cfg/flags :nitrate)
+           (not (nitrate-perms/allowed? :add-anybody-to-team
+                                        {:org-perms (:organization team)})))
+    (->> (rp/cmd! :check-org-members {:organization-id (get-in team [:organization :id])
+                                      :emails (vec (:emails params))})
+         (rx/subs! (fn [result]
+                     (let [blocked (into [] (comp (filter (fn [[_ v]] (not v))) (map first)) result)]
+                       (cond
+                         (empty? blocked)
+                         (do-invite-members! params origin)
+
+                         (= (count blocked) (count result))
+                         (st/emit!
+                          (modal/show
+                           {:type :alert
+                            :title (tr "modals.invite-restricted-members.all-blocked-title")
+                            :message (tr "modals.invite-restricted-members.all-blocked")
+                            :accept-label (tr "labels.accept")
+                            :accept-style :primary}))
+
+                         :else
+                         (st/emit!
+                          (modal/show
+                           {:type :invite-restricted-members
+                            :blocked-emails blocked
+                            :on-accept (fn []
+                                         (let [valid-emails (into #{} (filter (fn [e] (get result e))) (:emails params))
+                                               params'      (assoc params :emails valid-emails)]
+                                           (do-invite-members! params' origin)))})))))))
+    (do-invite-members! params origin)))
+
+
 
 (mf/defc invite-members-modal
   {::mf/register modal/components
@@ -217,11 +283,7 @@
           (let [params (:clean-data @form)
                 mdata  {:on-success (partial on-success form)
                         :on-error   (partial on-error form)}]
-            (st/emit! (-> (dtm/create-invitations (with-meta params mdata))
-                          (with-meta {::ev/origin origin}))
-                      ;; FIXME: looks duplicate
-                      (dtm/fetch-invitations)
-                      (dtm/fetch-members))))]
+            (submit-invite-members! (with-meta params mdata) origin team)))]
 
     [:div {:class (stl/css-case :modal-team-container true
                                 :modal-team-container-workspace (= origin :workspace)
@@ -263,6 +325,62 @@
          :class (stl/css :accept-btn)
          :disabled (and (boolean (some current-data-emails current-members-emails))
                         (empty? (remove current-members-emails current-data-emails)))}]]]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INVITE RESTRICTED MEMBERS MODAL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(mf/defc invite-restricted-members-modal
+  {::mf/register modal/components
+   ::mf/register-as :invite-restricted-members}
+  [{:keys [on-accept blocked-emails]}]
+  (let [expanded* (mf/use-state false)
+        expanded? (deref expanded*)
+        on-toggle (mf/use-fn #(swap! expanded* not))]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-restricted-container :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2 {:class (stl/css :modal-title)}
+        (tr "modals.invite-restricted-members.title")]
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click modal/hide!} deprecated-icon/close]]
+
+      [:div {:class (stl/css :modal-content)}
+       [:p (tr "modals.invite-restricted-members.description")]
+       [:& context-notification {:content (tr "modals.invite-restricted-members.warning")
+                                 :level :warning}]
+       [:div {:class (stl/css :restricted-emails-section)}
+        [:button {:class (stl/css :restricted-emails-toggle)
+                  :type "button"
+                  :aria-expanded expanded?
+                  :on-click on-toggle}
+         [:span {:class (stl/css :restricted-email-summary)}
+          (tr "modals.invite-restricted-members.blocked-addresses")]
+         [:> icon* {:icon-id i/arrow
+                    :size "s"
+                    :class (stl/css-case :restricted-emails-arrow true
+                                         :expanded expanded?)}]]
+        (when expanded?
+          [:ul {:class (stl/css :restricted-email-list)}
+           (for [email blocked-emails]
+             [:li {:key email} email])])]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
+        [:> button*
+         {:class (stl/css :cancel-button)
+          :variant "secondary"
+          :type "button"
+          :on-click modal/hide!}
+         (tr "modals.invite-restricted-members.cancel")]
+        [:> button*
+         {:class (stl/css :accept-btn)
+          :variant "primary"
+          :type "button"
+          :on-click (fn []
+                      (modal/hide!)
+                      (on-accept))}
+         (tr "modals.invite-restricted-members.send")]]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
@@ -739,11 +857,7 @@
     invite-email         (-> route :query-params :invite-email)
     on-invite-member     (mf/use-fn
                           (mf/deps team invite-email)
-                          (fn []
-                            (st/emit! (modal/show {:type :invite-members
-                                                   :team team
-                                                   :origin :team
-                                                   :invite-email invite-email}))))]
+                          (partial show-invite-members-modal! team invite-email))]
     [:div {:class (stl/css :empty-invitations)}
      [:span (tr "labels.no-invitations")]
      (when ^boolean can-invite
