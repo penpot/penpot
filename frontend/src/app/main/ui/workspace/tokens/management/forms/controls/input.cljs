@@ -181,7 +181,9 @@
                                    resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+                (rx/of {:error (if errors
+                                 (first errors)
+                                 (wte/error-with-value :error/unknown value))}))))))))
 
 (mf/defc input*
   [{:keys [name tokens token] :rest props}]

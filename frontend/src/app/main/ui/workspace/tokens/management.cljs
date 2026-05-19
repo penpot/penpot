@@ -111,9 +111,6 @@
         (mf/with-memo [active-tokens selected-token-set-tokens]
           (merge active-tokens selected-token-set-tokens))
 
-        tokens
-        (sd/use-resolved-tokens* tokens)
-
         ;; Group tokens by their type
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]

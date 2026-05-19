@@ -1102,7 +1102,7 @@ test.describe("Tokens - creation", () => {
     ).toBeEnabled();
   });
 
-  test("User cant submit empty typography token or reference", async ({
+  test("User can't submit empty typography token or reference", async ({
     page,
   }) => {
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
@@ -1660,7 +1660,7 @@ test.describe("Tokens - creation", () => {
     await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
   });
 
-  test("User cant create regular token with value missing", async ({
+  test("User can't create regular token with value missing", async ({
     page,
   }) => {
     const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
@@ -1742,7 +1742,7 @@ test("User creates grouped color token", async ({ page }) => {
   await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
 });
 
-test("User cant create regular token with value missing", async ({ page }) => {
+test("User can't create regular token with value missing", async ({ page }) => {
   const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1810,6 +1810,351 @@ test("User disables the current set but token still have resolved values shown i
   await expect(colorTokenPill).toHaveCount(1);
   await colorTokenPill.hover();  // Force title attribute to be attached to the button
   await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
+});
+
+test.describe("User can't create groups that clash with token names", () => {
+  const unknownError = "Unknown error";
+
+  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
+    const setInput = sidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill(setName);
+    await setInput.press(finalKey);
+  };
+
+  const createSet = async (sidebar, setName, finalKey = "Enter") => {
+    const tokensTabButton = sidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
+  };
+
+  const createBadToken = async (page, type, name, textFieldName, value) => {
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: ${type}` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill(name);
+
+    const valueField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: textFieldName,
+    });
+    await valueField.fill(value);
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const errorNode =
+      tokensUpdateCreateModal.getByText(unknownError);
+
+    await expect(errorNode).toBeVisible();
+    await expect(submitButton).toBeDisabled();
+  };
+
+  test("User can't create Border Radius token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Border Radius", "rad1.bad", "Value", "10");
+  });
+
+  test("User can't create Color token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Color", "col1.bad", "Value", "red");
+  });
+
+  test("User can't create Dimensions token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Dimensions", "dim1.bad", "Value", "100");
+  });
+
+  test("User can't create Font Size token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Font Size", "fsiz1.bad", "Value", "16");
+  });
+
+  test("User can't create Font Weight token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Font Weight", "wei1.bad", "Value", "400");
+  });
+
+  test("User can't create Letter Spacing token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Letter Spacing", "lspa1.bad", "Value", "1");
+  });
+
+  test("User can't create Number token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Number", "num1.bad", "Value", "10");
+  });
+
+  test("User can't create Rotation token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Rotation", "rot1.bad", "Value", "90");
+  });
+
+  test("User can't create Sizing token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Sizing", "siz1.bad", "Value", "100");
+  });
+
+  test("User can't create Spacing token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Spacing", "spa1.bad", "Value", "10");
+  });
+
+  test("User can't create Stroke Width token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Stroke Width", "str1.bad", "Value", "2");
+  });
+
+  test("User can't create Text Case token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Text Case", "cas1.bad", "Value", "uppercase");
+  });
+
+test("User can't create Text Decoration token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Text Decoration", "td1.bad", "Value", "underline");
+  });
+
+  test("User can't create Typography token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: Typography` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("typ1.bad");
+
+    const fontFamilyField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font family",
+    });
+    await fontFamilyField.fill("Arial");
+
+    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font size",
+    });
+    await fontSizeField.fill("16");
+
+    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font weight",
+    });
+    await fontWeightField.fill("400");
+
+    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Line height",
+    });
+    await lineHeightField.fill("1.5");
+
+    const letterSpacingField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Letter spacing",
+    });
+    await letterSpacingField.fill("0");
+
+    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text case",
+    });
+    await textCaseField.fill("none");
+
+    const textDecorationField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text decoration",
+    });
+    await textDecorationField.fill("none");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const errorNode = tokensUpdateCreateModal.getByText(unknownError);
+    await expect(errorNode).toHaveCount(6);
+    await expect(submitButton).toBeDisabled();
+  });
+
+  test("User can't create Shadow token with group name that clashes with existing token", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json"
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: Shadow` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("sha1.bad");
+
+    const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Color",
+    });
+    await colorField.fill("red");
+
+    const offsetXField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "X",
+    });
+    await offsetXField.fill("7");
+
+    const offsetYField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Y",
+    });
+    await offsetYField.fill("8");
+
+    const blurField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Blur",
+    });
+    await blurField.fill("5");
+
+    const spreadField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Spread",
+    });
+    await spreadField.fill("1");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const errorNode = tokensUpdateCreateModal.getByText(unknownError);
+    await expect(errorNode).toHaveCount(4);
+    await expect(submitButton).toBeDisabled();
+  });
 });
 
 test.describe("Tokens tab - edition", () => {
