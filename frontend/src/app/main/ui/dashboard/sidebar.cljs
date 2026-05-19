@@ -314,7 +314,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
@@ -324,8 +324,8 @@
            ;; Navigate to active org if user owns it, otherwise to last visited org
            (if (and (:id organization)
                     (= (:id profile) (:owner-id organization)))
-             (dnt/go-to-nitrate-cc organization)
-             (dnt/go-to-nitrate-cc))))
+             (dnt/go-to-nitrate-ac organization)
+             (dnt/go-to-nitrate-ac))))
 
         empty-org (d/seek #(nil? (:id %)) organizations)
         default-team-id (or (:default-team-id empty-org)
@@ -366,7 +366,7 @@
        [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
                                 :class       (stl/css :org-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-admin-console")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -754,7 +754,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}

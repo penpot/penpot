@@ -423,8 +423,8 @@
           (obj/merge!
            #js {"--editor-container-width" "auto"
                 "--editor-container-height" "auto"
-                "--editor-container-min-width" (dm/str selrect-width "px")
-                "--editor-container-min-height" (dm/str selrect-height "px")
+                "--editor-container-min-width" (dm/str (max 1 selrect-width) "px")
+                "--editor-container-min-height" (dm/str (max 1 selrect-height) "px")
                 "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
                 :display "flex"})
 

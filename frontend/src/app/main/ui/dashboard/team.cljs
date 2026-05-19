@@ -1401,8 +1401,9 @@
                                              is-owner? (= profile-id (:owner-id org))]
                                          (or (= perm "any") is-owner?))))))
 
-        can-change-organization? (mf/with-memo [organizations]
-                                   (> (count organizations) 1))
+        ;; Keep parity with UX requirement: hide only when user belongs to one org.
+        can-change-organization? (mf/with-memo [all-organizations]
+                                   (> (count all-organizations) 1))
 
         can-add-to-organization? (mf/with-memo [organizations all-organizations]
                                    (and (pos? (count all-organizations))

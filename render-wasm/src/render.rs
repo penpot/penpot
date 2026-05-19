@@ -3040,24 +3040,27 @@ impl RenderState {
         // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
         // guard to decide when cached top-level crops are unsafe to reuse (something is moving
         // over/inside them), without doing expensive ancestor walks per node.
-        let moved_bounds =
-            if self.options.is_interactive_transform() && !tree.modifier_ids().is_empty() {
-                let mut acc: Option<Rect> = None;
-                for id in tree.modifier_ids().iter() {
-                    let Some(s) = tree.get(id) else { continue };
-                    let r = self.get_cached_extrect(s, tree, 1.0);
-                    acc = Some(match acc {
-                        None => r,
-                        Some(mut prev) => {
-                            prev.join(r);
-                            prev
-                        }
-                    });
-                }
-                acc
-            } else {
-                None
-            };
+        //
+        // `modifier_ids` is pre-computed once here and reused throughout the loop to avoid
+        // repeated allocations (formerly O(N_shapes) HashMap builds) per node.
+        let modifier_ids = tree.modifier_ids();
+        let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
+            let mut acc: Option<Rect> = None;
+            for id in modifier_ids.iter() {
+                let Some(s) = tree.get(id) else { continue };
+                let r = self.get_cached_extrect(s, tree, 1.0);
+                acc = Some(match acc {
+                    None => r,
+                    Some(mut prev) => {
+                        prev.join(r);
+                        prev
+                    }
+                });
+            }
+            acc
+        } else {
+            None
+        };
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -3136,7 +3139,7 @@ impl RenderState {
                 let use_cached = self.should_use_cached_top_level_during_interactive(
                     node_id,
                     tree,
-                    &tree.modifier_ids(),
+                    modifier_ids,
                     moved_bounds,
                 );
 
@@ -3857,7 +3860,7 @@ impl RenderState {
     pub fn rebuild_modifier_tiles(
         &mut self,
         tree: ShapesPoolMutRef<'_>,
-        ids: Vec<Uuid>,
+        ids: &[Uuid],
     ) -> Result<()> {
         // During interactive transform, skip ancestor invalidation: walking up to the
         // parent frame evicts every tile the frame covers, including dense tiles with
@@ -3865,9 +3868,9 @@ impl RenderState {
         // `ShapesPool::set_modifiers`; the tile index is reconciled post-gesture by
         // the committing code path (rebuild_touched_tiles).
         if self.options.is_interactive_transform() {
-            self.update_tiles_shapes(&ids, tree)?;
+            self.update_tiles_shapes(ids, tree)?;
         } else {
-            let ancestors = all_with_ancestors(&ids, tree, false);
+            let ancestors = all_with_ancestors(ids, tree, false);
             self.update_tiles_shapes(&ancestors, tree)?;
         }
         Ok(())
