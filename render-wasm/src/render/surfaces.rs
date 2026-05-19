@@ -5,7 +5,7 @@ use crate::{get_gpu_state, performance};
 
 use skia_safe::{self as skia, IRect, Paint, RRect, Rect};
 
-use super::{gpu_state::GpuState, tiles, tiles::Tile, tiles::TileViewbox, tiles::TILE_SIZE};
+use super::{gpu_state::GpuState, tiles, tiles::Tile, tiles::TileRect, tiles::TileViewbox};
 use crate::math::Point;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -13,9 +13,18 @@ use std::collections::{HashMap, HashSet};
 
 const TEXTURES_CACHE_CAPACITY: usize = 1024;
 const TEXTURES_BATCH_DELETE: usize = 256;
+
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
 // If it's too big it could affect performance.
+const TILE_SIZE: i32 = tiles::TILE_SIZE as i32;
 const TILE_SIZE_MULTIPLIER: i32 = 2;
+const TILE_MARGIN_SIZE: i32 = TILE_SIZE * TILE_SIZE_MULTIPLIER / 4;
+const TILE_DRAWABLE_RECT: IRect = IRect {
+    left: TILE_MARGIN_SIZE,
+    top: TILE_MARGIN_SIZE,
+    right: TILE_MARGIN_SIZE + TILE_SIZE,
+    bottom: TILE_MARGIN_SIZE + TILE_SIZE,
+};
 
 /// Atlas texture size limits (px per side).
 ///
@@ -24,8 +33,23 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 ///   [`Surfaces::set_max_atlas_texture_size`].
 /// - `MAX_ATLAS_TEXTURE_SIZE` is a hard upper bound to clamp the runtime value
 ///   (defensive cap to avoid accidentally creating oversized GPU textures).
-const MAX_ATLAS_TEXTURE_SIZE: i32 = 4096;
+const MAX_ATLAS_TEXTURE_SIZE: i32 = 8192;
 const DEFAULT_MAX_ATLAS_TEXTURE_SIZE: i32 = 1024;
+
+pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
+    // First we retrieve the extended area of the viewport that we could render.
+    let TileRect(isx, isy, iex, iey) =
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, interest);
+
+    let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
+    let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
+
+    (
+        ((iex - isx).abs() + dx) * TILE_SIZE,
+        ((iey - isy).abs() + dy) * TILE_SIZE,
+    )
+        .into()
+}
 
 #[derive(Debug, PartialEq)]
 pub enum DrawOnCache {
@@ -202,7 +226,10 @@ impl Surfaces {
     /// WebGL `MAX_TEXTURE_SIZE` reported by the browser. Values are clamped to
     /// a small minimum so the atlas logic stays well-defined.
     pub fn set_max_atlas_texture_size(&mut self, max_px: i32) {
-        self.max_atlas_texture_size = max_px.clamp(TILE_SIZE as i32, MAX_ATLAS_TEXTURE_SIZE);
+        self.max_atlas_texture_size = max_px.clamp(
+            TILE_SIZE,
+            MAX_ATLAS_TEXTURE_SIZE
+        );
     }
 
     #[inline]
@@ -268,7 +295,7 @@ impl Surfaces {
         }
 
         // Add padding to reduce realloc frequency.
-        let pad = TILE_SIZE;
+        let pad = tiles::TILE_SIZE;
         new_left -= pad;
         new_top -= pad;
         new_right += pad;
@@ -279,7 +306,7 @@ impl Surfaces {
 
         // Compute atlas scale needed to fit within the fixed texture cap.
         // Keep the highest possible scale (closest to 1.0) that still fits.
-        let cap = self.max_atlas_texture_size.max(TILE_SIZE as i32) as f32;
+        let cap = self.max_atlas_texture_size.max(TILE_SIZE) as f32;
         let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
 
         // Never upscale the atlas (it would add blur and churn).
@@ -876,9 +903,36 @@ impl Surfaces {
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
-            (interest_area_threshold as f32 * TILE_SIZE),
-            (interest_area_threshold as f32 * TILE_SIZE),
+            (interest_area_threshold * TILE_SIZE) as f32,
+            (interest_area_threshold * TILE_SIZE) as f32,
         ));
+        Ok(())
+    }
+
+    pub fn resize_cache_from_viewbox(
+        &mut self,
+        viewbox: &Viewbox,
+        cached_viewbox: &Viewbox,
+        interest_area_threshold: i32,
+    ) -> Result<()> {
+        let viewbox_cache_size = get_cache_size(
+            viewbox,
+            interest_area_threshold,
+        );
+        let cached_viewbox_cache_size = get_cache_size(
+            cached_viewbox,
+            interest_area_threshold,
+        );
+        // Only resize cache if the new size is larger than the cached size
+        // This avoids unnecessary surface recreations when the cache size decreases
+        if viewbox_cache_size.width > cached_viewbox_cache_size.width
+            || viewbox_cache_size.height > cached_viewbox_cache_size.height
+        {
+            return self.resize_cache(
+                viewbox_cache_size,
+                interest_area_threshold,
+            );
+        }
         Ok(())
     }
 
@@ -1038,6 +1092,7 @@ impl Surfaces {
         self.canvas(SurfaceId::Debug)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
+
         self.canvas(SurfaceId::UI)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
@@ -1054,7 +1109,7 @@ impl Surfaces {
         canvas.restore();
     }
 
-    pub fn cache_current_tile_texture(
+    pub fn draw_current_tile_into_tile_atlas(
         &mut self,
         tile_viewbox: &TileViewbox,
         tile: &Tile,
@@ -1063,15 +1118,9 @@ impl Surfaces {
         tile_doc_rect: skia::Rect,
     ) {
         let gpu_state = get_gpu_state();
-        let rect = IRect::from_xywh(
-            self.margins.width,
-            self.margins.height,
-            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
-        );
+        let rect = TILE_DRAWABLE_RECT;
 
         let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
-
         if let Some(tile_image) = tile_image_opt {
             if !skip_cache_surface {
                 // Draw to cache surface for render_from_cache
@@ -1088,6 +1137,7 @@ impl Surfaces {
             let _ = self.blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
             self.atlas_tile_doc_rects.insert(*tile, tile_doc_rect);
 
+            // Draws current tile into tile atlas
             let tile_ref = self.tiles.add(tile_viewbox, tile);
             self.tile_atlas.canvas().draw_image_rect(
                 &tile_image,
@@ -1249,13 +1299,17 @@ impl Surfaces {
         self.tile_atlas.image_snapshot_with_bounds(rect)
     }
 
-    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
+    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: skia::Rect, _color: skia::Color) {
         if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            let mut paint = skia::Paint::default();
-            paint.set_color(color);
-            self.backbuffer.canvas().draw_rect(rect, &paint);
-            self.backbuffer
-                .canvas()
+            let backbuffer_canvas = self.backbuffer.canvas();
+
+            // if color != skia::Color::TRANSPARENT {
+            //     let mut paint = skia::Paint::default();
+            //     paint.set_color(color);
+            //     backbuffer_canvas.draw_rect(rect, &paint);
+            // }
+
+            backbuffer_canvas
                 .draw_image_rect(&image, None, rect, &skia::Paint::default());
         }
     }
@@ -1264,16 +1318,16 @@ impl Surfaces {
     /// cache-aligned rect.  This keeps the Cache surface in sync with
     /// Backbuffer so that `render_from_cache` (used during pan) has the
     /// full scene including tiles served from the texture cache.
-    pub fn draw_cached_tile_to_cache(
+    pub fn draw_cached_tile_into_cache(
         &mut self,
         tile: Tile,
         aligned_rect: &skia::Rect,
-        color: skia::Color,
+        _color: skia::Color,
     ) {
         if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            let mut bg = skia::Paint::default();
-            bg.set_color(color);
-            self.cache.canvas().draw_rect(aligned_rect, &bg);
+            // let mut bg = skia::Paint::default();
+            // bg.set_color(color);
+            // self.cache.canvas().draw_rect(aligned_rect, &bg);
             self.cache.canvas().draw_image_rect(
                 &image,
                 None,
@@ -1286,10 +1340,10 @@ impl Surfaces {
     /// Draws the current tile directly to the backbuffer and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
-    pub fn draw_current_tile_direct(
+    pub fn draw_current_tile_into_backbuffer(
         &mut self,
         tile_rect: &skia::Rect,
-        color: skia::Color,
+        _color: skia::Color,
         draw_on_cache: DrawOnCache,
     ) {
         let sampling_options = self.sampling_options;
@@ -1302,10 +1356,11 @@ impl Surfaces {
         let src_rect_f = skia::Rect::from(src_rect);
 
         let backbuffer_canvas = self.backbuffer.canvas();
+
         // Draw background
-        let mut paint = skia::Paint::default();
-        paint.set_color(color);
-        backbuffer_canvas.draw_rect(tile_rect, &paint);
+        // let mut paint = skia::Paint::default();
+        // paint.set_color(color);
+        // backbuffer_canvas.draw_rect(tile_rect, &paint);
 
         // Draw current surface directly to target (no snapshot)
         self.current.draw(
@@ -1487,8 +1542,8 @@ pub struct TileTextureCache {
 impl TileTextureCache {
     pub fn new(texture_size: i32, capacity: usize) -> Self {
         Self {
-            tile_size: TILE_SIZE,
-            provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE as i32),
+            tile_size: tiles::TILE_SIZE,
+            provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE),
             transforms: Vec::with_capacity(capacity),
             textures: Vec::with_capacity(capacity),
             grid: HashMap::with_capacity(capacity),

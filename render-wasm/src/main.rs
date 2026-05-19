@@ -302,7 +302,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
         let render_state = get_render_state();
         render_state.options.set_fast_mode(false);
         render_state.cancel_animation_frame();
-        render_state.tile_viewbox.update(render_state.viewbox);
+        render_state.tile_viewbox.update(&render_state.viewbox);
 
         if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();

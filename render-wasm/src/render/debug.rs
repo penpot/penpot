@@ -4,7 +4,7 @@ use super::{tiles, RenderState, SurfaceId};
 use macros::wasm_error;
 
 #[cfg(target_arch = "wasm32")]
-use crate::get_render_state;
+use crate::{get_render_state};
 
 use skia_safe::{self as skia, Rect};
 
@@ -271,6 +271,14 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn capture_frames(capture_frames: i32) -> Result<()> {
+    get_render_state().options.set_capture_frames(capture_frames);
+    Ok(())
 }
 
 #[no_mangle]

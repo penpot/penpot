@@ -29,6 +29,7 @@ pub struct RenderOptions {
     pub max_blocking_time_ms: i32,
     pub node_batch_threshold: i32,
     pub blur_downscale_threshold: f32,
+    pub capture_frames: i32,
 }
 
 impl Default for RenderOptions {
@@ -44,6 +45,7 @@ impl Default for RenderOptions {
             max_blocking_time_ms: MAX_BLOCKING_TIME_MS,
             node_batch_threshold: NODE_BATCH_THRESHOLD,
             blur_downscale_threshold: BLUR_DOWNSCALE_THRESHOLD,
+            capture_frames: 0,
         }
     }
 }
@@ -64,6 +66,10 @@ impl RenderOptions {
 
     pub fn set_fast_mode(&mut self, enabled: bool) {
         self.fast_mode = enabled;
+    }
+
+    pub fn set_capture_frames(&mut self, capture_frames: i32) {
+        self.capture_frames = capture_frames;
     }
 
     /// Updates the dpr viewport interest area threshold.
