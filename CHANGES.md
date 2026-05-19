@@ -26,6 +26,7 @@
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
 - Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
+- Allow self-hosted frontend containers to disable the nginx IPv6 listen directive with `PENPOT_DISABLE_IPV6_LISTEN=true`, avoiding startup failures on hosts booted without IPv6 support [Github #8897](https://github.com/penpot/penpot/issues/8897)
 
 ## 2.16.0 (Unreleased)
 
