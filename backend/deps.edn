@@ -88,8 +88,7 @@
   :test
   {:main-opts ["-m" "kaocha.runner"]
    :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"
-              "--sun-misc-unsafe-memory-access=allow"
-              "--enable-native-access=ALL-UNNAMED"]
+                            "--enable-native-access=ALL-UNNAMED"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :outdated

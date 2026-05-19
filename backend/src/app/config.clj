@@ -183,6 +183,7 @@
     [:oidc-user-info-source {:optional true} [:enum "auto" "userinfo" "token"]]
     [:oidc-client-secret {:optional true} :string]
     [:oidc-base-uri {:optional true} :string]
+    [:oidc-issuer {:optional true} :string]
     [:oidc-token-uri {:optional true} :string]
     [:oidc-auth-uri {:optional true} :string]
     [:oidc-user-uri {:optional true} :string]
