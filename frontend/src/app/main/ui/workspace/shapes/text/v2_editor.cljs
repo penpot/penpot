@@ -289,7 +289,9 @@
       :ref container-ref
       :data-testid "text-editor-container"
       :style {:width "var(--editor-container-width)"
-              :height "var(--editor-container-height)"}}
+              :height "var(--editor-container-height)"
+              :min-width "var(--editor-container-min-width, 1px)"
+              :min-height "var(--editor-container-min-height, 1px)"}}
      ;; We hide the editor when is blurred because otherwise the
      ;; selection won't let us see the underlying text. Use opacity
      ;; because display or visibility won't allow to recover focus
@@ -379,7 +381,7 @@
 
         render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-        [{:keys [x y width height]} transform]
+        [{:keys [x y width height selrect-width selrect-height]} transform]
         (if render-wasm?
           (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
@@ -401,7 +403,8 @@
                     "bottom" (+ y (- selrect-height height))
                     "center" (+ y (/ (- selrect-height height) 2))
                     y)]
-            [(assoc selrect :y y :width overlay-width :height max-height) transform])
+            [(assoc selrect :y y :width overlay-width :height max-height
+                    :selrect-width selrect-width :selrect-height selrect-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -418,14 +421,17 @@
         (cond-> #js {:pointerEvents "all"}
           render-wasm?
           (obj/merge!
-           #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")
-                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")})
+           #js {"--editor-container-width" "auto"
+                "--editor-container-height" "auto"
+                "--editor-container-min-width" (dm/str (max 1 selrect-width) "px")
+                "--editor-container-min-height" (dm/str (max 1 selrect-height) "px")
+                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
+                :display "flex"})
 
           (not render-wasm?)
           (obj/merge!
-           #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")})
+           #js {"--editor-container-width" (dm/str (max 1 width) "px")
+                "--editor-container-height" (dm/str (max 1 height) "px")})
 
           ;; Transform is necessary when there is a text overflow and the vertical
           ;; aligment is center or bottom.

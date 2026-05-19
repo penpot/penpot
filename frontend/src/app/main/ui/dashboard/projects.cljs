@@ -31,7 +31,6 @@
    [app.util.storage :as storage]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
@@ -48,7 +47,6 @@
 
 (mf/defc header*
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/private true}
   [{:keys [can-edit]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
@@ -62,8 +60,7 @@
         (tr "dashboard.new-project")])]))
 
 (mf/defc team-hero*
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [team on-close]}]
   (let [on-nav-members-click (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
 
@@ -102,8 +99,7 @@
       close-icon]]))
 
 (mf/defc project-item*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [project is-first team files can-edit]}]
   (let [project-id (get project :id)
         team-id    (get team :id)
@@ -313,7 +309,6 @@
   (l/derived :recent-files st/state))
 
 (mf/defc projects-section*
-  {::mf/props :obj}
   [{:keys [team projects profile]}]
 
   (let [team-id         (get team :id)
@@ -344,8 +339,8 @@
         (mf/use-fn
          (fn []
            (reset! show-team-hero* false)
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                 ::ev/origin "dashboard"}))))]
+           (st/emit! (ev/event {::ev/name "dont-show-team-up-hero"
+                                ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
       (swap! storage/global assoc ::show-team-hero show-team-hero?))

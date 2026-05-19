@@ -23,7 +23,6 @@
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -40,10 +39,10 @@
   (letfn [(on-finish []
             (st/emit!
              (dd/fetch-recent-files team-id)
-             (ptk/event ::ev/event {::ev/name "import-template-finish"
-                                    ::ev/origin "dashboard"
-                                    :template (:name template)
-                                    :section section})
+             (ev/event {::ev/name "import-template-finish"
+                        ::ev/origin "dashboard"
+                        :template (:name template)
+                        :section section})
 
              (when-not (some? project-id)
                (dcm/go-to-dashboard-recent
@@ -51,10 +50,10 @@
                 :project-id default-project-id))))]
 
     (st/emit!
-     (ptk/event ::ev/event {::ev/name "import-template-launch"
-                            ::ev/origin "dashboard"
-                            :template (:name template)
-                            :section section})
+     (ev/event {::ev/name "import-template-launch"
+                ::ev/origin "dashboard"
+                :template (:name template)
+                :section section})
 
      (modal/show
       {:type :import
@@ -64,8 +63,7 @@
        :on-finish-import on-finish}))))
 
 (mf/defc title*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-click is-collapsed]}]
   (let [on-key-down
         (mf/use-fn
@@ -145,9 +143,9 @@
         (mf/use-fn
          (mf/deps section)
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section section}))))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section section}))))
 
         on-key-down
         (mf/use-fn
@@ -171,7 +169,6 @@
          [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
 (mf/defc templates-section*
-  {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates   (mf/deref builtin-templates)
         templates   (mf/with-memo [templates]

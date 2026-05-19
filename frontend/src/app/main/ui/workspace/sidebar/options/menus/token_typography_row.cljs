@@ -10,28 +10,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.shared.token-option :as to]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.i18n :as i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc resolved-value-tooltip*
-  {::mf/private true}
-  [{:keys [token-name resolved-value]}]
-  [:*
-   [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-   [:span {:class (stl/css :token-name-tooltip)} token-name]
-   [:div
-    [:span (tr "inspect.tabs.styles.token-resolved-value")]
-    [:ul
-     (for [[k v] resolved-value]
-       [:li {:key (d/name k)}
-        [:span {:class (stl/css :resolved-key)} (str "- " (d/name k) ": ")]
-        [:span {:class (stl/css :resolved-value)}
-         (if (sequential? v)
-           (str/join ", " (map #(dm/str "\"" % "\"") v))
-           (dm/str v))]])]]])
 
 (mf/defc token-typography-row*
   [{:keys [token-name active-tokens detach-token] :rest props}]
@@ -59,8 +43,8 @@
                           has-errors
                           (tr "options.deleted-token")
                           :else
-                          (mf/html [:> resolved-value-tooltip* {:token-name token-name
-                                                                :resolved-value resolved-value}]))]
+                          (mf/html [:> to/resolved-value-tooltip* {:token-name token-name
+                                                                   :resolved-value resolved-value}]))]
 
     [:div {:class (stl/css-case :token-typography-row true
                                 :token-typography-row-with-errors has-errors

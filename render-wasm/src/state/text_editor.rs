@@ -101,7 +101,8 @@ pub enum TextEditorEvent {
 /// FIXME: It should be better to get these constants from the frontend through the API.
 const SELECTION_COLOR: Color = Color::from_argb(127, 0, 209, 184);
 const CURSOR_COLOR: Color = Color::BLACK;
-const CURSOR_BLINK_INTERVAL_MS: f64 = 530.0;
+const CURSOR_WIDTH: f32 = 1.0;
+const CURSOR_BLINK_INTERVAL_MS: f32 = 530.0;
 
 #[derive(Debug)]
 pub struct TextEditorStyles {
@@ -254,9 +255,16 @@ impl TextEditorStyles {
     }
 }
 
+impl Default for TextEditorStyles {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct TextEditorTheme {
     pub selection_color: Color,
     pub cursor_color: Color,
+    pub cursor_width: f32,
 }
 
 pub struct TextComposition {
@@ -317,6 +325,12 @@ impl TextComposition {
     }
 }
 
+impl Default for TextComposition {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct TextEditorState {
     pub theme: TextEditorTheme,
     pub selection: TextSelection,
@@ -326,9 +340,10 @@ pub struct TextEditorState {
     // selecting something with the pointer.
     pub is_pointer_selection_active: bool,
     pub is_click_event_skipped: bool,
+    pub is_overtype_mode: bool,
     pub active_shape_id: Option<Uuid>,
     pub cursor_visible: bool,
-    pub last_blink_time: f64,
+    pub last_blink_time_ms: f32,
     pub current_styles: TextEditorStyles,
     pending_events: Vec<TextEditorEvent>,
 }
@@ -339,15 +354,17 @@ impl TextEditorState {
             theme: TextEditorTheme {
                 selection_color: SELECTION_COLOR,
                 cursor_color: CURSOR_COLOR,
+                cursor_width: CURSOR_WIDTH,
             },
             selection: TextSelection::new(),
             composition: TextComposition::new(),
             has_focus: false,
             is_pointer_selection_active: false,
             is_click_event_skipped: false,
+            is_overtype_mode: false,
             active_shape_id: None,
             cursor_visible: true,
-            last_blink_time: 0.0,
+            last_blink_time_ms: 0.0,
             pending_events: Vec::new(),
             current_styles: TextEditorStyles::new(),
         }
@@ -357,9 +374,10 @@ impl TextEditorState {
         self.has_focus = true;
         self.active_shape_id = Some(shape_id);
         self.cursor_visible = true;
-        self.last_blink_time = 0.0;
+        self.last_blink_time_ms = 0.0;
         self.selection.reset();
         self.is_pointer_selection_active = false;
+        self.is_overtype_mode = false;
         self.pending_events.clear();
     }
 
@@ -367,9 +385,10 @@ impl TextEditorState {
         self.has_focus = false;
         // self.active_shape_id = None;
         self.cursor_visible = false;
-        self.last_blink_time = 0.0;
+        self.last_blink_time_ms = 0.0;
         // self.selection.reset();
         self.is_pointer_selection_active = false;
+        self.is_overtype_mode = false;
         self.pending_events.clear();
     }
 
@@ -377,9 +396,10 @@ impl TextEditorState {
         self.has_focus = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
-        self.last_blink_time = 0.0;
+        self.last_blink_time_ms = 0.0;
         self.selection.reset();
         self.is_pointer_selection_active = false;
+        self.is_overtype_mode = false;
         self.pending_events.clear();
     }
 
@@ -514,6 +534,14 @@ impl TextEditorState {
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.extend_to(*position);
         self.push_event(TextEditorEvent::SelectionChanged);
+    }
+
+    pub fn set_overtype_mode(&mut self, overtype_mode: bool) {
+        self.is_overtype_mode = overtype_mode;
+    }
+
+    pub fn toggle_overtype_mode(&mut self) {
+        self.set_overtype_mode(!self.is_overtype_mode);
     }
 
     fn update_styles_from_selection(&mut self, text_content: &TextContent) -> bool {
@@ -687,27 +715,27 @@ impl TextEditorState {
         styles_were_updated
     }
 
-    pub fn update_blink(&mut self, timestamp_ms: f64) {
+    pub fn update_blink(&mut self, timestamp_ms: f32) {
         if !self.has_focus {
             return;
         }
 
-        if self.last_blink_time == 0.0 {
-            self.last_blink_time = timestamp_ms;
+        if self.last_blink_time_ms == 0.0 {
+            self.last_blink_time_ms = timestamp_ms;
             self.cursor_visible = true;
             return;
         }
 
-        let elapsed = timestamp_ms - self.last_blink_time;
+        let elapsed = timestamp_ms - self.last_blink_time_ms;
         if elapsed >= CURSOR_BLINK_INTERVAL_MS {
             self.cursor_visible = !self.cursor_visible;
-            self.last_blink_time = timestamp_ms;
+            self.last_blink_time_ms = timestamp_ms;
         }
     }
 
     pub fn reset_blink(&mut self) {
         self.cursor_visible = true;
-        self.last_blink_time = 0.0;
+        self.last_blink_time_ms = 0.0;
     }
 
     pub fn push_event(&mut self, event: TextEditorEvent) {
@@ -861,6 +889,12 @@ impl TextEditorState {
         self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
         true
+    }
+}
+
+impl Default for TextEditorState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

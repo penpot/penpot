@@ -481,7 +481,7 @@
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -726,8 +726,32 @@
                             :timeout nil})
                  (dtm/fetch-teams)
                  ;; When the user is currently on a team of the org
-                 (when (= organization-id (:organization-id team))
+                 (when (= organization-id (dm/get-in team [:organization :id]))
                    (dcm/go-to-dashboard-recent {:team-id :default}))))))))
+
+
+(defn- handle-organization-deleted
+  [{:keys [organization-name teams deleted-teams]}]
+  (ptk/reify ::handle-organization-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :nitrate)
+        (let [team-id        (:current-team-id state)
+              teams-set      (set teams)
+              notify?        (contains? teams-set team-id)
+              fetch?         (some (:teams state) teams)
+              go-to-default? (some #{team-id} deleted-teams)]
+          (rx/concat
+           (when go-to-default? ;; If the user is currently on one of the deleted teams
+             (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
+
+           (when notify? ;; If the user is currently on one of the org teams
+             (rx/of (ntf/show {:content (tr "dashboard.org-deleted" organization-name)
+                               :type :toast
+                               :level :info
+                               :timeout nil})))
+           (when fetch? ;; If the user belonged to the org
+             (rx/of (dtm/fetch-teams)))))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
@@ -737,6 +761,7 @@
     :team-membership-change (dcm/team-membership-change msg)
     :team-org-change        (handle-change-team-org msg)
     :user-org-change        (handle-user-org-change msg)
+    :organization-deleted   (handle-organization-deleted msg)
     nil))
 
 

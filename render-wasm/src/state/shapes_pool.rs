@@ -49,6 +49,11 @@ pub struct ShapesPoolImpl {
     modified_shape_cache: HashMap<usize, OnceCell<Shape>>,
     /// Transform modifiers, keyed by index
     modifiers: HashMap<usize, skia::Matrix>,
+    /// UUIDs of shapes that have an active transform modifier, kept in sync
+    /// with `modifiers`. Stored explicitly so that `modifier_ids()` is O(K)
+    /// (K = number of modified shapes) instead of O(N_shapes) — avoids
+    /// building a full reverse-index HashMap on every call.
+    modifier_uuids: Vec<Uuid>,
     /// Structure entries, keyed by index
     structure: HashMap<usize, Vec<StructureEntry>>,
     /// Scale content values, keyed by index
@@ -69,6 +74,7 @@ impl ShapesPoolImpl {
 
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
+            modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
         }
@@ -138,6 +144,18 @@ impl ShapesPoolImpl {
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
         Some(&mut self.shapes[idx])
+    }
+
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
+
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
     }
 
     /// Get a shape by UUID. Returns the modified shape if modifiers/structure
@@ -226,7 +244,11 @@ impl ShapesPoolImpl {
         }
         self.modifiers = modifiers_with_idx;
 
+        // Compute ancestors before consuming `ids` so we can move it into
+        // `modifier_uuids` without a clone.
         let all_ids = shapes::all_with_ancestors(&ids, self, true);
+        // Keep modifier_uuids in sync so modifier_ids() is O(K) not O(N_shapes).
+        self.modifier_uuids = ids;
         for uuid in all_ids {
             if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
                 self.modified_shape_cache.insert(idx, OnceCell::new());
@@ -288,25 +310,27 @@ impl ShapesPoolImpl {
     pub fn clean_all(&mut self) -> Vec<Uuid> {
         self.clean_shape_cache();
 
-        let modified_uuids: Vec<Uuid> = if self.modifiers.is_empty() {
-            Vec::new()
-        } else {
-            let mut idx_to_uuid: HashMap<usize, Uuid> =
-                HashMap::with_capacity(self.uuid_to_idx.len());
-            for (uuid, idx) in self.uuid_to_idx.iter() {
-                idx_to_uuid.insert(*idx, *uuid);
-            }
-            self.modifiers
-                .keys()
-                .filter_map(|idx| idx_to_uuid.get(idx).copied())
-                .collect()
-        };
+        // `modifier_uuids` is kept in sync with `modifiers` by `set_modifiers`,
+        // so we can take it directly — no need to rebuild a reverse index.
+        let modified_uuids = std::mem::take(&mut self.modifier_uuids);
 
         self.modifiers = HashMap::default();
         self.structure = HashMap::default();
         self.scale_content = HashMap::default();
 
         modified_uuids
+    }
+
+    /// UUIDs of all shapes that currently have a transform modifier.
+    /// Used by the throttled drag path so per-rAF tile invalidation can
+    /// be done once with the current modifier set instead of once per
+    /// pointer move.
+    ///
+    /// Returns a reference to avoid allocation on every call — callers
+    /// inside hot render loops should hold this reference rather than
+    /// calling `modifier_ids()` repeatedly.
+    pub fn modifier_ids(&self) -> &[Uuid] {
+        &self.modifier_uuids
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
@@ -333,6 +357,7 @@ impl ShapesPoolImpl {
             uuid_to_idx,
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
+            modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
         }
@@ -360,5 +385,28 @@ impl ShapesPoolImpl {
                 .unwrap_or(default);
             !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Clone for ShapesPoolImpl {
+    fn clone(&self) -> Self {
+        ShapesPoolImpl {
+            shapes: self.shapes.clone(),
+            counter: self.counter,
+            uuid_to_idx: self.uuid_to_idx.clone(),
+            // The modified_shape_cache is a derived/computed cache; reset it on clone
+            // so it gets lazily rebuilt on demand rather than cloning OnceCell state.
+            modified_shape_cache: HashMap::default(),
+            modifiers: self.modifiers.clone(),
+            modifier_uuids: self.modifier_uuids.clone(),
+            structure: self.structure.clone(),
+            scale_content: self.scale_content.clone(),
+        }
     }
 }
