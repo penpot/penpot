@@ -1495,6 +1495,8 @@ impl Shape {
 
         // Outsets (strokes, shadows, blur, children) are translation-invariant,
         // so the cached extrect can be shifted instead of invalidated.
+        // The bounds cache must always be invalidated so that callers such as
+        // grid_cell_data get the updated position after a drag.
         if math::is_move_only_matrix(transform) {
             let tx = transform.translate_x();
             let ty = transform.translate_y();
@@ -1506,6 +1508,7 @@ impl Shape {
                     rect.height(),
                 );
             }
+            self.invalidate_bounds();
         } else {
             self.invalidate_extrect();
             self.invalidate_bounds();
