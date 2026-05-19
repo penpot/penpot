@@ -147,7 +147,13 @@
 
         on-style-change
         (fn [event]
-          (let [styles (styles/get-styles-from-event event)]
+          (let [styles     (styles/get-styles-from-event event)
+                fills      (:fills styles)
+                fill-color (when (sequential? fills) (some :fill-color fills))]
+            ;; Dynamically update the caret color as the cursor moves between spans
+            (when-let [container-node (mf/ref-val container-ref)]
+              (dom/set-style! container-node "--text-editor-caret-color"
+                              (or fill-color text-color)))
             (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
 
         on-needs-layout
@@ -219,10 +225,18 @@
      (= (:vertical-align content) "bottom")]))
 
 (defn get-color-from-content [content]
-  (let [fills (->> (tree-seq map? :children content)
-                   (mapcat :fills)
-                   (filter :fill-color))]
-    (some :fill-color fills)))
+  (let [nodes     (tree-seq map? :children content)
+        get-color (fn [node]
+                    ;; Handle both new format (:fills vector) and old/deprecated format
+                    ;; (direct :fill-color on the content node — pre-fills-refactor files)
+                    (or (some :fill-color (:fills node))
+                        (:fill-color node)))]
+    ;; Prefer inline (leaf) text nodes over paragraph nodes. The paragraph's :fills
+    ;; tracks the last-typed color, so using it directly would make the caret take
+    ;; the last span's color rather than the first visible span's color.
+    ;; Inline nodes have no :type; they are identified by the presence of :text.
+    (or (->> nodes (filter #(contains? % :text)) (some get-color))
+        (->> nodes (some get-color)))))
 
 (defn get-default-text-color
   "Returns the appropriate text color based on fill, frame, and background."
