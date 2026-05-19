@@ -51,7 +51,6 @@
     (if (= active-tab :reference)
       (get value :reference)
       value)
-
     value))
 
 (mf/defc form*
@@ -184,9 +183,10 @@
 
         on-remap-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token new-name old-name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type new-name)
             (dwtl/update-token (:id token)
                                {:name new-name
                                 :value (:value valid-token)
@@ -197,9 +197,10 @@
 
         on-rename-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type name)
             (dwtl/update-token (:id token)
                                {:name name
                                 :value (:value valid-token)
@@ -209,11 +210,12 @@
         on-submit
         (mf/use-fn
          (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
-         (fn [form _event]
+         (fn [form event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
+             (dom/stop-propagation event)
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -235,19 +237,22 @@
                          (st/emit! (modal/show :tokens/remapping-confirmation {:remap-data remap-data
                                                                                :on-remap on-remap
                                                                                :on-rename on-rename}))
-                         (st/emit!
-                          (if is-create
-                            (dwtl/create-token (ctob/make-token {:name name
-                                                                 :type token-type
-                                                                 :value (:value valid-token)
-                                                                 :description description}))
-                            (dwtl/update-token (:id token)
-                                               {:name name
-                                                :value (:value valid-token)
-                                                :description description}))
-                          (dwtl/open-token-type (:type token))
-                          (dwtp/propagate-workspace-tokens)
-                          (modal/hide!)))))
+                         (do
+                           (when is-rename
+                             (st/emit! (dwtl/toggle-nested-token-path token-type name)))
+                           (st/emit!
+                            (if is-create
+                              (dwtl/create-token (ctob/make-token {:name name
+                                                                   :type token-type
+                                                                   :value (:value valid-token)
+                                                                   :description description}))
+                              (dwtl/update-token (:id token)
+                                                 {:name name
+                                                  :value (:value valid-token)
+                                                  :description description}))
+                            (dwtl/open-token-type (:type token))
+                            (dwtp/propagate-workspace-tokens)
+                            (modal/hide!))))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)

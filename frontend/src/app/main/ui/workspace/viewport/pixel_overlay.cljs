@@ -22,6 +22,7 @@
    [app.util.globals :as ug]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [goog.events :as events]
    [rumext.v2 :as mf]))
@@ -96,18 +97,14 @@
             ;; Store latest color synchronously so the click handler always reads
             ;; the correct pixel even before the rAF fires (fixes race condition)
             (mf/set-ref-val! last-picked-color color)
-            (js/requestAnimationFrame
+            (timers/raf
              (fn []
                (st/emit! (dwc/pick-color color))))))))))
 
 
-(mf/defc pixel-overlay
-  {::mf/wrap-props false}
-  [props]
-  (let [vport             (unchecked-get props "vport")
-
-        viewport-ref      (unchecked-get props "viewport-ref")
-        viewport-node     (mf/ref-val viewport-ref)
+(mf/defc pixel-overlay*
+  [{:keys [vport viewport-ref]}]
+  (let [viewport-node     (mf/ref-val viewport-ref)
 
         canvas            (get-offscreen-canvas (:width vport) (:height vport))
         canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})
@@ -304,12 +301,11 @@
             ;; the correct pixel even before the rAF fires (fixes race condition)
             (mf/set-ref-val! last-picked-color color)
             ;; rAF throttles state updates to avoid an infinite React re-render loop
-            (js/requestAnimationFrame
+            (timers/raf
              (fn []
                (st/emit! (dwc/pick-color color))))))))))
 
 (mf/defc pixel-overlay-wasm*
-  {::mf/wrap-props false}
   [{:keys [viewport-ref canvas-ref]}]
   (let [viewport-node     (mf/ref-val viewport-ref)
         canvas            (mf/ref-val canvas-ref)

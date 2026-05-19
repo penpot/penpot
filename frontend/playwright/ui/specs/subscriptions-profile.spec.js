@@ -4,10 +4,11 @@ import SubscriptionProfilePage from "../pages/SubscriptionProfilePage";
 test.beforeEach(async ({ page }) => {
   await SubscriptionProfilePage.init(page);
 
-  await SubscriptionProfilePage.mockConfigFlags(page, [
-    "enable-subscriptions",
-    "disable-onboarding",
-  ]);
+  await SubscriptionProfilePage.mockConfigFlags(
+    page,
+    ["enable-subscriptions", "disable-onboarding"],
+    { penpotIsSaas: true },
+  );
 });
 
 test.describe("Subscriptions: profile", () => {

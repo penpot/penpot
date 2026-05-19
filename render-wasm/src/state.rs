@@ -225,8 +225,7 @@ impl State {
         let _ = get_render_state().render_preview(&self.shapes, timestamp);
     }
 
-    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) -> Result<()> {
-        // Index-based storage is safe
+    pub fn rebuild_modifier_tiles(&mut self, ids: &[Uuid]) -> Result<()> {
         get_render_state().rebuild_modifier_tiles(&mut self.shapes, ids)
     }
 

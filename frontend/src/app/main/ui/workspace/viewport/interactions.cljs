@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.embed :as embed]
-   [app.main.ui.workspace.viewport.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline*]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -196,9 +196,9 @@
                :d pdata}]
 
        (when dest-shape
-         [:& outline {:zoom zoom
-                      :shape dest-shape
-                      :color stroke-color}])
+         [:> outline* {:zoom zoom
+                       :shape dest-shape
+                       :color stroke-color}])
 
        [:> interaction-marker* {:index index
                                 :x orig-x
