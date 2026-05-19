@@ -306,19 +306,6 @@
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
-;; FIXME: this need docstring
-(defn- process-wasm-object
-  [id]
-  (ptk/reify ::process-wasm-object
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape (get objects id)]
-        ;; Only process objects that exist in the current page
-        ;; This prevents errors when processing changes from other pages
-        (when shape
-          (wasm.api/process-object shape))))))
-
 (defn initialize-file
   [team-id file-id]
   (assert (uuid? team-id) "expected valud uuid for `team-id`")
@@ -443,18 +430,6 @@
                       (rx/observe-on :async)
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
-
-               (->> stream
-                    (rx/filter dch/commit?)
-                    (rx/filter render-wasm-ready?)
-                    (rx/map deref)
-                    (rx/mapcat
-                     (fn [{:keys [redo-changes]}]
-                       (let [added (->> redo-changes
-                                        (filter #(= (:type %) :add-obj))
-                                        (map :id))]
-                         (->> (rx/from added)
-                              (rx/map process-wasm-object))))))
 
                (let [local-commits-s
                      (->> stream
