@@ -36,12 +36,12 @@
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as export]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer]]
+   [app.main.ui.shapes.grid-layout-viewer :refer [grid-layout-viewer*]]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
@@ -102,8 +102,8 @@
       (let [thumbnails? (mf/use-ctx muc/render-thumbnails)
             childs      (mapv (d/getf objects) (:shapes shape))]
         (if (and thumbnails? (some? (:thumbnail-id shape)))
-          [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
-          [:& frame-shape {:shape shape :childs childs}])))))
+          [:> frame/frame-thumbnail* {:shape shape :bounds (:children-bounds shape)}]
+          [:> frame-shape {:shape shape :childs childs}])))))
 
 (defn group-wrapper-factory
   [objects]
@@ -139,7 +139,7 @@
                  (not= :tspan (get-in shape [:content :tag]))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))
-          [:> shape-container {:shape shape}
+          [:> shape-container* {:shape shape}
            [:& svg-raw-shape {:shape shape
                               :childs childs}]]
 
@@ -158,7 +158,7 @@
         (let [opts #js {:shape shape}
               svg-raw? (= :svg-raw (:type shape))]
           (if-not svg-raw?
-            [:> shape-container {:shape shape}
+            [:> shape-container* {:shape shape}
              (case (:type shape)
                :text    [:> text/text-shape opts]
                :rect    [:> rect/rect-shape opts]
@@ -338,7 +338,7 @@
              (map #(get objects %))
              (filter #(empty? (:shapes %))))]
     (for [grid empty-grids]
-      [:& grid-layout-viewer {:shape grid :objects objects}])))
+      [:> grid-layout-viewer* {:shape grid :objects objects}])))
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
@@ -389,7 +389,7 @@
 
        (when-not is-hidden
          [:*
-          [:> shape-container {:shape root-shape'}
+          [:> shape-container* {:shape root-shape'}
            [:& (mf/provider muc/is-component?) {:value true}
             [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
 
@@ -630,7 +630,7 @@
                         "penpot:main-instance-parent" main-instance-parent
                         "penpot:main-instance-frame" main-instance-frame}
        [:title name]
-       [:> shape-container {:shape root-shape}
+       [:> shape-container* {:shape root-shape}
         (case (:type root-shape)
           :group [:& group-wrapper {:shape root-shape :view-box vbox}]
           :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]])))

@@ -10,17 +10,14 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes*]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(mf/defc image-shape
-  {::mf/wrap-props false}
-  [props]
+(mf/defc image-shape*
+  [{:keys [shape]}]
 
-  (let [shape     (unchecked-get props "shape")
-
-        x         (dm/get-prop shape :x)
+  (let [x         (dm/get-prop shape :x)
         y         (dm/get-prop shape :y)
         w         (dm/get-prop shape :width)
         h         (dm/get-prop shape :height)
@@ -36,7 +33,7 @@
 
         path?     (some? (.-d props))]
 
-    [:& shape-custom-strokes {:shape shape}
+    [:> shape-custom-strokes* {:shape shape}
      (if ^boolean path?
        [:> :path props]
        [:> :rect props])]))

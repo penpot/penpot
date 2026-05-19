@@ -14,7 +14,7 @@
    [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-fills* shape-strokes*]]
    [app.main.ui.shapes.filters :as filters]
    [app.util.debug :as dbg]
    [app.util.object :as obj]
@@ -28,42 +28,35 @@
   [shape render-id]
   (dm/str "url(#" (frame-clip-id shape render-id) ")"))
 
-(mf/defc frame-clip-def
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")]
-    (when (and ^boolean (cfh/frame-shape? shape)
-               (not ^boolean (:show-content shape)))
+(mf/defc frame-clip-def*
+  [{:keys [shape render-id]}]
+  (when (and ^boolean (cfh/frame-shape? shape)
+             (not ^boolean (:show-content shape)))
 
-      (let [render-id (unchecked-get props "render-id")
-            x         (dm/get-prop shape :x)
-            y         (dm/get-prop shape :y)
-            w         (dm/get-prop shape :width)
-            h         (dm/get-prop shape :height)
-            t         (gsh/transform-str shape)
+    (let [x         (dm/get-prop shape :x)
+          y         (dm/get-prop shape :y)
+          w         (dm/get-prop shape :width)
+          h         (dm/get-prop shape :height)
+          t         (gsh/transform-str shape)
 
-            props     (mf/with-memo [shape]
-                        (-> #js {}
-                            (attrs/add-border-props! shape)
-                            (obj/merge! #js {:x x :y y :width w :height h :transform t})))
+          props     (mf/with-memo [shape]
+                      (-> #js {}
+                          (attrs/add-border-props! shape)
+                          (obj/merge! #js {:x x :y y :width w :height h :transform t})))
 
-            path?     (some? (.-d props))]
+          path?     (some? (.-d props))]
 
-        [:clipPath {:id (frame-clip-id shape render-id)
-                    :class "frame-clip frame-clip-def"}
-         (if ^boolean path?
-           [:> :path props]
-           [:> :rect props])]))))
+      [:clipPath {:id (frame-clip-id shape render-id)
+                  :class "frame-clip frame-clip-def"}
+       (if ^boolean path?
+         [:> :path props]
+         [:> :rect props])])))
 
 ;; Wrapper around the frame that will handle things such as strokes and other properties
 ;; we wrap the proper frames and also the thumbnails
-(mf/defc frame-container
-  {::mf/wrap-props false}
-  [props]
-  (let [shape         (unchecked-get props "shape")
-        children      (unchecked-get props "children")
-
-        render-id     (mf/use-ctx muc/render-id)
+(mf/defc frame-container*
+  [{:keys [shape children]}]
+  (let [render-id     (mf/use-ctx muc/render-id)
 
         filter-id-blur     (dm/fmt "filter-blur-%" render-id)
         filter-id-shadows  (dm/fmt "filter-shadow-%" render-id)
@@ -110,24 +103,20 @@
             ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
             :fill "none"}
 
-        [:& shape-fills {:shape shape}
+        [:> shape-fills* {:shape shape}
          (if ^boolean path?
            [:> :path props]
            [:> :rect props])]
         children]]
 
-      [:& shape-strokes {:shape shape}
+      [:> shape-strokes* {:shape shape}
        (if ^boolean path?
          [:> :path props]
          [:> :rect props])]]]))
 
-(mf/defc frame-thumbnail-image
-  {::mf/wrap-props false}
-  [props]
-  (let [shape    (unchecked-get props "shape")
-        bounds   (unchecked-get props "bounds")
-
-        shape-id (dm/get-prop shape :id)
+(mf/defc frame-thumbnail-image*
+  [{:keys [shape bounds]}]
+  (let [shape-id (dm/get-prop shape :id)
         points   (dm/get-prop shape :points)
 
         bounds   (mf/with-memo [bounds points]
@@ -165,30 +154,24 @@
                :stroke "red"
                :stroke-width 2}])]))
 
-(mf/defc frame-thumbnail
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")]
-    (when ^boolean (:thumbnail-id shape)
-      [:> frame-container props
-       [:> frame-thumbnail-image props]])))
+(mf/defc frame-thumbnail*
+  [{:keys [shape] :as props}]
+  (when ^boolean (:thumbnail-id shape)
+    [:> frame-container* props
+     [:> frame-thumbnail-image* props]]))
 
 (defn frame-shape
   [shape-wrapper]
-  (mf/fnc frame-shape
-    {::mf/wrap-props false}
-    [props]
-    (let [shape         (unchecked-get props "shape")
-          childs        (unchecked-get props "childs")
-          reverse?      (and (ctl/flex-layout? shape) (ctl/reverse? shape))
+  (mf/fnc frame-shape*
+    [{:keys [shape childs] :as props}]
+    (let [reverse?      (and (ctl/flex-layout? shape) (ctl/reverse? shape))
           childs        (cond-> childs
                           (ctl/any-layout? shape)
                           (ctl/sort-layout-children-z-index reverse?))]
 
-      [:> frame-container props
+      [:> frame-container* props
        [:g.frame-children
         (for [item childs]
           (let [id (dm/get-prop item :id)]
             (when (some? id)
               [:& shape-wrapper {:key (dm/str id) :shape item}])))]])))
-

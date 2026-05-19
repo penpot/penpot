@@ -22,7 +22,7 @@
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.util.dom :as dom]
@@ -340,7 +340,7 @@
           (partial run! tm/dispose! sems)))
 
       (if-not svg-element?
-        [:> shape-container {:shape shape
+        [:> shape-container* {:shape shape
                              :cursor (when (ctsi/actionable? interactions) "pointer")
                              :on-pointer-down on-pointer-down
                              :on-pointer-up on-pointer-up

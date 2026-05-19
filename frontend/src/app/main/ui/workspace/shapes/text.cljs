@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
@@ -31,7 +31,7 @@
                 (dwt/apply-text-modifier shape text-modifier)
                 shape)]
 
-    [:> shape-container {:shape shape}
+    [:> shape-container* {:shape shape}
      [:g.text-shape {:key (dm/str shape-id)}
       [:& text/text-shape {:shape shape}]]
 
