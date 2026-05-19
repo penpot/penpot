@@ -82,6 +82,7 @@
 - Restore deleted team files in bulk instead of per file (by @Dexterity104) [#9246](https://github.com/penpot/penpot/issues/9246) (PR: [#9248](https://github.com/penpot/penpot/pull/9248))
 - Preserve Inkscape labels when pasting SVGs (by @jeffrey701) [#7869](https://github.com/penpot/penpot/issues/7869) (PR: [#9252](https://github.com/penpot/penpot/pull/9252))
 - Add Alt+click to expand layer subtree (by @MilosM348) [#7736](https://github.com/penpot/penpot/issues/7736) (PR: [#9179](https://github.com/penpot/penpot/pull/9179))
+- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 
 ### :bug: Bugs fixed
 - Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
@@ -89,7 +90,6 @@
 - Add guide locking and fix locked element selection in viewer (by @Dexterity104) [#8358](https://github.com/penpot/penpot/issues/8358) (PR: [#8949](https://github.com/penpot/penpot/pull/8949))
 - Add natural sorting on token names [#8635](https://github.com/penpot/penpot/issues/8635) (PR: [#8672](https://github.com/penpot/penpot/pull/8672))
 - Fix warnings for unsupported token $type (by @Dexterity104) [#8790](https://github.com/penpot/penpot/issues/8790) (PR: [#8873](https://github.com/penpot/penpot/pull/8873))
-- Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 - Apply styles to selection (by @AzazelN28) [#9661](https://github.com/penpot/penpot/issues/9661) (PR: [#8625](https://github.com/penpot/penpot/pull/8625))
 - Fix Alt/Option to draw shapes from center point (by @offreal) [#8360](https://github.com/penpot/penpot/issues/8360) (PR: [#8361](https://github.com/penpot/penpot/pull/8361))
 - Fix library update button freezing [#9330](https://github.com/penpot/penpot/issues/9330) (PR: [#9513](https://github.com/penpot/penpot/pull/9513))
@@ -158,6 +158,7 @@
 - Fix numeric input changes not saved when clicking on viewport [#9491](https://github.com/penpot/penpot/issues/9491) (PR: [#9548](https://github.com/penpot/penpot/pull/9548))
 - Fix resize cursor appearing on login and register buttons [#9505](https://github.com/penpot/penpot/issues/9505) (PR: [#9590](https://github.com/penpot/penpot/pull/9590))
 - Fix version restore restoring first previewed version instead of selected one [#9588](https://github.com/penpot/penpot/issues/9588) (PR: [#9626](https://github.com/penpot/penpot/pull/9626))
+- Fix incorrect error message when applying tokens while editing text [#9620](https://github.com/penpot/penpot/issues/9620) (PR: [#9708](https://github.com/penpot/penpot/pull/9708))
 
 
 ## 2.15.4 (Unreleased)

@@ -45,12 +45,12 @@ python3 tools/gh.py issues "2.16.0" --state all
 python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 ```
 
-**Label exclusion rules:**
-- `release blocker` — Internal release-blocking bugs not relevant to end users
-- `no changelog` — Chore/refactor work that doesn't need a changelog entry
+**Exclusion rules:**
+- `no changelog` label — Chore/refactor work that doesn't need a changelog entry
+- `Task` issue type — Internal chores are not user-facing; filter these out after fetching
 
 The script outputs JSON with each entry containing `number`, `title`, `state`,
-`labels`, and `closing_prs` (the PRs that fix each issue).
+`issue_type`, `labels`, and `closing_prs` (the PRs that fix each issue).
 
 ### 3. Identify missing entries (optional)
 
@@ -84,34 +84,27 @@ The `prs` command returns JSON with `number`, `title`, `body`, `state`,
 `merged_at`, `author`, `labels`, and `closing_issues`. PRs are fetched in
 batches of 50 via GraphQL to stay within API limits.
 
-### 5. Categorize entries
+### 5. Categorize entries — strictly by issue type, never by labels or emoji
 
-Use the **Issue Type** field (GitHub's native issue type, accessible via GraphQL
-`issueType { name }`) to determine which section an entry belongs to.
-**Do not** use labels or title emoji prefixes as the source of truth — they are
-often inaccurate or missing.
+Use the **Issue Type** field (GitHub's native issue type, exposed as
+`issue_type` in the `gh.py` JSON output) to determine which section an entry
+belongs to.
 
-| Issue Type (`issueType.name`) | Changelog section |
-|------------------------------|-------------------|
+> **⚠️ CRITICAL: Never use labels or title emoji prefixes for categorization.**
+> Labels like `bug` and `enhancement`, as well as title prefixes like `:bug:`
+> and `:sparkles:`, are frequently inaccurate, missing, or contradictory to the
+> actual issue type. The `issue_type` field from `gh.py` is the single source
+> of truth.
+
+| `issue_type` value | Changelog section |
+|--------------------|-------------------|
 | `Bug` | `### :bug: Bugs fixed` |
 | `Feature` or `Enhancement` | `### :sparkles: New features & Enhancements` |
-| No type set | Fetch the issue and check its labels as a fallback: `bug` label → bugs section, otherwise default to enhancements |
+| `Task` | **Exclude** — internal chores are not user-facing |
+| `null` (not set) | Check labels as a fallback: `bug` label → bugs, otherwise enhancements |
 
-To fetch Issue Types for all issues in a milestone efficiently, use a single
-GraphQL query with aliases rather than N+1 REST calls:
-
-```graphql
-query {
-  repository(owner: "penpot", name: "penpot") {
-    i123: issue(number: 123) {
-      number state milestone { number } issueType { name }
-    }
-    i456: issue(number: 456) {
-      number state milestone { number } issueType { name }
-    }
-  }
-}
-```
+The `gh.py` issues command already includes `issue_type` in every entry's
+output. **No separate GraphQL query is needed.**
 
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
@@ -224,7 +217,7 @@ Read the top of `CHANGES.md` and confirm:
   can find the code changes.
 - **Latest version first.** New sections are inserted at the top of the
   changelog, below the `# CHANGELOG` header.
-- **Issue Type determines section.** Use GitHub's `issueType` field (Bug → `:bug:`, Feature/Enhancement → `:sparkles:`) to categorize entries. Ignore labels and title emoji prefixes — they are unreliable for categorization.
+- **Issue Type determines section — exclusively.** Use the `issue_type` field from `gh.py` output (Bug → `:bug:`, Feature/Enhancement → `:sparkles:`). **Do not** use labels (`bug`, `enhancement`) or title emoji prefixes (`:bug:`, `:sparkles:`) — they are frequently wrong or contradictory. The `issue_type` is the single source of truth.
 - **User-facing descriptions.** Write from the user's perspective — describe
   what broke and what was fixed, not internal implementation details.
 - **Community attribution.** When the issue or fix PR has the
@@ -233,8 +226,9 @@ Read the top of `CHANGES.md` and confirm:
   issue author) for the attribution.
 - **Only closed issues.** An issue must have `state: "closed"` to appear in
   the changelog. Open unresolved issues are omitted.
-- **Excluded labels.** Issues with `release blocker` or `no changelog` labels
-  must be excluded from the changelog.
+- **Excluded issues.** Issues with `no changelog` label must be excluded.
+  Issues with `issue_type: "Task"` must also be excluded — they are internal
+  chores, not user-facing changes.
 - **Multiple PRs per issue.** If multiple PRs fix the same issue, list them
   comma-separated inline: `(PR: [#A](url), [#B](url))`.
 - **Duplicate removal.** If an entry already exists in a prior version section,
