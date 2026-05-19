@@ -68,7 +68,9 @@
 (defn- get-option-by-name
   [options name]
   (let [options (if (delay? options) (deref options) options)]
-    (d/seek #(= name (get % :name)) options)))
+    (d/seek #(and (= :token (get % :type))
+                  (= name (get % :name)))
+            options)))
 
 (defn- get-token-op
   [tokens name]
