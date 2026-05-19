@@ -2910,6 +2910,12 @@ msgstr "New password"
 msgid "labels.next"
 msgstr "Next"
 
+#: src/app/main/ui/static.cljs:325
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot is temporarily unavailable due to a system issue. Please try again "
+"shortly."
+
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "You're all caught up! New comment notifications will appear here."
