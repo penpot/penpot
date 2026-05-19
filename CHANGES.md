@@ -10,6 +10,7 @@
 
 - Show a read-only W × H size badge below the bounding box of the current selection (by @bittoby) [Github #9205](https://github.com/penpot/penpot/issues/9205)
 - Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
+- Improve self-hosted OIDC configuration documentation for containerized deployments by documenting explicit endpoint overrides and SSRF allowlisting
 
 ### :bug: Bugs fixed
 
