@@ -119,7 +119,7 @@
          :bool    [:> bool-wrapper props]
          :frame   [:> nested-frame-wrapper props]
 
-         nil)]))))
+         nil)])))
 
 (mf/defc root-frame-shape-wrapper
   {::mf/wrap [#(mf/memo' % common/check-shape-props)]
