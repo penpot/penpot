@@ -709,12 +709,6 @@
            (let [parent-validation-cache
                  (ctn/parent-validation-cache objects shapes libraries)
 
-                 subtree-ids-by-id
-                 (into {}
-                       (map (fn [id]
-                              [id (cfh/get-children-ids-with-self objects id)]))
-                       ids)
-
                  selection-rect-cache
                  (volatile! nil)
 
@@ -788,7 +782,6 @@
                         (fn [[modifiers snap-ignore-axis]]
                           (dwm/set-wasm-modifiers modifiers
                                                   :snap-ignore-axis snap-ignore-axis
-                                                  :subtree-ids-by-id subtree-ids-by-id
                                                   :selection-rect-cache selection-rect-cache))))
 
                   (->> move-stream
@@ -814,8 +807,7 @@
                              (dwu/start-undo-transaction undo-id)
                              (dwm/apply-wasm-modifiers modifiers
                                                        :snap-ignore-axis snap-ignore-axis
-                                                       :undo-transation? false
-                                                       :subtree-ids-by-id subtree-ids-by-id)
+                                                       :undo-transation? false)
                              (move-shapes-to-frame ids target-frame drop-index drop-cell)
                              (finish-transform)
                              (dwu/commit-undo-transaction undo-id))))))))

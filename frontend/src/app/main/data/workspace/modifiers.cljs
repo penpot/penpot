@@ -657,8 +657,7 @@
 
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel
-                        subtree-ids-by-id selection-rect-cache]
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel selection-rect-cache]
                  :or {ignore-constraints false ignore-snap-pixel false}
                  :as params}]
   (ptk/reify ::set-wasm-modifiers
@@ -727,93 +726,75 @@
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?
-                        subtree-ids-by-id]
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?]
                  :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
-  (ptk/reify ::apply-wasm-modifiesr
+  (ptk/reify ::apply-wasm-modifiers
     ptk/WatchEvent
     (watch [_ state _]
-      (let [translation?
-            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
-        (wasm.api/clean-modifiers)
-        (when-not translation?
-          (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree)))
+      (wasm.api/clean-modifiers)
+      (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
 
-        ;; Apply property changes (e.g. grow-type) to WASM shapes before
-        ;; propagating geometry, so propagate_modifiers sees the updated state.
-        (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
-          (when (= property :grow-type)
-            (wasm.api/use-shape id)
-            (wasm.api/set-shape-grow-type value)))
+      ;; Apply property changes (e.g. grow-type) to WASM shapes before
+      ;; propagating geometry, so propagate_modifiers sees the updated state.
+      (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
+        (when (= property :grow-type)
+          (wasm.api/use-shape id)
+          (wasm.api/set-shape-grow-type value)))
 
-        (let [objects (dsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
 
-              geometry-entries
-              (parse-geometry-modifiers modif-tree)
+            geometry-entries
+            (parse-geometry-modifiers modif-tree)
 
-              snap-pixel?
-              (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+            snap-pixel?
+            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-              transforms
-              (if (and translation? (not snap-pixel?))
-                ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
-                ;; translation matrix onto every descendant. Without
-                ;; this step the commit would only touch the dragged
-                ;; primaries and descendants would snap back to their
-                ;; pre-drag positions on drop.
-                ;;
-                ;; Skipped when `snap-pixel?` is on: WASM applies
-                ;; per-shape pixel correction (different scale/translate
-                ;; per descendant) which we can't replicate cheaply on
-                ;; the CLJS side.
-                (reduce
-                 (fn [acc [id data]]
-                   (let [t (:transform data)
-                         subtree-ids
-                         (or (get subtree-ids-by-id id)
-                             (cfh/get-children-ids-with-self objects id))]
-                     (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
-                 {}
-                 geometry-entries)
-                (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
+            ;; Commits must use WASM propagation; the translation-only
+            ;; root-modifiers fast path in `set-wasm-modifiers` is for
+            ;; live drag preview only (panel commits need full propagate).
+            transforms
+            (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
-              ignore-tree
-              (calculate-ignore-tree-wasm transforms objects)
+            translation?
+            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))
 
-              options
-              (-> params
-                  (assoc :reg-objects? true)
-                  (assoc :ignore-tree ignore-tree)
-                  (assoc :translation? translation?)
-                  ;; Attributes that can change in the transform. This
-                  ;; way we don't have to check all the attributes
-                  (assoc :attrs transform-attrs))
+            ignore-tree
+            (calculate-ignore-tree-wasm transforms objects)
 
-              modif-tree
-              (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
+            options
+            (-> params
+                (assoc :reg-objects? true)
+                (assoc :ignore-tree ignore-tree)
+                (assoc :translation? translation?)
+                ;; Attributes that can change in the transform. This
+                ;; way we don't have to check all the attributes
+                (assoc :attrs transform-attrs))
 
-              ids
-              (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
+            modif-tree
+            (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
-              update-shape
-              (fn [shape]
-                (let [shape-id  (dm/get-prop shape :id)
-                      transform (get transforms shape-id)
-                      modifiers (dm/get-in modif-tree [shape-id :modifiers])]
-                  (-> shape
-                      (gsh/apply-transform transform)
-                      (ctm/apply-structure-modifiers modifiers))))
+            ids
+            (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
-              bool-ids
-              (into #{}
-                    (comp
-                     (mapcat (partial cfh/get-parents-with-self objects))
-                     (filter cfh/bool-shape?)
-                     (map :id))
-                    ids)
+            update-shape
+            (fn [shape]
+              (let [shape-id  (dm/get-prop shape :id)
+                    transform (get transforms shape-id)
+                    modifiers (dm/get-in modif-tree [shape-id :modifiers])]
+                (-> shape
+                    (gsh/apply-transform transform)
+                    (ctm/apply-structure-modifiers modifiers))))
 
-              undo-id (js/Symbol)]
+            bool-ids
+            (into #{}
+                  (comp
+                   (mapcat (partial cfh/get-parents-with-self objects))
+                   (filter cfh/bool-shape?)
+                   (map :id))
+                  ids)
+
+            undo-id (js/Symbol)]
           (rx/concat
            (if undo-transation?
              (rx/of (dwu/start-undo-transaction undo-id))
@@ -830,7 +811,7 @@
 
            (if undo-transation?
              (rx/of (dwu/commit-undo-transaction undo-id))
-             (rx/empty))))))))
+             (rx/empty)))))))
 
 (def ^:private
   xf-rotation-shape
