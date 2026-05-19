@@ -45,11 +45,15 @@
     (t/is (= :authentication-required (th/ex-code (:error out))))))
 
 (t/deftest get-penpot-version
-  (let [profile (th/create-profile* 1 {:is-active true})
-        out     (management-command-with-nitrate! {::th/type :get-penpot-version
-                                                   ::rpc/profile-id (:id profile)})]
+  (let [out     (management-command-with-nitrate! {::th/type :get-penpot-version})
+        version (-> out :result :version)]
     (t/is (th/success? out))
-    (t/is (= cf/version (-> out :result :version)))))
+    (t/is (= #{:full :branch :base :main :major :minor :patch :modifier :commit :commit-hash}
+             (set (keys version))))
+    (doseq [k [:full :branch :base :main :major :minor :patch :modifier :commit :commit-hash]]
+      (t/is (or (nil? (get version k))
+                (string? (get version k)))))
+    (t/is (= cf/version version))))
 
 (t/deftest get-teams-returns-only-owned-non-default-non-deleted
   (let [profile      (th/create-profile* 1 {:is-active true})
@@ -556,6 +560,120 @@
       (t/is (= 1 (count remaining-target)))
       (t/is (= (:id outside-team) (:team-id (first remaining-target))))
       (t/is (= 1 (count remaining-other))))))
+
+(t/deftest delete-all-org-invitations-removes-org-and-org-team-invitations
+  (let [profile      (th/create-profile* 1 {:is-active true})
+        team-1       (th/create-team* 1 {:profile-id (:id profile)})
+        team-2       (th/create-team* 2 {:profile-id (:id profile)})
+        outside-team (th/create-team* 3 {:profile-id (:id profile)})
+        org-id       (uuid/random)
+        org-summary  {:id org-id
+                      :teams [{:id (:id team-1)}
+                              {:id (:id team-2)}]}
+        params       {::th/type :delete-all-org-invitations
+                      :organization-id org-id}]
+
+    ;; Should be deleted: org-level invitation.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "alice@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should be deleted: team-level invitation in team-1 (belongs to org).
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "bob@example.com"
+                    :created-by (:id profile)
+                    :role "admin"
+                    :valid-until (ct/in-future "48h")})
+
+    ;; Should be deleted: team-level invitation in team-2 (belongs to org),
+    ;; even if expired.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "carol@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-past "1h")})
+
+    ;; Should remain: invitation to a team outside the org.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id outside-team)
+                    :org-id nil
+                    :email-to "dan@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    ;; Should remain: invitation to a different organization.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id (uuid/random)
+                    :team-id nil
+                    :email-to "erin@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [calls    (atom [])
+          out      (with-redefs [nitrate/call (fn [_cfg method params]
+                                                (swap! calls conj {:method method :params params})
+                                                (case method
+                                                  :get-org-summary org-summary
+                                                  nil))]
+                     (management-command-with-nitrate! params))
+          present? (fn [email] (seq (th/db-query :team-invitation {:email-to email})))]
+      (t/is (th/success? out))
+      (t/is (nil? (:result out)))
+
+      ;; get-org-summary was called with the right organization-id.
+      (t/is (= 1 (count @calls)))
+      (t/is (= :get-org-summary (-> @calls first :method)))
+      (t/is (= {:organization-id org-id} (-> @calls first :params)))
+
+      ;; Org-level + team-in-org invitations are deleted.
+      (t/is (not (present? "alice@example.com")))
+      (t/is (not (present? "bob@example.com")))
+      (t/is (not (present? "carol@example.com")))
+
+      ;; Invitations outside the org survive.
+      (t/is (present? "dan@example.com"))
+      (t/is (present? "erin@example.com")))))
+
+(t/deftest delete-all-org-invitations-handles-org-with-no-teams
+  (let [profile (th/create-profile* 1 {:is-active true})
+        org-id  (uuid/random)
+        params  {::th/type :delete-all-org-invitations
+                 :organization-id org-id}]
+
+    ;; Org-level invitation should still be deleted.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "alice@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (let [out (with-redefs [nitrate/call (fn [_cfg method _params]
+                                           (case method
+                                             :get-org-summary {:id org-id :teams []}
+                                             nil))]
+                (management-command-with-nitrate! params))
+          remaining (th/db-query :team-invitation {:org-id org-id})]
+      (t/is (th/success? out))
+      (t/is (nil? (:result out)))
+      (t/is (empty? remaining)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests: remove-from-org

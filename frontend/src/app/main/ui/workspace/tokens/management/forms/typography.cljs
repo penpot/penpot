@@ -209,7 +209,7 @@
 
 ;; TODO: use cfo/make-schema:token-value and extend it with typography and reference fields
 (defn- make-schema
-  [tokens-tree active-tab]
+  [set-id token-id tokens-lib active-tab]
   (sm/schema
    [:and
     [:map
@@ -220,7 +220,7 @@
        (sm/update-properties cto/schema:token-name assoc
                              :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % tokens-lib set-id token-id))]]]
 
      [:value
       [:map
@@ -269,7 +269,7 @@
          result))]]))
 
 (mf/defc form*
-  [{:keys [token] :as props}]
+  [{:keys [token selected-token-set-id] :as props}]
   (let [initial
         (mf/with-memo [token]
           (let [value (:value token)
@@ -296,6 +296,12 @@
             {:name        (:name token "")
              :value       processed-value
              :description (:description token "")}))
+
+        make-schema
+        (mf/with-memo [selected-token-set-id token]
+          (partial make-schema selected-token-set-id (when (ctob/token? token)
+                                                       (ctob/get-id token))))
+
         props (mf/spread-props props {:initial initial
                                       :make-schema make-schema
                                       :token token

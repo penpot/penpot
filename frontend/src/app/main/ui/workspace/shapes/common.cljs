@@ -25,4 +25,4 @@
       [:> shape-container {:shape shape}
        [:& component {:shape shape}]
        (when *assert*
-         [:& wsd/shape-debug {:shape shape}])])))
+         [:> wsd/shape-debug* {:shape shape}])])))

@@ -64,13 +64,26 @@
 ;; ---- API: get-penpot-version
 
 (def ^:private schema:get-penpot-version-result
-  [:map [:version ::sm/text]])
+  [:map
+   [:version
+    [:map
+     [:full [:maybe ::sm/text]]
+     [:branch [:maybe ::sm/text]]
+     [:base [:maybe ::sm/text]]
+     [:main [:maybe ::sm/text]]
+     [:major [:maybe ::sm/text]]
+     [:minor [:maybe ::sm/text]]
+     [:patch [:maybe ::sm/text]]
+     [:modifier [:maybe ::sm/text]]
+     [:commit [:maybe ::sm/text]]
+     [:commit-hash [:maybe ::sm/text]]]]])
 
 (sv/defmethod ::get-penpot-version
   "Get the current Penpot version"
   {::doc/added "2.14"
    ::sm/params [:map]
-   ::sm/result schema:get-penpot-version-result}
+   ::sm/result schema:get-penpot-version-result
+   ::rpc/auth false}
   [_cfg _params]
   {:version cf/version})
 
@@ -530,6 +543,33 @@ LEFT JOIN profile AS p
                      (db/exec! conn [sql:delete-org-invitations clean-email organization-id ids-array]))))
     nil))
 
+
+;; API: delete-all-org-invitations
+
+(def ^:private sql:delete-all-org-invitations
+  "DELETE FROM team_invitation AS ti
+    WHERE ti.org_id = ?
+       OR ti.team_id = ANY(?);")
+
+(def ^:private schema:delete-all-org-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::delete-all-org-invitations
+  "Delete every pending invitation associated with an organization (org-level + team-level).
+   Called from Nitrate when an organization is about to be deleted, so users that click
+   their invitation token hit the existing invalid-token landing page."
+  {::doc/added "2.18"
+   ::sm/params schema:delete-all-org-invitations-params
+   ::rpc/auth false}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (->> (:teams org-summary)
+                         (map :id))]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
+    nil))
 
 
 ;; API: remove-from-org

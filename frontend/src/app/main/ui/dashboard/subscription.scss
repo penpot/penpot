@@ -224,7 +224,7 @@
   display: flex;
   border-radius: var(--sp-s);
   flex-direction: column;
-  margin: var(--sp-m);
+  margin: var(--sp-m) var(--sp-m) 0;
   background: var(--color-background-quaternary);
   border: $b-1 solid var(--color-accent-primary-muted);
   padding: var(--sp-l);
@@ -250,4 +250,30 @@
 
 .nitrate-bottom-button {
   width: fit-content;
+}
+
+.nitrate-current-plan {
+  border-radius: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-m);
+  margin-inline: var(--sp-m);
+  background: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-quaternary);
+  padding: var(--sp-m) var(--sp-l);
+}
+
+.nitrate-current-plan-label {
+  @include t.use-typography("body-small");
+
+  padding-block-end: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+}
+
+.nitrate-current-plan-text {
+  @include t.use-typography("body-medium");
+
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-foreground-primary);
 }

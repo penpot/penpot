@@ -7,9 +7,8 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc icons-gallery
-  {::mf/wrap-props false
-   ::mf/private true}
+(mf/defc icons-gallery*
+  {::mf/private true}
   []
   (let [entries   (->> (seq (js/Object.entries deprecated-icon/default))
                        (sort-by first))]
@@ -21,9 +20,8 @@
         val
         [:span key]])]))
 
-(mf/defc cursors-gallery
-  {::mf/wrap-props false
-   ::mf/private true}
+(mf/defc cursors-gallery*
+  {::mf/private true}
   []
   (let [rotation (mf/use-state 0)
         entries  (->> (seq (js/Object.entries c/default))
@@ -43,12 +41,11 @@
           [:span (pr-str key)]]))]))
 
 
-(mf/defc icons-preview
-  {::mf/wrap-props false}
+(mf/defc icons-preview*
   []
   [:article {:class (stl/css :container)}
    [:h2 {:class (stl/css :title)} "Cursors"]
-   [:& cursors-gallery]
+   [:> cursors-gallery*]
    [:h2 {:class (stl/css :title)} "Icons"]
-   [:& icons-gallery]])
+   [:> icons-gallery*]])
 
