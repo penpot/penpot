@@ -281,8 +281,17 @@ for how to define custom metadata and other ways of selecting tests.
 it, but for now we use shadow-cljs with <code class="language-text">package.json</code> scripts:
 
 ```bash
+# To run all frontend tests once
 pnpm run test
-pnpm run test:watch
+
+# To run all frontend tests and keep watching for changes
+pnpm run watch:test
+
+# To run a single frontend tests module
+pnpm run test -- --focus frontend-tests.logic.components-and-tokens
+
+# To run a single frontend test
+pnpm run test -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main
 ```
 
 #### Test output
