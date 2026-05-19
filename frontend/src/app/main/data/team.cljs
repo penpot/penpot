@@ -82,7 +82,11 @@
      (watch [_ state _]
        (when-let [team-id (or team-id (:current-team-id state))]
          (->> (rp/cmd! :get-team-members {:team-id team-id})
-              (rx/map (partial members-fetched team-id))))))))
+              (rx/map (partial members-fetched team-id))
+              (rx/catch (fn [error]
+                          (if (= :not-found (:type (ex-data error)))
+                            (rx/empty)
+                            (rx/throw error))))))))))
 
 (defn- invitations-fetched
   [team-id invitations]

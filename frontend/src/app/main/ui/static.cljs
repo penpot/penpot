@@ -228,7 +228,8 @@
          (mf/deps profile)
          (fn []
            (let [team-id (:default-team-id profile)]
-             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
+             (st/emit! (rt/assign-exception nil)
+                       (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         on-success
         (mf/use-fn
