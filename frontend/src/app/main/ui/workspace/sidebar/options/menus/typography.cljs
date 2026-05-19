@@ -315,7 +315,12 @@
             :on-click #(reset! open-selector? true)}
       (cond
         (or (= :multiple font-id) (= "mixed" font-id))
-        "--"
+        [:*
+         [:span {:class (stl/css :font-option-name :font-family-mixed)}
+          (tr "inspect.attributes.typography.mixed-font-family")]
+         [:> icon* {:icon-id i/arrow-down
+                    :class (stl/css :dropdown-icon)
+                    :size "s"}]]
 
         (some? font)
         [:*

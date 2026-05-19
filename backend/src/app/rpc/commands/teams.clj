@@ -194,7 +194,9 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params))
+      (contains? cf/flags :nitrate)
+      (remove #(get-in % [:organization :expired-license])))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -780,28 +782,28 @@
         team  (if (contains? cf/flags :nitrate)
                 (nitrate/add-org-info-to-team cfg team params)
                 team)
-        perms (get team :permissions)]
+        perms (get team :permissions)
+        org   (:organization team)
+        in-org? (and (contains? cf/flags :nitrate) org)
+        can-delete?
+        (if in-org?
+          (nitrate-perms/allowed? :delete-team
+                                  {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
+                                               :permissions (dm/get-in team [:organization :permissions])}
+                                   :profile-id profile-id
+                                   :team-perms perms
+                                   ;; `onlyMe` is for a future org-level flow.
+                                   :allow-org-owner-delete? false})
+          (boolean (:is-owner perms)))]
+
+    (when-not can-delete?
+      (ex/raise :type :validation
+                :code :only-owner-can-delete-team))
 
     (when (:is-default team)
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
-
-    ;; Check delete permissions based on organization settings.
-    ;; For non-org teams or when nitrate is disabled, only owners can delete.
-    (if (and (:organization team) (contains? cf/flags :nitrate))
-      (let [org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
-                       :permissions (dm/get-in team [:organization :permissions])}]
-        (when-not (nitrate-perms/allowed? :delete-team
-                                          {:org-perms  org-perms
-                                           :profile-id profile-id
-                                           :team-perms perms})
-          (ex/raise :type :validation
-                    :code :not-allowed
-                    :hint "You are not allowed to delete teams in this organization")))
-      (when-not (:is-owner perms)
-        (ex/raise :type :validation
-                  :code :only-owner-can-delete-team)))
 
     (let [delay (ldel/get-deletion-delay team)
           team  (db/update! conn :team
@@ -950,6 +952,7 @@
   ;; Validate incoming mime type
 
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

@@ -60,10 +60,11 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [objects        (obj/get props "objects")
-        active-frames  (obj/get props "active-frames")
-        shapes         (cfh/get-immediate-children objects)
-        vbox           (mf/use-ctx ctx/current-vbox)
+  (let [objects             (obj/get props "objects")
+        active-frames       (obj/get props "active-frames")
+        disable-thumbnails  (obj/get props "disable-thumbnails")
+        shapes              (cfh/get-immediate-children objects)
+        vbox                (mf/use-ctx ctx/current-vbox)
 
         frame-overlap? (mf/with-memo [vbox objects]
                          #(make-is-frame-overlap vbox objects))
@@ -84,13 +85,16 @@
 
       [:g.frame-children
        (for [shape shapes]
-         [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
-          (if ^boolean (cfh/frame-shape? shape)
-            [:& root-frame-wrapper
-             {:shape shape
-              :objects objects
-              :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
-            [:& shape-wrapper {:shape shape}])])]]]))
+         (let [thumbnail?
+               (and (not disable-thumbnails)
+                    (contains? active-frames (dm/get-prop shape :id)))]
+           [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
+            (if ^boolean (cfh/frame-shape? shape)
+              [:& root-frame-wrapper
+               {:shape shape
+                :objects objects
+                :thumbnail? thumbnail?}]
+              [:& shape-wrapper {:shape shape}])]))]]]))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % common/check-shape-props)]
@@ -121,7 +125,7 @@
                (not ^boolean (:hidden shape)))
       [:> wrapper-elem wrapper-props
        (case shape-type
-         :path    [:> path/path-wrapper props]
+         :path    [:> path/path-wrapper* props]
          :text    [:> text/text-wrapper props]
          :group   [:> group-wrapper props]
          :rect    [:> rect-wrapper props]

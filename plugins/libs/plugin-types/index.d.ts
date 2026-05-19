@@ -54,13 +54,14 @@ export interface Penpot extends Omit<
      * Sends a message to the plugin UI.
      *
      * @param message content usually is an object
+     * @param throwOnError if true, throws an error when the message cannot be cloned instead of logging to console (default: false)
      *
      * @example
      * ```js
      * this.sendMessage({ type: 'example-type', content: 'data we want to share' });
      * ```
      */
-    sendMessage: (message: unknown) => void;
+    sendMessage: (message: unknown, throwOnError?: boolean) => void;
     /**
      * This is usually used in the `plugin.ts` file in order to handle the data sent by our plugin
      *

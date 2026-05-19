@@ -408,7 +408,9 @@
         ;; Render root shape
         [:& shapes/root-shape {:key (str page-id)
                                :objects base-objects
-                               :active-frames @active-frames}]]]]
+                               :active-frames @active-frames
+                               ;; disable thumbnails when previewing a version
+                               :disable-thumbnails (some? preview-id)}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

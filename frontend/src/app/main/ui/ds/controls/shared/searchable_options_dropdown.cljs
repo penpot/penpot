@@ -33,7 +33,7 @@
    [:resolved-value {:optional true}
     [:or :int :string :float :map]]
    [:name {:optional true} :string]
-   [:value {:optional true} :keyword]
+   [:value {:optional true} [:or :keyword :int :string :float :map]]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
    [:aria-label {:optional true} :string]])
