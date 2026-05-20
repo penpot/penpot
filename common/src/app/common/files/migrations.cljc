@@ -1820,6 +1820,19 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+;; Re-run the 0019 and 0020 fixers after normalizing :component-root.
+;; Migrations 0019 and 0020 missed shapes with an explicit :component-root
+;; false because subcopy-head? expects nil. Normalize first, then re-run.
+(defmethod migrate-data "0022-normalize-component-root-and-resync"
+  [data _]
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (-> data
+        (cfcp/normalize-component-root)
+        (cfcp/fix-missing-swap-slots libraries)
+        (cfcp/sync-component-id-with-ref-shape libraries))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1898,4 +1911,5 @@
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
          "0020-sync-component-id-with-near-main"
-         "0021-fix-shape-svg-attrs"]))
+         "0021-fix-shape-svg-attrs"
+         "0022-normalize-component-root-and-resync"]))
