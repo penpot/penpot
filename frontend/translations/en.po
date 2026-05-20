@@ -7557,11 +7557,11 @@ msgid "workspace.options.stroke.dashed"
 msgstr "Dashed"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
-msgid "workspace.options.stroke.dash"
+msgid "workspace.options.stroke-dash"
 msgstr "Dash"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
-msgid "workspace.options.stroke.gap"
+msgid "workspace.options.stroke-gap"
 msgstr "Gap"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
