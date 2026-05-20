@@ -99,7 +99,7 @@
            (st/emit! (ev/event {::ev/name (if enabled?
                                             "enable-webgl-rendering"
                                             "disable-webgl-rendering")
-                                ::ev/origin "account_settings"})
+                                ::ev/origin "settings"})
                      (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
                      (ntf/success (tr (if enabled?
                                         "webgl.toast.webgl-render-enabled"
