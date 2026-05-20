@@ -225,6 +225,7 @@
              :tab-index (if searchable? "-1" "0")
              :role "combobox"
              :class (dm/str (stl/css-case :custom-select true
+                                          :searchable-select searchable?
                                           :disabled disabled
                                           :icon (some? current-icon-ref))
                             " " class)}
