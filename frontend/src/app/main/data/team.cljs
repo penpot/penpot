@@ -130,6 +130,33 @@
                              :on-accept delete-fn})
                            (modal/show :no-permission-modal {:type :delete-team})))))))))))
 
+(defn check-and-invite-members
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, then shows invite-members modal or a permission error."
+  [{:keys [team-id origin invite-email]
+    :or {origin :team}}]
+  (ptk/reify ::check-and-invite-members
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (->> (rp/cmd! :get-teams)
+             (rx/mapcat
+              (fn [teams]
+                (let [team        (d/seek #(= (:id %) team-id) teams)
+                      org         (:organization team)
+                      can-invite? (nitrate-perms/can-send-invitations?
+                                   {:nitrate-enabled? (contains? cf/flags :nitrate)
+                                    :organization org
+                                    :profile-id profile-id
+                                    :team-permissions (:permissions team)})]
+                  (rx/of (teams-fetched teams)
+                         (if can-invite?
+                           (modal/show {:type :invite-members
+                                        :team team
+                                        :origin origin
+                                        :invite-email invite-email})
+                           (modal/show :no-permission-modal {:type :invite-members})))))))))))
+
 ;; --- EVENT: fetch-members
 
 (defn- members-fetched
