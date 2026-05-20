@@ -291,33 +291,35 @@
         (mf/use-fn
          (mf/deps on-change update-input value nillable min max)
          (fn [raw-value]
-           (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
-             (when-not (= parsed (mf/ref-val last-value*))
-               (mf/set-ref-val! last-value* parsed)
-               (reset! token-applied-name* nil)
-               (when (fn? on-change)
-                 (on-change parsed))
-
-               (mf/set-ref-val! raw-value* (fmt/format-number parsed))
-               (update-input (fmt/format-number parsed)))
-
-             (if (and nillable (empty? raw-value))
+           (let [raw-value (str/trim (str raw-value))]
+             (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
                (do
-                 (mf/set-ref-val! last-value* nil)
-                 (mf/set-ref-val! raw-value* "")
-                 (reset! token-applied-name* nil)
-                 (update-input "")
-                 (when (fn? on-change)
-                   (on-change nil)))
+                 (when-not (= parsed (mf/ref-val last-value*))
+                   (mf/set-ref-val! last-value* parsed)
+                   (reset! token-applied-name* nil)
+                   (when (fn? on-change)
+                     (on-change parsed)))
 
-               (let [fallback-value (or (mf/ref-val last-value*) default)]
-                 (mf/set-ref-val! raw-value* fallback-value)
-                 (mf/set-ref-val!  last-value* fallback-value)
-                 (reset! token-applied-name* nil)
-                 (update-input (fmt/format-number fallback-value))
+                 (mf/set-ref-val! raw-value* (fmt/format-number parsed))
+                 (update-input (fmt/format-number parsed)))
 
-                 (when (and (fn? on-change) (not= fallback-value (str value)))
-                   (on-change fallback-value)))))))
+               (if (and nillable (empty? raw-value))
+                 (do
+                   (mf/set-ref-val! last-value* nil)
+                   (mf/set-ref-val! raw-value* "")
+                   (reset! token-applied-name* nil)
+                   (update-input "")
+                   (when (fn? on-change)
+                     (on-change nil)))
+
+                 (let [fallback-value (or (mf/ref-val last-value*) default)]
+                   (mf/set-ref-val! raw-value* fallback-value)
+                   (mf/set-ref-val!  last-value* fallback-value)
+                   (reset! token-applied-name* nil)
+                   (update-input (fmt/format-number fallback-value))
+
+                   (when (and (fn? on-change) (not= fallback-value (str value)))
+                     (on-change fallback-value))))))))
 
         apply-token
         (mf/use-fn
@@ -465,7 +467,7 @@
                    (dom/prevent-default event)
                    (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
-                 (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                 (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
                        new-val (increment current-value step min max)]
                    (dom/prevent-default event)
@@ -478,7 +480,7 @@
                    (dom/prevent-default event)
                    (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
-                 (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                 (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
                        new-val (decrement current-value step min max)]
                    (dom/prevent-default event)
@@ -507,7 +509,7 @@
                (let [inc? (->> (dom/get-delta-position event)
                                :y
                                (neg?))
-                     parsed (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                     parsed (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                      current-value (or parsed default)
                      new-val (if inc?
                                (increment current-value step min max)
@@ -526,7 +528,7 @@
                    has-token (some? (deref token-applied-name*))]
                (when-not (or is-focused has-token)
                  (let [client-x  (.-clientX event)
-                       parsed    (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                       parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        start-val (or parsed default 0)]
                    (mf/set-ref-val! drag-state* :maybe-dragging)
                    (mf/set-ref-val! drag-start-x* client-x)
