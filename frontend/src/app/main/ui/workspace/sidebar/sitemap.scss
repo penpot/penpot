@@ -55,8 +55,12 @@
   margin-bottom: deprecated.$s-12;
 }
 
+.page-delete-button {
+  --delete-button-display: none;
+}
+
 .page-delete-button-icon {
-  color: transparent;
+  display: var(--delete-button-display);
 }
 
 .page-element {
@@ -136,12 +140,6 @@
       color: var(--layer-row-foreground-color-drag);
       background-color: var(--layer-row-background-color-drag);
 
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-drag);
-        }
-      }
-
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-drag);
       }
@@ -155,12 +153,6 @@
       background-color: var(--layer-row-background-color-selected);
       box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
         var(--layer-row-background-color-selected);
-
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-selected);
-        }
-      }
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-selected);
@@ -178,10 +170,7 @@
 
       .page-actions button {
         opacity: deprecated.$op-10;
-
-        svg {
-          stroke: var(--layer-row-foreground-color-hover);
-        }
+        --delete-button-display: initial;
       }
 
       .page-icon svg {
@@ -217,12 +206,6 @@
       color: var(--layer-row-foreground-color-hidden);
       background-color: var(--layer-row-background-color-hidden);
       opacity: deprecated.$op-7;
-
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-hidden);
-        }
-      }
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hidden);
