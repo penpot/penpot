@@ -12,10 +12,13 @@ clojure -M:dev:test
 pnpm run test:jvm --focus common-tests.logic.variants-switch-test
 clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch
 pnpm run test:js
+pnpm run test:quiet
+pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test
+pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn
 pnpm run watch:test
 ```
 
-Focused JS tests are selected by editing `test/common_tests/runner.cljs`, then running `pnpm run test:js`. Multiple JVM `--focus` flags compose as a union.
+Use `test:quiet` for non-interactive JS runs; it buffers `build:test` output and forwards runner args. Common JS runner args support `--focus <namespace-or-var>` and `--log-level trace|debug|info|warn|error`. After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn`. New common JS test namespaces must be required/listed in `common_tests/runner.cljc`; new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags compose as a union.
 
 ## Test helpers
 

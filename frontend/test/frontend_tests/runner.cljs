@@ -94,6 +94,11 @@
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")
 
+;; This runner intentionally mirrors common-tests.runner. Both runners need
+;; forwarded CLI args, focused namespace/var execution, fixture preservation,
+;; and app log-level setup. A shared helper could own those mechanics, but we
+;; keep the logic local while there are only two test targets because sharing
+;; it would add cross-module test classpath coupling.
 (def ^:private log-levels
   #{:trace :debug :info :warn :error})
 

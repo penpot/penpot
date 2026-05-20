@@ -15,6 +15,8 @@ From `frontend/`:
 - After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus frontend-tests.logic.components-and-tokens/change-spacing-token-in-main-updates-copy-layout`.
 - Watch tests: `pnpm run watch:test`.
 
+New frontend test namespaces must be required/listed in `frontend_tests/runner.cljs`; new vars in existing namespaces need no runner change.
+
 ## Playwright integration tests
 
 Do not add, modify, or run Playwright integration tests under `frontend/playwright` unless explicitly asked. When explicitly asked, use `pnpm run test:e2e` or `pnpm run test:e2e --grep "pattern"` from `frontend/`; ensure dependencies are installed through `./scripts/setup` if the environment is not prepared.
