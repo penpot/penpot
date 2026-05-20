@@ -101,8 +101,6 @@
     .page-icon {
       @include deprecated.flex-center;
 
-      height: deprecated.$s-32;
-      width: deprecated.$s-24;
       padding: 0 deprecated.$s-4 0 deprecated.$s-8;
     }
 
@@ -170,6 +168,7 @@
 
       .page-actions button {
         opacity: deprecated.$op-10;
+
         --delete-button-display: initial;
       }
 
