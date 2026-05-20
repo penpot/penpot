@@ -379,19 +379,16 @@
       (l/error :hint "file schema validation error" :cause cause))))
 
 (defn- soft-validate-file!
-  [file libs]
+  [file libs changes]
   (try
-    (val/validate-file! file libs)
+    (val/validate-file-affected! file libs changes)
     (catch Throwable cause
       (l/error :hint "file validation error"
                :cause cause))))
 
-
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
-  (let [;; WARNING: this ruins performance; maybe we need to find
-        ;; some other way to do general validation
-        libs
+  (let [libs
         (when (and (or (contains? cf/flags :file-validation)
                        (contains? cf/flags :soft-file-validation))
                    (not skip-validate))
@@ -419,14 +416,14 @@
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
-        (soft-validate-file! file libs))
+        (soft-validate-file! file libs changes))
 
       (when (contains? cf/flags :soft-file-schema-validation)
         (soft-validate-file-schema! file))
 
       (when (and (contains? cf/flags :file-validation)
                  (not skip-validate))
-        (val/validate-file! file libs))
+        (val/validate-file-affected! file libs changes))
 
       (when (and (contains? cf/flags :file-schema-validation)
                  (not skip-validate))
