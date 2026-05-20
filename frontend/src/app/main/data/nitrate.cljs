@@ -71,15 +71,11 @@
 
 (defn can-send-invitations?
   [{:keys [organization profile-id team-permissions]}]
-  (let [in-org? (and (contains? cf/flags :nitrate) organization)]
-    (if in-org?
-      (nitrate-perms/allowed? :send-invitations
-                              {:org-perms {:owner-id    (:owner-id organization)
-                                           :permissions (:permissions organization)}
-                               :profile-id profile-id
-                               :team-perms team-permissions})
-      (or (:is-owner team-permissions)
-          (:is-admin team-permissions)))))
+  (nitrate-perms/can-send-invitations?
+   {:nitrate-enabled? (contains? cf/flags :nitrate)
+    :organization organization
+    :profile-id profile-id
+    :team-permissions team-permissions}))
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 

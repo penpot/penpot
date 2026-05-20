@@ -144,15 +144,11 @@
               (fn [teams]
                 (let [team        (d/seek #(= (:id %) team-id) teams)
                       org         (:organization team)
-                      in-org?     (and (contains? cf/flags :nitrate) org)
-                      can-invite? (if in-org?
-                                    (nitrate-perms/allowed? :send-invitations
-                                                            {:org-perms {:owner-id    (:owner-id org)
-                                                                         :permissions (:permissions org)}
-                                                             :profile-id profile-id
-                                                             :team-perms (:permissions team)})
-                                    (or (boolean (dm/get-in team [:permissions :is-owner]))
-                                        (boolean (dm/get-in team [:permissions :is-admin]))))]
+                      can-invite? (nitrate-perms/can-send-invitations?
+                                   {:nitrate-enabled? (contains? cf/flags :nitrate)
+                                    :organization org
+                                    :profile-id profile-id
+                                    :team-permissions (:permissions team)})]
                   (rx/of (teams-fetched teams)
                          (if can-invite?
                            (modal/show {:type :invite-members

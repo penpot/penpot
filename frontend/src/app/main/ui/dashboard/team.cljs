@@ -87,13 +87,10 @@
         invitations-section? (= section :dashboard-team-invitations)
         webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)
-        can-invite?          (if profile
-                               (dnt/can-send-invitations?
-                                {:organization (:organization team)
-                                 :profile-id (:id profile)
-                                 :team-permissions permissions})
-                               (or (:is-owner permissions)
-                                   (:is-admin permissions)))
+        can-invite?          (dnt/can-send-invitations?
+                              {:organization (:organization team)
+                               :profile-id (:id profile)
+                               :team-permissions permissions})
         invitations          (:invitations team)
 
         on-invite-member
