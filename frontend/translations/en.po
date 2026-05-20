@@ -9550,3 +9550,7 @@ msgstr "You are not allowed to delete teams that are part of %s organization. If
 
 msgid "dashboard.no-permission-move-team.message"
 msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "You do not have permission to invite people to join or to edit or delete invitations in this team."
+

@@ -9,7 +9,8 @@
 (def ^:private defaults
   {:create-teams "any"
    :delete-teams "onlyOwners"
-   :move-teams "always"})
+   :move-teams "always"
+   :send-invitations "ownersAndAdmins"})
 
 (defn- can-create-team?
   [{:keys [is-org-owner? permission-value]}]
@@ -36,13 +37,27 @@
     (true? target-org-same-owner?)
     :else false))
 
+(defn- can-send-invitations?
+  [{:keys [permission-value team-perms]}]
+  (cond
+    (= permission-value "ownersAndAdmins")
+    (or (boolean (:is-owner team-perms))
+        (boolean (:is-admin team-perms)))
+
+    (= permission-value "owners")
+    (boolean (:is-owner team-perms))
+
+    :else false))
+
 (def ^:private action-rules
   {:create-team {:permission-key :create-teams
                  :check-fn       can-create-team?}
    :delete-team {:permission-key :delete-teams
                  :check-fn       can-delete-team?}
    :move-team {:permission-key :move-teams
-               :check-fn       can-move-team?}})
+               :check-fn       can-move-team?}
+   :send-invitations {:permission-key :send-invitations
+                      :check-fn       can-send-invitations?}})
 
 (defn- normalize-org-permissions
   [org-perms]
