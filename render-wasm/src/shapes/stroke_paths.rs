@@ -33,7 +33,7 @@ pub fn stroke_to_path(
         paint.set_stroke_width(stroke.width * 2.0);
     }
 
-    let mut stroke_outline = skia::Path::default();
+    let mut stroke_outline = skia::PathBuilder::new();
     let success = skia::path_utils::fill_path_with_paint(
         &transformed_shape_path,
         &paint,
@@ -45,6 +45,8 @@ pub fn stroke_to_path(
     if !success {
         return None;
     }
+
+    let mut stroke_outline = stroke_outline.detach();
 
     // For inner/outer strokes, use boolean ops to clip
     // the 2×-width stroke outline to the correct region.
