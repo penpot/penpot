@@ -101,6 +101,17 @@
     :mod-typography
     :del-typography})
 
+(def ^:private token-change-types
+  #{:set-tokens-lib
+    :set-token
+    :set-token-set
+    :set-token-theme
+    :set-active-token-themes
+    :rename-token-set-group
+    :move-token-set
+    :move-token-set-group
+    :set-base-font-size})
+
 (def ^:private file-change-types
   #{:add-obj
     :mod-obj
@@ -111,6 +122,7 @@
 (defn- library-change?
   [{:keys [type] :as change}]
   (or (contains? library-change-types type)
+      (contains? token-change-types type)
       (contains? file-change-types type)))
 
 ;; If features are specified from params and the final feature
