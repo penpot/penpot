@@ -189,7 +189,7 @@
        [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:? [:& verify-token-page* {:route route}]]
+       [:? [:> verify-token-page* {:route route}]]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]
