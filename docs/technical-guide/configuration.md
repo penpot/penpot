@@ -171,13 +171,14 @@ PENPOT_OIDC_CLIENT_ID: <client-id>
 
 # Mainly used for auto discovery the openid endpoints
 PENPOT_OIDC_BASE_URI: <uri>
-PENPOT_OIDC_CLIENT_SECRET: <client-id>
+PENPOT_OIDC_CLIENT_SECRET: <client-secret>
 
 # Optional backend variables, used mainly if you want override; they are
 # autodiscovered using the standard openid-connect mechanism.
 PENPOT_OIDC_AUTH_URI: <uri>
 PENPOT_OIDC_TOKEN_URI: <uri>
 PENPOT_OIDC_USER_URI: <uri>
+PENPOT_OIDC_JWKS_URI: <uri>
 
 # Optional list of roles that users are required to have. If no role
 # is provided, roles checking  disabled.
@@ -187,6 +188,27 @@ PENPOT_OIDC_ROLES: "role1 role2"
 # not provided, the roles checking will be disabled.
 PENPOT_OIDC_ROLES_ATTR:
 ```
+
+<p class="advice">
+For self-hosted and containerized deployments, the autodiscovered OIDC endpoints are
+not always enough. Some providers expose browser-facing endpoints through a public
+hostname while the Penpot backend must reach the same provider through an
+internal/container-resolvable hostname. In that case, explicitly set the OIDC endpoint
+overrides above so the browser can use the public authorization endpoint while the
+backend uses reachable token, userinfo, and JWKS endpoints.
+</p>
+
+If the backend needs to contact the OIDC provider through a hostname not already allowed
+by SSRF protection, add it to:
+
+```bash
+# Backend
+# Space separated list of allowed hosts
+PENPOT_SSRF_ALLOWED_HOSTS: "<internal-provider-host> <public-provider-host>"
+```
+
+This is commonly required when the provider is reachable from the browser via a public
+URL but from the backend via a different internal hostname.
 <br />
 
 __Since version 1.6.0__
