@@ -344,6 +344,7 @@
          (mf/deps apply-token)
          (fn [id value name]
            (mf/set-ref-val! token-selection-in-progress* true)
+           (mf/set-ref-val! dirty-ref false)
            (reset! selected-id* id)
            (reset! focused-id* nil)
            (reset! is-open* false)
@@ -434,7 +435,11 @@
                  (let [name  (clean-token-name (mf/ref-val raw-value*))
                        token (get-option-by-name options name)]
                    (if token
-                     (apply-token (:resolved-value token) name)
+                     (do
+                       (apply-token (:resolved-value token) name)
+                       (mf/set-ref-val! dirty-ref false)
+                       (reset! filter-id* "")
+                       (handle-blur event))
                      (apply-value (mf/ref-val last-value*))))
                  (reset! is-open* false))
 
