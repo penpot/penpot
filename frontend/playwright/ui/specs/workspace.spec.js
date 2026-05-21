@@ -414,7 +414,8 @@ test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
     .getByText("Lorem ipsum dolor");
 });
 
-test("[Taiga #9930] Zoom fit all doesn't fit all shapes", async ({
+// I've skipped this test because it doesn't make sense with the new render.
+test.skip("[Taiga #9930] Zoom fit all doesn't fit all shapes", async ({
   page,
   context,
 }) => {

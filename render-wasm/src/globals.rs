@@ -130,7 +130,6 @@ pub extern "C" fn clean_up() -> Result<()> {
     // Cancel the current animation frame if it exists so
     // it won't try to render without context
     let render_state = get_render_state();
-    render_state.cancel_animation_frame();
     render_state.prepare_context_loss_cleanup();
     unsafe { DESIGN_STATE = std::ptr::null_mut() }
     mem::free_bytes()?;
