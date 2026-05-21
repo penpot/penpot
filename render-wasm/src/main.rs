@@ -409,6 +409,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn has_shape(a: u32, b: u32, c: u32, d: u32) -> Result<bool> {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        return Ok(state.has_shape(id));
+    });
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);

@@ -438,6 +438,19 @@
               (aget buffer 2)
               (aget buffer 3)))))
 
+(defn has-shape
+  [id]
+  (when wasm/context-initialized?
+    (let [buffer (uuid/get-u32 id)
+
+          result
+          (h/call wasm/internal-module "_has_shape"
+                  (aget buffer 0)
+                  (aget buffer 1)
+                  (aget buffer 2)
+                  (aget buffer 3))]
+      (= result 1))))
+
 (defn set-shape-text-content
   "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
   [shape-id content]
@@ -1262,6 +1275,15 @@
         (perf/end-measure "set-object")
         {:thumbnails pending_thumbnails
          :full pending_full}))))
+
+;; Check if the shape is already in the wasm memory
+;; if it's not it will copy it into the memory
+(defn assert-shape
+  [shape]
+  (when wasm/context-initialized?
+    (when-not (has-shape (:id shape))
+      (set-object shape))
+    (use-shape (:id shape))))
 
 (defn- update-text-layouts
   "Synchronously update text layouts for all shapes and send rect updates
@@ -2104,7 +2126,7 @@
 (defn calculate-position-data
   [shape]
   (when wasm/context-initialized?
-    (use-shape (:id shape))
+    (assert-shape shape)
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)
           offset (-> (h/call wasm/internal-module "_calculate_position_data")
