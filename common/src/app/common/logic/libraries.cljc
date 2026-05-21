@@ -20,6 +20,7 @@
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -2086,19 +2087,40 @@
    displacement (x/y).
    For :selrect we compare width/height only;
    for :points we normalise each vector so the first point is the
-   origin before comparing."
+   origin before comparing.
+   For :content on path shapes we compare the bounding-box width/height
+   of the path segments, again ignoring absolute position.
+
+   Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
+   exact `=` because `previous-shape` here may carry sub-pixel drift from
+   interactive transform modifiers (e.g. an alt-drag duplicate of a
+   variant whose children are component instances). Without tolerance
+   this guard would miss equivalent geometries and let the `:else` branch
+   in `update-attrs-on-switch` carry stale `:selrect`/`:points` from the
+   pre-switch shape onto the freshly instantiated target."
   [shape origin-shape attr]
   (or (and (= attr :selrect)
-           (= (-> shape :selrect :width)  (-> origin-shape :selrect :width))
-           (= (-> shape :selrect :height) (-> origin-shape :selrect :height)))
+           (mth/close? (-> shape :selrect :width)  (-> origin-shape :selrect :width))
+           (mth/close? (-> shape :selrect :height) (-> origin-shape :selrect :height)))
       (and (= attr :points)
            (let [normalize-pts (fn [pts]
                                  (when (seq pts)
                                    (let [f (first pts)]
-                                     (mapv #(gpt/subtract % f) pts))))]
-             (= (normalize-pts (get shape :points))
-                (normalize-pts (get origin-shape :points)))))))
-
+                                     (mapv #(gpt/subtract % f) pts))))
+                 a (normalize-pts (get shape :points))
+                 b (normalize-pts (get origin-shape :points))]
+             (and (= (count a) (count b))
+                  (every? identity (map gpt/close? a b)))))
+      (and (= attr :content)
+           (cfh/path-shape? shape)
+           (let [ca (:content shape)
+                 cb (:content origin-shape)]
+             (and (some? ca) (some? cb)
+                  (let [selrect-a (segment/content->selrect ca)
+                        selrect-b (segment/content->selrect cb)]
+                    (and (some? selrect-a) (some? selrect-b)
+                         (mth/close? (:width selrect-a) (:width selrect-b))
+                         (mth/close? (:height selrect-a) (:height selrect-b)))))))))
 
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
