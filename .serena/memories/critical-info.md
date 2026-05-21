@@ -12,6 +12,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Commit only when explicitly asked. Commit/PR format + changelog: `mem:workflow/creating-commits`, `mem:workflow/creating-prs`.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
+- Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
 
 # Project modules
 
@@ -29,8 +30,10 @@ This is a monorepo. Principles that apply to one module do *not* generally apply
 
 # Low-centrality project paths
 
-- `docker/` contains devenv related code, not needed unless specifically instructed. 
-   More info in docs/technical-guide if instructed to work on this.
+- `docker/` contains devenv related code, not needed unless specifically instructed.
+   When working on devenv startup, compose layout, instance config (`defaults.env`),
+   tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
+   `*-devenv` commands, read `mem:devenv/core`.
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
 
