@@ -470,7 +470,11 @@
 
                  (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
-                       new-val (increment current-value step min max)]
+                       eff-step      (cond
+                                       (kbd/shift? event) (* step 10)
+                                       (kbd/alt? event)   (* step 0.1)
+                                       :else              step)
+                       new-val       (increment current-value eff-step min max)]
                    (dom/prevent-default event)
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))))
@@ -483,7 +487,11 @@
 
                  (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
-                       new-val (decrement current-value step min max)]
+                       eff-step      (cond
+                                       (kbd/shift? event) (* step 10)
+                                       (kbd/alt? event)   (* step 0.1)
+                                       :else              step)
+                       new-val       (decrement current-value eff-step min max)]
                    (dom/prevent-default event)
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))))))))
