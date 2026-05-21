@@ -137,6 +137,8 @@
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
    [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-dash {:optional true} ::sm/safe-number]
+   [:stroke-gap {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}
     [::sm/one-of #{:center :inner :outer}]]
    [:stroke-cap-start {:optional true}
