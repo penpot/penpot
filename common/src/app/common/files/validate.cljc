@@ -704,7 +704,8 @@
 
 (defn- get-orphan-shapes
   [{:keys [objects] :as page}]
-  (let [xf (comp (map #(contains? objects (:parent-id %)))
+  (let [xf (comp (filter #(and (some? (:parent-id %))
+                               (not (contains? objects (:parent-id %)))))
                  (map :id))]
     (into [] xf (vals objects))))
 
