@@ -8371,6 +8371,10 @@ msgstr "%s sets activos"
 msgid "errors.tokens.number-too-large"
 msgstr "Valor de token no valido. El valor resuelto es muy grande: %s"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:60
+msgid "errors.tokens.name-collision"
+msgstr "El grupo de %s colisiona con un token del mismo nombre en otro set activo."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "errors.tokens.opacity-range"
 msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
