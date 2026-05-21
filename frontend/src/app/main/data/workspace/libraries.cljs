@@ -1162,7 +1162,7 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:files library-id :synced-at] (ct/now))
+         (d/update-in-when state [:files library-id] assoc :synced-at (ct/now))
          state))
 
      ptk/WatchEvent
