@@ -95,4 +95,5 @@
 /.idea
 /.claude
 /.playwright-mcp
+/docker/devenv/instances/
 /tools/__pycache__

@@ -18,13 +18,12 @@ services:
     container_name: "${PENPOT_MAIN_CONTAINER_NAME}"
     stop_signal: SIGINT
 
+    # postgres / minio / minio-setup live in the penpotdev-infra compose
+    # project and cannot be referenced via depends_on across projects.
+    # manage.sh waits for infra readiness before bringing main up.
     depends_on:
-      postgres:
-        condition: service_started
       redis:
         condition: service_started
-      minio-setup:
-        condition: service_completed_successfully
 
     volumes:
       - "user_data:/home/penpot/"
@@ -83,6 +82,7 @@ services:
       - PENPOT_OBJECTS_STORAGE_S3_BUCKET=${PENPOT_OBJECTS_STORAGE_S3_BUCKET}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - PENPOT_BACKEND_WORKER=${PENPOT_BACKEND_WORKER}
       - PENPOT_TMUX_SESSION=${PENPOT_TMUX_SESSION}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
 
@@ -91,9 +91,7 @@ services:
       - SERENA_UPDATE_VERSION=1.5.0
 
     networks:
-      default:
-        aliases:
-          - main
+      - default
 
   redis:
     image: valkey/valkey:8.1
@@ -105,6 +103,4 @@ services:
       - "valkey_data:/data"
 
     networks:
-      default:
-        aliases:
-          - redis
+      - default

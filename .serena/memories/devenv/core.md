@@ -1,48 +1,69 @@
 # Devenv startup and configuration
 
-Compose-based development environment under `docker/devenv/`, driven by `manage.sh`.
+Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + MinIO; each instance has its own `main` container, Valkey, source checkout, tmux session.
 
-## Source-of-truth layout
+## Compose project layout
 
-- `docker/devenv/defaults.env`: single source of truth for devenv config. Loaded by `manage.sh`'s simple env-file parser and by `docker compose --env-file`. Holds `COMPOSE_PROJECT_NAME`, container names (`PENPOT_MAIN_CONTAINER_NAME`, `PENPOT_VALKEY_CONTAINER_NAME`, `PENPOT_VALKEY_HOSTNAME`), runtime config that is passed into the container env, every published host port, Serena host ports, tmux session/attach defaults. `manage.sh` aborts if the file is unreadable.
-- `backend/scripts/_env`: backend-internal defaults only — `PENPOT_*_SHARED_KEY`, `PENPOT_SECRET_KEY`, `PENPOT_FLAGS`, deletion/upload sizes, `PENPOT_NITRATE_BACKEND_URI`, `JAVA_OPTS`, the `setup_minio` function. Never duplicates anything in `defaults.env`.
-- `docker/devenv/docker-compose.infra.yml`: shared services — `postgres`, `minio`, `minio-setup`, `mailer`, `ldap`. Attached to external network `penpot_shared`.
-- `docker/devenv/docker-compose.main.yml`: main devenv container plus `redis` (valkey). Same network. Pure `${VAR}` references (no inline `:-` defaults) — missing var = compose fails.
+- `penpotdev-infra`: shared `postgres`, `minio`, `minio-setup`, `mailer`, `ldap`. File: `docker-compose.infra.yml`.
+- `penpotdev-wsN` (N=0,1,…): per-instance `main` + `redis` (Valkey). File: `docker-compose.main.yml`. ws0 binds `$PWD`; ws1+ bind clones at `~/.penpot/penpot_workspaces/wsN/`.
+- All projects join external network `penpot_shared`. Created idempotently by `ensure-devenv-network`, never removed by lifecycle commands.
+
+## Source-of-truth files
+
+- `docker/devenv/defaults.env`: ws0 baseline — container/volume names, runtime env, published host ports, tmux defaults. `manage.sh` aborts if unreadable.
+- `docker/devenv/instances/wsN.env` (N≥1): auto-generated per reconciler pass. Overrides project name, container names, volume names, host ports (offset `10000·N`), `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_BACKEND_WORKER=false`, `PENPOT_SOURCE_PATH`. Gitignored.
+- `backend/scripts/_env`: backend-internal only — secret keys, `PENPOT_FLAGS` (with `enable-backend-worker` gated on `PENPOT_BACKEND_WORKER`), `JAVA_OPTS`, `setup_minio()`. Never duplicates `defaults.env`.
+- Compose files use pure `${VAR}` substitution; missing var = compose fails.
 
 ## Invariants
 
-- Published ports are host-side only. Compose maps `${PENPOT_*_PORT}:<fixed internal port>` so parallel instances can offset host ports while container-local services keep their normal devenv ports. Do not pass host-side port offsets into processes that expect container-local ports.
-- Volume keys in compose are literal (`user_data`, `valkey_data`). Docker prefixes them with `COMPOSE_PROJECT_NAME` to form the actual volume names.
-- External network `penpot_shared` is created idempotently by `manage.sh ensure-devenv-network`; `drop-devenv` does **not** remove it.
-- `PENPOT_SOURCE_PATH` is set by `manage.sh` to `$PWD` and bind-mounted as `/home/penpot/penpot`. Not in `defaults.env` because its value is dynamic.
-- `CURRENT_USER_ID=$(id -u)` is exported by `manage.sh` and passed as `EXTERNAL_UID` so file ownership inside the container matches the host.
-- `JAVA_OPTS` exported at the top of `manage.sh` (line ~28) is **shadowed inside the container** by `_env`, which reassigns it unconditionally to a much larger JVM config. The `-e JAVA_OPTS=$JAVA_OPTS` flag that `run-devenv-shell` / `run-devenv-isolated-shell` / `build` pass into `docker run`/`exec` only matters for processes that do not source `_env`.
+- `infra-compose` / `instance-compose` wrap `docker compose` with `env -i`. Without it, sourcing `defaults.env` into the shell at startup would shadow per-instance overlay `--env-file` (Compose gives shell precedence over `--env-file`).
+- Volume names pinned via `name:` (PENPOT_*_VOLUME), decoupled from the compose project name. ws1+ overlays set distinct per-instance volume names; ws0 keeps the historical `penpotdev_*` physical names so project renames never require data migration.
+- Network aliases (`- main`, `- redis`) are not declared in main.yml. Compose's auto-service-alias still registers `redis` on the shared network, so DNS for `redis` is non-deterministic with multiple instances. Backend uses `PENPOT_REDIS_URI=redis://penpot-devenv-wsN-valkey/0` (container_name) instead.
+- No cross-project `depends_on`. `manage.sh ensure-infra-up` `docker wait`s on the `minio-setup` one-shot.
+- `JAVA_OPTS` in `manage.sh` is shadowed inside the container by `_env`. The `-e JAVA_OPTS=...` flag only matters for processes that don't source `_env`.
 
-## MinIO provisioning split
+## Worker policy
 
-- Shared user/policy: provisioned once by the `minio-setup` one-shot service in the infra compose file. Alias-set loop bounded to 30 attempts. `main` depends on `service_completed_successfully`.
-- Per-process bucket creation: `setup_minio()` in `_env`. Idempotent (`mc mb -p`). Short-circuits if `PENPOT_OBJECTS_STORAGE_BACKEND != s3`.
+Backend workers run only on ws0. Task queue is shared (one Postgres DB) but Pub/Sub is per-instance Valkey: a task triggered from ws0's UI must complete on ws0 so its notification reaches the originating WebSocket. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ overlays set it to false. Known consequence: async tasks triggered from a ws1+ tab won't see completion notifications.
 
-## Tmux session lifecycle
+## Port layout
 
-- `docker/devenv/files/start-tmux.sh` is idempotent at the session level. Reads `PENPOT_TMUX_SESSION` (default `penpot`) and `PENPOT_TMUX_ATTACH` (default `true`). If the session exists it attaches or exits depending on `PENPOT_TMUX_ATTACH`; otherwise runs `./scripts/setup` for frontend/exporter and creates the session with frontend-watch / storybook / exporter / backend / optional MCP / optional Serena windows.
-- MCP and Serena windows are added only on session create (gated by `enable-mcp` in `PENPOT_FLAGS` and `SERENA_ENABLED=true`). `run-devenv-agentic` against an existing non-agentic session attaches without adding them — kill the session first to recreate.
-- `manage.sh run-devenv`: ensures containers, then invokes start-tmux.sh interactively (attaches).
-- `manage.sh attach-devenv`: pure attach — fails fast if devenv isn't running or session doesn't exist. Never starts containers. Takes no arguments.
+Container-internal ports fixed; host side offset `10000·N`.
 
-## Lifecycle commands
+| ws0 | ws1 | wsN | container | role |
+|---|---|---|---|---|
+| 3449 | 13449 | 3449+10000·N | 3449 | public HTTPS (Caddy; `/mcp/ws` same-origin) |
+| 3449/udp | 13449/udp | … | 3449/udp | HTTP/3 |
+| 4401 | 14401 | … | 4401 | MCP HTTP stream |
+| 4403 | 14403 | … | 4403 | MCP REPL |
+| 14281 | 24281 | … | 14281 | Serena MCP |
+| 14282 | 24282 | … | 24282 | Serena dashboard |
 
-`manage.sh` thin wrappers around `devenv-compose` (which adds `--env-file defaults.env` and both compose files):
-- `start-devenv` / `create-devenv`: pull image if missing, ensure network, `up -d` / `create`.
-- `stop-devenv`, `log-devenv`: as expected.
-- `drop-devenv`: `down -v` (removes containers + named volumes) and prunes the devenv image. Preserves `penpot_shared`.
-- `run-devenv-shell`: starts containers if needed, `docker exec -ti` as `penpot`.
-- `run-devenv-isolated-shell` / `build`: one-shot `docker run` against `${COMPOSE_PROJECT_NAME}_user_data` volume + repo bind mount. Not driven by compose.
+Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes: mailer 1080, ldap 10389/10636 (singletons, not offset).
 
-## Exporter env
+## Tmux + MCP routing
 
-`exporter/scripts/run` and `wait-and-start.sh` source `backend/scripts/_env`, then `_env.local` if present. Backend-style env reaches the exporter via that chain.
+`docker/devenv/files/start-tmux.sh` is session-level idempotent. Reads `PENPOT_TMUX_SESSION` and `PENPOT_TMUX_ATTACH`. If the session exists it attaches or exits; otherwise creates 4 base windows (frontend watch / storybook / exporter / backend) plus optional `mcp` (when `enable-mcp` in `PENPOT_FLAGS`) and `serena` (when `SERENA_ENABLED=true`). The conditional windows are added only on create — to switch from non-agentic to agentic, kill the session first.
 
-## MCP routing in parallel devenvs
+MCP plugin routing is same-origin: frontend uses `<public-uri>/mcp/ws`, per-instance nginx proxies to MCP port 4401 in-container. For the plugin↔MCP server wiring (how the browser plugin discovers the URL, the in-memory connection registry, why DB-mediated routing isn't needed), see `mem:mcp/core`.
 
-The normal MCP path is same-origin: frontend computes `<public-uri>/mcp/ws`, the plugin opens that WebSocket, and the instance-local nginx proxies it to the MCP server inside the same main container. This depends on fixed internal ports; per-instance overlays should only change the published host ports and `PENPOT_PUBLIC_URI`.
+## Workspace orchestration (ws1+)
+
+`sync-workspace wsN`:
+1. `assert-clean-git-state` — refuses on `.git/{rebase-apply,rebase-merge,MERGE_HEAD,CHERRY_PICK_HEAD,index.lock}`.
+2. `rsync -a --delete $PWD/.git/ $workspace/.git/`.
+3. `git ls-files -z --cached --others --exclude-standard` → `rsync --files-from` (Git is the authority on tracked files; rsync's gitignore filter would drop committed files under gitignored parents like `.clj-kondo/config.edn`).
+4. `git switch -C "wsN/<current-branch>"` inside the workspace.
+
+No `--delete` on the working-tree pass: gitignored caches in the workspace survive. Workspace dir + named volumes survive `compose down`.
+
+## CLI surface
+
+- `run-devenv-agentic [--n-instances N] [--no-mcp] [--no-serena] [--serena-context CTX]`: desired-state reconciler. Brings the running set to exactly `{ws0..ws(N-1)}`. Missing → sync + env-file + `compose up` + detached tmux. Extra → `compose down` highest-first (never `-v`). Running-in-target → left alone. `--n-instances 0` is rejected.
+- `run-devenv`: legacy alias, ws0 non-agentic attached.
+- `attach-devenv [--instance 0|wsN|N]`: pure attach. Fails fast if instance/session missing.
+- `run-devenv-shell [--instance 0|wsN|N] [cmd...]`: bash in target instance.
+- `start-devenv` / `stop-devenv` / `log-devenv` / `drop-devenv`: operate on infra + all parallel instances. `drop-devenv` never removes volumes.
+
+`exporter/scripts/run` and `wait-and-start.sh` source `backend/scripts/_env` then `_env.local` if present.
