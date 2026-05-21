@@ -9224,7 +9224,7 @@ msgid "subscription.banner.create-org-info"
 msgstr "Crea una organización y descubre exactamente cómo funciona Enterprise. Establece normas, gestiona tus equipos y disfruta de un nuevo nivel de control sobre tu flujo de trabajo de diseño."
 
 msgid "dashboard.no-permission-create-team.message"
-msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario de la organización."
 
 msgid "dashboard.no-org-allows-create-team.message"
 msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
@@ -9233,7 +9233,11 @@ msgid "dashboard.select-org-modal.permission-info"
 msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
 
 msgid "dashboard.no-permission-delete-team.message"
-msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario de la organización."
 
 msgid "dashboard.no-permission-move-team.message"
-msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario de la organización."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "No tienes permiso para invitar a personas a unirse ni para editar o eliminar invitaciones en este equipo."
+

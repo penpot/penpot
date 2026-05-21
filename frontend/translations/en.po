@@ -9545,7 +9545,7 @@ msgid "subscription.banner.create-org-info"
 msgstr "Create an organization and see exactly how Enterprise works. Set rules, manage your teams and discover a new level of control over your design workflow."
 
 msgid "dashboard.no-permission-create-team.message"
-msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-org-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
@@ -9554,7 +9554,11 @@ msgid "dashboard.select-org-modal.permission-info"
 msgstr "Here you find all your organizations where you are allowed to create or add teams."
 
 msgid "dashboard.no-permission-delete-team.message"
-msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-permission-move-team.message"
-msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the organization's owner."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "You do not have permission to invite people to join or to edit or delete invitations in this team."
+

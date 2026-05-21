@@ -77,7 +77,7 @@
 
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
-  (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
+  (apply-modifiers-to-objects objects (select-keys modifiers selected)))
 
 (defn- apply-wasm-modifiers-to-ids
   "Like `apply-modifiers-to-objects`, but only updates ids in `id-set`. During WASM
@@ -87,13 +87,15 @@
   (if (or (empty? wasm-modifiers) (empty? id-set))
     objects
     (reduce
-     (fn [objs pair]
-       (let [[id t] pair]
-         (if (and (contains? id-set id) (contains? objs id))
+     (fn [objs id]
+       (if-let [t (get wasm-modifiers id)]
+         (if (contains? objs id)
            (update objs id gsh/apply-transform t)
-           objs)))
+           objs)
+         objs))
      objects
-     wasm-modifiers)))
+     id-set)))
+
 
 (defn- outline-wasm-source-ids
   "Superset of shape ids that `shape-outlines` may look up (all outline usages here)."
@@ -142,7 +144,6 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
         wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
-
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
         file-id           (get file :id)
@@ -162,7 +163,6 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
-
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -370,6 +370,7 @@
         offset-y (if selecting-first-level-frame?
                    (:y first-shape)
                    (:y selected-frame))
+
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))
@@ -495,7 +496,7 @@
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
-                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
@@ -613,27 +614,26 @@
                                                 :ref text-editor-ref}]))
 
        (when show-frame-outline?
-         (let [outlined-frame-id
-               (->> @hover-ids
-                    (filter #(cfh/frame-shape? (get base-objects %)))
-                    (remove selected)
-                    (last))
+         (let [outlined-frame-id (->> @hover-ids
+                                      (filter #(cfh/frame-shape? (get base-objects %)))
+                                      (remove selected)
+                                      (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
-            [:& outline/shape-outlines
+            [:> outline/shape-outlines*
              {:objects objects-for-outlines
               :hover #{outlined-frame-id}
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline.blurrable
-               [:& outline/shape-outlines
+               [:> outline/shape-outlines*
                 {:objects objects-for-outlines
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
-         [:& outline/shape-outlines
+         [:> outline/shape-outlines*
           {:objects objects-for-outlines
            :selected selected
            :hover #{(:id @hover) @frame-hover}
@@ -753,7 +753,7 @@
            :focus focus}])
 
        (when show-snap-distance?
-         [:& snap-distances/snap-distances
+         [:> snap-distances/snap-distances*
           {:layout layout
            :zoom zoom
            :transform transform
