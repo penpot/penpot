@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.tool-toolbar.tool-toolbar
   (:require-macros [app.main.style :as stl])
@@ -90,7 +90,7 @@
 (def grouped-tools
   {:shapes {:default-tool :rect
             :tools {:rect {:icon i/rectangle}
-                    :circle {:icon i/elipse}}}
+                    :circle {:icon i/ellipse}}}
    :free-draw {:default-tool :path
                :tools {:path {:icon i/path}
                        :curve {:icon i/curve}}}})
@@ -115,34 +115,39 @@
         menu-label   (group-menu-label group drawtool)
         selected     (boolean (is-selected-group group drawtool))
 
-        select-tool (mf/use-fn
-                     (fn [event]
-                       (let [tool (-> (dom/get-current-target event)
-                                      (dom/get-data "tool")
-                                      (keyword))]
-                         (reset! default-tool* tool)
-                         (on-select-tool event))))
+        select-tool
+        (mf/use-fn
+         (fn [event]
+           (let [tool (-> (dom/get-current-target event)
+                          (dom/get-data "tool")
+                          (keyword))]
+             (reset! default-tool* tool)
+             (on-select-tool event))))
 
-        on-display-menu (mf/use-fn
-                         (fn []
-                           (cancel-timer! close-timer*)
-                           (cancel-timer! open-timer*)
-                           (mf/set-ref-val!
-                            open-timer*
-                            (ts/schedule 350
-                                         #(do
-                                            (reset! open* true)
-                                            (mf/set-ref-val! open-timer* nil))))))
-        on-hide-menu (mf/use-fn
-                      (fn []
-                        (cancel-timer! open-timer*)
-                        (cancel-timer! close-timer*)
-                        (mf/set-ref-val!
-                         close-timer*
-                         (ts/schedule 350
-                                      #(do
-                                         (reset! open* false)
-                                         (mf/set-ref-val! close-timer* nil))))))]
+        on-display-menu
+        (mf/use-fn
+         (fn []
+           (cancel-timer! close-timer*)
+           (cancel-timer! open-timer*)
+           (mf/set-ref-val!
+            open-timer*
+            (ts/schedule 350
+                         #(do
+                            (reset! open* true)
+                            (mf/set-ref-val! open-timer* nil))))))
+
+        on-hide-menu
+        (mf/use-fn
+         (fn []
+           (cancel-timer! open-timer*)
+           (cancel-timer! close-timer*)
+           (mf/set-ref-val!
+            close-timer*
+            (ts/schedule 350
+                         #(do
+                            (reset! open* false)
+                            (mf/set-ref-val! close-timer* nil))))))]
+
     (mf/with-effect []
       (fn []
         (cancel-timer! open-timer*)
@@ -219,42 +224,48 @@
   {::mf/wrap [mf/memo]}
   [{:keys [layout]}]
   (let [selected-drawing-tool (mf/deref refs/selected-drawing-tool)
-        selected-edition (mf/deref refs/selected-edition)
-        plugins-enabled (features/active-feature? @st/state "plugins/runtime")
-        rulers-enabled       (mf/deref refs/rulers?)
-        toolbar-hidden       (mf/deref toolbar-hidden-ref)
-        read-only?    (mf/use-ctx ctx/workspace-read-only?)
-        display-plugins-manager (mf/use-fn
-                                 (fn []
-                                   (st/emit!
-                                    (ev/event {::ev/name "open-plugins-manager"
-                                               ::ev/origin "workspace:toolbar"})
-                                    (modal/show :plugin-management {}))))
-        toggle-debug-panel (mf/use-fn
-                            (mf/deps layout)
-                            (fn []
-                              (let [is-sidebar-closed (contains? layout :collapse-left-sidebar)]
-                                (when is-sidebar-closed
-                                  (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
-                                (st/emit!
-                                 (dw/remove-layout-flag :shortcuts)
-                                 (-> (dw/toggle-layout-flag :debug-panel)
-                                     (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
+        selected-edition      (mf/deref refs/selected-edition)
+        rulers-enabled        (mf/deref refs/rulers?)
+        toolbar-hidden        (mf/deref toolbar-hidden-ref)
 
-        on-interrupt     (mf/use-fn
-                          (fn []
-                            (st/emit! :interrupt (dw/clear-edition-mode))))
+        plugins-enabled  (features/active-feature? @st/state "plugins/runtime")
 
-        on-select-tool (mf/use-fn
-                        (fn [event]
-                          (let [tool (-> (dom/get-current-target event)
-                                         (dom/get-data "tool")
-                                         (keyword))]
-                            (st/emit! :interrupt (dw/clear-edition-mode))
+        read-only?       (mf/use-ctx ctx/workspace-read-only?)
 
-                            ;; Delay so anything that launched :interrupt can finish
-                            (ts/schedule 100
-                                         #(st/emit! (dw/select-for-drawing tool))))))
+        display-plugins-manager
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-plugins-manager"
+                                ::ev/origin "workspace:toolbar"})
+                     (modal/show :plugin-management {}))))
+
+        toggle-debug-panel
+        (mf/use-fn
+         (mf/deps layout)
+         (fn []
+           (let [is-sidebar-closed (contains? layout :collapse-left-sidebar)]
+             (when is-sidebar-closed
+               (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+             (st/emit! (dw/remove-layout-flag :shortcuts)
+                       (-> (dw/toggle-layout-flag :debug-panel)
+                           (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
+
+        on-interrupt
+        (mf/use-fn
+         (fn []
+           (st/emit! :interrupt (dw/clear-edition-mode))))
+
+        on-select-tool
+        (mf/use-fn
+         (fn [event]
+           (let [tool (-> (dom/get-current-target event)
+                          (dom/get-data "tool")
+                          (keyword))]
+             (st/emit! :interrupt (dw/clear-edition-mode))
+
+             ;; Delay so anything that launched :interrupt can finish
+             (ts/schedule 100
+                          #(st/emit! (dw/select-for-drawing tool))))))
 
         toggle-toolbar
         (mf/use-fn
