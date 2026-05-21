@@ -48,7 +48,10 @@
        (let [{:keys [enter leave]} @sidebar-hover-queue
 
              enter (set/difference enter leave)
-             leave (set/difference leave enter)]
+             leave (set/difference leave enter)
+             search-match (get-in @st/state [:workspace-local :search-match-highlight])
+             leave (cond-> leave
+                     (some? search-match) (disj search-match))]
 
          (reset! sidebar-hover-queue {:enter #{} :leave #{}})
          (reset! sidebar-hover-pending? false)
