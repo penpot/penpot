@@ -70,18 +70,21 @@ var penpotFlags = "enable-mcp";
 **Running the DevEnv in Agentic Mode.** Start the DevEnv in agentic mode with:
 
 ```bash
-./manage.sh run-devenv-agentic
+./manage.sh run-devenv-agentic                    # ws0 only
+./manage.sh run-devenv-agentic --n-instances 3    # ws0, ws1, ws2
 ```
 
-> **Note:** the MCP and Serena tmux windows are only added when the tmux
-> session is created, not when an existing session is reattached. If you have
-> already run `./manage.sh run-devenv` (non-agentic) in the current devenv
-> container, the agentic command will just attach you to that session without
-> starting MCP or Serena. To switch to agentic mode, kill the existing session
-> first and rerun:
+Per-instance ports are offset by `10000 × N` (ws1's MCP at
+`http://localhost:14401/mcp`, Serena at `http://localhost:24281`, etc.). See
+the *Parallel workspaces* section in the [Dev environment guide](./devenv.md).
+
+> **Note:** the MCP and Serena tmux windows are only added when the session is
+> first created. If you've already run `./manage.sh run-devenv` (non-agentic)
+> in an instance, `run-devenv-agentic` just reattaches without starting them.
+> Kill the session first to recreate with the agentic windows:
 >
 > ```bash
-> docker exec penpot-devenv-main sudo -u penpot tmux kill-session -t penpot
+> docker exec penpot-devenv-ws0-main sudo -u penpot tmux kill-session -t penpot
 > ./manage.sh run-devenv-agentic
 > ```
 

@@ -12,6 +12,15 @@ export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 # PENPOT_DATABASE_*, PENPOT_REDIS_URI, PENPOT_OBJECTS_STORAGE_*, AWS_*) is owned by
 # docker/devenv/defaults.env and injected via the main service's env block.
 
+# Background worker flag is per-instance. Defaults to enabled (ws0); ws1+
+# overlays set PENPOT_BACKEND_WORKER=false so scheduled and async tasks only
+# run on ws0, keeping notification Pub/Sub bound to a single Valkey. See
+# mem:devenv/core for the rationale.
+__worker_flag=""
+if [[ "${PENPOT_BACKEND_WORKER:-true}" == "true" ]]; then
+    __worker_flag="enable-backend-worker"
+fi
+
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-login-with-password \
@@ -21,7 +30,7 @@ export PENPOT_FLAGS="\
        disable-login-with-github \
        disable-login-with-gitlab \
        disable-telemetry \
-       enable-backend-worker \
+       $__worker_flag \
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \

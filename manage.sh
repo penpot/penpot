@@ -26,7 +26,13 @@ done < "$DEVENV_DEFAULTS_FILE"
 unset __key __value
 
 # Source path for the workspace bind mount; consumed by docker-compose.main.yml.
+# ws0 binds the live repo at $PWD; ws1+ override this in their overlay env file.
 export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
+
+# Per-instance values like PENPOT_REDIS_URI must live in each instance's env
+# file (not in this shell), because docker compose's --env-file mechanism
+# lets a per-instance overlay override the baseline while the shell env
+# would otherwise shadow both for every project.
 
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
@@ -145,57 +151,245 @@ function ensure-devenv-network {
     docker network inspect "$DEVENV_NETWORK" >/dev/null 2>&1 || docker network create "$DEVENV_NETWORK" >/dev/null
 }
 
-function devenv-compose {
-    docker compose \
-        --env-file "$DEVENV_DEFAULTS_FILE" \
-        -f docker/devenv/docker-compose.infra.yml \
-        -f docker/devenv/docker-compose.main.yml \
-        "$@"
+# Compose-project plumbing for the parallel-workspaces layout.
+#
+# - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
+#   under project `penpotdev-infra`.
+# - Each runtime instance (ws0, ws1, ...) runs its own main + valkey under
+#   project `penpotdev-wsN`. ws0 uses only `defaults.env`; ws1+ additionally
+#   layer a generated overlay file under `docker/devenv/instances/`.
+# `env -i` strips the shell env before invoking docker compose so the
+# per-instance overlay --env-file actually overrides defaults.env. Without
+# stripping, the shell would still hold whatever values defaults.env was
+# sourced into at startup (PENPOT_MAIN_CONTAINER_NAME, etc.), and Docker
+# Compose's substitution gives the shell precedence over --env-file.
+# Only the values that genuinely need to be per-call (HOME/PATH for tooling,
+# CURRENT_USER_ID/PENPOT_SOURCE_PATH for the compose substitution) are
+# re-exported.
+function infra-compose {
+    env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
+        docker compose -p penpotdev-infra \
+            --env-file "$DEVENV_DEFAULTS_FILE" \
+            -f docker/devenv/docker-compose.infra.yml \
+            "$@"
+}
+
+function instance-compose {
+    local instance="$1"; shift
+    local source_path env_files
+    env_files=(--env-file "$DEVENV_DEFAULTS_FILE")
+    if [[ "$instance" == "ws0" ]]; then
+        source_path="$PWD"
+    else
+        source_path="$(workspace-path "$instance")"
+        env_files+=(--env-file "docker/devenv/instances/${instance}.env")
+    fi
+    env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
+        CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
+        PENPOT_SOURCE_PATH="$source_path" \
+        docker compose -p "penpotdev-${instance}" \
+            "${env_files[@]}" \
+            -f docker/devenv/docker-compose.main.yml \
+            "$@"
+}
+
+# Names of currently-running parallel instances (ws0, ws1, ...).
+function list-running-instances {
+    docker ps --format '{{.Label "com.docker.compose.project"}}' 2>/dev/null \
+        | sort -u \
+        | grep -oE '^penpotdev-ws[0-9]+$' \
+        | sed 's/^penpotdev-//' \
+        || true
 }
 
 function devenv-main-container {
-    devenv-compose ps -q main
+    local instance="${1:-ws0}"
+    instance-compose "$instance" ps -q main
 }
 
 function devenv-main-running {
-    local container=$(devenv-main-container)
+    local instance="${1:-ws0}"
+    local container
+    container=$(devenv-main-container "$instance")
     [[ -n "$container" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]]
+}
+
+# Bring shared infra up and block until minio-setup has provisioned the
+# shared MinIO user/policy. Idempotent: a second call when everything is
+# already up returns immediately.
+function ensure-infra-up {
+    infra-compose up -d
+    local setup_container
+    setup_container=$(infra-compose ps -aq minio-setup 2>/dev/null)
+    if [[ -n "$setup_container" ]]; then
+        docker wait "$setup_container" >/dev/null 2>&1 || true
+    fi
+}
+
+# Refuse to sync workspaces if the live repo is in a fragile Git state.
+# Copying a partial rebase/merge/cherry-pick into all workspaces would leave
+# every instance in the same broken state.
+function assert-clean-git-state {
+    local fragile=""
+    [ -d .git/rebase-apply ] && fragile="$fragile rebase-apply"
+    [ -d .git/rebase-merge ] && fragile="$fragile rebase-merge"
+    [ -f .git/MERGE_HEAD ]    && fragile="$fragile merge"
+    [ -f .git/CHERRY_PICK_HEAD ] && fragile="$fragile cherry-pick"
+    [ -f .git/index.lock ]    && fragile="$fragile index.lock"
+    if [[ -n "$fragile" ]]; then
+        echo "Live repo Git state is unsafe to copy into workspaces:$fragile" >&2
+        echo "Finish or abort the in-progress operation, then retry." >&2
+        return 1
+    fi
+}
+
+# Absolute path of the workspace directory for a non-ws0 instance.
+function workspace-path {
+    local instance="$1"
+    echo "$HOME/.penpot/penpot_workspaces/$instance"
+}
+
+# Generate (or refresh) the per-instance Compose env-file overlay. Idempotent;
+# safe to call on every reconciler pass.
+function write-instance-env {
+    local instance="$1"
+    if [[ "$instance" == "ws0" ]]; then
+        return 0
+    fi
+
+    if [[ ! "$instance" =~ ^ws([0-9]+)$ ]]; then
+        echo "write-instance-env: invalid instance '$instance'" >&2
+        return 1
+    fi
+    local n="${BASH_REMATCH[1]}"
+    local offset=$(( n * 10000 ))
+
+    local file="docker/devenv/instances/${instance}.env"
+    mkdir -p docker/devenv/instances
+    local workspace
+    workspace=$(workspace-path "$instance")
+    cat >"$file" <<EOF
+# Auto-generated by manage.sh for instance '$instance'.
+# Edits are overwritten on the next reconciler pass.
+
+COMPOSE_PROJECT_NAME=penpotdev-${instance}
+PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main
+PENPOT_VALKEY_CONTAINER_NAME=penpot-devenv-${instance}-valkey
+PENPOT_VALKEY_HOSTNAME=penpot-devenv-${instance}-valkey
+PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data
+PENPOT_VALKEY_DATA_VOLUME=penpotdev_${instance}_valkey_data
+
+PENPOT_PUBLIC_URI=https://localhost:$(( 3449 + offset ))
+PENPOT_REDIS_URI=redis://penpot-devenv-${instance}-valkey/0
+PENPOT_TMUX_SESSION=penpot
+
+PENPOT_PUBLIC_HTTP_PORT=$(( 3449 + offset ))
+PENPOT_MCP_SERVER_PORT=$(( 4401 + offset ))
+PENPOT_MCP_REPL_PORT=$(( 4403 + offset ))
+SERENA_EXTERNAL_PORT=$(( 14281 + offset ))
+SERENA_DASHBOARD_EXTERNAL_PORT=$(( 14282 + offset ))
+
+# Background workers run only on ws0 to keep async-task notifications bound
+# to a single Valkey Pub/Sub. See mem:devenv/core.
+PENPOT_BACKEND_WORKER=false
+
+# Workspace bind mount (computed in manage.sh too, but recorded here for
+# clarity when inspecting the env file).
+PENPOT_SOURCE_PATH=${workspace}
+EOF
+}
+
+# Seed (or re-seed) a workspace from the live repo, then switch it onto a
+# unique branch. Two-step sync:
+#   1. .git directory is rsync'd directly (so the workspace has its own
+#      clone with the developer's current commits / index).
+#   2. Working-tree files are enumerated by `git ls-files`, which is the
+#      only authoritative source for "what files belong in the working
+#      tree" (Git tracks files even when their parent directory matches
+#      a gitignore pattern, e.g. .clj-kondo/config.edn). Using rsync's
+#      gitignore filter directly misses those.
+# Gitignored caches already in the workspace (node_modules, target, etc.)
+# are left in place: no --delete on the working-tree pass.
+function sync-workspace {
+    local instance="$1"
+    if [[ "$instance" == "ws0" ]]; then
+        return 0
+    fi
+    assert-clean-git-state || return 1
+
+    local workspace
+    workspace=$(workspace-path "$instance")
+    mkdir -p "$workspace"
+
+    echo "[$instance] syncing workspace at $workspace ..."
+
+    # .git directory — direct mirror, including index, refs, hooks, etc.
+    rsync -a --delete "$PWD/.git/" "$workspace/.git/"
+
+    # Working-tree files: tracked + untracked-not-ignored. git ls-files
+    # speaks Git's actual semantics, including the "tracked overrides
+    # gitignore" rule. --files-from feeds the path list to rsync verbatim.
+    local files
+    files=$(mktemp)
+    git -C "$PWD" ls-files -z --cached --others --exclude-standard >"$files"
+    rsync -a --files-from="$files" --from0 "$PWD/" "$workspace/"
+    rm -f "$files"
+
+    (
+        cd "$workspace"
+        git switch -C "${instance}/${CURRENT_BRANCH}" >/dev/null
+    )
 }
 
 function start-devenv {
     pull-devenv-if-not-exists $@;
     ensure-devenv-network;
 
-    devenv-compose up -d;
+    ensure-infra-up
+    instance-compose ws0 up -d
 }
 
 function create-devenv {
     pull-devenv-if-not-exists $@;
     ensure-devenv-network;
 
-    devenv-compose create;
+    infra-compose create
+    instance-compose ws0 create
 }
 
 function stop-devenv {
-    devenv-compose stop -t 2;
+    local ws
+    for ws in $(list-running-instances); do
+        instance-compose "$ws" stop -t 2
+    done
+    infra-compose stop -t 2
 }
 
 function drop-devenv {
-    devenv-compose down -t 2 -v;
+    local ws
+    for ws in $(list-running-instances); do
+        # Never -v: data preservation rule.
+        instance-compose "$ws" down -t 2
+    done
+    infra-compose down -t 2
 
     echo "Clean old development image $DEVENV_IMGNAME..."
-    docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+    docker images $DEVENV_IMGNAME -q | xargs --no-run-if-empty docker rmi
 }
 
 function log-devenv {
-    devenv-compose logs -f --tail=50
+    # Tail ws0 by default; for multi-instance dev, attach explicitly per project.
+    instance-compose ws0 logs -f --tail=50
 }
 
 function run-devenv-tmux {
     local extra_env_args=()
+    local instance="ws0"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --instance)
+                instance="$(normalize-instance "$2")"; shift 2;;
             -e)
                 extra_env_args+=(-e "$2"); shift 2;;
             -e*)
@@ -206,68 +400,239 @@ function run-devenv-tmux {
         esac
     done
 
-    if ! devenv-main-running; then
-        start-devenv
-        echo "Waiting for containers fully start (5s)..."
-        sleep 5;
+    if ! devenv-main-running "$instance"; then
+        if [[ "$instance" == "ws0" ]]; then
+            start-devenv
+            echo "Waiting for containers fully start (5s)..."
+            sleep 5
+        else
+            echo "Instance '$instance' is not running; bring it up first with './manage.sh run-devenv-agentic --n-instances N'." >&2
+            return 1
+        fi
     fi
 
-    local container=$(devenv-main-container)
+    local container
+    container=$(devenv-main-container "$instance")
     docker exec -ti \
         "${extra_env_args[@]}" \
         "$container" sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
 }
 
+# Normalize an instance specifier ("0", "ws0", "1", "ws3", ...) to "wsN".
+function normalize-instance {
+    local raw="$1"
+    if [[ "$raw" =~ ^ws[0-9]+$ ]]; then
+        echo "$raw"
+    elif [[ "$raw" =~ ^[0-9]+$ ]]; then
+        echo "ws$raw"
+    else
+        echo "Invalid --instance value: '$raw' (expected 0|ws0|1|ws1|...)" >&2
+        return 1
+    fi
+}
 
+
+# Bring a single instance up: workspace sync (skipped for ws0), env-file
+# write (skipped for ws0), compose up, and detached tmux start with the
+# requested feature flags.
+function start-instance {
+    local instance="$1"
+    local enable_mcp="$2"
+    local enable_serena="$3"
+    local serena_context="$4"
+
+    if [[ "$instance" != "ws0" ]]; then
+        sync-workspace "$instance"
+        write-instance-env "$instance"
+    fi
+
+    instance-compose "$instance" up -d --no-deps main redis
+
+    # Wait briefly for main to be reachable; the tmux session lives inside.
+    local container deadline
+    container=$(devenv-main-container "$instance")
+    deadline=$(( SECONDS + 30 ))
+    while ! docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null | grep -q true; do
+        [[ $SECONDS -ge $deadline ]] && {
+            echo "[${instance}] main container did not reach Running within 30s" >&2
+            return 1
+        }
+        sleep 1
+    done
+
+    # Start the tmux session detached so the reconciler can proceed to the
+    # next instance without blocking on an interactive attach.
+    local tmux_env=(-e PENPOT_TMUX_ATTACH=false)
+    if [[ "$enable_mcp" == "true" ]]; then
+        tmux_env+=(-e PENPOT_FLAGS="${PENPOT_FLAGS:-} enable-mcp")
+    fi
+    if [[ "$enable_serena" == "true" ]]; then
+        tmux_env+=(-e SERENA_ENABLED=true -e SERENA_CONTEXT="$serena_context")
+    fi
+    docker exec -d "${tmux_env[@]}" "$container" \
+        sudo -EH -u penpot PENPOT_PLUGIN_DEV="${PENPOT_PLUGIN_DEV:-}" /home/start-tmux.sh
+}
+
+# Stop and remove one instance's containers without touching its volumes or
+# its on-disk workspace directory (rule: never wipe data).
+function stop-instance {
+    local instance="$1"
+    instance-compose "$instance" down -t 2
+}
+
+# Print per-instance URLs (Penpot UI, MCP stream endpoint, Serena, attach
+# command) for one instance.
+function print-instance-info {
+    local instance="$1"
+    local enable_mcp="$2"
+    local enable_serena="$3"
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    local offset=$(( n * 10000 ))
+    local public=$(( 3449 + offset ))
+    local mcp=$(( 4401 + offset ))
+    local serena=$(( 14281 + offset ))
+
+    echo
+    echo "[$instance]"
+    echo "  Penpot UI:           https://localhost:${public}"
+    if [[ "$enable_mcp" == "true" ]]; then
+        echo "  MCP stream:          http://localhost:${mcp}/mcp"
+    fi
+    if [[ "$enable_serena" == "true" ]]; then
+        echo "  Serena MCP:          http://localhost:${serena}"
+    fi
+    echo "  Attach:              ./manage.sh attach-devenv --instance ${instance}"
+}
+
+# Reconcile the running parallel set to exactly {ws0..ws(N-1)}.
 function run-devenv-agentic {
+    local n_instances=1
+    local enable_mcp=true
+    local enable_serena=true
     local serena_context="desktop-app"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --n-instances)
+                n_instances="$2"; shift 2;;
             --serena-context)
                 serena_context="$2"; shift 2;;
+            --no-mcp)
+                enable_mcp=false; shift;;
+            --no-serena)
+                enable_serena=false; shift;;
             *)
                 echo "run-devenv-agentic: unknown argument '$1'" >&2
                 return 1;;
         esac
     done
 
-    if ! devenv-main-running; then
-        start-devenv
-        echo "Waiting for containers fully start (5s)..."
-        sleep 5;
+    if ! [[ "$n_instances" =~ ^[1-9][0-9]*$ ]]; then
+        echo "run-devenv-agentic: --n-instances must be a positive integer (got '$n_instances')" >&2
+        return 1
     fi
 
-    run-devenv-tmux \
-        -e SERENA_ENABLED=true \
-        -e SERENA_CONTEXT="$serena_context" \
-        -e PENPOT_FLAGS="${PENPOT_FLAGS} enable-mcp"
+    pull-devenv-if-not-exists
+    ensure-devenv-network
+    ensure-infra-up
+
+    # Compute target and running sets.
+    local target=()
+    local i
+    for (( i=0; i < n_instances; i++ )); do
+        target+=("ws$i")
+    done
+    local running
+    running=$(list-running-instances)
+
+    # Stop extras, highest-numbered first.
+    local to_stop=()
+    for ws in $running; do
+        if ! printf '%s\n' "${target[@]}" | grep -qx "$ws"; then
+            to_stop+=("$ws")
+        fi
+    done
+    if [[ ${#to_stop[@]} -gt 0 ]]; then
+        # Sort numerically descending.
+        IFS=$'\n' to_stop=($(printf '%s\n' "${to_stop[@]}" \
+            | sed 's/^ws//' | sort -rn | sed 's/^/ws/'))
+        unset IFS
+        for ws in "${to_stop[@]}"; do
+            echo "Stopping $ws..."
+            stop-instance "$ws"
+        done
+    fi
+
+    # Start missing instances.
+    for ws in "${target[@]}"; do
+        if printf '%s\n' "$running" | grep -qx "$ws"; then
+            echo "[$ws] already running; leaving alone"
+            continue
+        fi
+        echo "Starting $ws..."
+        start-instance "$ws" "$enable_mcp" "$enable_serena" "$serena_context"
+    done
+
+    # Per-instance startup info.
+    for ws in "${target[@]}"; do
+        print-instance-info "$ws" "$enable_mcp" "$enable_serena"
+    done
 }
 
 function run-devenv-shell {
-    if ! devenv-main-running; then
-        start-devenv
+    local instance="ws0"
+    local positional=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --instance)
+                instance="$(normalize-instance "$2")"; shift 2;;
+            *)
+                positional+=("$1"); shift;;
+        esac
+    done
+
+    if ! devenv-main-running "$instance"; then
+        if [[ "$instance" == "ws0" ]]; then
+            start-devenv
+        else
+            echo "Instance '$instance' is not running." >&2
+            return 1
+        fi
     fi
-    local container=$(devenv-main-container)
+    local container
+    container=$(devenv-main-container "$instance")
     docker exec -ti \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
-           "$container" sudo -EH -u penpot $@
+           "$container" sudo -EH -u penpot "${positional[@]}"
 }
 
 function attach-devenv {
-    if ! devenv-main-running; then
-        echo "devenv is not running." >&2
-        echo "Start it first with './manage.sh run-devenv' (or './manage.sh start-devenv' for containers only)." >&2
+    local instance="ws0"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --instance)
+                instance="$(normalize-instance "$2")"; shift 2;;
+            *)
+                echo "attach-devenv: unknown argument '$1'" >&2
+                return 1;;
+        esac
+    done
+
+    if ! devenv-main-running "$instance"; then
+        echo "Instance '$instance' is not running." >&2
+        echo "Start it first with './manage.sh run-devenv' (ws0) or './manage.sh run-devenv-agentic --n-instances N' (parallel)." >&2
         return 1
     fi
 
     local session="${PENPOT_TMUX_SESSION:-penpot}"
-    local container=$(devenv-main-container)
+    local container
+    container=$(devenv-main-container "$instance")
 
     if ! docker exec "$container" sudo -EH -u penpot tmux has-session -t "$session" 2>/dev/null; then
-        echo "No tmux session '$session' inside the devenv container." >&2
-        echo "Start it with './manage.sh run-devenv'." >&2
+        echo "No tmux session '$session' inside instance '$instance'." >&2
+        echo "Start it with './manage.sh run-devenv' (ws0) or './manage.sh run-devenv-agentic'." >&2
         return 1
     fi
 
@@ -504,12 +869,17 @@ function usage {
     echo "- start-devenv                     Start the development oriented docker compose service."
     echo "- stop-devenv                      Stops the development oriented docker compose service."
     echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
-    echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
+    echo "- run-devenv                       Brings ws0 up and attaches to its tmux session (no MCP, no Serena)."
+    echo "                                   Optional --instance <wsN> targets a different instance."
     echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
-    echo "- run-devenv-agentic               Like run-devenv but with additional processes for agentic development enabled."
-    echo "                                   Options: --serena-context CONTEXT (default: desktop-app)"
-    echo "- attach-devenv                    Attaches to the tmux session inside the running devenv container."
-    echo "- run-devenv-shell                 Attaches to the running devenv container and starts a bash shell."
+    echo "- run-devenv-agentic               Desired-state reconciler. Brings the running parallel set to exactly"
+    echo "                                   {ws0..ws(N-1)} with MCP and Serena enabled on each."
+    echo "                                   Options: --n-instances N (default: 1), --serena-context CONTEXT (default: desktop-app),"
+    echo "                                            --no-mcp, --no-serena"
+    echo "- attach-devenv                    Attaches to the tmux session inside a running instance."
+    echo "                                   Options: --instance 0|wsN|N (default: 0)"
+    echo "- run-devenv-shell                 Opens a bash shell inside a running instance."
+    echo "                                   Options: --instance 0|wsN|N (default: 0)"
     echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
     echo ""
