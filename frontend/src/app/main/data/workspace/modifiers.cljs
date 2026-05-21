@@ -40,6 +40,10 @@
 (def ^:private xf:without-uuid-zero
   (remove #(= % uuid/zero)))
 
+;; Lets set-wasm-modifiers call clean-modifiers only on the
+;; non-translation→translation transition instead of every frame.
+(def ^:private wasm-structure-modifiers-active? (volatile! false))
+
 ;; Tracks whether the WASM renderer is currently in "interactive
 ;; transform" mode (a drag / resize / rotate gesture in progress).
 ;; Paired with `set-modifiers-start` / `set-modifiers-end` so the
@@ -305,6 +309,7 @@
         ;; skip shadows / blur).
         (ensure-interactive-transform-end!)
         (wasm.api/clean-modifiers)
+        (vreset! wasm-structure-modifiers-active? false)
         (set-wasm-props! (dsh/lookup-page-objects state) (:wasm-props state) [])))
 
     ptk/UpdateEvent
@@ -682,12 +687,19 @@
       (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
             translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
 
-        ;; Only geometry (transform matrix) changes during drag.
-        (when-not translation?
+        (if translation?
+          ;; Pure translation: no structure changes needed. If structure
+          ;; modifiers were active from a previous non-translation frame
+          ;; (e.g. shape hovered over a frame then dragged back out),
+          ;; clear them now so the shape is not clipped by the old frame.
+          (when @wasm-structure-modifiers-active?
+            (wasm.api/clean-modifiers)
+            (vreset! wasm-structure-modifiers-active? false))
           (let [objects (dsh/lookup-page-objects state)]
             (set-wasm-props! objects (:prev-wasm-props state) (:wasm-props state))
             (wasm.api/clean-modifiers)
-            (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))))
+            (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+            (vreset! wasm-structure-modifiers-active? true)))
         (let [geometry-entries (parse-geometry-modifiers modif-tree)
               root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
               modifiers

@@ -38,6 +38,24 @@
            (dissoc component :objects))
          component)))))
 
+(defn normalize-component-root
+  "Some old files have shapes with an explicit :component-root false. This is semantically
+   equivalent to the attribute being absent (instance-root? only treats true as root), but
+   breaks the subcopy-head? predicate, which expects nil. Remove the explicit false so the
+   downstream fixers can recognize these shapes as nested copy heads."
+  [file-data]
+  (ctf/update-all-shapes
+   file-data
+   (fn [shape]
+     (if (false? (:component-root shape))
+       (do
+         (log/warn :msg "Normalizing :component-root false on shape"
+                   :shape-id (:id shape)
+                   :shape-name (:name shape)
+                   :file-id (:id file-data))
+         {:result :update :updated-shape (dissoc shape :component-root)})
+       {:result :keep}))))
+
 (defn fix-missing-swap-slots
   "Locate shapes that have been swapped (i.e. their shape-ref does not point to the near match) but
    they don't have a swap slot. In this case, add one pointing to the near match."

@@ -39,9 +39,17 @@
            (not-empty)))))
 
 (defn- extract-partial-brace-text
+  "Returns the substring after the last '{' in s. If the resulting
+  substring ends with '}', that trailing brace is removed.
+  Returns nil if no '{' is found or s is nil."
   [s]
   (when-let [start (str/last-index-of s "{")]
-    (subs s (inc start))))
+    (let [partial (subs s (inc start))]
+      (if (and (seq partial)
+               (> (count partial) 0)
+               (= "}" (subs partial (dec (count partial)))))
+        (subs partial 0 (dec (count partial)))
+        partial))))
 
 (defn- filter-token-groups-by-name
   [tokens filter-text]

@@ -87,7 +87,7 @@
        (for [shape shapes]
          (let [thumbnail?
                (and (not disable-thumbnails)
-                    (contains? active-frames (dm/get-prop shape :id)))]
+                    (not (contains? active-frames (dm/get-prop shape :id))))]
            [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
             (if ^boolean (cfh/frame-shape? shape)
               [:& root-frame-wrapper
