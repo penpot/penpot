@@ -176,8 +176,23 @@ test.describe("Tokens - node tree", () => {
       await setupTokensFileRender(page);
 
     // Create tokens in two separate groups
-    await createToken(page, "Color", "dark.base", "Value", "#000000");
-    await createToken(page, "Color", "light.accent", "Value", "#ffffff");
+    await createToken(
+      page,
+      "Color",
+      "dark.base",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+
+    await createToken(
+      page,
+      "Color",
+      "light.accent",
+      "Value",
+      "textbox",
+      "#ffffff",
+    );
 
     const lightGroup = tokensSidebar.getByRole("button", {
       name: "light",
@@ -202,14 +217,14 @@ test.describe("Tokens - node tree", () => {
     // Rename to move it into the collapsed light group
     const nameField = tokensUpdateCreateModal.getByLabel("Name");
     await nameField.fill("light.base");
-    await tokensUpdateCreateModal
-      .getByRole("button", { name: "Save" })
-      .click();
+    await tokensUpdateCreateModal.getByRole("button", { name: "Save" }).click();
 
     // After rename, light group should be auto-expanded and both tokens visible
     await expect(lightGroup).toBeVisible();
     await expect(lightAccentToken).toBeVisible();
-    await expect(tokensSidebar.getByRole("button", { name: "base" })).toBeVisible();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "base" }),
+    ).toBeVisible();
   });
 
   test("User removes node and all child tokens", async ({ page }) => {
