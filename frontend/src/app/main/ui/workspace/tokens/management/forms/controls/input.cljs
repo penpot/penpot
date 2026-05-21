@@ -383,21 +383,39 @@
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value value-subfield index field] true)
+                       (update :errors dissoc :value)
+                       (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)))))))
 
 (mf/defc input-indexed*
-  [{:keys [name tokens token index value-subfield] :rest props}]
+  [{:keys [name tokens token index value-subfield nillable] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        nillable   (d/nilv nillable false)
 
-        error
-        (get-in @form [:errors :value value-subfield index input-name])
+        touched?
+        (get-in @form [:touched :value value-subfield index input-name])
 
         value-from-form
         (get-in @form [:data :value value-subfield index input-name] "")
+
+        ;; Resolution error for this specific field (e.g. missing reference)
+        indexed-error
+        (get-in @form [:errors :value value-subfield index input-name])
+
+        ;; Empty-field error: derived purely from the local field value so that
+        ;; each shadow layer is evaluated independently.
+        empty-error
+        (when (and (not nillable)
+                   (str/blank? value-from-form))
+          {:message (tr "errors.tokens.empty-field")})
+
+        error
+        (when touched? (or indexed-error empty-error))
 
         resolve-stream
         (mf/with-memo [token index input-name]
@@ -428,7 +446,7 @@
         props
         (if error
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (or (:message error) (tr "errors.field-cannot-be-empty"))})
           props)
 
         props

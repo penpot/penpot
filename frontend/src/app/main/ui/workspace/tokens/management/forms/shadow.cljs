@@ -57,10 +57,13 @@
                      (update :token-value (fn [value]
                                             (->> (or value [])
                                                  (mapv (fn [shadow]
-                                                         (d/update-when shadow :inset #(cond
-                                                                                         (boolean? %) %
-                                                                                         (= "true" %) true
-                                                                                         :else false)))))))
+                                                         (-> shadow
+                                                             (d/update-when :inset #(cond
+                                                                                      (boolean? %) %
+                                                                                      (= "true" %) true
+                                                                                      :else false))
+                                                             (update :blur   #(if (str/blank? %) "0" %))
+                                                             (update :spread #(if (str/blank? %) "0" %))))))))
                      (assoc :validators [check-empty-shadow-token
                                          check-shadow-token-self-reference]))]
 
@@ -160,6 +163,7 @@
         {:aria-label (tr "workspace.tokens.shadow-blur")
          :placeholder (tr "workspace.tokens.shadow-blur")
          :name :blur
+         :nillable true
          :slot-start (mf/html [:span {:class (stl/css :visible-label)}
                                (str (tr "workspace.tokens.shadow-blur") ":")])
          :token blur-token
@@ -172,6 +176,7 @@
         {:aria-label (tr "workspace.tokens.shadow-spread")
          :placeholder (tr "workspace.tokens.shadow-spread")
          :name :spread
+         :nillable true
          :slot-start (mf/html [:span {:class (stl/css :visible-label)}
                                (str (tr "workspace.tokens.shadow-spread") ":")])
          :token spread-token
@@ -310,15 +315,14 @@
              ref-valid? (and reference (not (str/blank? reference)))
 
              shadows (get value :shadow)
-             ;; To be a valid shadow it must contain one on each valid values
+             ;; To be a valid shadow it must contain one on each valid values.
+             ;; blur and spread are optional and default to "0" when blank.
              valid-composite-shadow?
              (and (seq shadows)
                   (every?
-                   (fn [{:keys [offset-x offset-y blur spread color]}]
+                   (fn [{:keys [offset-x offset-y color]}]
                      (and (not (str/blank? offset-x))
                           (not (str/blank? offset-y))
-                          (not (str/blank? blur))
-                          (not (str/blank? spread))
                           (not (str/blank? color))))
                    shadows))]
 
@@ -333,7 +337,11 @@
 
     (vector? value)
     {:reference nil
-     :shadow   value}
+     :shadow   (mapv (fn [shadow]
+                       (-> shadow
+                           (update :blur   #(if (nil? %) "0" %))
+                           (update :spread #(if (nil? %) "0" %))))
+                     value)}
 
     :else
     {:reference nil
