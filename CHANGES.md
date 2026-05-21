@@ -26,12 +26,14 @@
 - Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
 - Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
 - Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
+- Scoll to new created tokens on the tokens tree. [Github #9711](https://github.com/penpot/penpot/issues/9711)
 
 ## 2.16.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
 
 ### :rocket: Epics and highlights
+
 - WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR:[9113](https://github.com/penpot/penpot/pull/9113))
 - Design Tokens at the design tab: numeric fields with token selection in place [#9358](https://github.com/penpot/penpot/issues/9358)
 
@@ -85,6 +87,7 @@
 - Allow deleting the profile avatar after uploading (by @moorsecopers99) [#9067](https://github.com/penpot/penpot/issues/9067) (PR: [#9068](https://github.com/penpot/penpot/pull/9068))
 
 ### :bug: Bugs fixed
+
 - Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
 - Save and restore selection state in undo/redo (by @eureka0928) [#6007](https://github.com/penpot/penpot/issues/6007) (PR: [#8652](https://github.com/penpot/penpot/pull/8652))
 - Add guide locking and fix locked element selection in viewer (by @Dexterity104) [#8358](https://github.com/penpot/penpot/issues/8358) (PR: [#8949](https://github.com/penpot/penpot/pull/8949))
@@ -160,7 +163,6 @@
 - Fix version restore restoring first previewed version instead of selected one [#9588](https://github.com/penpot/penpot/issues/9588) (PR: [#9626](https://github.com/penpot/penpot/pull/9626))
 - Fix incorrect error message when applying tokens while editing text [#9620](https://github.com/penpot/penpot/issues/9620) (PR: [#9708](https://github.com/penpot/penpot/pull/9708))
 
-
 ## 2.15.4 (Unreleased)
 
 ### :bug: Bugs fixed
@@ -187,7 +189,6 @@
 
 - Fix mcp related internal config for docker images [GH #9565](https://github.com/penpot/penpot/pull/9565)
 
-
 ## 2.15.1
 
 ### :sparkles: New features & Enhancements
@@ -197,7 +198,6 @@
 ### :bug: Bugs fixed
 
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [#9137](https://github.com/penpot/penpot/issues/9137) (PR: [#9138](https://github.com/penpot/penpot/pull/9138))
-
 
 ## 2.15.0
 
