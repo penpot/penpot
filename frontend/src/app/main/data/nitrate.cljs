@@ -1,6 +1,7 @@
 (ns app.main.data.nitrate
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -67,6 +68,14 @@
 (defn go-to-nitrate-ac-create-org
   []
   (st/emit! (rt/nav-raw :href "/admin-console/?action=create-org")))
+
+(defn can-send-invitations?
+  [{:keys [organization profile-id team-permissions]}]
+  (nitrate-perms/can-send-invitations?
+   {:nitrate-enabled? (contains? cf/flags :nitrate)
+    :organization organization
+    :profile-id profile-id
+    :team-permissions team-permissions}))
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
