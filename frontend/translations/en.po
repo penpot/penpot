@@ -8610,7 +8610,7 @@ msgstr "Invalid token value. The resolved value is too large: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:60
 msgid "errors.tokens.name-collision"
-msgstr "Token name %s conflicts with a token group of the same name in another active set."
+msgstr "Group name of %s conflicts with a token of the same name in another active set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "errors.tokens.opacity-range"

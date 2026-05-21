@@ -566,16 +566,15 @@
   matching the expected behaviour in the issue. Resolved tokens are
   left untouched."
   [tokens resolved]
-  (let [resolved-names (set (keys resolved))
-        dropped        (->> tokens
-                            (remove (fn [[k _]] (contains? resolved-names k)))
-                            (map (fn [[k token]]
-                                   [k (assoc token
-                                             :errors
-                                             [(wte/error-with-value
-                                               :error.token/name-collision
-                                               (:name token))])]))
-                            (into {}))]
+  (let [dropped (->> tokens
+                     (remove (fn [[k _]] (contains? resolved k)))
+                     (map (fn [[k token]]
+                            [k (assoc token
+                                      :errors
+                                      [(wte/error-with-value
+                                        :error.token/name-collision
+                                        (:name token))])]))
+                     (into {}))]
     (merge resolved dropped)))
 
 (defn resolve-tokens
