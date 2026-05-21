@@ -73,6 +73,18 @@ var penpotFlags = "enable-mcp";
 ./manage.sh run-devenv-agentic
 ```
 
+> **Note:** the MCP and Serena tmux windows are only added when the tmux
+> session is created, not when an existing session is reattached. If you have
+> already run `./manage.sh run-devenv` (non-agentic) in the current devenv
+> container, the agentic command will just attach you to that session without
+> starting MCP or Serena. To switch to agentic mode, kill the existing session
+> first and rerun:
+>
+> ```bash
+> docker exec penpot-devenv-main sudo -u penpot tmux kill-session -t penpot
+> ./manage.sh run-devenv-agentic
+> ```
+
 ## Opening Penpot with Remote Debugging & MCP Enabled
 
 **Enable Remote Debugging in Your Browser.**

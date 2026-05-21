@@ -3,6 +3,10 @@
 SCRIPT_DIR=$(dirname $0);
 source $SCRIPT_DIR/../../backend/scripts/_env;
 
+if [ -f $SCRIPT_DIR/../../backend/scripts/_env.local ]; then
+    source $SCRIPT_DIR/../../backend/scripts/_env.local;
+fi
+
 bb -i '(babashka.wait/wait-for-port "localhost" 9630)';
 bb -i '(babashka.wait/wait-for-path "target/app.js")';
 sleep 2;

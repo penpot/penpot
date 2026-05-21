@@ -48,9 +48,44 @@ manage.sh script:
 ./manage.sh build-devenv-local # builds the local devenv docker image (called by run-devenv automatically when needed)
 ./manage.sh start-devenv       # starts background running containers
 ./manage.sh run-devenv         # enters to new tmux session inside of one of the running containers
+./manage.sh attach-devenv      # re-attaches to the tmux session inside an already-running devenv container
 ./manage.sh stop-devenv        # stops background running containers
 ./manage.sh drop-devenv        # removes all the containers, volumes and networks used by the devenv
 ```
+
+### Upgrading from a pre-split devenv
+
+The devenv compose configuration was split into two files,
+`docker/devenv/docker-compose.infra.yml` (Postgres, MinIO, mailer, LDAP) and
+`docker/devenv/docker-compose.main.yml` (the main devenv container and its
+Valkey), joined by an external Docker network called `penpot_shared`.
+Per-instance defaults live in `docker/devenv/defaults.env`.
+
+If you had the devenv running on the previous single-file compose setup, the
+first `./manage.sh start-devenv` after pulling the new code may fail with
+`minio-setup: gave up waiting for MinIO after 30 attempts`. The cause is that
+docker compose silently reuses the old infra containers (`penpotdev-postgres-1`,
+`penpotdev-minio-1`, `penpotdev-mailer-1`, `penpotdev-ldap-1`), which are still
+attached to the auto-generated `penpotdev_default` network from the old project
+layout. The freshly created `minio-setup` joins the new `penpot_shared`
+network instead, so it cannot resolve the `minio` hostname.
+
+Migration steps (data in the named volumes is preserved):
+
+```bash
+./manage.sh stop-devenv
+docker rm penpotdev-postgres-1 penpotdev-minio-1 penpotdev-minio-setup-1 \
+          penpotdev-mailer-1 penpotdev-ldap-1 \
+          penpot-devenv-main penpot-devenv-valkey 2>/dev/null
+docker network rm penpotdev_default 2>/dev/null
+./manage.sh start-devenv
+```
+
+After this one-time cleanup the new compose files create fresh containers on
+`penpot_shared` and `start-devenv` works normally. The named volumes
+(`penpotdev_postgres_data_pg16`, `penpotdev_minio_data`,
+`penpotdev_user_data`, `penpotdev_valkey_data`) are not touched, so existing
+Penpot state survives.
 
 Having the container running and tmux opened inside the container,
 you are free to execute commands and open as many shells as you want.

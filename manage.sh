@@ -2,7 +2,31 @@
 
 export ORGANIZATION="penpotapp";
 export DEVENV_IMGNAME="$ORGANIZATION/devenv";
-export DEVENV_PNAME="penpotdev";
+export DEVENV_NETWORK="penpot_shared";
+export DEVENV_DEFAULTS_FILE="docker/devenv/defaults.env";
+
+# Load instance configuration (project name, container names, ports, runtime
+# config). Single source of truth for the devenv; consumed by both docker
+# compose (via --env-file) and the shell logic below. Hard dependency — abort
+# loudly if it's missing or unreadable.
+#
+# Host-shell env wins over file values: a value already set in the parent
+# environment is preserved. This matches docker compose's own precedence rule
+# for --env-file (so substitution-time and shell-time agree).
+if [ ! -r "$DEVENV_DEFAULTS_FILE" ]; then
+    echo "manage.sh: cannot read $DEVENV_DEFAULTS_FILE" >&2
+    exit 1
+fi
+while IFS='=' read -r __key __value; do
+    [[ -z "$__key" || "$__key" =~ ^[[:space:]]*# ]] && continue
+    if [ -z "${!__key+x}" ]; then
+        export "$__key=$__value"
+    fi
+done < "$DEVENV_DEFAULTS_FILE"
+unset __key __value
+
+# Source path for the workspace bind mount; consumed by docker-compose.main.yml.
+export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
 
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
@@ -16,6 +40,43 @@ git config --global --add safe.directory /home/penpot/penpot || true
 export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
 
 set -e
+
+# ----------------------------------------------------------------------------
+# Function map
+#
+# Utility helpers
+#   print-current-version, setup-buildx, put-license-file
+#
+# Devenv image lifecycle
+#   build-devenv, pull-devenv, pull-devenv-if-not-exists
+#
+# Devenv compose plumbing (used by every *-devenv command below)
+#   ensure-devenv-network   create the external 'penpot_shared' network
+#   devenv-compose          wrap 'docker compose' with --env-file + both files
+#   devenv-main-container   resolve the 'main' container id via compose ps
+#   devenv-main-running     true if 'main' is up
+#
+# Devenv lifecycle (operate on the whole compose project)
+#   start-devenv, create-devenv, stop-devenv, drop-devenv, log-devenv
+#
+# Devenv interactive entry points (all operate on the running 'main' container)
+#   run-devenv-tmux         starts 'main' if needed and execs start-tmux.sh
+#                           interactively (this is what 'run-devenv' resolves to)
+#   run-devenv-agentic      same as run-devenv-tmux but enables MCP + Serena
+#   attach-devenv           pure attach to the existing tmux session; fails
+#                           fast if the devenv or session is missing
+#   run-devenv-shell        starts 'main' if needed and execs a bash shell
+#   run-devenv-isolated-shell  one-shot 'docker run' (NOT compose) against the
+#                           project user_data volume and the current PWD; used
+#                           for ad-hoc operations that should not touch a
+#                           running devenv
+#
+# Production build pipeline
+#   build                   one-shot 'docker run' that invokes a per-module
+#                           build script inside the devenv image
+#   build-<mod>-bundle      project a module's build output into ./bundles/
+#   build-<mod>-docker-image  package a bundle into a release docker image
+# ----------------------------------------------------------------------------
 
 ARCH=$(uname -m)
 
@@ -80,31 +141,54 @@ function pull-devenv-if-not-exists {
     fi
 }
 
+function ensure-devenv-network {
+    docker network inspect "$DEVENV_NETWORK" >/dev/null 2>&1 || docker network create "$DEVENV_NETWORK" >/dev/null
+}
+
+function devenv-compose {
+    docker compose \
+        --env-file "$DEVENV_DEFAULTS_FILE" \
+        -f docker/devenv/docker-compose.infra.yml \
+        -f docker/devenv/docker-compose.main.yml \
+        "$@"
+}
+
+function devenv-main-container {
+    devenv-compose ps -q main
+}
+
+function devenv-main-running {
+    local container=$(devenv-main-container)
+    [[ -n "$container" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]]
+}
+
 function start-devenv {
     pull-devenv-if-not-exists $@;
+    ensure-devenv-network;
 
-    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml up -d;
+    devenv-compose up -d;
 }
 
 function create-devenv {
     pull-devenv-if-not-exists $@;
+    ensure-devenv-network;
 
-    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml create;
+    devenv-compose create;
 }
 
 function stop-devenv {
-    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml stop -t 2;
+    devenv-compose stop -t 2;
 }
 
 function drop-devenv {
-    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    devenv-compose down -t 2 -v;
 
     echo "Clean old development image $DEVENV_IMGNAME..."
     docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
 function log-devenv {
-    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
+    devenv-compose logs -f --tail=50
 }
 
 function run-devenv-tmux {
@@ -117,39 +201,38 @@ function run-devenv-tmux {
             -e*)
                 extra_env_args+=(-e "${1#-e}"); shift;;
             *)
-                shift;;
+                echo "run-devenv: unknown argument '$1'" >&2
+                return 1;;
         esac
     done
 
-    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+    if ! devenv-main-running; then
         start-devenv
         echo "Waiting for containers fully start (5s)..."
         sleep 5;
     fi
 
+    local container=$(devenv-main-container)
     docker exec -ti \
         "${extra_env_args[@]}" \
-        penpot-devenv-main sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
+        "$container" sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
 }
 
 
 function run-devenv-agentic {
     local serena_context="desktop-app"
-    local serena_external_port="14281"
-    local serena_dashboard_external_port="14282"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --serena-context)
                 serena_context="$2"; shift 2;;
             *)
-                shift;;
+                echo "run-devenv-agentic: unknown argument '$1'" >&2
+                return 1;;
         esac
     done
 
-    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
-        SERENA_EXTERNAL_PORT="$serena_external_port" \
-        SERENA_DASHBOARD_EXTERNAL_PORT="$serena_dashboard_external_port" \
+    if ! devenv-main-running; then
         start-devenv
         echo "Waiting for containers fully start (5s)..."
         sleep 5;
@@ -162,19 +245,39 @@ function run-devenv-agentic {
 }
 
 function run-devenv-shell {
-    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+    if ! devenv-main-running; then
         start-devenv
     fi
+    local container=$(devenv-main-container)
     docker exec -ti \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
-           penpot-devenv-main sudo -EH -u penpot $@
+           "$container" sudo -EH -u penpot $@
+}
+
+function attach-devenv {
+    if ! devenv-main-running; then
+        echo "devenv is not running." >&2
+        echo "Start it first with './manage.sh run-devenv' (or './manage.sh start-devenv' for containers only)." >&2
+        return 1
+    fi
+
+    local session="${PENPOT_TMUX_SESSION:-penpot}"
+    local container=$(devenv-main-container)
+
+    if ! docker exec "$container" sudo -EH -u penpot tmux has-session -t "$session" 2>/dev/null; then
+        echo "No tmux session '$session' inside the devenv container." >&2
+        echo "Start it with './manage.sh run-devenv'." >&2
+        return 1
+    fi
+
+    docker exec -ti "$container" sudo -EH -u penpot tmux attach -t "$session"
 }
 
 function run-devenv-isolated-shell {
-    docker volume create ${DEVENV_PNAME}_user_data;
+    docker volume create ${PENPOT_USER_DATA_VOLUME};
     docker run -ti --rm \
-           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
+           --mount source=${PENPOT_USER_DATA_VOLUME},type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
@@ -217,9 +320,9 @@ function build {
     local script=${2:-build}
 
     pull-devenv-if-not-exists;
-    docker volume create ${DEVENV_PNAME}_user_data;
+    docker volume create ${PENPOT_USER_DATA_VOLUME};
     docker run -t --rm \
-           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
+           --mount source=${PENPOT_USER_DATA_VOLUME},type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
@@ -405,6 +508,7 @@ function usage {
     echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
     echo "- run-devenv-agentic               Like run-devenv but with additional processes for agentic development enabled."
     echo "                                   Options: --serena-context CONTEXT (default: desktop-app)"
+    echo "- attach-devenv                    Attaches to the tmux session inside the running devenv container."
     echo "- run-devenv-shell                 Attaches to the running devenv container and starts a bash shell."
     echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
@@ -454,6 +558,9 @@ case $1 in
         ;;
     run-devenv-agentic)
         run-devenv-agentic ${@:2}
+        ;;
+    attach-devenv)
+        attach-devenv ${@:2}
         ;;
     run-devenv-shell)
         run-devenv-shell ${@:2}
