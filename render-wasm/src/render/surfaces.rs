@@ -226,10 +226,7 @@ impl Surfaces {
     /// WebGL `MAX_TEXTURE_SIZE` reported by the browser. Values are clamped to
     /// a small minimum so the atlas logic stays well-defined.
     pub fn set_max_atlas_texture_size(&mut self, max_px: i32) {
-        self.max_atlas_texture_size = max_px.clamp(
-            TILE_SIZE,
-            MAX_ATLAS_TEXTURE_SIZE
-        );
+        self.max_atlas_texture_size = max_px.clamp(TILE_SIZE, MAX_ATLAS_TEXTURE_SIZE);
     }
 
     #[inline]
@@ -915,23 +912,14 @@ impl Surfaces {
         cached_viewbox: &Viewbox,
         interest_area_threshold: i32,
     ) -> Result<()> {
-        let viewbox_cache_size = get_cache_size(
-            viewbox,
-            interest_area_threshold,
-        );
-        let cached_viewbox_cache_size = get_cache_size(
-            cached_viewbox,
-            interest_area_threshold,
-        );
+        let viewbox_cache_size = get_cache_size(viewbox, interest_area_threshold);
+        let cached_viewbox_cache_size = get_cache_size(cached_viewbox, interest_area_threshold);
         // Only resize cache if the new size is larger than the cached size
         // This avoids unnecessary surface recreations when the cache size decreases
         if viewbox_cache_size.width > cached_viewbox_cache_size.width
             || viewbox_cache_size.height > cached_viewbox_cache_size.height
         {
-            return self.resize_cache(
-                viewbox_cache_size,
-                interest_area_threshold,
-            );
+            return self.resize_cache(viewbox_cache_size, interest_area_threshold);
         }
         Ok(())
     }
@@ -1299,7 +1287,12 @@ impl Surfaces {
         self.tile_atlas.image_snapshot_with_bounds(rect)
     }
 
-    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: skia::Rect, _color: skia::Color) {
+    pub fn draw_cached_tile_into_backbuffer(
+        &mut self,
+        tile: Tile,
+        rect: skia::Rect,
+        _color: skia::Color,
+    ) {
         if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
             let backbuffer_canvas = self.backbuffer.canvas();
 
@@ -1309,8 +1302,7 @@ impl Surfaces {
             //     backbuffer_canvas.draw_rect(rect, &paint);
             // }
 
-            backbuffer_canvas
-                .draw_image_rect(&image, None, rect, &skia::Paint::default());
+            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
         }
     }
 

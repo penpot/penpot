@@ -306,6 +306,20 @@
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
 
+;; These are the type of frames we have in our
+;; render pipeline.
+(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
+(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
+(def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+
+(defn- internal-render
+  ([]
+   (internal-render 0))
+  ([timestamp]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+     (request-render "frame-type-partial"))))
+
 (defn- build-reload-payload
   "Builds renderer reload payload from current application state.
    Avoids keeping heavyweight object snapshots in memory."
@@ -337,8 +351,8 @@
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
-  (when (initialized?)
-    (h/call wasm/internal-module "_render" timestamp)
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (internal-render timestamp)
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
@@ -1201,7 +1215,7 @@
               ;; completes in the first frame.  For zoom, interest-
               ;; area tiles (~3 tile margin) don't block the main
               ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
+              (internal-render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box

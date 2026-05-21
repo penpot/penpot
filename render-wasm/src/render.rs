@@ -38,6 +38,21 @@ pub use images::*;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+#[repr(u8)]
+pub enum FrameType {
+    None = 0,
+    Partial = 1,
+    Full = 2,
+}
+
+#[allow(dead_code)]
+#[repr(u8)]
+pub enum RenderFlag {
+    None = 0,
+    Partial = 1,
+    Full = 2,
+}
+
 #[derive(Debug)]
 pub struct NodeRenderState {
     pub id: Uuid,
@@ -334,10 +349,6 @@ pub(crate) struct RenderState {
     pub cached_viewbox: Viewbox,
     pub images: ImageStore,
     pub background_color: skia::Color,
-    // Identifier of the current requestAnimationFrame call, if any.
-    pub render_request_id: Option<i32>,
-    // Indicates whether the rendering process has pending frames.
-    pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
@@ -538,8 +549,6 @@ impl RenderState {
             cached_viewbox: Viewbox::new(0., 0.),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
-            render_request_id: None,
-            render_in_progress: false,
             pending_nodes: vec![],
             current_tile: None,
             sampling_options,
@@ -1678,14 +1687,6 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
-    pub fn cancel_animation_frame(&mut self) {
-        if self.render_in_progress {
-            if let Some(frame_id) = self.render_request_id {
-                wapi::cancel_animation_frame!(frame_id);
-            }
-        }
-    }
-
     fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
@@ -1893,7 +1894,7 @@ impl RenderState {
         // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
         // always prefer the persistent atlas. The atlas is incrementally updated as tiles finish,
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
-        if self.options.is_fast_mode() && self.render_in_progress && self.surfaces.has_atlas() {
+        if self.options.is_fast_mode() && self.surfaces.has_atlas() {
             self.surfaces
                 .draw_atlas_to_backbuffer(self.viewbox, bg_color);
 
@@ -1910,10 +1911,7 @@ impl RenderState {
 
             let interest = self.options.dpr_viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
-                tiles::get_tiles_for_viewbox_with_interest(
-                    &self.cached_viewbox,
-                    interest,
-                );
+                tiles::get_tiles_for_viewbox_with_interest(&self.cached_viewbox, interest);
             let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
             let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
             let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
@@ -1955,10 +1953,8 @@ impl RenderState {
                 if !cache_covers {
                     // Early return only if atlas exists; otherwise keep cache path.
                     if self.surfaces.has_atlas() {
-                        self.surfaces.draw_atlas_to_backbuffer(
-                            self.viewbox,
-                            bg_color,
-                        );
+                        self.surfaces
+                            .draw_atlas_to_backbuffer(self.viewbox, bg_color);
 
                         self.present_frame(shapes);
                         performance::end_measure!("render_from_cache");
@@ -2049,11 +2045,13 @@ impl RenderState {
             self.pending_nodes
                 .reserve(tree.len() - self.pending_nodes.capacity());
         }
+
         // Clear nested state stacks to avoid residual fills/blurs from previous renders
         // being incorrectly applied to new frames
         self.nested_fills.clear();
         self.nested_blurs.clear();
         self.nested_shadows.clear();
+
         // reorder by distance to the center.
         self.current_tile = None;
     }
@@ -2064,7 +2062,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         sync_render: bool,
-    ) -> Result<()> {
+    ) -> Result<FrameType> {
         self.gc(tree);
 
         let _start = performance::begin_timed_log!("start_render_loop");
@@ -2111,7 +2109,7 @@ impl RenderState {
         self.surfaces.resize_cache_from_viewbox(
             &self.viewbox,
             &self.cached_viewbox,
-            self.options.dpr_viewport_interest_area_threshold
+            self.options.dpr_viewport_interest_area_threshold,
         )?;
 
         // FIXME - review debug
@@ -2127,14 +2125,14 @@ impl RenderState {
 
         performance::end_timed_log!("tile_cache_update", _tile_start);
 
-        self.render_in_progress = true;
-
         self.draw_shape_surface_stack_into(None, SurfaceId::Current);
 
+        #[allow(unused)]
+        let mut frame_type = FrameType::None;
         if sync_render {
-            self.render_shape_tree_sync(base_object, tree, timestamp)?;
+            frame_type = self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
-            self.process_animation_frame(base_object, tree, timestamp)?;
+            frame_type = self.continue_render_loop(base_object, tree, timestamp)?;
 
             // This is an option to debug frames.
             if self.options.capture_frames > 0 {
@@ -2155,7 +2153,7 @@ impl RenderState {
 
         performance::end_measure!("start_render_loop");
         performance::end_timed_log!("start_render_loop", _start);
-        Ok(())
+        Ok(frame_type)
     }
 
     fn compute_document_bounds(
@@ -2189,41 +2187,45 @@ impl RenderState {
         acc
     }
 
-    pub fn process_animation_frame(
+    pub fn continue_render_loop(
         &mut self,
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<()> {
-        performance::begin_measure!("process_animation_frame");
-        self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+    ) -> Result<FrameType> {
+        performance::begin_measure!("continue_render_loop");
+        let frame_type = self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
 
         if !self.options.is_interactive_transform() {
-            self.surfaces.draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
+            self.surfaces
+                .draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
         }
 
-        if self.render_in_progress {
-            // Partial frame: just flush GPU work. The display shows the last
-            // fully submitted frame; no need to copy or draw UI overlays here.
-            self.flush();
-            self.cancel_animation_frame();
-            self.render_request_id = Some(wapi::request_animation_frame!());
-        } else {
-            // A full-quality frame is now complete. Rebuild the per-shape crop
-            // cache from the clean Backbuffer (no UI overlay yet) so that
-            // interactive drag backgrounds don't include the grid overlay.
-            if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                self.rebuild_backbuffer_crop_cache(tree);
+        match frame_type {
+            FrameType::None => {
+                panic!("FrameType::None");
             }
-            // present_frame: copy clean Backbuffer → Target, draw UI/debug
-            // overlays on Target only, then flush. Backbuffer stays overlay-free.
-            self.present_frame(tree);
-            wapi::notify_tiles_render_complete!();
-            performance::end_measure!("render");
+            FrameType::Partial => {
+                // Partial frame: just flush GPU work. The display shows the last
+                // fully submitted frame; no need to copy or draw UI overlays here.
+                self.flush();
+            }
+            FrameType::Full => {
+                // A full-quality frame is now complete. Rebuild the per-shape crop
+                // cache from the clean Backbuffer (no UI overlay yet) so that
+                // interactive drag backgrounds don't include the grid overlay.
+                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
+                    self.rebuild_backbuffer_crop_cache(tree);
+                }
+                // present_frame: copy clean Backbuffer → Target, draw UI/debug
+                // overlays on Target only, then flush. Backbuffer stays overlay-free.
+                self.present_frame(tree);
+                wapi::notify_tiles_render_complete!();
+                performance::end_measure!("render");
+            }
         }
-
-        performance::end_measure!("process_animation_frame");
-        Ok(())
+        performance::end_measure!("continue_render_loop");
+        Ok(frame_type)
     }
 
     pub fn render_shape_tree_sync(
@@ -2231,10 +2233,10 @@ impl RenderState {
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
-    ) -> Result<()> {
+    ) -> Result<FrameType> {
         self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
         self.present_frame(tree);
-        Ok(())
+        Ok(FrameType::Full)
     }
 
     pub fn render_shape_pixels(
@@ -3395,7 +3397,7 @@ impl RenderState {
         tree: ShapesPoolRef,
         timestamp: i32,
         allow_stop: bool,
-    ) -> Result<()> {
+    ) -> Result<FrameType> {
         let mut should_stop = false;
         let root_ids = {
             if let Some(shape_id) = base_object {
@@ -3423,7 +3425,7 @@ impl RenderState {
                     }
 
                     if early_return {
-                        return Ok(());
+                        return Ok(FrameType::Partial);
                     }
                     performance::end_measure!("render_shape_tree::uncached");
 
@@ -3454,10 +3456,8 @@ impl RenderState {
                             );
                         }
                     }
-                } else {
-                    if self.tiles.is_empty_at(current_tile) {
-                        self.surfaces.remove_cached_tile_surface(current_tile);
-                    }
+                } else if self.tiles.is_empty_at(current_tile) {
+                    self.surfaces.remove_cached_tile_surface(current_tile);
                 }
             }
 
@@ -3475,7 +3475,7 @@ impl RenderState {
                 // empty tile.
                 self.current_tile_had_shapes = false;
 
-                let Some(ids)  = self.tiles.get_shapes_at(next_tile) else {
+                let Some(ids) = self.tiles.get_shapes_at(next_tile) else {
                     // If the tile is empty we do not need to render it.
                     continue;
                 };
@@ -3492,9 +3492,8 @@ impl RenderState {
                 // which must contain the shapes behind it.
                 let tile_has_bg_blur = ids.iter().any(|id| {
                     tree.get(id).is_some_and(|s| {
-                        s.blur.is_some_and(|b| {
-                            !b.hidden && b.blur_type == BlurType::BackgroundBlur
-                        })
+                        s.blur
+                            .is_some_and(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
                     })
                 });
 
@@ -3520,23 +3519,20 @@ impl RenderState {
                     self.current_tile_had_shapes = true;
                 }
 
-                self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
-                    NodeRenderState {
+                self.pending_nodes
+                    .extend(valid_ids.into_iter().map(|id| NodeRenderState {
                         id,
                         visited_children: false,
                         clip_bounds: None,
                         visited_mask: false,
                         mask: false,
                         flattened: false,
-                    }
-                }));
+                    }));
             } else {
                 // If there are no more pending tiles, stop.
                 should_stop = true;
             }
         }
-
-        self.render_in_progress = false;
 
         // Mark cache as valid for render_from_cache.
         // Only update for full-quality renders (non-fast mode).
@@ -3550,7 +3546,7 @@ impl RenderState {
             self.cached_viewbox = self.viewbox;
         }
 
-        Ok(())
+        Ok(FrameType::Full)
     }
 
     /*
