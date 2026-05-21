@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
    [app.common.files.migrations :as fmg]
+   [app.common.files.repair :as cfr]
    [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -424,15 +425,29 @@
       (when (contains? cf/flags :soft-file-schema-validation)
         (soft-validate-file-schema! file))
 
-      (when (and (contains? cf/flags :file-validation)
-                 (not skip-validate))
-        (val/validate-file! file libs))
+      ;; If validation is active we try to validate the file.
+      ;; In case of a validation error we try to repair it first,
+      ;; if it's repaired we continue, otherwise we raise the exception
+      (let [file (if (and (contains? cf/flags :file-validation)
+                          (not skip-validate))
+                   (if-let [errors (d/not-empty? (val/validate-file file libs))]
+                     (do
+                       (l/warn :hint "file integrity errors found, attempting auto-repair"
+                               :file-id (str (:id file))
+                               :errors (count errors))
+                       (let [repair-changes (cfr/repair-file file libs errors)
+                             repaired-file  (update file :data cpc/process-changes repair-changes)]
+                         ;; Validate a second time after reparation.
+                         (val/validate-file! repaired-file libs)
+                         repaired-file))
+                     file)
+                   file)]
 
-      (when (and (contains? cf/flags :file-schema-validation)
-                 (not skip-validate))
-        (val/validate-file-schema! file)))
+        (when (and (contains? cf/flags :file-schema-validation)
+                   (not skip-validate))
+          (val/validate-file-schema! file))
 
-    file))
+        file))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
