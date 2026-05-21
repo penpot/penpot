@@ -236,7 +236,7 @@ test("Bug 10089 - Cannot change alpha", async ({ page }) => {
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
   await swatch.click();
 
-  const alpha = workspacePage.page.getByLabel("A", { exact: true });
+  const alpha = workspacePage.page.getByRole("spinbutton", { name: "Alpha" });
   await expect(alpha).toHaveValue("100");
 
   const alphaSlider = workspacePage.page.getByTestId("slider-opacity");
