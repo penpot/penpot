@@ -9128,6 +9128,9 @@ msgstr "¿Estás seguro de que deseas eliminar este equipo que forma parte de la
 msgid "nitrate.code-activation.title"
 msgstr "Activar Nitrate"
 
+msgid "nitrate.code-activation.renew-title"
+msgstr "RENOVAR NITRATE"
+
 msgid "nitrate.code-activation.input-label"
 msgstr "Introduce tu código de activación"
 
@@ -9233,6 +9236,9 @@ msgstr "Cancelar subscripción"
 
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renovar con código de activación"
+
+msgid "nitrate.subscription.renew-success"
+msgstr "Tu suscripción de Nitrate se ha renovado."
 
 msgid "subscription.settings.more-information"
 msgstr "Más información"

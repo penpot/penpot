@@ -95,9 +95,11 @@
                                       :activate-by-code (= code-action :activate)
                                       :renew-by-code (= code-action :renovate)
                                       :bottom-link (= code-action :renovate))
-                 ;; TODO add renovation modal
-                 :on-click (when (= code-action :activate)
-                             #(st/emit! (modal/show {:type :nitrate-code-activation})))}
+                 :on-click (cond
+                             (= code-action :activate)
+                             #(st/emit! (modal/show {:type :nitrate-code-activation}))
+                             (= code-action :renovate)
+                             #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))}
         (if (= code-action :activate)
           (tr "subscription.settings.activate-by-code")
           (tr "nitrate.subscription.settings.renew-with-code"))])
