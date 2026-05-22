@@ -92,10 +92,10 @@ pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn set_max_atlas_texture_size(max_px: i32) -> Result<()> {
+pub extern "C" fn set_max_texture_size(max_px: i32) -> Result<()> {
     get_render_state()
         .surfaces
-        .set_max_atlas_texture_size(max_px);
+        .set_max_texture_size(max_px);
     Ok(())
 }
 
