@@ -325,7 +325,8 @@
            ;; Navigate to active org if user owns it, otherwise to last visited org
            (if (and (:id organization)
                     (= (:id profile) (:owner-id organization)))
-             (dnt/go-to-nitrate-ac organization)
+             (dnt/go-to-nitrate-ac {:organization-id (:id organization)
+                                    :organization-slug (:slug organization)})
              (dnt/go-to-nitrate-ac))))
 
         empty-org (d/seek #(nil? (:id %)) organizations)
