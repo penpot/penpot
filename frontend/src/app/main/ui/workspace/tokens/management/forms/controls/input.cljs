@@ -446,7 +446,7 @@
         props
         (if error
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (or (:message error) (tr "errors.field-cannot-be-empty"))})
+                                  :hint-message (or (:message error) (tr "errors.field-missing"))})
           props)
 
         props

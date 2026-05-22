@@ -339,8 +339,8 @@
     {:reference nil
      :shadow   (mapv (fn [shadow]
                        (-> shadow
-                           (update :blur   #(if (nil? %) "0" %))
-                           (update :spread #(if (nil? %) "0" %))))
+                           (update :blur   #(if (str/blank? %) "0" %))
+                           (update :spread #(if (str/blank? %) "0" %))))
                      value)}
 
     :else
