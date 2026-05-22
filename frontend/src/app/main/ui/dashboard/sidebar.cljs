@@ -92,6 +92,7 @@
   (deprecated-icon/icon-xref :arrow-up-right (stl/css :arrow-up-right-icon)))
 
 (def ^:private ^:svg-id penpot-logo-icon "penpot-logo-icon")
+(def ^:private ^:svg-id penpot-logo-icon-subtle "penpot-logo-subtle")
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -340,11 +341,14 @@
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
                               :class       (stl/css :org-dropdown-item)}
-      [:span {:class (stl/css :org-icon)}
-       [:> raw-svg* {:id penpot-logo-icon}]]
-      "Penpot"
+      [:span {:class (stl/css :my-teams-icon)}
+       [:> raw-svg* {:id penpot-logo-icon-subtle}]]
+      [:span {:class (stl/css :team-text)
+              :title (tr "dashboard.my-teams")}
+       (tr "dashboard.my-teams")]
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
+     [:hr {:role "separator" :class (stl/css :team-separator)}]
 
      (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
