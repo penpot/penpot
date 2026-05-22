@@ -9457,6 +9457,9 @@ msgstr "Field %s is invalid: %s"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Nitrate"
 
+msgid "nitrate.code-activation.renew-title"
+msgstr "RENEW NITRATE"
+
 msgid "nitrate.code-activation.input-label"
 msgstr "Enter your activation code"
 
@@ -9561,6 +9564,9 @@ msgstr "Cancel subscription"
 
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renew with activation code"
+
+msgid "nitrate.subscription.renew-success"
+msgstr "Your Nitrate subscription has been renewed."
 
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"
