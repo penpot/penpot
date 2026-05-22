@@ -51,9 +51,7 @@
 
 ### :bug: Bugs fixed
 
-<<<<<<< fix/token-validation-group-nodes
 - Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
-- Fix token validation failure when group nodes are present in the token tree [Github #9010](https://github.com/penpot/penpot/issues/9010)
 - Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
@@ -79,22 +77,6 @@
 - Fix copy to be more specific [Taiga #13990](https://tree.taiga.io/project/penpot/issue/13990)
 - Allow deleting the profile avatar after uploading [Github #9067](https://github.com/penpot/penpot/issues/9067)
 - Fix incorrect rendering when exporting text as SVG, PNG and JPG (by @edwin-rivera-dev) [Github #8516](https://github.com/penpot/penpot/issues/8516)
-
-=======
-- Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
-- Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
-- Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
-- Fix two plugin error i18n keys broken by leading whitespace before `msgid` in `en.po` (by @MilosM348)
-- Use the noun "copia" instead of the verb "copiar" as the Spanish duplicate-suffix when duplicating design tokens [Github #9623](https://github.com/penpot/penpot/issues/9623)
-- Harden Nginx responses with standard security headers and hide upstream `X-Powered-By` headers
-- Expose Source Sans Pro semibold (weight 600) variants in the builtin fonts list, matching the bundled font assets and CSS @font-face declarations [Github #7378](https://github.com/penpot/penpot/issues/7378)
-- Fix plugin API `shape.fills` and `shape.strokes` arrays being read-only [Github #8357](https://github.com/penpot/penpot/issues/8357)
-- Fix `get-profile` masking transient DB errors as anonymous user (by @jack-stormentswe) [Github #9253](https://github.com/penpot/penpot/issues/9253)
-- Fix `Ctrl+'` "Show guides" shortcut on non-US keyboard layouts by matching the physical key location (by @RenzoMXD) [Github #8423](https://github.com/penpot/penpot/issues/8423)
-- Fix lost-update race on `team.features` during concurrent file creation (by @web-dev0521) [Github #9197](https://github.com/penpot/penpot/issues/9197)
-- Fix copy and paste actions crashing the workspace on insecure origins (plain HTTP / non-`localhost`) where the Clipboard API is unavailable (by @MilosM348) [Github #6514](https://github.com/penpot/penpot/issues/6514)
-- Fix blend-mode dropdown leaving the canvas rendered with the last hover-preview blend mode when dismissed without selecting an option; the WASM render is now reverted to the saved blend mode on pointer-leave (by @edwin-rivera-dev) [Github #XXXX](https://github.com/penpot/penpot/issues/XXXX)
->>>>>>> develop
 
 ## 2.16.0 (Unreleased)
 
