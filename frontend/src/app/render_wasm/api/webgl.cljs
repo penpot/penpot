@@ -11,15 +11,6 @@
    [app.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
 
-(defn max-texture-size
-  "Returns `gl.MAX_TEXTURE_SIZE` (max dimension of a 2D texture), or nil if
-  unavailable."
-  [gl]
-  (when gl
-    (let [n (.getParameter ^js gl (.-MAX_TEXTURE_SIZE ^js gl))]
-      (when (and (number? n) (pos? n) (js/isFinite n))
-        (js/Math.floor n)))))
-
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
   []

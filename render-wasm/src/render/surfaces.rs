@@ -26,15 +26,6 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
     bottom: TILE_MARGIN_SIZE + TILE_SIZE,
 };
 
-/// Atlas texture size limits (px per side).
-///
-/// - `DEFAULT_ATLAS_TEXTURE_SIZE` is the startup fallback used until the
-///   frontend reads the real `gl.MAX_TEXTURE_SIZE` and sends it via
-///   [`Surfaces::atlas.set_max_texture_size`].
-/// - `atlas.max_texture_size` is a hard upper bound to clamp the runtime value
-///   (defensive cap to avoid accidentally creating oversized GPU textures).
-const MAX_ATLAS_TEXTURE_SIZE: i32 = 8192;
-
 pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let TileRect(isx, isy, iex, iey) =
@@ -90,9 +81,6 @@ pub struct DocAtlas {
     /// Optional document-space bounds (1 unit == 1 doc px @ 100% zoom) used to
     /// clamp atlas writes/clears so the atlas doesn't grow due to outlier tile rects.
     pub doc_bounds: Option<skia::Rect>,
-    /// Max width/height in pixels for the atlas surface (typically browser
-    /// `MAX_TEXTURE_SIZE`). Set from ClojureScript after WebGL context creation.
-    pub max_texture_size: i32,
     /// Tracks the last document-space rect written to the atlas per tile.
     /// Used to clear old content without clearing the whole (potentially huge) tile rect.
     pub tile_doc_rects: HashMap<Tile, skia::Rect>,
@@ -102,8 +90,8 @@ impl DocAtlas {
     pub fn try_new() -> Result<Self> {
         // Keep atlas as a regular surface like the rest. Start with a tiny
         // transparent surface and grow it on demand.
-        let mut surface = get_gpu_state()
-            .create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
+        let mut surface =
+            get_gpu_state().create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
 
         surface.canvas().clear(skia::Color::TRANSPARENT);
 
@@ -113,20 +101,12 @@ impl DocAtlas {
             size: skia::ISize::new(0, 0),
             scale: 1.0,
             doc_bounds: None,
-            max_texture_size: MAX_ATLAS_TEXTURE_SIZE,
-            tile_doc_rects: HashMap::default()
+            tile_doc_rects: HashMap::default(),
         })
     }
 
     pub fn is_empty(&self) -> bool {
         self.size.width <= 0 || self.size.height <= 0
-    }
-
-    /// Sets the maximum atlas texture dimension (one side). Should match the
-    /// WebGL `MAX_TEXTURE_SIZE` reported by the browser. Values are clamped to
-    /// a small minimum so the atlas logic stays well-defined.
-    pub fn set_max_texture_size(&mut self, max_px: i32) {
-        self.max_texture_size = max_px.clamp(TILE_SIZE, self.max_texture_size);
     }
 
     /// Sets the document-space bounds used to clamp atlas updates.
@@ -198,7 +178,7 @@ impl DocAtlas {
 
         // Compute atlas scale needed to fit within the fixed texture cap.
         // Keep the highest possible scale (closest to 1.0) that still fits.
-        let cap = self.max_texture_size.max(TILE_SIZE) as f32;
+        let cap = gpu_state.max_texture_size().max(TILE_SIZE) as f32;
         let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
 
         // Never upscale the atlas (it would add blur and churn).
@@ -229,12 +209,8 @@ impl DocAtlas {
             let dy = (current_top - new_top) * new_scale;
 
             let image = self.surface.image_snapshot();
-            let src = skia::Rect::from_xywh(
-                0.0,
-                0.0,
-                self.size.width as f32,
-                self.size.height as f32,
-            );
+            let src =
+                skia::Rect::from_xywh(0.0, 0.0, self.size.width as f32, self.size.height as f32);
             let dst = skia::Rect::from_xywh(
                 dx,
                 dy,
@@ -415,7 +391,6 @@ impl DocAtlas {
             self.origin,
         ))
     }
-
 }
 
 pub struct Surfaces {
@@ -477,9 +452,7 @@ impl Surfaces {
         let backbuffer =
             gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
 
-        // TODO: Obtener este tamaño de alguna otra parte.
-        let max_texture_size = 8192;
-        // NOTA: Esta textura debería utilizar el máximo permitido por la GPU.
+        let max_texture_size = gpu_state.max_texture_size();
         let tile_atlas = gpu_state.create_surface_with_dimensions(
             "tile_atlas".to_string(),
             max_texture_size,
@@ -534,15 +507,6 @@ impl Surfaces {
 
     pub fn set_dpr(&mut self, dpr: f32) {
         self.dpr = dpr;
-    }
-
-    pub fn set_max_texture_size(&mut self, max_texture_size: i32) {
-        self.atlas.set_max_texture_size(max_texture_size);
-    }
-
-    #[inline]
-    pub fn max_texture_dimension_px(&self) -> i32 {
-        self.atlas.max_texture_size
     }
 
     pub fn clear_tiles(&mut self) {
@@ -1157,7 +1121,9 @@ impl Surfaces {
 
             // Incrementally update persistent 1:1 atlas in document space.
             // `tile_doc_rect` is in world/document coordinates (1 unit == 1 px at 100%).
-            let _ = self.atlas.blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
+            let _ = self
+                .atlas
+                .blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
             self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
 
             // Draws current tile into tile atlas

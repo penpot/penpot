@@ -412,7 +412,7 @@ pub struct InteractiveDragCrop {
 /// Chooses a window inside the full workspace-pixel crop `[0, out_w) × [0, out_h)` with each side
 /// at most `max_side_px` (**without scaling**): centered on the projection of
 /// `viewport_doc ∩ src_doc_bounds`, or on the full crop if that intersection is empty.
-/// `max_side_px` should match [`Surfaces::max_texture_dimension_px`] (same budget as the atlas).
+/// `max_side_px` should match [`GpuState::max_texture_size`] (same budget as the atlas).
 #[allow(clippy::too_many_arguments)]
 fn drag_crop_snapshot_window_px(
     max_side_px: i32,
@@ -1766,7 +1766,7 @@ impl RenderState {
         let vb_left = self.viewbox.area.left;
         let vb_top = self.viewbox.area.top;
         let (bb_w, bb_h) = self.surfaces.surface_size(SurfaceId::Backbuffer);
-        let max_snap_px = self.surfaces.max_texture_dimension_px();
+        let max_snap_px = get_gpu_state().max_texture_size();
 
         // Snapshot the atlas once for the whole pass so that all shapes sharing
         // the tile/atlas fallback path reuse the same GPU image rather than each
@@ -3624,7 +3624,9 @@ impl RenderState {
         if tree.get_modifier(&shape.id).is_some() {
             if let Some(raw_shape) = tree.get_raw(&shape.id) {
                 let old_extrect = raw_shape.extrect(tree, 1.0);
-                self.surfaces.atlas.clear_doc_rect_in_atlas_clipped(old_extrect);
+                self.surfaces
+                    .atlas
+                    .clear_doc_rect_in_atlas_clipped(old_extrect);
             }
         }
 
