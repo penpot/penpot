@@ -2910,6 +2910,12 @@ msgstr "New password"
 msgid "labels.next"
 msgstr "Next"
 
+#: src/app/main/ui/static.cljs:325
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot is temporarily unavailable due to a system issue. Please try again "
+"shortly."
+
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "You're all caught up! New comment notifications will appear here."
@@ -2921,6 +2927,10 @@ msgstr "No pending invitations."
 #: src/app/main/ui/dashboard/team.cljs:739
 msgid "labels.no-invitations-gather-people"
 msgstr "Gather your people and build great things together."
+
+#: src/app/main/ui/components/select.cljs
+msgid "labels.no-matches"
+msgstr "No matches"
 
 #: src/app/main/ui/static.cljs
 #, unused
@@ -7556,6 +7566,14 @@ msgstr "Center"
 msgid "workspace.options.stroke.dashed"
 msgstr "Dashed"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-dash"
+msgstr "Dash"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-gap"
+msgstr "Gap"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
 msgid "workspace.options.stroke.dotted"
 msgstr "Dotted"
@@ -9537,7 +9555,7 @@ msgid "subscription.banner.create-org-info"
 msgstr "Create an organization and see exactly how Enterprise works. Set rules, manage your teams and discover a new level of control over your design workflow."
 
 msgid "dashboard.no-permission-create-team.message"
-msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-org-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
@@ -9546,7 +9564,11 @@ msgid "dashboard.select-org-modal.permission-info"
 msgstr "Here you find all your organizations where you are allowed to create or add teams."
 
 msgid "dashboard.no-permission-delete-team.message"
-msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-permission-move-team.message"
-msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the organization's owner."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "You do not have permission to invite people to join or to edit or delete invitations in this team."
+

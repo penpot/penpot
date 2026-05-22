@@ -73,7 +73,7 @@
 (mf/defc header
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [section team]}]
+  [{:keys [section team profile]}]
   (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
         on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
         on-nav-invitations   (mf/use-fn #(st/emit! (dcm/go-to-dashboard-invitations)))
@@ -87,16 +87,19 @@
         invitations-section? (= section :dashboard-team-invitations)
         webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)
+        can-invite?          (dnt/can-send-invitations?
+                              {:organization (:organization team)
+                               :profile-id (:id profile)
+                               :team-permissions permissions})
         invitations          (:invitations team)
 
         on-invite-member
         (mf/use-fn
          (mf/deps team invite-email)
          (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :team
-                                  :invite-email invite-email}))))]
+           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+                                                    :origin :team
+                                                    :invite-email invite-email}))))]
 
     (mf/with-effect [team invite-email]
       (when invite-email
@@ -122,9 +125,11 @@
        [:li {:class (when settings-section? (stl/css :active))}
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
-      (if (and (or invitations-section? members-section?) (:is-admin permissions) (not-empty invitations))
-        [:a
+      (if (and (or invitations-section? members-section?) (not-empty invitations))
+        [:button
          {:class (stl/css :btn-secondary :btn-small)
+          :type "button"
+          :disabled (not can-invite?)
           :on-click on-invite-member
           :data-testid "invite-member"}
          (tr "dashboard.invite-profile")]
@@ -551,7 +556,9 @@
     (st/emit! (dtm/fetch-members)))
 
   [:*
-   [:& header {:section :dashboard-team-members :team team}]
+   [:& header {:section :dashboard-team-members
+               :team team
+               :profile profile}]
    [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
 
     [:> team-members*
@@ -685,11 +692,12 @@
 
         on-change
         (mf/use-fn
-         (mf/deps on-select-change)
+         (mf/deps can-invite on-select-change)
          (fn [event]
-           (let [email (-> (dom/get-current-target event)
-                           (dom/get-data "attr"))]
-             (on-select-change email))))
+           (when can-invite
+             (let [email (-> (dom/get-current-target event)
+                             (dom/get-data "attr"))]
+               (on-select-change email)))))
 
         on-change-role
         (mf/use-fn
@@ -701,19 +709,21 @@
 
     [:div {:class (stl/css :table-row :table-row-invitations)}
      [:div {:class (stl/css :table-field :field-email)}
-      [:div {:class (stl/css :input-wrapper)}
-       [:label
-        [:span {:class (stl/css-case :input-checkbox true
-                                     :global/checked (is-selected? email))}
-         deprecated-icon/status-tick]
+      (if can-invite
+        [:div {:class (stl/css :input-wrapper)}
+         [:label
+          [:span {:class (stl/css-case :input-checkbox true
+                                       :global/checked (is-selected? email))}
+           deprecated-icon/status-tick]
 
-        [:input {:type "checkbox"
-                 :id (dm/str "email-" email)
-                 :data-attr email
-                 :value email
-                 :checked (is-selected? email)
-                 :on-change on-change}]
-        email]]]
+          [:input {:type "checkbox"
+                   :id (dm/str "email-" email)
+                   :data-attr email
+                   :value email
+                   :checked (is-selected? email)
+                   :on-change on-change}]
+          email]]
+        [:div email])]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> invitation-role-selector*
@@ -740,20 +750,20 @@
     on-invite-member     (mf/use-fn
                           (mf/deps team invite-email)
                           (fn []
-                            (st/emit! (modal/show {:type :invite-members
-                                                   :team team
-                                                   :origin :team
-                                                   :invite-email invite-email}))))]
+                            (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+                                                                     :origin :team
+                                                                     :invite-email invite-email}))))]
     [:div {:class (stl/css :empty-invitations)}
      [:span (tr "labels.no-invitations")]
-     (when ^boolean can-invite
+     (if ^boolean can-invite
        [[:span (tr "labels.no-invitations-gather-people")]
         [:a
          {:class (stl/css :btn-empty-invitations)
           :on-click on-invite-member
           :data-testid "invite-member"}
          (tr "dashboard.invite-profile")]
-        [:div {:class (stl/css :blank-space)}]])]))
+        [:div {:class (stl/css :blank-space)}]]
+       [:span (tr "dashboard.invitations.no-permission")])]))
 
 (mf/defc invitation-modal
   {::mf/register modal/components
@@ -880,15 +890,16 @@
 
 (mf/defc invitation-section*
   {::mf/private true}
-  [{:keys [team]}]
+  [{:keys [team profile]}]
   (let [permissions (get team :permissions)
         invitations (mf/use-state (get team :invitations))
 
         team-id     (get team :id)
 
-        owner?      (get permissions :is-owner)
-        admin?      (get permissions :is-admin)
-        can-invite? (or owner? admin?)
+        can-invite? (dnt/can-send-invitations?
+                     {:organization (:organization team)
+                      :profile-id (:id profile)
+                      :team-permissions permissions})
 
         selected    (mf/use-state #{})
 
@@ -900,11 +911,12 @@
 
         on-select-change
         (mf/use-fn
-         (mf/deps selected)
+         (mf/deps can-invite? selected)
          (fn [email]
-           (if (contains? @selected email)
-             (swap! selected disj email)
-             (swap! selected conj email))))
+           (when can-invite?
+             (if (contains? @selected email)
+               (swap! selected disj email)
+               (swap! selected conj email)))))
 
         on-confirm-delete
         (mf/use-fn
@@ -1014,7 +1026,12 @@
       (reset! sort-state {:field nil :direction :asc}))
 
     [:div {:class (stl/css :invitations)}
-     (when (> (count @selected) 0)
+     (when (and (not can-invite?)
+                (seq @invitations))
+       [:div {:class (stl/css :empty-invitations)}
+        [:span (tr "dashboard.invitations.no-permission")]])
+     (when (and can-invite?
+                (> (count @selected) 0))
        [:*
         [:div {:class (stl/css :invitations-actions)}
          [:div
@@ -1075,10 +1092,11 @@
 
   [:*
    [:& header {:section :dashboard-team-invitations
-               :team team}]
+               :team team
+               :profile profile}]
    [:section {:class (stl/css :dashboard-team-invitations)}
 
-    [:> invitation-section* {:team team}]
+    [:> invitation-section* {:team team :profile profile}]
 
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-banner? team profile))
