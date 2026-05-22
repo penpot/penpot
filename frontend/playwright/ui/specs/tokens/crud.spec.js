@@ -1794,22 +1794,26 @@ test("User duplicate color token", async ({ page }) => {
 test("User disables the current set but token still have resolved values shown in the sidebar", async ({
   page,
 }) => {
-  const { tokenThemesSetsSidebar, tokensSidebar } = await setupEmptyTokensFileRender(page);
+  const { tokenThemesSetsSidebar, tokensSidebar } =
+    await setupEmptyTokensFileRender(page);
 
   // Create color token
   await createToken(page, "Color", "color.primary", "Value", "#ff0000");
   await unfoldTokenType(tokensSidebar, "color");
 
   // Deactivate current set
-  await tokenThemesSetsSidebar
-    .getByRole("checkbox")
-    .click();
+  await tokenThemesSetsSidebar.getByRole("checkbox").click();
 
   // Tokens tab panel should have a token with the color #ff0000 and correct resolved value in the tooltip
-  const colorTokenPill = tokensSidebar.getByRole("button", { name: "#ff0000 color.primary" });
+  const colorTokenPill = tokensSidebar.getByRole("button", {
+    name: "#ff0000 color.primary",
+  });
   await expect(colorTokenPill).toHaveCount(1);
-  await colorTokenPill.hover();  // Force title attribute to be attached to the button
-  await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
+  await colorTokenPill.hover(); // Force title attribute to be attached to the button
+  await expect(colorTokenPill).toHaveAttribute(
+    "title",
+    /Resolved value: #ff0000/,
+  );
 });
 
 test.describe("Tokens tab - edition", () => {
@@ -2033,4 +2037,28 @@ test.describe("Tokens tab - delete", () => {
     await expect(tokenContextMenuForToken).not.toBeVisible();
     await expect(colorToken).not.toBeVisible();
   });
+});
+
+test("BUG: 1425 Token is not highlighted in red when value references a token in a disabled set", async ({
+  page,
+}) => {
+  const { tokensSidebar, tokenContextMenuForToken, tokenThemesSetsSidebar } =
+    await setupTokensFileRender(page);
+
+  await expect(tokensSidebar).toBeVisible();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await createToken(page, "Border radius", "base-radius", "Value", "20");
+  await createToken(page, "Border radius", "ref-base", "Value", "{base-radius}");
+  
+  const refTokenPill = tokensSidebar.getByRole("button", {
+    name: "ref-base",
+  });
+
+  await expect(refTokenPill).toBeVisible();
+
+  const CoreSetCheckbox = tokenThemesSetsSidebar.getByRole('button', { name: 'core' }).getByRole('checkbox'); 
+  await CoreSetCheckbox.click();
+  const brokenTokenPill = tokensSidebar.getByRole('button', { name: 'Missing reference ref-base' });
+  await expect(brokenTokenPill).toBeVisible();
 });
