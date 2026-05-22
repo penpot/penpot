@@ -11,7 +11,7 @@
 
 (defmulti render-release-notes :version)
 
-(mf/defc navigation-bullets
+(mf/defc navigation-bullets*
   [{:keys [slide navigate total]}]
   [:ul {:class (stl/css :step-dots)}
    (for [i (range total)]

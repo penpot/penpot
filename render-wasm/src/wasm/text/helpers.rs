@@ -276,6 +276,43 @@ pub fn find_text_span_at_offset(para: &Paragraph, char_offset: usize) -> Option<
     None
 }
 
+pub fn replace_text_with_newlines(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+    text: &str,
+) -> Option<TextPositionWithAffinity> {
+    let normalized = text.replace("\r\n", "\n").replace('\r', "\n");
+    let lines: Vec<&str> = normalized.split('\n').collect();
+    if lines.is_empty() {
+        return None;
+    }
+
+    let mut current_cursor = *cursor;
+
+    if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, lines[0]) {
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph, new_offset);
+    } else {
+        return None;
+    }
+
+    for line in lines.iter().skip(1) {
+        if !split_paragraph_at_cursor(text_content, &current_cursor) {
+            break;
+        }
+        current_cursor =
+            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph + 1, 0);
+        if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, line) {
+            current_cursor = TextPositionWithAffinity::new_without_affinity(
+                current_cursor.paragraph,
+                new_offset,
+            );
+        }
+    }
+
+    Some(current_cursor)
+}
+
 /// Insert text at a cursor position, splitting on newlines into multiple paragraphs.
 /// Returns the final cursor position after insertion.
 pub fn insert_text_with_newlines(
@@ -354,6 +391,58 @@ pub fn insert_text_at_cursor(
     span.set_text(new_text);
 
     Some(cursor.offset + text.chars().count())
+}
+
+/// Replace text at cursor position (overtype mode). Replaces N characters where N is the
+/// length of the input text, returning the new cursor offset.
+pub fn replace_text_at_cursor(
+    text_content: &mut TextContent,
+    cursor: &TextPositionWithAffinity,
+    text: &str,
+) -> Option<usize> {
+    let text_len = text.chars().count();
+    if text_len == 0 {
+        return Some(cursor.offset);
+    }
+
+    let paragraphs = text_content.paragraphs_mut();
+    if cursor.paragraph >= paragraphs.len() {
+        return None;
+    }
+
+    let para = &mut paragraphs[cursor.paragraph];
+    let children = para.children_mut();
+    if children.is_empty() {
+        return None;
+    }
+
+    if children.len() == 1 && children[0].text.is_empty() {
+        children[0].set_text(text.to_string());
+        return Some(text_len);
+    }
+
+    let (span_idx, offset_in_span) = find_text_span_at_offset(para, cursor.offset)?;
+
+    let children = para.children_mut();
+    let span = &mut children[span_idx];
+    let mut new_text = span.text.clone();
+
+    let byte_offset = new_text
+        .char_indices()
+        .nth(offset_in_span)
+        .map(|(i, _)| i)
+        .unwrap_or(new_text.len());
+
+    let end_byte_offset = new_text
+        .char_indices()
+        .nth(offset_in_span + text_len)
+        .map(|(i, _)| i)
+        .unwrap_or(new_text.len());
+
+    new_text.replace_range(byte_offset..end_byte_offset, text);
+    span.set_text(new_text);
+
+    Some(cursor.offset + text_len)
 }
 
 /// Delete a range of text specified by a selection.

@@ -36,6 +36,7 @@
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -465,13 +466,23 @@
       (when-not (some? (get-in state [:workspace-editor-state id]))
         (let [objects   (dsh/lookup-page-objects state)
               shape     (get objects id)
+              wasm?     (features/active-feature? state "render-wasm/v1")
               update-node? (fn [node]
                              (or (txt/is-text-node? node)
                                  (txt/is-paragraph-node? node)))
               shape-ids (cond
                           (cfh/text-shape? shape)  [id]
-                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
-          (rx/of (dwsh/update-shapes shape-ids #(txt/update-text-content % update-node? d/txt-merge attrs))))))))
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+              ;; Keep WASM editor cache in sync with merged :content so a following
+              ;; `apply-styles-to-selection` in `update-attrs` does not read stale
+              ;; `shape-text-contents` and overwrite per-run fills (e.g. line-height).
+              merge-shape
+              (fn [sh]
+                (let [updated-shape (txt/update-text-content sh update-node? d/txt-merge attrs)]
+                  (when wasm?
+                    (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
+                  updated-shape))]
+          (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
 
 (defn migrate-node
   [node]
@@ -851,11 +862,13 @@
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
         (when-let [instance (:workspace-editor state)]
-          (let [attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
-                                          (styles/get-styles-from-style-declaration))
-                overriden-attrs (merge attrs-to-override attrs)
-                styles  (styles/attrs->styles overriden-attrs)]
-            (editor.v2/applyStylesToSelection instance styles)))))))
+          (when (seq attrs)
+            ;; DOM `getCurrentStyle` reflects one resolved style (e.g. caret color). Merging
+            ;; it with sidebar `attrs` and applying to the whole selection collapses mixed
+            ;; fills/fonts when the user only changes one property (e.g. line-height).
+            ;; Apply only the explicit attributes from this action.
+            (let [styles (styles/attrs->styles attrs)]
+              (editor.v2/applyStylesToSelection instance styles))))))))
 
 (defn update-all-attrs
   [ids attrs]
@@ -935,6 +948,12 @@
                             (d/concat-vec txt/text-font-attrs
                                           txt/text-spacing-attrs
                                           txt/text-transform-attrs)))
+             values    (cond-> values
+                         (number? (:line-height values))
+                         (update :line-height str)
+
+                         (number? (:letter-spacing values))
+                         (update :letter-spacing str))
 
              typ-id    (uuid/next)
              typ       (-> (if multiple?
@@ -947,8 +966,8 @@
 
          (rx/concat
           (rx/of (dwl/add-typography typ)
-                 (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                        :asset-type "typography"}))
+                 (ev/event {::ev/name "add-asset-to-library"
+                            :asset-type "typography"}))
 
           (when (not multiple?)
             (rx/of (update-attrs (:id shape)

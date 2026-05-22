@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as h]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -218,6 +219,8 @@
 
         token-applied-name*  (mf/use-state applied-token-name)
         token-applied-name   (deref token-applied-name*)
+        is-token-applied? (and (some? token-applied-name)
+                               (not= :multiple token-applied-name))
 
         focused-id*     (mf/use-state nil)
         focused-id      (deref focused-id*)
@@ -329,6 +332,7 @@
          (fn [event]
            (let [text (dom/get-target-val event)]
              (mf/set-ref-val! raw-value* text)
+             (mf/set-ref-val! dirty-ref true)
              (reset! filter-id* text))))
 
         on-token-apply
@@ -386,10 +390,21 @@
                (reset! is-open* false)))
 
            (when (mf/ref-val dirty-ref)
-             (apply-value (mf/ref-val raw-value*)))
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))
            (when (fn? on-blur)
              (on-blur event))
            (dom/blur! (mf/ref-val ref))))
+
+        commit-pending-on-unmount
+        (mf/use-fn
+         (mf/deps apply-value)
+         (fn []
+           (when (mf/ref-val dirty-ref)
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))))
+
+        handle-unmount (h/use-ref-callback commit-pending-on-unmount)
 
         on-key-down
         (mf/use-fn
@@ -501,9 +516,9 @@
 
         on-scrub-pointer-down
         (mf/use-fn
-         (mf/deps disabled is-open is-multiple? ref min max nillable default)
+         (mf/deps disabled is-open is-multiple? ref min max nillable default is-token-applied?)
          (fn [event]
-           (when-not (or disabled is-open is-multiple?)
+           (when-not (or disabled is-open is-multiple?  is-token-applied?)
              (let [node (mf/ref-val ref)
                    is-focused (and (some? node) (dom/active? node))
                    has-token (some? (deref token-applied-name*))]
@@ -518,57 +533,57 @@
 
         on-scrub-pointer-move
         (mf/use-fn
-         (mf/deps apply-value update-input step min max on-change-start)
+         (mf/deps apply-value update-input step min max on-change-start  is-token-applied?)
          (fn [event]
-           (let [state (mf/ref-val drag-state*)]
-             (when (or (= state :maybe-dragging) (= state :dragging))
-               (let [client-x (.-clientX event)
-                     start-x  (mf/ref-val drag-start-x*)
-                     delta-x  (- client-x start-x)]
-                 (when (and (= state :maybe-dragging)
-                            (>= (js/Math.abs delta-x) 3))
-                   (mf/set-ref-val! drag-state* :dragging)
-                   (dom/add-class! (dom/get-body) "cursor-drag-scrub")
-                   (when (fn? on-change-start)
-                     (on-change-start)))
-                 (when (= (mf/ref-val drag-state*) :dragging)
-                   (let [effective-step (cond
-                                          (.-shiftKey event) (* step 10)
-                                          (.-ctrlKey event)  (* step 0.1)
-                                          :else              step)
-                         steps   (js/Math.round (/ delta-x 1))
-                         new-val (mth/clamp (+ (mf/ref-val drag-start-val*)
-                                               (* steps effective-step))
-                                            min max)]
-                     (update-input (fmt/format-number new-val))
-                     (apply-value (dm/str new-val)))))))))
+           (when-not is-token-applied?
+             (let [state (mf/ref-val drag-state*)]
+               (when (or (= state :maybe-dragging) (= state :dragging))
+                 (let [client-x (.-clientX event)
+                       start-x  (mf/ref-val drag-start-x*)
+                       delta-x  (- client-x start-x)]
+                   (when (and (= state :maybe-dragging)
+                              (>= (js/Math.abs delta-x) 3))
+                     (mf/set-ref-val! drag-state* :dragging)
+                     (when (fn? on-change-start)
+                       (on-change-start)))
+                   (when (= (mf/ref-val drag-state*) :dragging)
+                     (let [effective-step (cond
+                                            (.-shiftKey event) (* step 10)
+                                            (.-ctrlKey event)  (* step 0.1)
+                                            :else              step)
+                           steps   (js/Math.round (/ delta-x 1))
+                           new-val (mth/clamp (+ (mf/ref-val drag-start-val*)
+                                                 (* steps effective-step))
+                                              min max)]
+                       (update-input (fmt/format-number new-val))
+                       (apply-value (dm/str new-val))))))))))
 
         on-scrub-pointer-up
         (mf/use-fn
-         (mf/deps ref on-change-end)
+         (mf/deps ref on-change-end is-token-applied?)
          (fn [event]
-           (let [state (mf/ref-val drag-state*)]
-             (when (= state :maybe-dragging)
-               (mf/set-ref-val! drag-state* :idle)
-               (dom/release-pointer event)
-               (when-let [node (mf/ref-val ref)]
-                 (dom/focus! node)))
-             (when (= state :dragging)
-               (mf/set-ref-val! drag-state* :idle)
-               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
-               (dom/release-pointer event)
-               (when (fn? on-change-end)
-                 (on-change-end))))))
+           (when-not is-token-applied?
+             (let [state (mf/ref-val drag-state*)]
+               (when (= state :maybe-dragging)
+                 (mf/set-ref-val! drag-state* :idle)
+                 (dom/release-pointer event)
+                 (when-let [node (mf/ref-val ref)]
+                   (dom/focus! node)))
+               (when (= state :dragging)
+                 (mf/set-ref-val! drag-state* :idle)
+                 (dom/release-pointer event)
+                 (when (fn? on-change-end)
+                   (on-change-end)))))))
 
         on-scrub-lost-pointer-capture
         (mf/use-fn
-         (mf/deps on-change-end)
+         (mf/deps on-change-end is-token-applied?)
          (fn [_event]
-           (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
-             (mf/set-ref-val! drag-state* :idle)
-             (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
-             (when (and was-dragging (fn? on-change-end))
-               (on-change-end)))))
+           (when-not is-token-applied?
+             (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
+               (mf/set-ref-val! drag-state* :idle)
+               (when (and was-dragging (fn? on-change-end))
+                 (on-change-end))))))
 
         open-dropdown
         (mf/use-fn
@@ -766,15 +781,17 @@
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
 
-    [:div {:class [class (stl/css :input-wrapper)]
+    (mf/with-effect [handle-unmount] handle-unmount)
+
+    [:div {:class [class (stl/css-case :input-wrapper true
+                                       :resizable (not is-token-applied?))]
            :ref wrapper-ref
            :on-pointer-down on-scrub-pointer-down
            :on-pointer-move on-scrub-pointer-move
            :on-pointer-up on-scrub-pointer-up
            :on-lost-pointer-capture on-scrub-lost-pointer-capture}
 
-     (if (and (some? token-applied-name)
-              (not= :multiple token-applied-name))
+     (if is-token-applied?
        [:> token-field* token-props]
        [:> input-field* input-props])
 

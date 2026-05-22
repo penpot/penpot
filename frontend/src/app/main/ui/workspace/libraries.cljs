@@ -107,8 +107,7 @@
      "\u00A0")))
 
 (mf/defc library-description*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [summary]}]
   (let [components-count (get summary :components)
         graphics-count   (get summary :graphics)
@@ -133,8 +132,7 @@
         (tr "workspace.libraries.typography" (c typography-count))])]))
 
 (mf/defc sample-library-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [library importing]}]
   (let [id         (:id library)
         importing? (deref importing)
@@ -185,8 +183,7 @@
     (not (ctob/empty-lib? tokens-lib))))
 
 (mf/defc libraries-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [is-shared linked-libraries shared-libraries]}]
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         search-term*   (mf/use-state "")
@@ -485,8 +482,7 @@
                         :typographies typographies}]))
 
 (mf/defc updates-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [file-id libraries]}]
   ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
@@ -514,12 +510,13 @@
                         (mf/deps file-id)
                         (fn [event]
                           (when-not updating?
-                            (let [library-id (some-> (dom/get-target event)
+                            (let [library-id (some-> (dom/get-current-target event)
                                                      (dom/get-data "library-id")
                                                      (uuid/parse))]
-                              (st/emit!
-                               (dwl/set-updating-library true)
-                               (dwl/sync-file file-id library-id))))))]
+                              (when library-id
+                                (st/emit!
+                                 (dwl/set-updating-library true)
+                                 (dwl/sync-file file-id library-id)))))))]
 
     [:div {:class (stl/css :updates-content)}
      [:div {:class (stl/css :update-section)}
@@ -621,7 +618,7 @@
              (when (or (pos? (:components exceeded))
                        (pos? (:colors exceeded))
                        (pos? (:typographies exceeded)))
-               [:& lb/link-button
+               [:> lb/link-button*
                 {:on-click see-all-assets
                  :class (stl/css :libraries-updates-see-all)
                  :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))

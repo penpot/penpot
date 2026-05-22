@@ -20,9 +20,16 @@
 (def schema:role
   [::sm/one-of {:title "TeamRole"} valid-roles])
 
+(def schema:team-name
+  [:and
+   [::sm/text {:max 250}]
+   [:fn {:error/code "errors.team-name-invalid-chars"}
+    (fn [s] (not (re-find #"[.:/]" s)))]])
+
 ;; FIXME: specify more fields
 (def schema:team
   [:map {:title "Team"}
    [:id ::sm/uuid]
    [:name :string]])
+
 

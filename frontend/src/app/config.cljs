@@ -156,14 +156,15 @@
         (ts/asap #(.reload ^js location true))
         true))))
 
+(def saas?                (obj/get global "penpotIsSaas" false))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def oidc-name            (obj/get global "penpotOIDCName"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
-(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
+(def plugins-list-uri     (obj/get global "penpotPluginsListURI" "https://penpot.app/penpothub/plugins"))
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
-(def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
+(def templates-uri        (obj/get global "penpotTemplatesURI" "https://penpot.github.io/penpot-files/"))
 (def upload-chunk-size    (obj/get global "penpotUploadChunkSize" (* 1024 1024 25))) ;; 25 MiB
 
 ;; We set the current parsed flags under common for make
@@ -190,7 +191,10 @@
       public-uri))
 
 (def worker-uri
-  (obj/get global "penpotWorkerURI" "/js/worker/main.js"))
+  (-> public-uri
+      (u/join "js/worker/main.js")
+      (get :path)
+      (str "?version=" version-tag)))
 
 (defn external-feature-flag
   [flag value]

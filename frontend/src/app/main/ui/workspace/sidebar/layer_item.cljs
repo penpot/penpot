@@ -16,7 +16,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
@@ -275,11 +274,19 @@
 
         toggle-collapse
         (mf/use-fn
-         (mf/deps is-expanded)
+         (mf/deps is-expanded id objects)
          (fn [event]
            (dom/stop-propagation event)
-           (if (and is-expanded (kbd/shift? event))
+           (cond
+             ;; Shift+click while expanded collapses every layer in the sidebar
+             (and is-expanded (kbd/shift? event))
              (st/emit! (dwc/collapse-all))
+
+             ;; Alt+click while collapsed expands the entire subtree rooted at this id
+             (and (not is-expanded) (kbd/alt? event))
+             (st/emit! (dwc/expand-subtree id objects))
+
+             :else
              (st/emit! (dwc/toggle-collapse id)))))
 
         toggle-blocking
@@ -433,20 +440,19 @@
         (mf/use-fn
          (mf/deps id objects)
          (fn [event]
-           (when (contains? cf/flags :canary)
-             (let [shift?    (kbd/shift? event)
-                   shape     (get objects id)
-                   parent    (get objects (:parent-id shape))
-                   siblings  (:shapes parent)
-                   pos       (d/index-of siblings id)]
-               (when (some? pos)
-                 (let [;; Layers render in reverse: Tab (visually down) = dec index,
-                       ;; Shift+Tab (visually up) = inc index
-                       target-id (if shift?
-                                   (get siblings (inc pos))
-                                   (get siblings (dec pos)))]
-                   (when (some? target-id)
-                     (st/emit! (dw/start-rename-shape target-id)))))))))]
+           (let [shift?    (kbd/shift? event)
+                 shape     (get objects id)
+                 parent    (get objects (:parent-id shape))
+                 siblings  (:shapes parent)
+                 pos       (d/index-of siblings id)]
+             (when (some? pos)
+               (let [;; Layers render in reverse: Tab (visually down) = dec index,
+                     ;; Shift+Tab (visually up) = inc index
+                     target-id (if shift?
+                                 (get siblings (inc pos))
+                                 (get siblings (dec pos)))]
+                 (when (some? target-id)
+                   (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)

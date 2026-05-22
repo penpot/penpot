@@ -113,12 +113,19 @@
             (tgen/fmap keyword)))))
 
 ;; --- SPEC: email
+;;
+;; Regex rules enforced:
+;;   local part  - valid RFC chars, no leading/trailing dot, no consecutive dots
+;;   domain      - labels can't start/end with hyphen, no empty labels
+;;   TLD         - at least 2 alphabetic chars
 
-(def email-re #"[a-zA-Z0-9_.+-\\\\]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+(def email-re
+  #"^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}$")
 
 (defn parse-email
   [s]
-  (some->> s (re-seq email-re) first))
+  (when (and (string? s) (re-matches email-re s))
+    s))
 
 (letfn [(conformer [v]
           (or (parse-email v) ::s/invalid))
@@ -126,11 +133,10 @@
           (dm/str v))]
   (s/def ::email
     (s/with-gen (s/conformer conformer unformer)
-      #(as-> (tgen/let [p1 (s/gen ::not-empty-string)
-                        p2 (s/gen ::not-empty-string)
-                        p3 (tgen/elements ["com" "net"])]
-               (str p1 "@" p2 "." p3)) $
-         (tgen/such-that (partial re-matches email-re) $ 50)))))
+      #(tgen/let [local (tgen/string-alphanumeric 1 20)
+                  label (tgen/string-alphanumeric 2 10)
+                  tld   (tgen/elements ["com" "net" "org" "io" "co" "dev"])]
+         (str local "@" label "." tld)))))
 
 ;; -- SPEC: uri
 

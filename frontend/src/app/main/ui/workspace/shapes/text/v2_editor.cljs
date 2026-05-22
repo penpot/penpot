@@ -147,7 +147,13 @@
 
         on-style-change
         (fn [event]
-          (let [styles (styles/get-styles-from-event event)]
+          (let [styles     (styles/get-styles-from-event event)
+                fills      (:fills styles)
+                fill-color (when (sequential? fills) (some :fill-color fills))]
+            ;; Dynamically update the caret color as the cursor moves between spans
+            (when-let [container-node (mf/ref-val container-ref)]
+              (dom/set-style! container-node "--text-editor-caret-color"
+                              (or fill-color text-color)))
             (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
 
         on-needs-layout
@@ -219,10 +225,18 @@
      (= (:vertical-align content) "bottom")]))
 
 (defn get-color-from-content [content]
-  (let [fills (->> (tree-seq map? :children content)
-                   (mapcat :fills)
-                   (filter :fill-color))]
-    (some :fill-color fills)))
+  (let [nodes     (tree-seq map? :children content)
+        get-color (fn [node]
+                    ;; Handle both new format (:fills vector) and old/deprecated format
+                    ;; (direct :fill-color on the content node — pre-fills-refactor files)
+                    (or (some :fill-color (:fills node))
+                        (:fill-color node)))]
+    ;; Prefer inline (leaf) text nodes over paragraph nodes. The paragraph's :fills
+    ;; tracks the last-typed color, so using it directly would make the caret take
+    ;; the last span's color rather than the first visible span's color.
+    ;; Inline nodes have no :type; they are identified by the presence of :text.
+    (or (->> nodes (filter #(contains? % :text)) (some get-color))
+        (->> nodes (some get-color)))))
 
 (defn get-default-text-color
   "Returns the appropriate text color based on fill, frame, and background."
@@ -289,7 +303,9 @@
       :ref container-ref
       :data-testid "text-editor-container"
       :style {:width "var(--editor-container-width)"
-              :height "var(--editor-container-height)"}}
+              :height "var(--editor-container-height)"
+              :min-width "var(--editor-container-min-width, 1px)"
+              :min-height "var(--editor-container-min-height, 1px)"}}
      ;; We hide the editor when is blurred because otherwise the
      ;; selection won't let us see the underlying text. Use opacity
      ;; because display or visibility won't allow to recover focus
@@ -379,7 +395,7 @@
 
         render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-        [{:keys [x y width height]} transform]
+        [{:keys [x y width height selrect-width selrect-height]} transform]
         (if render-wasm?
           (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
                 selrect-transform (mf/deref refs/workspace-selrect)
@@ -401,7 +417,8 @@
                     "bottom" (+ y (- selrect-height height))
                     "center" (+ y (/ (- selrect-height height) 2))
                     y)]
-            [(assoc selrect :y y :width overlay-width :height max-height) transform])
+            [(assoc selrect :y y :width overlay-width :height max-height
+                    :selrect-width selrect-width :selrect-height selrect-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -418,14 +435,17 @@
         (cond-> #js {:pointerEvents "all"}
           render-wasm?
           (obj/merge!
-           #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")
-                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")})
+           #js {"--editor-container-width" "auto"
+                "--editor-container-height" "auto"
+                "--editor-container-min-width" (dm/str (max 1 selrect-width) "px")
+                "--editor-container-min-height" (dm/str (max 1 selrect-height) "px")
+                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
+                :display "flex"})
 
           (not render-wasm?)
           (obj/merge!
-           #js {"--editor-container-width" (dm/str width "px")
-                "--editor-container-height" (dm/str height "px")})
+           #js {"--editor-container-width" (dm/str (max 1 width) "px")
+                "--editor-container-height" (dm/str (max 1 height) "px")})
 
           ;; Transform is necessary when there is a text overflow and the vertical
           ;; aligment is center or bottom.

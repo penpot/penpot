@@ -30,7 +30,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -292,7 +292,7 @@
           (csu/get-token-dropdown-options typography-tokens nil))
 
         selected-token-id*
-        (mf/use-state #(when current-token-name
+        (mf/use-state #(when (and (not= :multiple current-token-name) current-token-name)
                          (:id (get-option-by-name dropdown-options current-token-name))))
         selected-token-id (deref selected-token-id*)
 
@@ -411,10 +411,18 @@
 
         detach-token
         (mf/use-fn
+         (mf/deps ids)
          (fn [token-name]
            (st/emit! (dwta/unapply-token {:token-name  token-name
                                           :attributes  #{:typography}
                                           :shape-ids   ids}))))
+
+        handle-detach-all-tokens
+        (mf/use-fn
+         (mf/deps ids)
+         (fn []
+           (st/emit! (dwta/unapply-multiple-tokens {:attributes  #{:typography}
+                                                    :shape-ids   ids}))))
 
         expand-stream
         (mf/with-memo []
@@ -429,10 +437,12 @@
               (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
                 (dom/focus! (txu/get-text-editor-content)))))))
 
-        common-props
-        (mf/props {:values    values
-                   :on-change on-change
-                   :on-blur   on-text-blur})]
+        common-props (mf/props
+                      {:ids         ids
+                       :values      values
+                       :on-change   on-change
+                       :show-recent true
+                       :on-blur     on-text-blur})]
 
     (hooks/use-stream
      expand-stream
@@ -443,7 +453,7 @@
 
     (mf/with-effect [applied-token-name dropdown-options]
       (reset! selected-token-id*
-              (when applied-token-name
+              (when (and (not= :multiple applied-token-name) applied-token-name)
                 (:id (get-option-by-name dropdown-options applied-token-name)))))
 
     (mf/with-effect [token-dropdown-open?]
@@ -475,10 +485,35 @@
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
         (cond
+          (and token-typography-row-enabled? (= :multiple current-token-name) (= typography-id :multiple))
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-tokens-and-assets")]]
+
+          (and token-typography-row-enabled? (= :multiple current-token-name))
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-tokens")]
+           [:> icon-button* {:variant    "ghost"
+                             :aria-label (tr "workspace.libraries.text.multiple-token-tooltip")
+                             :tooltip-placement "top-left"
+                             :on-click   handle-detach-all-tokens
+                             :icon       i/detach}]]
+
           (and token-typography-row-enabled? current-token-name)
           [:> token-typography-row* {:token-name    current-token-name
                                      :detach-token  detach-token
                                      :active-tokens (resolve-delay typography-tokens)}]
+
+          (= typography-id :multiple)
+          [:div {:class (stl/css :multiple-typography)}
+           [:span {:class (stl/css :multiple-text)}
+            (tr "workspace.libraries.text.mixed-typography")]
+           [:> icon-button* {:variant    "ghost"
+                             :aria-label (tr "workspace.libraries.text.multiple-assets-tooltip")
+                             :on-click   handle-detach-typography
+                             :tooltip-placement "top-left"
+                             :icon       i/detach}]]
 
           typography
           [:& typography-entry {:file-id    typography-file-id
@@ -487,24 +522,14 @@
                                 :on-detach  handle-detach-typography
                                 :on-change  handle-change-typography}]
 
-          (= typography-id :multiple)
-          [:div {:class (stl/css :multiple-typography)}
-           [:span {:class (stl/css :multiple-text)} (tr "workspace.libraries.text.multiple-typography")]
-           [:> icon-button* {:variant    "ghost"
-                             :aria-label (tr "workspace.libraries.text.multiple-typography-tooltip")
-                             :on-click   handle-detach-typography
-                             :icon       i/detach}]]
+
 
           :else
-          [:> text-options  #js {:ids       ids
-                                 :values    values
-                                 :on-change on-change
-                                 :show-recent true
-                                 :on-blur   on-text-blur}])
+          [:> text-options* common-props])
 
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options* common-props]
-         [:> grow-options* (mf/spread-props common-props {:ids ids})]
+         [:> grow-options* common-props]
          [:> icon-button* {:variant     "ghost"
                            :aria-label  (tr "labels.options")
                            :data-testid "text-align-options-button"
@@ -523,4 +548,5 @@
                                          :options      (resolve-delay dropdown-options)
                                          :selected     selected-token-id
                                          :align        "right"
+                                         :placeholder  (tr "workspace.tokens.search-by-token")
                                          :ref          set-option-ref}])]))

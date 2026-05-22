@@ -14,6 +14,7 @@
   --options-empty: var(--color-canvas);
 
   display: grid;
+  align-content: center;
   place-items: center start;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
@@ -25,6 +26,7 @@
   outline-offset: calc(-1 * $b-1);
   background-color: var(--options-bg-color);
   color: var(--options-fg-color);
+  cursor: default;
 
   &:hover,
   &[aria-selected="true"] {

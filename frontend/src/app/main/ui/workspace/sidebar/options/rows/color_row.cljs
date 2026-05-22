@@ -71,11 +71,12 @@
   [{:keys [active-tokens applied-token-name color on-swatch-click-token detach-token open-modal-from-token]}]
   (let [;; `active-tokens` may be provided as a `delay` (lazy computation).
         ;; In that case we must deref it (`@active-tokens`) to force evaluation
-        ;; and obtain the actual value. If it’s already realized (not a delay),
+        ;; and obtain the actual value. If it's already realized (not a delay),
         ;; we just use it directly.
         active-tokens (if (delay? active-tokens)
                         @active-tokens
                         active-tokens)
+
 
         active-color-tokens (:color active-tokens)
 
@@ -240,7 +241,16 @@
 
         open-modal
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index applied-token)
+         (mf/deps disable-gradient
+                  disable-opacity
+                  disable-image
+                  disable-picker
+                  on-change
+                  on-close
+                  on-open
+                  tokens
+                  index
+                  applied-token)
          (fn [color pos tab]
            (let [color (cond
                          ^boolean has-multiple-colors
@@ -345,6 +355,11 @@
     (mf/with-effect [color prev-color disable-picker]
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
+
+    (mf/with-effect [applied-token disable-picker]
+      (when (not disable-picker)
+        (modal/update-props! :colorpicker {:applied-token applied-token})))
+
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)
@@ -436,4 +451,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
+                         :tooltip-position "top-left"
                          :icon i/move}])]))

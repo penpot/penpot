@@ -75,6 +75,11 @@
   (track! :set-structure-modifiers)
   nil)
 
+(defn- mock-set-modifiers
+  [_modifiers]
+  (track! :set-modifiers)
+  nil)
+
 (defn- mock-set-shape-grow-type
   [_grow-type]
   (track! :set-shape-grow-type)
@@ -141,6 +146,7 @@
           {:clean-modifiers         wasm.api/clean-modifiers
            :set-structure-modifiers wasm.api/set-structure-modifiers
            :propagate-modifiers     wasm.api/propagate-modifiers
+           :set-modifiers           wasm.api/set-modifiers
            :set-shape-grow-type     wasm.api/set-shape-grow-type
            :set-shape-text-content  wasm.api/set-shape-text-content
            :set-shape-text-images   wasm.api/set-shape-text-images
@@ -152,6 +158,7 @@
   (set! wasm.api/clean-modifiers         mock-clean-modifiers)
   (set! wasm.api/set-structure-modifiers mock-set-structure-modifiers)
   (set! wasm.api/propagate-modifiers     mock-propagate-modifiers)
+  (set! wasm.api/set-modifiers           mock-set-modifiers)
   (set! wasm.api/set-shape-grow-type     mock-set-shape-grow-type)
   (set! wasm.api/set-shape-text-content  mock-set-shape-text-content)
   (set! wasm.api/set-shape-text-images   mock-set-shape-text-images)
@@ -167,6 +174,7 @@
     (set! wasm.api/clean-modifiers         (:clean-modifiers orig))
     (set! wasm.api/set-structure-modifiers (:set-structure-modifiers orig))
     (set! wasm.api/propagate-modifiers     (:propagate-modifiers orig))
+    (set! wasm.api/set-modifiers           (:set-modifiers orig))
     (set! wasm.api/set-shape-grow-type     (:set-shape-grow-type orig))
     (set! wasm.api/set-shape-text-content  (:set-shape-text-content orig))
     (set! wasm.api/set-shape-text-images   (:set-shape-text-images orig))

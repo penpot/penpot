@@ -26,15 +26,23 @@
   margin: 0 var(--sp-l) 0 0;
   border-right: $b-1 solid var(--panel-border-color);
   background-color: var(--panel-background-color);
-  z-index: var(--z-index-dropdown);
 }
 
 // SIDEBAR CONTENT COMPONENT
+.sidebar-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
   gap: var(--sp-xxl);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: hidden auto;
 }
@@ -217,7 +225,7 @@
 }
 
 .team-separator {
-  border-top: $b-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--color-background-quaternary);
   margin: 0;
 }
 
@@ -470,8 +478,13 @@
   min-width: deprecated.$s-192;
 }
 
+// Each submenu is positioned via its bottom edge; the visual top lands
+// at `inset-block-end + submenu_height`. Help & Learning (3 items,
+// taller) needs the same inset as Community (2 items, shorter) so that
+// its top edge sits one row above Community — aligning with the
+// "Help & Learning" trigger row in the parent menu.
 .sub-menu.help-learning {
-  inset-block-end: deprecated.$s-72;
+  inset-block-end: deprecated.$s-120;
 }
 
 .sub-menu.community {
@@ -632,6 +645,17 @@
   }
 }
 
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
 .sidebar-org-switch {
   position: relative;
   width: 100%;
@@ -647,6 +671,10 @@
   gap: var(--sp-s);
   height: 100%;
   width: 100%;
+}
+
+.current-org-no-options {
+  gap: 0;
 }
 
 .current-org .arrow-icon {

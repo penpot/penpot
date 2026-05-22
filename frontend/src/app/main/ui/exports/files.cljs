@@ -45,8 +45,7 @@
      :files files}))
 
 (mf/defc export-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [file]}]
   [:div {:class (stl/css-case
                  :file-entry true

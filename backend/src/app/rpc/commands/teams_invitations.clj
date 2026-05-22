@@ -19,6 +19,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.email.blacklist :as email.blacklist]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.nitrate :as nitrate]
@@ -91,6 +92,7 @@
     [:map
      [:id ::sm/uuid]
      [:name :string]
+     [:initials [:maybe :string]]
      [:logo ::sm/uri]]]
    [:profile
     [:map
@@ -121,6 +123,12 @@
 
   (let [email  (profile/clean-email email)
         member (profile/get-profile-by-email conn email)]
+
+    (when (and (email.blacklist/enabled? cfg)
+               (email.blacklist/contains? cfg email))
+      (ex/raise :type :restriction
+                :code :email-domain-is-not-allowed
+                :hint "email domain is in the blacklist"))
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the
@@ -197,9 +205,9 @@
                          organization "create-org-invitation"
                          :else "create-team-invitation")
                 event (-> (audit/event-from-rpc-params params)
-                          (assoc ::audit/name evname)
-                          (assoc ::audit/props props))]
-            (audit/submit! cfg event))
+                          (assoc :name evname)
+                          (assoc :props props))]
+            (audit/submit cfg event))
 
           (when (allow-invitation-emails? member)
             (if organization
@@ -211,8 +219,8 @@
                             :invited-by (:fullname profile)
                             :user-name (:fullname member)
                             :organization-name (:name organization)
-                            :org-logo (:logo organization)
-                            :org-initials (d/get-initials (:name organization))
+                            :organization-logo (:logo organization)
+                            :organization-initials (:initials organization)
                             :token itoken
                             :extra-data ptoken}))
               (let [team (if (contains? cf/flags :nitrate)
@@ -224,18 +232,18 @@
                             :to email
                             :invited-by (:fullname profile)
                             :team (:name team)
-                            :organization (:organization-name team)
+                            :organization (dm/get-in team [:organization :name])
                             :token itoken
                             :extra-data ptoken}))))
 
           itoken)))))
 
 (defn create-org-invitation
-  [cfg {:keys [::rpc/profile-id id name logo] :as params}]
+  [cfg {:keys [::rpc/profile-id id name initials logo] :as params}]
   (let [profile  (db/get-by-id cfg :profile profile-id)]
     (create-invitation cfg
                        (assoc params
-                              :organization {:id id :name name :logo logo}
+                              :organization {:id id :name name :initials initials :logo logo}
                               :profile profile
                               :role :editor))))
 
@@ -479,9 +487,9 @@
 
     (let [props {:name name :features features}
           event (-> (audit/event-from-rpc-params params)
-                    (assoc ::audit/name "create-team")
-                    (assoc ::audit/props props))]
-      (audit/submit! cfg event))
+                    (assoc :name "create-team")
+                    (assoc :props props))]
+      (audit/submit cfg event))
 
     ;; Create invitations for all provided emails.
     (let [profile     (db/get-by-id conn :profile profile-id)

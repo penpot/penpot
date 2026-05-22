@@ -4904,11 +4904,11 @@ msgid "subscription.settings.success.dialog.thanks"
 msgstr "पेनपोट %s योजना चुनने के लिए धन्यवाद!"
 
 #: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
+msgid "subscription.settings.success.dialog.footer"
 msgstr "अपनी योजना का आनंद लें!"
 
 #: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
+msgid "subscription.settings.success.dialog.title"
 msgstr "आप %s हैं!"
 
 #: src/app/main/ui/settings/subscription.cljs:526
@@ -7651,7 +7651,7 @@ msgid "workspace.tokens.color"
 msgstr "रंग"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "पंक्ति की ऊँचाई फ़ॉन्ट आकार पर निर्भर करती है। हल किया गया मान प्राप्त करने "
 "के लिए फ़ॉन्ट आकार जोड़ें।"
@@ -7701,7 +7701,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "%s token संपादित करें"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "टोकन मान रिक्त नहीं हो सकता"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7709,7 +7709,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "%s टोकन नाम दर्ज करें"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "आयात त्रुटि: JSON को पार्स नहीं किया जा सका।"
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7773,7 +7773,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "%s आयात करें"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "आयात त्रुटि:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -7824,60 +7824,60 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "व्यक्तिगत टोकन का प्रयोग करें"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "अमान्य रंग मान: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
+msgid "errors.tokens.invalid-font-family-token-value"
 msgstr "Invalid token value: आप केवल फ़ॉन्ट-परिवार token का संदर्भ ले सकते हैं"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
 "अमान्य फ़ॉन्ट भार मान: संख्यात्मक मान (100-950) या मानक नाम (पतला, हल्का, "
 "नियमित, बोल्ड, आदि) का उपयोग करें, वैकल्पिक रूप से उसके बाद 'इटैलिक' लिखें"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "आयात त्रुटि: JSON में अमान्य टोकन डेटा।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "आयात त्रुटि: JSON में अमान्य टोकन नाम।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" एक मान्य टोकन नाम नहीं है।\n"
 "टोकन नामों में केवल अक्षर और अंक होने चाहिए, जो डॉट (.) से अलग किए गए हों, "
 "और $ चिह्न से शुरू नहीं होने चाहिए।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgid "errors.tokens.invalid-shadow-type-token-value"
 msgstr "अमान्य छाया प्रकार: केवल 'innerShadow' या 'dropShadow' स्वीकार किए जाते हैं"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "अमान्य token मान: केवल कोई नहीं, अपरकेस, लोअरकेस या कैपिटलाइज़ स्वीकार किए "
 "जाते हैं"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr ""
 "अमान्य token मान: केवल कोई नहीं, रेखांकित और स्ट्राइक-थ्रू स्वीकार किए जाते "
 "हैं"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
+msgid "errors.tokens.invalid-token-value-shadow"
 msgstr "अमान्य मूल्य: एक समग्र छाया टोकन का संदर्भ देना चाहिए।।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr "अमान्य मान: एक संयुक्त टाइपोग्राफी token का संदर्भ होना चाहिए।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "अमान्य टोकन मान: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -7917,7 +7917,7 @@ msgid "workspace.tokens.min-size"
 msgstr "न्यूनतम. आकार"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "गुम टोकन संदर्भ: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -7957,7 +7957,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "आपके पास वर्तमान में कोई थीम नहीं है।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "इस फ़ाइल में कोई टोकन, सेट या थीम नहीं मिला।"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -7965,11 +7965,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s सक्रिय सेट"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "अमान्य टोकन मान. हल किया गया मान बहुत बड़ा है: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr "अपारदर्शिता 0 और 100% या 0 और 1 (जैसे 50% या 0.5) के बीच होनी चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
@@ -8016,7 +8016,7 @@ msgid "workspace.tokens.select-set"
 msgstr "सेट का चयन करें।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "टोकन में स्व-संदर्भ होता है"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8057,7 +8057,7 @@ msgid "workspace.tokens.shadow-blur"
 msgstr "धुंधला"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
+msgid "errors.tokens.shadow-blur-range"
 msgstr "छाया धुंधलापन 0 से अधिक या उसके बराबर होना चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
@@ -8078,7 +8078,7 @@ msgid "workspace.tokens.shadow-spread"
 msgstr "फैलाना"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
+msgid "errors.tokens.shadow-spread-range"
 msgstr "छाया प्रसार 0 से अधिक या उसके बराबर होना चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
@@ -8099,7 +8099,7 @@ msgid "workspace.tokens.size"
 msgstr "आकार"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "स्ट्रोक की चौड़ाई 0 से बड़ी या उसके बराबर होनी चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -8200,11 +8200,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "मान मान्य नहीं है"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "अमान्य मान: % की अनुमति नहीं है।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "अमान्य मान: इकाइयाँ अनुमति नहीं हैं।"
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166

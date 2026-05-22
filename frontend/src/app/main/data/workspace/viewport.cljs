@@ -16,9 +16,19 @@
    [app.common.math :as mth]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn sync-wasm-workspace-viewport
+  "Effect-only: pushes the current workspace zoom/view box to WASM after other
+  events (e.g. `update-viewport-size`) have updated the store."
+  []
+  (ptk/reify ::sync-wasm-workspace-viewport
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn initialize-viewport
   [{:keys [width height] :as size}]
@@ -82,7 +92,11 @@
       (update [_ state]
         (update state :workspace-local
                 (fn [local]
-                  (setup state local)))))))
+                  (setup state local))))
+
+      ptk/EffectEvent
+      (effect [_ state _]
+        (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (defn calculate-centered-viewbox
   "Updates the viewbox coordinates for a given center position"
@@ -101,7 +115,13 @@
   (ptk/reify ::update-viewport-position-center
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local calculate-centered-viewbox position))))
+      (if (dwvw/render-context-lost? state)
+        state
+        (update state :workspace-local calculate-centered-viewbox position)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
@@ -118,11 +138,17 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :vbox]
-                 (fn [vbox]
-                   (-> vbox
-                       (update :x x)
-                       (update :y y)))))))
+      (if (dwvw/render-context-lost? state)
+        state
+        (update-in state [:workspace-local :vbox]
+                   (fn [vbox]
+                     (-> vbox
+                         (update :x x)
+                         (update :y y))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn update-viewport-size
   [resize-type {:keys [width height] :as size}]
@@ -166,23 +192,35 @@
                         (assoc-in [:vbox :width] vbox-width')
                         (assoc-in [:vbox :height] vbox-height')))))))))
 
+(defn- activate-panning []
+  (ptk/reify ::activate-panning
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :panning] true)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-view-interaction-start! state))))
+
 (defn start-panning []
   (ptk/reify ::start-panning
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
             zoom (get-in state [:workspace-local :zoom])]
-        (when-not (get-in state [:workspace-local :panning])
+        (when (and (not (dwvw/render-context-lost? state))
+                   (not (get-in state [:workspace-local :panning])))
           (rx/concat
-           (rx/of #(-> % (assoc-in [:workspace-local :panning] true)))
+           (rx/of (activate-panning))
            (->> stream
                 (rx/filter mse/pointer-event?)
-                (rx/filter #(= :delta (:source %)))
+                (rx/filter #(some? (mse/get-pointer-movement %)))
                 (rx/take-until stopper)
                 ;; Some events are executed in synchronous way like panning with backspace pressed
                 (rx/observe-on :af)
                 (rx/map (fn [event]
-                          (let [delta (dm/get-prop event :pt)]
+                          (let [delta (mse/get-pointer-movement event)]
                             (update-viewport-position {:x #(- % (/ (:x delta) zoom))
                                                        :y #(- % (/ (:y delta) zoom))})))))))))))
 
@@ -191,4 +229,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :panning)))))
+          (update :workspace-local dissoc :panning)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-view-interaction-end! state))))

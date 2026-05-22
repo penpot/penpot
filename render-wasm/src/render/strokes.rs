@@ -1,7 +1,8 @@
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{
-    merge_fills, Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type,
+    merge_fills, Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs,
+    Type,
 };
 use skia_safe::{self as skia, ImageFilter, RRect};
 
@@ -210,6 +211,7 @@ fn draw_stroke_on_path(
     path_transform: Option<&Matrix>,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
+    svg_attrs: Option<&SvgAttrs>,
     antialias: bool,
 ) {
     let is_open = path.is_open();
@@ -229,8 +231,8 @@ fn draw_stroke_on_path(
     if let Some(pt) = path_transform {
         canvas.concat(pt);
     }
-    let skia_path = path.to_skia_path();
 
+    let skia_path = path.to_skia_path(svg_attrs);
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
             draw_inner_stroke_path(canvas, &skia_path, &draw_paint, blur, antialias);
@@ -297,6 +299,12 @@ fn handle_stroke_caps(
 ) {
     // Closed shapes don't have caps
     if !is_open {
+        return;
+    }
+
+    // When both ends share the same simple line cap, Skia already drew it
+    // natively via `PaintCap` on the stroke paint, so skip the manual overlay.
+    if stroke.to_skia_linecap().is_some() {
         return;
     }
 
@@ -510,7 +518,7 @@ fn draw_image_stroke_in_container(
             if let Some(p) = shape_type.path() {
                 canvas.save();
 
-                let path = p.to_skia_path().make_transform(
+                let path = p.to_skia_path(svg_attrs).make_transform(
                     &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
                 );
                 let stroke_kind = stroke.render_kind(p.is_open());
@@ -574,7 +582,7 @@ fn draw_image_stroke_in_container(
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
     if let Type::Path(p) = &shape.shape_type {
         if stroke.render_kind(p.is_open()) == StrokeKind::Outer {
-            let path = p.to_skia_path().make_transform(
+            let path = p.to_skia_path(svg_attrs).make_transform(
                 &path_transform.ok_or(Error::CriticalError("No path transform".to_string()))?,
             );
             let mut clear_paint = skia::Paint::default();
@@ -846,6 +854,7 @@ fn render_merged(
                     path_transform.as_ref(),
                     None,
                     blur_filter.as_ref(),
+                    svg_attrs,
                     antialias,
                 );
             }
@@ -1016,6 +1025,7 @@ fn render_single_internal(
                         path_transform.as_ref(),
                         shadow,
                         blur.as_ref(),
+                        svg_attrs,
                         antialias,
                     );
                 }

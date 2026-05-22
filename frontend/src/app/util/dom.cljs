@@ -122,6 +122,14 @@
              (fn? (.-preventDefault event)))
     (.preventDefault event)))
 
+(defn prevent-default-context-menu
+  [^js event]
+  (let [target (some-> event .-target)
+        tag    (some-> target .-tagName .toLowerCase)]
+    (when-not (or (#{"input" "textarea"} tag)
+                  (some-> target .-isContentEditable))
+      (.preventDefault event))))
+
 (defn get-target
   "Extract the target from event instance."
   [^js event]
@@ -322,6 +330,18 @@
    (create-text globals/document text))
   ([document ^js text]
    (.createTextNode document text)))
+
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
 
 (defn set-html!
   [^js el html]

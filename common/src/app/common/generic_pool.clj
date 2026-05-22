@@ -8,11 +8,11 @@
   (:refer-clojure :exclude [get])
   (:import
    java.lang.AutoCloseable
+   org.apache.commons.pool2.impl.DefaultPooledObject
+   org.apache.commons.pool2.impl.SoftReferenceObjectPool
    org.apache.commons.pool2.ObjectPool
    org.apache.commons.pool2.PooledObject
-   org.apache.commons.pool2.PooledObjectFactory
-   org.apache.commons.pool2.impl.DefaultPooledObject
-   org.apache.commons.pool2.impl.SoftReferenceObjectPool))
+   org.apache.commons.pool2.PooledObjectFactory))
 
 (defn pool?
   [o]

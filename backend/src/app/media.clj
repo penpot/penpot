@@ -18,6 +18,7 @@
    [app.config :as cf]
    [app.db :as-alias db]
    [app.http.client :as http]
+   [app.media.sanitize :as sanitize]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [buddy.core.bytes :as bb]
@@ -31,14 +32,11 @@
   (:import
    clojure.lang.XMLHandler
    java.io.InputStream
-   javax.xml.XMLConstants
    javax.xml.parsers.SAXParserFactory
+   javax.xml.XMLConstants
    org.apache.commons.io.IOUtils
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation))
-
-(def default-max-file-size
-  (* 1024 1024 10)) ; 10 MiB
 
 (def schema:upload
   [:map {:title "Upload"}
@@ -74,6 +72,20 @@
       (ex/raise :type :restriction
                 :code :media-max-file-size-reached
                 :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                (:size upload)
+                                max-size)))
+    upload))
+
+(defn validate-font-size!
+  "Validates that the font file `upload` does not exceed the configured
+  `:font-max-file-size` limit.  Accepts the same map shape as
+  `validate-media-size!` — requires a `:size` key in bytes."
+  [upload]
+  (let [max-size (cf/get :font-max-file-size)]
+    (when (> (:size upload) max-size)
+      (ex/raise :type :restriction
+                :code :font-max-file-size-reached
+                :hint (str/ffmt "the uploaded font size % is greater than the maximum %"
                                 (:size upload)
                                 max-size)))
     upload))
@@ -295,9 +307,7 @@
   [{:keys [::http/client]} uri]
   (letfn [(parse-and-validate [{:keys [status headers] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
-                  mtype    (get headers "content-type")
-                  format   (cm/mtype->format mtype)
-                  max-size (cf/get :media-max-file-size default-max-file-size)]
+                  mtype    (get headers "content-type")]
 
               (when-not (<= 200 status 299)
                 (ex/raise :type :validation
@@ -309,25 +319,17 @@
                           :code :unknown-size
                           :hint "seems like the url points to resource with unknown size"))
 
-              (when (> size max-size)
-                (ex/raise :type :validation
-                          :code :file-too-large
-                          :hint (str/ffmt "the file size % is greater than the maximum %"
-                                          size
-                                          default-max-file-size)))
-
-              (when (nil? format)
-                (ex/raise :type :validation
-                          :code :media-type-not-allowed
-                          :hint "seems like the url points to an invalid media object"))
-
-              {:size size :mtype mtype :format format}))]
+              (-> {:size size :mtype mtype}
+                  (validate-media-type!)
+                  (validate-media-size!))))]
 
     (let [{:keys [body] :as response}
           (try
-            (http/req! client
-                       {:method :get :uri uri}
-                       {:response-type :input-stream})
+            (http/req-with-redirects
+             client
+             {:method :get :uri uri}
+             {:response-type :input-stream
+              :max-redirects 3})
             (catch java.net.ConnectException cause
               (ex/raise :type :validation
                         :code :unable-to-download-image
@@ -358,9 +360,11 @@
                   :code :mismatch-write-size
                   :hint "unexpected state: unable to write to file"))
 
-      {;; :size size
-       :path path
-       :mtype mtype})))
+      ;; Sanitize: strip trailing data after image EOF markers
+      (let [new-size (sanitize/truncate-after-eof path mtype)]
+        {:path  path
+         :mtype mtype
+         :size  new-size}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FONTS

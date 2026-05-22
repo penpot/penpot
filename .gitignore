@@ -15,6 +15,12 @@
 .repl
 /*.jpg
 /*.md
+!CHANGES.md
+!CONTRIBUTING.md
+!README.md
+!AGENTS.md
+!CODE_OF_CONDUCT.md
+!SECURITY.md
 /*.png
 /*.svg
 /*.sql
@@ -24,6 +30,9 @@
 /.clj-kondo/.cache
 /_dump
 /notes
+/.opencode/package-lock.json
+/plans
+/prompts
 /playground/
 /backend/*.md
 !/backend/AGENTS.md
@@ -83,3 +92,6 @@
 /**/.yarn/*
 /.pnpm-store
 /.vscode
+/.idea
+/.claude
+/.playwright-mcp

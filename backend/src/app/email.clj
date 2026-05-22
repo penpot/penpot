@@ -22,14 +22,33 @@
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
-   jakarta.mail.Message$RecipientType
-   jakarta.mail.Session
-   jakarta.mail.Transport
    jakarta.mail.internet.InternetAddress
    jakarta.mail.internet.MimeBodyPart
    jakarta.mail.internet.MimeMessage
    jakarta.mail.internet.MimeMultipart
+   jakarta.mail.Message$RecipientType
+   jakarta.mail.Session
+   jakarta.mail.Transport
    java.util.Properties))
+
+(defn clean
+  "Clean and normalizes email address string"
+  [email]
+  (let [email (str/lower email)
+        email (if (str/starts-with? email "mailto:")
+                (subs email 7)
+                email)
+        email (if (or (str/starts-with? email "<")
+                      (str/ends-with? email ">"))
+                (str/trim email "<>")
+                email)]
+    email))
+
+(defn get-domain
+  [email]
+  (let [email      (clean email)
+        [_ domain] (str/split email "@" 2)]
+    domain))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EMAIL IMPL
@@ -416,8 +435,8 @@
   [:map
    [:invited-by ::sm/text]
    [:organization-name ::sm/text]
-   [:org-initials ::sm/text]
-   [:org-logo ::sm/uri]
+   [:organization-initials [:maybe :string]]
+   [:organization-logo ::sm/uri]
    [:user-name [:maybe ::sm/text]]
    [:token ::sm/text]])
 

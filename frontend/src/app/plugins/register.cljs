@@ -54,7 +54,10 @@
           (conj "library:read")
 
           (contains? permissions "comment:write")
-          (conj "comment:read"))
+          (conj "comment:read")
+
+          (contains? permissions "clipboard:write")
+          (conj "clipboard:read"))
 
         plugin-url
         (u/uri plugin-url)
@@ -135,3 +138,7 @@
       (= plugin-id mcp-plugin-id)
       (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
         (contains? permissions permission))))
+
+(defn get-plugin-data
+  [state plugin-id]
+  (get-in state [:profile :props :plugins :data plugin-id]))

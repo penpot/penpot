@@ -49,16 +49,16 @@
          • :prop      → the property type (:fill, :stroke, :shadow, etc.)
          • :shape-id  → the UUID of the shape using this color
          • :index     → index of the color in the shape's fill/stroke list
-   
+
    Example of groups:
    {
      {:color \"#9f2929\", :opacity 0.3,  :token-name \"asd2\" :has-token-applied true}
      [{:prop :fill, :shape-id #uuid \"d0231035-25c9-80d5-8006-eae4c3dff32e\", :index 0}]
-   
+
      {:color \"#1b54b6\", :opacity 1}
      [{:prop :fill, :shape-id #uuid \"aab34f9a-98c1-801a-8006-eae5e8236f1b\", :index 0}]
    }
-   
+
    This structure allows fast lookups of all shapes using the same visual color,
    regardless of whether it comes from local fills, strokes or shadow-colors."
 
@@ -69,12 +69,11 @@
         ;; Unique color attribute maps
         all-colors (distinct (mapv :attrs data))
 
-        ;; Split into: library colors, token colors, and plain colors
-        library-colors (filterv :ref-id all-colors)
+        ;; Split into mutually exclusive groups:
+        ;; token-colors take priority; library-colors and plain colors exclude tokens
         token-colors   (filterv :token-name all-colors)
-        colors         (filterv #(and (nil? (:ref-id %))
-                                      (not (:token-name %)))
-                                all-colors)]
+        library-colors (filterv (fn [c] (and (some? (:ref-id c)) (nil? (:token-name c)))) all-colors)
+        colors         (filterv (fn [c] (and (nil? (:ref-id c)) (nil? (:token-name c)))) all-colors)]
     {:groups groups
      :all-colors all-colors
      :colors colors
@@ -91,7 +90,7 @@
                                     (d/without-nils))
         prev-color              (d/seek (partial get groups) prev-colors)
         color-operations-old    (get groups old-color)
-        color-operations-prev   (get groups prev-colors)
+        color-operations-prev   (get groups prev-color)
         color-operations        (or color-operations-prev color-operations-old)
         old-color               (or prev-color old-color)]
     [color-operations old-color]))
@@ -107,21 +106,26 @@
         open?            (deref open*)
 
         has-colors?      (or (some? (seq colors)) (some? (seq library-colors)))
-
         toggle-content   (mf/use-fn #(swap! open* not))
 
-        expand-lib-color (mf/use-state false)
-        expand-color     (mf/use-state false)
-        expand-token-color     (mf/use-state false)
+        expand-lib-color   (mf/use-state false)
+        expand-color       (mf/use-state false)
+        expand-token-color (mf/use-state false)
 
         ;;  TODO: Review if this is still necessary.
         prev-colors-ref  (mf/use-ref nil)
 
+        ;; Always keep this ref pointing to the latest groups so that on-change
+        ;; (which may be captured stale by the colorpicker's rx subscription) can
+        ;; still read the current groups and find the correct color operations.
+        groups-ref       (mf/use-ref nil)
+        _                (mf/set-ref-val! groups-ref groups)
+
         on-change
         (mf/use-fn
-         (mf/deps groups)
          (fn [old-color new-color from-picker?]
-           (let [prev-colors (mf/ref-val prev-colors-ref)
+           (let [groups (mf/ref-val groups-ref)
+                 prev-colors (mf/ref-val prev-colors-ref)
                  [color-operations old-color] (retrieve-color-operations groups old-color prev-colors)]
 
              ;;  TODO: Review if this is still necessary.
@@ -243,8 +247,7 @@
         [:div {:class (stl/css :selected-color-group)}
          (let [token-color-extract (cond->> token-colors (not @expand-token-color) (take 3))]
            (for [[index token-color] (d/enumerate token-color-extract)]
-             (let [color {:color (:color token-color)
-                          :opacity (:opacity token-color)}]
+             (let [color (dissoc token-color :token-name :has-token-applied)]
                [:> color-row*
                 {:key index
                  :color color

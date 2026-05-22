@@ -9,9 +9,8 @@
    [app.common.data :as d]
    [rumext.v2 :as mf]))
 
-(mf/defc frame-preview
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+(mf/defc frame-preview*
+  {::mf/wrap [mf/memo]}
   []
 
   (let [iframe-ref (mf/use-ref nil)
@@ -37,7 +36,6 @@
         load-ref
         (mf/use-callback
          (fn [iframe-dom]
-           (.log js/console "load-ref" iframe-dom)
            (mf/set-ref-val! iframe-ref iframe-dom)
            (when (and iframe-dom @last-data*)
              (-> iframe-dom .-contentWindow .-document .open)

@@ -72,8 +72,10 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -201,6 +203,38 @@
               (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
 
+
+(defn check-file-position-data
+  [file-id]
+  (ptk/reify ::fix-position-data
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file (dsh/lookup-file state file-id)
+            changes
+            (->> file :data :pages
+                 (mapcat
+                  (fn [page-id]
+                    (->> (dsh/lookup-page-objects state file-id page-id)
+                         (vals)
+                         (filter cfh/text-shape?)
+                         (filter #(nil? (:position-data %)))
+                         (map (fn [shape]
+                                {:type :mod-obj
+                                 :id (:id shape)
+                                 :page-id page-id
+                                 :operations
+                                 [{:type :set
+                                   :attr :position-data
+                                   :val (wasm.api/calculate-position-data shape)
+                                   :ignore-touched true
+                                   :ignore-geometry true}]})))))
+                 (into []))]
+        (rx/of (dch/commit-changes
+                {:redo-changes changes :undo-changes []
+                 :save-undo? false
+                 :origin it
+                 :tags #{:position-data}}))))))
+
 (defn- workspace-initialized
   [file-id]
   (ptk/reify ::workspace-initialized
@@ -318,7 +352,12 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            render-wasm? (contains? features "render-wasm/v1")]
+            ;; since render-wasm/v1 can be hot-toggled by the user, we need to query it
+            ;; from the state with active-feature?
+            render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
+            render-wasm-ready?   #(and (render-wasm-enabled?)
+                                       wasm-state/context-initialized?
+                                       (not @wasm-state/context-lost?))]
 
         (log/debug :hint "initialize-workspace"
                    :team-id (dm/str team-id)
@@ -329,7 +368,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean render-wasm?
+                 (if ^boolean (render-wasm-enabled?)
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
@@ -352,7 +391,7 @@
                    (rx/of (du/fetch-access-tokens))))
 
                 ;; Once the essential data is fetched, lets proceed to
-                ;; fetch teh file bunldle
+                ;; fetch the file bundle
                 (rx/of (initialize-file team-id file-id)))
 
                (->> stream
@@ -405,74 +444,72 @@
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
-               (when render-wasm?
-                 (->> stream
-                      (rx/filter dch/commit?)
-                      (rx/map deref)
-                      (rx/mapcat
-                       (fn [{:keys [redo-changes]}]
-                         (let [added (->> redo-changes
-                                          (filter #(= (:type %) :add-obj))
-                                          (map :id))]
-                           (->> (rx/from added)
-                                (rx/map process-wasm-object)))))))
+               (->> stream
+                    (rx/filter dch/commit?)
+                    (rx/filter render-wasm-ready?)
+                    (rx/map deref)
+                    (rx/mapcat
+                     (fn [{:keys [redo-changes]}]
+                       (let [added (->> redo-changes
+                                        (filter #(= (:type %) :add-obj))
+                                        (map :id))]
+                         (->> (rx/from added)
+                              (rx/map process-wasm-object))))))
 
-               (when render-wasm?
-                 (let [local-commits-s
-                       (->> stream
-                            (rx/filter dch/commit?)
-                            (rx/map deref)
-                            (rx/filter #(and (= :local (:source %))
-                                             (not (contains? (:tags %) :position-data))))
-                            (rx/filter (complement empty?)))
+               (let [local-commits-s
+                     (->> stream
+                          (rx/filter dch/commit?)
+                          (rx/filter render-wasm-ready?)
+                          (rx/map deref)
+                          (rx/filter #(and (= :local (:source %))
+                                           (not (contains? (:tags %) :position-data))))
+                          (rx/filter (complement empty?)))
 
-                       notifier-s
-                       (rx/merge
-                        (->> local-commits-s (rx/debounce 1000))
-                        (->> stream (rx/filter dps/force-persist?)))
+                     notifier-s
+                     (rx/merge
+                      (->> local-commits-s (rx/debounce 1000))
+                      (->> stream (rx/filter dps/force-persist?)))
 
-                       objects-s
-                       (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
+                     objects-s
+                     (rx/from-atom refs/workspace-page-objects {:emit-current-value? true})
 
-                       current-page-id-s
-                       (rx/from-atom refs/current-page-id {:emit-current-value? true})]
+                     current-page-id-s
+                     (rx/from-atom refs/current-page-id {:emit-current-value? true})]
 
-                   (->> local-commits-s
-                        (rx/buffer-until notifier-s)
-                        (rx/with-latest-from objects-s)
-                        (rx/map
-                         (fn [[commits objects]]
-                           (->> commits
-                                (mapcat :redo-changes)
-                                (filter #(contains? #{:mod-obj :add-obj} (:type %)))
-                                (filter #(cfh/text-shape? objects (:id %)))
-                                (map #(vector
-                                       (:id %)
-                                       (wasm.api/calculate-position-data (get objects (:id %))))))))
+                 (->> local-commits-s
+                      (rx/buffer-until notifier-s)
+                      (rx/with-latest-from objects-s)
+                      (rx/map
+                       (fn [[commits objects]]
+                         (->> commits
+                              (mapcat :redo-changes)
+                              (filter #(contains? #{:mod-obj :add-obj} (:type %)))
+                              (filter #(cfh/text-shape? objects (:id %)))
+                              (map #(vector
+                                     (:id %)
+                                     (wasm.api/calculate-position-data (get objects (:id %))))))))
 
-                        (rx/with-latest-from current-page-id-s)
-                        (rx/map
-                         (fn [[text-position-data page-id]]
-                           (let [changes
-                                 (->> text-position-data
-                                      (mapv (fn [[id position-data]]
-                                              {:type :mod-obj
-                                               :id id
-                                               :page-id page-id
-                                               :operations
-                                               [{:type :set
-                                                 :attr :position-data
-                                                 :val position-data
-                                                 :ignore-touched true
-                                                 :ignore-geometry true}]})))]
-                             (when (d/not-empty? changes)
-                               (dch/commit-changes
-                                {:redo-changes changes :undo-changes []
-                                 :save-undo? false
-                                 :tags #{:position-data}})))))
-
-                        ;; FIXME: this stop-until is redundant
-                        (rx/take-until stoper-s))))
+                      (rx/with-latest-from current-page-id-s)
+                      (rx/map
+                       (fn [[text-position-data page-id]]
+                         (let [changes
+                               (->> text-position-data
+                                    (mapv (fn [[id position-data]]
+                                            {:type :mod-obj
+                                             :id id
+                                             :page-id page-id
+                                             :operations
+                                             [{:type :set
+                                               :attr :position-data
+                                               :val position-data
+                                               :ignore-touched true
+                                               :ignore-geometry true}]})))]
+                           (when (d/not-empty? changes)
+                             (dch/commit-changes
+                              {:redo-changes changes :undo-changes []
+                               :save-undo? false
+                               :tags #{:position-data}})))))
+                      (rx/take-until stoper-s)))
 
                (->> stream
                     (rx/filter dch/commit?)
@@ -511,7 +548,8 @@
            :workspace-persistence
            :workspace-presence
            :workspace-tokens
-           :workspace-undo)
+           :workspace-undo
+           :workspace-versions)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
@@ -1255,6 +1293,24 @@
                          (pcb/mod-page {:background (:color color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
+(defn change-pixel-grid-color
+  "Update the pixel grid color (and optional alpha) for the given page.
+  Mirrors `change-canvas-color` — stored on the page so the choice
+  travels with the file and persists across sessions."
+  ([color]
+   (change-pixel-grid-color nil color))
+  ([page-id color]
+   (ptk/reify ::change-pixel-grid-color
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:pixel-grid-color (:color color)
+                                        :pixel-grid-opacity (:opacity color)}))]
+         (rx/of (dch/commit-changes changes)))))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1359,7 +1415,7 @@
         (rx/concat
          (rx/of (dch/commit-changes changes))
          (when (nil? annotation)
-           (rx/of (ptk/data-event ::ev/event {::ev/name "delete-component-annotation"}))))))))
+           (rx/of (ev/event {::ev/name "delete-component-annotation"}))))))))
 
 (defn set-annotations-expanded
   [expanded]
@@ -1381,7 +1437,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (some? id)
-        (rx/of (ptk/data-event ::ev/event {::ev/name "create-component-annotation"}))))))
+        (rx/of (ev/event {::ev/name "create-component-annotation"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes
@@ -1554,6 +1610,7 @@
 (dm/export dwv/initialize-viewport)
 (dm/export dwv/update-viewport-position)
 (dm/export dwv/update-viewport-size)
+(dm/export dwv/sync-wasm-workspace-viewport)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
 

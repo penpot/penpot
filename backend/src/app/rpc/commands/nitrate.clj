@@ -11,6 +11,9 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
+   [app.config :as cf]
    [app.db :as db]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -56,6 +59,41 @@
   [cfg _params]
   (nitrate/call cfg :connectivity {}))
 
+(def ^:private schema:redeem-activation-code-params
+  [:map {:title "RedeemActivationCodeParams"}
+   [:activation-code ::sm/text]])
+
+(def ^:private schema:redeem-activation-code-result
+  [:map {:title "RedeemActivationCodeResult"}
+   [:cancel-at [:maybe ct/schema:inst]]])
+
+(sv/defmethod ::redeem-nitrate-activation-code
+  {::rpc/auth true
+   ::doc/added "2.14"
+   ::sm/params schema:redeem-activation-code-params
+   ::sm/result schema:redeem-activation-code-result}
+  [cfg {:keys [::rpc/profile-id activation-code]}]
+  (let [profile (db/get cfg :profile {:id profile-id})]
+    (try
+      (let [result (nitrate/call cfg :redeem-activation-code
+                                 {:request-params  {:code      activation-code
+                                                    :penpot-id profile-id
+                                                    :email     (:email profile)}})]
+        (when-not result
+          (ex/raise :type :validation
+                    :code :invalid-activation-code
+                    :hint "The activation code is invalid, expired or fully redeemed"))
+        result)
+      (catch Exception cause
+        (let [{:keys [type status]} (ex-data cause)]
+          (if (= type :nitrate-http-error)
+            (ex/raise :type :validation
+                      :code (case status
+                              410 :expired-activation-code
+                              :invalid-activation-code)
+                      :cause cause)
+            (throw cause)))))))
+
 (def ^:private sql:prefix-team-name-and-unset-default
   "UPDATE team
       SET name = ? || name,
@@ -74,7 +112,7 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
-(def ^:private sql:get-team-files-count
+(def sql:get-team-files-count
   "SELECT count(*) AS total
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
@@ -244,31 +282,83 @@
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
+  ;; Check moveTeams permission on the source organization
+  (when (contains? cf/flags :nitrate)
+    (let [org-perms (nitrate/call cfg :get-org-permissions
+                                  {:organization-id organization-id})]
+      (if (nil? org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions")
+        (when-not (nitrate-perms/allowed? :move-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))))
 
   ;; Api call to nitrate
   (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
 
   ;; Notify connected users
-  (notifications/notify-team-change cfg team-id nil nil organization-name "dashboard.team-no-longer-belong-org")
+  (notifications/notify-team-change cfg {:id team-id :organization {:name organization-name}} "dashboard.team-no-longer-belong-org")
   nil)
 
 
-(def ^:private schema:add-team-to-org
+(def ^:private schema:add-team-to-organization
   [:map
    [:team-id ::sm/uuid]
-   [:organization-id ::sm/uuid]
-   [:organization-name ::sm/text]])
+   [:organization-id ::sm/uuid]])
 
-(sv/defmethod ::add-team-to-org
+(sv/defmethod ::add-team-to-organization
   {::rpc/auth true
    ::doc/added "2.17"
-   ::sm/params schema:add-team-to-org
+   ::sm/params schema:add-team-to-organization
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id  team-id organization-id organization-name]}]
+  [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
+
+  (when (contains? cf/flags :nitrate)
+    (let [team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
+          source-org-id         (get-in team-with-org [:organization :id])
+          source-org-perms      (when source-org-id
+                                  (nitrate/call cfg :get-org-permissions
+                                                {:organization-id source-org-id}))
+          target-org-perms      (nitrate/call cfg :get-org-permissions
+                                              {:organization-id organization-id})
+          target-org-same-owner? (and (some? source-org-perms)
+                                      (some? target-org-perms)
+                                      (= (:owner-id source-org-perms)
+                                         (:owner-id target-org-perms)))]
+      (when (nil? target-org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions"))
+
+      ;; Team already belongs to an organization: check move-teams on source org.
+      (when (some? source-org-id)
+        (when (nil? source-org-perms)
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "Unable to verify organization permissions"))
+        (when-not (nitrate-perms/allowed? :move-team
+                                          {:org-perms source-org-perms
+                                           :profile-id profile-id
+                                           :target-org-same-owner? target-org-same-owner?})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))
+
+      ;; Always check target create-teams permission (new/add and move flows).
+      (when-not (nitrate-perms/allowed? :create-team
+                                        {:org-perms target-org-perms
+                                         :profile-id profile-id})
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "You are not allowed to add teams in this organization"))))
 
   (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
     ;; Add teammates to the org if needed
@@ -277,8 +367,8 @@
       (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
   ;; Api call to nitrate
-  (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})
+  (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
 
-  ;; Notify connected users
-  (notifications/notify-team-change cfg team-id nil organization-id organization-name "dashboard.team-belong-org")
+    ;; Notify connected users
+    (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
   nil)

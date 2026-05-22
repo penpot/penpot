@@ -378,14 +378,6 @@
   border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
 
-  &:not(:focus-within) {
-    cursor: ew-resize;
-
-    input {
-      cursor: ew-resize;
-    }
-  }
-
   span,
   label {
     @extend %input-label;
@@ -915,7 +907,7 @@
   position: absolute;
   padding: $s-4;
   border-radius: $br-8;
-  z-index: $z-index-10;
+  z-index: $z-index-dropdown;
   color: var(--title-foreground-color-hover);
   background-color: var(--menu-background-color);
   border: $s-2 solid var(--panel-border-color);

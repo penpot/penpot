@@ -6,12 +6,11 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
-   [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
-   [app.main.data.plugins :as dpl]
    [app.main.data.preview :as dp]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
@@ -31,9 +30,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
-   [app.util.dom :as dom]
-   [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]))
+   [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -44,23 +41,25 @@
   (-> (dw/toggle-layout-flag flag)
       (vary-meta assoc ::ev/origin "workspace-shortcuts")))
 
+(defn on-display-guides-keydown
+  [^js event]
+  (let [mod?   (if (cf/check-platform? :macos)
+                 (.-metaKey event)
+                 (.-ctrlKey event))
+        shift? (.-shiftKey event)
+        code   (.-code event)]
+    (when (and mod?
+               (or (and (not shift?) (= "Quote" code))
+                   (and shift?       (= "Backslash" code))))
+      (.preventDefault event)
+      (st/emit! (toggle-layout-flag :display-guides)))))
+
 (defn- emit-when-no-readonly
   [& events]
   (let [can-edit?  (:can-edit (deref refs/permissions))
         read-only? (deref refs/workspace-read-only?)]
     (when (and can-edit? (not read-only?))
       (run! st/emit! events))))
-
-(def esc-pressed
-  (ptk/reify ::esc-pressed
-    ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of
-       :interrupt
-       (let [selection (dm/get-in state [:workspace-local :selected])]
-         (if (empty? selection)
-           (dpl/close-current-plugin)
-           (dw/deselect-all true)))))))
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
@@ -149,7 +148,7 @@
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
-                          :fn #(st/emit! esc-pressed)}
+                          :fn #(st/emit! :interrupt (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
                       :fn #(st/emit! (dw/open-layers-search :find))}
@@ -514,17 +513,17 @@
                           :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
-                          :command "shift+0"
+                          :command ["shift+0" "shift+num0"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all              {:tooltip (ds/shift "1")
-                          :command "shift+1"
+                          :command ["shift+1" "shift+num1"]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected        {:tooltip (ds/shift "2")
-                          :command ["shift+2" "@" "\""]
+                          :command ["shift+2" "shift+num2" "@" "\""]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
 
@@ -612,7 +611,7 @@
                            :subsections [:basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
                                   (st/emit!
-                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
+                                   (ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
                                    (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts
@@ -626,7 +625,7 @@
             (range 10)
             (map (fn [n] [(keyword (str "opacity-" n))
                           {:tooltip (str n)
-                           :command (str n)
+                           :command [(str n) (str "num" n)]
                            :subsections [:modify-layers]
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 

@@ -31,8 +31,7 @@
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [project create-fn can-edit]}]
   (let [project-id (:id project)
 
@@ -133,7 +132,6 @@
                            :on-import on-import}])]]))
 
 (mf/defc files-section*
-  {::mf/props :obj}
   [{:keys [project team]}]
   (let [files            (mf/deref refs/files)
         project-id       (get project :id)

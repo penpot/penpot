@@ -1,6 +1,6 @@
-use skia_safe::{self as skia, Matrix};
-
 use crate::math;
+use crate::shapes::svg_attrs::{FillRule, SvgAttrs};
+use skia_safe::{self as skia, Matrix};
 
 mod subpaths;
 
@@ -217,8 +217,14 @@ impl Path {
         Path::new(segments)
     }
 
-    pub fn to_skia_path(&self) -> skia::Path {
-        self.skia_path.snapshot()
+    pub fn to_skia_path(&self, svg_attrs: Option<&SvgAttrs>) -> skia::Path {
+        let mut path = self.skia_path.snapshot();
+        if let Some(attrs) = svg_attrs {
+            if attrs.fill_rule == FillRule::Evenodd {
+                path.set_fill_type(skia::PathFillType::EvenOdd);
+            }
+        }
+        path
     }
 
     pub fn contains(&self, p: skia::Point) -> bool {
@@ -230,6 +236,28 @@ impl Path {
     }
 
     pub fn transform(&mut self, mtx: &Matrix) {
+        if math::is_move_only_matrix(mtx) {
+            let tx = mtx.translate_x();
+            let ty = mtx.translate_y();
+            self.segments.iter_mut().for_each(|s| match s {
+                Segment::MoveTo(p) | Segment::LineTo(p) => {
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                Segment::CurveTo((c1, c2, p)) => {
+                    c1.0 += tx;
+                    c1.1 += ty;
+                    c2.0 += tx;
+                    c2.1 += ty;
+                    p.0 += tx;
+                    p.1 += ty;
+                }
+                _ => {}
+            });
+            self.skia_path = self.skia_path.with_offset((tx, ty));
+            return;
+        }
+
         self.segments.iter_mut().for_each(|s| match s {
             Segment::MoveTo(p) => {
                 let np = mtx.map_point(skia::Point::new(p.0, p.1));

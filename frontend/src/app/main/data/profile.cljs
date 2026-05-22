@@ -15,6 +15,7 @@
    [app.main.data.media :as di]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as-alias dtm]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.plugins.register :as plugins.register]
@@ -152,10 +153,10 @@
 
            (when (not= (:theme profile)
                        (:theme profile'))
-             (rx/of (ptk/data-event ::ev/event
-                                    {::ev/name "activate-theme"
-                                     ::ev/origin "settings"
-                                     :theme (:theme profile)})))))))))
+             (rx/of (ev/event
+                     {::ev/name "activate-theme"
+                      ::ev/origin "settings"
+                      :theme (:theme profile)})))))))))
 
 ;; --- Toggle Theme
 
@@ -186,9 +187,9 @@
     (watch [it state _]
       (let [profile (get state :profile)
             origin  (::ev/origin (meta it))]
-        (rx/of (ptk/data-event ::ev/event {:theme (:theme profile)
-                                           ::ev/name "activate-theme"
-                                           ::ev/origin origin})
+        (rx/of (ev/event {:theme (:theme profile)
+                          ::ev/name "activate-theme"
+                          ::ev/origin origin})
                (persist-profile))))))
 
 ;; --- Request Email Change
@@ -291,8 +292,13 @@
     ;; FIXME
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :update-profile-props {:props props})
-           (rx/map (constantly (refresh-profile)))))))
+      (let [refresh-profile (->> (rp/cmd! :update-profile-props {:props props})
+                                 (rx/map (constantly (refresh-profile))))
+            recompute       (when (contains? props :renderer)
+                              (rx/of (features/recompute-features)))]
+        (if recompute
+          (rx/concat recompute refresh-profile)
+          refresh-profile)))))
 
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))

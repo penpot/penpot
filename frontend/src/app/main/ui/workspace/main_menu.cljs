@@ -18,6 +18,7 @@
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
@@ -43,12 +44,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
-   [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-(def tokens-ref
-  (l/derived :access-tokens st/state))
 
 (mf/defc shortcuts*
   {::mf/private true}
@@ -66,43 +62,43 @@
   (let [nav-to-helpc-center
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-help-center-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-help-center-click"
+                                ::ev/origin "workspace-menu:in-app"}))
            (dom/open-new-window "https://help.penpot.app")))
 
         nav-to-community
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-community-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-community-click"
+                                ::ev/origin "workspace-menu:in-app"}))
            (dom/open-new-window "https://community.penpot.app")))
 
         nav-to-youtube
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-tutorials-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-tutorials-click"
+                                ::ev/origin "workspace-menu:in-app"}))
            (dom/open-new-window "https://www.youtube.com/c/Penpot")))
 
         nav-to-templates
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "workspace"}))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "workspace"}))
            (dom/open-new-window "https://penpot.app/libraries-templates")))
 
         nav-to-github
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-github-repository-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-github-repository-click"
+                                ::ev/origin "workspace-menu:in-app"}))
            (dom/open-new-window "https://github.com/penpot/penpot")))
 
         nav-to-terms
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-terms-service-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-terms-service-click"
+                                ::ev/origin "workspace-menu:in-app"}))
            (dom/open-new-window "https://penpot.app/terms")))
 
         nav-to-feedback
@@ -129,8 +125,8 @@
         (mf/use-fn
          (fn [event]
            (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
-                                              :version version}))
+             (st/emit! (ev/event {::ev/name "show-release-notes"
+                                  :version version}))
              (println version)
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -230,8 +226,10 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme]}]
-  (let [show-nudge-options
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
+  (let [renderer (or (-> profile :props :renderer) :svg)
+
+        show-nudge-options
         (mf/use-fn
          #(modal/show! {:type :nudge-option}))]
 
@@ -325,7 +323,17 @@
          "light" (tr "workspace.header.menu.toggle-system-theme")
          "system" (tr "workspace.header.menu.toggle-dark-theme")
          (tr "workspace.header.menu.toggle-light-theme"))]
-      [:> shortcuts* {:id :toggle-theme}]]]))
+      [:> shortcuts* {:id :toggle-theme}]]
+     (when (contains? cf/flags :render-switch)
+       [:> dropdown-menu-item* {:on-click    toggle-render
+                                :class       (stl/css :base-menu-item :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (toggle-render event)))}
+        [:span {:class (stl/css :item-name)}
+         (if (= renderer :wasm)
+           (tr "workspace.header.menu.disable-webgl")
+           (tr "workspace.header.menu.enable-webgl"))]])]))
 
 (mf/defc view-menu*
   {::mf/private true
@@ -747,10 +755,10 @@
                 (fn [event]
                   (if can-open?
                     (do
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?))
                     (dom/stop-propagation event))))
                on-key-down
@@ -759,10 +767,10 @@
                 (fn [event]
                   (when can-open?
                     (when (kbd/enter? event)
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?)))))]
 
            [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
@@ -782,17 +790,26 @@
   [{:keys [on-close]}]
   (let [plugins? (features/active-feature? @st/state "plugins/runtime")
 
-        profile         (mf/deref refs/profile)
-        mcp             (mf/deref refs/mcp)
+        profile  (mf/deref refs/profile)
+        mcp      (mf/deref refs/mcp)
+        tokens   (mf/deref refs/access-tokens)
 
-        mcp-enabled?    (true? (-> profile :props :mcp-enabled))
-        mcp-connected?  (= "connected" (get mcp :connection-status))
+        expires-at (some->> tokens
+                            (some #(when (= (:type %) "mcp") %))
+                            :expires-at)
+        expired?   (and (some? expires-at) (> (ct/now) expires-at))
+
+        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
+        mcp-connection (get mcp :connection-status)
+        mcp-connected? (= mcp-connection "connected")
+
+        show-enabled?   (and mcp-enabled? (false? expired?))
 
         on-nav-to-integrations
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "manage-mpc-option"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "manage-mpc-option"
+                                ::ev/origin "workspace-menu"}))
            (dom/open-new-window "/#/settings/integrations")))
 
         on-nav-to-integrations-key-down
@@ -806,11 +823,11 @@
          (fn []
            (if mcp-connected?
              (st/emit! (mcp/user-disconnect-mcp)
-                       (ptk/event ::ev/event {::ev/name "disconnect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"}))
+                       (ev/event {::ev/name "disconnect-mcp-plugin"
+                                  ::ev/origin "workspace-menu"}))
              (st/emit! (mcp/connect-mcp)
-                       (ptk/event ::ev/event {::ev/name "connect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"})))))
+                       (ev/event {::ev/name "connect-mcp-plugin"
+                                  ::ev/origin "workspace-menu"})))))
 
         on-toggle-mcp-plugin-key-down
         (mf/use-fn
@@ -825,7 +842,7 @@
                                              :pos-6 plugins?)
                         :on-close on-close}
 
-     (when mcp-enabled?
+     (when (and show-enabled? (not expired?))
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
@@ -840,7 +857,7 @@
                               :on-click    on-nav-to-integrations
                               :on-key-down on-nav-to-integrations-key-down}
       [:span {:class (stl/css :item-name)}
-       (if mcp-enabled?
+       (if show-enabled?
          (tr "workspace.header.menu.mcp.server.status.enabled")
          (tr "workspace.header.menu.mcp.server.status.disabled"))]]]))
 
@@ -892,8 +909,8 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click"
+                                ::ev/origin "workspace-menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -915,6 +932,18 @@
            (dom/stop-propagation event)
            (st/emit! (du/toggle-theme))))
 
+        toggle-render
+        (mf/use-fn
+         (mf/deps profile)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [renderer (or (-> profile :props :renderer) :svg)
+                 next-renderer (if (= renderer :wasm) :svg :wasm)]
+             (st/emit! (du/update-profile-props {:renderer next-renderer})
+                       (ntf/success (tr (if (= next-renderer :wasm)
+                                          "webgl.toast.webgl-render-enabled"
+                                          "webgl.toast.webgl-render-disabled")))))))
+
         open-plugins-manager
         (mf/use-fn
          (fn [event]
@@ -922,8 +951,8 @@
            (reset! show-menu* false)
            (reset! selected-sub-menu* nil)
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "open-plugins-manager"
-                                   ::ev/origin "workspace:menu"})
+            (ev/event {::ev/name "open-plugins-manager"
+                       ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
         subscription           (:subscription (:props profile))
@@ -1014,11 +1043,11 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [tokens   (mf/deref tokens-ref)
-              expired? (some->> tokens
-                                (some #(when (= (:type %) "mcp") %))
-                                :expires-at
-                                (> (ct/now)))
+        (let [tokens   (mf/deref refs/access-tokens)
+              expires-at (some->> tokens
+                                  (some #(when (= (:type %) "mcp") %))
+                                  :expires-at)
+              expired?   (and (some? expires-at) (> (ct/now) expires-at))
 
               mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (get mcp :connection-status)
@@ -1094,6 +1123,7 @@
                               :profile profile
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
+                              :toggle-render toggle-render
                               :on-close close-sub-menu}]
 
        :plugins

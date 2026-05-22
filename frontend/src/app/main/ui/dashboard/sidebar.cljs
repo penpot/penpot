@@ -24,7 +24,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
-   [app.main.ui.components.link :refer [link]]
+   [app.main.ui.components.link :refer [link*]]
    [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -32,6 +32,7 @@
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
                                                menu-team-icon*
+                                               nitrate-current-plan*
                                                nitrate-sidebar*
                                                show-subscription-dashboard-banner?
                                                subscription-sidebar*]]
@@ -49,7 +50,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.functions :as f]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private clear-search-icon
@@ -92,6 +92,7 @@
   (deprecated-icon/icon-xref :arrow-up-right (stl/css :arrow-up-right-icon)))
 
 (def ^:private ^:svg-id penpot-logo-icon "penpot-logo-icon")
+(def ^:private ^:svg-id penpot-logo-icon-subtle "penpot-logo-subtle")
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -314,7 +315,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
@@ -324,8 +325,9 @@
            ;; Navigate to active org if user owns it, otherwise to last visited org
            (if (and (:id organization)
                     (= (:id profile) (:owner-id organization)))
-             (dnt/go-to-nitrate-cc organization)
-             (dnt/go-to-nitrate-cc))))
+             (dnt/go-to-nitrate-ac {:organization-id (:id organization)
+                                    :organization-slug (:slug organization)})
+             (dnt/go-to-nitrate-ac))))
 
         empty-org (d/seek #(nil? (:id %)) organizations)
         default-team-id (or (:default-team-id empty-org)
@@ -340,11 +342,14 @@
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
                               :class       (stl/css :org-dropdown-item)}
-      [:span {:class (stl/css :org-icon)}
-       [:> raw-svg* {:id penpot-logo-icon}]]
-      "Penpot"
+      [:span {:class (stl/css :my-teams-icon)}
+       [:> raw-svg* {:id penpot-logo-icon-subtle}]]
+      [:span {:class (stl/css :team-text)
+              :title (tr "dashboard.my-teams")}
+       (tr "dashboard.my-teams")]
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
+     [:hr {:role "separator" :class (stl/css :team-separator)}]
 
      (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
@@ -366,7 +371,7 @@
        [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
                                 :class       (stl/css :org-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-admin-console")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -383,10 +388,9 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (let [params (if (and (contains? cf/flags :nitrate) (:organization-id team))
-                          {:organization-id (:organization-id team)}
-                          {})]
-             (st/emit! (modal/show :team-form params)))))
+           (if (contains? cf/flags :nitrate)
+             (st/emit! (dtm/check-and-create-team (:id team)))
+             (st/emit! (modal/show :team-form {})))))
 
         on-team-click
         (mf/use-fn
@@ -526,17 +530,9 @@
         (mf/use-fn
          (mf/deps team delete-fn)
          (fn []
-           (let [is-org-team? (some? (:organization-id team))
-                 message (if is-org-team?
-                           (tr "modals.delete-org-team-confirm.message" (:organization-name team))
-                           (tr "modals.delete-team-confirm.message"))]
-             (st/emit!
-              (modal/show
-               {:type :confirm
-                :title (tr "modals.delete-team-confirm.title")
-                :message message
-                :accept-label (tr "modals.delete-team-confirm.accept")
-                :on-accept delete-fn})))))]
+           ;; Fetch fresh team data to check current permission, then show appropriate modal
+           (st/emit! (dtm/check-and-delete-team {:team-id (:id team)
+                                                 :delete-fn delete-fn}))))]
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click    go-members
@@ -712,9 +708,12 @@
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
                          vals
-                         (filter #(= (:organization-id %) (:id current-org)))))
+                         (filter #(= (dm/get-in % [:organization :id]) (:id current-org)))))
 
         default-org? (nil? (:id current-org))
+
+        show-options? (and (not default-org?)
+                           (not= (:id profile) (:owner-id current-org)))
 
         show-orgs-menu*
         (mf/use-state false)
@@ -760,12 +759,12 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
        [:div {:class (stl/css :org-switch-content)}
-        [:button {:class (stl/css :current-org)
+        [:button {:class (stl/css-case :current-org true :current-org-no-options (not show-options?))
                   :on-click on-show-orgs-click
                   :on-key-down on-show-orgs-keydown
                   :aria-expanded show-orgs-menu?
@@ -782,8 +781,7 @@
              [:span {:class (stl/css :team-text)}
               (:name current-org)]])]
          arrow-icon]
-        (when-not (or default-org?
-                      (= (:id profile) (:owner-id current-org)))
+        (when show-options?
           [:> button* {:variant "ghost"
                        :type "button"
                        :class (stl/css :org-options-btn)
@@ -819,10 +817,11 @@
 (mf/defc sidebar-team-switch*
   [{:keys [team profile]}]
   (let [nitrate?     (contains? cf/flags :nitrate)
-        organization-id (when nitrate? (:organization-id team))
+        org          (:organization team)
+        organization-id (when nitrate? (:id org))
         teams (cond->> (mf/deref refs/teams)
                 nitrate?
-                (filter #(= (-> % val :organization-id) organization-id))
+                (filter #(= (dm/get-in (val %) [:organization :id]) organization-id))
                 nitrate?
                 (into {}))
 
@@ -1054,11 +1053,12 @@
         (reset! overflow* (> scroll-height client-height))))
 
     [:*
-     [:div {:ref container}
+     [:div {:class (stl/css :sidebar-content-wrapper)}
       (when nitrate?
         [:div {:class (stl/css :orgs-container)}
          [:> sidebar-org-switch* {:team team :profile profile}]])
-      [:div {:class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
+      [:div {:ref container
+             :class (stl/css-case :sidebar-content true :sidebar-content-nitrate nitrate?)}
        [:> sidebar-team-switch* {:team team :profile profile}]
 
        [:> sidebar-search* {:search-term search-term
@@ -1069,16 +1069,16 @@
          [:li {:class (stl/css-case :recent-projects true
                                     :sidebar-nav-item true
                                     :current projects?)}
-          [:& link {:action go-projects
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-projects-with-key}
+          [:> link* {:action go-projects
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-projects-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
          [:li {:class (stl/css-case :current drafts?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-drafts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-drafts-with-key}
+          [:> link* {:action go-drafts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-drafts-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
@@ -1088,17 +1088,17 @@
         [:ul {:class (stl/css :sidebar-nav)}
          [:li {:class (stl/css-case :sidebar-nav-item true
                                     :current fonts?)}
-          [:& link {:action go-fonts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-fonts-with-key
-                    :data-testid "fonts"}
+          [:> link* {:action go-fonts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-fonts-with-key
+                     :data-testid "fonts"}
            [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
          [:li {:class (stl/css-case :current libs?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-libs
-                    :data-testid "libs-link-sidebar"
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-libs-with-key}
+          [:> link* {:action go-libs
+                     :data-testid "libs-link-sidebar"
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
@@ -1121,8 +1121,7 @@
       [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]]))
 
 (mf/defc help-learning-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close on-click]}]
   (let [handle-click-url
         (mf/use-fn
@@ -1131,8 +1130,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))
 
         handle-feedback-click
@@ -1166,8 +1165,7 @@
         (tr "labels.give-feedback")])]))
 
 (mf/defc community-contributions-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close]}]
   (let [handle-click-url
         (mf/use-fn
@@ -1176,8 +1174,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -1197,14 +1195,13 @@
       (tr "labels.community")]]))
 
 (mf/defc about-penpot-menu*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-close]}]
   (let [version cf/version
         show-release-notes
         (mf/use-fn
          (fn [event]
-           (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version (:main version)}))
+           (st/emit! (ev/event {::ev/name "show-release-notes" :version (:main version)}))
            (if (and (kbd/alt? event) (kbd/mod? event))
              (st/emit! (modal/show {:type :onboarding}))
              (st/emit! (modal/show {:type :release-notes :version (:main version)})))))
@@ -1216,8 +1213,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -1315,7 +1312,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     (mf/with-effect [show-profile-menu?]
@@ -1324,11 +1321,14 @@
 
     [:*
      (if (contains? cf/flags :nitrate)
-       [:> nitrate-sidebar* {:profile profile :teams teams}]
+       [:*
+        [:> nitrate-sidebar* {:profile profile :teams teams}]
+        [:> nitrate-current-plan* {:profile profile}]]
        (when (contains? cf/flags :subscriptions)
          (if (show-subscription-dashboard-banner? profile)
            [:> dashboard-cta* {:profile profile}]
            [:> subscription-sidebar* {:profile profile}])))
+
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)
@@ -1434,8 +1434,7 @@
          nil))]))
 
 (mf/defc sidebar*
-  {::mf/props :obj
-   ::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]}
   [{:keys [team profile] :as props}]
   [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
    [:> sidebar-content* props]

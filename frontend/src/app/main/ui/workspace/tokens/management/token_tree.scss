@@ -13,6 +13,7 @@
   display: flex;
   flex-wrap: wrap;
   padding-inline-start: calc(var(--node-spacing));
+  gap: var(--sp-xs);
 
   & .node-parent {
     flex: 1 0 100%;

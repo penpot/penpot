@@ -45,7 +45,7 @@
           [:p "Create overlays, back buttons or links to URLs to mimic the behavior of the product you’re designing."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "Flows allow you to define multiple starting points within the same page so you can better organize and present your prototypes."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -83,7 +83,7 @@
           [:p "Using boolean operations will lead to countless graphic possibilities for your designs."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -102,7 +102,7 @@
           [:p [:a {:alt "Explore libraries & templates" :target "_blank" :href "https://penpot.app/libraries-templates"} "Explore libraries & templates"]]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

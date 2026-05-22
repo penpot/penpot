@@ -7,12 +7,14 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
+   [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.http.client :as http]
    [app.rpc :as-alias rpc]
@@ -27,14 +29,16 @@
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
   (fn []
-    (http/req! cfg (cond-> {:method method
-                            :headers {"content-type" "application/json"
-                                      "accept" "application/json"
-                                      "x-shared-key" shared-key
-                                      "x-profile-id" (str profile-id)}
-                            :uri uri
-                            :version :http1.1}
-                     (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key))))))
+    (http/req cfg
+              (cond-> {:method method
+                       :headers {"content-type" "application/json"
+                                 "accept" "application/json"
+                                 "x-shared-key" shared-key
+                                 "x-profile-id" (str profile-id)}
+                       :uri uri
+                       :version :http1.1}
+                (= method :post) (assoc :body (json/encode request-params :key-fn json/write-camel-key)))
+              {:skip-ssrf-check? true})))
 
 (defn- with-retries
   [handler max-retries]
@@ -54,25 +58,44 @@
           result)))))
 
 
-(defn- with-validate [handler uri schema]
+(defn- with-validate [handler uri schema & {:keys [throw-on-error?]}]
   (fn []
     (let [response (handler)
           status (:status response)]
-      (when-not status
-        (l/error :hint "could't do the nitrate request, it is probably down"
-                 :uri uri)
-        ;; TODO decide what to do when Nitrate is inaccesible
-        nil)
       (cond
+        (nil? status)
+        (do
+          (l/error :hint "couldn't do the nitrate request, it is probably down"
+                   :uri uri)
+          (ex/raise :type :nitrate-unavailable
+                    :hint (str "nitrate is unreachable at " uri)))
+
+        (>= status 500)
+        ;; Nitrate is up enough to answer (or the proxy is) but the
+        ;; service itself is failing; treat as unavailable so callers
+        ;; surface the static error page.
+        (do
+          (l/error :hint "nitrate request failed with server error status"
+                   :uri uri
+                   :status status
+                   :body (:body response))
+          (ex/raise :type :nitrate-unavailable
+                    :status status
+                    :hint (str "nitrate is unavailable, HTTP " status " at " uri)))
+
         (>= status 400)
-        ;; For error status codes (4xx, 5xx), fail immediately without validation
+        ;; For client error status codes (4xx), fail immediately without validation
         (do
           (when (not= status 404) ;; Don't need to log 404
             (l/error :hint "nitrate request failed with error status"
                      :uri uri
                      :status status
                      :body (:body response)))
-          nil)
+          (if throw-on-error?
+            (ex/raise :type :nitrate-http-error
+                      :status status
+                      :hint (str "nitrate HTTP " status " at " uri))
+            nil))
         (= status 204) ;; 204 doesn't return any body
         nil
         :else ;; For success status codes, validate the response
@@ -88,11 +111,11 @@
               nil)))))))
 
 (defn- request-to-nitrate
-  [cfg method uri schema {:keys [::rpc/profile-id request-params] :as params}]
+  [cfg method uri schema {:keys [::rpc/profile-id request-params throw-on-error?] :as params}]
   (let [shared-key     (-> cfg ::setup/shared-keys :nitrate)
         full-http-call (-> (request-builder cfg method uri shared-key profile-id request-params)
                            (with-retries 3)
-                           (with-validate uri schema))]
+                           (with-validate uri schema :throw-on-error? throw-on-error?))]
     (full-http-call)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,16 +131,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private schema:organization
-  [:map
-   [:id ::sm/uuid]
-   [:name ::sm/text]
-   [:slug ::sm/text]
-   [:is-your-penpot :boolean]
-   [:owner-id ::sm/uuid]
-   [:avatar-bg-url [::sm/text]]
-   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
-
 (def ^:private schema:org-summary
   [:map
    [:id ::sm/uuid]
@@ -128,12 +141,6 @@
      [:map
       [:id ::sm/uuid]
       [:is-your-penpot :boolean]]]]])
-
-(def ^:private schema:team
-  [:map
-   [:id ::sm/uuid]
-   [:organization-id ::sm/uuid]
-   [:is-your-penpot :boolean]])
 
 (def ^:private schema:profile-org
   [:map
@@ -182,6 +189,7 @@
                      "day"
                      "week"
                      "year"]]
+   [:manual :boolean]
    [:quantity :int]
    [:description [:maybe ::sm/text]]
    [:created-at schema:timestamp]
@@ -221,7 +229,7 @@
                         (str baseuri
                              "/api/teams/"
                              team-id)
-                        schema:organization params)))
+                        cto/schema:team-with-organization params)))
 
 (defn- get-org-membership-api
   [cfg {:keys [profile-id organization-id] :as params}]
@@ -256,18 +264,62 @@
                              "/summary")
                         schema:org-summary params)))
 
+(defn- get-owned-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/owned-organizations")
+                        [:vector schema:org-summary]
+                        params)))
+
+(def ^:private schema:org-summary-counts
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]
+   [:team-count ::sm/int]
+   [:member-count ::sm/int]])
+
+(defn- get-owned-orgs-summary-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/owned-organizations-summary")
+                        [:vector schema:org-summary-counts]
+                        params)))
+
+(defn- delete-owned-orgs-api
+  [cfg {:keys [profile-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :post
+                        (str baseuri
+                             "/api/users/"
+                             profile-id
+                             "/delete-owned-organizations")
+                        nil params)))
 
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
         params (assoc params :request-params {:team-id team-id
-                                              :is-your-penpot (true? is-default)})]
-    (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/add-team")
-                        schema:team params)))
+                                              :is-your-penpot (true? is-default)})
+        team (request-to-nitrate cfg :post
+                                 (str baseuri
+                                      "/api/organizations/"
+                                      organization-id
+                                      "/add-team")
+                                 cto/schema:team-with-organization params)
+        custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
+                       (str (cf/get :public-uri) "/assets/by-id/" logo-id))]
+    (cond-> team
+      custom-photo
+      (assoc-in [:organization :custom-photo] custom-photo))))
 
 (defn- add-profile-to-org-api
   [cfg {:keys [profile-id organization-id team-id email] :as params}]
@@ -340,6 +392,32 @@
                              "/api/connectivity")
                         schema:connectivity params)))
 
+(def ^:private schema:redeem-result
+  [:map
+   [:cancel-at [:maybe schema:timestamp]]])
+
+(defn- get-org-permissions-api
+  [cfg {:keys [organization-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/permissions")
+                        [:map
+                         [:organization-id ::sm/uuid]
+                         [:owner-id ::sm/uuid]
+                         [:permissions [:map-of :keyword :string]]]
+                        params)))
+
+(defn- redeem-activation-code-api
+  [cfg params]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :post
+                        (str baseuri "/api/activation-codes/redeem")
+                        schema:redeem-result
+                        (assoc params :throw-on-error? true))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -352,13 +430,18 @@
      :get-org-membership           (partial get-org-membership-api cfg)
      :get-org-membership-by-team   (partial get-org-membership-by-team-api cfg)
      :get-org-summary              (partial get-org-summary-api cfg)
+     :get-owned-orgs               (partial get-owned-orgs-api cfg)
+     :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
+     :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
+     :get-org-permissions          (partial get-org-permissions-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
-     :connectivity                 (partial get-connectivity-api cfg)}))
+     :connectivity                 (partial get-connectivity-api cfg)
+     :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS
@@ -368,41 +451,46 @@
 (defn add-nitrate-licence-to-profile
   "Enriches a profile map with subscription information from Nitrate.
   Adds a :subscription field containing the user's license details.
-  Returns the original profile unchanged if the request fails."
+  Returns the original profile unchanged if the request fails for a reason
+  other than Nitrate being unreachable. When Nitrate is unreachable the
+  `:nitrate-unavailable` exception propagates so the request is rejected."
   [cfg profile]
   (try
     (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
       (assoc profile :subscription subscription))
     (catch Throwable cause
-      (l/error :hint "failed to get nitrate licence"
-               :profile-id (:id profile)
-               :cause cause)
-      profile)))
+      (if (= :nitrate-unavailable (-> cause ex-data :type))
+        (throw cause)
+        (do
+          (l/error :hint "failed to get nitrate licence"
+                   :profile-id (:id profile)
+                   :cause cause)
+          profile)))))
 
 (defn add-org-info-to-team
   "Enriches a team map with organization information from Nitrate.
   Adds organization-id, organization-name, organization-slug, organization-owner-id, and your-penpot fields.
-  Returns the original team unchanged if the request fails or org data is nil."
+  Returns the original team unchanged if the request fails or org data is nil.
+  Propagates `:nitrate-unavailable` so the request is rejected when Nitrate is unreachable."
   [cfg team params]
   (try
-    (let [params (assoc (or params {}) :team-id (:id team))
-          org (call cfg :get-team-org params)]
+    (let [params        (assoc (or params {}) :team-id (:id team))
+          team-with-org (call cfg :get-team-org params)
+          org           (:organization team-with-org)]
       (if (some? org)
-        (assoc team
-               :organization-id (:id org)
-               :organization-name (:name org)
-               :organization-slug (:slug org)
-               :organization-owner-id (:owner-id org)
-               :organization-avatar-bg-url (:avatar-bg-url org)
-               :organization-custom-photo (when-let [logo-id (:logo-id org)]
-                                            (str (cf/get :public-uri) "/assets/by-id/" logo-id))
-               :is-default (or (:is-default team) (true? (:is-your-penpot org))))
+        (-> (cto/apply-organization team (assoc org :custom-photo
+                                                (when-let [logo-id (:logo-id org)]
+                                                  (str (cf/get :public-uri) "/assets/by-id/" logo-id))))
+            (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-org)))))
         team))
     (catch Throwable cause
-      (l/error :hint "failed to get team organization info"
-               :team-id (:id team)
-               :cause cause)
-      team)))
+      (if (= :nitrate-unavailable (-> cause ex-data :type))
+        (throw cause)
+        (do
+          (l/error :hint "failed to get team organization info"
+                   :team-id (:id team)
+                   :cause cause)
+          team)))))
 
 (defn set-team-organization
   "Associates a team with an organization in Nitrate.

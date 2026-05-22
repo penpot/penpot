@@ -553,14 +553,13 @@
   (let [file-id (h/parse-uuid file-id)
         tnow    (ct/now)]
 
-    (audit/insert! main/system
-                   {::audit/name "delete-file"
-                    ::audit/type "action"
-                    ::audit/profile-id uuid/zero
-                    ::audit/props {:id file-id}
-                    ::audit/context {:triggered-by "srepl"
-                                     :cause "explicit call to delete-file!"}
-                    ::audit/tracked-at tnow})
+    (audit/insert main/system
+                  {:name "delete-file"
+                   :type "action"
+                   :props {:id file-id}
+                   :context {:triggered-by "srepl"
+                             :cause "explicit call to delete-file!"}
+                   :tracked-at tnow})
     (wrk/invoke! (-> main/system
                      (assoc ::wrk/task :delete-object)
                      (assoc ::wrk/params {:object :file
@@ -578,17 +577,14 @@
                                            {:id file-id}
                                            {::db/remove-deleted false
                                             ::sql/columns [:id :name]})]
-                    (audit/insert! system
-                                   {::audit/name "restore-file"
-                                    ::audit/type "action"
-                                    ::audit/profile-id uuid/zero
-                                    ::audit/props file
-                                    ::audit/context {:triggered-by "srepl"
-                                                     :cause "explicit call to restore-file!"}
-                                    ::audit/tracked-at (ct/now)})
+                    (audit/insert system
+                                  {:name "restore-file"
+                                   :type "action"
+                                   :props file
+                                   :context {:triggered-by "srepl"
+                                             :cause "explicit call to restore-file!"}})
 
-
-                    (#'files/restore-file conn file-id))
+                    (#'files/restore-files conn [file-id]))
                   :restored))))
 
 (defn delete-project!
@@ -597,14 +593,13 @@
   (let [project-id (h/parse-uuid project-id)
         tnow       (ct/now)]
 
-    (audit/insert! main/system
-                   {::audit/name "delete-project"
-                    ::audit/type "action"
-                    ::audit/profile-id uuid/zero
-                    ::audit/props {:id project-id}
-                    ::audit/context {:triggered-by "srepl"
-                                     :cause "explicit call to delete-project!"}
-                    ::audit/tracked-at tnow})
+    (audit/insert main/system
+                  {:name "delete-project"
+                   :type "action"
+                   :props {:id project-id}
+                   :context {:triggered-by "srepl"
+                             :cause "explicit call to delete-project!"}
+                   :tracked-at tnow})
 
     (wrk/invoke! (-> main/system
                      (assoc ::wrk/task :delete-object)
@@ -622,7 +617,7 @@
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
                                  {::sql/columns [:id]})]
-    (#'files/restore-file conn id))
+    (#'files/restore-files conn [id]))
 
   :restored)
 
@@ -635,14 +630,12 @@
                   (when-let [project (db/get* system :project
                                               {:id project-id}
                                               {::db/remove-deleted false})]
-                    (audit/insert! system
-                                   {::audit/name "restore-project"
-                                    ::audit/type "action"
-                                    ::audit/profile-id uuid/zero
-                                    ::audit/props project
-                                    ::audit/context {:triggered-by "srepl"
-                                                     :cause "explicit call to restore-team!"}
-                                    ::audit/tracked-at (ct/now)})
+                    (audit/insert system
+                                  {:name "restore-project"
+                                   :type "action"
+                                   :props project
+                                   :context {:triggered-by "srepl"
+                                             :cause "explicit call to restore-team!"}})
 
                     (restore-project* system project-id))))))
 
@@ -652,14 +645,13 @@
   (let [team-id (h/parse-uuid team-id)
         tnow    (ct/now)]
 
-    (audit/insert! main/system
-                   {::audit/name "delete-team"
-                    ::audit/type "action"
-                    ::audit/profile-id uuid/zero
-                    ::audit/props {:id team-id}
-                    ::audit/context {:triggered-by "srepl"
-                                     :cause "explicit call to delete-profile!"}
-                    ::audit/tracked-at tnow})
+    (audit/insert main/system
+                  {:name "delete-team"
+                   :type "action"
+                   :props {:id team-id}
+                   :context {:triggered-by "srepl"
+                             :cause "explicit call to delete-profile!"}
+                   :tracked-at tnow})
 
     (wrk/invoke! (-> main/system
                      (assoc ::wrk/task :delete-object)
@@ -695,14 +687,12 @@
                                                    {:id team-id}
                                                    {::db/remove-deleted false})
                                           (teams/decode-row))]
-                    (audit/insert! system
-                                   {::audit/name "restore-team"
-                                    ::audit/type "action"
-                                    ::audit/profile-id uuid/zero
-                                    ::audit/props team
-                                    ::audit/context {:triggered-by "srepl"
-                                                     :cause "explicit call to restore-team!"}
-                                    ::audit/tracked-at (ct/now)})
+                    (audit/insert system
+                                  {:name "restore-team"
+                                   :type "action"
+                                   :props team
+                                   :context {:triggered-by "srepl"
+                                             :cause "explicit call to restore-team!"}})
 
                     (restore-team* system team-id))))))
 
@@ -712,13 +702,12 @@
   (let [profile-id (h/parse-uuid profile-id)
         tnow       (ct/now)]
 
-    (audit/insert! main/system
-                   {::audit/name "delete-profile"
-                    ::audit/type "action"
-                    ::audit/profile-id uuid/zero
-                    ::audit/context {:triggered-by "srepl"
-                                     :cause "explicit call to delete-profile!"}
-                    ::audit/tracked-at tnow})
+    (audit/insert main/system
+                  {:name "delete-profile"
+                   :type "action"
+                   :context {:triggered-by "srepl"
+                             :cause "explicit call to delete-profile!"}
+                   :tracked-at tnow})
 
     (wrk/invoke! (-> main/system
                      (assoc ::wrk/task :delete-object)
@@ -737,14 +726,12 @@
                                                       {:id profile-id}
                                                       {::db/remove-deleted false})
                                              (profile/decode-row))]
-                    (audit/insert! system
-                                   {::audit/name "restore-profile"
-                                    ::audit/type "action"
-                                    ::audit/profile-id uuid/zero
-                                    ::audit/props (audit/profile->props profile)
-                                    ::audit/context {:triggered-by "srepl"
-                                                     :cause "explicit call to restore-profile!"}
-                                    ::audit/tracked-at (ct/now)})
+                    (audit/insert system
+                                  {:name "restore-profile"
+                                   :type "action"
+                                   :props (audit/profile->props profile)
+                                   :context {:triggered-by "srepl"
+                                             :cause "explicit call to restore-profile!"}})
 
                     (db/update! system :profile
                                 {:deleted-at nil}
@@ -768,14 +755,14 @@
                                                   {::db/remove-deleted false})
                                          (profile/decode-row))]
                   (do
-                    (audit/insert! system
-                                   {::audit/name "delete-profile"
-                                    ::audit/type "action"
-                                    ::audit/profile-id (:id profile)
-                                    ::audit/tracked-at deleted-at
-                                    ::audit/props (audit/profile->props profile)
-                                    ::audit/context {:triggered-by "srepl"
-                                                     :cause "explicit call to delete-profiles-in-bulk!"}})
+                    (audit/insert system
+                                  {:name "delete-profile"
+                                   :type "action"
+                                   :profile-id (:id profile)
+                                   :tracked-at deleted-at
+                                   :props (audit/profile->props profile)
+                                   :context {:triggered-by "srepl"
+                                             :cause "explicit call to delete-profiles-in-bulk!"}})
                     (wrk/invoke! (-> system
                                      (assoc ::wrk/task :delete-object)
                                      (assoc ::wrk/params {:object :profile

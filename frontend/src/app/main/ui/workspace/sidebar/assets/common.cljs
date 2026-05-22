@@ -198,6 +198,39 @@
          (run! st/emit!))
     (st/emit! (dwu/commit-undo-transaction undo-id))))
 
+(defn make-delete-asset-group-fn
+  "Build an `:on-delete-group` handler that filters `assets` by group
+  path, asks the user to confirm, and on accept emits every event
+  produced by `delete-events` inside one undo transaction.
+
+  Options:
+  - `:assets`             collection to filter.
+  - `:on-clear-selection` invoked before the deletes.
+  - `:delete-events`      `(fn [matching-assets] => seq-of-events)`.
+  - `:path-filter`        `(fn [asset-path group-path] => bool)` deciding
+                          which assets fall under the group. Defaults to
+                          `str/starts-with?`."
+  [{:keys [assets on-clear-selection delete-events path-filter]
+    :or {path-filter str/starts-with?}}]
+  (fn [path]
+    (let [matching (filter #(path-filter (:path %) path) assets)
+          undo-id  (js/Symbol)
+          do-delete
+          (fn []
+            (on-clear-selection)
+            (st/emit! (dwu/start-undo-transaction undo-id))
+            (run! st/emit! (delete-events matching))
+            (st/emit! (dwu/commit-undo-transaction undo-id)))]
+      (when (seq matching)
+        (st/emit!
+         (modal/show
+          {:type :confirm
+           :title (tr "modals.delete-asset-group.title")
+           :message (tr "modals.delete-asset-group.message"
+                        (c (count matching)))
+           :accept-label (tr "labels.delete")
+           :on-accept do-delete}))))))
+
 (defn on-drop-asset
   [event asset dragging* selected selected-full selected-paths rename]
   (let [create-typed-assets-group (partial create-assets-group rename)]
@@ -291,13 +324,34 @@
         current-page-id (mf/deref refs/current-page-id)
         thumbnail-requested? (mf/use-ref false)
 
-        thumbnail-uri*
+        object-id
         (mf/with-memo [file-id page-id root-id]
-          (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
-            (refs/workspace-thumbnail-by-id object-id)))
+          (thc/fmt-object-id file-id page-id root-id "component"))
+
+        thumbnail-uri*
+        (mf/with-memo [object-id]
+          (refs/workspace-thumbnail-by-id object-id))
 
         thumbnail-uri
         (mf/deref thumbnail-uri*)
+
+        rendered-at*
+        (mf/with-memo [object-id]
+          (refs/workspace-thumbnail-rendered-at object-id))
+
+        rendered-at
+        (mf/deref rendered-at*)
+
+        modified-at
+        (some-> (:modified-at component) (.getTime))
+
+        ;; Stale if there's no in-session render record
+        ;; or the component was modified after the last render
+        stale?
+        (and (some? thumbnail-uri)
+             (or (nil? rendered-at)
+                 (and (some? modified-at)
+                      (> modified-at rendered-at))))
 
         on-error
         (mf/use-fn
@@ -307,20 +361,21 @@
              (inc retry))))]
 
     ;; Lazy WASM thumbnail rendering: when the component becomes
-    ;; visible, has no cached thumbnail, and lives on the current page
-    ;; trigger a render. Ref is used to avoid triggering multiple renders
-    ;; while the component is still not rendered and the thumbnail URI
-    ;; is not available.
+    ;; visible and either has no cached thumbnail or the cached one is
+    ;; stale relative to the last recorded edit, trigger a render. Ref
+    ;; is used to avoid triggering multiple renders while the previous
+    ;; render is in flight.
     (mf/use-effect
-     (mf/deps is-hidden thumbnail-uri wasm? current-page-id file-id page-id)
+     (mf/deps is-hidden thumbnail-uri stale? wasm? current-page-id file-id page-id)
      (fn []
-       (if (some? thumbnail-uri)
+       (if (and (some? thumbnail-uri) (not stale?))
          (mf/set-ref-val! thumbnail-requested? false)
          (when (and wasm? (not is-hidden) (not (mf/ref-val thumbnail-requested?)) (= page-id current-page-id))
            (mf/set-ref-val! thumbnail-requested? true)
            (st/emit! (dwt.wasm/render-thumbnail file-id page-id root-id))))))
 
     (if (and (some? thumbnail-uri)
+             (not stale?)
              (or (contains? cf/flags :component-thumbnails)
                  wasm?))
       [:& component-svg-thumbnail
