@@ -28,6 +28,9 @@ impl GpuState {
         let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
             Error::CriticalError("Failed to create GL context".to_string()),
         )?;
+
+        println!("max_texture_size {}", context.max_texture_size());
+
         let framebuffer_info = {
             let mut fboid: gl::types::GLint = 0;
             unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };

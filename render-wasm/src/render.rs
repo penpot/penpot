@@ -1771,7 +1771,7 @@ impl RenderState {
         // Snapshot the atlas once for the whole pass so that all shapes sharing
         // the tile/atlas fallback path reuse the same GPU image rather than each
         // triggering a separate `image_snapshot` flush.
-        let atlas_snap = self.surfaces.atlas_snapshot_for_drag_crop();
+        let atlas_snap = self.surfaces.atlas.snapshot_for_drag_crop();
 
         // Scratch surface reused across all shapes that need the tile/atlas
         // fallback — avoids one WebGL texture allocation per shape.
@@ -1894,7 +1894,7 @@ impl RenderState {
         // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
         // always prefer the persistent atlas. The atlas is incrementally updated as tiles finish,
         // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
-        if self.options.is_fast_mode() && self.surfaces.has_atlas() {
+        if self.options.is_fast_mode() && !self.surfaces.atlas.is_empty() {
             self.surfaces
                 .draw_atlas_to_backbuffer(self.viewbox, bg_color);
 
@@ -1952,7 +1952,7 @@ impl RenderState {
                     min_x >= 0.0 && min_y >= 0.0 && max_x <= cache_w && max_y <= cache_h;
                 if !cache_covers {
                     // Early return only if atlas exists; otherwise keep cache path.
-                    if self.surfaces.has_atlas() {
+                    if !self.surfaces.atlas.is_empty() {
                         self.surfaces
                             .draw_atlas_to_backbuffer(self.viewbox, bg_color);
 
@@ -2078,7 +2078,7 @@ impl RenderState {
         // to clamp atlas updates. This prevents zoom-out tiles from forcing atlas
         // growth far beyond real content.
         let doc_bounds = self.compute_document_bounds(base_object, tree);
-        self.surfaces.set_atlas_doc_bounds(doc_bounds);
+        self.surfaces.atlas.set_doc_bounds(doc_bounds);
 
         self.cache_cleared_this_render = false;
         if self.options.is_interactive_transform() {
@@ -3612,7 +3612,7 @@ impl RenderState {
         // When the shape has an active modifier (i.e. is being moved/resized),
         // clear its OLD doc-space extent from the atlas using the raw
         // (pre-modifier) shape.  The per-tile clearing done later via
-        // `clear_tile_in_atlas` only covers tiles tracked in `atlas_tile_doc_rects`
+        // `clear_tile_in_atlas` only covers tiles tracked in `atlas.tile_doc_rects`
         // at the current zoom level. However, the atlas may also contain stale
         // pixels from previous zoom levels (tiles are larger / smaller in doc
         // space at different zoom scales) that were never re-tracked after a zoom
@@ -3624,7 +3624,7 @@ impl RenderState {
         if tree.get_modifier(&shape.id).is_some() {
             if let Some(raw_shape) = tree.get_raw(&shape.id) {
                 let old_extrect = raw_shape.extrect(tree, 1.0);
-                self.surfaces.clear_doc_rect_in_atlas_clipped(old_extrect);
+                self.surfaces.atlas.clear_doc_rect_in_atlas_clipped(old_extrect);
             }
         }
 

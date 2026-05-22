@@ -1939,7 +1939,7 @@
           (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
             (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
           (when-let [max-tex (webgl/max-texture-size context)]
-            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+            (h/call wasm/internal-module "_set_max_texture_size" max-tex))
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
