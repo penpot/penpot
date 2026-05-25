@@ -1077,6 +1077,15 @@ impl Shape {
         self.selrect.center()
     }
 
+    // TODO: This can be used in more places
+    pub fn centered_transform(&self) -> Matrix {
+        let center = self.center();
+        let mut matrix = self.transform;
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+        matrix
+    }
+
     pub fn clip(&self) -> bool {
         self.clip_content
     }
