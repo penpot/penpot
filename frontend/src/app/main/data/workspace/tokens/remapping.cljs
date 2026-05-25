@@ -94,7 +94,7 @@
 
 (defn remap-tokens
   "Main function to remap all token references when a token name changes"
-  [old-token-name new-token-name]
+  [old-token-name new-token-name & {:keys [undo-group]}]
   (ptk/reify ::remap-tokens
     ptk/WatchEvent
     (watch [_ state _]
@@ -120,14 +120,19 @@
                                              (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))
                                    attributes (set (map :attribute refs))]
                                (if token
-                                 (-> (pcb/with-container changes container)
-                                     (pcb/update-shapes shape-ids
-                                                        (fn [shape]
-                                                          (update shape :applied-tokens
-                                                                  #(merge % (cft/attributes-map attributes (:token token)))))))
+                                 ;; Create a new independent changes so we can call `with-file-data` after `with-container`
+                                 ;; otherwise it causes probelms looking up for objects
+                                 (let [container-changes
+                                       (-> (pcb/empty-changes)
+                                           (pcb/with-container container)
+                                           (pcb/with-file-data file-data)
+                                           (pcb/update-shapes shape-ids
+                                                              (fn [shape]
+                                                                (update shape :applied-tokens
+                                                                        #(merge % (cft/attributes-map attributes (:token token)))))))]
+                                   (pcb/concat-changes changes container-changes))
                                  changes)))
                            (-> (pcb/empty-changes)
-                               (pcb/with-file-data file-data)
                                (pcb/with-library-data file-data))
                            refs-by-container)
 
@@ -141,7 +146,10 @@
                                    (pcb/set-token changes (ctob/get-id set) (:id token)
                                                   (assoc token :value new-value))))))
                            shape-changes
-                           (:token-aliases scan-results))]
+                           (:token-aliases scan-results))
+
+            token-changes
+            (cond-> token-changes (some? undo-group) (assoc :undo-group undo-group))]
 
         (log/info :hint "token-remapping"
                   :old-name old-token-name
@@ -152,13 +160,13 @@
 
 (defn bulk-remap-tokens
   "Helper function to remap a batch of tokens, used for node renaming"
-  [tokens-in-path new-tokens]
+  [tokens-in-path new-tokens & {:keys [undo-group]}]
   (ptk/reify ::bulk-remap-tokens
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
        (map (fn [old-token new-token]
-              (remap-tokens (:name old-token) (:name new-token)))
+              (remap-tokens (:name old-token) (:name new-token) :undo-group undo-group))
             tokens-in-path
             new-tokens)))))
 

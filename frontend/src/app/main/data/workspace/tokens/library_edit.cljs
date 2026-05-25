@@ -603,7 +603,7 @@
                               (merge (meta it))))))))))
 
 (defn bulk-update-tokens
-  [set-id token-ids type old-path new-path]
+  [set-id token-ids type old-path new-path & {:keys [undo-group]}]
   (dm/assert! (uuid? set-id))
   (dm/assert! (every? uuid? token-ids))
   (ptk/reify ::bulk-update-tokens
@@ -624,7 +624,9 @@
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
 
-                            token-ids)]
+                            token-ids)
+
+            changes (cond-> changes (some? undo-group) (assoc :undo-group undo-group))]
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
         (rx/of (dch/commit-changes changes)
