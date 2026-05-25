@@ -1,0 +1,247 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.shortcuts-page {
+  display: flex;
+  justify-content: center;
+  padding-block-end: px2rem(32);
+}
+
+.shortcuts-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 590px;
+  width: 100%;
+}
+
+.page-title {
+  color: var(--color-foreground-primary);
+  width: 100%;
+  margin: px2rem(80) 0 px2rem(16);
+}
+
+.shortcuts-section {
+  margin-bottom: var(--sp-lg);
+}
+
+.shortcuts-search-section {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding-block-start: 8px;
+}
+
+.restore-all-button {
+  min-width: 130px;
+}
+
+// RESTORE ALL MODAL
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
+}
+
+.modal-dialog {
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $b-2 solid var(--modal-border-color);
+  display: grid;
+  grid-template-rows: 0 auto 1fr;
+  gap: 32px;
+  min-width: $sz-364;
+  min-height: $sz-192;
+  max-height: $sz-520;
+  width: $sz-500;
+  max-width: $sz-712;
+}
+
+.modal-title {
+  @include t.use-typography("headline-medium");
+
+  color: var(--color-foreground-primary);
+  block-size: 26px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  height: $sz-32;
+  width: $sz-28;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: fit-content;
+}
+
+.modal-content-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-footer {
+  justify-self: end;
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-s);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.shortcuts-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.shortcuts-list-item,
+.shortcuts-list-header {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  display: grid;
+  grid-template-columns: 40% 30% 30%;
+}
+
+.shortcuts-list-header {
+  border-block-end: $b-1 solid var(--color-foreground-secondary);
+  block-size: $sz-32;
+  text-align: start;
+  padding-block-end: 8px;
+}
+
+.shortcuts-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.shortcuts-list-item {
+  color: var(--color-foreground-primary);
+}
+
+.shortcuts-list-item:first-child {
+  padding-block-start: 8px;
+}
+
+.shortcut-header-name,
+.shortcut-header-command {
+  text-align: start;
+}
+
+.shortcut-command {
+  display: flex;
+  gap: var(--sp-s);
+  align-items: center;
+  justify-content: start;
+  text-align: start;
+  flex-wrap: wrap;
+}
+
+.default-command {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-tertiary);
+  padding: 6px 4px;
+}
+
+.shortcuts-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  padding-block-start: var(--sp-m);
+}
+
+.shortcuts-info {
+  display: flex;
+  gap: var(--sp-s);
+  align-items: center;
+}
+
+.shortcuts-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  padding-block-start: var(--sp-m);
+}
+
+.shortcuts-info {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+
+}
+
+.shortcuts-customized-dot,
+.shortcuts-conflict-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-accent-info);
+}
+
+.shortcuts-conflict-dot {
+  background-color: var(--color-accent-error);
+}
+
+.shortcuts-info {
+  display: flex;
+  gap: var(--sp-m);
+}
+
+.shortcuts-info-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxs);
+}
+
+.dot-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  width: 16px;
+}
+
+.shortcuts-text {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+}
+
+.shortcuts-not-assigned-icon {
+  margin-inline-end: var(--sp-xs);
+}

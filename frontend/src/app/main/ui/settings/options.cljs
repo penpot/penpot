@@ -122,10 +122,15 @@
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 
-    [:div {:class (stl/css :dashboard-settings)}
+    [:section {:class (stl/css :dashboard-settings)
+               :aria-labelledby "options-section-title"}
      [:*
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
-       [:h2 (tr "labels.settings")]
+       [:> heading* {:level 2
+                     :typography t/title-large
+                     :class (stl/css :color-primary)
+                     :id "options-section-title"}
+        (tr "labels.settings")]
        [:> options-form*]]
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))

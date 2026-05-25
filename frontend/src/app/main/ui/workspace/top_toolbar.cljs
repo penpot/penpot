@@ -278,6 +278,10 @@
         plugins-enabled? (features/active-feature? @st/state "plugins/runtime")
         read-only?       (mf/use-ctx ctx/workspace-read-only?)
 
+        profile           (mf/deref refs/profile)
+        props             (get profile :props)
+        custom-shortcuts  (mf/deref refs/custom-shortcuts)
+
         mcp-conn-status  (get mcp :connection-status)
         mcp-valid-token? (get mcp :token-valid)
         mcp-enabled?     (get mcp :enabled)
@@ -328,7 +332,13 @@
         (mf/use-fn
          (fn [event]
            (dom/blur! (dom/get-target event))
-           (st/emit! (dwc/toggle-toolbar-visibility))))]
+           (st/emit! (dwc/toggle-toolbar-visibility))))
+
+        get-tt           #(sc/get-effective-tooltip % custom-shortcuts)
+        test-tooltip-board-text
+        (if (not (:workspace-visited props))
+          (tr "workspace.toolbar.frame-first-time" (get-tt :draw-frame))
+          (tr "workspace.toolbar.frame" (get-tt :draw-frame)))]
 
     (when-not ^boolean read-only?
       [:div {:role "toolbar"

@@ -227,7 +227,7 @@
 (mf/defc preferences-menu*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render]}]
+  [{:keys [layout profile toggle-flag on-close toggle-theme toggle-render show-shortcuts]}]
   (let [renderer (or (-> profile :props :renderer) :svg)
 
         show-nudge-options
@@ -334,7 +334,18 @@
         [:span {:class (stl/css :item-name)}
          (if (= renderer :wasm)
            (tr "workspace.header.menu.disable-webgl")
-           (tr "workspace.header.menu.enable-webgl"))]])]))
+           (tr "workspace.header.menu.enable-webgl"))]])
+
+     [:> dropdown-menu-item* {:on-click    show-shortcuts
+                              :class       (stl/css :base-menu-item :submenu-item)
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (show-shortcuts event)))
+                              :data-testid "change-shortcuts"
+                              :id          "file-menu-change-shortcuts"}
+      [:span {:class (stl/css :item-name)}
+       (tr "workspace.header.menu.change-shortcuts")]
+      [:> shortcuts* {:id :show-shortcuts}]]]))
 
 (mf/defc view-menu*
   {::mf/private true
@@ -989,6 +1000,19 @@
                        ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
+        show-shortcuts
+        (mf/use-fn
+         (mf/deps layout)
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! selected-sub-menu* nil)
+           (when (contains? layout :collapse-left-sidebar)
+             (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+           (st/emit!
+            (-> (dw/toggle-layout-flag :shortcuts)
+                (vary-meta assoc ::ev/origin "workspace-menu")))))
+
         subscription           (:subscription (:props profile))
         subscription-type      (get-subscription-type subscription)]
 
@@ -1155,6 +1179,7 @@
                               :toggle-flag toggle-flag
                               :toggle-theme toggle-theme
                               :toggle-render toggle-render
+                              :show-shortcuts show-shortcuts
                               :on-close close-sub-menu}]
 
        :plugins

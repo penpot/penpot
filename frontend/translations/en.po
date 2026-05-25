@@ -5605,7 +5605,37 @@ msgstr "Set thumbnails"
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+msgid "shortcuts.edit"
+msgstr "Edit shortcut"
+
+msgid "shortcuts.reset"
+msgstr "Reset to default"
+
+msgid "shortcuts.reset-all"
+msgstr "Reset all shortcuts"
+
+msgid "shortcuts.edit-modal.title"
+msgstr "Edit shortcut"
+
+msgid "shortcuts.edit-modal.current"
+msgstr "Current shortcut"
+
+msgid "shortcuts.edit-modal.press-keys"
+msgstr "Press the desired key combination"
+
+msgid "shortcuts.edit-modal.recording"
+msgstr "Recording..."
+
+msgid "shortcuts.edit-modal.conflict"
+msgstr "This shortcut is already assigned to \"%s\". The old shortcut will be unbound."
+
+msgid "shortcuts.edit-modal.save"
+msgstr "Save"
+
+msgid "shortcuts.edit-modal.cancel"
+msgstr "Cancel"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.toggle-alignment"
 msgstr "Toggle dynamic alignment"
 

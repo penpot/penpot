@@ -68,32 +68,38 @@
   {;; EDIT
    :undo                 {:tooltip (ds/meta "Z")
                           :command (ds/c-mod "z")
+                          :section [:workspace]
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwu/undo)}
 
    :redo                 {:tooltip (ds/meta "Y")
                           :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
+                          :section [:workspace]
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwu/redo)}
 
    :clear-undo           {:tooltip (ds/alt "Q")
                           :command "alt+q"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly dwu/reinitialize-undo)}
 
    :copy                 {:tooltip (ds/meta "C")
                           :command (ds/c-mod "c")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/copy-selected))}
 
    :copy-link            {:tooltip (ds/shift (ds/alt "C"))
                           :command "shift+alt+c"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/copy-link-to-clipboard))}
 
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly
                                 (dw/copy-selected)
                                 (dw/delete-selected))}
@@ -102,58 +108,70 @@
                           :disabled true
                           :command (ds/c-mod "v")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn (constantly nil)}
 
    :paste-replace        {:tooltip (ds/meta (ds/shift "V"))
                           :command (ds/c-mod "shift+v")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/paste-from-clipboard {:replace? true}))}
 
    :copy-props           {:tooltip (ds/meta (ds/alt "c"))
                           :command (ds/c-mod "alt+c")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/copy-selected-props))}
 
    :paste-props          {:tooltip (ds/meta (ds/alt "v"))
                           :command (ds/c-mod "alt+v")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/paste-selected-props))}
 
    :delete               {:tooltip (ds/supr)
                           :command ["del" "backspace"]
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/delete-selected))}
 
    :duplicate            {:tooltip (ds/meta "D")
                           :command (ds/c-mod "d")
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwv/duplicate-or-add-variant))}
 
    :start-editing        {:tooltip (ds/enter)
                           :command "enter"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/start-editing-selected))}
 
    :start-measure        {:tooltip (ds/alt "")
                           :command ["alt" "."]
                           :type "keydown"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/toggle-distances-display true))}
 
    :stop-measure         {:tooltip (ds/alt "")
                           :command ["alt" "."]
                           :type "keyup"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/toggle-distances-display false))}
 
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(st/emit! :interrupt (dw/deselect-all true))}
 
    :find             {:tooltip (ds/meta "F") :command (ds/c-mod "f") :subsections [:edit]
+                      :section [:workspace]
                       :fn #(st/emit! (dw/open-layers-search :find))}
    :find-and-replace {:tooltip (ds/meta "H") :command (ds/c-mod "h") :subsections [:edit]
+                      :section [:workspace]
                       :fn #(st/emit! (dw/open-layers-search :find-and-replace))}
 
    ;; MODIFY LAYERS
@@ -161,11 +179,13 @@
    :rename               {:tooltip (ds/alt "N")
                           :command "alt+n"
                           :subsections [:edit]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/start-rename-selected))}
 
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/group-selected))}
 
    :ungroup              {:tooltip (ds/shift "G")
@@ -176,99 +196,119 @@
    :mask                 {:tooltip (ds/meta "M")
                           :command (ds/c-mod "m")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/mask-group))}
 
    :unmask               {:tooltip (ds/meta-shift "M")
                           :command (ds/c-mod "shift+m")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/unmask-group))}
 
    :create-component-variant {:tooltip (ds/meta "K")
                               :command (ds/c-mod "k")
                               :subsections [:modify-layers]
+                              :section [:workspace]
                               :fn #(emit-when-no-readonly (dwv/add-component-or-variant))}
 
    :detach-component     {:tooltip (ds/meta-shift "K")
                           :command (ds/c-mod "shift+k")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly dwl/detach-selected-components)}
 
    :flip-vertical        {:tooltip (ds/shift "V")
                           :command "shift+v"
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/flip-vertical-selected))}
 
    :flip-horizontal      {:tooltip (ds/shift "H")
                           :command "shift+h"
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/flip-horizontal-selected))}
    :bring-forward        {:tooltip (ds/meta ds/up-arrow)
                           :command (ds/c-mod "up")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :up))}
 
    :bring-backward       {:tooltip (ds/meta ds/down-arrow)
                           :command (ds/c-mod "down")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :down))}
 
    :bring-front          {:tooltip (ds/meta-shift ds/up-arrow)
                           :command (ds/c-mod "shift+up")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :top))}
 
    :bring-back           {:tooltip (ds/meta-shift ds/down-arrow)
                           :command (ds/c-mod "shift+down")
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :bottom))}
 
    :move-fast-up         {:tooltip (ds/shift ds/up-arrow)
                           :command ["shift+up" "shift+alt+up"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up true))}
 
    :move-fast-down       {:tooltip (ds/shift ds/down-arrow)
                           :command ["shift+down" "shift+alt+down"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down true))}
 
    :move-fast-right      {:tooltip (ds/shift ds/right-arrow)
                           :command ["shift+right" "shift+alt+right"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :right true))}
 
    :move-fast-left       {:tooltip (ds/shift ds/left-arrow)
                           :command ["shift+left" "shift+alt+left"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :left true))}
 
    :move-unit-up         {:tooltip ds/up-arrow
                           :command ["up" "alt+up"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up false))}
 
    :move-unit-down       {:tooltip ds/down-arrow
                           :command ["down" "alt+down"]
+                          :section [:workspace]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down false))}
 
    :move-unit-left       {:tooltip ds/right-arrow
                           :command ["right" "alt+right"]
                           :subsections [:modify-layers]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
 
    :move-unit-right      {:tooltip ds/left-arrow
                           :command ["left" "alt+left"]
+                          :section [:workspace]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
 
    :artboard-selection   {:tooltip (ds/meta (ds/alt "G"))
                           :command (ds/c-mod "alt+g")
+                          :section [:workspace]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dws/create-artboard-from-selection))}
 
    :toggle-layout-flex   {:tooltip (ds/shift "A")
                           :command "shift+a"
+                          :section [:workspace]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly
                                 (with-meta (dwsl/toggle-layout :flex)
@@ -276,6 +316,7 @@
 
    :toggle-layout-grid   {:tooltip (ds/meta-shift "A")
                           :command (ds/c-mod "shift+a")
+                          :section [:workspace]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly
                                 (with-meta (dwsl/toggle-layout :grid)
@@ -284,83 +325,99 @@
 
    :draw-frame           {:tooltip "B"
                           :command ["b" "a"]
+                          :section [:workspace :basics]
                           :subsections [:tools :basics]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :frame))}
 
    :move                 {:tooltip "V"
                           :command "v"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly :interrupt)}
 
    :draw-rect            {:tooltip "R"
                           :command "r"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :rect))}
 
    :draw-ellipse         {:tooltip "E"
                           :command "e"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :circle))}
 
    :draw-text            {:tooltip "T"
                           :command "t"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
                                                       (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :path))}
 
    :draw-curve           {:tooltip (ds/shift "C")
                           :command "shift+c"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dwd/select-for-drawing :curve))}
 
    :add-comment          {:tooltip "C"
                           :command "c"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(st/emit! (dwd/select-for-drawing :comments))}
 
    :toggle-comments-visibility
    {:tooltip (ds/meta-shift "C")
     :command (ds/c-mod "shift+c")
+    :section [:workspace]
     :subsections [:main-menu]
     :fn #(st/emit! (dwcm/toggle-comments-visibility {:origin "workspace-shortcuts"}))}
 
    :insert-image         {:tooltip (ds/shift "K")
                           :command "shift+k"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(-> "image-upload" dom/get-element dom/click)}
 
    :toggle-visibility    {:tooltip (ds/meta-shift "H")
                           :command (ds/c-mod "shift+h")
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-visibility-selected))}
 
    :toggle-lock          {:tooltip (ds/meta-shift "L")
                           :command (ds/c-mod "shift+l")
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-lock-selected))}
 
    :toggle-lock-size     {:tooltip (ds/shift "L")
                           :command "shift+l"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-proportion-lock))}
 
    :scale                {:tooltip "K"
                           :command "k"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
 
    :open-color-picker    {:tooltip "I"
                           :command "i"
+                          :section [:workspace]
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (mdc/picker-for-selected-shape))}
 
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"
+                          :section [:workspace :basics]
                           :subsections [:basics :tools]
                           :fn #(st/emit! (dw/toggle-focus-mode))}
 
@@ -368,41 +425,49 @@
 
    :align-left           {:tooltip (ds/alt "A")
                           :command "alt+a"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :hleft))}
 
    :align-right          {:tooltip (ds/alt "D")
                           :command "alt+d"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :hright))}
 
    :align-top            {:tooltip (ds/alt "W")
                           :command "alt+w"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :vtop))}
 
    :align-hcenter        {:tooltip (ds/alt "H")
                           :command "alt+h"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :hcenter))}
 
    :align-vcenter        {:tooltip (ds/alt "V")
                           :command "alt+v"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :vcenter))}
 
    :align-bottom         {:tooltip (ds/alt "S")
                           :command "alt+s"
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/align-objects :vbottom))}
 
    :h-distribute         {:tooltip (ds/meta-shift (ds/alt "H"))
                           :command (ds/c-mod "shift+alt+h")
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/distribute-objects :horizontal))}
 
    :v-distribute         {:tooltip (ds/meta-shift (ds/alt "V"))
                           :command (ds/c-mod "shift+alt+v")
+                          :section [:workspace]
                           :subsections [:alignment]
                           :fn #(emit-when-no-readonly (dw/distribute-objects :vertical))}
 
@@ -410,11 +475,13 @@
 
    :toggle-rulers        {:tooltip (ds/meta-shift "R")
                           :command (ds/c-mod "shift+r")
+                          :section [:workspace]
                           :subsections [:main-menu]
                           :fn #(st/emit! (toggle-layout-flag :rulers))}
 
    :select-all           {:tooltip (ds/meta "A")
                           :command (ds/c-mod "a")
+                          :section [:workspace]
                           :subsections [:main-menu]
                           :fn #(st/emit! (dw/select-all))}
 
@@ -423,37 +490,44 @@
                           :command [(ds/c-mod "'") (ds/c-mod "219")]
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :display-guides))}
 
    :toggle-alignment     {:tooltip (ds/meta "\\")
                           :command (ds/c-mod "\\")
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :dynamic-alignment))}
 
    :thumbnail-set        {:tooltip (ds/shift "T")
                           :command "shift+t"
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/toggle-file-thumbnail-selected))}
 
    :show-pixel-grid      {:tooltip (ds/shift ",")
                           :command "shift+,"
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :show-pixel-grid))}
 
    :snap-pixel-grid      {:command ","
                           :tooltip ","
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :snap-pixel-grid))}
 
    :export-shapes        {:tooltip (ds/meta-shift "E")
                           :command (ds/c-mod "shift+e")
                           :subsections [:basics :main-menu]
+                          :section [:workspace :basics]
                           :fn #(st/emit!
                                 (de/show-workspace-export-dialog {:origin "workspace:shortcuts"}))}
 
    :toggle-snap-ruler-guide {:tooltip (ds/meta-shift "G")
                              :command (ds/c-mod "shift+g")
                              :subsections [:main-menu]
+                             :section [:workspace]
                              :fn #(st/emit! (toggle-layout-flag :snap-ruler-guides))}
 
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
@@ -461,11 +535,13 @@
                              :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
                              :show-command (ds/c-mod "shift+'")
                              :subsections [:main-menu]
+                             :section [:workspace]
                              :fn #(st/emit! (toggle-layout-flag :snap-guides))}
 
    :show-shortcuts       {:tooltip "?"
                           :command "?"
                           :subsections [:main-menu]
+                          :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :shortcuts))}
 
    ;; PANELS
@@ -473,22 +549,26 @@
    :toggle-layers        {:tooltip (ds/alt "L")
                           :command (ds/a-mod "l")
                           :subsections [:panels]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-workspace :layout :layers))}
 
    :toggle-assets        {:tooltip (ds/alt "I")
                           :command (ds/a-mod "i")
                           :subsections [:panels]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-workspace :layout :assets))}
 
    :toggle-history       {:tooltip (ds/meta-alt "H")
                           :command (ds/ca-mod "h")
                           :subsections [:panels]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly
                                 (dw/toggle-layout-flag :document-history))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :command (ds/a-mod "p")
                           :subsections [:panels]
+                          :section [:workspace]
                           :fn #(do (r/set-resize-type! :bottom)
                                    (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
                                                           (dw/remove-layout-flag :textpalette)
@@ -497,6 +577,7 @@
    :toggle-textpalette   {:tooltip (ds/alt "T")
                           :command (ds/a-mod "t")
                           :subsections [:panels]
+                          :section [:workspace]
                           :fn #(do (r/set-resize-type! :bottom)
                                    (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
                                                           (dw/remove-layout-flag :colorpalette)
@@ -505,6 +586,7 @@
    :hide-ui              {:tooltip "\\"
                           :command "\\"
                           :subsections [:panels :basics]
+                          :section [:workspace :basics]
                           :fn #(st/emit! (toggle-layout-flag :hide-ui))}
 
    ;; ZOOM-WORKSPACE
@@ -512,36 +594,43 @@
    :increase-zoom        {:tooltip "+"
                           :command ["+" "="]
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/increase-zoom))}
 
    :decrease-zoom        {:tooltip "-"
                           :command ["-" "_"]
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
                           :command ["shift+0" "shift+num0"]
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! dw/reset-zoom)}
 
    :fit-all              {:tooltip (ds/shift "1")
                           :command ["shift+1" "shift+num1"]
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-fit-all)}
 
    :zoom-selected        {:tooltip (ds/shift "2")
                           :command ["shift+2" "shift+num2" "@" "\""]
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
 
    :zoom-lense-increase  {:tooltip "Z"
                           :command "z"
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn identity}
 
    :zoom-lense-decrease  {:tooltip (ds/alt "Z")
                           :command "alt+z"
                           :subsections [:zoom-workspace]
+                          :section [:workspace]
                           :fn identity}
 
    ;; NAVIGATION
@@ -550,36 +639,43 @@
    :open-viewer          {:tooltip "G V"
                           :command "g v"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-viewer))}
 
    :open-inspect         {:tooltip "G I"
                           :command "g i"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-viewer :section :inspect))}
 
    :open-comments        {:tooltip "G C"
                           :command "g c"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-viewer :section :comments))}
 
    :open-dashboard       {:tooltip "G D"
                           :command "g d"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dcm/go-to-dashboard-recent))}
 
    :select-prev          {:tooltip (ds/shift "tab")
                           :command "shift+tab"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/select-prev-shape))}
 
    :select-next          {:tooltip ds/tab
                           :command "tab"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(st/emit! (dw/select-next-shape))}
 
    :select-parent-layer  {:tooltip (ds/shift ds/enter)
                           :command "shift+enter"
                           :subsections [:navigation-workspace]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/select-parent-layer))}
    ;; SHAPE
 
@@ -587,27 +683,32 @@
    :bool-union           {:tooltip (ds/meta (ds/alt "U"))
                           :command (ds/c-mod "alt+u")
                           :subsections [:shape]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/create-bool :union))}
 
    :bool-difference      {:tooltip (ds/meta (ds/alt "D"))
                           :command (ds/c-mod "alt+d")
                           :subsections [:shape]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/create-bool :difference))}
 
    :bool-intersection    {:tooltip (ds/meta (ds/alt "I"))
                           :command (ds/c-mod "alt+i")
                           :subsections [:shape]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/create-bool :intersection))}
 
    :bool-exclude         {:tooltip (ds/meta (ds/alt "E"))
                           :command (ds/c-mod "alt+e")
                           :subsections [:shape]
+                          :section [:workspace]
                           :fn #(emit-when-no-readonly (dw/create-bool :exclude))}
 
    ;; THEME
    :toggle-theme         {:tooltip (ds/alt "M")
                           :command (ds/a-mod "m")
                           :subsections [:basics]
+                          :section [:workspace :basics]
                           :fn #(st/emit! (with-meta (du/toggle-theme)
                                            {::ev/origin "workspace:shortcut"}))}
 
@@ -616,6 +717,7 @@
    :plugins               {:tooltip (ds/meta (ds/alt "P"))
                            :command (ds/c-mod "alt+p")
                            :subsections [:basics]
+                           :section [:workspace :basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
                                   (st/emit!
                                    (ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
@@ -633,6 +735,7 @@
             (map (fn [n] [(keyword (str "opacity-" n))
                           {:tooltip (str n)
                            :command [(str n) (str "num" n)]
+                           :section [:workspace]
                            :subsections [:modify-layers]
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 
@@ -641,6 +744,24 @@
     *assert*
     (merge debug-shortcuts)))
 
-(defn get-tooltip [shortcut]
+(defn get-tooltip
+  "Returns the tooltip string for a shortcut, using any custom binding
+  from the user's profile props if one exists, falling back to the
+  default :tooltip field."
+  [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
-  (get-in shortcuts [shortcut :tooltip]))
+  (let [custom-shortcuts (get-in @st/state [:profile :props :custom-shortcuts])
+        custom-command   (get custom-shortcuts shortcut)]
+    (if (and custom-command (not= custom-command ""))
+      (ds/command->tooltip custom-command)
+      (get-in shortcuts [shortcut :tooltip]))))
+
+(defn get-effective-tooltip
+  "Returns the tooltip string for a shortcut given an already-resolved
+  custom-shortcuts map. Use this when you already have the custom
+  shortcuts derefed for the current render cycle."
+  [shortcut custom-shortcuts]
+  (let [custom-command (get custom-shortcuts shortcut)]
+    (if (and custom-command (not= custom-command ""))
+      (ds/command->tooltip custom-command)
+      (get-in shortcuts [shortcut :tooltip]))))

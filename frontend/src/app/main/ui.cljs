@@ -200,7 +200,8 @@
         :settings-feedback
         :settings-subscription
         :settings-integrations
-        :settings-notifications)
+        :settings-notifications
+        :settings-shortcuts)
        (let [params (get params :query)
              error-report-id (some-> params :error-report-id uuid/parse*)]
          [:? [:> settings-page*

@@ -560,10 +560,10 @@
                                                  (tr "subscription.settings.enterprise")))}))
            (rt/nav :settings-subscription {} {::rt/replace true})))))
 
-    [:section {:class (stl/css :dashboard-section)}
+    [:section {:class (stl/css :dashboard-section)
+               :aria-labelledyby "subscription-section-title"}
      [:div {:class (stl/css :dashboard-content)}
-      [:h2 {:class (stl/css :title-section)} (tr "subscription.labels")]
-
+      [:h2 {:id "subscription-section-title" :class (stl/css :title-section)} (tr "subscription.labels")]
 
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]

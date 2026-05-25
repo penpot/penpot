@@ -17,6 +17,7 @@
 (def shortcuts
   {:toggle-theme    {:tooltip (ds/alt "M")
                      :command (ds/a-mod "m")
+                     :section [:dashboard]
                      :subsections [:general-dashboard]
                      :fn #(st/emit! (with-meta (du/toggle-theme)
                                       {::ev/origin "dashboard:shortcuts"}))}})
@@ -24,23 +25,27 @@
 (def shortcuts-sidebar-navigation
   {:go-to-drafts       {:tooltip "G D"
                         :command "g d"
+                        :section [:dashboard]
                         :subsections [:navigation-dashboard]
                         :fn #(st/emit! (dcm/go-to-dashboard-files :project-id :default))}
 
    :go-to-libs         {:tooltip "G L"
                         :command "g l"
+                        :section [:dashboard]
                         :subsections [:navigation-dashboard]
                         :fn #(st/emit! (dcm/go-to-dashboard-libraries))}})
 
 (def shortcut-search
   {:go-to-search       {:tooltip (ds/meta "F")
                         :command (ds/c-mod "f")
+                        :section [:dashboard]
                         :subsections [:navigation-dashboard]
                         :fn #(st/emit! (dcm/go-to-dashboard-search))}})
 
 (def shortcut-create-new-project
   {:create-new-project {:tooltip "+"
                         :command "+"
+                        :section [:dashboard]
                         :subsections [:general-dashboard]
                         :fn #(st/emit! (dd/create-element))}})
 

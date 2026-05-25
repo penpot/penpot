@@ -16,22 +16,20 @@
 }
 
 .search-field {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-4;
   margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
+
+  // The search bar should fill available space; the reset-all button sits at the end
+  & > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .shortcuts-title {
   margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
-}
-
-.section {
-  margin: 0;
-}
-
-.not-found {
-  @include deprecated.body-small-typography;
-
-  color: var(--empty-message-foreground-color);
-  margin: deprecated.$s-12;
 }
 
 .shortcuts-list {
@@ -42,78 +40,11 @@
   overflow-y: auto;
   font-size: deprecated.$fs-12;
   color: var(--title-foreground-color);
+}
 
-  .section-title,
-  .subsection-title {
-    @include deprecated.uppercase-title-typography;
+.not-found {
+  @include deprecated.body-small-typography;
 
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: deprecated.$s-8 0;
-    cursor: pointer;
-
-    .subsection-name,
-    .section-name {
-      padding-left: deprecated.$s-4;
-    }
-
-    &:hover {
-      color: var(--title-foreground-color-hover);
-    }
-  }
-
-  .subsection-title {
-    text-transform: none;
-    padding-left: deprecated.$s-12;
-  }
-
-  .subsection-menu {
-    margin-bottom: deprecated.$s-4;
-  }
-
-  .sub-menu {
-    margin-bottom: deprecated.$s-4;
-
-    .shortcuts-name {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      min-height: deprecated.$s-32;
-      padding: deprecated.$s-6;
-      margin-bottom: deprecated.$s-4;
-      border-radius: deprecated.$br-8;
-      background-color: var(--pill-background-color);
-
-      .command-name {
-        @include deprecated.body-small-typography;
-
-        margin-left: deprecated.$s-2;
-        color: var(--pill-foreground-color);
-      }
-
-      .keys {
-        @include deprecated.flex-center;
-
-        gap: deprecated.$s-2;
-        color: var(--pill-foreground-color);
-
-        .key {
-          @include deprecated.body-small-typography;
-          @include deprecated.flex-center;
-
-          text-transform: capitalize;
-          height: deprecated.$s-20;
-          padding: deprecated.$s-2 deprecated.$s-6;
-          border-radius: deprecated.$s-6;
-          background-color: var(--menu-shortcut-background-color);
-        }
-
-        .space {
-          margin: 0 deprecated.$s-2;
-        }
-      }
-    }
-  }
+  color: var(--empty-message-foreground-color);
+  margin: deprecated.$s-12;
 }
