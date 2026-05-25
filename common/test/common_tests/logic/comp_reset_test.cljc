@@ -14,6 +14,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.types.container :as ctn]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -385,6 +386,85 @@
     ;; ==== Check
     ;; After reset + propagation the copy should mirror the canonical color
     (t/is (= copy2-bottom-color "#aabbcc"))))
+
+(t/deftest test-reset-nested-component-from-different-library-preserves-children
+  ;; Regression test for the cross-library find-main-container bug:
+  ;; avatar-img lives in library1, avatar (which nests avatar-img) lives in library2,
+  ;; and card (which nests avatar) lives in the current file.
+  ;; Resetting overrides on avatar used to delete avatar-img because find-main-container
+  ;; only searched within the single library argument (library2) and could not find
+  ;; the avatar-img component which belongs to library1.
+  (let [;; ==== Setup
+        ;; library1: avatar-img-component (simple component with a child rect)
+        library1
+        (-> (thf/sample-file :library1 :is-shared true)
+            (tho/add-simple-component :avatar-img-component
+                                      :avatar-img-main
+                                      :avatar-img-child
+                                      :child-params {:fills (ths/sample-fills-color :fill-color "#abcdef")}))
+
+        ;; library2: avatar-component (nests avatar-img from library1)
+        library2
+        (-> (thf/sample-file :library2 :is-shared true)
+            (tho/add-frame :avatar-main)
+            (thc/instantiate-component :avatar-img-component
+                                       :avatar-img-nested-head
+                                       :library library1
+                                       :parent-label :avatar-main
+                                       :children-labels [:avatar-img-nested-child])
+            (thc/make-component :avatar-component :avatar-main))
+
+        ;; file: card-component (nests avatar from library2) + a copy of card
+        file
+        (-> (thf/sample-file :file)
+            (tho/add-frame :card-main)
+            (thc/instantiate-component :avatar-component
+                                       :avatar-in-card-main
+                                       :library library2
+                                       :parent-label :card-main
+                                       :children-labels [:avatar-img-in-card-main])
+            (thc/make-component :card-component :card-main)
+            (thc/instantiate-component :card-component
+                                       :card-copy
+                                       :children-labels [:avatar-in-card-copy]))
+
+        page              (thf/current-page file)
+        avatar-in-card-copy (ths/get-shape file :avatar-in-card-copy)
+
+        ;; ==== Action: override a fill on the avatar copy, then reset
+        changes
+        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                    #{(:id avatar-in-card-copy)}
+                                    (fn [shape]
+                                      (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
+                                    (:objects page)
+                                    {})
+
+        file-mdf       (thf/apply-changes file changes)
+        container-mdf  (ctn/get-container (:data file-mdf) :page (:id page))
+
+        changes
+        (cll/generate-reset-component (pcb/empty-changes)
+                                      file-mdf
+                                      {(:id file-mdf) file-mdf
+                                       (:id library1) library1
+                                       (:id library2) library2}
+                                      container-mdf
+                                      (:id avatar-in-card-copy))
+
+        file' (thf/apply-changes file-mdf changes :validate? false)
+
+        ;; ==== Get
+        avatar-in-card-copy'  (ths/get-shape file' :avatar-in-card-copy)
+        ;; avatar-img nested head must still exist inside avatar-in-card-copy after reset
+        avatar-img-copy-id    (first (:shapes avatar-in-card-copy'))
+        avatar-img-copy'      (when avatar-img-copy-id
+                                (ths/get-shape-by-id file' avatar-img-copy-id))]
+
+    ;; ==== Check
+    (t/is (some? avatar-in-card-copy') "avatar copy must still exist after reset")
+    (t/is (some? avatar-img-copy-id)   "avatar-img copy must not be deleted from avatar's children")
+    (t/is (some? avatar-img-copy')     "avatar-img copy shape must be present in objects")))
 
 (t/deftest test-reset-without-propagation-does-not-update-copies
   ;; This is the regression test for the misplaced-parenthesis bug: when
