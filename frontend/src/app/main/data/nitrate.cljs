@@ -163,6 +163,49 @@
                             :level :success}))))
              (rx/catch on-error))))))
 
+(defn show-leave-org-modal
+  [{:keys [organization profile default-team-id leave-fn teams-to-transfer on-error]}]
+  (ptk/reify ::show-leave-org-modal
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! ::get-leave-org-summary {:id (:id organization)
+                                             :default-team-id default-team-id})
+           (rx/mapcat
+            (fn [summary]
+              (let [num-teams-to-delete (:teams-to-delete summary)
+                    num-teams-to-transfer (:teams-to-transfer summary)
+                    num-teams-to-exit (:teams-to-exit summary)
+                    num-teams-to-detach (:teams-to-detach summary)]
+                (cond
+                  (pos? num-teams-to-transfer)
+                  (rx/of
+                   (modal/show
+                    {:type :leave-and-reassign-org
+                     :profile profile
+                     :teams-to-transfer teams-to-transfer
+                     :num-teams-to-delete num-teams-to-delete
+                     :accept leave-fn}))
+
+                  (or (pos? num-teams-to-delete)
+                      (pos? num-teams-to-exit)
+                      (pos? num-teams-to-detach))
+                  (rx/of (modal/show
+                          {:type :confirm
+                           :title (tr "modals.before-leave-org.title" (:name organization))
+                           :message (tr "modals.before-leave-org.message")
+                           :accept-label (tr "modals.leave-org-confirm.accept")
+                           :on-accept leave-fn
+                           :error-msg (tr "modals.before-leave-org.warning")}))
+
+                  :else
+                  (rx/of (modal/show
+                          {:type :confirm
+                           :title (tr "modals.leave-org-confirm.title" (:name organization))
+                           :message (tr "modals.leave-org-confirm.message")
+                           :accept-label (tr "modals.leave-org-confirm.accept")
+                           :on-accept leave-fn}))))))
+           (rx/catch on-error)))))
+
 
 (defn remove-team-from-org
   [{:keys [team-id organization-id organization-name] :as params}]

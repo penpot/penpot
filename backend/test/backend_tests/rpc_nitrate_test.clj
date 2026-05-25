@@ -44,6 +44,13 @@
                            :organization-id (:id org-summary)}
       nil)))
 
+(defn- nitrate-org-summary-only-mock
+  [org-summary]
+  (fn [_cfg method _params]
+    (case method
+      :get-org-summary org-summary
+      nil)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -278,6 +285,64 @@
         ;; The team itself should still exist
         (let [team (th/db-get :team {:id (:id team1)})]
           (t/is (nil? (:deleted-at team))))))))
+
+(t/deftest get-leave-org-summary-counts-default-team-as-delete-when-empty
+  (let [profile-owner    (th/create-profile* 1 {:is-active true})
+        profile-user     (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 97 {:profile-id (:id profile-user)})
+
+        organization-id  (uuid/random)
+        your-penpot-id   (:id org-default-team)
+        org-summary      (make-org-summary
+                          :organization-id organization-id
+                          :organization-name "Test Org"
+                          :owner-id (:id profile-owner)
+                          :your-penpot-teams [your-penpot-id]
+                          :org-teams [])]
+
+    (with-redefs [nitrate/call (nitrate-org-summary-only-mock org-summary)]
+      (let [out (th/command! {::th/type :get-leave-org-summary
+                              ::rpc/profile-id (:id profile-user)
+                              :id organization-id
+                              :default-team-id your-penpot-id})]
+        (t/is (th/success? out))
+        (t/is (= {:teams-to-delete 1
+                  :teams-to-transfer 0
+                  :teams-to-exit 0
+                  :teams-to-detach 0}
+                 (:result out)))))))
+
+(t/deftest get-leave-org-summary-counts-default-team-as-keep-when-has-files
+  (let [profile-owner    (th/create-profile* 1 {:is-active true})
+        profile-user     (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 96 {:profile-id (:id profile-user)})
+        project          (th/create-project* 96 {:profile-id (:id profile-user)
+                                                 :team-id (:id org-default-team)})
+        _                (th/create-file* 96 {:profile-id (:id profile-user)
+                                              :project-id (:id project)})
+        extra-team       (th/create-team* 95 {:profile-id (:id profile-user)})
+
+        organization-id  (uuid/random)
+        your-penpot-id   (:id org-default-team)
+        org-summary      (make-org-summary
+                          :organization-id organization-id
+                          :organization-name "Test Org"
+                          :owner-id (:id profile-owner)
+                          :your-penpot-teams [your-penpot-id]
+                          :org-teams [(:id extra-team)])]
+
+    (with-redefs [nitrate/call (nitrate-org-summary-only-mock org-summary)]
+      (let [out (th/command! {::th/type :get-leave-org-summary
+                              ::rpc/profile-id (:id profile-user)
+                              :id organization-id
+                              :default-team-id your-penpot-id})]
+        (t/is (th/success? out))
+        ;; extra-team is deletable, default team has files and is preserved.
+        (t/is (= {:teams-to-delete 1
+                  :teams-to-transfer 0
+                  :teams-to-exit 0
+                  :teams-to-detach 1}
+                 (:result out)))))))
 
 (t/deftest leave-org-error-org-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
