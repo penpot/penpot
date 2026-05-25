@@ -43,10 +43,9 @@
 }
 
 .text-icon {
-  color: var(--color-foreground-secondary);
-
   @include t.use-typography("body-small");
 
+  color: var(--color-foreground-secondary);
   inline-size: fit-content;
   min-inline-size: px2rem(46);
   padding-inline-start: var(--sp-xs);
