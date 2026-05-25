@@ -50,9 +50,9 @@
      [:div {:class (stl/css :plan-card-header)}
       [:div {:class (stl/css :plan-card-title-container)}
        (when card-title-icon
-         [:> icon* {:icon-id card-title-icon
-                    :class (stl/css :plan-title-icon)
-                    :size "s"}])
+         [:span {:class (stl/css :plan-title-icon)}
+          [:> icon* {:icon-id card-title-icon
+                     :size "s"}]])
        [:h4 {:class (stl/css :plan-card-title)} card-title]
        (when recommended
          [:& badge-notification {:content (tr "subscription.settings.recommended")
