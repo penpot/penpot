@@ -247,25 +247,69 @@
                                                is-own? (= profile-id (:owner-id org))]
                                            (or (= perm "any") is-own?))) all-orgs)
                       team     (first (filter #(= (:id %) team-id) teams))
+                      add-anybody-to-team-orgs
+                      (filterv #(nitrate-perms/allowed? :add-anybody-to-team
+                                                        {:org-perms %})
+                               orgs)
+                      orgs-to-check
+                      (filterv #(not (nitrate-perms/allowed? :add-anybody-to-team
+                                                             {:org-perms %}))
+                               orgs)
+                      org-ids-to-check (mapv :id orgs-to-check)
                       on-confirm (fn [organization-id]
                                    (st/emit! (add-team-to-org {:team-id team-id
-                                                               :organization-id organization-id})))]
-                  (rx/of (dt/teams-fetched teams)
-                         (if (empty? orgs)
-                           (modal/show :no-permission-modal {:type :no-orgs-create})
-                           (let [has-filtered? (< (count orgs) (count all-orgs))
-                                 extra-props   (when has-filtered?
-                                                 {:info-message-key "dashboard.select-org-modal.permission-info"})]
-                             (modal/show :select-organization-modal
-                                         (merge {:organizations           orgs
-                                                 :current-organization-id (dm/get-in team [:organization :id])
-                                                 :on-confirm              on-confirm
-                                                 :title-key               "dashboard.select-org-modal.title"
-                                                 :choose-key              "dashboard.select-org-modal.choose"
-                                                 :placeholder-key         "dashboard.select-org-modal.select"
-                                                 :accept-key              "dashboard.select-org-modal.accept"
-                                                 :cancel-key              "labels.cancel"}
-                                                extra-props)))))))))))))
+                                                               :organization-id organization-id})))
+                      show-select-modal
+                      (fn [orgs-allowed]
+                        (let [has-filtered? (< (count orgs) (count all-orgs))
+                              extra-props   (when has-filtered?
+                                              {:info-message-key "dashboard.select-org-modal.permission-info"})]
+                          (modal/show :select-organization-modal
+                                      (merge {:organizations orgs
+                                              :orgs-allowed orgs-allowed
+                                              :current-organization-id (dm/get-in team [:organization :id])
+                                              :on-confirm on-confirm
+                                              :title-key "dashboard.select-org-modal.title"
+                                              :choose-key "dashboard.select-org-modal.choose"
+                                              :placeholder-key "dashboard.select-org-modal.select"
+                                              :accept-key "dashboard.select-org-modal.accept"
+                                              :cancel-key "labels.cancel"}
+                                             extra-props))))]
+                  (cond
+                    (empty? orgs)
+                    (rx/of (dt/teams-fetched teams)
+                           (modal/show :no-permission-modal {:type :no-orgs-create}))
+
+                    (empty? org-ids-to-check)
+                    (let [orgs-allowed (into {}
+                                             (map (fn [org] [(:id org) true]))
+                                             orgs)]
+                      (rx/of (dt/teams-fetched teams)
+                             (show-select-modal orgs-allowed)))
+
+                    :else
+                    (->> (rp/cmd! :all-team-members-in-orgs
+                                  {:team-id team-id
+                                   :organization-ids org-ids-to-check})
+                         (rx/mapcat
+                          (fn [checked-orgs]
+                            (let [orgs-allowed
+                                  (merge (into {}
+                                               (map (fn [org] [(:id org) true]))
+                                               add-anybody-to-team-orgs)
+                                         checked-orgs)
+                                  valid-orgs
+                                  (filterv #(true? (get orgs-allowed (:id %))) orgs)]
+                              (rx/of
+                               (dt/teams-fetched teams)
+                               (if (empty? valid-orgs)
+                                 (modal/show
+                                  {:type :alert
+                                   :message (tr "dashboard.team-organization.add.no-valid-orgs")
+                                   :accept-label (tr "labels.accept")
+                                   :accept-style :primary
+                                   :title (tr "dashboard.select-org-modal.title")})
+                                 (show-select-modal orgs-allowed))))))))))))))))
 
 (defn show-change-team-org-modal
   "Fetches fresh team/org data, then shows the change-org modal

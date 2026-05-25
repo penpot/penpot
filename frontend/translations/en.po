@@ -1150,6 +1150,9 @@ msgstr "This team is not part of any organization"
 msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "You are not allowed to add this team to any of your organizations."
+
 msgid "dashboard.select-org-modal.title"
 msgstr "Add team to an organization"
 
@@ -1182,6 +1185,9 @@ msgstr "Change team organization"
 
 msgid "dashboard.team-organization.remove"
 msgstr "Remove team from organization"
+
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Only people within your organization can be invited."
 
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"

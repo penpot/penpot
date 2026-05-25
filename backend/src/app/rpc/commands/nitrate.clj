@@ -516,3 +516,36 @@
             team-member-ids (into #{} (map :profile-id team-members))]
         (every? #(contains? team-member-ids %) org-member-ids)))
     false))
+
+(def ^:private schema:all-team-members-in-orgs-params
+  [:map {:title "CheckTeamMembersInOrgsParams"}
+   [:team-id ::sm/uuid]
+   [:organization-ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::all-team-members-in-orgs
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:all-team-members-in-orgs-params
+   ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
+  [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
+  (if (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+
+      (let [team-members    (db/query cfg :team-profile-rel {:team-id team-id})
+            team-member-ids (into #{} (map :profile-id team-members))]
+        ;; Validate requester membership in all orgs before fetching members.
+        (run! #(assert-membership cfg profile-id %) organization-ids)
+
+        (into {}
+              (map (fn [organization-id]
+                     (let [org-members    (nitrate/call cfg :get-org-members {:organization-id organization-id})
+                           org-member-ids (into #{} org-members)]
+                       [organization-id
+                        (every? #(contains? org-member-ids %) team-member-ids)])))
+              organization-ids)))
+    {}))
+
+
