@@ -686,13 +686,15 @@
                    :font-style (:font-style typography)}}
           (tr "workspace.assets.typography.sample")]
 
-         [:div {:class (stl/css :typography-name)
-                :title (:name typography)} (:name typography)]
-
-         (when-not name-only?
-           [:div {:class (stl/css :typography-font)
-                  :title (:name font-data)}
-            (:name font-data)])])
+         [:div {:class (stl/css :name-block)
+                :title (if name-only?
+                         (:name typography)
+                         (dm/str (:name typography) " (" (:name font-data) ")"))}
+          (if name-only?
+            [:span  {:class (stl/css :typography-name)} (:name typography)]
+            [:*
+             (:name typography)
+             [:span  {:class (stl/css :typography-name :typography-font)} (:name font-data)]])]])
       [:div {:class (stl/css :element-set-actions)}
        (when ^boolean on-detach
          [:> icon-button* {:variant "action"
