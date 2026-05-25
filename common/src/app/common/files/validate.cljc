@@ -721,12 +721,13 @@
 
 (defn check-ref-cycles
   [component file]
-  (let [cycles-ids (reduce-kv (fn [acc _ shape]
-                                (if (= (:id shape) (:shape-ref shape))
-                                  (conj acc (:id shape))
-                                  acc))
-                              []
-                              (:objects component))]
+  (let [cycles-ids (-> (reduce-kv (fn [acc id shape]
+                                    (if (= id (:shape-ref shape))
+                                      (conj! acc id)
+                                      acc))
+                                  (transient [])
+                                  (:objects component))
+                       (persistent!))]
 
     (when (seq cycles-ids)
       (report-error :shape-ref-cycle
@@ -798,13 +799,14 @@
   orphaned shapes were silently skipped.  The `reduce-kv` approach
   builds a plain vector of IDs and never yields `nil` entries."
   [{:keys [objects] :as _page}]
-  (reduce-kv (fn [result id shape]
-               (if (or (cfh/root? shape)
-                       (contains? objects (:parent-id shape)))
-                 result
-                 (conj result id)))
-             []
-             objects))
+  (persistent!
+   (reduce-kv (fn [result id shape]
+                (if (and (not (cfh/root? shape))
+                         (not (contains? objects (:parent-id shape))))
+                  (conj! result id)
+                  result))
+              (transient [])
+              objects)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API: VALIDATION FUNCTIONS
@@ -870,39 +872,49 @@
   tokens, typography…) produce no entries because there is nothing left
   to check."
   [changes]
-  (reduce
-   (fn [acc {:keys [type page-id component-id id]}]
-     (case type
-       ;; Shape-level ops are scoped to either a page or a component
-       (:add-obj :mod-obj :del-obj :fix-obj
-                 :mov-objects :reorder-children :reg-objects)
-       (cond
-         page-id      (update acc :page-ids conj page-id)
-         component-id (update acc :component-ids conj component-id)
-         :else        acc)
 
-       ;; A new or modified page needs a full page sweep
-       (:add-page :mod-page)
-       (update acc :page-ids conj id)
+  (loop [changes (seq changes)
+         page-ids #{}
+         component-ids #{}]
+    (if-let [change (first changes)]
+      (let [{:keys [type page-id component-id id]} change
+            page-ids
+            (case type
+              ;; Shape-level ops are scoped to either a page or a component
+              (:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects)
+              (cond-> page-ids
+                page-id (conj page-id))
 
-       ;; A new or modified component needs component-level checking
-       (:add-component :mod-component)
-       (update acc :component-ids conj id)
+              ;; A new or modified page needs a full page sweep
+              (:add-page :mod-page)
+              (conj page-ids id)
 
-       ;; restore-component resurrects a deleted component (touches the
-       ;; component definition) and places its main instance on a page
-       ;; (touches that page's shape tree) — both sides need validation.
-       :restore-component
-       (-> acc
-           (update :component-ids conj id)
-           (update :page-ids conj page-id))
+              ;; restore-component resurrects a deleted component (touches the
+              ;; component definition) and places its main instance on a page
+              ;; (touches that page's shape tree)
+              :restore-component
+              (conj page-ids page-id)
 
-       ;; del-*, mov-page, purge-component, and file-level changes such
-       ;; as colors, tokens, and typography updates leave no live entity
-       ;; behind that needs re-checking, so they are silently ignored.
-       acc))
-   {:page-ids #{} :component-ids #{}}
-   changes))
+              ;; Otherwise don't change the ids
+              page-ids)
+
+            component-ids
+            (case type
+              ;; Shape-level ops are scoped to either a page or a component
+              (:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects)
+              (cond-> component-ids
+                component-id (conj component-id))
+
+              ;; A new, modified, restored component needs component-level checking
+              (:add-component :mod-component :restore-component)
+              (conj component-ids id)
+
+              ;; Otherwise don't change the ids
+              component-ids)]
+        (recur (rest changes) page-ids component-ids))
+
+      ;; Return result of accumulated ids
+      {:page-ids page-ids :component-ids component-ids})))
 
 (defn validate-file-affected
   "Validate only the pages and components touched by `changes`.
