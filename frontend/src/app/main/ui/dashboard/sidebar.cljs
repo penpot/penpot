@@ -350,6 +350,8 @@
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
      [:hr {:role "separator" :class (stl/css :team-separator)}]
+     [:li {:role "presentation" :class (stl/css :org-section-label)}
+      (tr "dashboard.section.organizations")]
 
      (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
@@ -753,10 +755,10 @@
          [:div {:class (stl/css :team-name)}
           (if default-org?
             [:*
-             [:span {:class (stl/css :org-penpot-icon)}
-              [:> raw-svg* {:id penpot-logo-icon}]]
+             [:span {:class (stl/css :my-teams-icon-xxxl)}
+              [:> raw-svg* {:id penpot-logo-icon-subtle}]]
              [:span {:class (stl/css :team-text)}
-              "Penpot"]]
+              (tr "dashboard.my-teams")]]
             [:*
              [:> org-avatar* {:org current-org :size "xxxl"}]
              [:span {:class (stl/css :team-text)}

@@ -392,6 +392,9 @@ msgstr "Crear org"
 msgid "dashboard.my-teams"
 msgstr "Mis equipos"
 
+msgid "dashboard.section.organizations"
+msgstr "Organizaciones"
+
 msgid "dashboard.go-to-admin-console"
 msgstr "Ir a la Admin Console"
 
