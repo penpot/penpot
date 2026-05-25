@@ -79,6 +79,8 @@
 
 (def go-to-subscription-url (u/join cf/public-uri "#/settings/subscriptions"))
 
+(def go-to-ac-url "/admin-console/")
+
 (defn go-to-nitrate-billing
   []
   (let [href (dm/str "/admin-console/licenses/billing?callback=" (js/encodeURIComponent go-to-subscription-url))]
