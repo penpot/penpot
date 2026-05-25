@@ -816,16 +816,17 @@
                                                                      :origin :team
                                                                      :invite-email invite-email}))))]
     [:div {:class (stl/css :empty-invitations)}
-     [:span (tr "labels.no-invitations")]
+     [:div (tr "labels.no-invitations")]
      (if ^boolean can-invite
-       [[:span (tr "labels.no-invitations-gather-people")]
-        [:a
-         {:class (stl/css :btn-empty-invitations)
-          :on-click on-invite-member
-          :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")]
+       [[:div (tr "labels.no-invitations-gather-people")]
+        [:div {:class (stl/css :empty-invitations-buttons)}
+         [:a
+          {:class (stl/css :btn-empty-invitations)
+           :on-click on-invite-member
+           :data-testid "invite-member"}
+          (tr "dashboard.invite-profile")]]
         [:div {:class (stl/css :blank-space)}]]
-       [:span (tr "dashboard.invitations.no-permission")])]))
+       [:div {:class (stl/css :no-permission-text)} (tr "dashboard.invitations.no-permission")])]))
 
 (mf/defc invitation-modal
   {::mf/register modal/components
@@ -1091,7 +1092,8 @@
      (when (and (not can-invite?)
                 (seq @invitations))
        [:div {:class (stl/css :empty-invitations)}
-        [:span (tr "dashboard.invitations.no-permission")]])
+        [:div {:class (stl/css :no-permission-text)}
+         (tr "dashboard.invitations.no-permission")]])
      (when (and can-invite?
                 (> (count @selected) 0))
        [:*
