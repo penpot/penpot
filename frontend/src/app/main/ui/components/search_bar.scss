@@ -10,7 +10,7 @@
   display: flex;
   gap: deprecated.$s-2;
   height: deprecated.$s-32;
-  width: 100%;
+  flex-grow: 1;
   border-radius: deprecated.$br-8;
   background-color: var(--search-bar-background-color);
 }

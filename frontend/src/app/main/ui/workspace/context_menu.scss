@@ -21,8 +21,8 @@
   width: deprecated.$s-240;
   padding: deprecated.$s-4;
   border-radius: deprecated.$br-8;
-  border: deprecated.$s-2 solid var(--panel-border-color);
-  background-color: var(--menu-background-color);
+  border: deprecated.$s-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
   max-height: 100vh;
   overflow-y: auto;
 }
@@ -36,6 +36,12 @@
 }
 
 .context-menu-item {
+  --context-menu-item-bg-color: var(--color-background-tertiary);
+  --context-menu-item-title-color: var(--color-foreground-primary);
+  --context-menu-item-shortcut-color: var(--color-foreground-secondary);
+  --context-menu-item-shortcut-bg-color: var(--color-background-primary);
+  --context-menu-item-shortcut-border-color: transparent;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -44,52 +50,48 @@
   padding: deprecated.$s-6;
   border-radius: deprecated.$br-8;
   cursor: pointer;
-
-  .title {
-    @include deprecated.body-small-typography;
-
-    color: var(--menu-foreground-color);
-  }
-
-  .shortcut {
-    @include deprecated.flex-center;
-
-    gap: deprecated.$s-2;
-    color: var(--menu-shortcut-foreground-color);
-
-    .shortcut-key {
-      @include deprecated.body-small-typography;
-      @include deprecated.flex-center;
-
-      height: deprecated.$s-20;
-      padding: deprecated.$s-2 deprecated.$s-6;
-      border-radius: deprecated.$br-6;
-      background-color: var(--menu-shortcut-background-color);
-    }
-  }
-
-  .submenu-icon svg {
-    @extend %button-icon-small;
-
-    stroke: var(--menu-foreground-color);
-  }
+  background-color: var(--context-menu-item-bg-color);
+  border: 1px solid var(--context-menu-item-shortcut-border-color);
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
-
-    .title {
-      color: var(--menu-foreground-color-hover);
-    }
-
-    .shortcut {
-      color: var(--menu-shortcut-foreground-color-hover);
-    }
+    --context-menu-item-title-color: var(--menu-foreground-color-hover);
+    --context-menu-item-bg-color: var(--menu-background-color-hover);
+    --context-menu-item-shortcut-color: var(--menu-shortcut-foreground-color-hover);
   }
 
   &:focus {
-    border: 1px solid var(--menu-border-color-focus);
-    background-color: var(--menu-background-color-focus);
+    --context-menu-item-bg-color: var(--menu-background-color-focus);
+    --context-menu-item-shortcut-border-color: var(--menu-border-color-focus);
   }
+}
+
+.title {
+  @include deprecated.body-small-typography;
+
+  color: var(--context-menu-item-title-color);
+}
+
+.shortcut {
+  @include deprecated.flex-center;
+
+  gap: deprecated.$s-2;
+  color: var(--context-menu-item-shortcut-color);
+}
+
+.shortcut-key {
+  @include deprecated.body-small-typography;
+  @include deprecated.flex-center;
+
+  height: deprecated.$s-20;
+  padding: deprecated.$s-2 deprecated.$s-6;
+  border-radius: deprecated.$br-6;
+  background-color: var(--context-menu-item-shortcut-bg-color);
+}
+
+.submenu-icon svg {
+  @extend %button-icon-small;
+
+  stroke: var(--menu-foreground-color);
 }
 
 .icon-menu-item {
@@ -164,4 +166,9 @@
   &.selected {
     border: deprecated.$s-2 solid var(--menu-foreground-color);
   }
+}
+
+.customized-key {
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-primary);
 }

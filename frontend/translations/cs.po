@@ -3242,16 +3242,8 @@ msgstr "Pracovní plocha"
 msgid "shortcut-subsection.alignment"
 msgstr "Zarovnání"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:59
-msgid "shortcut-subsection.edit"
-msgstr "Upravit"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Obecný"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Obecný"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62

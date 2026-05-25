@@ -5076,11 +5076,7 @@ msgid "shortcut-subsection.edit"
 msgstr "Édition"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Général"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
-msgid "shortcut-subsection.general-viewer"
+msgid "shortcut-subsection.generic"
 msgstr "Général"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1005, src/app/main/ui/workspace/sidebar/shortcuts.cljs:62

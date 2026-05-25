@@ -175,7 +175,10 @@
     :mcp
     :background-blur
     :available-viewer-wasm
-    :stroke-per-side})
+    :stroke-path
+    :stroke-per-side
+
+    :custom-shortcuts})
 
 (def all-flags
   (set/union email login varia))

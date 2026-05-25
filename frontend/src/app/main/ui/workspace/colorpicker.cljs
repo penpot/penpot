@@ -788,7 +788,7 @@
                   (combine-groups-with-resolved  color-tokens)))]
 
     (mf/with-effect []
-      (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts)))
+      (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts :workspace)))
       (fn []
         (st/emit! (dsc/pop-shortcuts ::colorpicker))
         (when (and @dirty? @last-change on-close)
