@@ -213,6 +213,11 @@ impl ImageStore {
         }
     }
 
+    pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
+        let gpu_image = self.get(id)?.clone();
+        gpu_image.make_non_texture_image(self.context.as_mut())
+    }
+
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
         let key = (*id, is_thumbnail);
         // Use entry API to mutate the HashMap in-place if needed

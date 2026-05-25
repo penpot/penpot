@@ -6,13 +6,16 @@ pub mod gpu_state;
 pub mod grid_layout;
 mod images;
 mod options;
+pub mod pdf;
 pub mod rulers;
 mod shadows;
+pub mod shape_renderer;
 mod strokes;
 mod surfaces;
 pub mod text;
 pub mod text_editor;
 mod ui;
+mod vector;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
