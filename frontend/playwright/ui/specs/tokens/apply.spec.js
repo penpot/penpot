@@ -1200,9 +1200,7 @@ test("BUG: 14200, Tokens in sets are applied when clicking on Save during creati
   await expect(borderTokenPill).not.toBeVisible();
 });
 
-test("Check token application across sets", async ({
-  page,
-}) => {
+test("Check token application across sets", async ({ page }) => {
   // Setup the workspace with token features enabled
   const {
     workspacePage,
@@ -1253,7 +1251,7 @@ test("Check token application across sets", async ({
     });
     await submitButton.click();
     await expect(tokensUpdateCreateModal).not.toBeVisible();
-  }
+  };
 
   // Select rectangle layer
   await page.getByRole("tab", { name: "Layers" }).click();
@@ -1268,7 +1266,9 @@ test("Check token application across sets", async ({
 
   // Create nested token set, select it and activate it
   await createSet(tokenThemesSetsSidebar, "device/desktop");
-  const desktopSetButton = tokenThemesSetsSidebar.getByRole("button", { name: "desktop" });
+  const desktopSetButton = tokenThemesSetsSidebar.getByRole("button", {
+    name: "desktop",
+  });
   await desktopSetButton.click();
   await desktopSetButton.getByRole("checkbox").click();
 
@@ -1292,14 +1292,18 @@ test("Check token application across sets", async ({
   await expect(borderTokenPill).not.toBeVisible();
 
   // Apply token to shape
-  await tokensSidebar.getByRole('button', { name: 'border-radius', exact: true }).click();
+  await tokensSidebar
+    .getByRole("button", { name: "border-radius", exact: true })
+    .click();
 
   await expect(borderTokenPill).toBeVisible();
   await expect(borderTokenPill).toHaveText("20");
 
   //Create new set, select it and activate it
   await createSet(tokenThemesSetsSidebar, "device/mobile");
-  const mobileSetButton = tokenThemesSetsSidebar.getByRole("button", { name: "mobile" });
+  const mobileSetButton = tokenThemesSetsSidebar.getByRole("button", {
+    name: "mobile",
+  });
   await mobileSetButton.click();
   await mobileSetButton.getByRole("checkbox").click();
 
@@ -1767,4 +1771,37 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     });
     await expect(brokenPill).toHaveCount(2);
   });
+});
+
+test("BUG: 14234, Numeric input token filtering must be case sensitive", async ({
+  page,
+}) => {
+  const { workspacePage, tokensSidebar } = await setupTokensFileRender(page, {
+    flags: ["enable-token-combobox", "enable-feature-token-input"],
+  });
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+  await unfoldTokenType(tokensSidebar, "dimensions");
+
+  await createToken(page, "Dimensions", "Dim-up", "Value", "20");
+  await createToken(page, "Dimensions", "dim-up", "Value", "10");
+  const measuresSection = page.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+  });
+  await widthInput.click();
+  await widthInput.type("{Dim");
+  await expect(
+    measuresSection.getByText("Dim-up", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    measuresSection.getByText("dim-up", { exact: true }),
+  ).not.toBeVisible();
 });

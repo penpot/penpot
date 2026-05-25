@@ -53,13 +53,12 @@
 
 (defn- filter-token-groups-by-name
   [tokens filter-text]
-  (let [lc-filter (str/lower filter-text)]
-    (into {}
-          (keep (fn [[group tokens]]
-                  (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
-                    (when (seq filtered)
-                      [group filtered]))))
-          tokens)))
+  (into {}
+        (keep (fn [[group tokens]]
+                (let [filtered (filter #(str/includes? (:name %) filter-text) tokens)]
+                  (when (seq filtered)
+                    [group filtered]))))
+        tokens))
 
 (defn- sort-groups-and-tokens
   "Sorts the tokens inside the groups alphabetically.
