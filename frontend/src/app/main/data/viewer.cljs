@@ -193,30 +193,26 @@
                                           :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true}))])))
                  (into {}))]
 
-        (prn "update viewer state")
-
         (-> state
             (assoc-in [:viewer :file] file)
             (assoc-in [:viewer :pages] pages))))))
 
 (defn- generate-update-position-data-changes
-  [state file-id page-id]
-  (reduce-kv
-   (fn [result _ shape]
-     (if (and (cfh/text-shape? shape) (nil? (:position-data shape)))
-       (conj result
-             {:type :mod-obj
-              :id (:id shape)
-              :page-id page-id
-              :operations
-              [{:type :set
-                :attr :position-data
-                :val (wasm.api/calculate-position-data shape)
-                :ignore-touched true
-                :ignore-geometry true}]})
-       result))
+  [shapes page-id]
+  (reduce
+   (fn [result shape]
+     (conj result
+           {:type :mod-obj
+            :id (:id shape)
+            :page-id page-id
+            :operations
+            [{:type :set
+              :attr :position-data
+              :val (wasm.api/calculate-position-data shape)
+              :ignore-touched true
+              :ignore-geometry true}]}))
    []
-   (dsh/lookup-page-objects state file-id page-id)))
+   shapes))
 
 (defn update-page-position-data
   [file-id page-id]
@@ -226,22 +222,35 @@
       (if (features/active-feature? state "render-wasm/v1")
         (let [objects (dsh/lookup-page-objects state file-id page-id)
 
-              check?
-              (->> objects
-                   (some
-                    (fn [[_ shape]]
-                      (and (cfh/text-shape? shape) (nil? (:position-data shape))))))]
-          (if check?
+              shapes
+              (reduce-kv
+               (fn [result _ shape]
+                 (cond-> result
+                   (and (cfh/text-shape? shape) (nil? (:position-data shape)))
+                   (conj shape)))
+               []
+               objects)
+
+              ;; Creates a stream from the async callback. This stream will only
+              ;; emit one single value after the objects have finished loading
+              ;; in the wasm memory.
+              set-objects-stream
+              (rx/create
+               (fn [subs]
+                 (wasm.api/init-canvas-context (js/OffscreenCanvas. 0 0))
+                 (wasm.api/set-objects-callback shapes #(rx/push! subs :done))
+                 nil))]
+
+          (if (d/not-empty? shapes)
             (->> (rx/from @wasm.api/module)
+                 (rx/mapcat (constantly set-objects-stream))
                  (rx/mapcat
                   (fn []
-                    (if (wasm.api/init-canvas-context (js/OffscreenCanvas. 0 0))
-                      (let [changes (generate-update-position-data-changes state file-id page-id)
-                            _ (wasm.api/clear-canvas)]
-                        (if (d/not-empty? changes)
-                          (rx/of (apply-changes-viewer changes))
-                          (rx/empty)))
-                      (rx/empty)))))
+                    (let [changes (generate-update-position-data-changes shapes page-id)
+                          _ (wasm.api/clear-canvas)]
+                      (if (d/not-empty? changes)
+                        (rx/of (apply-changes-viewer changes))
+                        (rx/empty))))))
             (rx/empty)))
 
         ;; Render wasm disabled, we do nothing
