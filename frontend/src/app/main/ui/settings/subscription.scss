@@ -98,18 +98,15 @@
 .plan-title-icon {
   @extend %button-icon;
 
-  stroke: var(--color-foreground-primary);
   block-size: var(--sp-xl);
   inline-size: var(--sp-xl);
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
-  stroke-width: 2.25px;
-  padding: px2rem(3);
 }
 
 .plan-title-icon svg {
-  block-size: var(--sp-m);
-  inline-size: var(--sp-m);
+  stroke: var(--color-foreground-primary);
+  stroke-width: 2.25px;
 }
 
 .plan-card-title,
