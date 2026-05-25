@@ -430,16 +430,23 @@
 }
 
 .empty-invitations {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  height: px2rem(156);
-  max-width: $sz-1000;
   width: 100%;
   margin-top: var(--sp-l);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   color: var(--color-foreground-secondary);
+  padding: var(--sp-xxxl);
+  text-align: center;
+}
+
+.empty-invitations-buttons {
+  width: fit-content;
+  margin: auto;
+}
+
+.no-permission-text {
+  max-width: $sz-512;
+  margin: auto;
 }
 
 .btn-empty-invitations {

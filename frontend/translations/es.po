@@ -9283,5 +9283,5 @@ msgid "dashboard.no-permission-move-team.message"
 msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario de la organización."
 
 msgid "dashboard.invitations.no-permission"
-msgstr "No tienes permiso para invitar a personas a unirse ni para editar o eliminar invitaciones en este equipo."
+msgstr "No tienes permiso para invitar a personas a unirse a este equipo, ni para editar o eliminar invitaciones."
 
