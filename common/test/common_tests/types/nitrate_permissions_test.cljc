@@ -21,15 +21,15 @@
                                          :profile-id :member
                                          :team-perms {:is-admin true}}))))
 
-(t/deftest org-owner-is-allowed-for-create
+(t/deftest org-owner-is-allowed-for-create-and-delete
   (t/is (true? (nitrate-perms/allowed? :create-team
                                        {:org-perms org-perms
                                         :profile-id :owner
                                         :team-perms {:is-admin false}})))
-  (t/is (false? (nitrate-perms/allowed? :delete-team
-                                        {:org-perms org-perms
-                                         :profile-id :owner
-                                         :team-perms {:is-admin false}}))))
+  (t/is (true? (nitrate-perms/allowed? :delete-team
+                                       {:org-perms org-perms
+                                        :profile-id :owner
+                                        :team-perms {:is-admin false}}))))
 
 (t/deftest create-team-permission-rules
   (t/is (true? (nitrate-perms/allowed? :create-team
@@ -57,16 +57,11 @@
                                          :profile-id :member
                                          :team-perms {:is-admin true}}))))
 
-(t/deftest delete-team-onlyme-is-gated-for-future-org-flow
+(t/deftest delete-team-onlyme-still-allows-org-owner
   (let [only-me-org (assoc org-perms :permissions {:create-teams "any"
                                                    :delete-teams "onlyMe"})]
-    (t/is (false? (nitrate-perms/allowed? :delete-team
-                                          {:org-perms only-me-org
-                                           :profile-id :owner
-                                           :team-perms {:is-owner false :is-admin false}})))
     (t/is (true? (nitrate-perms/allowed? :delete-team
                                          {:org-perms only-me-org
-                                          :allow-org-owner-delete? true
                                           :profile-id :owner
                                           :team-perms {:is-owner false :is-admin false}})))
     (t/is (false? (nitrate-perms/allowed? :delete-team

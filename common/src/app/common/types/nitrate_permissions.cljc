@@ -19,10 +19,11 @@
       (= permission-value "any")))
 
 (defn- can-delete-team?
-  [{:keys [is-org-owner? permission-value team-perms allow-org-owner-delete?]}]
+  [{:keys [is-org-owner? permission-value team-perms]}]
   (cond
-    (= permission-value "onlyMe")
-    (and allow-org-owner-delete? is-org-owner?)
+    ;; Org owners can always delete teams inside their organizations.
+    is-org-owner?
+    true
     (= permission-value "onlyOwners")
     (boolean (:is-owner team-perms))
     :else false))
@@ -76,7 +77,7 @@
 
 (defn allowed?
   "Returns true only for explicitly allowed actions (fail-closed)."
-  [action {:keys [org-perms profile-id team-perms allow-org-owner-delete? target-org-same-owner?]}]
+  [action {:keys [org-perms profile-id team-perms target-org-same-owner?]}]
   (let [{:keys [permission-key check-fn] :as rule}
         (get action-rules action)
         permissions (normalize-org-permissions org-perms)
@@ -87,7 +88,6 @@
       :else (boolean (check-fn {:is-org-owner? is-org-owner?
                                 :permission-value permission-value
                                 :team-perms team-perms
-                                :allow-org-owner-delete? allow-org-owner-delete?
                                 :target-org-same-owner? target-org-same-owner?})))))
 
 (defn can-send-invitations?

@@ -112,12 +112,48 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
-(def sql:get-team-files-count
-  "SELECT count(*) AS total
+(def ^:private sql:get-teams-files-counts
+  "SELECT p.team_id, count(*) AS total
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
-    WHERE p.team_id = ?
-      AND f.deleted_at IS NULL")
+    WHERE p.team_id = ANY(?)
+      AND f.deleted_at IS NULL
+ GROUP BY p.team_id")
+
+(defn- get-team-files-counts
+  [conn team-ids]
+  (if (seq team-ids)
+    (let [ids-array (db/create-array conn "uuid" team-ids)]
+      (->> (db/exec! conn [sql:get-teams-files-counts ids-array])
+           (reduce (fn [acc {:keys [team-id total]}]
+                     (assoc acc team-id (long total)))
+                   {})))
+    {}))
+
+(defn- build-leave-org-plan
+  [{:keys [::db/conn]} default-team-id teams-to-delete keep-default-team-requested?]
+  (let [all-teams     (cond-> (set teams-to-delete) default-team-id (conj default-team-id))
+        files-counts  (get-team-files-counts conn all-teams)
+        has-files?    (fn [id] (pos? (long (get files-counts id 0))))
+        deletable     (remove has-files? teams-to-delete)
+        keep-default? (or keep-default-team-requested?
+                          (and default-team-id (has-files? default-team-id)))
+        to-detach     (cond-> (into [] (remove (set deletable) teams-to-delete))
+                        (and default-team-id keep-default?) (conj default-team-id))]
+    {:deletable-team-ids       deletable
+     :keep-default-team?       keep-default?
+     :delete-default-team?     (boolean (and default-team-id (not keep-default?)))
+     :detach-from-org-team-ids to-detach}))
+
+(defn get-leave-org-summary
+  [cfg default-team-id teams-to-delete teams-to-transfer-count teams-to-exit-count]
+  (let [{:keys [deletable-team-ids delete-default-team? detach-from-org-team-ids]}
+        (build-leave-org-plan cfg default-team-id teams-to-delete nil)]
+    {:teams-to-delete   (+ (count deletable-team-ids)
+                           (if delete-default-team? 1 0))
+     :teams-to-transfer teams-to-transfer-count
+     :teams-to-exit     teams-to-exit-count
+     :teams-to-detach   (count detach-from-org-team-ids)}))
 
 (def ^:private schema:leave-org
   [:map
@@ -131,6 +167,18 @@
      [:map
       [:id ::sm/uuid]
       [:reassign-to {:optional true} ::sm/uuid]]]]])
+
+(def ^:private schema:get-leave-org-summary-result
+  [:map
+   [:teams-to-delete ::sm/int]
+   [:teams-to-transfer ::sm/int]
+   [:teams-to-exit ::sm/int]
+   [:teams-to-detach ::sm/int]])
+
+(def ^:private schema:get-leave-org-summary
+  [:map
+   [:id ::sm/uuid]
+   [:default-team-id ::sm/uuid]])
 
 
 (defn- get-organization-teams-for-user
@@ -221,16 +269,14 @@
                 :code :not-valid-teams))))
 
 
+
 (defn leave-org
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
-  (let [org-prefix                 (str "[" (d/sanitize-string name) "] ")
-
-        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
-                                        :total)
-        delete-default-team?        (= default-team-files-count 0)]
-
-
-
+  [{:keys [::db/conn] :as cfg}
+   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?]}]
+  (let [org-prefix (str "[" (d/sanitize-string name) "] ")
+        {:keys [deletable-team-ids
+                keep-default-team?
+                detach-from-org-team-ids]} (build-leave-org-plan cfg default-team-id teams-to-delete keep-default-team-requested?)]
 
     ;; assert that the received teams are valid, checking the different constraints
     (when-not skip-validation
@@ -238,20 +284,27 @@
 
     (assert-membership cfg profile-id id)
 
-    ;; delete the teams-to-delete
-    (doseq [id teams-to-delete]
-      (teams/delete-team cfg {:profile-id profile-id :team-id id}))
+    ;; delete only eligible teams (non-protected and without files)
+    (doseq [id deletable-team-ids]
+      (teams/delete-team cfg {:profile-id profile-id
+                              :team-id id}))
 
     ;; leave the teams-to-leave
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Delete default-team-id if empty; otherwise keep it and prefix the name.
-    (if delete-default-team?
-      (do
-        (db/update! conn :team {:is-default false} {:id default-team-id})
-        (teams/delete-team cfg {:profile-id profile-id :team-id default-team-id}))
-      (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id]))
+    ;; Process org "Your Penpot" team: keep with prefix if needed, otherwise delete.
+    (when default-team-id
+      (if keep-default-team?
+        (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id])
+        (teams/delete-team cfg {:profile-id profile-id
+                                :team-id default-team-id})))
+
+    ;; Detach retained owned teams from the organization in Nitrate.
+    ;; Nitrate will rehome them to its fallback/default org.
+    (doseq [team-id detach-from-org-team-ids]
+      (nitrate/call cfg :remove-team-from-org {:team-id team-id
+                                               :organization-id id}))
 
     ;; Api call to nitrate
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :organization-id id})
@@ -266,6 +319,25 @@
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
   (leave-org cfg (assoc params :profile-id profile-id)))
+
+
+(sv/defmethod ::get-leave-org-summary
+  {::rpc/auth true
+   ::doc/added "2.18"
+   ::sm/params schema:get-leave-org-summary
+   ::sm/result schema:get-leave-org-summary-result
+   ::db/transaction true}
+  [cfg {:keys [::rpc/profile-id id default-team-id]}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (get-valid-teams cfg id profile-id default-team-id)
+        teams-to-transfer-count (count valid-teams-to-transfer)
+        teams-to-exit-count     (count valid-teams-to-exit)]
+    (when-not valid-default-team
+      (ex/raise :type :validation
+                :code :not-valid-teams))
+    (get-leave-org-summary cfg default-team-id valid-teams-to-delete-ids teams-to-transfer-count teams-to-exit-count)))
 
 
 (def ^:private schema:remove-team-from-org

@@ -186,8 +186,10 @@
         expected-start    (str "[" (d/sanitize-string organization-name) "] ")
         org-summary       {:id organization-id
                            :name organization-name
-                           :teams [{:id (:id team-with-files)}
-                                   {:id (:id empty-team)}]}
+                           :teams [{:id (:id team-with-files)
+                                    :is-your-penpot true}
+                                   {:id (:id empty-team)
+                                    :is-your-penpot true}]}
         calls             (atom [])
         submitted         (atom [])
         out               (with-redefs [nitrate/call (fn [_cfg method params]
@@ -222,6 +224,7 @@
     (let [{:keys [topic message]} (first @calls)]
       (t/is (= uuid/zero topic))
       (t/is (= :organization-deleted (:type message)))
+      (t/is (= organization-id (:organization-id message)))
       (t/is (= organization-name (:organization-name message)))
       (t/is (= #{(:id team-with-files) (:id empty-team)}
                (set (:teams message))))
@@ -254,12 +257,16 @@
         org-2-prefix       (str "[" (d/sanitize-string org-2-name) "] ")
         owned-orgs         [{:id org-1-id
                              :name org-1-name
-                             :teams [{:id (:id org-1-team-files)}
-                                     {:id (:id org-1-team-empty)}]}
+                             :teams [{:id (:id org-1-team-files)
+                                      :is-your-penpot true}
+                                     {:id (:id org-1-team-empty)
+                                      :is-your-penpot true}]}
                             {:id org-2-id
                              :name org-2-name
-                             :teams [{:id (:id org-2-team-files)}
-                                     {:id (:id org-2-team-empty)}]}]
+                             :teams [{:id (:id org-2-team-files)
+                                      :is-your-penpot true}
+                                     {:id (:id org-2-team-empty)
+                                      :is-your-penpot true}]}]
         calls              (atom [])
         submitted          (atom [])
         out                (with-redefs [nitrate/call (fn [_cfg method params]
@@ -313,6 +320,8 @@
           m2 (org-msg org-2-name)]
       (t/is (some? m1))
       (t/is (some? m2))
+      (t/is (= org-1-id (:organization-id m1)))
+      (t/is (= org-2-id (:organization-id m2)))
       (t/is (= #{(:id org-1-team-files) (:id org-1-team-empty)}
                (set (:teams m1))))
       (t/is (= #{(:id org-1-team-empty)}
@@ -1016,9 +1025,10 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   0
+    (t/is (= {:teams-to-delete   1
               :teams-to-transfer 0
-              :teams-to-exit     0}
+              :teams-to-exit     0
+              :teams-to-detach   0}
              (:result out)))))
 
 (t/deftest get-remove-from-org-summary-with-teams-to-delete
@@ -1042,9 +1052,10 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   1
+    (t/is (= {:teams-to-delete   2
               :teams-to-transfer 0
-              :teams-to-exit     0}
+              :teams-to-exit     0
+              :teams-to-detach   0}
              (:result out)))))
 
 (t/deftest get-remove-from-org-summary-with-teams-to-transfer
@@ -1072,9 +1083,10 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   0
+    (t/is (= {:teams-to-delete   1
               :teams-to-transfer 1
-              :teams-to-exit     0}
+              :teams-to-exit     0
+              :teams-to-detach   0}
              (:result out)))))
 
 (t/deftest get-remove-from-org-summary-with-teams-to-exit
@@ -1101,9 +1113,10 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   0
+    (t/is (= {:teams-to-delete   1
               :teams-to-transfer 0
-              :teams-to-exit     1}
+              :teams-to-exit     1
+              :teams-to-detach   0}
              (:result out)))))
 
 (t/deftest get-remove-from-org-summary-does-not-mutate

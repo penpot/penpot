@@ -487,9 +487,10 @@
 
     ;; Delete owned organizations on the fly (no grace period).
     ;; Nitrate iterates the user's owned orgs and, per org, calls
-    ;; Penpot back via ::notify-organization-deletion which renames
-    ;; the org's teams (prefixed with "[OrgName] ", including the
-    ;; user's "Your Penpot" team) and soft-deletes empty ones.
+    ;; Penpot back through two paths: ::notify-user-organizations-deletion
+    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
+    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; imported "Your Penpot" teams according to whether they still have files.
     (when (contains? cf/flags :nitrate)
       (nitrate/call cfg :delete-owned-orgs {:profile-id profile-id})
       ;; Remove the user from any remaining org memberships.
