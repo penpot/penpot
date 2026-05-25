@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-nitrate-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as-alias db]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -714,6 +715,71 @@
         (t/is (not (th/success? out)))
         (t/is (= :validation (th/ex-type (:error out))))
         (t/is (= :not-valid-teams (th/ex-code (:error out))))))))
+
+(t/deftest all-team-members-in-orgs-returns-org-id->boolean-map
+  (let [profile-user  (th/create-profile* 201 {:is-active true})
+        profile-other (th/create-profile* 202 {:is-active true})
+        team          (th/create-team* 201 {:profile-id (:id profile-user)})
+        _             (th/create-team-role* {:team-id (:id team)
+                                             :profile-id (:id profile-other)
+                                             :role :editor})
+        team-member-ids (->> (th/db-query :team-profile-rel {:team-id (:id team)})
+                             (map :profile-id)
+                             (into #{}))
+        org-id-1      (uuid/random)
+        org-id-2      (uuid/random)
+        calls         (atom [])]
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (fn [_cfg method params]
+                                 (swap! calls conj [method params])
+                                 (case method
+                                   :get-org-membership {:is-member true
+                                                        :organization-id (:organization-id params)}
+                                   :get-org-members (get {org-id-1 (vec team-member-ids)
+                                                          org-id-2 [(:id profile-user)]}
+                                                         (:organization-id params)
+                                                         [])
+                                   nil))]
+      (let [out (th/command! {::th/type :all-team-members-in-orgs
+                              ::rpc/profile-id (:id profile-user)
+                              :team-id (:id team)
+                              :organization-ids [org-id-1 org-id-2]})
+            methods (map first @calls)
+            membership-calls (count (filter #(= :get-org-membership %) methods))
+            get-members-calls (count (filter #(= :get-org-members %) methods))]
+        (t/is (th/success? out))
+        (t/is (= {org-id-1 true
+                  org-id-2 false}
+                 (:result out)))
+        (t/is (= 2 membership-calls))
+        (t/is (= 2 get-members-calls))))))
+
+(t/deftest all-team-members-in-orgs-fails-before-fetching-org-members
+  (let [profile-user  (th/create-profile* 203 {:is-active true})
+        team          (th/create-team* 203 {:profile-id (:id profile-user)})
+        org-id-1      (uuid/random)
+        org-id-2      (uuid/random)
+        calls         (atom [])]
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (fn [_cfg method params]
+                                 (swap! calls conj [method params])
+                                 (case method
+                                   :get-org-membership (if (= (:organization-id params) org-id-2)
+                                                         {:is-member false
+                                                          :organization-id (:organization-id params)}
+                                                         {:is-member true
+                                                          :organization-id (:organization-id params)})
+                                   :get-org-members []
+                                   nil))]
+      (let [out (th/command! {::th/type :all-team-members-in-orgs
+                              ::rpc/profile-id (:id profile-user)
+                              :team-id (:id team)
+                              :organization-ids [org-id-1 org-id-2]})
+            methods (map first @calls)]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :user-doesnt-belong-organization (th/ex-code (:error out))))
+        (t/is (= 0 (count (filter #(= :get-org-members %) methods))))))))
 
 (t/deftest leave-org-error-reassign-on-non-owned-team
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
