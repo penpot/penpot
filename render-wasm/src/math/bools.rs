@@ -62,8 +62,14 @@ pub fn path_to_beziers(path: &Path) -> Vec<Bezier> {
             Segment::Close => {
                 let (x1, y1) = prev?;
                 let (x2, y2) = start?;
-                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
                 prev = Some((x2, y2));
+                // Skip degenerate zero-length close segment: path already returned
+                // to the start point via an explicit LineTo/CurveTo, so adding a
+                // zero-length linear bezier here would confuse intersection detection.
+                if (x1 - x2).abs() < 1e-6 && (y1 - y2).abs() < 1e-6 {
+                    return None;
+                }
+                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
                 Some(s)
             }
         })
