@@ -89,6 +89,7 @@ services:
     depends_on:
       - penpot-backend
       - penpot-exporter
+      - penpot-mcp
 
     networks:
       - penpot
