@@ -215,7 +215,45 @@
       (->> (rp/cmd! ::remove-team-from-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
            (rx/mapcat
             (fn [_]
-              (rx/of (modal/hide))))))))
+              (rx/of (modal/hide))))
+           (rx/catch
+            (fn [cause]
+              (let [code (-> cause ex-data :code)]
+                (if (= code :not-allowed)
+                  (rx/of (modal/show :no-permission-modal {:type :no-orgs-change}))
+                  (rx/throw cause)))))))))
+
+(defn show-remove-team-from-org-modal
+  "Fetches fresh team/org data, then shows the remove-from-org confirmation
+  modal or the no-permission modal if the move-team permission blocks it."
+  [{:keys [team-id]}]
+  (ptk/reify ::show-remove-team-from-org-modal
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (dt/with-refreshed-team team-id
+          (fn [team]
+            (let [source-org (:organization team)
+                  can-move?  (nitrate-perms/allowed?
+                              :move-team
+                              {:org-perms {:owner-id    (:owner-id source-org)
+                                           :permissions (:permissions source-org)}
+                               :profile-id profile-id
+                               :team-perms (:permissions team)
+                               :target-org-same-owner? false})]
+              (rx/of (if can-move?
+                       (modal/show
+                        {:type :confirm
+                         :title (tr "modals.remove-team-org.title")
+                         :message (tr "modals.remove-team-org.text" (:name team) (dm/get-in team [:organization :name]))
+                         :hint (tr "modals.remove-team-org.info")
+                         :hint-level :default
+                         :accept-label (tr "modals.remove-team-org.accept")
+                         :on-accept #(st/emit! (remove-team-from-org {:team-id team-id
+                                                                      :organization-id (dm/get-in team [:organization :id])
+                                                                      :organization-name (dm/get-in team [:organization :name])}))
+                         :accept-style :danger})
+                       (modal/show :no-permission-modal {:type :no-orgs-change}))))))))))
 
 
 (defn add-team-to-org

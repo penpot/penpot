@@ -67,7 +67,7 @@
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
 
-(defn- with-refreshed-team
+(defn with-refreshed-team
   "Fetches fresh team data from the server to ensure up-to-date org
   permissions, updates the app state, and calls f with the fresh team data.
   Returns an observable of events."

@@ -1521,27 +1521,11 @@
         (fn [file]
           (st/emit! (dtm/update-team-photo file)))
 
-        remove-team-from-org-fn
-        (mf/use-fn
-         (mf/deps team)
-         (fn []
-           (st/emit! (dnt/remove-team-from-org {:team-id (:id team)
-                                                :organization-id (dm/get-in team [:organization :id])
-                                                :organization-name (dm/get-in team [:organization :name])}))))
-
         on-remove-team-from-org
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (let [params {:type :confirm
-                         :title (tr "modals.remove-team-org.title")
-                         :message (tr "modals.remove-team-org.text" (:name team) (dm/get-in team [:organization :name]))
-                         :hint (tr "modals.remove-team-org.info")
-                         :hint-level :default
-                         :accept-label (tr "modals.remove-team-org.accept")
-                         :on-accept remove-team-from-org-fn
-                         :accept-style :danger}]
-             (st/emit! (modal/show params)))))
+           (st/emit! (dnt/show-remove-team-from-org-modal {:team-id (:id team)}))))
 
         on-add-team-to-org
         (mf/use-fn
