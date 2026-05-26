@@ -94,6 +94,8 @@ test.describe("Tokens - creation", () => {
     await toggleDropdownButton.click();
     const option = page.getByRole("option", { name: "my-token" });
     await expect(option).toBeVisible();
+    const resolvedValue = option.getByText('3');
+    await expect(resolvedValue).toBeVisible();
     await option.click();
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 3"),
