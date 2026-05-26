@@ -21,11 +21,14 @@
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.strings :refer [matches-search]]
    [clojure.set :as set]
    [clojure.string]
    [cuerdas.core :as str]
+   [goog.events :as events]
    [rumext.v2 :as mf]))
 
 (mf/defc converted-chars*
@@ -481,9 +484,27 @@
         (mf/use-callback
          (fn [_]
            (reset! open-sections [[1]])
-           (reset! filter-term "")))]
+           (reset! filter-term "")))
 
-    [:div {:class (dm/str class " " (stl/css :shortcuts))}
+        panel-ref
+        (mf/use-ref nil)
+
+        on-document-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event)
+             (let [panel (mf/ref-val panel-ref)
+                   active (dom/get-active)]
+               (when (and panel active (dom/child? active panel))
+                 (dom/stop-propagation event)
+                 (close-fn))))))]
+
+    (mf/with-effect []
+      (let [key (events/listen globals/document "keydown" on-document-key-down)]
+        (fn [] (events/unlistenByKey key))))
+
+    [:div {:ref panel-ref
+           :class (dm/str class " " (stl/css :shortcuts))}
      [:> panel-title* {:class (stl/css :shortcuts-title)
                        :text (tr "shortcuts.title")
                        :on-close close-fn}]

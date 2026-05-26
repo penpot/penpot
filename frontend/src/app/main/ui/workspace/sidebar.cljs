@@ -43,7 +43,11 @@
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [goog.events :as events]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -262,23 +266,44 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click on-close-document-history
-                             :icon i/close}]))]
+                             :icon i/close}]))
 
-    [:> tab-switcher* {:tabs tabs
-                       :selected selected
-                       :on-change on-change-tab
-                       :class (stl/css :left-sidebar-tabs)
-                       :action-button-position "end"
-                       :action-button button}
+        panel-ref
+        (mf/use-ref nil)
 
-     (case selected
-       "history"
-       [:article {:class (stl/css :history-tab)}
-        [:> versions-toolbox* {}]]
+        on-document-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event)
+             (let [panel (mf/ref-val panel-ref)
+                   active (dom/get-active)
+                   tag    (some-> active .-tagName str/lower)]
+               (when (and panel active
+                          (dom/child? active panel)
+                          (not (#{"input" "textarea"} tag)))
+                 (dom/stop-propagation event)
+                 (on-close-document-history)))))]
 
-       "actions"
-       [:article {:class (stl/css :versions-tab)}
-        [:> history-toolbox*]])]))
+    (mf/with-effect []
+      (let [key (events/listen globals/document "keydown" on-document-key-down)]
+        (fn [] (events/unlistenByKey key))))
+
+    [:div {:ref panel-ref}
+     [:> tab-switcher* {:tabs tabs
+                        :selected selected
+                        :on-change on-change-tab
+                        :class (stl/css :left-sidebar-tabs)
+                        :action-button-position "end"
+                        :action-button button}
+
+      (case selected
+        "history"
+        [:article {:class (stl/css :history-tab)}
+         [:> versions-toolbox* {}]]
+
+        "actions"
+        [:article {:class (stl/css :versions-tab)}
+         [:> history-toolbox* {}]])]]))
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]

@@ -8,6 +8,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Dismiss the workspace History and Shortcuts panels with the Escape key while focus is inside the panel (by @Atefoub) [Github #9540](https://github.com/penpot/penpot/issues/9540)
 - Show a read-only W × H size badge below the bounding box of the current selection (by @bittoby) [Github #9205](https://github.com/penpot/penpot/issues/9205)
 - Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API [Github #9185](https://github.com/penpot/penpot/issues/9185)
 - Show alpha percentage next to library color values to distinguish colors that differ only in opacity (by @rockchris099) [Github #6328](https://github.com/penpot/penpot/issues/6328)
