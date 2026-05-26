@@ -289,6 +289,7 @@
                                                       errors?)
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
+              :id (str "token-pill-" (:id token))
               :type "button"
               :on-focus on-hover
 

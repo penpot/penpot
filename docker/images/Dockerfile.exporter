@@ -3,7 +3,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v22.22.0 \
+    NODE_VERSION=v24.15.0 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:/opt/imagick/bin:$PATH \
     PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers

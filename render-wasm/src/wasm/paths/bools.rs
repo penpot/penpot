@@ -5,7 +5,7 @@ use crate::math;
 use crate::shapes::BoolType;
 use crate::uuid::Uuid;
 use crate::{mem, SerializableResult};
-use crate::{with_current_shape_mut, with_state, STATE};
+use crate::{with_current_shape_mut, with_state};
 use std::mem::size_of;
 
 #[allow(unused_imports)]

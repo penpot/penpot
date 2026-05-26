@@ -203,6 +203,38 @@
               (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
 
+
+(defn check-file-position-data
+  [file-id]
+  (ptk/reify ::fix-position-data
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file (dsh/lookup-file state file-id)
+            changes
+            (->> file :data :pages
+                 (mapcat
+                  (fn [page-id]
+                    (->> (dsh/lookup-page-objects state file-id page-id)
+                         (vals)
+                         (filter cfh/text-shape?)
+                         (filter #(nil? (:position-data %)))
+                         (map (fn [shape]
+                                {:type :mod-obj
+                                 :id (:id shape)
+                                 :page-id page-id
+                                 :operations
+                                 [{:type :set
+                                   :attr :position-data
+                                   :val (wasm.api/calculate-position-data shape)
+                                   :ignore-touched true
+                                   :ignore-geometry true}]})))))
+                 (into []))]
+        (rx/of (dch/commit-changes
+                {:redo-changes changes :undo-changes []
+                 :save-undo? false
+                 :origin it
+                 :tags #{:position-data}}))))))
+
 (defn- workspace-initialized
   [file-id]
   (ptk/reify ::workspace-initialized
@@ -1578,6 +1610,7 @@
 (dm/export dwv/initialize-viewport)
 (dm/export dwv/update-viewport-position)
 (dm/export dwv/update-viewport-size)
+(dm/export dwv/sync-wasm-workspace-viewport)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
 

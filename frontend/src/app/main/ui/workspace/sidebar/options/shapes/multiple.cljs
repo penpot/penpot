@@ -274,7 +274,7 @@
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc content-attrs applied-tokens)]
+                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])

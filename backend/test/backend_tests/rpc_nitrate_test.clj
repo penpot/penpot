@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-nitrate-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as-alias db]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -42,6 +43,13 @@
       :get-org-summary org-summary
       :get-org-membership {:is-member true
                            :organization-id (:id org-summary)}
+      nil)))
+
+(defn- nitrate-org-summary-only-mock
+  [org-summary]
+  (fn [_cfg method _params]
+    (case method
+      :get-org-summary org-summary
       nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -278,6 +286,64 @@
         ;; The team itself should still exist
         (let [team (th/db-get :team {:id (:id team1)})]
           (t/is (nil? (:deleted-at team))))))))
+
+(t/deftest get-leave-org-summary-counts-default-team-as-delete-when-empty
+  (let [profile-owner    (th/create-profile* 1 {:is-active true})
+        profile-user     (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 97 {:profile-id (:id profile-user)})
+
+        organization-id  (uuid/random)
+        your-penpot-id   (:id org-default-team)
+        org-summary      (make-org-summary
+                          :organization-id organization-id
+                          :organization-name "Test Org"
+                          :owner-id (:id profile-owner)
+                          :your-penpot-teams [your-penpot-id]
+                          :org-teams [])]
+
+    (with-redefs [nitrate/call (nitrate-org-summary-only-mock org-summary)]
+      (let [out (th/command! {::th/type :get-leave-org-summary
+                              ::rpc/profile-id (:id profile-user)
+                              :id organization-id
+                              :default-team-id your-penpot-id})]
+        (t/is (th/success? out))
+        (t/is (= {:teams-to-delete 1
+                  :teams-to-transfer 0
+                  :teams-to-exit 0
+                  :teams-to-detach 0}
+                 (:result out)))))))
+
+(t/deftest get-leave-org-summary-counts-default-team-as-keep-when-has-files
+  (let [profile-owner    (th/create-profile* 1 {:is-active true})
+        profile-user     (th/create-profile* 2 {:is-active true})
+        org-default-team (th/create-team* 96 {:profile-id (:id profile-user)})
+        project          (th/create-project* 96 {:profile-id (:id profile-user)
+                                                 :team-id (:id org-default-team)})
+        _                (th/create-file* 96 {:profile-id (:id profile-user)
+                                              :project-id (:id project)})
+        extra-team       (th/create-team* 95 {:profile-id (:id profile-user)})
+
+        organization-id  (uuid/random)
+        your-penpot-id   (:id org-default-team)
+        org-summary      (make-org-summary
+                          :organization-id organization-id
+                          :organization-name "Test Org"
+                          :owner-id (:id profile-owner)
+                          :your-penpot-teams [your-penpot-id]
+                          :org-teams [(:id extra-team)])]
+
+    (with-redefs [nitrate/call (nitrate-org-summary-only-mock org-summary)]
+      (let [out (th/command! {::th/type :get-leave-org-summary
+                              ::rpc/profile-id (:id profile-user)
+                              :id organization-id
+                              :default-team-id your-penpot-id})]
+        (t/is (th/success? out))
+        ;; extra-team is deletable, default team has files and is preserved.
+        (t/is (= {:teams-to-delete 1
+                  :teams-to-transfer 0
+                  :teams-to-exit 0
+                  :teams-to-detach 1}
+                 (:result out)))))))
 
 (t/deftest leave-org-error-org-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
@@ -649,6 +715,71 @@
         (t/is (not (th/success? out)))
         (t/is (= :validation (th/ex-type (:error out))))
         (t/is (= :not-valid-teams (th/ex-code (:error out))))))))
+
+(t/deftest all-team-members-in-orgs-returns-org-id->boolean-map
+  (let [profile-user  (th/create-profile* 201 {:is-active true})
+        profile-other (th/create-profile* 202 {:is-active true})
+        team          (th/create-team* 201 {:profile-id (:id profile-user)})
+        _             (th/create-team-role* {:team-id (:id team)
+                                             :profile-id (:id profile-other)
+                                             :role :editor})
+        team-member-ids (->> (th/db-query :team-profile-rel {:team-id (:id team)})
+                             (map :profile-id)
+                             (into #{}))
+        org-id-1      (uuid/random)
+        org-id-2      (uuid/random)
+        calls         (atom [])]
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (fn [_cfg method params]
+                                 (swap! calls conj [method params])
+                                 (case method
+                                   :get-org-membership {:is-member true
+                                                        :organization-id (:organization-id params)}
+                                   :get-org-members (get {org-id-1 (vec team-member-ids)
+                                                          org-id-2 [(:id profile-user)]}
+                                                         (:organization-id params)
+                                                         [])
+                                   nil))]
+      (let [out (th/command! {::th/type :all-team-members-in-orgs
+                              ::rpc/profile-id (:id profile-user)
+                              :team-id (:id team)
+                              :organization-ids [org-id-1 org-id-2]})
+            methods (map first @calls)
+            membership-calls (count (filter #(= :get-org-membership %) methods))
+            get-members-calls (count (filter #(= :get-org-members %) methods))]
+        (t/is (th/success? out))
+        (t/is (= {org-id-1 true
+                  org-id-2 false}
+                 (:result out)))
+        (t/is (= 2 membership-calls))
+        (t/is (= 2 get-members-calls))))))
+
+(t/deftest all-team-members-in-orgs-fails-before-fetching-org-members
+  (let [profile-user  (th/create-profile* 203 {:is-active true})
+        team          (th/create-team* 203 {:profile-id (:id profile-user)})
+        org-id-1      (uuid/random)
+        org-id-2      (uuid/random)
+        calls         (atom [])]
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (fn [_cfg method params]
+                                 (swap! calls conj [method params])
+                                 (case method
+                                   :get-org-membership (if (= (:organization-id params) org-id-2)
+                                                         {:is-member false
+                                                          :organization-id (:organization-id params)}
+                                                         {:is-member true
+                                                          :organization-id (:organization-id params)})
+                                   :get-org-members []
+                                   nil))]
+      (let [out (th/command! {::th/type :all-team-members-in-orgs
+                              ::rpc/profile-id (:id profile-user)
+                              :team-id (:id team)
+                              :organization-ids [org-id-1 org-id-2]})
+            methods (map first @calls)]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :user-doesnt-belong-organization (th/ex-code (:error out))))
+        (t/is (= 0 (count (filter #(= :get-org-members %) methods))))))))
 
 (t/deftest leave-org-error-reassign-on-non-owned-team
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
