@@ -92,62 +92,66 @@
 ;; Token Remapping Core Logic
 ;; ==========================
 
+(defn build-remap-changes
+  "Build the pending changes required to rename a token from `old-token-name`
+   to `new-token-name`, covering applied-token references on shapes and alias
+   references in other tokens. Updates to copy shapes are committed with
+   `:ignore-touched true` so the rename does not flip sync groups into the
+   :touched set and silently break later main→copy propagation."
+  [file-data old-token-name new-token-name]
+  (let [scan-results     (scan-workspace-token-references file-data old-token-name)
+        tokens-lib       (:tokens-lib file-data)
+        sets             (ctob/get-sets tokens-lib)
+        tokens-with-sets (mapcat (fn [set]
+                                   (map (fn [token]
+                                          {:token token :set set})
+                                        (vals (ctob/get-tokens tokens-lib (ctob/get-id set)))))
+                                 sets)
+
+        refs-by-container (group-by :container (:applied-tokens scan-results))
+
+        shape-changes
+        (reduce-kv
+         (fn [changes container refs]
+           (let [shape-ids  (map :shape-id refs)
+                 token      (or (some #(when (= (:name (:token %)) new-token-name) %) tokens-with-sets)
+                                (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))
+                 attributes (set (map :attribute refs))]
+             (if token
+               (-> (pcb/with-container changes container)
+                   (pcb/update-shapes shape-ids
+                                      (fn [shape]
+                                        (update shape :applied-tokens
+                                                #(merge % (cft/attributes-map attributes (:token token)))))
+                                      {:ignore-touched true}))
+               changes)))
+         (-> (pcb/empty-changes)
+             (pcb/with-file-data file-data)
+             (pcb/with-library-data file-data))
+         refs-by-container)]
+
+    (reduce
+     (fn [changes ref]
+       (let [source-token-id (:source-token-id ref)]
+         (when-let [{:keys [token set]} (some #(when (= (:id (:token %)) source-token-id) %) tokens-with-sets)]
+           (let [old-value (:value token)
+                 new-value (cto/update-token-value-references old-value old-token-name new-token-name)]
+             (pcb/set-token changes (ctob/get-id set) (:id token)
+                            (assoc token :value new-value))))))
+     shape-changes
+     (:token-aliases scan-results))))
+
 (defn remap-tokens
   "Main function to remap all token references when a token name changes"
   [old-token-name new-token-name]
   (ptk/reify ::remap-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-data (dh/lookup-file-data state)
-            scan-results (scan-workspace-token-references file-data old-token-name)
-            tokens-lib (:tokens-lib file-data)
-            sets (ctob/get-sets tokens-lib)
-            tokens-with-sets (mapcat (fn [set]
-                                       (map (fn [token]
-                                              {:token token :set set})
-                                            (vals (ctob/get-tokens tokens-lib (ctob/get-id set)))))
-                                     sets)
-
-            ;; Group applied token references by container
-            refs-by-container (group-by :container (:applied-tokens scan-results))
-
-            ;; Use apply-token logic to update shapes for both direct and alias references
-            shape-changes (reduce-kv
-                           (fn [changes container refs]
-                             (let [shape-ids (map :shape-id refs)
-                                   ;; Find the correct token to apply (new or alias)
-                                   token (or (some #(when (= (:name (:token %)) new-token-name) %) tokens-with-sets)
-                                             (some #(when (= (:name (:token %)) old-token-name) %) tokens-with-sets))
-                                   attributes (set (map :attribute refs))]
-                               (if token
-                                 (-> (pcb/with-container changes container)
-                                     (pcb/update-shapes shape-ids
-                                                        (fn [shape]
-                                                          (update shape :applied-tokens
-                                                                  #(merge % (cft/attributes-map attributes (:token token)))))))
-                                 changes)))
-                           (-> (pcb/empty-changes)
-                               (pcb/with-file-data file-data)
-                               (pcb/with-library-data file-data))
-                           refs-by-container)
-
-            ;; Create changes for updating token alias references
-            token-changes (reduce
-                           (fn [changes ref]
-                             (let [source-token-id (:source-token-id ref)]
-                               (when-let [{:keys [token set]} (some #(when (= (:id (:token %)) source-token-id) %) tokens-with-sets)]
-                                 (let [old-value (:value token)
-                                       new-value (cto/update-token-value-references old-value old-token-name new-token-name)]
-                                   (pcb/set-token changes (ctob/get-id set) (:id token)
-                                                  (assoc token :value new-value))))))
-                           shape-changes
-                           (:token-aliases scan-results))]
-
+      (let [file-data     (dh/lookup-file-data state)
+            token-changes (build-remap-changes file-data old-token-name new-token-name)]
         (log/info :hint "token-remapping"
                   :old-name old-token-name
-                  :new-name new-token-name
-                  :references-count (:total-references scan-results))
-
+                  :new-name new-token-name)
         (rx/of (dch/commit-changes token-changes))))))
 
 (defn bulk-remap-tokens
