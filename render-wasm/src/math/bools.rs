@@ -340,10 +340,16 @@ fn push_bezier(result: &mut Vec<Segment>, bezier: &Bezier) {
             result.push(Segment::LineTo((bezier.end.x as f32, bezier.end.y as f32)));
         }
         BezierHandles::Quadratic { handle } => {
+            let s = bezier.start;
+            let e = bezier.end;
+            let cp1x = s.x + (2.0 / 3.0) * (handle.x - s.x);
+            let cp1y = s.y + (2.0 / 3.0) * (handle.y - s.y);
+            let cp2x = e.x + (2.0 / 3.0) * (handle.x - e.x);
+            let cp2y = e.y + (2.0 / 3.0) * (handle.y - e.y);
             result.push(Segment::CurveTo((
-                (handle.x as f32, handle.y as f32),
-                (handle.x as f32, handle.y as f32),
-                (bezier.end.x as f32, bezier.end.y as f32),
+                (cp1x as f32, cp1y as f32),
+                (cp2x as f32, cp2y as f32),
+                (e.x as f32, e.y as f32),
             )));
         }
         BezierHandles::Cubic {
