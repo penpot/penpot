@@ -215,7 +215,8 @@
       (->> (rp/cmd! ::remove-team-from-org {:team-id team-id :organization-id organization-id :organization-name organization-name})
            (rx/mapcat
             (fn [_]
-              (rx/of (modal/hide))))
+              (rx/of (dt/fetch-teams)
+                     (modal/hide))))
            (rx/catch
             (fn [cause]
               (let [code (-> cause ex-data :code)]
@@ -245,13 +246,13 @@
                        (modal/show
                         {:type :confirm
                          :title (tr "modals.remove-team-org.title")
-                         :message (tr "modals.remove-team-org.text" (:name team) (dm/get-in team [:organization :name]))
+                         :message (tr "modals.remove-team-org.text" (:name team) (:name source-org))
                          :hint (tr "modals.remove-team-org.info")
                          :hint-level :default
                          :accept-label (tr "modals.remove-team-org.accept")
                          :on-accept #(st/emit! (remove-team-from-org {:team-id team-id
-                                                                      :organization-id (dm/get-in team [:organization :id])
-                                                                      :organization-name (dm/get-in team [:organization :name])}))
+                                                                      :organization-id (:id source-org)
+                                                                      :organization-name (:name source-org)}))
                          :accept-style :danger})
                        (modal/show :no-permission-modal {:type :no-orgs-change}))))))))))
 
