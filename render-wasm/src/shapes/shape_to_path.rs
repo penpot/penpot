@@ -186,11 +186,7 @@ fn join_paths(path: Path, other: Path) -> Path {
     let is_even_odd = path.is_even_odd() || other.is_even_odd();
     let mut segments = path.segments().clone();
     segments.extend(other.segments().iter());
-    let mut result = Path::new(segments);
-    if is_even_odd {
-        result.set_even_odd();
-    }
-    result
+    Path::new(segments).with_even_odd(is_even_odd)
 }
 
 fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
@@ -241,9 +237,10 @@ impl ToPath for Shape {
                     result = join_paths(result, shape.to_path(shapes));
                 }
                 // Force closure of the group path
+                let is_even_odd = result.is_even_odd();
                 let mut segments = result.segments().clone();
                 segments.push(Segment::Close);
-                Path::new(segments)
+                Path::new(segments).with_even_odd(is_even_odd)
             }
 
             Type::Bool(bool_data) => bool_data.path.clone(),
@@ -267,12 +264,8 @@ impl ToPath for Shape {
                 // Path::contains works correctly in subsequent boolean operations
                 // (letters with interior holes need even-odd fill).
                 let is_even_odd = result.is_even_odd();
-                let mut transformed =
-                    Path::new(transform_segments(result.segments().clone(), self));
-                if is_even_odd {
-                    transformed.set_even_odd();
-                }
-                transformed
+                Path::new(transform_segments(result.segments().clone(), self))
+                    .with_even_odd(is_even_odd)
             }
         }
     }

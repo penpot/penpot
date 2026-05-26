@@ -381,6 +381,7 @@ pub fn bool_from_shapes(bool_type: BoolType, children_ids: &[Uuid], shapes: Shap
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
+        let is_even_odd = current_path.is_even_odd() || other_path.is_even_odd();
         let beziers = match bool_type {
             BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
             BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
@@ -388,7 +389,7 @@ pub fn bool_from_shapes(bool_type: BoolType, children_ids: &[Uuid], shapes: Shap
             BoolType::Exclusion => exclusion(segs_a, segs_b),
         };
 
-        current_path = Path::new(beziers_to_segments(&beziers));
+        current_path = Path::new(beziers_to_segments(&beziers)).with_even_odd(is_even_odd);
     }
 
     current_path
@@ -441,13 +442,14 @@ pub fn debug_render_bool_paths(
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
+        let is_even_odd = current_path.is_even_odd() || other_path.is_even_odd();
         let beziers = match bool_data.bool_type {
             BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
             BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
             BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
             BoolType::Exclusion => exclusion(segs_a, segs_b),
         };
-        current_path = Path::new(beziers_to_segments(&beziers));
+        current_path = Path::new(beziers_to_segments(&beziers)).with_even_odd(is_even_odd);
 
         if idx == 0 {
             for b in &beziers {

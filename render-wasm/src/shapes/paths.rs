@@ -267,8 +267,13 @@ impl Path {
         self.skia_path.fill_type() == skia::PathFillType::EvenOdd
     }
 
-    pub fn set_even_odd(&mut self) {
-        self.skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+    // Builder method: set even-odd fill on this path and return it.
+    // Use as `Path::new(segments).with_even_odd(is_even_odd)`.
+    pub fn with_even_odd(mut self, is_even_odd: bool) -> Self {
+        if is_even_odd {
+            self.skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+        }
+        self
     }
 
     pub fn is_open(&self) -> bool {
