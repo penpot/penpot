@@ -19,6 +19,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.path :as path]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -46,8 +47,8 @@
      (with-meta changes
        {::page-id page-id})))
   ([]
-   {:redo-changes []
-    :undo-changes '()})
+   {:redo-changes []     ;; redo-changes is a vector so that conj adds things at the end, in order of execution
+    :undo-changes '()})  ;; undo-changes is a list to conj things at the beginning, so they execute in the reverse order when undoing several changes
   ([origin]
    {:redo-changes []
     :undo-changes '()
@@ -66,6 +67,12 @@
   (cond-> changes
     (some? undo-group)
     (assoc :undo-group undo-group)))
+
+(defn set-translation?
+  [changes translation?]
+  (cond-> changes
+    translation?
+    (assoc :translation? true)))
 
 (defn with-page
   [changes page]
@@ -162,7 +169,7 @@
    (contains? (meta changes) ::file-data)
    "Call (with-file-data) before using this function"))
 
-(defn- lookup-objects
+(defn lookup-objects
   [changes]
   (let [data (::file-data (meta changes))]
     (dm/get-in data [:pages-index uuid/zero :objects])))
@@ -404,12 +411,9 @@
    (add-object changes obj nil))
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
-
-   ;; FIXME: add shape validation
-
    (assert-page-id! changes)
    (assert-objects! changes)
-   (let [obj (cond-> obj
+   (let [obj (cond-> (cts/check-shape obj)
                (not= index ::undefined)
                (assoc ::index index))
 

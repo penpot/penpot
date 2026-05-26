@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
+   [app.main.data.uploads :as uploads]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -24,23 +25,13 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(def ^:const default-chunk-size
-  (* 1024 1024 4)) ;; 4MiB
-
-(defn- chunk-array
-  [data chunk-size]
-  (let [total-size (alength data)]
-    (loop [offset 0
-           chunks []]
-      (if (< offset total-size)
-        (let [end   (min (+ offset chunk-size) total-size)
-              chunk (.subarray ^js data offset end)]
-          (recur end (conj chunks chunk)))
-        chunks))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General purpose events & IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private font-upload-chunk-size
+  "Size in bytes of each chunk when uploading font files (10 MiB)."
+  (* 1024 1024 10))
 
 (defn fonts-fetched
   [fonts]
@@ -60,9 +51,9 @@
 
           (prepare-font-variant [item]
             {:id (str (:font-style item) "-" (:font-weight item))
-             :name (str (cm/font-weight->name (:font-weight item))
-                        (when (not= "normal" (:font-style item))
-                          (str " " (str/capital (:font-style item)))))
+             :name (cm/font-display-variant (:variant-name item)
+                                            (:font-weight item)
+                                            (:font-style item))
              :style (:font-style item)
              :weight (str (:font-weight item))
              ::fonts/woff1-file-id (:woff1-file-id item)
@@ -94,9 +85,44 @@
       (->> (rp/cmd! :get-font-variants {:team-id team-id})
            (rx/map fonts-fetched)))))
 
+(defn upload-font-variant
+  "Uploads a single font variant item using the chunked upload API.
+
+  For each mime-type in `data`, creates a Blob and uploads it via the
+  session-based chunked upload.  Once all sessions are created, calls
+  `create-font-variant` with the resulting `:uploads` map so the server
+  can assemble the chunks and materialise the final font-variant record.
+
+  Returns an observable that emits the created font-variant."
+  [{:keys [data team-id font-id font-family font-weight font-style] :as _item}]
+  ;; Upload each mtype as a separate chunked session in parallel, collect
+  ;; all [mtype session-id] pairs, then call create-font-variant with :uploads.
+  (->> (rx/from (seq data))
+       (rx/mapcat (fn [[mtype buffer]]
+                    (let [blob (js/Blob. #js [buffer] #js {:type mtype})]
+                      (->> (uploads/upload-blob-chunked blob :chunk-size font-upload-chunk-size)
+                           (rx/map (fn [{:keys [session-id]}]
+                                     [mtype session-id]))))))
+       (rx/reduce (fn [acc [mtype session-id]]
+                    (assoc acc mtype session-id))
+                  {})
+       (rx/mapcat (fn [uploads]
+                    (rp/cmd! :create-font-variant
+                             {:team-id     team-id
+                              :font-id     font-id
+                              :font-family font-family
+                              :font-weight font-weight
+                              :font-style  font-style
+                              :uploads     uploads})))))
+
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
-  map with temporal ID's associated to each font entry."
+  map with temporal ID's associated to each font entry.
+
+  Each font entry's `:data` is a map of `{mtype -> ArrayBuffer}`.  The
+  raw `ArrayBuffer` is kept as-is so that `upload-font-variant` can
+  wrap it in a `Blob` and hand it directly to `upload-blob-chunked`
+  without any intermediate client-side chunking."
   [blobs team-id]
   (letfn [(prepare [{:keys [font type name data] :as params}]
             (if font
@@ -134,12 +160,13 @@
                                                           (not= hhea-ascender os2-ascent)
                                                           (not= hhea-descender os2-descent))))
                     data            (js/Uint8Array. data)]
-                {:content {:data (chunk-array data default-chunk-size)
+                {:content {:data data
                            :name name
                            :type type}
                  :font-family (or family "")
                  :font-weight (cm/parse-font-weight variant)
                  :font-style  (cm/parse-font-style variant)
+                 :variant-name variant
                  :height-warning? height-warning?})
               ;; Font could not be parsed (woff2), extract metadata from filename
               (let [base-name       (str/replace name #"\.[^.]+$" "")
@@ -151,7 +178,7 @@
                                         (str/trim))
                     family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
                     data            (js/Uint8Array. data)]
-                {:content {:data (chunk-array data default-chunk-size)
+                {:content {:data data
                            :name name
                            :type type}
                  :font-family family-name
@@ -284,12 +311,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (rx/of (ptk/data-event ::ev/event {::ev/name "add-font"
-                                           :team-id team-id
-                                           :font-id (:id font)
-                                           :font-family (:font-family font)
-                                           :font-style (:font-style font)
-                                           :font-weight (:font-weight font)}))))))
+        (rx/of (ev/event {::ev/name "add-font"
+                          :team-id team-id
+                          :font-id (:id font)
+                          :font-family (:font-family font)
+                          :font-style (:font-style font)
+                          :font-weight (:font-weight font)}))))))
 
 (defn update-font
   [{:keys [id name] :as params}]
@@ -333,9 +360,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font"
-                                            :team-id team-id
-                                            :font-id font-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font"
+                           :team-id team-id
+                           :font-id font-id})))))))
 
 (defn delete-font-variant
   [id]
@@ -354,9 +381,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font-variant"
-                                            :id id
-                                            :team-id team-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font-variant"
+                           :id id
+                           :team-id team-id})))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

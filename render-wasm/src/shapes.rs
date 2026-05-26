@@ -195,7 +195,7 @@ pub struct Shape {
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub bounds: OnceCell<math::Bounds>,
-    pub extrect_cache: RefCell<Option<(math::Rect, u32)>>,
+    pub extrect_cache: RefCell<Option<math::Rect>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
     deleted: bool,
@@ -1015,17 +1015,14 @@ impl Shape {
     }
 
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
-        let scale_key = (scale * 1000.0).round() as u32;
-
-        if let Some((cached_extrect, cached_scale)) = *self.extrect_cache.borrow() {
-            if cached_scale == scale_key {
-                return cached_extrect;
-            }
+        // `scale` is forwarded to children but intentionally NOT part of the cache key.
+        if let Some(cached_extrect) = *self.extrect_cache.borrow() {
+            return cached_extrect;
         }
 
         let extrect = self.calculate_extrect_uncached(shapes_pool, scale);
 
-        *self.extrect_cache.borrow_mut() = Some((extrect, scale_key));
+        *self.extrect_cache.borrow_mut() = Some(extrect);
         extrect
     }
 
@@ -1350,8 +1347,10 @@ impl Shape {
     pub fn get_skia_path(&self) -> Option<skia::Path> {
         if let Some(path) = self.shape_type.path() {
             let mut skia_path = path.to_skia_path(self.svg_attrs.as_ref());
-            if let Some(path_transform) = self.to_path_transform() {
-                skia_path = skia_path.make_transform(&path_transform);
+            if !math::identitish(&self.transform) {
+                if let Some(path_transform) = self.to_path_transform() {
+                    skia_path = skia_path.make_transform(&path_transform);
+                }
             }
             Some(skia_path)
         } else {
@@ -1359,7 +1358,120 @@ impl Shape {
         }
     }
 
+    /// Same `concat` applied around [`center`](Self::center) as in `render_shape` (non-text branch).
+    fn shape_document_transform(&self) -> Matrix {
+        let c = self.center();
+        let mut m = self.transform;
+        m.post_translate(c);
+        m.pre_translate(-c);
+        m
+    }
+
+    /// Fill silhouette only, document space (matches fill rendering).
+    fn drag_crop_fill_clip_path_skia(&self) -> Option<skia::Path> {
+        match &self.shape_type {
+            Type::Rect(r) => {
+                let p = Path::new(shape_to_path::rect_segments(self, r.corners));
+                Some(p.to_skia_path(self.svg_attrs.as_ref()))
+            }
+            Type::Circle => {
+                let p = Path::new(shape_to_path::circle_segments(self));
+                Some(p.to_skia_path(self.svg_attrs.as_ref()))
+            }
+            Type::Path(_) | Type::Bool(_) => {
+                let sk = self.get_skia_path()?;
+                Some(sk.make_transform(&self.shape_document_transform()))
+            }
+            _ => None,
+        }
+    }
+
+    /// Whether this shape may use the backbuffer crop fast path during interactive drag.
+    ///
+    /// Conservative: only effects and fills that match what we snapshot and clip in
+    /// [`drag_crop_clip_path`](Self::drag_crop_clip_path). Text is never safe (glyph layout,
+    /// no `drag_crop_clip_path`).
+    pub fn is_safe_for_drag_crop_cache(&self, shapes_pool: ShapesPoolRef) -> bool {
+        if matches!(self.shape_type, Type::Text(_)) {
+            return false;
+        }
+
+        // If a frame shows overflow (clip_content=false) and its visible content exceeds the
+        // frame bounds, a cached crop anchored to the frame can easily become incorrect while
+        // moving (children can extend beyond selrect). Be conservative and render live.
+        if matches!(self.shape_type, Type::Frame(_)) && !self.clip_content {
+            let extrect = self.extrect(shapes_pool, 1.0);
+            let sr = self.selrect;
+            let exceeds = extrect.left < sr.left
+                || extrect.top < sr.top
+                || extrect.right > sr.right
+                || extrect.bottom > sr.bottom;
+            if exceeds {
+                return false;
+            }
+        }
+
+        self.blur.is_none()
+            && self.shadows.is_empty()
+            && (self.opacity - 1.0).abs() <= 1e-4
+            && self.blend_mode().0 == skia::BlendMode::SrcOver
+    }
+
+    /// Fill + visible strokes in **document space** for clipping interactive drag textures.
+    ///
+    /// The backbuffer crop uses an axis-aligned `extrect`; we clip the blit so backdrop pixels
+    /// outside the real silhouette (fill and stroke regions) are not smeared. Strokes use
+    /// [`stroke_to_path`](stroke_to_path) like the main renderer, then union with the fill path.
+    pub fn drag_crop_clip_path(&self) -> Option<skia::Path> {
+        let mut acc = self.drag_crop_fill_clip_path_skia()?;
+        if !self.has_visible_strokes() {
+            return Some(acc);
+        }
+
+        let shape_path = match &self.shape_type {
+            Type::Rect(r) => Path::new(shape_to_path::rect_segments(self, r.corners)),
+            Type::Circle => Path::new(shape_to_path::circle_segments(self)),
+            Type::Path(_) | Type::Bool(_) => self.shape_type.path()?.clone(),
+            _ => return Some(acc),
+        };
+
+        let path_transform = self.to_path_transform();
+        let apply_doc_transform = path_transform.is_some();
+
+        for stroke in self.visible_strokes() {
+            let Some(stroke_region) = stroke_to_path(
+                stroke,
+                &shape_path,
+                path_transform.as_ref(),
+                &self.selrect,
+                self.svg_attrs.as_ref(),
+            ) else {
+                continue;
+            };
+            let mut sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
+            if apply_doc_transform {
+                sk = sk.make_transform(&self.shape_document_transform());
+            }
+            acc = acc.op(&sk, skia::PathOp::Union).unwrap_or(acc);
+        }
+
+        Some(acc)
+    }
+
     fn transform_selrect(&mut self, transform: &Matrix) {
+        if math::is_move_only_matrix(transform) {
+            let tx = transform.translate_x();
+            let ty = transform.translate_y();
+            // `self.transform` (rotation/scale around center) is unchanged by translation.
+            self.selrect = math::Rect::from_xywh(
+                self.selrect.left + tx,
+                self.selrect.top + ty,
+                self.selrect.width(),
+                self.selrect.height(),
+            );
+            return;
+        }
+
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 
@@ -1381,9 +1493,26 @@ impl Shape {
     pub fn apply_transform(&mut self, transform: &Matrix) {
         self.transform_selrect(transform);
 
-        // TODO: See if we can change this invalidation to a transformation
-        self.invalidate_extrect();
-        self.invalidate_bounds();
+        // Outsets (strokes, shadows, blur, children) are translation-invariant,
+        // so the cached extrect can be shifted instead of invalidated.
+        // The bounds cache must always be invalidated so that callers such as
+        // grid_cell_data get the updated position after a drag.
+        if math::is_move_only_matrix(transform) {
+            let tx = transform.translate_x();
+            let ty = transform.translate_y();
+            if let Some(rect) = self.extrect_cache.borrow_mut().as_mut() {
+                *rect = math::Rect::from_xywh(
+                    rect.left + tx,
+                    rect.top + ty,
+                    rect.width(),
+                    rect.height(),
+                );
+            }
+            self.invalidate_bounds();
+        } else {
+            self.invalidate_extrect();
+            self.invalidate_bounds();
+        }
 
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {

@@ -35,6 +35,8 @@
            on-color-detach
            on-remove
            on-stroke-width-change
+           on-stroke-dash-change
+           on-stroke-gap-change
            on-stroke-style-change
            on-stroke-alignment-change
            on-stroke-cap-start-change
@@ -105,6 +107,23 @@
             #(on-stroke-width-change index %)
             ids
             #{:stroke-width})))
+
+        ;; The SVG renderer defaults dash and gap to `stroke-width + 10` when
+        ;; unset. Showing that value as placeholder makes the override obvious.
+        default-dash-gap (when (number? stroke-width) (+ 10 stroke-width))
+
+        stroke-gap  (or (:stroke-gap stroke) default-dash-gap)
+        stroke-dash (or (:stroke-dash stroke) default-dash-gap)
+
+        on-dash-change
+        (mf/use-fn
+         (mf/deps index on-stroke-dash-change)
+         #(on-stroke-dash-change index %))
+
+        on-gap-change
+        (mf/use-fn
+         (mf/deps index on-stroke-gap-change)
+         #(on-stroke-gap-change index %))
 
         stroke-alignment (or (:stroke-alignment stroke) :center)
 
@@ -205,8 +224,6 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
 
-     (prn "stroke-row*" applied-tokens)
-
      ;; Stroke Color
      ;; FIXME: memorize stroke color
      [:div {:class (stl/css :stroke-color-actions)}
@@ -295,6 +312,30 @@
                        :options stroke-style-options
                        :disabled hidden?
                        :on-change on-style-change}]])])
+
+     ;; Stroke Dash / Gap (only visible for dashed style)
+     (when (= stroke-style :dashed)
+       [:div {:class (stl/css :stroke-dash-options)
+              :data-testid "stroke.dash-options"}
+        [:> numeric-input-wrapper* {:on-change on-dash-change
+                                    :text-icon "DASH"
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-dash
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-dash")
+                                    :value stroke-dash}]
+        [:> numeric-input-wrapper* {:on-change on-gap-change
+                                    :text-icon "GAP"
+                                    :min 0
+                                    :on-focus on-focus
+                                    :on-blur on-blur
+                                    :attr :stroke-gap
+                                    :tooltip-placement "top-left"
+                                    :class (stl/css :numeric-input-wrapper)
+                                    :property (tr "workspace.options.stroke-gap")
+                                    :value stroke-gap}]])
 
      ;; Stroke Caps
      (when show-caps

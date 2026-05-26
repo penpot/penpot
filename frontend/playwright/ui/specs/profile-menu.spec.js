@@ -10,12 +10,16 @@ test("Navigate to penpot changelog from profile menu", async ({ page }) => {
   await dashboardPage.goToDashboard();
 
   await dashboardPage.openProfileMenu();
-  await dashboardPage.clickProfileMenuItem("About Penpot");
+  const aboutPenpotItem = page.getByText("About Penpot");
+  await aboutPenpotItem.hover();
+
+  const changelogSubmenuItem = page.getByText("Penpot Changelog");
+  await expect(changelogSubmenuItem).toBeVisible();
 
   // Listen for the new page (tab) that opens when clicking "Penpot Changelog"
   const [newPage] = await Promise.all([
     page.context().waitForEvent("page"),
-    dashboardPage.clickProfileMenuItem("Penpot Changelog"),
+    changelogSubmenuItem.click(),
   ]);
 
   await newPage.waitForLoadState();

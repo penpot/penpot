@@ -27,6 +27,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
@@ -228,7 +229,8 @@
          (mf/deps profile)
          (fn []
            (let [team-id (:default-team-id profile)]
-             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
+             (st/emit! (rt/assign-exception nil)
+                       (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         on-success
         (mf/use-fn
@@ -319,6 +321,16 @@
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
+
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
 
 (mf/defc webgl-context-lost*
   []
@@ -491,12 +503,8 @@
       :service-unavailable
       [:> service-unavailable*]
 
-      :wasm-error
-      (case (get data :code)
-        :webgl-context-lost
-        [:> webgl-context-lost*]
-
-        [:> internal-error* props])
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 
@@ -565,8 +573,10 @@
         auth-error? (= type :authentication)
         not-found?  (= type :not-found)
 
-        authenticated?
-        (is-authenticated? profile)
+        authenticated? (is-authenticated? profile)
+
+        ;; Keeps whether the user was authenticated when this component first mounted.
+        initial-authenticated? (mf/with-memo [] authenticated?)
 
         request-access?
         (and
@@ -582,13 +592,23 @@
 
 
     (if (or auth-error? not-found?)
-      (if (not authenticated?)
+      (cond
+        (not authenticated?)
         [:> context-wrapper*
          {:is-workspace workspace?
           :is-dashboard dashboard?
           :is-viewer view?
           :profile profile}
          [:> login-modal* {}]]
+
+        ;; The user was not authenticated when exception-page first
+        ;; mounted, but they have just logged in via the login modal.
+        ;; Show a loading indicator to prevent briefly flashing the
+        ;; "no permission" dialog.
+        (not initial-authenticated?)
+        [:> loader* {:title (tr "labels.loading") :overlay true}]
+
+        :else
         (when (get info :loaded false)
           (if request-access?
             [:> context-wrapper* {:is-workspace workspace?

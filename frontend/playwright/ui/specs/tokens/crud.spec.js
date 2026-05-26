@@ -94,6 +94,8 @@ test.describe("Tokens - creation", () => {
     await toggleDropdownButton.click();
     const option = page.getByRole("option", { name: "my-token" });
     await expect(option).toBeVisible();
+    const resolvedValue = option.getByText('3');
+    await expect(resolvedValue).toBeVisible();
     await option.click();
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 3"),
@@ -1687,29 +1689,58 @@ test.describe("Tokens - creation", () => {
     // Submit button should remain disabled when value is empty
     await expect(submitButton).toBeDisabled();
   });
+});
 
-  test("User duplicate color token", async ({ page }) => {
-    const { tokensSidebar, tokenContextMenuForToken } =
-      await setupTokensFileRender(page);
+test("User cannot create token with a conflicting name in other set", async ({ page }) => {
+  const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page);
 
-    await expect(tokensSidebar).toBeVisible();
+  await expect(tokensSidebar).toBeVisible();
 
-    await unfoldTokenType(tokensSidebar, "color");
+  await tokenThemesSetsSidebar.getByRole('button', { name: 'light', exact: true }).click();
 
-    const colorToken = tokensSidebar.getByRole("button", {
-      name: "colors.blue.100",
-    });
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+  await tokensTabPanel
+    .getByRole("button", { name: "Add Token: Color" })
+    .click();
 
-    await colorToken.click({ button: "right" });
-    await expect(tokenContextMenuForToken).toBeVisible();
+  await expect(tokensUpdateCreateModal).toBeVisible();
 
-    await tokenContextMenuForToken.getByText("Duplicate token").click();
-    await expect(tokenContextMenuForToken).not.toBeVisible();
-
-    await expect(
-      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
-    ).toBeVisible();
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  const valueField = tokensUpdateCreateModal.getByLabel("Value");
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
   });
+
+  // Initially submit button should be disabled
+  await expect(submitButton).toBeDisabled();
+
+  await nameField.click();
+
+  // Fill in the name of an existing token in the current set
+  await nameField.fill("accent.default");
+
+  // An error message should appear and submit button should be disabled
+  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: accent.default'))
+    .toBeVisible()
+
+  await expect(submitButton).toBeDisabled();
+
+  // Fill in a name that clashes with tokens like colors.red.600 in set core
+  await nameField.fill("colors.red");
+
+  // An error message should appear and submit button should be disabled
+  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: colors.red'))
+    .toBeVisible()
+
+  await expect(submitButton).toBeDisabled();
+
+  // Fill in a name that matches exactly a token in another set
+  await nameField.fill("colors.red.600");
+  await valueField.fill("#6000000");
+
+  // Submit button should be enabled now
+  await expect(submitButton).toBeEnabled();
 });
 
 test("User creates grouped color token", async ({ page }) => {
@@ -1794,22 +1825,33 @@ test("User duplicate color token", async ({ page }) => {
 test("User disables the current set but token still have resolved values shown in the sidebar", async ({
   page,
 }) => {
-  const { tokenThemesSetsSidebar, tokensSidebar } = await setupEmptyTokensFileRender(page);
+  const { tokenThemesSetsSidebar, tokensSidebar } =
+    await setupEmptyTokensFileRender(page);
 
   // Create color token
-  await createToken(page, "Color", "color.primary", "Value", "#ff0000");
+  await createToken(
+    page,
+    "Color",
+    "color.primary",
+    "Value",
+    "textbox",
+    "#ff0000",
+  );
   await unfoldTokenType(tokensSidebar, "color");
 
   // Deactivate current set
-  await tokenThemesSetsSidebar
-    .getByRole("checkbox")
-    .click();
+  await tokenThemesSetsSidebar.getByRole("checkbox").click();
 
   // Tokens tab panel should have a token with the color #ff0000 and correct resolved value in the tooltip
-  const colorTokenPill = tokensSidebar.getByRole("button", { name: "#ff0000 color.primary" });
+  const colorTokenPill = tokensSidebar.getByRole("button", {
+    name: "#ff0000 color.primary",
+  });
   await expect(colorTokenPill).toHaveCount(1);
-  await colorTokenPill.hover();  // Force title attribute to be attached to the button
-  await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
+  await colorTokenPill.hover(); // Force title attribute to be attached to the button
+  await expect(colorTokenPill).toHaveAttribute(
+    "title",
+    /Resolved value: #ff0000/,
+  );
 });
 
 test.describe("Tokens tab - edition", () => {

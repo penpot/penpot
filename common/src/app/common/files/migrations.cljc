@@ -34,7 +34,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
-   [app.common.types.tokens-lib :as types.tokens-lib]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1599,7 +1599,7 @@
 
 (defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
   [data _]
-  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
+  (d/update-when data :tokens-lib ctob/fix-duplicate-token-set-ids))
 
 (defmethod migrate-data "0014-clear-components-nil-objects"
   [data _]
@@ -1805,6 +1805,13 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
+(defmethod migrate-data "0021-repair-bad-tokens"
+  [data _]
+  (d/update-when data :tokens-lib
+                 #(-> %
+                      (ctob/fix-conflicting-token-names)
+                      (ctob/fix-missing-sets-in-themes))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1882,4 +1889,5 @@
          "0017-fix-layout-flex-dir"
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
-         "0020-sync-component-id-with-near-main"]))
+         "0020-sync-component-id-with-near-main"
+         "0021-repair-bad-tokens"]))

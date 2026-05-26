@@ -45,7 +45,7 @@
           [:p "Along with a better organization of panels (say hello to typography toolbar!) and new shortcuts that will speed your workflow."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -64,7 +64,7 @@
           [:p "And they don’t come alone, but with some nice improvements to the rulers."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -82,7 +82,7 @@
           [:p "Scrollbars at the design workspace will make it more obvious how to navigate it and easier for some users, for instance those who love using graphic tablets, from now on, will feel just as comfortable as those who use a mouseAnd they don’t come alone, but with some nice improvements to the rulers."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]]
@@ -101,7 +101,7 @@
           [:p "This is a must if you’re working with grids (if you’re not, you should ;)), being able to adjust the movement to your baseline grid (8px? 5px?) is a huge timesaver that will improve your quality of life while designing."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

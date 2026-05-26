@@ -80,7 +80,7 @@
            "Developers now get a clearer context during handoff. The Inspect panel shows the actual token used in your design, in a similar way to how styles are displayed. This small detail reduces ambiguity, aligns everyone on the same language, and strengthens collaboration across the team."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -116,7 +116,7 @@
            "It’s a subtle improvement, but it removes friction you feel hundreds of times a week, and makes component work flow more naturally."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -152,7 +152,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]

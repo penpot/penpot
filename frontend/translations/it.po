@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-16 08:35+0000\n"
+"PO-Revision-Date: 2026-02-17 10:09+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 5.16\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -7840,7 +7840,7 @@ msgid "workspace.tokens.color"
 msgstr "Colore"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "L'interlinea dipende dalla dimensione del carattere. Aggiungi una "
 "dimensione carattere per ottenere il valore risolto."
@@ -7890,7 +7890,7 @@ msgid "workspace.tokens.edit-token"
 msgstr "Modifica token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
+msgid "errors.tokens.empty-input"
 msgstr "Il valore del token non può essere vuoto"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
@@ -7898,7 +7898,7 @@ msgid "workspace.tokens.enter-token-name"
 msgstr "Inserisci il nome del token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
+msgid "errors.tokens.error-parse"
 msgstr "Errore di importazione: Impossibile analizzare il JSON."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
@@ -7962,7 +7962,7 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Importa %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
+msgid "errors.tokens.import-error"
 msgstr "Errore di importazione:"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
@@ -8019,65 +8019,65 @@ msgid "workspace.tokens.individual-tokens"
 msgstr "Utilizza token individuali"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
+msgid "errors.tokens.invalid-color"
 msgstr "Valore colore invalido: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
+msgid "errors.tokens.invalid-font-family-token-value"
 msgstr ""
 "Valore del token non valido: puoi fare riferimento solo a un token "
 "font-family"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
+msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
 "Valore del peso del font non valido: usa valori numerici (100-950) o nomi "
 "standard (thin, light, regular, bold, ecc.) eventualmente seguiti da "
 "'Italic'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
+msgid "errors.tokens.invalid-json"
 msgstr "Errore di importazione: Dati del token non validi nel JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
+msgid "errors.tokens.invalid-json-token-name"
 msgstr "Errore di importazione: nome token non valido nel JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
+msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" non è un nome token valido\n"
 "I nomi dei token devono contenere solo lettere e cifre, separate dal "
 "carattere . e non devono iniziare con il simbolo $."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgid "errors.tokens.invalid-shadow-type-token-value"
 msgstr ""
 "Tipologia ombra non valida: sono consentite solo 'innerShadow' o "
 "'dropShadow'"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
+msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
 "Valore del token non valido: sono accettati solo none, Uppercase, Lowercase "
 "o Capitalize"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgid "errors.tokens.invalid-text-decoration-token-value"
 msgstr ""
 "Valore del token non valido: sono accettati solo none, underline e "
 "strike-through"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
+msgid "errors.tokens.invalid-token-value-shadow"
 msgstr "Valore non valido: deve fare riferimento a un token ombra composito."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
+msgid "errors.tokens.invalid-token-value-typography"
 msgstr "Valore non valido: deve fare riferimento a un token tipografico composito."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
+msgid "errors.tokens.invalid-value"
 msgstr "Valore token non valido: %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
@@ -8117,7 +8117,7 @@ msgid "workspace.tokens.min-size"
 msgstr "Dimensione min"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
+msgid "errors.tokens.missing-references"
 msgstr "Riferimenti al token mancanti: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
@@ -8150,7 +8150,7 @@ msgstr "Nessun riferimento trovato"
 msgid "workspace.tokens.no-remap-needed"
 msgstr ""
 "Questo token al momento non è utilizzato nel tuo progetto, quindi non è "
-"necessario alcun rimappaggio."
+"necessaria alcuna riassegnazione."
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:485
 msgid "workspace.tokens.no-sets-create"
@@ -8169,7 +8169,7 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "Al momento non hai temi."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
+msgid "errors.tokens.no-token-files-found"
 msgstr "Nessun token, set o tema trovato in questo file."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
@@ -8177,11 +8177,11 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "% set attivi"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
+msgid "errors.tokens.number-too-large"
 msgstr "Valore token non valido. Il valore risolto è troppo grande: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
+msgid "errors.tokens.opacity-range"
 msgstr ""
 "L'opacità deve essere compresa tra 0 e 100% o tra 0 e 1 (ad esempio 50% o "
 "0.5)."
@@ -8231,7 +8231,7 @@ msgid "workspace.tokens.select-set"
 msgstr "Seleziona set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
+msgid "errors.tokens.self-reference"
 msgstr "Il token ha un riferimento a se stesso"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
@@ -8270,7 +8270,7 @@ msgid "workspace.tokens.shadow-blur"
 msgstr "Sfocatura"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
+msgid "errors.tokens.shadow-blur-range"
 msgstr "La sfocatura dell'ombra deve essere maggiore o uguale a 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:987, src/app/main/ui/workspace/tokens/management/create/form.cljs:988
@@ -8291,7 +8291,7 @@ msgid "workspace.tokens.shadow-spread"
 msgstr "Diffusione"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
+msgid "errors.tokens.shadow-spread-range"
 msgstr "La diffusione dell'ombra deve essere maggiore o uguale a 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
@@ -8321,7 +8321,7 @@ msgid "workspace.tokens.size"
 msgstr "Dimensione"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
+msgid "errors.tokens.stroke-width-range"
 msgstr "La larghezza della traccia deve essere maggiore o uguale a 0."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -8432,11 +8432,11 @@ msgid "workspace.tokens.value-not-valid"
 msgstr "Il valore non è valido"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
+msgid "errors.tokens.value-with-percent"
 msgstr "Valore non valido: % non è consentito."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
+msgid "errors.tokens.value-with-units"
 msgstr "Valore non valido: le unità non sono consentite."
 
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
@@ -8797,3 +8797,67 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:99
+msgid "workspace.tokens.remap"
+msgstr "Riassegna token"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
+msgid "workspace.tokens.not-remap"
+msgstr "Non riassegnare"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
+msgid "workspace.tokens.remap-token-references-title"
+msgstr "Riassegnare tutti i token che usano `%s` a `%s`?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
+msgid "workspace.tokens.remap-warning-effects"
+msgstr ""
+"Questo cambierà tutti i livelli e i riferimenti che utilizzano il vecchio "
+"nome del token."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
+msgid "workspace.tokens.remap-warning-time"
+msgstr "Questa azione può richiedere un po' di tempo."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.create-new-org"
+msgstr "Crea nuova organizzazione"
+
+#: src/app/main/errors.cljs:105
+msgid "errors.unexpected-exception"
+msgstr "Errore inaspettato: %s"
+
+#: src/app/main/ui/static.cljs:315
+msgid "errors.webgl-context-lost.desc-message"
+msgstr "WebGL ha smesso di funzionare. Ricarica la pagina per ripristinarlo"
+
+#: src/app/main/ui/static.cljs:314
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Oops! Il contesto della canvas è stato perso"
+
+#: src/app/main/ui/static.cljs:318
+msgid "labels.reload-page"
+msgstr "Ricarica pagina"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Strumenti di debug"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
+msgid "workspace.tokens.missing-reference"
+msgstr "Riferimento mancante"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:204
+msgid "workspace.tokens.reference-composite-shadow"
+msgstr "Inserisci un alias per il token ombra"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
+#, unused
+msgid "workspace.tokens.warning-name-change"
+msgstr ""
+"Rinominare questo token interromperà ogni riferimento al suo nome precedente"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:231
+msgid "workspace.toolbar.debug"
+msgstr "Strumenti di debug"

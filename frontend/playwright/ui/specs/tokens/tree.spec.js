@@ -32,8 +32,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
@@ -88,8 +102,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
@@ -139,6 +167,64 @@ test.describe("Tokens - node tree", () => {
 
     await expect(darkerNode).toBeVisible();
     await expect(darkerNodeToken).toBeVisible();
+  });
+
+  test("Renaming a token into a collapsed group auto-expands that group", async ({
+    page,
+  }) => {
+    const { tokensSidebar, tokensUpdateCreateModal, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
+
+    // Create tokens in two separate groups
+    await createToken(
+      page,
+      "Color",
+      "dark.base",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+
+    await createToken(
+      page,
+      "Color",
+      "light.accent",
+      "Value",
+      "textbox",
+      "#ffffff",
+    );
+
+    const lightGroup = tokensSidebar.getByRole("button", {
+      name: "light",
+      exact: true,
+    });
+
+    // Collapse the light group so its children are hidden
+    await lightGroup.click();
+
+    const lightAccentToken = tokensSidebar.getByRole("button", {
+      name: "accent",
+    });
+    await expect(lightAccentToken).not.toBeVisible();
+
+    // Open the edit modal for the dark.base token
+    const darkBaseToken = tokensSidebar.getByRole("button", { name: "base" });
+    await darkBaseToken.click({ button: "right" });
+    await tokenContextMenuForToken.getByText("Edit token").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Rename to move it into the collapsed light group
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("light.base");
+    await tokensUpdateCreateModal.getByRole("button", { name: "Save" }).click();
+
+    // After rename, light group should be auto-expanded and both tokens visible
+    await expect(lightGroup).toBeVisible();
+    await expect(lightAccentToken).toBeVisible();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "base" }),
+    ).toBeVisible();
   });
 
   test("User removes node and all child tokens", async ({ page }) => {

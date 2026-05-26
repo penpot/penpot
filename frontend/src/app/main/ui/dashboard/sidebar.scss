@@ -26,15 +26,23 @@
   margin: 0 var(--sp-l) 0 0;
   border-right: $b-1 solid var(--panel-border-color);
   background-color: var(--panel-background-color);
-  z-index: var(--z-index-panels);
 }
 
 // SIDEBAR CONTENT COMPONENT
+.sidebar-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
   gap: var(--sp-xxl);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   padding: 0;
   overflow: hidden auto;
 }
@@ -217,8 +225,17 @@
 }
 
 .team-separator {
-  border-top: $b-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--color-background-quaternary);
   margin: 0;
+}
+
+.org-section-label {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  list-style: none;
+  padding: var(--sp-m) $sz-6 $sz-6;
+  text-transform: uppercase;
 }
 
 .tick-icon {
@@ -634,6 +651,28 @@
     fill: var(--icon-stroke-color);
     width: var(--sp-xl);
     height: var(--sp-xl);
+  }
+}
+
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
+.my-teams-icon-xxxl {
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxxl);
+    height: var(--sp-xxxl);
   }
 }
 

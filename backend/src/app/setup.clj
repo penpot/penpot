@@ -11,7 +11,9 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.setup.keys :as keys]
    [app.setup.templates]
@@ -35,21 +37,19 @@
        (into {})))
 
 (defn- handle-instance-id
-  [instance-id conn read-only?]
+  [instance-id conn]
   (or instance-id
       (let [instance-id (uuid/random)]
-        (when-not read-only?
-          (try
-            (db/insert! conn :server-prop
-                        {:id "instance-id"
-                         :preload true
-                         :content (db/tjson instance-id)})
-            (catch Throwable cause
-              (l/warn :hint "unable to persist instance-id"
-                      :instance-id instance-id
-                      :cause cause))))
+        (try
+          (db/insert! conn :server-prop
+                      {:id "instance-id"
+                       :preload true
+                       :content (db/tjson instance-id)})
+          (catch Throwable cause
+            (l/warn :hint "unable to persist instance-id"
+                    :instance-id instance-id
+                    :cause cause)))
         instance-id)))
-
 
 (def sql:add-prop
   "INSERT INTO server_prop (id, content, preload)
@@ -77,7 +77,12 @@
   (assert (db/pool? (::db/pool params)) "expected valid database pool"))
 
 (defmethod ig/init-key ::props
-  [_ {:keys [::db/pool ::key] :as cfg}]
+  [_ {:keys [::key] :as cfg}]
+  (audit/submit cfg {:type "trigger"
+                     :name "instance-start"
+                     :props {:version (:full cf/version)
+                             :flags (mapv name cf/flags)
+                             :public-uri (str (cf/get :public-uri))}})
 
   (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                     (db/xact-lock! conn 0)
@@ -91,7 +96,7 @@
                       (-> (get-all-props conn)
                           (assoc :secret-key secret)
                           (assoc :tokens-key (keys/derive secret :salt "tokens"))
-                          (update :instance-id handle-instance-id conn (db/read-only? pool)))))))
+                          (update :instance-id handle-instance-id conn))))))
 
 (defmethod ig/init-key ::shared-keys
   [_ {:keys [::props] :as cfg}]

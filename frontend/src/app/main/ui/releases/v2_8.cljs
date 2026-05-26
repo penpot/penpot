@@ -83,7 +83,7 @@
            "- And we’ve a new language! Hi Serbians!"]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -116,7 +116,7 @@
            "This is just one more step in the evolution of Design Tokens in Penpot. And there's more to come: typography tokens are already in the works!"]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -149,7 +149,7 @@
            "- We have integrated AI-powered help, which is trained on Penpot documentation, directly into the design workspace. Get assistance without switching context, so you can stay in the flow."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -186,7 +186,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]

@@ -30,7 +30,7 @@
    (when (some? links)
      [:nav {:class (stl/css :link-nav)}
       (for [[index link] (d/enumerate links)]
-        [:& lb/link-button {:key (dm/str "link-" index)
-                            :class (stl/css :link)
-                            :on-click (:callback link)
-                            :value (:label link)}])])])
+        [:> lb/link-button* {:key (dm/str "link-" index)
+                             :class (stl/css :link)
+                             :on-click (:callback link)
+                             :value (:label link)}])])])

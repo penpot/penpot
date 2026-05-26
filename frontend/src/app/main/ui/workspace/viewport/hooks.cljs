@@ -177,14 +177,14 @@
                            (dw/increase-zoom)))))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects transform selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only?]
+  [page-id move-stream objects selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures? read-only? transform]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
-        transform-ref (mf/use-ref nil)
         selected-ref (mf/use-ref selected)
         hover-disabled-ref (mf/use-ref hover-disabled?)
         focus-ref (mf/use-ref focus)
+        transform-ref (mf/use-ref transform)
 
         last-point-ref (mf/use-var nil)
         mod-str (mf/use-memo #(rx/subject))
@@ -197,7 +197,7 @@
                  rect (grc/center->rect point (/ 5 zoom))]
 
              (if (mf/ref-val hover-disabled-ref)
-               (rx/of nil)
+               (rx/of [])
                (->> (mw/ask-buffered!
                      {:cmd :index/query-selection
                       :page-id page-id
@@ -222,7 +222,6 @@
 
                 (->> move-stream
                      (rx/tap #(reset! last-point-ref %))
-                     ;; When transforming shapes we stop querying the worker
                      (rx/merge-map query-point)))
 
                (rx/share)))
@@ -231,10 +230,6 @@
         (->> over-shapes-stream (rx/debounce 50))]
 
     ;; Refresh the refs on a value change
-    (mf/use-effect
-     (mf/deps transform)
-     #(mf/set-ref-val! transform-ref transform))
-
     (mf/use-effect
      (mf/deps zoom)
      #(mf/set-ref-val! zoom-ref zoom))
@@ -256,6 +251,10 @@
     (mf/use-effect
      (mf/deps focus)
      #(mf/set-ref-val! focus-ref focus))
+
+    (mf/use-effect
+     (mf/deps transform)
+     #(mf/set-ref-val! transform-ref transform))
 
     (hooks/use-stream
      over-shapes-stream-debounced
@@ -367,7 +366,9 @@
                       (get objects)))]
            (reset! hover hover-shape)
            (reset! measure-hover measure-hover-shape)
-           (reset! hover-ids ids)))
+           ;; Skip hover-ids update during drag
+           (when (not= :move (mf/ref-val transform-ref))
+             (reset! hover-ids ids))))
 
        (fn []
          ;; Clean the cache
@@ -466,6 +467,11 @@
 (defn setup-shortcuts
   [path-editing? drawing-path? text-editing? grid-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
+
+  (mf/with-effect []
+    (.addEventListener js/window "keydown" wsc/on-display-guides-keydown)
+    (fn []
+      (.removeEventListener js/window "keydown" wsc/on-display-guides-keydown)))
 
   (mf/with-effect [path-editing? drawing-path? grid-editing?]
     (cond

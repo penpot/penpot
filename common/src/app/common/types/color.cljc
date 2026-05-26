@@ -192,6 +192,9 @@
 (def ^:const background-quaternary "#2e3434")
 (def ^:const background-quaternary-light "#eef0f2")
 (def ^:const canvas "#E8E9EA")
+(def ^:const default-pixel-grid-color "#0070E4")
+
+(def ^:const default-pixel-grid-opacity 0.2)
 
 (def names
   {"aliceblue" "#f0f8ff"
@@ -609,6 +612,36 @@
 (defn hsv->hsl
   [hsv]
   (-> hsv hsv->hex hex->hsl))
+
+;; HSB (Hue, Saturation, Brightness) — same color model as HSV but with
+;; the brightness component normalized to a 0-100 range, matching Figma,
+;; Sketch, and Adobe XD conventions. Internally we reuse the HSV math and
+;; only rescale the brightness axis.
+
+(defn rgb->hsb
+  [rgb]
+  (let [[h s v] (rgb->hsv rgb)]
+    [h s (* (/ v 255.0) 100.0)]))
+
+(defn hsb->rgb
+  [[h s b]]
+  (hsv->rgb [h s (int (* (/ b 100.0) 255.0))]))
+
+(defn hex->hsb
+  [v]
+  (-> v hex->rgb rgb->hsb))
+
+(defn hsb->hex
+  [hsb]
+  (-> hsb hsb->rgb rgb->hex))
+
+(defn hsv->hsb
+  [[h s v]]
+  [h s (* (/ v 255.0) 100.0)])
+
+(defn hsb->hsv
+  [[h s b]]
+  [h s (int (* (/ b 100.0) 255.0))])
 
 (defn expand-hex
   [v]

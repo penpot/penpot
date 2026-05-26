@@ -231,8 +231,8 @@ fn draw_stroke_on_path(
     if let Some(pt) = path_transform {
         canvas.concat(pt);
     }
-    let skia_path = path.to_skia_path(svg_attrs);
 
+    let skia_path = path.to_skia_path(svg_attrs);
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
             draw_inner_stroke_path(canvas, &skia_path, &draw_paint, blur, antialias);
@@ -299,6 +299,12 @@ fn handle_stroke_caps(
 ) {
     // Closed shapes don't have caps
     if !is_open {
+        return;
+    }
+
+    // When both ends share the same simple line cap, Skia already drew it
+    // natively via `PaintCap` on the stroke paint, so skip the manual overlay.
+    if stroke.to_skia_linecap().is_some() {
         return;
     }
 
