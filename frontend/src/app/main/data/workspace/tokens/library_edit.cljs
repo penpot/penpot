@@ -683,7 +683,11 @@
                                            token-id)]
             (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
                   unames (map :name tokens)     ;; TODO: add function duplicate-token in tokens-lib
-                  suffix (tr "workspace.tokens.duplicate-suffix")
+                  ;; "copy" is intentionally not translated here. Token names are validated
+                  ;; against a restricted set of allowed characters (currently English-compatible),
+                  ;; so translating this suffix could introduce invalid characters and break
+                  ;; token name validation.
+                  suffix "copy"
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)
                   new-token (-> token
                                 (ctob/reid (uuid/next))
