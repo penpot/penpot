@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -175,9 +176,11 @@
                       (rx/subs! (fn [{:keys [error value]}]
                                   (when touched?
                                     (if error
-                                      (do
-                                        (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                        (reset! hint* {:message error :type "error"}))
+                                      (if (csu/group-name-conflict-error? error token-name)
+                                        (swap! form assoc-in [:extra-errors ""] {:message error})
+                                        (do
+                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                          (reset! hint* {:message error :type "error"})))
                                       (let [message (tr "workspace.tokens.resolved-value" value)]
                                         (swap! form update :extra-errors dissoc input-name)
                                         (reset! hint* {:message message :type "hint"})))))))]
@@ -205,7 +208,8 @@
                    (-> state
                        (assoc-in [:data :value field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (mf/defc composite-fonts-combobox*
   [{:keys [token tokens name] :rest props}]
@@ -306,8 +310,11 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
-                             (reset! hint* {:message error' :type "error"}))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+                               (do
+                                 (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
+                                 (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" value)

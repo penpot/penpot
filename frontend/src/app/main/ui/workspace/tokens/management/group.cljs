@@ -100,18 +100,19 @@
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
-
         expandable? (d/nilv (seq tokens) false)
 
         on-pill-context-menu
         (mf/use-fn
+         (mf/deps active-theme-tokens)
          (fn [event token]
            (dom/prevent-default event)
-           (st/emit! (dwtl/assign-token-context-menu
-                      {:type :token
-                       :position (dom/get-client-position event)
-                       :errors (:errors token)
-                       :token-id (:id token)}))))
+           (let [resolved-token (get active-theme-tokens (:name token))]
+             (st/emit! (dwtl/assign-token-context-menu
+                        {:type :token
+                         :position (dom/get-client-position event)
+                         :errors (:errors resolved-token)
+                         :token-id (:id token)})))))
 
         on-node-context-menu
         (mf/use-fn

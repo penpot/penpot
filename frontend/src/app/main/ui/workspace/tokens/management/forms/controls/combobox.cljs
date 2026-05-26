@@ -78,6 +78,9 @@
         error
         (get-in @form [:errors name])
 
+        extra-error
+        (get-in @form [:extra-errors name])
+
         value
         (get-in @form [:data name] "")
 
@@ -264,11 +267,10 @@
                                      :on-mouse-down dom/prevent-default
                                      :on-click toggle-dropdown}]))})
         props
-        (if (and error touched?)
+        (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)
-
 
         {:keys [style ready?]} (use-floating-dropdown is-open input-wrapper-ref wrapper-ref dropdown-ref)]
 
@@ -284,9 +286,11 @@
                                   (let [touched? (get-in @form [:touched name])]
                                     (when touched?
                                       (if error
-                                        (do
-                                          (swap! form assoc-in [:extra-errors name] {:message error})
-                                          (reset! hint* {:message error :type "error"}))
+                                        (if (csu/group-name-conflict-error? error token-name)
+                                          (swap! form assoc-in [:extra-errors ""] {:message error})
+                                          (do
+                                            (swap! form assoc-in [:extra-errors name] {:message error})
+                                            (reset! hint* {:message error :type "error"})))
                                         (let [message (tr "workspace.tokens.resolved-value" value)]
                                           (swap! form update :extra-errors dissoc name)
                                           (reset! hint* {:message message :type "hint"}))))))))]

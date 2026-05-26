@@ -45,11 +45,15 @@
                          valid?)))))
 
 (defn- make-initial-state
-  [initial-data]
+  [initial-data initial-errors]
   (let [initial (if (fn? initial-data) (initial-data) initial-data)
-        initial (d/nilv initial {})]
+        initial (d/nilv initial {})
+        initial-errors (if (fn? initial-errors) (initial-errors) initial-errors)
+        initial-errors (d/nilv initial-errors {})]
     {:initial initial
+     :initial-errors initial-errors
      :data initial
+     :extra-errors initial-errors
      :errors {}
      :touched {}}))
 
@@ -64,9 +68,11 @@
     (-reset! [_ new-value]
       (if (nil? new-value)
         (let [initial (-> (mf/ref-val internal-state)
-                          (get :initial)
-                          (make-initial-state))]
-          (mf/set-ref-val! internal-state initial))
+                          (get :initial))
+              initial-errors (-> (mf/ref-val internal-state)
+                                 (get :initial-errors))
+              state (make-initial-state initial initial-errors)]
+          (mf/set-ref-val! internal-state state))
         (mf/set-ref-val! internal-state new-value))
       (rerender-fn))
 
@@ -92,12 +98,12 @@
         (rerender-fn)))))
 
 (defn use-form
-  [& {:keys [initial schema validators] :as opts}]
+  [& {:keys [initial initial-errors schema validators] :as opts}]
   (let [rerender-fn (use-rerender-fn)
 
         initial
-        (mf/with-memo [initial]
-          (make-initial-state initial))
+        (mf/with-memo [initial initial-errors]
+          (make-initial-state initial initial-errors))
 
         internal-state
         (mf/use-ref initial)
@@ -131,14 +137,16 @@
                        (assoc-in [:touched field] true)
                        (assoc-in [:data field] (if trim? (str/trim value) value))
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (defn update-input-value!
   [form field value]
   (swap! form (fn [state]
                 (-> state
                     (assoc-in [:data field] value)
-                    (update :errors dissoc field)))))
+                    (update :errors dissoc field)
+                    (update :extra-errors dissoc "")))))
 
 (defn on-input-blur
   [form field]
