@@ -6,7 +6,7 @@ import {
   setupTypographyTokensFileRender,
   unfoldTokenType,
   createToken,
-  createSet
+  createSet,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {

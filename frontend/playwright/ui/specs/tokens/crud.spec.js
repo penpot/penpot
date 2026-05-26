@@ -1818,21 +1818,6 @@ test("User disables the current set but token still have resolved values shown i
 });
 
 test.describe("User can't create groups that clash with token names", () => {
-  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
-    const setInput = sidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill(setName);
-    await setInput.press(finalKey);
-  };
-
-  const createSet = async (sidebar, setName, finalKey = "Enter") => {
-    const tokensTabButton = sidebar
-      .getByRole("button", { name: "Add set" })
-      .click();
-
-    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
-  };
-
   const createBadToken = async (page, type, name, textFieldName, value) => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -2102,7 +2087,7 @@ test("User can't create Text Decoration token with group name that clashes with 
     });
 
     const errorNode = tokensUpdateCreateModal.getByText("Group name of typ1.bad conflicts with a token of the same name in another active set.");
-    await expect(errorNode).toHaveCount(6);
+    await expect(errorNode).toHaveCount(1);
     await expect(submitButton).toBeDisabled();
   });
 
@@ -2160,7 +2145,7 @@ test("User can't create Text Decoration token with group name that clashes with 
     });
 
     const errorNode = tokensUpdateCreateModal.getByText("Group name of sha1.bad conflicts with a token of the same name in another active set.");
-    await expect(errorNode).toHaveCount(5);
+    await expect(errorNode).toHaveCount(1);
     await expect(submitButton).toBeDisabled();
   });
 });

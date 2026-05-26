@@ -37,7 +37,8 @@
          (mf/deps input-name)
          (fn [id]
            (let [is-inner? (= id "inner")]
-             (swap! form assoc-in [:data :value indexed-type index input-name] is-inner?))))
+             (swap! form assoc-in [:data :value indexed-type index input-name] is-inner?)
+             (swap! form update :extra-errors dissoc ""))))
 
         props (mf/spread-props props {:default-selected (if value "inner" "drop")
                                       :variant "ghost"

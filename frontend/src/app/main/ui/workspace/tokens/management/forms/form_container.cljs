@@ -20,7 +20,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc form-container*
-  [{:keys [token token-type] :rest props}]
+  [{:keys [token token-type initial-errors] :rest props}]
   (let [token-type
         (or (:type token) token-type)
 
@@ -38,7 +38,8 @@
         props
         (mf/spread-props props {:token-type token-type
                                 :tokens-tree-in-selected-set tokens-tree-in-selected-set
-                                :token token})
+                                :token token
+                                :initial-errors initial-errors})
         text-case-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
         text-decoration-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
         font-weight-props (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})

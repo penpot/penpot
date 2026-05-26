@@ -75,7 +75,7 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-id initial-errors] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position token-type)
         modal-size-large* (mf/use-state (or (= token-type :typography)
                                             (= token-type :color)
@@ -102,6 +102,7 @@
                           :action action
                           :selected-token-set-id selected-token-set-id
                           :token-type token-type
+                          :initial-errors initial-errors
                           :on-display-colorpicker update-modal-size}]]))
 
 ;; Modals ----------------------------------------------------------------------
