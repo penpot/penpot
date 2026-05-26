@@ -17,7 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.modal :as modal]
-   ;; [app.main.data.workspace :as dw]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -459,9 +459,9 @@
             ;; is set.
             (wasm.api/initialize-viewport base-objects zoom vbox
                                           :background background
-                                          ;; :on-shapes-ready
-                                          ;; (st/emit! (dw/check-file-position-data file-id))
-                                          )
+                                          :on-shapes-ready
+                                          (fn []
+                                            (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))

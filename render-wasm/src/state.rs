@@ -119,6 +119,10 @@ impl State {
         self.current_id = Some(id);
     }
 
+    pub fn has_shape(&mut self, id: Uuid) -> bool {
+        self.shapes.has(&id)
+    }
+
     pub fn delete_shape_children(&mut self, parent_id: Uuid, id: Uuid) {
         let render_state = get_render_state();
 

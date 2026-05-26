@@ -438,6 +438,19 @@
               (aget buffer 2)
               (aget buffer 3)))))
 
+(defn has-shape
+  [id]
+  (when wasm/context-initialized?
+    (let [buffer (uuid/get-u32 id)
+
+          result
+          (h/call wasm/internal-module "_has_shape"
+                  (aget buffer 0)
+                  (aget buffer 1)
+                  (aget buffer 2)
+                  (aget buffer 3))]
+      (= result 1))))
+
 (defn set-shape-text-content
   "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
   [shape-id content]
@@ -1403,6 +1416,53 @@
                                noop-fn
                                noop-fn)))))))]
          (process-next-chunk 0 [] []))))))
+
+
+;; This is a version of process-pending that doesn't have sideffects
+;; with like request render or update layout.
+(defn- process-pending-no-sideffects
+  [thumbnails full on-complete]
+  (let [pending-thumbnails
+        (d/index-by :key :callback thumbnails)
+
+        pending-full
+        (d/index-by :key :callback full)]
+
+    (if (or (seq pending-thumbnails) (seq pending-full))
+      (->> (rx/concat
+            (->> (rx/from (vals pending-thumbnails))
+                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty)))
+            (->> (rx/from (vals pending-full))
+                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty))))
+           (rx/subs!
+            noop-fn
+            noop-fn
+            (fn []
+              (when (fn? on-complete) (on-complete)))))
+      ;; No pending images — complete immediately.
+      (when on-complete (on-complete)))))
+
+(defn set-objects-callback
+  "Sets the shapes and when the async operations are done calls the callback. Won't
+  interact with the rendering pipeline, this call is only to set the model (used currently
+  in the viewer)."
+  [shapes set-objects-cb]
+  (let [total-shapes (count shapes)
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+          (if (< index total-shapes)
+            (let [shape (nth shapes index)
+                  {:keys [thumbnails full]} (set-object shape)]
+              (recur (inc index)
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
+
+    (process-pending-no-sideffects thumbnails full set-objects-cb)))
 
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."

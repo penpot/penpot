@@ -204,36 +204,40 @@
              (rx/take-until stopper-s))))))
 
 
-(defn check-file-position-data
-  [file-id]
-  (ptk/reify ::fix-position-data
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [file (dsh/lookup-file state file-id)
-            changes
-            (->> file :data :pages
-                 (mapcat
-                  (fn [page-id]
-                    (->> (dsh/lookup-page-objects state file-id page-id)
-                         (vals)
-                         (filter cfh/text-shape?)
-                         (filter #(nil? (:position-data %)))
-                         (map (fn [shape]
-                                {:type :mod-obj
-                                 :id (:id shape)
-                                 :page-id page-id
-                                 :operations
-                                 [{:type :set
-                                   :attr :position-data
-                                   :val (wasm.api/calculate-position-data shape)
-                                   :ignore-touched true
-                                   :ignore-geometry true}]})))))
-                 (into []))]
-        (rx/of (dch/commit-changes
-                {:redo-changes changes :undo-changes []
-                 :save-undo? false
-                 :origin it
-                 :tags #{:position-data}}))))))
+(defn update-page-position-data
+  ([]
+   (update-page-position-data nil nil))
+  ([file-id page-id]
+   (ptk/reify ::update-page-position-data
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-id (or file-id (:current-file-id state))
+             page-id (or page-id (:current-page-id state))
+             changes
+             (reduce-kv
+              (fn [result _ shape]
+                (if (and (cfh/text-shape? shape)
+                         (nil? (:position-data shape)))
+                  (conj result
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :page-id page-id
+                         :operations
+                         [{:type :set
+                           :attr :position-data
+                           :val (wasm.api/calculate-position-data shape)
+                           :ignore-touched true
+                           :ignore-geometry true}]})
+                  result))
+              []
+              (dsh/lookup-page-objects state file-id page-id))]
+         (if (d/not-empty? changes)
+           (rx/of (dch/commit-changes
+                   {:redo-changes changes :undo-changes []
+                    :save-undo? false
+                    :origin it
+                    :tags #{:position-data}}))
+           (rx/empty)))))))
 
 (defn- workspace-initialized
   [file-id]
