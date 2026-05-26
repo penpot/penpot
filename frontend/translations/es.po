@@ -3435,6 +3435,10 @@ msgstr "Si, borrar mi cuenta"
 msgid "modals.delete-account.info"
 msgstr "Si borras tu cuenta perderás todos tus proyectos y archivos."
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info.with-orgs"
+msgstr "Esta acción es irreversible. Tu cuenta, suscripción y organizaciones se eliminarán inmediatamente. También perderás el acceso a tus proyectos y archivos actuales."
+
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "¿Seguro que quieres borrar tu cuenta?"

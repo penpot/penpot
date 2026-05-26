@@ -3536,6 +3536,10 @@ msgstr "Yes, delete my account"
 msgid "modals.delete-account.info"
 msgstr "By removing your account you’ll lose all your current projects and archives."
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info.with-orgs"
+msgstr "This action is irreversible. Your account, subscription, and organizations will be deleted immediately. You will also lose access to your current projects and files."
+
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
