@@ -180,9 +180,17 @@ pub fn circle_segments(shape: &Shape) -> Vec<Segment> {
 }
 
 fn join_paths(path: Path, other: Path) -> Path {
+    // Propagate even-odd fill: if either input uses it, the joined result must too,
+    // so that Path::contains gives the correct answer during boolean operations
+    // (e.g. letters with holes like 'O' or 'A' use even-odd fill).
+    let is_even_odd = path.is_even_odd() || other.is_even_odd();
     let mut segments = path.segments().clone();
     segments.extend(other.segments().iter());
-    Path::new(segments)
+    let mut result = Path::new(segments);
+    if is_even_odd {
+        result.set_even_odd();
+    }
+    result
 }
 
 fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
@@ -255,7 +263,16 @@ impl ToPath for Shape {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 
-                Path::new(transform_segments(result.segments().clone(), self))
+                // Preserve even-odd fill through the transform step so that
+                // Path::contains works correctly in subsequent boolean operations
+                // (letters with interior holes need even-odd fill).
+                let is_even_odd = result.is_even_odd();
+                let mut transformed =
+                    Path::new(transform_segments(result.segments().clone(), self));
+                if is_even_odd {
+                    transformed.set_even_odd();
+                }
+                transformed
             }
         }
     }

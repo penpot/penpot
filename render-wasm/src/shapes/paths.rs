@@ -68,6 +68,7 @@ impl Path {
     pub fn from_skia_path(path: skia::Path) -> Self {
         let verbs = path.verbs();
         let points = path.points();
+        let fill_type = path.fill_type();
 
         let mut segments = Vec::new();
         let mut current_point = 0;
@@ -136,16 +137,20 @@ impl Path {
             }
         }
 
-        Path::new(segments)
+        let mut result = Path::new(segments);
+        result.skia_path.set_fill_type(fill_type);
+        result
     }
 
     /// Like `from_skia_path` but properly converts conics to cubic beziers
     /// (using Skia's conic-to-quad + quad-to-cubic elevation). Use this when
-    /// accurate curve conversion matters (e.g. stroke-to-path on circles).
+    /// accurate curve conversion matters (e.g. stroke-to-path on circles,
+    /// text glyph paths which contain many conic segments).
     pub fn from_skia_path_accurate(path: skia::Path) -> Self {
         let verbs = path.verbs();
         let points = path.points();
         let conic_weights = path.conic_weights();
+        let fill_type = path.fill_type();
 
         let mut segments = Vec::new();
         let mut current_point = 0;
@@ -239,7 +244,9 @@ impl Path {
             }
         }
 
-        Path::new(segments)
+        let mut result = Path::new(segments);
+        result.skia_path.set_fill_type(fill_type);
+        result
     }
 
     pub fn to_skia_path(&self, svg_attrs: Option<&SvgAttrs>) -> skia::Path {
@@ -254,6 +261,14 @@ impl Path {
 
     pub fn contains(&self, p: skia::Point) -> bool {
         self.skia_path.contains(p)
+    }
+
+    pub fn is_even_odd(&self) -> bool {
+        self.skia_path.fill_type() == skia::PathFillType::EvenOdd
+    }
+
+    pub fn set_even_odd(&mut self) {
+        self.skia_path.set_fill_type(skia::PathFillType::EvenOdd);
     }
 
     pub fn is_open(&self) -> bool {
