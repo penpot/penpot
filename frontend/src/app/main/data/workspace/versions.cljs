@@ -222,6 +222,15 @@
 ;; PREVIEW VERSION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- preview-label
+  "Return the same identifying text the History sidebar uses for a version.
+  User-created (pinned) versions use their custom label; system autosaves use
+  a localized date and time (see `snapshot-entry*` / `date*` in the sidebar)."
+  [{:keys [created-by label created-at]}]
+  (if (= "system" created-by)
+    (ct/format-inst created-at :localized-date-time)
+    (when (seq label) label)))
+
 (defn- apply-snapshot
   "Swap the file data in app state with the provided snapshot-file
   response. Used by the version preview feature to show historical
@@ -274,7 +283,7 @@
             features (features/get-enabled-features state team-id)
             snapshot (->> (dm/get-in state [:workspace-versions :data])
                           (d/seek #(= id (:id %))))
-            label    (or (:label snapshot)
+            label    (or (preview-label snapshot)
                          (tr "workspace.versions.preview.unnamed"))
             output-s (rx/subject)]
         (rx/merge
