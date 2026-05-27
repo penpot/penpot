@@ -129,6 +129,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `Board.addRulerGuide` attaching guides to the page instead of the board due to a shadowed `id` binding; also correct the `'content:write'` permission error message and the `RulerGuideProxy` name (by @girafic) [#8225](https://github.com/penpot/penpot/issues/8225) (PR: [#8632](https://github.com/penpot/penpot/pull/8632))
 - Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
 - Save and restore selection state in undo/redo (by @eureka0928) [#6007](https://github.com/penpot/penpot/issues/6007) (PR: [#8652](https://github.com/penpot/penpot/pull/8652))
 - Add guide locking and fix locked element selection in viewer (by @Dexterity104) [#8358](https://github.com/penpot/penpot/issues/8358) (PR: [#8949](https://github.com/penpot/penpot/pull/8949))
