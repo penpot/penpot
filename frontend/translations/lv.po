@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-18 14:09+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16.1-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -172,7 +172,7 @@ msgid "auth.register-title"
 msgstr "Izveidot kontu"
 
 #: src/app/main/ui/auth.cljs
-#, unused
+#, fuzzy, unused
 msgid "auth.sidebar-tagline"
 msgstr "Atvērtā pirmkoda risinājums dizaina izstrādei un modelēšanai."
 
@@ -4579,6 +4579,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Koplietojamās bibliotēkas - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Modelēšanas brīvība komandām"
 
