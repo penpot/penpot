@@ -9516,7 +9516,7 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Full open-source freedom, with the governance your org needs"
 
 msgid "nitrate.form.enterprise.price"
-msgstr "$25 / member per month"
+msgstr "per member per month"
 
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"
