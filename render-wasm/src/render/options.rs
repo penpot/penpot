@@ -7,7 +7,8 @@ const SHOW_WASM_INFO: u32 = 0x08;
 // Render performance options
 // This is the extra area used for tile rendering (tiles beyond viewport).
 // Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+const MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
@@ -70,8 +71,10 @@ impl RenderOptions {
     /// This function is updated when the dpr or the
     /// viewport_interest_area_threshold is changed
     fn update_dpr_viewport_interest_area_threshold(&mut self) {
+        // TODO: this will likely need to change once we have the tile atlas in place
         self.dpr_viewport_interest_area_threshold =
-            (self.dpr * self.viewport_interest_area_threshold as f32).ceil() as i32;
+            ((self.dpr * self.viewport_interest_area_threshold as f32).ceil() as i32)
+                .min(MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD);
     }
 
     /// Sets the devicePixelRatio.
