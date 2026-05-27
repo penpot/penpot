@@ -10,6 +10,7 @@
 @use "ds/colors.scss" as *;
 @use "ds/mixins.scss" as *;
 @use "ds/z-index.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .custom-select {
   @include custom-scrollbar;
@@ -103,7 +104,6 @@
     block-size: $sz-12;
     inline-size: $sz-12;
     stroke-width: 1.33px;
-    visibility: hidden;
     stroke: var(--color-foreground-secondary);
     transform: rotate(90deg);
   }
@@ -136,10 +136,10 @@
   top: $sz-32;
   left: 0;
   inline-size: 100%;
-  max-block-size: var(--menu-max-height, #{px2rem(300)});
+  max-block-size: var(--menu-max-height, px2rem(300));
   padding: var(--sp-xxs);
   margin: 0;
-  margin-block-start: px2rem(1);
+  margin-block-start: 1px;
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
   overflow: hidden auto;
@@ -151,6 +151,12 @@
     margin: 0;
     block-size: $sz-12;
     border-block-start: $b-1 solid var(--color-background-primary);
+  }
+
+  &[data-direction="up"] {
+    bottom: $sz-32;
+    top: auto;
+    max-block-size: var(--menu-max-height-up, px2rem(300));
   }
 }
 
