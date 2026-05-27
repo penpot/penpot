@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -4981,6 +4981,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Paylaşılmış Kütüphaneler - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Takımlar için Özgür Tasarım"
 
@@ -7554,6 +7555,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Maskeler"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Katmanları ara"
 
@@ -8564,6 +8566,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Yeni organizasyon oluştur"
 
