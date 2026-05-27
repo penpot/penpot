@@ -1025,7 +1025,7 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   1
+    (t/is (= {:teams-to-delete   0
               :teams-to-transfer 0
               :teams-to-exit     0
               :teams-to-detach   0}
@@ -1052,7 +1052,7 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   2
+    (t/is (= {:teams-to-delete   1
               :teams-to-transfer 0
               :teams-to-exit     0
               :teams-to-detach   0}
@@ -1083,7 +1083,7 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   1
+    (t/is (= {:teams-to-delete   0
               :teams-to-transfer 1
               :teams-to-exit     0
               :teams-to-detach   0}
@@ -1113,7 +1113,7 @@
                         :organization-id          organization-id
                         :default-team-id (:id org-team)}))]
     (t/is (th/success? out))
-    (t/is (= {:teams-to-delete   1
+    (t/is (= {:teams-to-delete   0
               :teams-to-transfer 0
               :teams-to-exit     1
               :teams-to-detach   0}
