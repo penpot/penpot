@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -5470,6 +5470,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Bibliotecas Compartidas - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Diseño Libre para Equipos"
 
