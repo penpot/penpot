@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -4995,6 +4995,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Librerie condivise - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Libertà di design per i team"
 
@@ -7580,6 +7581,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Maschere"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Cerca livelli"
 
@@ -8640,6 +8642,7 @@ msgid "workspace.tokens.remap-warning-time"
 msgstr "Questa azione può richiedere un po' di tempo."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Crea nuova organizzazione"
 
