@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Marius <hi@mariusscheel.de>\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -7290,6 +7290,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Masken"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Ebenen durchsuchen"
 
