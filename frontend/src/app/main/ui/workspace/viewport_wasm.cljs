@@ -60,6 +60,7 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.text-editor :as ted]
+   [app.util.theme :as theme]
    [app.util.timers :as ts]
    [app.util.webapi :as webapi]
    [beicon.v2.core :as rx]
@@ -460,16 +461,17 @@
 
     (mf/with-effect [@canvas-init?]
       (when @canvas-init?
-        (let [canvas (mf/ref-val canvas-ref)]
-          (webapi/on-dpr-change
-           (fn [new-dpr]
-             (let [css-w (.-clientWidth ^js canvas)
-                   css-h (.-clientHeight ^js canvas)]
-               (set! (.-width canvas) (* new-dpr css-w))
-               (set! (.-height canvas) (* new-dpr css-h))
-               (wasm.api/set-render-options! new-dpr)
-               (wasm.api/resize-viewbox css-w css-h)
-               (wasm.api/request-render "dpr-change")))))))
+        (let [canvas (mf/ref-val canvas-ref)
+              cancel (webapi/on-dpr-change
+                      (fn [new-dpr]
+                        (let [css-w (.-clientWidth ^js canvas)
+                              css-h (.-clientHeight ^js canvas)]
+                          (set! (.-width canvas) (* new-dpr css-w))
+                          (set! (.-height canvas) (* new-dpr css-h))
+                          (wasm.api/set-render-options! new-dpr)
+                          (wasm.api/resize-viewbox css-w css-h)
+                          (wasm.api/render-sync))))]
+          cancel)))
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
@@ -536,13 +538,10 @@
       (mf/with-effect [@canvas-init?]
         (when @canvas-init?
           (push-ruler-colors!)
-          (let [obs (js/MutationObserver.
-                     (fn [_]
-                       (push-ruler-colors!)
-                       (wasm.api/request-render "rulers-colors-theme")))]
-            (.observe obs js/document.body
-                      #js {:attributes true :attributeFilter #js ["class"]})
-            (fn [] (.disconnect obs)))))
+          (theme/add-color-scheme-listener!
+           (fn []
+             (push-ruler-colors!)
+             (wasm.api/request-render "rulers-colors-theme")))))
 
       (mf/with-effect [@canvas-init? show-rulers?]
         (when @canvas-init?
