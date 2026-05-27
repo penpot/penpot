@@ -8461,6 +8461,10 @@ msgstr "Edit %s token"
 msgid "errors.tokens.empty-input"
 msgstr "Token value cannot be empty"
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "errors.tokens.empty-field"
+msgstr "This field cannot be empty"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
 msgstr "Enter %s token name"

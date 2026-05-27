@@ -8221,6 +8221,10 @@ msgstr "Editar token de %s"
 msgid "errors.tokens.empty-input"
 msgstr "El valor del token no puede estar vacío"
 
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "errors.tokens.empty-field"
+msgstr "Este campo no puede estar vacío"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
 msgstr "Introduce un nombre para el token %s"
