@@ -8690,6 +8690,12 @@ msgstr "Crear tablero. Click y arrastrar para definir el tamaño. (%s)"
 msgid "workspace.toolbar.image"
 msgstr "Imagen (%s)"
 
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP conectado"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Mover (%s)"

@@ -8968,6 +8968,12 @@ msgstr "Create board. Click and drag to define its size. (%s)"
 msgid "workspace.toolbar.image"
 msgstr "Image (%s)"
 
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP connected"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Move (%s)"
