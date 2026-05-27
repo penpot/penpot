@@ -22,6 +22,7 @@
 - Remove unreachable try/catch in hex->hsl (by @Dexterity104) [#9244](https://github.com/penpot/penpot/issues/9244) (PR: [#9245](https://github.com/penpot/penpot/pull/9245))
 - Remove stray debug log in exporter upload-resource (by @iot2edge) [#9270](https://github.com/penpot/penpot/issues/9270) (PR: [#9272](https://github.com/penpot/penpot/pull/9272))
 - Release pool connection during font variant creation (by @Dexterity104) [#9286](https://github.com/penpot/penpot/issues/9286) (PR: [#9287](https://github.com/penpot/penpot/pull/9287))
+- Add autocomplete combobox to token creation and edition forms [#9899](https://github.com/penpot/penpot/issues/9899) (PR: [#9109](https://github.com/penpot/penpot/pull/9109))
 
 ### :bug: Bugs fixed
 
@@ -50,6 +51,7 @@
 - Fix misaligned B(V) input label in HSB color picker [#9731](https://github.com/penpot/penpot/issues/9731) (PR: [#9793](https://github.com/penpot/penpot/pull/9793))
 - Fix shadow token creation not allowing empty blur or spread value [#9808](https://github.com/penpot/penpot/issues/9808) (PR: [#9809](https://github.com/penpot/penpot/pull/9809))
 - Fix settings form visual layout broken after recent contribution [#9882](https://github.com/penpot/penpot/issues/9882) (PR: [#9883](https://github.com/penpot/penpot/pull/9883))
+- Fix token validation failure caused by group nodes in token tree [#9010](https://github.com/penpot/penpot/issues/9010) (PR: [#9025](https://github.com/penpot/penpot/pull/9025), [#9825](https://github.com/penpot/penpot/pull/9825))
 
 ## 2.16.0 (Unreleased)
 
