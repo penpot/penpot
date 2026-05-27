@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-28 00:09+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.16.1-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -173,7 +173,7 @@ msgid "auth.register-title"
 msgstr "Créer un compte"
 
 #: src/app/main/ui/auth.cljs
-#, unused
+#, fuzzy, unused
 msgid "auth.sidebar-tagline"
 msgstr "La solution de design et de prototypage à code source ouvert."
 
@@ -5005,6 +5005,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Bibliothèques partagées - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Design libre pour les équipes"
 
@@ -5348,6 +5349,7 @@ msgid "errors.webgl-context-lost.main-message"
 msgstr "Oups! Le contexte du canevas a été perdu"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Crée une nouvelle organisation"
 
@@ -7607,6 +7609,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Masques"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Recherche de calques"
 
@@ -8141,6 +8144,7 @@ msgid "workspace.tokens.token-name"
 msgstr "Nom"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+#, fuzzy
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Un token existe déjà au chemin : %s"
 
@@ -8177,10 +8181,12 @@ msgid "workspace.tokens.tools"
 msgstr "Outils"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:46
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type-message"
 msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:48
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Le type « %s » n'est pas supporté (%s)\n"
 
