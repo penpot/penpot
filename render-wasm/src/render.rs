@@ -3061,15 +3061,31 @@ impl RenderState {
         let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
             let mut acc: Option<Rect> = None;
             for id in modifier_ids.iter() {
-                let Some(s) = tree.get(id) else { continue };
-                let r = self.get_cached_extrect(s, tree, 1.0);
-                acc = Some(match acc {
-                    None => r,
-                    Some(mut prev) => {
-                        prev.join(r);
-                        prev
-                    }
-                });
+                // Current (post-modifier) bounds
+                if let Some(s) = tree.get(id) {
+                    let r = self.get_cached_extrect(s, tree, 1.0);
+                    acc = Some(match acc {
+                        None => r,
+                        Some(mut prev) => {
+                            prev.join(r);
+                            prev
+                        }
+                    });
+                }
+
+                // Pre-modifier bounds: important so cached top-level crops that still contain the
+                // shape at its original position are considered "unsafe" even after the shape
+                // has moved away (e.g. dragging a child out of a clipped frame).
+                if let Some(raw) = tree.get_raw(id) {
+                    let r0 = self.get_cached_extrect(raw, tree, 1.0);
+                    acc = Some(match acc {
+                        None => r0,
+                        Some(mut prev) => {
+                            prev.join(r0);
+                            prev
+                        }
+                    });
+                }
             }
             acc
         } else {
