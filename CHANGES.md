@@ -51,6 +51,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix spacing token changes in main flex components leaving copied text children at stale padding offsets [Taiga #11766](https://tree.taiga.io/project/penpot/issue/11766)
 - Fix plugin API `LibraryTypography.remove()` failing with a UUID assertion error [Github #8223](https://github.com/penpot/penpot/issues/8223)
 - Fix MCP SSE sessions leaking memory on zombie connections by adding inactivity timeout parity with Streamable HTTP sessions (by @bitloi) [Github #9432](https://github.com/penpot/penpot/issues/9432)
 - Fix missing `labels.open` translation (by @MilosM348) [Github #9320](https://github.com/penpot/penpot/pull/9320)
