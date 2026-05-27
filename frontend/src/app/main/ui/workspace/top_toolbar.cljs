@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -19,7 +20,9 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -90,6 +93,14 @@
         read-only?    (mf/use-ctx ctx/workspace-read-only?)
         rulers?       (mf/deref refs/rulers?)
         hide-toolbar? (mf/deref toolbar-hidden-ref)
+
+        ;; The MCP badge mirrors the "connected" indicator shown in the
+        ;; main menu: the MCP server is enabled and its plugin is
+        ;; connected in this browser tab.
+        mcp           (mf/deref refs/mcp)
+        mcp-active?   (and (contains? cf/flags :mcp)
+                           (true? (:mcp-enabled props))
+                           (= "connected" (:connection-status mcp)))
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt (dw/clear-edition-mode)))
@@ -221,7 +232,15 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             deprecated-icon/bug]])]]
+             deprecated-icon/bug]])
+
+         (when mcp-active?
+           [:li {:class (stl/css :mcp-badge)}
+            [:> tooltip* {:content (tr "workspace.toolbar.mcp-connected")
+                          :placement "bottom"}
+             [:& badge-notification {:content (tr "workspace.toolbar.mcp")
+                                     :size :small
+                                     :is-focus true}]]])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

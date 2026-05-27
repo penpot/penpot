@@ -83,6 +83,15 @@
   }
 }
 
+.mcp-badge {
+  // Override the badge's default min-width so it hugs the "MCP" label.
+  --badge-notification-min-width: auto;
+
+  display: flex;
+  align-items: center;
+  margin-inline-start: var(--sp-s);
+}
+
 .toolbar-handler {
   @include deprecated.flex-center;
   @include deprecated.button-style;
