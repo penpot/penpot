@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
+"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -4120,6 +4120,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Общие библиотеки - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot — свобода в дизайне для команд"
 
@@ -6230,6 +6231,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Маски"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Искать слои"
 
