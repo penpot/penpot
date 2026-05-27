@@ -45,12 +45,19 @@ python3 tools/gh.py issues "2.16.0" --state all
 python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 ```
 
-**Label exclusion rules:**
-- `release blocker` — Internal release-blocking bugs not relevant to end users
-- `no changelog` — Chore/refactor work that doesn't need a changelog entry
+**Exclusion rules (issue-level):**
+- `no changelog` label — Chore/refactor work that doesn't need a changelog entry
+- `release blocker` label — Blocked issues not yet ready for changelog
+- `Task` issue type — Internal chores are not user-facing; filter these out after fetching
+
+**Exclusion rules (PR-level):**
+In addition to issue-level exclusions, PRs with these labels should be
+excluded regardless of their linked issue's labels:
+- `release blocker` — PR is part of a pending release blocker batch
+- `no issue required` — Trivial fix not tracked as an issue
 
 The script outputs JSON with each entry containing `number`, `title`, `state`,
-`labels`, and `closing_prs` (the PRs that fix each issue).
+`issue_type`, `labels`, and `closing_prs` (the PRs that fix each issue).
 
 ### 3. Identify missing entries (optional)
 
@@ -62,6 +69,10 @@ python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog" --c
 ```
 
 This returns a filtered JSON array with only the missing issues.
+
+> **Note:** The `--compare` flag checks **issues** only (via issue number
+> references in the changelog). To find merged **PRs** not yet referenced,
+> use the milestone PR cross-reference described in step 10 below.
 
 ### 4. Fetch additional PR details when needed
 
@@ -80,19 +91,42 @@ python3 tools/gh.py prs --file prs.txt
 cat prs.txt | python3 tools/gh.py prs --stdin
 ```
 
+The `prs` command also supports listing all PRs in a milestone in one call:
+
+```bash
+# All merged PRs in a milestone (default)
+python3 tools/gh.py prs --milestone "2.16.0"
+
+# All states (merged, open, closed)
+python3 tools/gh.py prs --milestone "2.16.0" --state all
+```
+
 The `prs` command returns JSON with `number`, `title`, `body`, `state`,
 `merged_at`, `author`, `labels`, and `closing_issues`. PRs are fetched in
-batches of 50 via GraphQL to stay within API limits.
+batches of 50 via GraphQL to stay within API limits (milestone mode uses
+paginated GraphQL on the milestone's `pullRequests` connection).
 
-### 5. Categorize entries
+### 5. Categorize entries — strictly by issue type, never by labels or emoji
 
-Check the labels on each issue to determine which section it belongs to:
+Use the **Issue Type** field (GitHub's native issue type, exposed as
+`issue_type` in the `gh.py` JSON output) to determine which section an entry
+belongs to.
 
-| Label / Title prefix | Changelog section |
-|----------------------|-------------------|
-| `bug` label or `:bug:` title prefix | `### :bug: Bugs fixed` |
-| `enhancement` label or `:sparkles:` prefix | `### :sparkles: New features & Enhancements` |
-| No label | Infer from title convention, default to bug fix |
+> **⚠️ CRITICAL: Never use labels or title emoji prefixes for categorization.**
+> Labels like `bug` and `enhancement`, as well as title prefixes like `:bug:`
+> and `:sparkles:`, are frequently inaccurate, missing, or contradictory to the
+> actual issue type. The `issue_type` field from `gh.py` is the single source
+> of truth.
+
+| `issue_type` value | Changelog section |
+|--------------------|-------------------|
+| `Bug` | `### :bug: Bugs fixed` |
+| `Feature` or `Enhancement` | `### :sparkles: New features & Enhancements` |
+| `Task` | **Exclude** — internal chores are not user-facing |
+| `null` (not set) | Check labels as a fallback: `bug` label → bugs, otherwise enhancements |
+
+The `gh.py` issues command already includes `issue_type` in every entry's
+output. **No separate GraphQL query is needed.**
 
 **Community contribution attribution:** If the issue or its fix PR has the
 `community contribution` label, add an attribution `(by @<github_username>)`
@@ -121,6 +155,37 @@ tracked in the milestone.
 | Closed issue + one or more PRs fix it | Primary link = issue, PR inline comma-separated |
 | PR exists with no linked issue | If a corresponding closed issue exists in the same milestone, link the issue. Otherwise, skip the entry (the issue must be the changelog unit). |
 | Closed issue with no fix PR in milestone | Link the issue directly, without a PR reference. |
+
+> **False-positive associations:** A PR may incorrectly claim to close an issue
+> from a different context (e.g., a very old PR referencing a modern issue, or a
+> cross-project reference). If the PR title and issue title are clearly unrelated,
+> or the PR was created years before the issue, treat it as a data glitch and
+> skip it. PR [#3](https://github.com/penpot/penpot/pull/3) (ancient License PR
+> claiming to close a plugin API issue) is a known example.
+
+### 5a. ⚠️ Verify PR merge status before writing
+
+A closed issue may list closing PRs that were **closed without merging**
+(e.g., a community PR that was superseded by another). The changelog must
+only reference **merged** PRs. Verify before writing:
+
+```bash
+# Collect all PR numbers from the candidate entries and check them
+python3 tools/gh.py prs <ALL_PR_NUMBERS> | python3 -c "
+import json, sys
+for pr in json.load(sys.stdin):
+    if pr['state'] != 'MERGED':
+        print(f'WARNING: #{pr[\"number\"]} is {pr[\"state\"]} (not merged)')
+"
+```
+
+If a closing PR is closed-unmerged, find the actual merged PR that
+superseded it:
+1. Check the issue's closing PRs list for other PRs (there may be multiple)
+2. Look for other PRs with similar titles or descriptions referencing the same issue
+3. Inspect the closed PR's conversation timeline for a pointer to the replacement
+
+Replace the reference in the changelog entry with the correct merged PR number.
 
 ### 6. Read the current CHANGES.md
 
@@ -186,6 +251,72 @@ Read the top of `CHANGES.md` and confirm:
 - The section ordering is correct (newest first)
 - Formatting matches the surrounding entries
 
+### 10. Cross-reference milestone PRs against the changelog
+
+Issues can be fixed by PRs that aren't in the milestone, and merged PRs in
+the milestone may not close any tracked issue. After writing, run a full
+cross-reference to catch gaps:
+
+```bash
+# List all merged PRs in the milestone
+python3 tools/gh.py prs --milestone "<MILESTONE>" --state merged > /tmp/milestone-prs.json
+
+# Extract PR numbers from the changelog section
+python3 -c "
+import json, re
+
+with open('CHANGES.md') as f:
+    content = f.read()
+
+# Extract the version section (adjust regex to match the actual version)
+match = re.search(r'## <MILESTONE> \(Unreleased\)\n(.*?)(?:\n## |\Z)', content, re.DOTALL)
+section = match.group(1)
+
+# Collect all PR numbers referenced
+changelog_prs = set()
+for m in re.findall(r'\[#(\d+)\]\(https://github\.com/penpot/penpot/pull/\d+\)', section):
+    changelog_prs.add(int(m))
+
+# Collect all milestone PRs (filtered)
+with open('/tmp/milestone-prs.json') as f:
+    milestone_prs = json.load(f)
+
+milestone_merged = {pr['number'] for pr in milestone_prs}
+
+# PRs in milestone but not in changelog
+missing = sorted(milestone_merged - changelog_prs)
+print(f'Milestone merged PRs: {len(milestone_merged)}')
+print(f'Changelog referenced PRs: {len(changelog_prs)}')
+print(f'PRs in milestone but NOT in changelog: {len(missing)}')
+for num in missing:
+    pr = next(p for p in milestone_prs if p['number'] == num)
+    print(f'  #{num} {pr[\"title\"][:80]}')
+"
+```
+
+For each missing PR found, decide whether it should be added to the
+changelog or is legitimately excluded (check its labels).
+
+Also verify that no closed-unmerged PRs remain in the changelog:
+
+```bash
+python3 tools/gh.py prs --milestone "<MILESTONE>" --state all | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+closed = [p for p in data if p['state'] == 'CLOSED']
+if closed:
+    print('WARNING: CLOSED (unmerged) PRs in milestone:')
+    for p in closed:
+        print(f'  #{p[\"number\"]} {p[\"title\"][:80]}')
+"
+```
+
+**Post-edit audit checklist:**
+- ✅ All referenced PRs are merged (no closed-unmerged artifacts)
+- ✅ Every merged milestone PR is either in the changelog or excluded by label
+- ✅ PR and issue counts are internally consistent
+- ✅ No false-positive PR-to-issue associations
+
 ## Version section template
 
 ```markdown
@@ -205,6 +336,7 @@ Read the top of `CHANGES.md` and confirm:
   can find the code changes.
 - **Latest version first.** New sections are inserted at the top of the
   changelog, below the `# CHANGELOG` header.
+- **Issue Type determines section — exclusively.** Use the `issue_type` field from `gh.py` output (Bug → `:bug:`, Feature/Enhancement → `:sparkles:`). **Do not** use labels (`bug`, `enhancement`) or title emoji prefixes (`:bug:`, `:sparkles:`) — they are frequently wrong or contradictory. The `issue_type` is the single source of truth.
 - **User-facing descriptions.** Write from the user's perspective — describe
   what broke and what was fixed, not internal implementation details.
 - **Community attribution.** When the issue or fix PR has the
@@ -213,8 +345,9 @@ Read the top of `CHANGES.md` and confirm:
   issue author) for the attribution.
 - **Only closed issues.** An issue must have `state: "closed"` to appear in
   the changelog. Open unresolved issues are omitted.
-- **Excluded labels.** Issues with `release blocker` or `no changelog` labels
-  must be excluded from the changelog.
+- **Excluded issues.** Issues with `no changelog` label must be excluded.
+  Issues with `issue_type: "Task"` must also be excluded — they are internal
+  chores, not user-facing changes.
 - **Multiple PRs per issue.** If multiple PRs fix the same issue, list them
   comma-separated inline: `(PR: [#A](url), [#B](url))`.
 - **Duplicate removal.** If an entry already exists in a prior version section,
@@ -230,3 +363,17 @@ Read the top of `CHANGES.md` and confirm:
 - **Use `tools/gh.py`.** Prefer the helper script over raw `gh api` calls for
   milestone issue listing and PR detail fetching. It handles GraphQL
   pagination, batching, and label filtering automatically.
+- **Verify PR merge status.** Not all closing PRs are merged — community PRs
+  can be superseded and closed without merging. Always check that every PR
+  referenced in the changelog has `state: MERGED`.
+- **PR-level exclusions apply.** A PR can carry its own exclusion labels
+  (`release blocker`, `no issue required`) independent of its linked issue's
+  labels. Check both.
+- **Cross-reference milestone PRs, not just issues.** The `--compare` flag on
+  the `issues` command only compares issue numbers. Merged PRs not linked to
+  any milestone issue can be missed. Use `python3 tools/gh.py prs --milestone`
+  for a full PR cross-reference.
+- **False-positive PR-to-issue associations.** A PR may claim to close an
+  issue from a different project or context. If the PR title and issue title
+  are clearly unrelated, or the PR predates the issue by years, treat it as a
+  data glitch and skip it.

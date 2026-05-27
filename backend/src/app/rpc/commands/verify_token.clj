@@ -247,13 +247,21 @@
               (:organization-id claims)
               (assoc :org-team-id accepted-team-id)))))
 
-      ;; If we have not logged-in user, and invitation comes with member-id we
-      ;; redirect user to login, if no memeber-id is present and  in the invitation
-      ;; token and registration is enabled, we redirect user the the register page.
-      {:invitation-token token
-       :iss :team-invitation
-       :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
-       :state :pending})))
+      (do
+        ;; If the user is not logged-in and the token is invalid we throw the error
+        ;; Taiga issue #14182
+        (when (nil? invitation)
+          (ex/raise :type :validation
+                    :code :invalid-token
+                    :hint "no invitation associated with the token"))
+
+        ;; If we have not logged-in user, and invitation comes with member-id we
+        ;; redirect user to login, if no member-id is present and  in the invitation
+        ;; token and registration is enabled, we redirect user the the register page.
+        {:invitation-token token
+         :iss :team-invitation
+         :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
+         :state :pending}))))
 
 ;; --- Default
 

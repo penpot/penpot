@@ -24,8 +24,10 @@ export class Task<TParams = any> {
             return;
         }
 
+        // create response object
         const response = {
             type: "task-response",
+            // NOTE: This inner response schema also constructed in main.ts/sendTaskResponse.
             response: {
                 id: this.requestId,
                 success: success,

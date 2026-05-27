@@ -134,6 +134,24 @@ desc: Learn how to create, manage and apply Penpot Design Tokens using W3C DTCG 
 </ul>
 <p>Tokens can be applied to multiple selected elements, but not to groups.</p>
 
+<h3 id="design-tokens-design-tab">Applying tokens from the Design tab</h3>
+<p>Besides applying tokens from the Tokens panel, you can bind tokens from numeric and color fields in the Design sidebar.</p>
+<p>Token selection is available for:</p>
+<ul>
+  <li><strong>Size and position:</strong> width, height, x, y</li>
+  <li><strong>Rotation and border radius</strong></li>
+  <li><strong>Layout spacing:</strong> gaps, paddings, margins, min and max widths and heights</li>
+  <li><strong>Typography:</strong> letter spacing and line height</li>
+  <li><strong>Stroke width</strong></li>
+  <li><strong>Shadows:</strong> x, y, blur, spread</li>
+  <li><strong>Blur</strong> amount</li>
+</ul>
+<p>Click the token control on a field to open a list of applicable tokens from your active sets and themes. Select a token to apply it; a token pill shows the bound token. Use the pill menu to detach the token when you need a custom value again.</p>
+<p class="advice">When a numeric field has a token applied, drag-to-change is disabled for that field. Edit the token or detach it first.</p>
+<figure>
+  <img src="/img/design-tokens/41-design-tab-token-dropdown.webp" alt="Token list on a numeric field in the Design sidebar">
+</figure>
+
 <h3 id="design-tokens-radius">Border radius</h3>
 <p>Border radius tokens allow you to define specific values for border-radius properties, offering flexibility in how you style the corners of elements.</p>
 <figure>
@@ -654,6 +672,7 @@ ExtraBold Italic
 
 <h2 id="design-tokens-import-export">Importing and Exporting Tokens</h2>
 <p>You can export Tokens from Penpot and import them from your computer to a Penpot file. Tokens can be imported from the <strong>Tools</strong> option at the bottom of the <strong>Tokens</strong> tab.</p>
+<p>You can also <a href="/user-guide/design-systems/libraries/#import-tokens-from-library">import tokens from a connected shared library</a> using the Libraries modal. That import uses the library's full token definition (sets and themes included) and replaces the tokens already in your file.</p>
 <p>The <strong>Import</strong> functionality allows you to upload and replace the global token set using a single file or a folder with multiple files in it.</p>
 <p>These features support JSON files formatted according to specific guidelines and preserve the ability to undo changes if needed.</p>
 <figure>

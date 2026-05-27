@@ -1445,6 +1445,7 @@ impl Shape {
                 path_transform.as_ref(),
                 &self.selrect,
                 self.svg_attrs.as_ref(),
+                true,
             ) else {
                 continue;
             };

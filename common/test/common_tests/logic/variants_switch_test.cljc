@@ -17,6 +17,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.types.component :as ctk]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -38,13 +39,13 @@
         copy01 (ths/get-shape file :copy01)
 
         ;; ==== Action
-        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
-        copy01'   (ths/get-shape file' :copy02)]
+        copy01'   (ths/get-shape file' :copy01)]
     (thf/dump-file file :keys [:width])
     ;; The copy had width 5 before the switch
     (t/is (= (:width copy01) 5))
-    ;; The rect has width 15 after the switch
+    ;; The copy has width 15 after the switch
     (t/is (= (:width copy01') 15))))
 
 (t/deftest test-simple-switch
@@ -64,15 +65,15 @@
         rect01 (get-in page [:objects (-> copy01 :shapes first)])
 
         ;; ==== Action
-        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         page'     (thf/current-page file')
-        copy02'   (ths/get-shape file' :copy02)
-        rect02'      (get-in page' [:objects (-> copy02' :shapes first)])]
+        copy01'   (ths/get-shape file' :copy01)
+        rect01'      (get-in page' [:objects (-> copy01' :shapes first)])]
     ;; The rect had width 5 before the switch
     (t/is (= (:width rect01) 5))
     ;; The rect has width 15 after the switch
-    (t/is (= (:width rect02') 15))))
+    (t/is (= (:width rect01') 15))))
 
 ;; ============================================================
 ;; SIMPLE ATTRIBUTE OVERRIDES (identical variants)
@@ -103,9 +104,9 @@
         copy01 (ths/get-shape file :copy01)
 
         ;; ==== Action
-        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
-        copy01'   (ths/get-shape file' :copy02)]
+        copy01'   (ths/get-shape file' :copy01)]
     (thf/dump-file file :keys [:width])
     ;; The copy had width 25 before the switch
     (t/is (= (:width copy01) 25))
@@ -140,16 +141,16 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         page'     (thf/current-page file')
-        copy02'   (ths/get-shape file' :copy02)
-        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+        copy01'   (ths/get-shape file' :copy01)
+        rect01'   (get-in page' [:objects (-> copy01' :shapes first)])]
 
     ;; The rect had width 25 before the switch
     (t/is (= (:width rect01) 25))
     ;; The override is keept: The rect still has width 25 after the switch
-    (t/is (= (:width rect02') 25))))
+    (t/is (= (:width rect01') 25))))
 
 ;; ============================================================
 ;; SIMPLE ATTRIBUTE OVERRIDES (different variants)
@@ -183,17 +184,193 @@
         rect01 (get-in page [:objects (:id rect01)])
 
         ;; ==== Action
-        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
 
         page'     (thf/current-page file')
-        copy02'   (ths/get-shape file' :copy02)
-        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+        copy01'   (ths/get-shape file' :copy01)
+        rect01'   (get-in page' [:objects (-> copy01' :shapes first)])]
 
     ;; The rect had width 25 before the switch
     (t/is (= (:width rect01) 25))
     ;; The override isn't keept, because the property is different in the mains
     ;; The rect has width 15 after the switch
-    (t/is (= (:width rect02') 15))))
+    (t/is (= (:width rect01') 15))))
+
+;; ============================================================
+;; NESTED COPY SWITCH (no overrides)
+;; ============================================================
+
+(t/deftest test-nested-switch-in-main
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 15}})
+
+                      (tho/add-frame :m03)
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :parent-label :m03)
+                      (thc/make-component :c03 :m03))
+
+        copy01 (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+
+        copy01'   (ths/get-shape file' :copy01)]
+
+    (thf/dump-file file :keys [:width])
+
+    ;; The copy had width 5 before the switch
+    (t/is (= (:width copy01) 5))
+    ;; The copy has width 15 after the switch
+    (t/is (= (:width copy01') 15))
+    ;; The copy is not touched but has swap slot
+    (t/is (= (count (:touched copy01')) 1))
+    (t/is (= (ctk/get-swap-slot copy01') (thi/id :copy01)))))
+
+(t/deftest test-nested-switch-in-copy
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 15}})
+
+                      (tho/add-frame :m03)
+                      (thc/instantiate-component :c01
+                                                 :nested01
+                                                 :parent-label :m03)
+                      (thc/make-component :c03 :m03)
+
+                      (thc/instantiate-component :c03
+                                                 :nested02
+                                                 :children-labels [:child01]))
+
+        child01 (ths/get-shape file :child01)
+
+        ;; ==== Action
+        file'     (tho/swap-component-in-shape file :child01 :c02 {:keep-touched? true})
+
+        child01'   (ths/get-shape file' :child01)]
+
+    (thf/dump-file file :keys [:width])
+
+    ;; The copy had width 5 before the switch
+    (t/is (= (:width child01) 5))
+    ;; The copy has width 15 after the switch
+    (t/is (= (:width child01') 15))
+    ;; The copy is not touched but has swap slot
+    (t/is (= (count (:touched child01')) 1))
+    (t/is (= (ctk/get-swap-slot child01') (thi/id :nested01)))))
+
+;; ============================================================
+;; NESTED COPY SWITCH (with overrides)
+;; ============================================================
+
+(t/deftest test-nested-switch-in-main-with-override
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 15}})
+
+                      (tho/add-frame :m03)
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :parent-label :m03)
+                      (thc/make-component :c03 :m03))
+
+        page    (thf/current-page file)
+        fills   (ths/sample-fills-color :fill-color "#fabada")
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(thi/id :copy01)}
+                                            (fn [shape]
+                                              (assoc shape
+                                                     :width 25
+                                                     :fills fills))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+
+        copy01 (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+
+        copy01'   (ths/get-shape file' :copy01)]
+
+    (thf/dump-file file :keys [:width :touched])
+
+    ;; The copy had fill color before the switch
+    (t/is (= (:fills copy01) fills))
+    ;; The copy still has fill color after the switch
+    (t/is (= (:fills copy01') fills))
+    ;; The copy had width 25 before the switch
+    (t/is (= (:width copy01) 25))
+    ;; The copy gets the switched variant width 15, because this is the value changed in the variant
+    (t/is (= (:width copy01') 15))
+    ;; The copy is fills touched and has swap slot
+    (t/is (= (count (:touched copy01')) 2))
+    (t/is (= (ctk/get-swap-slot copy01') (thi/id :copy01)))
+    (t/is (contains? (:touched copy01') :fill-group))))
+
+(t/deftest test-nested-switch-in-copy-with-override
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 15}})
+
+                      (tho/add-frame :m03)
+                      (thc/instantiate-component :c01
+                                                 :nested01
+                                                 :parent-label :m03)
+                      (thc/make-component :c03 :m03)
+
+                      (thc/instantiate-component :c03
+                                                 :copy02
+                                                 :children-labels [:nested02]))
+
+        page      (thf/current-page file)
+        fills     (ths/sample-fills-color :fill-color "#fabada")
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(thi/id :nested02)}
+                                              (fn [shape]
+                                                (assoc shape
+                                                       :width 25
+                                                       :fills fills))
+                                              (:objects page)
+                                              {})
+
+        file      (thf/apply-changes file changes)
+
+        nested02  (ths/get-shape file :nested02)
+
+        ;; ==== Action
+        file'     (tho/swap-component-in-shape file :nested02 :c02 {:keep-touched? true})
+
+        nested02' (ths/get-shape file' :nested02)]
+
+    (thf/dump-file file :keys [:width])
+
+    ;; The copy had fill color before the switch
+    (t/is (= (:fills nested02) fills))
+    ;; The copy still has fill color after the switch
+    (t/is (= (:fills nested02') fills))
+    ;; The copy had width 5 before the switch
+    (t/is (not= (:width nested02) 5))
+    ;; The copy gets the switched variant width 15, because this is the value changed in the variant
+    (t/is (= (:width nested02') 15))
+    ;; The copy is fills touched and has swap slot
+    (t/is (= (count (:touched nested02')) 2))
+    (t/is (= (ctk/get-swap-slot nested02') (thi/id :nested01)))
+    (t/is (contains? (:touched nested02') :fill-group))))
 
 ;; ============================================================
 ;; TEXT OVERRIDES (identical variants)
@@ -2793,3 +2970,68 @@
     ;; its :selrect.y is internally inconsistent and renders incorrectly.
     (t/is (= post-btn-rel-y post-btn-selrect-rel-y)
           ":y and :selrect.y must agree after switch")))
+
+(t/deftest test-switch-does-not-override-path-content-when-only-repositioned
+  ;; Regression: when a path shape inside a variant has :geometry-group touched
+  ;; (e.g. because auto-layout repositioned it after the copy's parent was
+  ;; resized), switching variants must NOT copy the old variant's path position
+  ;; to the new variant. The path should stay at the new variant's default position.
+  ;;
+  ;; Root cause: equal-geometry? did not handle the :content attr for path shapes,
+  ;; so switch-path-change-value was always invoked and placed the new path at the
+  ;; pre-switch absolute position instead of the target master's default position.
+  (let [;; A small closed triangle path whose bounding box is 24x14 px,
+        ;; anchored at absolute position (x0, y0).
+        triangle (fn [x0 y0]
+                   [{:command :move-to :params {:x x0 :y y0}}
+                    {:command :line-to :params {:x (+ x0 24) :y y0}}
+                    {:command :line-to :params {:x (+ x0 12) :y (+ y0 14)}}
+                    {:command :close-path}])
+
+        ;; V1 has the path at y=10; V2 has the same-shape path at y=30.
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                      {:variant1-params {:width 100 :height 100}
+                                       :variant2-params {:width 100 :height 100}})
+                     (ths/add-sample-shape :path1 :type :path
+                                           :parent-label :m01
+                                           :content (triangle 0 10))
+                     (ths/add-sample-shape :path2 :type :path
+                                           :parent-label :m02
+                                           :content (triangle 0 30))
+                     (thc/instantiate-component :c01 :copy01))
+
+        ;; Simulate auto-layout repositioning the path inside the copy by
+        ;; moving it to y=50. This touches :geometry-group on the copy's path.
+        page     (thf/current-page file)
+        copy01   (ths/get-shape file :copy01)
+        copy-path (->> (cfh/get-children-with-self (:objects page) (:id copy01))
+                       (filter #(= :path (:type %)))
+                       first)
+        changes  (cls/generate-update-shapes
+                  (pcb/empty-changes nil (:id page))
+                  #{(:id copy-path)}
+                  #(gsh/absolute-move % (gpt/point (:x %) 50))
+                  (:objects page) {})
+        file     (thf/apply-changes file changes)
+
+        ;; Switch copy01 from V1 (c01) to V2 (c02).
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+
+        page'      (thf/current-page file')
+        copy01'    (ths/get-shape file' :copy01)
+        copy-path' (->> (cfh/get-children-with-self (:objects page') (:id copy01'))
+                        (filter #(= :path (:type %)))
+                        first)
+
+        ;; Expected: V2's path sits at y=30 (its master default), not y=50
+        ;; (the pre-switch repositioned position).
+        m02      (ths/get-shape file :m02)
+        path2    (ths/get-shape file :path2)
+        target-rel-y (- (-> path2 :selrect :y) (-> m02 :selrect :y))
+        actual-rel-y (- (-> copy-path' :selrect :y) (-> copy01' :selrect :y))]
+
+    (t/is (some? copy-path') "path should exist in switched copy")
+    (t/is (= target-rel-y actual-rel-y)
+          (str "path :selrect.y should match target master layout (expected "
+               target-rel-y " got " actual-rel-y ")"))))

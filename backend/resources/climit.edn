@@ -19,7 +19,7 @@
  {:permits 40}
 
  :root/by-profile
- {:permits 10}
+ {:permits 10 :queue 30 :timeout 30000}
 
  :file-thumbnail-ops/global
  {:permits 20}
@@ -27,4 +27,16 @@
  {:permits 2}
 
  :submit-audit-events/by-profile
- {:permits 1 :queue 3}}
+ {:permits 1 :queue 3}
+
+ :restore-file-snapshot/global
+ {:permits 3}
+
+ :restore-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ :create-file-snapshot/global
+ {:permits 3}
+
+ :create-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}}

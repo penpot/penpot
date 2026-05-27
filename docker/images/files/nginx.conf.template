@@ -73,7 +73,7 @@ http {
 
     server {
         listen 8080 default_server;
-        listen [::]:8080 default_server;
+        ${PENPOT_IPV6_LISTEN_DIRECTIVE}
         server_name _;
 
         client_max_body_size $PENPOT_HTTP_SERVER_MAX_BODY_SIZE;
@@ -167,7 +167,7 @@ http {
             proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
         }
 
-        location /control-center {
+        location /admin-console {
             proxy_http_version 1.1;
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $http_cf_connecting_ip;
