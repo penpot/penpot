@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -3910,6 +3910,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Bibliotecas partilhadas - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Liberdade de Design para Equipas"
 
@@ -6132,6 +6133,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Máscaras"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Pesquisar camadas"
 
