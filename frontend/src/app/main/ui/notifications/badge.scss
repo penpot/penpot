@@ -19,7 +19,7 @@
   grid-template-columns: 1fr;
   min-height: deprecated.$s-32;
   height: fit-content;
-  min-width: var(--badge-notification-min-width, #{deprecated.$s-80});
+  min-width: deprecated.$s-80;
   width: fit-content;
   padding-block: 0;
   padding-inline: var(--sp-xs);

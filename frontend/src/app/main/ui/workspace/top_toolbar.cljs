@@ -13,16 +13,16 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -94,13 +94,33 @@
         rulers?       (mf/deref refs/rulers?)
         hide-toolbar? (mf/deref toolbar-hidden-ref)
 
-        ;; The MCP badge mirrors the "connected" indicator shown in the
-        ;; main menu: the MCP server is enabled and its plugin is
-        ;; connected in this browser tab.
-        mcp           (mf/deref refs/mcp)
-        mcp-active?   (and (contains? cf/flags :mcp)
-                           (true? (:mcp-enabled props))
-                           (= "connected" (:connection-status mcp)))
+        ;; The MCP control is available whenever the MCP server is
+        ;; enabled for the profile. Its status dot mirrors the
+        ;; "connected" indicator shown in the main menu: primary when
+        ;; the plugin is connected in this browser tab, gray otherwise.
+        mcp            (mf/deref refs/mcp)
+        mcp-enabled?   (and (contains? cf/flags :mcp)
+                            (true? (:mcp-enabled props)))
+        mcp-connected? (= "connected" (:connection-status mcp))
+
+        mcp-menu-open* (mf/use-state false)
+        mcp-menu-open? (deref mcp-menu-open*)
+
+        toggle-mcp-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! mcp-menu-open* not)))
+
+        close-mcp-menu
+        (mf/use-fn #(reset! mcp-menu-open* false))
+
+        switch-mcp
+        (mf/use-fn
+         (fn []
+           (st/emit! (mcp/connect-mcp)
+                     (ev/event {::ev/name "connect-mcp-plugin"
+                                ::ev/origin "workspace:toolbar"}))))
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt (dw/clear-edition-mode)))
@@ -234,13 +254,36 @@
               :on-click toggle-debug-panel}
              deprecated-icon/bug]])
 
-         (when mcp-active?
-           [:li {:class (stl/css :mcp-badge)}
-            [:> tooltip* {:content (tr "workspace.toolbar.mcp-connected")
-                          :placement "bottom"}
-             [:& badge-notification {:content (tr "workspace.toolbar.mcp")
-                                     :size :small
-                                     :is-focus true}]]])]]
+         (when mcp-enabled?
+           [:li
+            [:button
+             {:title (tr "workspace.toolbar.mcp")
+              :aria-label (tr "workspace.toolbar.mcp")
+              :class (stl/css-case :main-toolbar-options-button true
+                                   :mcp-button true
+                                   :selected mcp-menu-open?)
+              :on-click toggle-mcp-menu
+              :data-tool "mcp"
+              :data-testid "mcp-btn"}
+             [:span {:class (stl/css-case :mcp-status-dot true
+                                          :connected mcp-connected?)}]
+             [:span {:class (stl/css-case :mcp-button-label true
+                                          :connected mcp-connected?)}
+              (tr "workspace.toolbar.mcp")]]
+            [:> dropdown-menu* {:show mcp-menu-open?
+                                :on-close close-mcp-menu
+                                :class (stl/css :mcp-menu)}
+             (if mcp-connected?
+               [:li {:class (stl/css :mcp-menu-info)
+                     :role "presentation"}
+                (tr "workspace.toolbar.mcp-connected")]
+               [:*
+                [:li {:class (stl/css :mcp-menu-info)
+                      :role "presentation"}
+                 (tr "notifications.mcp.active-in-another-tab")]
+                [:> dropdown-menu-item* {:class (stl/css :mcp-menu-item)
+                                         :on-click switch-mcp}
+                 (tr "workspace.toolbar.mcp-switch-here")]])]])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

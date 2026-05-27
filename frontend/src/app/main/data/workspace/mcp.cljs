@@ -10,13 +10,10 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
-   [app.main.data.event :as ev]
-   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.register :as preg]
-   [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -72,45 +69,6 @@
     (rx/dispose! @interval-sub)
     (reset! interval-sub nil)))
 
-(declare manage-mcp-notification)
-
-(defn handle-pong
-  [{:keys [id data]}]
-  (ptk/reify ::handle-pong
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [mcp-state (get state :mcp)]
-        (cond
-          (= "connected" (:connection-status data))
-          (update state :mcp assoc :connected-tab id)
-
-          (and (= "disconnected" (:connection-status data))
-               (= id (:connected-tab mcp-state)))
-          (update state :mcp dissoc :connected-tab)
-
-          :else
-          state)))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (manage-mcp-notification)))))
-
-;; This event will arrive when a new workspace is open in another tab
-(defn handle-ping
-  []
-  (ptk/reify ::handle-ping
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [conn-status (get-in state [:mcp :connection-status])]
-        (rx/of (mbc/event :mcp/pong {:connection-status conn-status}))))))
-
-(defn notify-other-tabs-disconnect
-  []
-  (ptk/reify ::notify-other-tabs-disconnect
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (mbc/event :mcp/pong {:connection-status "disconnected"})))))
-
 ;; This event will arrive when the mcp is enabled in the dashboard
 (defn update-mcp-status
   [value]
@@ -121,12 +79,10 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       (rx/of (manage-mcp-notification))
-       (case value
-         true  (rx/of (ptk/data-event ::connect))
-         false (rx/of (ptk/data-event ::disconnect))
-         nil)))))
+      (case value
+        true  (rx/of (ptk/data-event ::connect))
+        false (rx/of (ptk/data-event ::disconnect))
+        nil))))
 
 (defn update-mcp-connection-status
   [value]
@@ -137,16 +93,17 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (manage-mcp-notification)
-             (mbc/event :mcp/pong {:connection-status value})))))
+      ;; Only one MCP plugin instance may be active across browser tabs.
+      ;; When this tab becomes connected, tell every other tab to
+      ;; disconnect (which also stops their reconnect watcher). Otherwise
+      ;; several tabs stay connected at once and the MCP server reports
+      ;; "multiple instances connected" and the agent fails.
+      (when (= "connected" value)
+        (rx/of (mbc/event :mcp/force-disconect {}))))))
 
 (defn connect-mcp
   []
   (ptk/reify ::connect-mcp
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :mcp assoc :connected-tab (:session-id state)))
-
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (mbc/event :mcp/force-disconect {})
@@ -165,33 +122,6 @@
     ptk/EffectEvent
     (effect [_ _ _]
       (stop-reconnect-watcher!))))
-
-(defn- manage-mcp-notification
-  []
-  (ptk/reify ::manage-mcp-notification
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [mcp-state          (get state :mcp)
-
-            mcp-enabled?       (-> state :profile :props :mcp-enabled)
-
-            current-tab-id     (get state :session-id)
-            connected-tab-id   (get mcp-state :connected-tab)]
-
-        (if mcp-enabled?
-          (if (= connected-tab-id current-tab-id)
-            (rx/of (ntf/hide))
-            (rx/of (ntf/dialog
-                    {:content (tr "notifications.mcp.active-in-another-tab")
-                     :cancel {:label (tr "labels.dismiss")
-                              :callback #(st/emit! (ntf/hide)
-                                                   (ev/event {::ev/name "dismiss-mcp-tab-switch"
-                                                              ::ev/origin "workspace-notification"}))}
-                     :accept {:label (tr "labels.switch")
-                              :callback #(st/emit! (connect-mcp)
-                                                   (ev/event {::ev/name "confirm-mcp-tab-switch"
-                                                              ::ev/origin "workspace-notification"}))}})))
-          (rx/of (ntf/hide)))))))
 
 (defn init-mcp
   [stream]
@@ -240,7 +170,7 @@
   (ptk/reify ::init
     ptk/UpdateEvent
     (update [_ state]
-      (update state :mcp assoc :connected-tab (:session-id state) :active true))
+      (update state :mcp assoc :active true))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -254,20 +184,6 @@
               (if enabled?
                 (rx/merge
                  (init-mcp stream)
-
-                 (rx/of (mbc/event :mcp/ping {}))
-
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/ping))
-                      (rx/filter (fn [{:keys [id]}]
-                                   (not= session-id id)))
-                      (rx/map handle-ping))
-
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/pong))
-                      (rx/filter (fn [{:keys [id]}]
-                                   (not= session-id id)))
-                      (rx/map handle-pong))
 
                  (->> mbc/stream
                       (rx/filter (mbc/type? :mcp/force-disconect))
