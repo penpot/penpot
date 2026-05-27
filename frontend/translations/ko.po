@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-30 05:01+0000\n"
-"Last-Translator: Dogyeong <d00gann918@naver.com>\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"Last-Translator: deveronica <deveronica42@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
 "Language: ko\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158,
 #: src/app/main/ui/viewer/login.cljs:100
@@ -168,6 +168,7 @@ msgid "auth.register-title"
 msgstr "계정 생성"
 
 #: src/app/main/ui/auth.cljs
+#, fuzzy
 msgid "auth.sidebar-tagline"
 msgstr "디자인 및 프로토타이핑을 위한 오픈소스 솔루션."
 
@@ -1093,6 +1094,7 @@ msgstr ""
 "가하세요."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "새 조직 생성"
 
@@ -1900,6 +1902,7 @@ msgstr "token 목록 열기"
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43,
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99,
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "이 token은 활성 세트에 없거나 유효하지 않은 값을 가지고 있습니다."
 
@@ -3792,6 +3795,7 @@ msgstr ""
 "시스템 점검 안내: 5분 이내에 짧은 점검을 위해 서비스가 중단될 예정입니다."
 
 #: src/app/main/data/common.cljs:82
+#, fuzzy
 msgid "notifications.by-code.upgrade-version"
 msgstr "새 버전이 출시되었습니다. 페이지를 새로고침해주세요"
 
@@ -5220,6 +5224,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "공유 라이브러리 - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - 팀을 위한 자유로운 디자인"
 
@@ -7895,6 +7900,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "마스크"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "레이어 검색"
 
@@ -8440,6 +8446,7 @@ msgstr "이름"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268,
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+#, fuzzy
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "해당 경로에 이미 token이 있습니다: %s"
 
@@ -8478,11 +8485,12 @@ msgid "workspace.tokens.tools"
 msgstr "도구"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:46
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr ""
-"가져오기가 성공적으로 완료되었습니다. 일부 token이 포함되지 않았습니다."
+msgstr "가져오기가 성공적으로 완료되었습니다. 일부 token이 포함되지 않았습니다."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:48
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "유형 '%s'가 지원되지 않습니다 (%s)\n"
 
