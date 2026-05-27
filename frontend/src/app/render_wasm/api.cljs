@@ -15,6 +15,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
@@ -311,7 +312,7 @@
         zoom       (:zoom local)
         vbox       (:vbox local)
         canvas     wasm/canvas
-        background (get page :background)]
+        background (get page :background clr/canvas)]
     {:canvas canvas
      :base-objects (cpf/focus-objects objects focus)
      :zoom zoom
