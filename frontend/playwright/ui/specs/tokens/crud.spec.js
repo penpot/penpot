@@ -2076,3 +2076,27 @@ test.describe("Tokens tab - delete", () => {
     await expect(colorToken).not.toBeVisible();
   });
 });
+
+test("BUG: 1425 Token is not highlighted in red when value references a token in a disabled set", async ({
+  page,
+}) => {
+  const { tokensSidebar, tokenContextMenuForToken, tokenThemesSetsSidebar } =
+    await setupTokensFileRender(page);
+
+  await expect(tokensSidebar).toBeVisible();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await createToken(page, "Border radius", "base-radius", "Value", "20");
+  await createToken(page, "Border radius", "ref-base", "Value", "{base-radius}");
+  
+  const refTokenPill = tokensSidebar.getByRole("button", {
+    name: "ref-base",
+  });
+
+  await expect(refTokenPill).toBeVisible();
+
+  const CoreSetCheckbox = tokenThemesSetsSidebar.getByRole('button', { name: 'core' }).getByRole('checkbox'); 
+  await CoreSetCheckbox.click();
+  const brokenTokenPill = tokensSidebar.getByRole('button', { name: 'Missing reference ref-base' });
+  await expect(brokenTokenPill).toBeVisible();
+});

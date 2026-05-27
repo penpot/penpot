@@ -603,7 +603,7 @@
                               (merge (meta it))))))))))
 
 (defn bulk-update-tokens
-  [set-id token-ids type old-path new-path]
+  [set-id token-ids type old-path new-path & {:keys [undo-group]}]
   (dm/assert! (uuid? set-id))
   (dm/assert! (every? uuid? token-ids))
   (ptk/reify ::bulk-update-tokens
@@ -624,7 +624,9 @@
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
 
-                            token-ids)]
+                            token-ids)
+
+            changes (cond-> changes (some? undo-group) (assoc :undo-group undo-group))]
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
         (rx/of (dch/commit-changes changes)
@@ -681,7 +683,11 @@
                                            token-id)]
             (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
                   unames (map :name tokens)     ;; TODO: add function duplicate-token in tokens-lib
-                  suffix (tr "workspace.tokens.duplicate-suffix")
+                  ;; "copy" is intentionally not translated here. Token names are validated
+                  ;; against a restricted set of allowed characters (currently English-compatible),
+                  ;; so translating this suffix could introduce invalid characters and break
+                  ;; token name validation.
+                  suffix "copy"
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)
                   new-token (-> token
                                 (ctob/reid (uuid/next))

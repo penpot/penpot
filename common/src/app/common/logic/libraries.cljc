@@ -2098,6 +2098,8 @@
    For :selrect we compare width/height only;
    for :points we normalise each vector so the first point is the
    origin before comparing.
+   For :content on path shapes we compare the bounding-box width/height
+   of the path segments, again ignoring absolute position.
 
    Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
    exact `=` because `previous-shape` here may carry sub-pixel drift from
@@ -2118,8 +2120,17 @@
                  a (normalize-pts (get shape :points))
                  b (normalize-pts (get origin-shape :points))]
              (and (= (count a) (count b))
-                  (every? identity (map gpt/close? a b)))))))
-
+                  (every? identity (map gpt/close? a b)))))
+      (and (= attr :content)
+           (cfh/path-shape? shape)
+           (let [ca (:content shape)
+                 cb (:content origin-shape)]
+             (and (some? ca) (some? cb)
+                  (let [selrect-a (segment/content->selrect ca)
+                        selrect-b (segment/content->selrect cb)]
+                    (and (some? selrect-a) (some? selrect-b)
+                         (mth/close? (:width selrect-a) (:width selrect-b))
+                         (mth/close? (:height selrect-a) (:height selrect-b)))))))))
 
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch

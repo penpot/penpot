@@ -474,7 +474,7 @@
          (mf/deps subscription-editors nitrate-license)
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
-                                ::ev/origin "settings:in-app"}))
+                                ::ev/origin "settings"}))
            (if (= subscription-type "nitrate")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
              (st/emit!
@@ -537,7 +537,7 @@
 
           (st/emit!
            (ev/event {::ev/name "open-subscription-modal"
-                      ::ev/origin "settings:from-pricing-page"})
+                      ::ev/origin "settings"})
            (modal/show :management-dialog
                        {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
                                              "unlimited"

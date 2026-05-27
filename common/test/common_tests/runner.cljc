@@ -20,6 +20,7 @@
    [common-tests.files-changes-test]
    [common-tests.files-migrations-test]
    [common-tests.files.shapes-builder-test]
+   [common-tests.files.validate-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-map-test]
    [common-tests.geom-flex-layout-test]
@@ -56,6 +57,7 @@
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
    [common-tests.logic.token-test]
+   [common-tests.logic.variants-switch-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
    [common-tests.record-test]
@@ -91,6 +93,7 @@
    'common-tests.files-changes-test
    'common-tests.files-builder-test
    'common-tests.files-migrations-test
+   'common-tests.files.validate-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-map-test
    'common-tests.geom-flex-layout-test
@@ -127,6 +130,7 @@
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
    'common-tests.logic.token-test
+   'common-tests.logic.variants-switch-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.record-test

@@ -4751,6 +4751,14 @@ msgstr "Cancel"
 msgid "shortcuts.export-shapes"
 msgstr "Export shapes"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.find"
+msgstr "Find"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.find-and-replace"
+msgstr "Find and replace"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
 msgid "shortcuts.fit-all"
 msgstr "Zoom to fit all"
@@ -4954,6 +4962,10 @@ msgstr " or "
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
 msgid "shortcuts.paste"
 msgstr "Paste"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.paste-replace"
+msgstr "Paste and replace"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
 #, unused
@@ -8296,7 +8308,10 @@ msgstr "Masks"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
 msgid "workspace.sidebar.layers.search"
-msgstr "Search layers"
+msgstr "Find…"
+
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Find and replace"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
@@ -8328,11 +8343,11 @@ msgstr "No matches"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs
 msgid "workspace.sidebar.layers.search-scope-layers"
-msgstr "Search layers"
+msgstr "Layer names"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs
 msgid "workspace.sidebar.layers.search-scope-canvas"
-msgstr "Search on canvas"
+msgstr "Text content"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
