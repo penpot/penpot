@@ -8079,7 +8079,7 @@ msgstr "Show main component"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.clear-guides"
-msgstr "Clear artboard guides"
+msgstr "Clear board guides"
 
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Remove thumbnail"
