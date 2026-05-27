@@ -48,9 +48,9 @@ manage.sh script:
 ./manage.sh build-devenv-local # builds the local devenv docker image
 ./manage.sh start-devenv       # brings up the shared infra + ws0 in background
 ./manage.sh run-devenv         # ws0 with non-agentic tmux, attached (legacy alias)
-./manage.sh run-devenv-agentic # ws0 (default) with MCP + Serena enabled; see below
+./manage.sh run-devenv-agentic # one agentic instance; --ws to target ws1+; see below
 ./manage.sh attach-devenv      # re-attaches to the tmux session of a running instance
-./manage.sh stop-devenv        # stops infra and all running parallel instances
+./manage.sh stop-devenv        # stops one instance (or --all); infra stops with the last
 ./manage.sh drop-devenv        # removes containers (data volumes preserved)
 ```
 
@@ -58,18 +58,40 @@ manage.sh script:
 
 The devenv runs as separate compose projects: shared infra (`penpotdev-infra`:
 Postgres, MinIO, mailer, LDAP) plus one `penpotdev-wsN` project per runtime
-instance. `ws0` binds the live repo; `ws1..wsN-1` are disposable clones under
-`~/.penpot/penpot_workspaces/` seeded from the current working tree on each
-startup.
+instance. `ws0` (a.k.a. `main`) binds the live repo; `ws1+` bind clones the
+developer maintains explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
+(default `~/.penpot/penpot_workspaces/`).
+
+Each call to `run-devenv-agentic` brings up one instance, and ws0 is always
+running whenever any ws1+ is — `--ws N` (N≥1) auto-starts ws0 first if it
+isn't already up:
 
 ```bash
-./manage.sh run-devenv-agentic --n-instances 3
+./manage.sh run-devenv-agentic           # main (ws0)
+./manage.sh run-devenv-agentic --ws 1    # ws0 if needed, then ws1
+./manage.sh run-devenv-agentic --ws 2 --sync   # ws2, re-seeding from the live repo
 ```
 
-is a desired-state reconciler: it brings the running set to exactly
-`{ws0, ws1, ws2}`. Missing instances are created; surplus instances
-(highest-numbered first) are stopped; instances already at their target index
-are left alone. Stopping never removes data volumes or workspace directories.
+Starting an instance that is already running is an error. `--sync` is only
+valid for `ws1+`; on ws0 it errors out. When a `ws1+` workspace directory
+does not exist yet, the first start syncs it implicitly from the live repo.
+Otherwise the workspace contents are left untouched unless `--sync` is passed
+again. Live-repo Git in a fragile state (rebase / merge / cherry-pick /
+`index.lock`) blocks all syncs.
+
+`frontend/resources/public/js/config.js` (which is gitignored and configures
+the frontend's MCP flag) is copied into each workspace on its initial sync
+only. After that the developer maintains it in each workspace; subsequent
+`--sync` runs leave the workspace copy alone.
+
+Stopping mirrors the start invariant — ws0 is the last to stop, and shared
+infra stops with it:
+
+```bash
+./manage.sh stop-devenv --ws 1           # stops ws1; ws0 + infra stay up
+./manage.sh stop-devenv                  # stops ws0 + infra; errors if ws1+ still running
+./manage.sh stop-devenv --all            # stops every ws1+ first, then ws0 + infra
+```
 
 Host ports are offset by `10000 × N`:
 
@@ -80,18 +102,28 @@ Host ports are offset by `10000 × N`:
 | Serena MCP | `http://localhost:14281` | `http://localhost:24281` | `http://localhost:34281` |
 
 Container-internal ports stay fixed. Target a specific instance with
-`--instance ws1` on `attach-devenv` / `run-devenv-shell`. `run-devenv-agentic`
-accepts `--no-mcp`, `--no-serena`, and `--serena-context CTX`.
+`--ws 1` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`, and
+`start-coding-agent` (`--instance ws1` on `run-devenv-shell` /
+`run-devenv`). The `--ws` flag accepts a **non-negative integer only** —
+`--ws main` or `--ws ws1` is rejected, keeping the flag shape uniform across
+commands. `run-devenv-agentic` also accepts `--serena-context CTX`.
 
 ### Shared state and workers
 
 All instances share one Penpot database and one MinIO bucket; users, teams,
 files, and MCP tokens are visible from every instance. Per-instance Valkey
-keeps WebSocket Pub/Sub channels isolated. Background workers
-(`enable-backend-worker`) run only on ws0 — ws1+ overlays disable it so async
-task notifications stay bound to a single Pub/Sub. Trade-off: async tasks
-triggered from a ws1+ tab execute (on ws0) but their completion notifications
-never reach the originating tab.
+keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
+file-summary cache, rate-limit counters) isolated.
+
+Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
+disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
+`task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
+runs them against the shared DB and MinIO. The "ws0 always up when ws1+ is
+up" invariant exists for this reason: it keeps a single worker-bearer and
+avoids the multi-instance cron-dedup race (the lock on `scheduled_task` is
+released when the task body finishes, so two cron timers firing the same
+scheduled instant with a gap larger than the body's runtime can both
+execute it).
 
 ### Upgrading from a pre-parallel devenv
 
@@ -128,7 +160,7 @@ docker rm   penpotdev-postgres-1 penpotdev-minio-1 penpotdev-minio-setup-1 \
 docker network rm penpotdev_default 2>/dev/null
 
 # Bring up infra + ws0 under the new project layout.
-./manage.sh run-devenv-agentic --n-instances 1
+./manage.sh run-devenv-agentic
 ```
 
 After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` /

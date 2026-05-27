@@ -96,4 +96,7 @@
 /.claude
 /.playwright-mcp
 /docker/devenv/instances/
+/.devenv/mcp/
+/opencode.json
+/.codex/
 /tools/__pycache__

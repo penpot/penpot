@@ -19,7 +19,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 This is a monorepo. Principles that apply to one module do *not* generally apply to others. Do not make assumptions.
 
 - `frontend/`: ClojureScript + SCSS SPA/design editor. 
-- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers. 
+- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers. Runtime services and the task-queue vs Pub/Sub topology that constrains horizontal scaling: `mem:prod-infra/core`.
 - `common/`: shared CLJC data types, geometry, schemas, file/change logic, and utilities. 
 - `render-wasm/`: Rust -> WebAssembly Skia renderer consumed by frontend. 
 - `exporter/`: ClojureScript/Node headless Playwright SVG/PDF export. 

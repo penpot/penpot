@@ -2,7 +2,8 @@
 
 Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; mail; audit/logging; workers.
 
-Focused routing: RPC/DB/workers -> `mem:backend/rpc-db-worker-subtleties`; HTTP/session/storage/media/file-data -> `mem:backend/http-storage-filedata-subtleties`; auth/permissions/product domains -> `mem:backend/auth-permissions-product-domains`.
+Focused routing: RPC/DB/workers -> `mem:backend/rpc-db-worker-subtleties`; HTTP/session/storage/media/file-data -> `mem:backend/http-storage-filedata-subtleties`; auth/permissions/product domains -> `mem:backend/auth-permissions-product-domains`; 
+the external services the backend depends on and the task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
 
 ## Stable namespace map
 
