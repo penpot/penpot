@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-17 10:09+0000\n"
-"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -170,7 +170,7 @@ msgid "auth.register-title"
 msgstr "Crea un account"
 
 #: src/app/main/ui/auth.cljs
-#, unused
+#, fuzzy, unused
 msgid "auth.sidebar-tagline"
 msgstr "La soluzione open source per il design e la prototipazione."
 
