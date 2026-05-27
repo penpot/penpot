@@ -6069,7 +6069,6 @@ msgstr "Activar renderizado WebGL (beta)"
 msgid "workspace.header.menu.disable-webgl"
 msgstr "Desactivar renderizado WebGL (beta)"
 
-
 #: src/app/main/ui/workspace/main_menu.cljs:492
 msgid "workspace.header.menu.undo"
 msgstr "Deshacer"
@@ -6126,10 +6125,6 @@ msgstr "Pantalla completa"
 #: src/app/main/ui/workspace/right_header.cljs:104
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:274, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:276, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:868
-msgid "workspace.layout_grid.editor.options.edit-grid"
-msgstr "Editar rejilla"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1539
 msgid "workspace.layout-grid.editor.options.exit"
@@ -8559,10 +8554,6 @@ msgstr "¿Actualizar todas las referencias de `%s` a `%s`?"
 msgid "workspace.tokens.remap-node-references-title"
 msgstr "¿Renombrar `%s` to `%s` y remapear todos los tokens de este grupo?"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
-msgstr "Esta acción actualizará todas las capas y referencias que usen el token antiguo"
-
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
 msgstr "Este proceso puede durar un poco"
@@ -9197,7 +9188,6 @@ msgstr "¿Necesitas un código? Contáctanos:"
 msgid "nitrate.code-activation.placeholder"
 msgstr "Pega aquí tu código de activación"
 
-
 msgid "nitrate.activation-success.title"
 msgstr "¡Ya eres Business Nitrate!"
 
@@ -9344,4 +9334,3 @@ msgstr "No tienes permiso para mover equipos que son parte de la organización %
 
 msgid "dashboard.invitations.no-permission"
 msgstr "No tienes permiso para invitar a personas a unirse a este equipo, ni para editar o eliminar invitaciones."
-

@@ -252,69 +252,6 @@ msgstr "Bido njem"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Aba ngagharị"
 
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Mepụta ọdịmara ọhụrụ"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Mmepụtara ọdịmara nnweta gara nke ọma ."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Pịa mpi \"Nweta ọdịmara ọhụrụ \" inweta otu ."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "Mkpụrụ ụbọchị narị na iri asatọ"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "Mkpụrụ ụbọchị iri atọ"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "Mkpụrụ ụbọchị iri isii"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "Mkpụrụ ụbọchị iri itoolu"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Ncha ncha"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Mebiri na%s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Na-emebi na%s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Enweghị ụbọchị mmebi"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Ọdịmara nkeonwe"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Ọdịmara nnweta nke onwe na-arụ ọrụ dị ka mgbamonwe mbanye anyị /akara "
-"mpịbanye e nwere ike iji usoro mbinye aka kwe ka ngwa nweta ndịnime ite "
-"mkpịsị API"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Ọdịmara ga-emebi na%s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Ọdịmara enweghị ụbọchị mmebi"
-
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "Tinye dị ka ọ a nkwekọrịta"
@@ -1634,22 +1571,6 @@ msgstr "nnukwu nkpatụ"
 msgid "modals.change-email.submit"
 msgstr "Gbanwee ozi nl"
 
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Ụbọchị mmebi"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Aha"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Create token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Mepụta ọdịmara nweta"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Mebe nko - ududo"
@@ -1665,14 +1586,6 @@ msgstr "Isi ozi URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://ọmụmaaụ.com/ozi anabara"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Hichapụ ọdịmara"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Hichapụ ọdịmara"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"

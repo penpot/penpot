@@ -326,77 +326,6 @@ msgstr "Začít prohlídku"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Průvodce rozhraním"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Zkopírovaný token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Generovat nový token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Přístupový token byl úspěšně vytvořen."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Pro vygenerování nového tokenu stiskněte tlačítko \"Generovat nový token\"."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Zatím nemáte žádné tokeny."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 dní"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 dní"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 dní"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 dní"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Nikdy"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Platnost vypršela %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Platnost vyprší %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Žádné datum vypršení platnosti"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Osobní přístupové tokeny"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Osobní přístupové tokeny fungují jako alternativa k našemu systému "
-"ověřování přihlašovacích údajů/hesel a lze je použít k tomu, aby aplikaci "
-"umožnily přístup k internímu rozhraní Penpot API"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Platnost tokenu vyprší %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Token nemá žádné datum vypršení platnosti"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Přidat soubor"
@@ -2367,30 +2296,6 @@ msgstr "Změnit e-mail"
 msgid "modals.change-email.title"
 msgstr "Změňte svůj e-mail"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Kopírovat token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Datum vypršení platnosti"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Jméno"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "Název může pomoci zjistit, k čemu token slouží"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Vytvořit token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Vygenerujte přístupový token"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Vytvořit webhook"
@@ -2406,18 +2311,6 @@ msgstr "Adresa URL datové části"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Smazat token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "Opravdu chcete tento token smazat?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Smazat token"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -3958,10 +3851,6 @@ msgstr "Sdílené knihovny - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot – Svoboda designu pro týmy"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profil – Přístupové tokeny"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"

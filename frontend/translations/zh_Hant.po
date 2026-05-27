@@ -309,74 +309,6 @@ msgstr "開始遊覽"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "遊覽用戶界面"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "已複製 Token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "產生新的 Token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "已成功建立 Access Token。"
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "按下\"產生新 Token\" 按鈕來產生一個。"
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "你目前還沒有 Tokens。"
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 天"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 天"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 天"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 天"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "從不"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "已於 %s 過期"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "將於 %s 過期"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "沒有到期時間"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "個人存取權杖"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr "個人存取權杖就像是帳號密碼驗證系統的替代方案，且可用於讓第三方應用程式存取 Penpot 內部 API"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "權杖將於 %s 到期"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "權杖沒有到期時間"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "加入檔案"
@@ -2285,30 +2217,6 @@ msgstr "更改電子郵件"
 msgid "modals.change-email.title"
 msgstr "更改你的電郵"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "複製權杖(token)"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "截止日期"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "名稱"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "該名稱可以幫助了解權杖(token)的用途"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "建立權杖(token)"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "產生存取權杖(token)"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "設置Webhook"
@@ -2324,18 +2232,6 @@ msgstr "訊息負載網址"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "刪除權杖(token)"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "您確定要刪除此權杖(token)嗎？"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "刪除權杖(token)"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -3789,10 +3685,6 @@ msgstr "共享圖庫 - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot - 給團隊設計的自由"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "個人資料 - 存取權杖(token)"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"

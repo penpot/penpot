@@ -264,73 +264,6 @@ msgstr "bẹ̀rẹ̀ ìrìn kiri"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "wò ó bí o ṣe ń rìn kiri"
 
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "ṣe ìpilẹ̀sẹ̀ àmì tókìnnì"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "ṣe àyẹ̀wò àmì tókìnnì tí o ṣẹ̀dá bó ṣeyẹ."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "tẹ bọ́tìnnì \" ṣe ìpilẹ̀sẹ̀ àmì tókìnnì tuntun\"  láti ṣe ìpilẹ̀sẹ̀ òmíràn."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "o kò tí ì ní àmì tókínnì títí di ìsinsìn yìí."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "ọgọ́saǹ-ań ọjọ́"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "ọgbọ̀n ọjọ́"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "ọgọ́ta ọjọ́"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "àádọ́ruǹ-ún ọjọ́"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "rárá"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "ó parí ní %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "ó parí %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "kò sì ọjọ́ ìparí"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "àmì tokìnnì ìwọlé ti ara ẹni"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Iṣẹ́ àmì tókìnì ìwọlé ti ara ẹni dàbì ọ̀nà kejí tí a le gbà wọlé/ ọ̀rọ̀- "
-"agbaniwọle  a lè lo ìfàsẹ sí ètò láti gbaye fún ohun èlò à tì wọlé  "
-"pẹ́ńpọtì ti abẹ́nú  api"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "àmì tòkìn yóò parí ní %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "kò sí ọjọ́ ìparí fún àmì tókìn"
-
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "ṣe àpàpọ̀ bí i yàrá ìkàwe tí a pín"
@@ -1805,30 +1738,6 @@ msgstr "Pàrọ̀ ímeèlìl"
 msgid "modals.change-email.title"
 msgstr "Pàrọ̀ ímeèlì rẹ"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Ṣẹ̀dà tókìn"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Ọjọ́ ìparí"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Orúkọ"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "Orúkọ yí ó ràn wá lọ́wọ́ láti mọ ohun tí tókìn wà fún"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Ṣẹ̀dà tókìn"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Pilẹ̀ṣẹ̀ wí wọlé tókìń"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Ṣẹ̀dá ìkọ́- wẹ́bù"
@@ -1844,18 +1753,6 @@ msgstr "Péloòdù URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://àpẹrẹ.com/postreceive ìgbà àtẹ̀yinwá"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Pa tókìn rẹ́"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "Ṣé ó dá ọ lójú pé o fẹ́ pa tókìn yi rẹ́?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Pa tókìn rẹ́"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -2942,10 +2839,6 @@ msgstr "Wà - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot – Se onìrú òmínìra fun awọ̀n ẹ̀gbẹ̀"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profaili – Aami wiwọle"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"

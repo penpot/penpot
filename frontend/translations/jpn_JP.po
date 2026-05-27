@@ -242,10 +242,6 @@ msgstr "チームを管理"
 msgid "dasboard.tutorial-hero.start"
 msgstr "チュートリアルを始める"
 
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180日"
-
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "共有ライブラリとして追加"

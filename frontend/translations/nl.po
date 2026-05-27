@@ -344,77 +344,6 @@ msgstr "Je gaat %1 herstellen."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Bestand herstellen"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Toegangsbewijs gekopieerd"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Nieuw toegangsbewijs aanmaken"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Toegangsbewijs is succesvol aangemaakt."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Je hebt nog geen toegangsbewijzen."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 dagen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 dagen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 dagen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 dagen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Nooit"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Verlopen op %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Verloopt op %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Geen verloopdatum"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Persoonlijke toegangsbewijzen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Persoonlijke toegangsbewijzen functioneren als alternatief voor ons "
-"login/wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een "
-"applicatie toegang te geven tot de interne Penpot API"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Het toegangsbewijs verloopt op %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Het toegangsbewijs heeft geen verloopdatum"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Bestand toevoegen"
@@ -3160,30 +3089,6 @@ msgstr "E-mailadres wijzigen"
 msgid "modals.change-email.title"
 msgstr "Je e-mailadres wijzigen"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Toegangsbewijs kopiëren"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Vervaldatum"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Naam"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "De naam helpt je te onthouden waar het toegangsbewijs voor is"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Toegangsbewijs aanmaken"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Toegangsbewijs genereren"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Webhook aanmaken"
@@ -3199,18 +3104,6 @@ msgstr "Payload-URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://voorbeeld.nl/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Toegangsbewijs verwijderen"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "Weet je zeker dat je dit toegangsbewijs wilt verwijderen?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Toegangsbewijs verwijderen"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -5127,10 +5020,6 @@ msgstr "Gedeelde bibliotheken - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Ontwerpvrijheid voor teams"
 
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profiel - Toegangsbewijzen"
-
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Feedback geven - Penpot"
@@ -5464,10 +5353,6 @@ msgstr "Groep opheffen"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Kleurtokens"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434
-msgid "workspace.colorpicker.get-color"
-msgstr "Kleur verkrijgen"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
 msgstr "Componenten kunnen niet in zichzelf worden genest."
@@ -5754,10 +5639,6 @@ msgstr "Volledig scherm"
 msgid "workspace.header.zoom-selected"
 msgstr "Naar selectie zoomen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
-msgid "workspace.layout-grid.editor.margin.expand"
-msgstr "Opties voor 4-zijdige marges weergeven"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "Raster bewerken"
@@ -5809,30 +5690,6 @@ msgstr "Lokaliseren"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Raster-layout tonen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "Inhoud passend (horizontaal)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "Inhoud passend (verticaal)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "Vaste hoogte"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "Vaste breedte"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "Hoogte 100%"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "Breedte 100%"
 
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
@@ -6433,30 +6290,6 @@ msgstr "Na vertraging"
 msgid "workspace.options.interaction-animation"
 msgstr "Animatie"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Omlaag"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "In"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Links"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "Uit"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Rechts"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Omhoog"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Ontbinden"
@@ -6901,14 +6734,6 @@ msgstr "Met kleurtokens"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Dekking"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "Horizontaal"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "Verticaal"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused
@@ -8821,12 +8646,6 @@ msgstr "Tokens opnieuw toewijzen"
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:86
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "Alle tokens die '%s' gebruiken toewijzen aan '%s'?"
-
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Hierdoor worden alle lagen en verwijzingen die de oude tokennaam gebruiken, "
-"gewijzigd."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"

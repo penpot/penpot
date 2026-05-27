@@ -285,22 +285,6 @@ msgstr "ابدأ الجولة"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "جولة في الواجهة"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "نُسخ الرمز"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "ولّد رمز جديد"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "أُنشئ رمز الوصول بنجاح."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "اضغط على الزر \"ولّد رمز جديد\" لإنشاء واحد."
-
 #: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
 msgid "dashboard.add-shared"
 msgstr "أضف كمكتبة مشتركة"
@@ -2566,10 +2550,6 @@ msgstr "المكاتب المشتركة - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot - صمّم حرية للفرق"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "ملف التعريف - رموز الوصول"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"

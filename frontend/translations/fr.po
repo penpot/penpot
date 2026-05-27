@@ -347,77 +347,6 @@ msgstr "Vous êtes sur le point de restaurer %s."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "Restaurer le fichier"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Token copié"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Générer un nouveau jeton"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Le jeton d'accès a bien été créé."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Appuyez sur le bouton \"Générer un nouveau jeton\" pour en générer un."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Vous n'avez pas encore de jeton."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 jours"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 jours"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 jours"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 jours"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Jamais"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Est arrivé à expiration le %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Arrive à expiration le %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Aucune date d'expiration"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Jetons d'accès personnels"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Les jetons d'accès personnels fonctionnent comme une alternative à notre "
-"système d'authentification par login/mot de passe et peuvent être utilisés "
-"pour permettre à une application d'accéder à l'API interne de Penpot"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Le jeton arrivera à expiration le %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Le jeton n'a pas de date d'expiration"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Ajouter un fichier"
@@ -3171,30 +3100,6 @@ msgstr "Changer adresse e‑mail"
 msgid "modals.change-email.title"
 msgstr "Changez votre adresse e‑mail"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Copier le jeton"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Date d'expiration"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Nom"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "Le nom aide à savoir comment le jeton sera utilisé"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Créer un jeton"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Générer un jeton d'accès"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Créer un webhook"
@@ -3210,18 +3115,6 @@ msgstr "URL de charge utile"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Supprimer le jeton"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "Confirmez-vous que vous souhaitez supprimer ce jeton ?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Supprimer le jeton"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -5092,10 +4985,6 @@ msgstr "Bibliothèques partagées – %s – Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot – Liberté de conception pour les équipes"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profil – Jetons d'accès"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
@@ -8524,43 +8413,9 @@ msgid_plural "team.invitations-selected"
 msgstr[0] "1 invitation sélectionnée"
 msgstr[1] "%s invitations sélectionnées"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "Hauteur 100 %"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "Largeur 100 %"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Gauche"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Droite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Haut"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-#, fuzzy
-msgid "workspace.options.orientation.horizontal"
-msgstr "Horizontal"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-#, fuzzy
-msgid "workspace.options.orientation.vertical"
-msgstr "Vertical"
-
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:232
 msgid "workspace.tokens.shadow-add-shadow"
 msgstr "Ajouter une ombre"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
-msgstr "Le flou de l'ombre doit être supérieur ou égal à 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
 #, unused
@@ -8586,16 +8441,6 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
-msgstr ""
-"Type d'ombre non valide : seuls les types « innerShadow » ou « dropShadow » "
-"sont acceptés"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
-msgstr "Valeur non valide : doit référencer un token d'ombre composite."
-
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
 msgid "workspace.tokens.missing-reference"
 msgstr "Référence manquante"
@@ -8616,10 +8461,6 @@ msgstr "Supprimer l'ombre"
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:173, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:174, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
 msgid "workspace.tokens.shadow-spread"
 msgstr "Portée"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
-msgstr "La portée de l'ombre doit être supérieure ou égale à 0."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:51
 #, unused
@@ -8717,14 +8558,6 @@ msgstr "Modifier dans l'espace de travail"
 msgid "workspace.debug.title"
 msgstr "Outils de débogage"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "Adapter le contenu (horizontalement)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "Adapter le contenu (verticalement)"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:567
 msgid "workspace.options.component.variant.duplicated.copy.title"
 msgstr ""
@@ -8760,12 +8593,6 @@ msgstr ""
 "Erreur lors de la définition de la graisse/du style de la police. Ce style "
 "de police n'existe pas dans la police active"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
-msgstr ""
-"Valeur de token non valide : vous ne pouvez référencer qu'un token de "
-"famille de polices"
-
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
 msgid "workspace.tokens.letter-spacing-value-enter-composite"
 msgstr "Interlettrage ou {alias}"
@@ -8797,12 +8624,6 @@ msgstr "Remapper des tokens"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "Remapper tous les tokens qui utilisent «  %s  » dans « %s » ?"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
-msgstr ""
-"Tous les calques et les références utilisant l'ancien nom du token vont être "
-"modifiés."
-
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:92
 #, unused
 msgid "workspace.tokens.remapping-in-progress"
@@ -8821,37 +8642,10 @@ msgstr "Changer"
 msgid "subscription.dashboard.power-up.professional.bottom-button"
 msgstr "Passez à un forfait supérieur !"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "Corriger la hauteur"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "Corriger la largeur"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:570
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Chercher les variantes en conflit"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Vers le bas"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "À l'intérieur"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "À l'extérieur"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:265
 msgid "workspace.options.more-token-colors"
 msgstr "Plus de tokens de couleur"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
-msgstr ""
-"Valeur de graisse de la police non valide : utilisez des valeurs numériques "
-"(100 à 950) ou des noms standard (thin, light, regular, bold, etc.) "
-"éventuellement suivi de la mention « Italic »"

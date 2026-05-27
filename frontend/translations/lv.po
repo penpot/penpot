@@ -337,77 +337,6 @@ msgstr "Sākt iepazīšanos"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Saskarnes caurskate"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Pilnvara ievietota starpliktuvē"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "Izveidot jaunu pilnvaru"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "Piekļuves pilnvara ir veiksmīgi izveidota."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Jānospiež poga \"Izveidot jaunu pilnvaru\", lai izveidotu kādu."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "Pagaidām vēl nav pilnvaru."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 dienas"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 dienas"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60 dienas"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90 dienas"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "Nekad"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Izbeidzās %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "Derīgs līdz %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "Bez derīguma datuma"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "Privātās piekļuves pilnvaras"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Privātās piekļuves pilnvaras darbojas kā alternatīva mūsu "
-"pieteikšanās/paroles autentificēšanas sistēmai, un tās var izmantot, lai "
-"ļautu lietotnēm piekļūt iekšējam Penpot API"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Pilnvara beigsies %s"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Pilnvarai nav derīguma beigu datuma"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "Pievienot datni"
@@ -2840,30 +2769,6 @@ msgstr "Mainīt e-pasta adresi"
 msgid "modals.change-email.title"
 msgstr "E-pasta maiņa"
 
-#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "Ievietot pilnvaru starpliktuvē"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "Derīguma termiņš"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "Nosaukums"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "Nosaukums var palīdzēt saprast, kam pilnvara ir paredzēta"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "Izveidot pilnvaru"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "Izveidot jaunu piekļuves pilnvaru"
-
 #: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Izveidot tīmekļa aizķeri"
@@ -2879,18 +2784,6 @@ msgstr "Vērtuma URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "Izdzēst pilnvaru"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "Vai tiešām izdzēst šo pilnvaru?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "Izdzēst pilnvaru"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -4689,10 +4582,6 @@ msgstr "Koplietojamās bibliotēkas - %s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Modelēšanas brīvība komandām"
 
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "Profils - piekļuves pilnvaras"
-
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
 msgstr "Sniegt atsauksmes - Penpot"
@@ -5342,14 +5231,6 @@ msgstr "Noteikt atrašanās vietu"
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "Norādīt režģa izkārtojumu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "100% augstums"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "100% platums"
-
 #: src/app/main/ui/workspace/libraries.cljs
 #, unused
 msgid "workspace.libraries.add"
@@ -5941,30 +5822,6 @@ msgstr "Pēc kavēšanās"
 msgid "workspace.options.interaction-animation"
 msgstr "Animācija"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "Uz leju"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "Uz iekšu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "Pa kreisi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "Uz āru"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "Pa labi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "Uz augšu"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Izšķīst"
@@ -6405,14 +6262,6 @@ msgstr "Vairāk bibliotēkas krāsu"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:229, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "Caurspīdīgums"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "Līmeniski"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "Stateniski"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, unused

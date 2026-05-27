@@ -331,76 +331,6 @@ msgstr "%s 파일이 복원됩니다."
 msgid "dashboard-restore-file-confirmation.title"
 msgstr "파일 복원"
 
-#: src/app/main/ui/settings/access_tokens.cljs:103
-msgid "dashboard.access-tokens.copied-success"
-msgstr "토큰 복사됨"
-
-#: src/app/main/ui/settings/access_tokens.cljs:189
-msgid "dashboard.access-tokens.create"
-msgstr "새 토큰 생성"
-
-#: src/app/main/ui/settings/access_tokens.cljs:64
-msgid "dashboard.access-tokens.create.success"
-msgstr "액세스 토큰이 성공적으로 생성되었습니다."
-
-#: src/app/main/ui/settings/access_tokens.cljs:286
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "\"새 토큰 생성\" 버튼을 눌러 토큰을 생성하세요."
-
-#: src/app/main/ui/settings/access_tokens.cljs:285
-msgid "dashboard.access-tokens.empty.no-access-tokens"
-msgstr "아직 생성된 토큰이 없습니다."
-
-#: src/app/main/ui/settings/access_tokens.cljs:135
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180일"
-
-#: src/app/main/ui/settings/access_tokens.cljs:132
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30일"
-
-#: src/app/main/ui/settings/access_tokens.cljs:133
-msgid "dashboard.access-tokens.expiration-60-days"
-msgstr "60일"
-
-#: src/app/main/ui/settings/access_tokens.cljs:134
-msgid "dashboard.access-tokens.expiration-90-days"
-msgstr "90일"
-
-#: src/app/main/ui/settings/access_tokens.cljs:131
-msgid "dashboard.access-tokens.expiration-never"
-msgstr "만료 없음"
-
-#: src/app/main/ui/settings/access_tokens.cljs:268
-msgid "dashboard.access-tokens.expired-on"
-msgstr "%s에 만료됨"
-
-#: src/app/main/ui/settings/access_tokens.cljs:269
-msgid "dashboard.access-tokens.expires-on"
-msgstr "%s에 만료 예정"
-
-#: src/app/main/ui/settings/access_tokens.cljs:267
-msgid "dashboard.access-tokens.no-expiration"
-msgstr "만료일 없음"
-
-#: src/app/main/ui/settings/access_tokens.cljs:184
-msgid "dashboard.access-tokens.personal"
-msgstr "개인용 액세스 토큰"
-
-#: src/app/main/ui/settings/access_tokens.cljs:185
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"개인용 엑세스 토큰은 로그인/비밀번호 기반 인증을 대신할 수 있는 인증 수단이"
-"고, 이를 통해 애플리케이션이 내부 Penpot API에 접근할 수 있습니다"
-
-#: src/app/main/ui/settings/access_tokens.cljs:142
-msgid "dashboard.access-tokens.token-will-expire"
-msgstr "해당 토큰은 %s에 만료됩니다"
-
-#: src/app/main/ui/settings/access_tokens.cljs:143
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "해당 토큰은 만료일이 없습니다"
-
 #: src/app/main/ui/dashboard/placeholder.cljs:41
 msgid "dashboard.add-file"
 msgstr "파일 추가"
@@ -1155,11 +1085,6 @@ msgstr "그룹화"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
 msgid "shortcuts.h-distribute"
 msgstr "수평 간격 동일하게"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101,
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-msgid "color-row.token-color-row.deleted-token"
-msgstr "해당 token이 존재하지 않거나 삭제되었습니다."
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
 msgid "color-token.empty-state"
@@ -1971,11 +1896,6 @@ msgstr "일치하는 항목이 없습니다."
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "token 목록 열기"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:91,
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
-msgid "ds.inputs.token-field.detach-token"
-msgstr "token 해제"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43,
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99,
@@ -3437,31 +3357,6 @@ msgstr "크게 이동"
 msgid "modals.change-email.info"
 msgstr "본인 확인을 위해 현재 이메일인 \"%s\"로 이메일을 보내드립니다."
 
-#: src/app/main/ui/settings/access_tokens.cljs:152,
-#: src/app/main/ui/settings/access_tokens.cljs:158
-msgid "modals.create-access-token.copy-token"
-msgstr "토큰 복사"
-
-#: src/app/main/ui/settings/access_tokens.cljs:130
-msgid "modals.create-access-token.expiration-date.label"
-msgstr "만료일"
-
-#: src/app/main/ui/settings/access_tokens.cljs:124
-msgid "modals.create-access-token.name.label"
-msgstr "이름"
-
-#: src/app/main/ui/settings/access_tokens.cljs:126
-msgid "modals.create-access-token.name.placeholder"
-msgstr "토큰의 용도를 알 수 있는 이름을 입력하세요:"
-
-#: src/app/main/ui/settings/access_tokens.cljs:178
-msgid "modals.create-access-token.submit-label"
-msgstr "토큰 생성"
-
-#: src/app/main/ui/settings/access_tokens.cljs:111
-msgid "modals.create-access-token.title"
-msgstr "액세스 토큰 생성"
-
 #: src/app/main/ui/dashboard/team.cljs:1103
 msgid "modals.create-webhook.url.label"
 msgstr "페이로드(Payload) URL"
@@ -3469,18 +3364,6 @@ msgstr "페이로드(Payload) URL"
 #: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/settings/access_tokens.cljs:257
-msgid "modals.delete-acces-token.accept"
-msgstr "토큰 삭제"
-
-#: src/app/main/ui/settings/access_tokens.cljs:256
-msgid "modals.delete-acces-token.message"
-msgstr "정말 이 토큰을 삭제하시겠습니까?"
-
-#: src/app/main/ui/settings/access_tokens.cljs:255
-msgid "modals.delete-acces-token.title"
-msgstr "토큰 삭제"
 
 #: src/app/main/ui/settings/delete_account.cljs:56
 msgid "modals.delete-account.cancel"
@@ -5248,14 +5131,6 @@ msgstr ""
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "Penpot %s 플랜을 선택해주셔서 감사합니다!"
 
-#: src/app/main/ui/settings/subscription.cljs:347
-msgid "subscription.settings.sucess.dialog.footer"
-msgstr "플랜을 즐기세요!"
-
-#: src/app/main/ui/settings/subscription.cljs:340
-msgid "subscription.settings.sucess.dialog.title"
-msgstr "%s이(가) 되셨습니다!"
-
 #: src/app/main/ui/settings/subscription.cljs:526
 msgid "subscription.settings.support-us-since"
 msgstr "이 플랜으로 저희를 지원해주신 날짜: %s"
@@ -5347,10 +5222,6 @@ msgstr "공유 라이브러리 - %s - Penpot"
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
 msgid "title.default"
 msgstr "Penpot - 팀을 위한 자유로운 디자인"
-
-#: src/app/main/ui/settings/access_tokens.cljs:278
-msgid "title.settings.access-tokens"
-msgstr "프로필 - 액세스 토큰"
 
 #: src/app/main/ui/settings/feedback.cljs:161
 msgid "title.settings.feedback"
@@ -5707,10 +5578,6 @@ msgstr "그룹 해제"
 msgid "workspace.colorpicker.color-tokens"
 msgstr "색상 token"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434
-msgid "workspace.colorpicker.get-color"
-msgstr "색상 가져오기"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:506
 msgid "workspace.component.swap.loop-error"
 msgstr "컴포넌트는 자기 자신 안에 중첩될 수 없습니다."
@@ -6002,10 +5869,6 @@ msgstr "전체 화면"
 msgid "workspace.header.zoom-selected"
 msgstr "선택 항목에 맞추기"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:422
-msgid "workspace.layout-grid.editor.margin.expand"
-msgstr "4면 여백 옵션 표시"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275,
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:859
 msgid "workspace.layout-grid.editor.options.edit-grid"
@@ -6070,30 +5933,6 @@ msgstr "위치 찾기"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1565
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "그리드 레이아웃 위치 찾기"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:449
-msgid "workspace.layout-item.fit-content-horizontal"
-msgstr "콘텐츠에 맞춤 (가로)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:477
-msgid "workspace.layout-item.fit-content-vertical"
-msgstr "콘텐츠에 맞춤 (세로)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:465
-msgid "workspace.layout-item.fix-height"
-msgstr "높이 고정"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:439
-msgid "workspace.layout-item.fix-width"
-msgstr "너비 고정"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:471
-msgid "workspace.layout-item.height-100"
-msgstr "높이 100%"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:444
-msgid "workspace.layout-item.width-100"
-msgstr "너비 100%"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -6710,30 +6549,6 @@ msgstr "지연 후"
 msgid "workspace.options.interaction-animation"
 msgstr "애니메이션"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:616
-msgid "workspace.options.interaction-animation-direction-down"
-msgstr "아래"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:593
-msgid "workspace.options.interaction-animation-direction-in"
-msgstr "들어오기"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:612
-msgid "workspace.options.interaction-animation-direction-left"
-msgstr "왼쪽"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:596
-msgid "workspace.options.interaction-animation-direction-out"
-msgstr "나가기"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:608
-msgid "workspace.options.interaction-animation-direction-right"
-msgstr "오른쪽"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:620
-msgid "workspace.options.interaction-animation-direction-up"
-msgstr "위로"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:383
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "디졸브"
@@ -7176,16 +6991,6 @@ msgstr "색상 token 더보기"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241
 msgid "workspace.options.opacity"
 msgstr "불투명도"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:108,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:401
-msgid "workspace.options.orientation.horizontal"
-msgstr "가로"
-
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:104,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397
-msgid "workspace.options.orientation.vertical"
-msgstr "세로"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
@@ -8176,13 +7981,6 @@ msgstr "폴더 선택"
 msgid "workspace.tokens.color"
 msgstr "색상"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:101,
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:251
-msgid "workspace.tokens.composite-line-height-needs-font-size"
-msgstr ""
-"행간은 글꼴 크기에 따라 달라집니다. 확인된 값을 얻으려면 글꼴 크기를 추가하세"
-"요."
-
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:57
 msgid "workspace.tokens.create-new-theme"
 msgstr "첫 번째 테마를 만들어 보세요."
@@ -8229,17 +8027,9 @@ msgstr "테마 편집"
 msgid "workspace.tokens.edit-token"
 msgstr "%s token 편집"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:41
-msgid "workspace.tokens.empty-input"
-msgstr "token 값은 비워둘 수 없습니다"
-
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
 msgstr "%s token 이름 입력"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:15
-msgid "workspace.tokens.error-parse"
-msgstr "가져오기 오류: JSON을 구문 분석할 수 없습니다."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:49
 msgid "workspace.tokens.export"
@@ -8298,11 +8088,6 @@ msgstr "token 세트 그룹화는 아직 지원되지 않습니다."
 msgid "workspace.tokens.import-button-prefix"
 msgstr "%s 가져오기"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:32,
-#: src/app/main/data/workspace/tokens/errors.cljs:37
-msgid "workspace.tokens.import-error"
-msgstr "가져오기 오류:"
-
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:273
 msgid "workspace.tokens.import-menu-folder-option"
 msgstr "폴더"
@@ -8351,63 +8136,6 @@ msgstr ""
 msgid "workspace.tokens.individual-tokens"
 msgstr "개별 token 사용"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:49
-msgid "workspace.tokens.invalid-color"
-msgstr "유효하지 않은 색상 값: %s"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-font-family-token-value"
-msgstr "잘못된 token 값: 글꼴 모음 token만 참조할 수 있습니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:89
-msgid "workspace.tokens.invalid-font-weight-token-value"
-msgstr ""
-"유효하지 않은 글꼴 굵기 값입니다. 숫자 값(100~950) 또는 표준 이름(thin, "
-"light, regular, bold 등)을 사용하세요. 필요하면 뒤에 'Italic'을 붙일 수 있습"
-"니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:23
-msgid "workspace.tokens.invalid-json"
-msgstr "가져오기 오류: JSON 내 token 데이터가 유효하지 않습니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:27
-msgid "workspace.tokens.invalid-json-token-name"
-msgstr "가져오기 오류: JSON 내 token 이름이 유효하지 않습니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:28
-msgid "workspace.tokens.invalid-json-token-name-detail"
-msgstr ""
-"\"%s\"은(는) 유효한 token 이름이 아닙니다.\n"
-"token 이름은 .으로 구분된 문자와 숫자만 포함할 수 있으며 $ 기호로 시작할 수 "
-"없습니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:105
-msgid "workspace.tokens.invalid-shadow-type-token-value"
-msgstr ""
-"유효하지 않은 그림자 유형: '내부 그림자' 또는 '그림자 효과'만 가능합니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:81
-msgid "workspace.tokens.invalid-text-case-token-value"
-msgstr "잘못된 token 값: none, Uppercase, Lowercase, Capitalize만 가능합니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:85
-msgid "workspace.tokens.invalid-text-decoration-token-value"
-msgstr "잘못된 token 값: none, underline, strike-through만 가능합니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:117
-msgid "workspace.tokens.invalid-token-value-shadow"
-msgstr "잘못된 값: 복합 그림자 token을 참조해야 합니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.invalid-token-value-typography"
-msgstr "잘못된 값: 복합 타이포그래피 token을 참조해야 합니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:61,
-#: src/app/main/data/workspace/tokens/errors.cljs:73,
-#: src/app/main/data/workspace/tokens/errors.cljs:77
-msgid "workspace.tokens.invalid-value"
-msgstr "잘못된 token 값: %s"
-
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:205
 msgid "workspace.tokens.label.group"
 msgstr "그룹"
@@ -8447,10 +8175,6 @@ msgstr "최소 크기"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:303
 msgid "workspace.tokens.missing-reference"
 msgstr "누락된 참조"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:57
-msgid "workspace.tokens.missing-references"
-msgstr "누락된 token 참조: "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:124
 msgid "workspace.tokens.more-options"
@@ -8497,10 +8221,6 @@ msgstr "테마가 없습니다."
 msgid "workspace.tokens.no-themes-currently"
 msgstr "현재 테마가 없습니다."
 
-#: src/app/main/data/workspace/tokens/errors.cljs:19
-msgid "workspace.tokens.no-token-files-found"
-msgstr "이 파일에서 token, 세트 또는 테마를 찾을 수 없습니다."
-
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:95
 msgid "workspace.tokens.not-remap"
 msgstr "재매핑 안 함"
@@ -8508,15 +8228,6 @@ msgstr "재매핑 안 함"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:134
 msgid "workspace.tokens.num-active-sets"
 msgstr "활성 세트 %s개"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:53
-msgid "workspace.tokens.number-too-large"
-msgstr "잘못된 token 값. 확인된 값이 너무 큽니다: %s"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:73,
-#: src/app/main/data/workspace/tokens/warnings.cljs:15
-msgid "workspace.tokens.opacity-range"
-msgstr "불투명도는 0~100% 또는 0~1 사이의 값이어야 합니다(예: 50% 또는 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
 msgid "workspace.tokens.original-value"
@@ -8554,10 +8265,6 @@ msgstr "토큰 재매핑"
 msgid "workspace.tokens.remap-token-references-title"
 msgstr "`%s`을 사용하는 모든 토큰을 `%s`로 재매핑하시겠습니까?"
 
-#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:88
-msgid "workspace.tokens.remap-warning-effects"
-msgstr "이 작업은 이전 token 이름을 사용하는 모든 레이어와 참조를 변경합니다."
-
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:89
 msgid "workspace.tokens.remap-warning-time"
 msgstr "이 작업은 시간이 조금 걸릴 수 있습니다."
@@ -8590,12 +8297,6 @@ msgstr "테마 저장"
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:309
 msgid "workspace.tokens.select-set"
 msgstr "세트 선택."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:45,
-#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:299,
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:243
-msgid "workspace.tokens.self-reference"
-msgstr "token이 자기 자신을 참조하고 있습니다"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
 msgid "workspace.tokens.set-edit-placeholder"
@@ -8631,10 +8332,6 @@ msgstr "그림자 추가"
 msgid "workspace.tokens.shadow-blur"
 msgstr "블러"
 
-#: src/app/main/data/workspace/tokens/errors.cljs:109
-msgid "workspace.tokens.shadow-blur-range"
-msgstr "그림자 블러는 0 이상이어야 합니다."
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:987,
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:988
 msgid "workspace.tokens.shadow-color"
@@ -8653,10 +8350,6 @@ msgstr "그림자 제거"
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:177
 msgid "workspace.tokens.shadow-spread"
 msgstr "확산"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:113
-msgid "workspace.tokens.shadow-spread-range"
-msgstr "그림자 확산은 0 이상이어야 합니다."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1215
 msgid "workspace.tokens.shadow-title"
@@ -8683,11 +8376,6 @@ msgstr "Y"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
 msgid "workspace.tokens.size"
 msgstr "크기"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:77,
-#: src/app/main/data/workspace/tokens/warnings.cljs:19
-msgid "workspace.tokens.stroke-width-range"
-msgstr "선 두께는 0 이상이어야 합니다."
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:40,
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
@@ -8806,14 +8494,6 @@ msgstr "참조 사용"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:132
 msgid "workspace.tokens.value-not-valid"
 msgstr "값이 유효하지 않습니다"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:69
-msgid "workspace.tokens.value-with-percent"
-msgstr "잘못된 값: %가 허용되지 않습니다."
-
-#: src/app/main/data/workspace/tokens/errors.cljs:65
-msgid "workspace.tokens.value-with-units"
-msgstr "잘못된 값: 단위가 허용되지 않습니다."
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 msgid "workspace.tokens.warning-name-change"
