@@ -10,7 +10,8 @@
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:watch-dir "resources/public"
-              :reload-strategy :full}
+              :reload-strategy :full
+              :devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}
    :build-options {:manifest-name "manifest.json"}
    :modules
    {:shared
@@ -86,7 +87,8 @@
   {:target :browser
    :output-dir "resources/public/js/worker/"
    :asset-path "/js/worker"
-   :devtools {:browser-inject :main
+   :devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]
+              :browser-inject :main
               :watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}

@@ -83,12 +83,12 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - PENPOT_BACKEND_WORKER=${PENPOT_BACKEND_WORKER}
-      - PENPOT_TMUX_SESSION=${PENPOT_TMUX_SESSION}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
 
       # Agentic devenv: set to a commit/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
       - SERENA_UPDATE_VERSION=1.5.0
+      - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
 
     networks:
       - default
