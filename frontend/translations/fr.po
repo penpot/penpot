@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -4983,6 +4983,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Bibliothèques partagées – %s – Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot – Liberté de conception pour les équipes"
 
@@ -8392,6 +8393,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Créer une organisation"
 
@@ -8478,6 +8480,7 @@ msgid "workspace.tokens.theme.enable"
 msgstr "Activer"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+#, fuzzy
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Il existe déjà un token au chemin : %s"
 
