@@ -883,16 +883,24 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key]}]
+  [{:keys [organizations orgs-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key]}]
   (let [valid-organizations (mf/with-memo [organizations]
                               (remove #(= (:id %) current-organization-id) organizations))
-        options (mf/with-memo [valid-organizations]
+        options (mf/with-memo [valid-organizations orgs-allowed]
                   (mapv (fn [organization]
-                          {:id (str (:id organization))
-                           :label (:name organization)
-                           :avatar {:render-fn render-org-combobox-avatar*
-                                    :organization organization
-                                    :size "xl"}})
+                          (let [org-id (:id organization)
+                                ;; orgs-allowed is a map of org-id and a boolean indicating if it is allowed
+                                enabled? (or (nil? orgs-allowed)
+                                             (true? (get orgs-allowed org-id)))]
+                            (cond-> {:id (str org-id)
+                                     :label (:name organization)
+                                     :disabled (not enabled?)
+                                     :dimmed (not enabled?)
+                                     :avatar {:render-fn render-org-combobox-avatar*
+                                              :organization organization
+                                              :size "xl"}}
+                              (not enabled?)
+                              (assoc :title (tr "dashboard.team-organization.disabled-org-tooltip")))))
                         valid-organizations))
 
         form (fm/use-form :schema schema:organization-form :initial {})
@@ -1513,27 +1521,11 @@
         (fn [file]
           (st/emit! (dtm/update-team-photo file)))
 
-        remove-team-from-org-fn
-        (mf/use-fn
-         (mf/deps team)
-         (fn []
-           (st/emit! (dnt/remove-team-from-org {:team-id (:id team)
-                                                :organization-id (dm/get-in team [:organization :id])
-                                                :organization-name (dm/get-in team [:organization :name])}))))
-
         on-remove-team-from-org
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (let [params {:type :confirm
-                         :title (tr "modals.remove-team-org.title")
-                         :message (tr "modals.remove-team-org.text" (:name team) (dm/get-in team [:organization :name]))
-                         :hint (tr "modals.remove-team-org.info")
-                         :hint-level :default
-                         :accept-label (tr "modals.remove-team-org.accept")
-                         :on-accept remove-team-from-org-fn
-                         :accept-style :danger}]
-             (st/emit! (modal/show params)))))
+           (st/emit! (dnt/show-remove-team-from-org-modal {:team-id (:id team)}))))
 
         on-add-team-to-org
         (mf/use-fn

@@ -93,16 +93,18 @@
 
         on-option-click
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change options)
          (fn [event]
            (dom/stop-propagation event)
            (let [node  (dom/get-current-target event)
-                 id    (dom/get-data node "id")]
-             (reset! selected-id* id)
-             (reset! is-open* false)
-             (reset! focused-id* nil)
-             (when (fn? on-change)
-               (on-change id)))))
+                 id    (dom/get-data node "id")
+                 option (d/seek #(= id (get % :id)) options)]
+             (when-not (true? (:disabled option))
+               (reset! selected-id* id)
+               (reset! is-open* false)
+               (reset! focused-id* nil)
+               (when (fn? on-change)
+                 (on-change id))))))
 
         on-click
         (mf/use-fn
@@ -192,14 +194,15 @@
                      (handle-focus-change options focused-id* new-index nodes))
 
                    (kbd/enter? event)
-                   (do
-                     (reset! selected-id* focused-id)
-                     (reset! is-open* false)
-                     (reset! focused-id* nil)
-                     (dom/blur! (mf/ref-val input-ref))
-                     (when (and (fn? on-change)
-                                (some? focused-id))
-                       (on-change focused-id)))
+                   (let [focused-option (d/seek #(= focused-id (get % :id)) options)]
+                     (when-not (true? (:disabled focused-option))
+                       (reset! selected-id* focused-id)
+                       (reset! is-open* false)
+                       (reset! focused-id* nil)
+                       (dom/blur! (mf/ref-val input-ref))
+                       (when (and (fn? on-change)
+                                  (some? focused-id))
+                         (on-change focused-id))))
 
                    (kbd/esc? event)
                    (do (reset! is-open* false)

@@ -67,7 +67,9 @@
       [:div {:class (stl/css :modal-content)}
        [:& context-notification
         {:level :warning
-         :content (tr "modals.delete-account.info")}]
+         :content (tr (if has-orgs?
+                        "modals.delete-account.info.with-orgs"
+                        "modals.delete-account.info"))}]
 
        (when has-orgs?
          [:div {:class (stl/css :orgs-section)}
