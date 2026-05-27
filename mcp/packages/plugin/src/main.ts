@@ -1,11 +1,28 @@
 import "./style.css";
 
+/**
+ * the maximum allowed size for task responses sent back to the MCP server in the integrated remote MCP mode.
+ * This bounds the JSON response size.
+ * Note that in the remote MCP case, responses are transferred to LLMs (not the file system) and LLMs have
+ * size limitations. This serves to bound the size of returned images in particular.
+ * Too many overly large simultaneous responses can cause OOM issues in the MCP server, so this contributes
+ * to bounding memory usage in the centrally provided MCP server.
+ */
+const MAX_TASK_RESPONSE_SIZE_REMOTE_MCP = 15_000_000;
+
 // get the current theme from the URL
 const searchParams = new URLSearchParams(window.location.hash.split("?")[1]);
 document.body.dataset.theme = searchParams.get("theme") ?? "light";
 
-// WebSocket connection management
+// WebSocket connection to the MCP server
 let ws: WebSocket | null = null;
+
+/**
+ * indicates whether the plugin is running with the Penpot-integrated remote MCP server enabled
+ * (as opposed to a local server used with the explicitly loaded plugin);
+ * set via the "mcp-mode" message sent by plugin.ts on initialization
+ */
+let isIntegratedRemoteMcp = false;
 
 const statusPill = document.getElementById("connection-status") as HTMLElement;
 const statusText = document.getElementById("status-text") as HTMLElement;
@@ -79,7 +96,22 @@ function updateExecutedCode(code: string | null): void {
  */
 function sendTaskResponse(response: any): void {
     if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(response));
+        let responseString = JSON.stringify(response);
+        if (isIntegratedRemoteMcp && responseString.length > MAX_TASK_RESPONSE_SIZE_REMOTE_MCP) {
+            const errorMessage = `Serialised response size (${responseString.length}) exceeds maximum of ${MAX_TASK_RESPONSE_SIZE_REMOTE_MCP}.`;
+            console.warn(
+                errorMessage +
+                    " [integrated remote MCP mode restriction]; sending error response instead; original response:",
+                response
+            );
+            response = {
+                id: response.id,
+                success: false,
+                error: errorMessage,
+            };
+            responseString = JSON.stringify(response);
+        }
+        ws.send(responseString);
         console.log("Sent response to MCP server:", response);
     } else {
         console.error("WebSocket not connected, cannot send response");
@@ -176,6 +208,9 @@ disconnectBtn?.addEventListener("click", () => {
 
 // Listen plugin.ts messages
 window.addEventListener("message", (event) => {
+    if (event.data.type === "mcp-mode") {
+        isIntegratedRemoteMcp = event.data.integratedRemoteMcp;
+    }
     if (event.data.type === "start-server") {
         connectToMcpServer(event.data.url, event.data.token);
     }

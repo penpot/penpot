@@ -70,3 +70,23 @@ desc: Use Penpot's libraries for reusable design elements! Learn to create, mana
 <figure>
   <img src="/img/libraries/libraries-open.webp" alt="Open libraries">
 </figure>
+
+<h4 id="import-tokens-from-library">Import tokens from a connected library</h4>
+<p>If a shared library you have connected includes design tokens, you can copy them into the current file from the <strong>Libraries</strong> modal.</p>
+<p>The <strong>Import tokens</strong> button appears only next to connected libraries that define tokens. Libraries without tokens do not show this control.</p>
+<ol>
+  <li>Open the <strong>Libraries</strong> panel from the assets tab.</li>
+  <li>Under <strong>Libraries in this file</strong>, find the connected library that includes tokens and click <strong>Import tokens</strong> (beside the disconnect control).</li>
+  <li>Review the confirmation dialog. Importing brings in the library's full token data, including sets and themes when the library defines them.</li>
+  <li>Click <strong>Import tokens</strong> to apply, or <strong>Cancel</strong> to go back without changes.</li>
+</ol>
+<p class="advice">Importing tokens from a library replaces all tokens, sets and themes in the current file. Export your tokens first (from the Tokens tab → Tools → Export) if you need to keep a backup.</p>
+<p>This is separate from connecting the library for components, colors and typographies. You can use shared assets without importing tokens, and import tokens only when you want the file's token setup to match the library.</p>
+<figure>
+  <img src="/img/libraries/libraries-import-tokens-button.webp" alt="Import tokens button in the Libraries modal">
+  <figcaption>The Import tokens button on a connected library that includes tokens.</figcaption>
+</figure>
+<figure>
+  <img src="/img/libraries/libraries-import-tokens-confirm.webp" alt="Import tokens from library confirmation dialog">
+  <figcaption>Confirm before importing. All current tokens, sets and themes in this file will be replaced.</figcaption>
+</figure>

@@ -29,7 +29,7 @@
         on-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-subscription-url)))
+           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-ac-url)))
 
         on-activate-click
         (mf/use-fn

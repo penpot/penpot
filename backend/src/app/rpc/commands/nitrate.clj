@@ -112,12 +112,47 @@
       AND t.id = ANY(?)
       AND t.deleted_at IS NULL")
 
-(def sql:get-team-files-count
-  "SELECT count(*) AS total
+(def ^:private sql:get-teams-files-counts
+  "SELECT p.team_id, count(*) AS total
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
-    WHERE p.team_id = ?
-      AND f.deleted_at IS NULL")
+    WHERE p.team_id = ANY(?)
+      AND f.deleted_at IS NULL
+ GROUP BY p.team_id")
+
+(defn- get-team-files-counts
+  [conn team-ids]
+  (if (seq team-ids)
+    (let [ids-array (db/create-array conn "uuid" team-ids)]
+      (->> (db/exec! conn [sql:get-teams-files-counts ids-array])
+           (reduce (fn [acc {:keys [team-id total]}]
+                     (assoc acc team-id (long total)))
+                   {})))
+    {}))
+
+(defn- build-leave-org-plan
+  [{:keys [::db/conn]} default-team-id teams-to-delete keep-default-team-requested?]
+  (let [all-teams     (cond-> (set teams-to-delete) default-team-id (conj default-team-id))
+        files-counts  (get-team-files-counts conn all-teams)
+        has-files?    (fn [id] (pos? (long (get files-counts id 0))))
+        deletable     (remove has-files? teams-to-delete)
+        keep-default? (or keep-default-team-requested?
+                          (and default-team-id (has-files? default-team-id)))
+        to-detach     (cond-> (into [] (remove (set deletable) teams-to-delete))
+                        (and default-team-id keep-default?) (conj default-team-id))]
+    {:deletable-team-ids       deletable
+     :keep-default-team?       keep-default?
+     :delete-default-team?     (boolean (and default-team-id (not keep-default?)))
+     :detach-from-org-team-ids to-detach}))
+
+(defn get-leave-org-summary
+  [cfg default-team-id teams-to-delete teams-to-transfer-count teams-to-exit-count]
+  (let [{:keys [deletable-team-ids detach-from-org-team-ids]}
+        (build-leave-org-plan cfg default-team-id teams-to-delete nil)]
+    {:teams-to-delete   (count deletable-team-ids)
+     :teams-to-transfer teams-to-transfer-count
+     :teams-to-exit     teams-to-exit-count
+     :teams-to-detach   (count detach-from-org-team-ids)}))
 
 (def ^:private schema:leave-org
   [:map
@@ -131,6 +166,18 @@
      [:map
       [:id ::sm/uuid]
       [:reassign-to {:optional true} ::sm/uuid]]]]])
+
+(def ^:private schema:get-leave-org-summary-result
+  [:map
+   [:teams-to-delete ::sm/int]
+   [:teams-to-transfer ::sm/int]
+   [:teams-to-exit ::sm/int]
+   [:teams-to-detach ::sm/int]])
+
+(def ^:private schema:get-leave-org-summary
+  [:map
+   [:id ::sm/uuid]
+   [:default-team-id ::sm/uuid]])
 
 
 (defn- get-organization-teams-for-user
@@ -221,16 +268,14 @@
                 :code :not-valid-teams))))
 
 
+
 (defn leave-org
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation] :as params}]
-  (let [org-prefix                 (str "[" (d/sanitize-string name) "] ")
-
-        default-team-files-count    (-> (db/exec-one! conn [sql:get-team-files-count default-team-id])
-                                        :total)
-        delete-default-team?        (= default-team-files-count 0)]
-
-
-
+  [{:keys [::db/conn] :as cfg}
+   {:keys [profile-id id name default-team-id teams-to-delete teams-to-leave skip-validation keep-default-team-requested?]}]
+  (let [org-prefix (str "[" (d/sanitize-string name) "] ")
+        {:keys [deletable-team-ids
+                keep-default-team?
+                detach-from-org-team-ids]} (build-leave-org-plan cfg default-team-id teams-to-delete keep-default-team-requested?)]
 
     ;; assert that the received teams are valid, checking the different constraints
     (when-not skip-validation
@@ -238,20 +283,27 @@
 
     (assert-membership cfg profile-id id)
 
-    ;; delete the teams-to-delete
-    (doseq [id teams-to-delete]
-      (teams/delete-team cfg {:profile-id profile-id :team-id id}))
+    ;; delete only eligible teams (non-protected and without files)
+    (doseq [id deletable-team-ids]
+      (teams/delete-team cfg {:profile-id profile-id
+                              :team-id id}))
 
     ;; leave the teams-to-leave
     (doseq [{:keys [id reassign-to]} teams-to-leave]
       (teams/leave-team cfg {:profile-id profile-id :id id :reassign-to reassign-to}))
 
-    ;; Delete default-team-id if empty; otherwise keep it and prefix the name.
-    (if delete-default-team?
-      (do
-        (db/update! conn :team {:is-default false} {:id default-team-id})
-        (teams/delete-team cfg {:profile-id profile-id :team-id default-team-id}))
-      (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id]))
+    ;; Process org "Your Penpot" team: keep with prefix if needed, otherwise delete.
+    (when default-team-id
+      (if keep-default-team?
+        (db/exec! conn [sql:prefix-team-name-and-unset-default org-prefix default-team-id])
+        (teams/delete-team cfg {:profile-id profile-id
+                                :team-id default-team-id})))
+
+    ;; Detach retained owned teams from the organization in Nitrate.
+    ;; Nitrate will rehome them to its fallback/default org.
+    (doseq [team-id detach-from-org-team-ids]
+      (nitrate/call cfg :remove-team-from-org {:team-id team-id
+                                               :organization-id id}))
 
     ;; Api call to nitrate
     (nitrate/call cfg :remove-profile-from-org {:profile-id profile-id :organization-id id})
@@ -268,6 +320,25 @@
   (leave-org cfg (assoc params :profile-id profile-id)))
 
 
+(sv/defmethod ::get-leave-org-summary
+  {::rpc/auth true
+   ::doc/added "2.18"
+   ::sm/params schema:get-leave-org-summary
+   ::sm/result schema:get-leave-org-summary-result
+   ::db/transaction true}
+  [cfg {:keys [::rpc/profile-id id default-team-id]}]
+  (let [{:keys [valid-teams-to-delete-ids
+                valid-teams-to-transfer
+                valid-teams-to-exit
+                valid-default-team]} (get-valid-teams cfg id profile-id default-team-id)
+        teams-to-transfer-count (count valid-teams-to-transfer)
+        teams-to-exit-count     (count valid-teams-to-exit)]
+    (when-not valid-default-team
+      (ex/raise :type :validation
+                :code :not-valid-teams))
+    (get-leave-org-summary cfg default-team-id valid-teams-to-delete-ids teams-to-transfer-count teams-to-exit-count)))
+
+
 (def ^:private schema:remove-team-from-org
   [:map
    [:team-id ::sm/uuid]
@@ -282,6 +353,20 @@
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
   (assert-membership cfg profile-id organization-id)
+  ;; Check moveTeams permission on the source organization
+  (when (contains? cf/flags :nitrate)
+    (let [org-perms (nitrate/call cfg :get-org-permissions
+                                  {:organization-id organization-id})]
+      (if (nil? org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions")
+        (when-not (nitrate-perms/allowed? :move-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))))
 
   ;; Api call to nitrate
   (nitrate/call cfg :remove-team-from-org {:team-id team-id :organization-id organization-id})
@@ -308,18 +393,43 @@
   (assert-membership cfg profile-id organization-id)
 
   (when (contains? cf/flags :nitrate)
-    (let [org-perms (nitrate/call cfg :get-org-permissions
-                                  {:organization-id organization-id})]
-      (if (nil? org-perms)
+    (let [team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
+          source-org-id         (get-in team-with-org [:organization :id])
+          source-org-perms      (when source-org-id
+                                  (nitrate/call cfg :get-org-permissions
+                                                {:organization-id source-org-id}))
+          target-org-perms      (nitrate/call cfg :get-org-permissions
+                                              {:organization-id organization-id})
+          target-org-same-owner? (and (some? source-org-perms)
+                                      (some? target-org-perms)
+                                      (= (:owner-id source-org-perms)
+                                         (:owner-id target-org-perms)))]
+      (when (nil? target-org-perms)
         (ex/raise :type :validation
                   :code :not-allowed
-                  :hint "Unable to verify organization permissions")
-        (when-not (nitrate-perms/allowed? :create-team
-                                          {:org-perms org-perms
-                                           :profile-id profile-id})
+                  :hint "Unable to verify organization permissions"))
+
+      ;; Team already belongs to an organization: check move-teams on source org.
+      (when (some? source-org-id)
+        (when (nil? source-org-perms)
           (ex/raise :type :validation
                     :code :not-allowed
-                    :hint "You are not allowed to add teams in this organization")))))
+                    :hint "Unable to verify organization permissions"))
+        (when-not (nitrate-perms/allowed? :move-team
+                                          {:org-perms source-org-perms
+                                           :profile-id profile-id
+                                           :target-org-same-owner? target-org-same-owner?})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to move teams that are part of this organization. If you need more information, contact the owner.")))
+
+      ;; Always check target create-teams permission (new/add and move flows).
+      (when-not (nitrate-perms/allowed? :create-team
+                                        {:org-perms target-org-perms
+                                         :profile-id profile-id})
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "You are not allowed to add teams in this organization"))))
 
   (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
     ;; Add teammates to the org if needed
@@ -333,3 +443,108 @@
     ;; Notify connected users
     (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
   nil)
+
+(def ^:private sql:get-profiles-by-emails
+  "SELECT id, email
+     FROM profile
+    WHERE email = ANY(?)
+      AND deleted_at IS NULL")
+
+(def ^:private sql:get-org-direct-invitation-emails
+  "SELECT DISTINCT email_to
+     FROM team_invitation
+    WHERE org_id = ?
+      AND team_id IS NULL
+      AND valid_until >= now()")
+
+(defn get-org-direct-invitation-emails
+  "Returns the set of emails that have a pending direct org-level invitation
+  (i.e. invited to the org itself, not to a specific team)."
+  [conn org-id]
+  (->> (db/exec! conn [sql:get-org-direct-invitation-emails org-id])
+       (map :email-to)
+       (into #{})))
+
+(def ^:private schema:check-org-members-params
+  [:map {:title "CheckOrgMembersParams"}
+   [:organization-id ::sm/uuid]
+   [:emails [:vector ::sm/email]]])
+
+(sv/defmethod ::check-org-members
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:check-org-members-params
+   ::sm/result [:map-of :string :boolean]
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id organization-id emails]}]
+  (or (when (contains? cf/flags :nitrate)
+        (assert-membership cfg profile-id organization-id)
+        (let [emails-array   (db/create-array conn "text" emails)
+              profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
+              email->id      (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
+              org-member-ids (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+              invited-emails (get-org-direct-invitation-emails conn organization-id)]
+          (into {}
+                (map (fn [email]
+                       (let [pid (get email->id email)]
+                         [email (boolean (or (and pid (contains? org-member-ids pid))
+                                             (contains? invited-emails email)))])))
+                emails)))
+      {}))
+
+(def ^:private schema:all-org-members-in-team-params
+  [:map {:title "CheckOrgMembersInTeamParams"}
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::all-org-members-in-team
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:all-org-members-in-team-params
+   ::sm/result ::sm/boolean}
+  [cfg {:keys [::rpc/profile-id team-id organization-id]}]
+  (if (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+      (assert-membership cfg profile-id organization-id)
+      (let [org-members     (nitrate/call cfg :get-org-members {:organization-id organization-id})
+            org-member-ids  (into #{} org-members)
+            team-members    (db/query cfg :team-profile-rel {:team-id team-id})
+            team-member-ids (into #{} (map :profile-id team-members))]
+        (every? #(contains? team-member-ids %) org-member-ids)))
+    false))
+
+(def ^:private schema:all-team-members-in-orgs-params
+  [:map {:title "CheckTeamMembersInOrgsParams"}
+   [:team-id ::sm/uuid]
+   [:organization-ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::all-team-members-in-orgs
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:all-team-members-in-orgs-params
+   ::sm/result [:map-of ::sm/uuid ::sm/boolean]}
+  [cfg {:keys [::rpc/profile-id team-id organization-ids]}]
+  (if (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+
+      (let [team-members    (db/query cfg :team-profile-rel {:team-id team-id})
+            team-member-ids (into #{} (map :profile-id team-members))]
+        ;; Validate requester membership in all orgs before fetching members.
+        (run! #(assert-membership cfg profile-id %) organization-ids)
+
+        (into {}
+              (map (fn [organization-id]
+                     (let [org-members    (nitrate/call cfg :get-org-members {:organization-id organization-id})
+                           org-member-ids (into #{} org-members)]
+                       [organization-id
+                        (every? #(contains? org-member-ids %) team-member-ids)])))
+              organization-ids)))
+    {}))
+
+

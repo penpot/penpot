@@ -333,6 +333,8 @@
                   :penpot:stroke-opacity        (d/name (:stroke-opacity stroke))
                   :penpot:stroke-style          (d/name (:stroke-style stroke))
                   :penpot:stroke-width          (d/name (:stroke-width stroke))
+                  :penpot:stroke-dash           ((d/nilf str) (:stroke-dash stroke))
+                  :penpot:stroke-gap            ((d/nilf str) (:stroke-gap stroke))
                   :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
                   :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
                   :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))
