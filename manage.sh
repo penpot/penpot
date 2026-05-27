@@ -645,6 +645,8 @@ function parse-ws-integer {
 function start-instance {
     local instance="$1"
     local serena_context="$2"
+    local git_user_name="${3:-}"
+    local git_user_email="${4:-}"
 
     instance-compose "$instance" up -d --no-deps main redis
 
@@ -659,6 +661,16 @@ function start-instance {
         }
         sleep 1
     done
+
+    # Seed the container's global git config from the values resolved on the
+    # host so commits made inside the devenv carry a real author/committer. Empty
+    # values are skipped — the host-identity warning is the caller's job.
+    if [[ -n "$git_user_name" ]]; then
+        docker exec "$container" sudo -u penpot git config --global user.name "$git_user_name"
+    fi
+    if [[ -n "$git_user_email" ]]; then
+        docker exec "$container" sudo -u penpot git config --global user.email "$git_user_email"
+    fi
 
     # Detached tmux so callers don't block on attach. Agentic mode is the only
     # mode here, so MCP and Serena are always on.
@@ -710,6 +722,14 @@ function print-instance-info {
 #                ws1+ also sync implicitly the first time when their workspace
 #                directory does not exist yet.
 #   --serena-context CTX  passed to Serena (default: desktop-app).
+#   --git-user-name NAME  Git author/committer name to wire into the
+#                container's global git config (so commits made inside the
+#                devenv carry a real identity). Defaults to the host's
+#                effective `git config user.name` when omitted (resolved at
+#                the current working directory, so a per-repo local override
+#                in <repo>/.git/config takes precedence over ~/.gitconfig).
+#   --git-user-email EMAIL  matching email; defaults to the host's effective
+#                `git config user.email` (same local-over-global precedence).
 #
 # ws0 is the worker-bearer and must be running whenever any ws1+ is up. When
 # starting ws1+, ws0 is brought up first automatically if it is not already
@@ -718,6 +738,8 @@ function run-devenv-agentic {
     local target="ws0"
     local do_sync=false
     local serena_context="desktop-app"
+    local git_user_name=""
+    local git_user_email=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -727,6 +749,10 @@ function run-devenv-agentic {
                 do_sync=true; shift;;
             --serena-context)
                 serena_context="$2"; shift 2;;
+            --git-user-name)
+                git_user_name="$2"; shift 2;;
+            --git-user-email)
+                git_user_email="$2"; shift 2;;
             *)
                 echo "run-devenv-agentic: unknown argument '$1'" >&2
                 return 1;;
@@ -736,6 +762,26 @@ function run-devenv-agentic {
     if [[ "$target" == "ws0" && "$do_sync" == "true" ]]; then
         echo "run-devenv-agentic: --sync is not allowed on main (ws0)." >&2
         return 1
+    fi
+
+    # Fall back to the host developer's effective git identity when the
+    # respective flag is not provided. Plain `git config user.X` (no --global)
+    # honours the local->global->system precedence, so a per-repo override in
+    # <repo>/.git/config takes precedence over ~/.gitconfig -- matching what
+    # `git commit` on the host would actually record. `|| true` swallows the
+    # non-zero exit for a missing entry; the empty result is propagated
+    # untouched and surfaces as a no-op inside the container (start-tmux.sh
+    # skips `git config --global` when the env var is empty).
+    if [[ -z "$git_user_name" ]]; then
+        git_user_name="$(git config user.name 2>/dev/null || true)"
+    fi
+    if [[ -z "$git_user_email" ]]; then
+        git_user_email="$(git config user.email 2>/dev/null || true)"
+    fi
+    if [[ -z "$git_user_name" || -z "$git_user_email" ]]; then
+        echo "[$target] warning: host git identity is incomplete (name='${git_user_name}', email='${git_user_email}')." >&2
+        echo "  Commits made inside the devenv will fail until you set it via --git-user-name / --git-user-email" >&2
+        echo "  or 'git config user.{name,email}' on the host." >&2
     fi
 
     if devenv-main-running "$target"; then
@@ -753,7 +799,7 @@ function run-devenv-agentic {
         echo "[ws0] not running; starting it first (workers run only on ws0)."
         echo "Starting ws0..."
         write-instance-mcp-configs "ws0"
-        start-instance "ws0" "$serena_context"
+        start-instance "ws0" "$serena_context" "$git_user_name" "$git_user_email"
         print-instance-info "ws0"
     fi
 
@@ -772,7 +818,7 @@ function run-devenv-agentic {
 
     echo "Starting $target..."
     write-instance-mcp-configs "$target"
-    start-instance "$target" "$serena_context"
+    start-instance "$target" "$serena_context" "$git_user_name" "$git_user_email"
     print-instance-info "$target"
 }
 
@@ -1185,7 +1231,10 @@ function usage {
     echo "                                   Auto-starts ws0 first when --ws N (N>=1) is requested (workers run only on ws0)."
     echo "                                   Options: --ws N (default: 0; non-negative integer only),"
     echo "                                            --sync (re-seed workspace from live repo; ws1+ only),"
-    echo "                                            --serena-context CONTEXT (default: desktop-app)"
+    echo "                                            --serena-context CONTEXT (default: desktop-app),"
+    echo "                                            --git-user-name NAME / --git-user-email EMAIL"
+    echo "                                            (default: host's effective 'git config user.{name,email}',"
+    echo "                                             honouring per-repo local overrides)"
     echo "- attach-devenv                    Attaches to the tmux session inside a running instance."
     echo "                                   Options: --ws N (default: 0; non-negative integer only)"
     echo "- start-coding-agent <client>      Launches an AI coding agent against one workspace with the right MCP config wired in."

@@ -106,7 +106,27 @@ Container-internal ports stay fixed. Target a specific instance with
 `start-coding-agent` (`--instance ws1` on `run-devenv-shell` /
 `run-devenv`). The `--ws` flag accepts a **non-negative integer only** —
 `--ws main` or `--ws ws1` is rejected, keeping the flag shape uniform across
-commands. `run-devenv-agentic` also accepts `--serena-context CTX`.
+commands. `run-devenv-agentic` also accepts `--serena-context CTX` and
+`--git-user-name NAME` / `--git-user-email EMAIL` (see below).
+
+### Git identity inside the container
+
+`run-devenv-agentic` wires a Git author identity into the container's
+**global** git config (`git config --global user.{name,email}`) so commits
+made from inside the devenv carry a real author/committer. Without this,
+the container would commit as the unconfigured `penpot@<container>`
+fallback — usable but useless for review.
+
+The values come from `--git-user-name NAME` / `--git-user-email EMAIL`
+when passed, or from your host's effective `git config user.{name,email}`
+otherwise. "Effective" here means the values plain `git config user.X`
+returns at the working directory `manage.sh` is invoked from — local
+(`<repo>/.git/config`) overrides global (`~/.gitconfig`), matching what
+`git commit` on the host would record. If neither is available the script
+prints a warning and continues — commits will fail inside the container
+until you set an identity. The values are applied every time
+`run-devenv-agentic` brings an instance up (idempotent), so re-running
+with different flags is the way to change the in-container identity.
 
 ### Shared state and workers
 
