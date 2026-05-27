@@ -8023,6 +8023,10 @@ msgid "workspace.shape.menu.show-main"
 msgstr "Ver componente principal"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
+msgid "workspace.shape.menu.clear-guides"
+msgstr "Eliminar guias del tablero"
+
+#: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Quitar miniatura"
 
