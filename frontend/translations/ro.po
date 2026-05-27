@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: George Lemon <george@getvasco.com>\n"
+"Last-Translator: AlexTECPlayz <alextecplayz@vantainteractive.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
 "Language: ro\n"
@@ -7297,6 +7297,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Măști"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Caută straturi"
 
