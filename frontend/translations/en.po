@@ -8974,6 +8974,9 @@ msgstr "MCP"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP connected"
 
+msgid "workspace.toolbar.mcp-switch-here"
+msgstr "Switch here"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
 msgstr "Move (%s)"
