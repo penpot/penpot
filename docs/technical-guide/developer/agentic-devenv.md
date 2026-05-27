@@ -85,6 +85,19 @@ instance up, so you don't need to compute the offsets by hand. See the
 the workspace and lifecycle details (including the `--sync` flag and shutdown
 shape).
 
+**Git identity for agent commits.** Coding agents typically need to commit
+inside the devenv, so `run-devenv-agentic` wires a Git identity into the
+container's global config on every bring-up. By default it propagates the
+host's effective `git config user.{name,email}` (local repo override wins
+over `~/.gitconfig`, matching what `git commit` on the host would record).
+Override either with `--git-user-name "Full Name"` /
+`--git-user-email you@example.com` — useful when you want agent commits to
+carry an identity different from your normal one. Without either source the
+script warns and proceeds; commits made by the agent will fail until you fix
+it. See the
+[Dev environment guide](./devenv.md#git-identity-inside-the-container) for
+the full mechanics.
+
 > **Note:** the MCP and Serena tmux windows are only added when the session is
 > first created. If you've already run `./manage.sh run-devenv` (non-agentic)
 > in an instance, `run-devenv-agentic` errors out because the instance is
