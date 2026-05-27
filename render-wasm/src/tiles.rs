@@ -66,44 +66,16 @@ impl TileRect {
         self.3
     }
 
+    /// Inclusive tile count on X (matches `contains`: both `x1` and `x2` are included).
     #[inline]
-    pub fn x(&self) -> i32 {
-        self.0
+    pub fn columns(&self) -> i32 {
+        self.x2() - self.x1() + 1
     }
 
+    /// Inclusive tile count on Y (matches `contains`: both `y1` and `y2` are included).
     #[inline]
-    pub fn y(&self) -> i32 {
-        self.1
-    }
-
-    #[inline]
-    pub fn width(&self) -> i32 {
-        self.x2() - self.x1()
-    }
-
-    #[inline]
-    pub fn half_width(&self) -> i32 {
-        self.width() / 2
-    }
-
-    #[inline]
-    pub fn height(&self) -> i32 {
-        self.y2() - self.y1()
-    }
-
-    #[inline]
-    pub fn half_height(&self) -> i32 {
-        self.height() / 2
-    }
-
-    #[inline]
-    pub fn center_x(&self) -> i32 {
-        self.x() + self.half_width()
-    }
-
-    #[inline]
-    pub fn center_y(&self) -> i32 {
-        self.y() + self.half_height()
+    pub fn rows(&self) -> i32 {
+        self.y2() - self.y1() + 1
     }
 
     pub fn contains(&self, tile: &Tile) -> bool {
@@ -249,27 +221,50 @@ impl TileHashMap {
 const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
 const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = 64;
 
-// This structure keeps the list of tiles that are in the pending list, the
-// ones that are going to be rendered.
-pub struct PendingTiles {
-    pub list: Vec<Tile>,
-    pub spiral: Vec<Tile>,
-    pub spiral_rect: TileRect,
+/// Cached spiral of tile offsets for a given grid size.
+///
+/// Offsets are centered at (0,0) and must be translated by the desired origin/center tile.
+#[derive(Debug, Default)]
+pub struct TileSpiral {
+    offsets: Vec<Tile>,
+    columns: usize,
+    rows: usize,
 }
 
-impl PendingTiles {
+impl TileSpiral {
     pub fn new() -> Self {
         Self {
-            list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
-            spiral: Vec::with_capacity(VIEWPORT_SPIRAL_DEFAULT_CAPACITY),
-            spiral_rect: TileRect::empty(),
+            offsets: Vec::with_capacity(VIEWPORT_SPIRAL_DEFAULT_CAPACITY),
+            columns: 0,
+            rows: 0,
         }
     }
 
-    // Generate tiles in spiral order from center
-    fn generate_spiral(columns: usize, rows: usize) -> Vec<Tile> {
-        let total = columns * rows;
-        let mut result = Vec::with_capacity(total);
+    #[inline]
+    pub fn iter(&self) -> std::slice::Iter<'_, Tile> {
+        self.offsets.iter()
+    }
+
+    /// Ensure the spiral offsets match the given grid size.
+    ///
+    /// This regenerates offsets whenever the size changes (grow or shrink) so callers
+    /// don't accidentally reuse a spiral built for a previous viewport.
+    pub fn ensure(&mut self, columns: usize, rows: usize) {
+        if self.columns == columns && self.rows == rows {
+            return;
+        }
+        self.columns = columns;
+        self.rows = rows;
+
+        let total = columns.saturating_mul(rows);
+        self.offsets.clear();
+        self.offsets.reserve(total);
+
+        if total == 0 {
+            return;
+        }
+
+        // Generate tiles in spiral order from center (same algorithm as before).
         let mut cx = 0;
         let mut cy = 0;
 
@@ -280,8 +275,8 @@ impl PendingTiles {
         let mut direction_total_y = 1;
         let mut direction = 0;
 
-        result.push(Tile(cx, cy));
-        while result.len() < total {
+        self.offsets.push(Tile(cx, cy));
+        while self.offsets.len() < total {
             match direction {
                 0 => cx += 1,
                 1 => cy += 1,
@@ -290,7 +285,7 @@ impl PendingTiles {
                 _ => unreachable!("Invalid direction"),
             }
 
-            result.push(Tile(cx, cy));
+            self.offsets.push(Tile(cx, cy));
 
             direction_current += 1;
             let direction_total = if direction % 2 == 0 {
@@ -309,8 +304,26 @@ impl PendingTiles {
                 direction_current = 0;
             }
         }
-        result.reverse();
-        result
+
+        self.offsets.reverse();
+    }
+}
+
+// This structure keeps the list of tiles that are in the pending list, the
+// ones that are going to be rendered.
+pub struct PendingTiles {
+    pub list: Vec<Tile>,
+    pub spiral: TileSpiral,
+    pub spiral_rect: TileRect,
+}
+
+impl PendingTiles {
+    pub fn new() -> Self {
+        Self {
+            list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            spiral: TileSpiral::new(),
+            spiral_rect: TileRect::empty(),
+        }
     }
 
     pub fn update(&mut self, tile_viewbox: &TileViewbox, surfaces: &Surfaces, only_visible: bool) {
@@ -333,11 +346,10 @@ impl PendingTiles {
         // doesn't change. The spiral_rect is based on the
         // viewbox so, if the viewbox doesn't change
         // the spiral should not change.
-        let total = (spiral_rect.width() * spiral_rect.height()) as usize;
-        if self.spiral.len() < total {
-            self.spiral =
-                Self::generate_spiral(spiral_rect.width() as usize, spiral_rect.height() as usize);
-        }
+        let columns = spiral_rect.columns();
+        let rows = spiral_rect.rows();
+
+        self.spiral.ensure(columns as usize, rows as usize);
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)
@@ -349,7 +361,13 @@ impl PendingTiles {
         let mut interest_cached = Vec::new();
         let mut interest_uncached = Vec::new();
 
-        let center_tile = Tile(spiral_rect.center_x(), spiral_rect.center_y());
+        // Compute the scheduling center explicitly (inclusive range).
+        // This avoids relying on `TileRect::center_x/center_y` semantics, which may be used
+        // elsewhere with different expectations.
+        let center_tile = Tile(
+            (spiral_rect.x1() + spiral_rect.x2()) / 2,
+            (spiral_rect.y1() + spiral_rect.y2()) / 2,
+        );
         for spiral_tile in self.spiral.iter() {
             let tile = Tile(spiral_tile.0 + center_tile.0, spiral_tile.1 + center_tile.1);
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
