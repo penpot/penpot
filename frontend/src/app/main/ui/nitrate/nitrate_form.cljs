@@ -61,7 +61,8 @@
           "- " (tr "nitrate.form.enterprise-feature-3")]]
 
         (if online?
-          [[:p {:class (stl/css :modal-text-large)}
+          [[:div {:class (stl/css :modal-text-large :price-text)}
+            [:span {:class (stl/css :price-value)} "25$"]
             (tr "nitrate.form.enterprise.price")]
 
            [:div {:class (stl/css :modal-text-large :modal-buttons-section)}
