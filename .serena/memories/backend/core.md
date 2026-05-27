@@ -7,6 +7,7 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 - RPC, DB helpers, workers, cron: `mem:backend/rpc-db-worker-subtleties`
 - HTTP sessions, config, storage, media, file data persistence: `mem:backend/http-storage-filedata-subtleties`
 - Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
+- Services, task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
 
 ## Stable namespace map
 
