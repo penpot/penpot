@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: liimee <alt+git@fw.taaa.my.id>\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -4047,6 +4047,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Pustaka Terbagi - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Kebebasan Desain untuk Tim"
 
@@ -6404,6 +6405,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Topeng"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Cari lapisan"
 
