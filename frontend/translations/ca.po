@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Aryiu <aryiu@users.noreply.hosted.weblate.org>\n"
+"Last-Translator: Josep Ponsà <jponsac@uoc.edu>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
 "Language: ca\n"
@@ -4230,6 +4230,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Màscares"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Cerca capes"
 
