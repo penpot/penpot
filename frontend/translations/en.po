@@ -1151,7 +1151,7 @@ msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
 msgid "dashboard.team-organization.add.no-valid-orgs"
-msgstr "You are not allowed to add this team to any of your organizations."
+msgstr "You don't have permission to add this team to any of your organizations."
 
 msgid "dashboard.select-org-modal.title"
 msgstr "Add team to an organization"
@@ -1164,6 +1164,12 @@ msgstr "Select an organization"
 
 msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
+
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Pending invitations to external users will be canceled."
+
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr "\"%s\" only allows organization members to join its teams. Any pending invitations to people outside the organization will be revoked."
 
 msgid "dashboard.change-org-modal.title"
 msgstr "Change team's organization"
@@ -3769,7 +3775,7 @@ msgstr "Only existing members of the organization can be invited. Because none o
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-restricted-members.all-org-members-in-team"
-msgstr "Only existing members of the organization can be invited to this team, and they are all already team members. If you need more information, contact the organization's owner."
+msgstr "Only \"%s\" organization's members can be invited to this team, and they are all already team members. If you need more information, contact the organization's owner."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-restricted-members.cancel"
