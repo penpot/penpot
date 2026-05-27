@@ -549,31 +549,68 @@ function stop-devenv {
     fi
 }
 
+# drop-devenv shares stop-devenv's CLI and invariants exactly; the only
+# difference is that on a full teardown it also removes the devenv image
+# (forcing the next bring-up to re-pull/rebuild). Single-workspace drops
+# keep the image because the rest of the workspaces still depend on it.
+#
+#   --ws N (N >= 1)  delegate to stop-devenv; image is kept.
+#   --ws 0 | (none)  delegate to stop-devenv; image is removed.
+#   --all            delegate to stop-devenv; image is removed.
 function drop-devenv {
-    local ws
-    for ws in $(list-running-instances); do
-        # Never -v: data preservation rule.
-        instance-compose "$ws" down -t 2
+    # Parse args ourselves to decide whether the image gets removed.
+    # stop-devenv then re-parses the same flags and runs the actual stop.
+    local target=""
+    local all=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ws)
+                target="$(parse-ws-integer "$2")" || return 1; shift 2;;
+            --all)
+                all=true; shift;;
+            *)
+                echo "drop-devenv: unknown argument '$1'" >&2
+                return 1;;
+        esac
     done
-    infra-compose down -t 2
+    if [[ -n "$target" && "$all" == "true" ]]; then
+        echo "drop-devenv: --ws and --all are mutually exclusive." >&2
+        return 1
+    fi
 
-    echo "Clean old development image $DEVENV_IMGNAME..."
-    docker images $DEVENV_IMGNAME -q | xargs --no-run-if-empty docker rmi
+    local stop_args=()
+    [[ -n "$target" ]] && stop_args+=(--ws "${target#ws}")
+    [[ "$all" == "true" ]] && stop_args+=(--all)
+    stop-devenv "${stop_args[@]}" || return $?
+
+    # Image removal happens for the full-teardown paths only. A single-wsN
+    # (N >= 1) drop must keep the image since ws0 and any other wsN still
+    # rely on it.
+    if [[ -z "$target" || "$target" == "ws0" ]] || [[ "$all" == "true" ]]; then
+        echo "Clean old development image $DEVENV_IMGNAME..."
+        docker images $DEVENV_IMGNAME -q | xargs --no-run-if-empty docker rmi
+    fi
 }
 
 function log-devenv {
-    # Tail ws0 by default; for multi-instance dev, attach explicitly per project.
-    instance-compose ws0 logs -f --tail=50
+    local target="ws0"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ws)
+                target="$(parse-ws-integer "$2")" || return 1; shift 2;;
+            *)
+                echo "log-devenv: unknown argument '$1'" >&2
+                return 1;;
+        esac
+    done
+    instance-compose "$target" logs -f --tail=50
 }
 
 function run-devenv-tmux {
     local extra_env_args=()
-    local instance="ws0"
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --instance)
-                instance="$(normalize-instance "$2")"; shift 2;;
             -e)
                 extra_env_args+=(-e "$2"); shift 2;;
             -e*)
@@ -584,37 +621,17 @@ function run-devenv-tmux {
         esac
     done
 
-    if ! devenv-main-running "$instance"; then
-        if [[ "$instance" == "ws0" ]]; then
-            start-devenv
-            echo "Waiting for containers fully start (5s)..."
-            sleep 5
-        else
-            echo "Instance '$instance' is not running; bring it up first with './manage.sh run-devenv-agentic --n-instances N'." >&2
-            return 1
-        fi
+    if ! devenv-main-running ws0; then
+        start-devenv
+        echo "Waiting for containers fully start (5s)..."
+        sleep 5
     fi
 
     local container
-    container=$(devenv-main-container "$instance")
+    container=$(devenv-main-container ws0)
     docker exec -ti \
         "${extra_env_args[@]}" \
         "$container" sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
-}
-
-# Normalize an instance specifier ("main", "0", "ws0", "1", "ws3", ...) to "wsN".
-function normalize-instance {
-    local raw="$1"
-    if [[ "$raw" == "main" ]]; then
-        echo "ws0"
-    elif [[ "$raw" =~ ^ws[0-9]+$ ]]; then
-        echo "$raw"
-    elif [[ "$raw" =~ ^[0-9]+$ ]]; then
-        echo "ws$raw"
-    else
-        echo "Invalid instance value: '$raw' (expected main|0|ws0|1|ws1|...)" >&2
-        return 1
-    fi
 }
 
 # Strict parser for --ws values. Accepts a bare integer in the supported
@@ -789,6 +806,23 @@ function run-devenv-agentic {
         return 1
     fi
 
+    # Pre-flight: frontend/resources/public/js/config.js must exist in the
+    # live repo. The file is gitignored; ws0 reads it directly from $PWD and
+    # wsN gets a one-shot copy on its initial sync. Without it the frontend
+    # never sets the 'enable-mcp' flag, so the agent can't drive Penpot via
+    # MCP. Fail fast (before any side effects) so the developer can fix it
+    # without leaving infra / containers half-started behind.
+    local cfg="frontend/resources/public/js/config.js"
+    if [[ ! -f "$PWD/$cfg" ]]; then
+        echo "$cfg is missing in the live repo." >&2
+        echo "Create it before running run-devenv-agentic -- the file is gitignored," >&2
+        echo "read directly from \$PWD on ws0 and copied into wsN only on its initial" >&2
+        echo "sync. Without it the Penpot frontend will not establish the MCP" >&2
+        echo "connection, so the agent cannot drive it. Minimal content:" >&2
+        echo "  var penpotFlags = \"enable-mcp\";" >&2
+        return 1
+    fi
+
     pull-devenv-if-not-exists
     ensure-devenv-network
     ensure-infra-up
@@ -827,8 +861,8 @@ function run-devenv-shell {
     local positional=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --instance)
-                instance="$(normalize-instance "$2")"; shift 2;;
+            --ws)
+                instance="$(parse-ws-integer "$2")" || return 1; shift 2;;
             *)
                 positional+=("$1"); shift;;
         esac
@@ -839,12 +873,20 @@ function run-devenv-shell {
             start-devenv
         else
             echo "Instance '$instance' is not running." >&2
+            echo "Bring it up first with './manage.sh run-devenv-agentic --ws ${instance#ws}'." >&2
             return 1
         fi
+    fi
+    # No positional args -> drop the user into a bash shell. Without this,
+    # `sudo -EH -u penpot` would be called with no command and just print its
+    # own usage.
+    if [[ ${#positional[@]} -eq 0 ]]; then
+        positional=(bash)
     fi
     local container
     container=$(devenv-main-container "$instance")
     docker exec -ti \
+           -w /home/penpot/penpot \
            -e JAVA_OPTS="$JAVA_OPTS" \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            "$container" sudo -EH -u penpot "${positional[@]}"
@@ -874,7 +916,8 @@ function attach-devenv {
 
     if ! docker exec "$container" sudo -EH -u penpot tmux has-session -t "$session" 2>/dev/null; then
         echo "No tmux session '$session' inside instance '$instance'." >&2
-        echo "Start it with './manage.sh run-devenv-agentic [--ws N]'." >&2
+        echo "The session may still be starting (the workspace's startup script runs the" >&2
+        echo "project setup before creating it) or it may have been closed. Wait and retry." >&2
         return 1
     fi
 
@@ -995,17 +1038,52 @@ function start-coding-agent {
 }
 
 function run-devenv-isolated-shell {
-    docker volume create ${PENPOT_USER_DATA_VOLUME};
+    local instance="ws0"
+    local positional=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ws)
+                instance="$(parse-ws-integer "$2")" || return 1; shift 2;;
+            *)
+                positional+=("$1"); shift;;
+        esac
+    done
+
+    # Resolve the user_data volume and source tree for the target workspace.
+    # ws0 uses the baseline volume name from defaults.env; wsN follows the
+    # write-instance-env naming convention (penpotdev_<instance>_user_data)
+    # and bind-mounts the workspace clone instead of $PWD.
+    local user_data_volume source_path
+    if [[ "$instance" == "ws0" ]]; then
+        user_data_volume="$PENPOT_USER_DATA_VOLUME"
+        source_path="$PWD"
+    else
+        user_data_volume="penpotdev_${instance}_user_data"
+        source_path="$(workspace-path "$instance")"
+        if [[ ! -d "$source_path" ]]; then
+            echo "isolated-shell: workspace for $instance not found at $source_path." >&2
+            return 1
+        fi
+    fi
+
+    # No command -> drop into bash. Always cwd to the source-tree root;
+    # callers that need a subdir can `cd` inside the shell or pass
+    # `bash -c 'cd subdir && cmd'`.
+    if [[ ${#positional[@]} -eq 0 ]]; then
+        positional=(bash)
+    fi
+
+    docker volume create "$user_data_volume" >/dev/null
     docker run -ti --rm \
-           --mount source=${PENPOT_USER_DATA_VOLUME},type=volume,target=/home/penpot/ \
-           --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
+           --mount source="$user_data_volume",type=volume,target=/home/penpot/ \
+           --mount source="$source_path",type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
            -e BUILD_WASM=$BUILD_WASM \
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -e JAVA_OPTS="$JAVA_OPTS" \
-           -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot $@
+           -w /home/penpot/penpot \
+           "$DEVENV_IMGNAME:latest" sudo -EH -u penpot "${positional[@]}"
 }
 
 function build-imagemagick-docker-image {
@@ -1216,40 +1294,68 @@ function build-storybook-docker-image {
 function usage {
     echo "PENPOT build & release manager"
     echo "USAGE: $0 OPTION"
-    echo "Options:"
-    echo "- pull-devenv                      Pulls docker development oriented image"
-    echo "- build-devenv                     Build docker development oriented image"
-    echo "- build-devenv --local             Build a local docker development oriented image"
-    echo "- create-devenv                    Create the development oriented docker compose service."
-    echo "- start-devenv                     Start the development oriented docker compose service."
-    echo "- stop-devenv                      Stops the development oriented docker compose service."
-    echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
-    echo "- run-devenv                       Brings ws0 up and attaches to its tmux session (no MCP, no Serena)."
-    echo "                                   Optional --instance <wsN> targets a different instance."
-    echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
-    echo "- run-devenv-agentic               Brings one agentic instance (MCP + Serena) up. Errors out if it is already running."
-    echo "                                   Auto-starts ws0 first when --ws N (N>=1) is requested (workers run only on ws0)."
-    echo "                                   Options: --ws N (default: 0; non-negative integer only),"
-    echo "                                            --sync (re-seed workspace from live repo; ws1+ only),"
-    echo "                                            --serena-context CONTEXT (default: desktop-app),"
-    echo "                                            --git-user-name NAME / --git-user-email EMAIL"
-    echo "                                            (default: host's effective 'git config user.{name,email}',"
-    echo "                                             honouring per-repo local overrides)"
-    echo "- attach-devenv                    Attaches to the tmux session inside a running instance."
-    echo "                                   Options: --ws N (default: 0; non-negative integer only)"
-    echo "- start-coding-agent <client>      Launches an AI coding agent against one workspace with the right MCP config wired in."
+    echo ""
+    echo "Development environment (devenv)"
+    echo "--------------------------------"
+    echo "The devenv runs Penpot in a Docker container and supports parallel"
+    echo "'workspaces': ws0 (the live repo at \$PWD) and optional wsN (N >= 1, sibling"
+    echo "clones). Use --ws N to target a specific workspace; the default is 0."
+    echo "Full guide: docs/technical-guide/developer/{devenv,agentic-devenv}.md."
+    echo ""
+    echo "Image lifecycle"
+    echo "- pull-devenv                      Pull the devenv docker image from the registry."
+    echo "- build-devenv [--local]           Build the devenv docker image (--local skips the registry push)."
+    echo ""
+    echo "Bring a devenv up / down"
+    echo "- run-devenv-agentic               Bring one workspace up with AI-agent tooling enabled (MCP + Serena),"
+    echo "                                   start its tmux session in the background, regenerate the per-workspace"
+    echo "                                   MCP configs, and print the workspace's URLs. Errors out if the target"
+    echo "                                   is already running."
+    echo "                                   Options:"
+    echo "                                     --ws N                target workspace (default: 0). N >= 1 auto-starts"
+    echo "                                                           ws0 first if it is not already up."
+    echo "                                     --sync                re-seed the wsN clone from the live repo before"
+    echo "                                                           starting (forbidden on ws0; implicit on first"
+    echo "                                                           start of a wsN with no on-disk workspace yet)."
+    echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
+    echo "                                     --git-user-name NAME / --git-user-email EMAIL"
+    echo "                                                           identity wired into the container's git config"
+    echo "                                                           (default: host's effective 'git config user.X',"
+    echo "                                                           honouring per-repo local overrides; see"
+    echo "                                                           devenv.md > 'Git identity inside the container')."
+    echo "- start-devenv                     Bring ws0 + shared infra up in the background (no tmux, no MCP/Serena)."
+    echo "- create-devenv                    Create ws0 + shared-infra compose services without starting them."
+    echo "- stop-devenv                      Stop one or more workspaces. Shared infra stops with the last one."
+    echo "                                   Options: --ws N (stop wsN, N >= 1) | (no flag) (stop ws0 + infra;"
+    echo "                                            refused if any wsN is still running) | --all (stop every wsN"
+    echo "                                            highest first, then ws0 + infra)."
+    echo "- drop-devenv                      Same CLI and invariants as stop-devenv (see above), plus removal of"
+    echo "                                   the shared devenv image on full teardowns (no flag, --ws 0, or --all)."
+    echo "                                   Refused if any wsN (N >= 1) is still running. A single --ws N (N >= 1)"
+    echo "                                   keeps the image since other workspaces still need it."
+    echo "- log-devenv                       Tail a workspace's compose logs."
+    echo "                                   Options: --ws N (default: 0)."
+    echo ""
+    echo "Work inside a running devenv"
+    echo "- attach-devenv                    Attach to the tmux session inside a running workspace."
+    echo "                                   Options: --ws N (default: 0)."
+    echo "- start-coding-agent <client>      Launch an AI coding agent against one workspace with the right MCP"
+    echo "                                   config wired in. cd's into the workspace, refuses to launch if the"
+    echo "                                   instance is not running, and forwards extra args to the client."
     echo "                                   client: claude | opencode | vscode | codex"
-    echo "                                   Options: --ws N (default: 0; non-negative integer only)."
-    echo "                                   cd's into the target workspace and refuses to launch if the instance is not running."
-    echo "                                   Extra args after --ws (or after the client name) are forwarded to the underlying client."
-    echo "                                   See docs/technical-guide/developer/agentic-devenv.md and .devenv/README.md"
-    echo "                                   for per-client setup, override paths, and the Codex 'trusted project' caveat."
-    echo "- run-devenv-shell                 Opens a bash shell inside a running instance."
-    echo "                                   Options: --instance 0|wsN|N (default: 0)"
-    echo "- stop-devenv                      Stops instances. ws0 must be the last to stop; shared infra stops with ws0."
-    echo "                                   Options: --ws N (stop one ws1+) | --ws 0 | (none) (stop ws0 + infra) | --all"
-    echo "- isolated-shell                   Starts a bash shell in a new devenv container."
-    echo "- log-devenv                       Show logs of the running devenv docker compose service."
+    echo "                                   Options: --ws N (default: 0). See agentic-devenv.md and"
+    echo "                                   .devenv/README.md for per-client setup and override paths."
+    echo "- run-devenv-shell                 Open a bash shell inside the workspace's running devenv container"
+    echo "                                   ('docker exec' into the live 'main' container alongside the tmux"
+    echo "                                   session). Requires the workspace to be up."
+    echo "                                   Options: --ws N (default: 0)."
+    echo "- run-devenv                       Start ws0 if needed and attach to its tmux session interactively."
+    echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
+    echo "- isolated-shell                   Spawn a fresh, ephemeral devenv container ('docker run', not 'docker exec')"
+    echo "                                   with the workspace's source tree and build-cache volume mounted. Use this"
+    echo "                                   for ad-hoc work that should not touch the running devenv (e.g. manual"
+    echo "                                   builds); the workspace does not need to be running."
+    echo "                                   Options: --ws N (default: 0)."
     echo ""
     echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."
     echo "- build-frontend-bundle            Build frontend bundle"

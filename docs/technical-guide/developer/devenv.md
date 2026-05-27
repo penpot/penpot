@@ -102,12 +102,13 @@ Host ports are offset by `10000 × N`:
 | Serena MCP | `http://localhost:14281` | `http://localhost:24281` | `http://localhost:34281` |
 
 Container-internal ports stay fixed. Target a specific instance with
-`--ws 1` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`, and
-`start-coding-agent` (`--instance ws1` on `run-devenv-shell` /
-`run-devenv`). The `--ws` flag accepts a **non-negative integer only** —
-`--ws main` or `--ws ws1` is rejected, keeping the flag shape uniform across
-commands. `run-devenv-agentic` also accepts `--serena-context CTX` and
-`--git-user-name NAME` / `--git-user-email EMAIL` (see below).
+`--ws N` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`,
+`start-coding-agent`, `run-devenv-shell`, and `isolated-shell`. `--ws`
+accepts a **non-negative integer only** — `--ws main` or `--ws ws1` is
+rejected, keeping the flag shape uniform across commands. `run-devenv` is
+ws0-only and takes no workspace flag. `run-devenv-agentic` also accepts
+`--serena-context CTX` and `--git-user-name NAME` / `--git-user-email
+EMAIL` (see below).
 
 ### Git identity inside the container
 
