@@ -755,6 +755,18 @@ msgstr "Uploading data to server (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Uploading file: %s"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.check-error"
+msgstr "We couldn't verify this file."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "This file appears to be damaged."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Something went wrong while processing this file."
+
 #: src/app/main/ui/dashboard/team.cljs:765
 msgid "dashboard.invitation-modal.delete"
 msgstr "You're going to delete the invitations to:"
