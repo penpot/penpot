@@ -1377,7 +1377,7 @@
                                     :description "Brand blue"}))
          (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.small")
                                    {:name "space.small"
-                                    :type :dimension
+                                    :type :dimensions
                                     :value "4px"
                                     :description ""})))
        (t/testing "token `$type` overrides the inherited group `$type`"
@@ -1388,7 +1388,7 @@
                                     :description ""}))
          (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.large")
                                    {:name "space.large"
-                                    :type :dimension
+                                    :type :dimensions
                                     :value "16px"
                                     :description ""}))))))
 
