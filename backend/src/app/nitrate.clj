@@ -281,18 +281,25 @@
    [:name ::sm/text]
    [:slug ::sm/text]
    [:team-count ::sm/int]
-   [:member-count ::sm/int]])
+   [:member-count ::sm/int]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]])
 
 (defn- get-owned-orgs-summary-api
   [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/owned-organizations-summary")
-                        [:vector schema:org-summary-counts]
-                        params)))
+  (let [baseuri (cf/get :nitrate-backend-uri)
+        orgs    (request-to-nitrate cfg :get
+                                    (str baseuri
+                                         "/api/users/"
+                                         profile-id
+                                         "/owned-organizations-summary")
+                                    [:vector schema:org-summary-counts]
+                                    params)]
+    (mapv (fn [org]
+            (if-let [logo-id (:logo-id org)]
+              (assoc org :custom-photo (str (cf/get :public-uri) "/assets/by-id/" logo-id))
+              org))
+          orgs)))
 
 (defn- delete-owned-orgs-api
   [cfg {:keys [profile-id] :as params}]
