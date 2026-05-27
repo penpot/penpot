@@ -6,7 +6,7 @@ Uses GitHub GraphQL and REST APIs via the authenticated ``gh`` CLI.
 
 Subcommands:
   issues   List issues in a milestone
-  prs      Fetch details for one or more PRs
+  prs      Fetch details for one or more PRs (or all PRs in a milestone)
 
 Usage:
   python3 tools/gh.py issues <milestone-title>          (default: state=closed)
@@ -16,6 +16,8 @@ Usage:
   python3 tools/gh.py prs 9179 9204 9311
   python3 tools/gh.py prs --file prs.txt
   cat prs.txt | python3 tools/gh.py prs --stdin
+  python3 tools/gh.py prs --milestone "2.16.0"          (default: state=merged)
+  python3 tools/gh.py prs --milestone "2.16.0" --state all
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -210,7 +212,86 @@ def cmd_issues(args: argparse.Namespace) -> None:
 
 
 # ─────────────────────────────────────────────
-#  Subcommand: prs
+#  Subcommand: prs — milestone PR listing
+# ─────────────────────────────────────────────
+
+GQL_MILESTONE_PRS_QUERY = """\
+query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
+  repository(owner: $owner, name: $repo) {
+    milestone(number: $milestone) {
+      pullRequests(first: 50, after: $cursor, states: __STATES__) {
+        totalCount
+        pageInfo { hasNextPage endCursor }
+        nodes {
+          ... on PullRequest {
+            number
+            title
+            state
+            mergedAt
+            author { login }
+            labels(first: 20) { nodes { name } }
+            closingIssuesReferences(first: 5) { nodes { number } }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
+    """
+    Fetch all PRs in a milestone via paginated GraphQL.
+
+    Args:
+        milestone_num: milestone number
+        states: GraphQL states enum array literal for pullRequests,
+                e.g. ``"[MERGED]"`` or ``"[OPEN CLOSED MERGED]"``
+
+    Returns:
+        List of {number, title, state, merged_at, author, labels, closing_issues}
+    """
+    query = GQL_MILESTONE_PRS_QUERY.replace("__STATES__", states)
+    all_nodes: list[dict] = []
+    cursor: str | None = None
+
+    while True:
+        variables: dict[str, Any] = {
+            "owner": OWNER,
+            "repo": REPO_NAME,
+            "milestone": milestone_num,
+            "cursor": cursor,
+        }
+        data = run_gh_graphql(query, variables)
+        prs = data["repository"]["milestone"]["pullRequests"]
+        page_info = prs["pageInfo"]
+
+        for node in prs["nodes"]:
+            if node is None:
+                continue
+            all_nodes.append({
+                "number": node["number"],
+                "title": node["title"],
+                "state": node["state"],
+                "merged_at": node.get("mergedAt"),
+                "author": node["author"]["login"] if node["author"] else None,
+                "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
+            })
+
+        total = len(all_nodes)
+        print(f"  ... fetched {total} PRs so far", file=sys.stderr)
+
+        if not page_info["hasNextPage"]:
+            break
+        cursor = page_info["endCursor"]
+
+    return all_nodes
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: prs — batch fetch by number
 # ─────────────────────────────────────────────
 
 PRS_BATCH_SIZE = 50
@@ -280,7 +361,24 @@ def fetch_prs_batch(pr_numbers: list[int]) -> list[dict]:
 def cmd_prs(args: argparse.Namespace) -> None:
     """Handle the ``prs`` subcommand."""
 
-    # Collect PR numbers from args / file / stdin
+    # ── Milestone mode: fetch all PRs in a milestone ──
+    if args.milestone:
+        print(f"Looking up milestone \"{args.milestone}\"...", file=sys.stderr)
+        ms = find_milestone(args.milestone)
+        print(f"Milestone #{ms['number']}: {ms['open_issues']} open, {ms['closed_issues']} closed",
+              file=sys.stderr)
+
+        state_map = {"open": "[OPEN]", "closed": "[CLOSED]",
+                     "merged": "[MERGED]", "all": "[OPEN CLOSED MERGED]"}
+        gql_states = state_map[args.state]
+
+        print(f"Fetching {args.state} PRs via GraphQL...", file=sys.stderr)
+        results = fetch_milestone_prs(ms["number"], gql_states)
+        print(f"Fetched {len(results)} PRs total", file=sys.stderr)
+        print(json.dumps(results, indent=2))
+        return
+
+    # ── Batch mode: fetch specific PRs by number ──
     pr_numbers: list[int] = []
 
     if args.numbers:
@@ -300,7 +398,7 @@ def cmd_prs(args: argparse.Namespace) -> None:
                 pr_numbers.append(int(line))
 
     if not pr_numbers:
-        print("ERROR: no PR numbers provided (pass numbers, --file, or --stdin)",
+        print("ERROR: no PR numbers provided (pass numbers, --file, --stdin, or --milestone)",
               file=sys.stderr)
         sys.exit(1)
 
@@ -350,10 +448,18 @@ def main() -> None:
     p_issues.set_defaults(func=cmd_issues)
 
     # --- prs ---
-    p_prs = sub.add_parser("prs", help="Fetch details for one or more PRs")
+    p_prs = sub.add_parser("prs", help="Fetch details for one or more PRs (or all PRs in a milestone)")
     p_prs.add_argument(
         "numbers", type=int, nargs="*",
         help="PR numbers to fetch (space-separated)"
+    )
+    p_prs.add_argument(
+        "--milestone", type=str,
+        help="Milestone title to list all PRs from (e.g. '2.16.0')"
+    )
+    p_prs.add_argument(
+        "--state", choices=["open", "closed", "merged", "all"], default="merged",
+        help="PR state filter when using --milestone (default: merged)"
     )
     p_prs.add_argument(
         "--file", type=str,
