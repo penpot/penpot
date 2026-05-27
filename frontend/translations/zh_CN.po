@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Maemolee <maemolee@gmail.com>\n"
+"Last-Translator: Semon Xue <semonxue@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -6681,6 +6681,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "遮罩"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "搜索图层"
 
