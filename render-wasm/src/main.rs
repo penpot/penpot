@@ -928,7 +928,9 @@ pub fn free_gpu_resources() {
     get_render_state().free_gpu_resources();
 }
 
-fn main() {
-    #[cfg(target_arch = "wasm32")]
-    init_gl!();
+pub fn main() {
+    // Why an empty main?
+    // Right now with the target `wasm32-unknown-emscripten` it is not possible
+    // to compile a rust project without a main and generate the necessary glue
+    // code. So the only option is to compile it with an empty main.
 }

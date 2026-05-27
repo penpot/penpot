@@ -22,6 +22,16 @@ impl Tile {
     }
 
     #[inline(always)]
+    pub fn get_rect_with_size(&self, tile_size: f32) -> skia::Rect {
+        skia::Rect::from_xywh(
+            self.0 as f32 * tile_size,
+            self.1 as f32 * tile_size,
+            tile_size,
+            tile_size,
+        )
+    }
+
+    #[inline(always)]
     pub fn get_rect_with_offset(&self, offset: &skia::Point) -> skia::Rect {
         skia::Rect::from_xywh(
             self.0 as f32 * TILE_SIZE - offset.x,
@@ -92,22 +102,76 @@ impl TileRect {
     }
 
     /// Inclusive tile count on X (matches `contains`: both `x1` and `x2` are included).
-    #[inline]
+    #[inline(always)]
     pub fn columns(&self) -> i32 {
         self.x2() - self.x1() + 1
     }
 
     /// Inclusive tile count on Y (matches `contains`: both `y1` and `y2` are included).
-    #[inline]
+    #[inline(always)]
     pub fn rows(&self) -> i32 {
         self.y2() - self.y1() + 1
     }
 
+    #[inline(always)]
+    pub fn width(&self) -> i32 {
+        self.x2() - self.x1()
+    }
+
+    #[inline(always)]
+    pub fn height(&self) -> i32 {
+        self.y2() - self.y1()
+    }
+
+    #[inline(always)]
     pub fn contains(&self, tile: &Tile) -> bool {
         tile.x() >= self.left()
             && tile.y() >= self.top()
             && tile.x() <= self.right()
             && tile.y() <= self.bottom()
+    }
+
+    pub fn iter(self, inclusive: bool) -> TileRectIter {
+        TileRectIter::new(self, inclusive)
+    }
+}
+
+#[allow(dead_code)]
+pub struct TileRectIter {
+    rect: TileRect,
+    inclusive: bool,
+    index: i32,
+    total: i32,
+}
+
+impl TileRectIter {
+    fn new(rect: TileRect, inclusive: bool) -> Self {
+        let width = rect.width() + if inclusive { 1 } else { 0 };
+        let height = rect.height() + if inclusive { 1 } else { 0 };
+        Self {
+            rect,
+            inclusive,
+            index: 0,
+            total: width * height,
+        }
+    }
+}
+
+impl Iterator for TileRectIter {
+    type Item = Tile;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.total {
+            return None;
+        }
+
+        let width = self.rect.width() + if self.inclusive { 1 } else { 0 };
+
+        let x = self.rect.left() + self.index % width;
+        let y = self.rect.top() + self.index / width;
+
+        self.index += 1;
+
+        Some(Tile::from(x, y))
     }
 }
 
@@ -344,6 +408,10 @@ pub struct PendingTiles {
     pub list: Vec<Tile>,
     pub spiral: TileSpiral,
     pub spiral_rect: TileRect,
+    pub visible_cached: Vec<Tile>,
+    pub visible_uncached: Vec<Tile>,
+    pub interest_cached: Vec<Tile>,
+    pub interest_uncached: Vec<Tile>,
 }
 
 impl PendingTiles {
@@ -352,6 +420,10 @@ impl PendingTiles {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             spiral: TileSpiral::new(),
             spiral_rect: TileRect::empty(),
+            visible_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            interest_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
         }
     }
 

@@ -378,7 +378,7 @@ impl DocAtlas {
     }
 
     /// Returns a snapshot of the atlas together with its scale and origin, so the
-    /// caller can take it **once** per `rebuild_backbuffer_crop_cache` and share it
+    /// caller can take it **once** per `rebuild_backbuffer_crop_cachef` and share it
     /// across all shapes that need the tile/atlas fallback path — avoiding an
     /// `image_snapshot` (and potential GPU flush) per shape.
     pub fn snapshot_for_drag_crop(&mut self) -> Option<(skia::Image, f32, skia::Point)> {
@@ -424,6 +424,7 @@ pub struct Surfaces {
     tiles: TileTextureCache,
     pub atlas: DocAtlas,
     sampling_options: skia::SamplingOptions,
+    atlas_sampling_options: skia::SamplingOptions,
     pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
     dirty_surfaces: u32,
@@ -498,6 +499,10 @@ impl Surfaces {
             tiles,
             atlas,
             sampling_options,
+            atlas_sampling_options: skia::SamplingOptions::new(
+                skia::FilterMode::Nearest,
+                skia::MipmapMode::None,
+            ),
             margins,
             dirty_surfaces: 0,
             extra_tile_dims,
@@ -514,9 +519,6 @@ impl Surfaces {
     }
 
     pub fn draw_tile_atlas_to_backbuffer(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
-        let sampling_options =
-            skia::SamplingOptions::new(skia::FilterMode::Nearest, skia::MipmapMode::None);
-
         self.tiles.update(viewbox, tile_viewbox);
         self.backbuffer.canvas().draw_atlas(
             &self.tile_atlas.image_snapshot(),
@@ -524,7 +526,7 @@ impl Surfaces {
             &self.tiles.textures,
             None,
             skia::BlendMode::SrcOver,
-            sampling_options,
+            self.atlas_sampling_options,
             None,
             None,
         );
@@ -1273,45 +1275,11 @@ impl Surfaces {
         self.tile_atlas.image_snapshot_with_bounds(rect)
     }
 
-    pub fn draw_cached_tile_into_backbuffer(
-        &mut self,
-        tile: Tile,
-        rect: skia::Rect,
-        _color: skia::Color,
-    ) {
+    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
         if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
+            // let rect = tile.get_rect_with_offset(&offset);
             let backbuffer_canvas = self.backbuffer.canvas();
-
-            // if color != skia::Color::TRANSPARENT {
-            //     let mut paint = skia::Paint::default();
-            //     paint.set_color(color);
-            //     backbuffer_canvas.draw_rect(rect, &paint);
-            // }
-
             backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
-        }
-    }
-
-    /// Draws a cached tile texture to the Cache self.backbuffer at the given
-    /// cache-aligned rect.  This keeps the Cache surface in sync with
-    /// Backbuffer so that `render_from_cache` (used during pan) has the
-    /// full scene including tiles served from the texture cache.
-    pub fn draw_cached_tile_into_cache(
-        &mut self,
-        tile: Tile,
-        aligned_rect: &skia::Rect,
-        _color: skia::Color,
-    ) {
-        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            // let mut bg = skia::Paint::default();
-            // bg.set_color(color);
-            // self.cache.canvas().draw_rect(aligned_rect, &bg);
-            self.cache.canvas().draw_image_rect(
-                &image,
-                None,
-                aligned_rect,
-                &skia::Paint::default(),
-            );
         }
     }
 

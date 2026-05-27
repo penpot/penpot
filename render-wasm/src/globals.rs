@@ -1,5 +1,8 @@
 use macros::wasm_error;
 
+#[cfg(target_arch = "wasm32")]
+use crate::emscripten::init_gl;
+
 use crate::mem;
 use crate::render::{gpu_state::GpuState, RenderState};
 use crate::state::{State, TextEditorState};
@@ -107,6 +110,7 @@ fn design_init() {
     }
 }
 
+/// Initializes TextEditorState.
 fn text_editor_init() {
     unsafe {
         let text_editor_state = TextEditorState::new();
@@ -117,6 +121,8 @@ fn text_editor_init() {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
+    #[cfg(target_arch = "wasm32")]
+    init_gl!();
     gpu_init();
     render_init(width, height);
     text_editor_init();
