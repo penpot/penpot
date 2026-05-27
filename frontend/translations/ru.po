@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
+"Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -6961,6 +6961,7 @@ msgid "labels.mixed-values"
 msgstr "Смешать"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Создать новую организацию"
 
