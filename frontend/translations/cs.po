@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: matl-17 <lmlmlmlmlm71@gmail.com>\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/"
 "cs/>\n"
 "Language: cs\n"
@@ -3849,6 +3849,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Sdílené knihovny - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot – Svoboda designu pro týmy"
 
@@ -6149,6 +6150,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Masky"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Prohledat vrstvy"
 
