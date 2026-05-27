@@ -28,7 +28,7 @@
   color: var(--options-fg-color);
   cursor: default;
 
-  &:hover,
+  &:hover:not(.option-disabled),
   &[aria-selected="true"] {
     --options-bg-color: var(--color-background-quaternary);
   }

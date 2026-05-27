@@ -159,7 +159,7 @@
                   (if all-org-members-in-team?
                     (rx/of (modal/show
                             {:type :alert
-                             :message (tr "modals.invite-restricted-members.all-org-members-in-team")
+                             :message (tr "modals.invite-restricted-members.all-org-members-in-team" (get-in team [:organization :name]))
                              :accept-label (tr "labels.accept")
                              :accept-style :primary
                              :title (tr "modals.invite-team-member.title")}))
