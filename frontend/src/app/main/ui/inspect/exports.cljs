@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.main.data.exports.assets :as de]
+   [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
@@ -17,7 +18,11 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
    [app.util.keyboard :as kbd]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def ^:private exports-cache-ref
+  (l/derived :inspect-exports-cache st/state))
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
@@ -65,46 +70,58 @@
                (de/request-export {:exports exports})
                (de/export-shapes-event exports "viewer")))))
 
+        shapes-key
+        (vec (sort (map :id shapes)))
+
         add-export
         (mf/use-callback
-         (mf/deps shapes)
+         (mf/deps shapes exports)
          (fn []
            (let [xspec {:type :png
                         :suffix ""
-                        :scale 1}]
-             (swap! exports conj xspec))))
+                        :scale 1}
+                 new-exports (conj @exports xspec)]
+             (reset! exports new-exports)
+             (st/emit! (dv/update-exports-cache shapes-key new-exports)))))
 
         delete-export
         (mf/use-callback
-         (mf/deps shapes)
+         (mf/deps shapes exports)
          (fn [index]
-           (swap! exports (fn [exports]
-                            (let [[before after] (split-at index exports)]
-                              (d/concat-vec before (rest after)))))))
+           (let [new-exports (let [[before after] (split-at index @exports)]
+                               (d/concat-vec before (rest after)))]
+             (reset! exports new-exports)
+             (st/emit! (dv/update-exports-cache shapes-key new-exports)))))
 
         on-scale-change
         (mf/use-callback
-         (mf/deps shapes)
+         (mf/deps shapes exports)
          (fn [index event]
-           (let [scale (d/parse-double event)]
-             (swap! exports assoc-in [index :scale] scale))))
+           (let [scale (d/parse-double event)
+                 new-exports (assoc-in @exports [index :scale] scale)]
+             (reset! exports new-exports)
+             (st/emit! (dv/update-exports-cache shapes-key new-exports)))))
 
         on-suffix-change
         (mf/use-callback
-         (mf/deps shapes)
+         (mf/deps shapes exports)
          (fn [event]
            (let [value (dom/get-target-val event)
                  index (-> (dom/get-current-target event)
                            (dom/get-data "value")
-                           (d/parse-integer))]
-             (swap! exports assoc-in [index :suffix] value))))
+                           (d/parse-integer))
+                 new-exports (assoc-in @exports [index :suffix] value)]
+             (reset! exports new-exports)
+             (st/emit! (dv/update-exports-cache shapes-key new-exports)))))
 
         on-type-change
         (mf/use-callback
-         (mf/deps shapes)
+         (mf/deps shapes exports)
          (fn [index event]
-           (let [type (keyword event)]
-             (swap! exports assoc-in [index :type] type))))
+           (let [type (keyword event)
+                 new-exports (assoc-in @exports [index :type] type)]
+             (reset! exports new-exports)
+             (st/emit! (dv/update-exports-cache shapes-key new-exports)))))
 
         manage-key-down
         (mf/use-callback
@@ -130,10 +147,14 @@
     (mf/use-effect
      (mf/deps shapes)
      (fn []
-       (reset! exports (-> (mapv #(:exports % []) shapes)
-                           flatten
-                           distinct
-                           vec))))
+       (let [shapes-key (vec (sort (map :id shapes)))
+             cached     (get @exports-cache-ref shapes-key)]
+         (if (some? cached)
+           (reset! exports cached)
+           (reset! exports (-> (mapv #(:exports % []) shapes)
+                               flatten
+                               distinct
+                               vec))))))
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable false
