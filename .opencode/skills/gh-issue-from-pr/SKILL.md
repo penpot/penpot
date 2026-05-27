@@ -1,8 +1,3 @@
----
-name: gh-issue-from-pr
-description: Create a user-facing GitHub issue from a PR, separating the WHAT from the HOW, with correct milestone, project, labels, and issue type.
----
-
 # Skill: gh-issue-from-pr
 
 Create a GitHub issue that captures the **WHAT** (user-facing feature or
@@ -18,15 +13,43 @@ Used when the project board needs an issue as the primary changelog/release unit
 ## Prerequisites
 
 - `gh` CLI authenticated (`gh auth status`)
+- `tools/gh.py` helper script available
 - Permission to create issues and edit PRs in the target repository
 
 ## Workflow
 
 ### 1. Understand the PR
 
+Use `gh.py` to fetch all PR details in a single batched GraphQL call
+(avoids N+1 API calls and respects rate limits):
+
 ```bash
-gh pr view <PR_NUMBER> --repo penpot/penpot \
-  --json title,body,author,labels,baseRefName,mergedAt,state,milestone
+python3 tools/gh.py prs <PR_NUMBER>
+```
+
+This returns JSON with: `number`, `title`, `body`, `state`, `merged_at`,
+`created_at`, `milestone`, `base_ref`, `author`, `labels`, `closing_issues`.
+
+Extract individual fields without parsing the full JSON twice:
+
+```bash
+# Title
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['title'])"
+
+# Author
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['author'])"
+
+# Milestone
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0].get('milestone'))"
+
+# Labels
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['labels'])"
+
+# Base branch
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0].get('base_ref'))"
+
+# Body (for extracting user-facing description)
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0].get('body',''))"
 ```
 
 Identify:
@@ -38,10 +61,10 @@ Identify:
 ### 2. Determine metadata
 
 | Field | Source | Rule |
-|-------|--------|------|
+|-------|--------|-------|
 | **Title** | PR title | Rewrite from user perspective. Strip leading emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`). Focus on observable behavior. Use imperative mood. |
 | **Labels** | PR labels | Copy user-facing labels (`bug`, `enhancement`, `community contribution`). Skip workflow labels (`backport candidate`, `team-qa`). |
-| **Milestone** | PR milestone | **Always copy what's on the PR.** Fetch with: `gh pr view <PR_NUMBER> --json milestone --jq '.milestone.title'` If the PR has no milestone, create the issue without one. |
+| **Milestone** | PR milestone | **Always copy what's on the PR.** Fetch with: `python3 tools/gh.py prs <N> \| python3 -c "import sys,json; print(json.load(sys.stdin)[0].get('milestone'))"`. If the PR has no milestone, create the issue without one. |
 | **Project** | Always `Main` | Penpot uses the `Main` project (number 8) for all issues. |
 | **Body** | PR's user-facing section | Extract steps to reproduce or feature description. Omit internal details. Use templates below. |
 | **Issue Type** | PR labels / title | Map: `bug` label or `:bug:` title → `Bug`. `enhancement` label or `:sparkles:` title → `Enhancement`. Feature/epic → `Feature`. Default → `Task`. |
@@ -115,7 +138,7 @@ Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
 Assign the issue to the PR author so they're responsible for it:
 
 ```bash
-AUTHOR=$(gh pr view <PR_NUMBER> --repo penpot/penpot --json author --jq '.author.login')
+AUTHOR=$(python3 tools/gh.py prs <PR_NUMBER> | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['author'])")
 gh issue edit <ISSUE_NUMBER> --repo penpot/penpot --add-assignee "$AUTHOR"
 ```
 
@@ -175,7 +198,12 @@ query { repository(owner: "penpot", name: "penpot") {
 Append `Closes #<ISSUE_NUMBER>` to the PR body:
 
 ```bash
-gh pr view <PR_NUMBER> --repo penpot/penpot --json body --jq '.body' > /tmp/pr-body.md
+# Fetch current body via gh.py
+python3 tools/gh.py prs <PR_NUMBER> | python3 -c "
+import sys, json
+print(json.load(sys.stdin)[0].get('body', ''))
+" > /tmp/pr-body.md
+
 printf "\n\nCloses #<ISSUE_NUMBER>\n" >> /tmp/pr-body.md
 gh pr edit <PR_NUMBER> --repo penpot/penpot --body-file /tmp/pr-body.md
 
@@ -228,3 +256,7 @@ rm -f /tmp/issue-body.md /tmp/pr-body.md
   single issue that summarizes the overall change.
 - **Community attribution:** if the PR has the `community contribution`
   label or the author is not a core team member, add the label to the issue.
+- **Always use `tools/gh.py prs` for fetching PR data.** Never use
+  `gh pr view --json ...` directly — `gh.py` batches requests and
+  respects rate limits. If you need a field not exposed by `gh.py`,
+  add it to the script instead of calling `gh` directly.

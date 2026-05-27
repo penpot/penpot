@@ -102,9 +102,17 @@ python3 tools/gh.py prs --milestone "2.16.0" --state all
 ```
 
 The `prs` command returns JSON with `number`, `title`, `body`, `state`,
-`merged_at`, `author`, `labels`, and `closing_issues`. PRs are fetched in
-batches of 50 via GraphQL to stay within API limits (milestone mode uses
-paginated GraphQL on the milestone's `pullRequests` connection).
+`merged_at`, `milestone`, `author`, `labels`, and `closing_issues`. PRs are
+fetched in batches of 50 via GraphQL to stay within API limits (milestone mode
+uses paginated GraphQL on the milestone's `pullRequests` connection).
+
+> **⚠️ CRITICAL: Never iterate PRs one-by-one with `for pr in ...; do gh pr view ...; done`.**
+> This causes N+1 API calls and will quickly exhaust GitHub's rate limit.
+> **Always use `tools/gh.py prs <N1> <N2> ...`** which batches up to 50 PRs
+> per GraphQL query. If a field you need is missing from `gh.py`'s output,
+> **add it to the script** (edit the `GQL_PRS_QUERY_ITEM` template and the
+> result builder in `fetch_prs_batch`) rather than working around it with
+> one-by-one calls.
 
 ### 5. Categorize entries — strictly by issue type, never by labels or emoji
 
