@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
+"Last-Translator: Louis Chance <contact@louischance.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -7512,6 +7512,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Masques"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Rechercher des calques"
 
