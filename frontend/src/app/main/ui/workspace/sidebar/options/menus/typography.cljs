@@ -384,7 +384,7 @@
         letter-spacing (or letter-spacing "0")
         handle-change
         (fn [value attr]
-          (on-change {attr (str value)}))]
+          (on-change {attr (ust/format-precision value 2)}))]
 
     [:div {:class (stl/css :spacing-options)}
      [:div {:class (stl/css :line-height)
