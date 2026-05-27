@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-03-09 20:09+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -172,7 +172,7 @@ msgid "auth.register-title"
 msgstr "Створити обліковий запис"
 
 #: src/app/main/ui/auth.cljs
-#, unused
+#, fuzzy, unused
 msgid "auth.sidebar-tagline"
 msgstr "Відкрите рішення для дизайну та прототипування."
 
@@ -4411,6 +4411,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Спільні бібліотеки - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - свобода дизайну для команд"
 
@@ -6869,6 +6870,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Маски"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "Пошук шарів"
 
@@ -7655,6 +7657,7 @@ msgid "dashboard.clear-trash-button"
 msgstr "Звільнити кошик"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Створити організацію"
 
@@ -7840,6 +7843,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Відкрити список токенів"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:43, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:99, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:106
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr ""
 "Цей токен не міститься в жодному з активних наборів або має недійсне "
@@ -8539,6 +8543,7 @@ msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "Сімейство шрифта або список шрифтів, розділені комою (,)"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:268, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:223
+#, fuzzy
 msgid "workspace.tokens.token-name-duplication-validation-error"
 msgstr "Токен вже існує на шляху: %s"
 
@@ -8547,6 +8552,7 @@ msgid "workspace.tokens.token-name-length-validation-error"
 msgstr "Імʼя повинне містити принаймні 1 символ"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:46
+#, fuzzy
 msgid "workspace.tokens.unknown-token-type-message"
 msgstr "Імпротування пройшло успішно. Деякі токени не були додані."
 
