@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-02-20 03:09+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.16.1-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -163,7 +163,7 @@ msgid "auth.register-title"
 msgstr "יצירת חשבון"
 
 #: src/app/main/ui/auth.cljs
-#, unused
+#, fuzzy, unused
 msgid "auth.sidebar-tagline"
 msgstr "הפתרון בקוד פתוח לעיצוב ויצירת אבטיפוס."
 
@@ -4753,6 +4753,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "ספריות משותפות - %s‏ - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - חופש עיצובי לצוותים"
 
@@ -7321,6 +7322,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "מסכות"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
+#, fuzzy
 msgid "workspace.sidebar.layers.search"
 msgstr "חיפוש בשכבות"
 
@@ -8267,6 +8269,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "יצירת ארגון חדש"
 
