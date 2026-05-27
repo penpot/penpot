@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"Last-Translator: Marius <hi@mariusscheel.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -4775,6 +4775,7 @@ msgid "title.dashboard.shared-libraries"
 msgstr "Gemeinsam genutzte Bibliotheken - %s - Penpot"
 
 #: src/app/main/ui/auth/verify_token.cljs:70, src/app/main/ui/auth.cljs:34
+#, fuzzy
 msgid "title.default"
 msgstr "Penpot - Gestaltungsfreiheit für Teams"
 
@@ -8268,6 +8269,7 @@ msgid "labels.reload-page"
 msgstr "Seite neu laden"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
+#, fuzzy
 msgid "dashboard.create-new-org"
 msgstr "Neue Organisation erstellen"
 
