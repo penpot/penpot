@@ -2131,8 +2131,15 @@ test("BUG: 1425 Token is not highlighted in red when value references a token in
   await expect(tokensSidebar).toBeVisible();
 
   await unfoldTokenType(tokensSidebar, "Border radius");
-  await createToken(page, "Border radius", "base-radius", "Value", "20");
-  await createToken(page, "Border radius", "ref-base", "Value", "{base-radius}");
+  await createToken(page, "Border radius", "base-radius", "Value", "textbox", "20");
+  await createToken(
+    page,
+    "Border radius",
+    "ref-base",
+    "Value",
+    "textbox",
+    "{base-radius}",
+  );
   
   const refTokenPill = tokensSidebar.getByRole("button", {
     name: "ref-base",

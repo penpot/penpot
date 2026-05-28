@@ -1788,8 +1788,8 @@ test("BUG: 14234, Numeric input token filtering must be case sensitive", async (
   await tokensTabButton.click();
   await unfoldTokenType(tokensSidebar, "dimensions");
 
-  await createToken(page, "Dimensions", "Dim-up", "Value", "20");
-  await createToken(page, "Dimensions", "dim-up", "Value", "10");
+  await createToken(page, "Dimensions", "Dim-up", "Value", "combobox", "20");
+  await createToken(page, "Dimensions", "dim-up", "Value", "combobox", "10");
   const measuresSection = page.getByRole("region", {
     name: "shape-measures-section",
   });
