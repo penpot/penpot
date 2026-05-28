@@ -1,41 +1,38 @@
-# Handling Penpot Frontend Crashes
+# Frontend Runtime Crash Handling
 
-When the Penpot frontend crashes, it usually shows the **Internal Error** page (title text "Something bad happened", class `main_ui_static__download-link`).
+## Detect a runtime workspace crash
 
-A typical error pattern is: Changes go through (JS API, `execute_code`), but about 1-2s later, an `update-file` request hits the backend with the change and gets rejected.
-So be sure to check the status for a crash.
+Runtime crashes usually show the Internal Error page with title text "Something bad happened" and class `main_ui_static__download-link`. A common pattern is: changes go through via JS API / `execute_code`, then 1-2s later an `update-file` request reaches the backend and is rejected.
 
-After a crash, `execute_code` is unusable (no instances connected), and any data in `storage` is lost, but `cljs_repl` keeps working!
+After a crash, `execute_code` can become unusable because no plugin instances are connected and any data in its `storage` is lost, but `cljs_repl` usually still works.
 
-## 1. Detect the crash
+Check crash state:
 
-cljs REPL `(some? (:exception @app.main.store/state))` returns `true` when the Internal Error page is showing, 
-`false` on a healthy workspace (and after a successful reload).
+```clojure
+(some? (:exception @app.main.store/state))
+```
 
-## 2. Read the cause
+It returns `true` when the Internal Error page is showing and `false` on a healthy workspace or after a successful reload.
+
+## Read the runtime cause
 
 The exception is stored at `(:exception @app.main.store/state)`. Useful keys:
 
-- `:type`, `:code`, `:status` — error class (e.g. `:validation` / `:referential-integrity` / `400`)
-- `:hint`, `:details` — human-readable explanation; `:details` typically contains a vector of validation problems with `:shape-id`, `:page-id`, `:args`, etc.
-- `:uri` — the API endpoint that returned the error (e.g. `update-file`)
-- `:app.main.errors/instance` — the underlying JS Error object
-- `:app.main.errors/trace` — JS stack trace string (only shows the response-handling path, not the dispatch site that produced the bad change)
+- `:type`, `:code`, `:status`: error class, e.g. `:validation`, `:referential-integrity`, `400`.
+- `:hint`, `:details`: human-readable explanation; `:details` often contains validation problems with `:shape-id`, `:page-id`, `:args`, etc.
+- `:uri`: API endpoint that returned the error, e.g. `update-file`.
+- `:app.main.errors/instance`: underlying JS Error object.
+- `:app.main.errors/trace`: JS stack trace string, usually response-handling path rather than the dispatch site that produced the bad change.
 
-```
+```clojure
 (let [ex (:exception @app.main.store/state)]
   (select-keys ex [:type :code :status :hint :details :uri]))
 ```
 
-For backend validation errors (`:type :validation`), `:details` is the most informative field — it tells you exactly which shape and which invariant was violated.
+For backend validation errors (`:type :validation`), `:details` is usually the most informative field; it identifies the shape and invariant that failed.
 
-## 3. Recover and continue testing
+## Recover and continue testing
 
-Reload steps:
-1. List tabs with `playwright:browser_tabs` (`action: list`) and find the Penpot workspace tab (URL contains `/#/workspace`, title ends in `- Penpot`).
-2. If it isn't the current tab, select it via `playwright:browser_tabs` (`action: select`, `index: <n>`). The selected tab's URL then appears as "Page URL" in the result.
-3. Reload by calling `playwright:browser_navigate` with that same URL.
-4. Confirm recovery: `(some? (:exception @app.main.store/state))` should now return `false`.
+Simplest path when `cljs_repl` is still live (usually true after a crash): reload via repl with `(.reload js/location)` — see `mem:frontend/cljs-repl`. Alternatively via Playwright: find the workspace tab (URL contains `/#/workspace`, title ends `- Penpot`), select it if not current, then `playwright:browser_navigate` to that same URL. Either way, confirm recovery with `(some? (:exception @app.main.store/state))` returning `false`.
 
-Whether the offending change persists depends on the crash type:
-For **backend-rejected changes** (e.g. `:type :validation`, 4xx on `update-file`), changes are NOT persisted. Reload restores the pre-crash state — safe to retry.
+For backend-rejected changes, such as validation errors on `update-file`, changes are not persisted. Reload restores the pre-crash state, so it is safe to retry after fixing the cause.

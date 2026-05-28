@@ -450,7 +450,9 @@
            [:div {:class (stl/css :interaction-row-select)}
             [:& select {:default-value (str (:destination interaction))
                         :options destination-options
-                        :on-change change-destination}]]])
+                        :on-change change-destination
+                        :searchable? true
+                        :search-placeholder (tr "workspace.options.interaction-destination")}]]])
 
         ;; Preserve scroll
         (when (ctsi/has-preserve-scroll interaction)

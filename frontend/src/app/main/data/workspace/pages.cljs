@@ -329,6 +329,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page             (dsh/lookup-page state id)
+            objects          (:objects page)
+            empty-page?       (and (= 1 (count objects))
+                                   (= uuid/zero (first (keys objects))))
             changes          (-> (pcb/empty-changes it)
                                  (pcb/with-page page)
                                  (pcb/mod-page page {:name name}))
@@ -342,7 +345,11 @@
             separator?       (= "---" (str/trim name))]
         (rx/concat
          (rx/of (dch/commit-changes changes))
+         ;; Go to other page only if page is empty (only has the root shape)
+         ;; and the separator page is being renamed, otherwise user can rename
+         ;; any page to separator and be forced to go to another page
          (when (and separator?
+                    empty-page?
                     (= id (:current-page-id state))
                     (some? fallback-page-id))
            (rx/of (dcm/go-to-workspace :page-id fallback-page-id))))))))
