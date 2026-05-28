@@ -35,6 +35,7 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.text-editor :as ted]
@@ -83,17 +84,23 @@
   []
   (ptk/reify ::focus-editor
     ptk/EffectEvent
-    (effect [_ state _]
-      (let [editor (:workspace-editor state)
-            element (when editor (.-element editor))]
-        (cond
-          ;; V1 (DraftEditor)
-          (.-focus editor)
-          (ts/schedule #(.focus ^js editor))
+    (effect [_ _ _]
+      ;; The focus is deferred, so we re-read the current editor at fire
+      ;; time: the editor present now can be unmounted before the timeout
+      ;; runs (e.g. switching renderer while editing a text), and focusing a
+      ;; stale instance throws.
+      (ts/schedule
+       (fn []
+         (let [editor  (:workspace-editor @st/state)
+               element (when editor (.-element editor))]
+           (cond
+             ;; V1 (DraftEditor)
+             (and (some? editor) (.-focus editor))
+             (.focus ^js editor)
 
-          ;; V2
-          (and element (.-focus element))
-          (ts/schedule #(.focus ^js element)))))))
+             ;; V2
+             (and element (.-focus element))
+             (.focus ^js element))))))))
 
 (defn gen-name
   [editor]

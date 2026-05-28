@@ -424,9 +424,9 @@
               (js/clearTimeout timeout-id))
             (wasm.api/clear-canvas)))))
 
-    (mf/with-effect [show-text-editor? workspace-editor-state edition]
+    (mf/with-effect [show-text-editor? workspace-editor-state edition @canvas-init? @initialized?]
       (let [active-editor-state (get workspace-editor-state edition)]
-        (when (and show-text-editor? active-editor-state)
+        (when (and show-text-editor? active-editor-state @canvas-init? @initialized?)
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]

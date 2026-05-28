@@ -429,6 +429,13 @@
 
 (declare get-text-dimensions)
 
+(defn initialized?
+  "True when the WASM render context is ready to receive design-state
+  operations. Use it to skip WASM work during transient states (e.g. while
+  switching renderer with a text shape being edited)."
+  []
+  (and wasm/context-initialized? (not @wasm/context-lost?)))
+
 (defn use-shape
   [id]
   (when wasm/context-initialized?
@@ -459,17 +466,20 @@
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
 
-  (h/call wasm/internal-module "_clear_shape_text")
+  ;; The WASM design state may not be ready (e.g. while switching renderer
+  ;; with a text shape being edited). Skip the WASM layout calls in that case.
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_clear_shape_text")
 
-  (set-shape-vertical-align (get content :vertical-align))
+    (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (f/get-content-fonts content)
-        fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts all-fonts)]
-    (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
-    result))
+    (let [fonts         (f/get-content-fonts content)
+          fallback-fonts (fonts-from-text-content content true)
+          all-fonts (concat fonts fallback-fonts)
+          result (f/store-fonts all-fonts)]
+      (f/load-fallback-fonts-for-editor! fallback-fonts)
+      (h/call wasm/internal-module "_update_shape_text_layout")
+      result)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -1130,17 +1140,19 @@
    (use-shape id)
    (get-text-dimensions))
   ([]
-   (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
-                       (mem/->offset-32))
-         heapf32   (mem/get-heap-f32)
-         width     (aget heapf32 (+ offset 0))
-         height    (aget heapf32 (+ offset 1))
-         max-width (aget heapf32 (+ offset 2))
+   (if-not (and wasm/context-initialized? (not @wasm/context-lost?))
+     {:x 0 :y 0 :width 0 :height 0 :max-width 0}
+     (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
+                         (mem/->offset-32))
+           heapf32   (mem/get-heap-f32)
+           width     (aget heapf32 (+ offset 0))
+           height    (aget heapf32 (+ offset 1))
+           max-width (aget heapf32 (+ offset 2))
 
-         x (aget heapf32 (+ offset 3))
-         y (aget heapf32 (+ offset 4))]
-     (mem/free)
-     {:x x :y y :width width :height height :max-width max-width})))
+           x (aget heapf32 (+ offset 3))
+           y (aget heapf32 (+ offset 4))]
+       (mem/free)
+       {:x x :y y :width width :height height :max-width max-width}))))
 
 (defn intersect-position-in-shape
   [id position]
@@ -1661,7 +1673,8 @@
 
 (defn clean-modifiers
   []
-  (h/call wasm/internal-module "_clean_modifiers"))
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_clean_modifiers")))
 
 (defn set-modifiers-start
   "Enter interactive transform mode (drag / resize / rotate). Enables
