@@ -85,6 +85,31 @@
   (track! :set-shape-grow-type)
   nil)
 
+(defn- mock-initialized?
+  []
+  (track! :initialized?)
+  true)
+
+;; The functions below used to short-circuit in tests because they guarded on
+;; `wasm/context-initialized?` (always false without a real WASM binary). They
+;; now guard on `initialized?`, which the mock forces to `true`, so they would
+;; reach the real WASM heap. Stub them as no-ops to preserve that behavior.
+
+(defn- mock-use-shape
+  [_id]
+  (track! :use-shape)
+  nil)
+
+(defn- mock-calculate-position-data
+  [_shape]
+  (track! :calculate-position-data)
+  nil)
+
+(defn- mock-request-render
+  [_requester]
+  (track! :request-render)
+  nil)
+
 (defn- mock-set-shape-text-content
   [_shape-id _content]
   (track! :set-shape-text-content)
@@ -143,7 +168,11 @@
   (reset-call-counts!)
   ;; Save originals
   (reset! originals
-          {:clean-modifiers         wasm.api/clean-modifiers
+          {:initialized?            wasm.api/initialized?
+           :use-shape               wasm.api/use-shape
+           :calculate-position-data wasm.api/calculate-position-data
+           :request-render          wasm.api/request-render
+           :clean-modifiers         wasm.api/clean-modifiers
            :set-structure-modifiers wasm.api/set-structure-modifiers
            :propagate-modifiers     wasm.api/propagate-modifiers
            :set-modifiers           wasm.api/set-modifiers
@@ -155,6 +184,10 @@
            :make-font-data          wasm.fonts/make-font-data
            :get-content-fonts       wasm.fonts/get-content-fonts})
   ;; Install mocks
+  (set! wasm.api/initialized?            mock-initialized?)
+  (set! wasm.api/use-shape               mock-use-shape)
+  (set! wasm.api/calculate-position-data mock-calculate-position-data)
+  (set! wasm.api/request-render          mock-request-render)
   (set! wasm.api/clean-modifiers         mock-clean-modifiers)
   (set! wasm.api/set-structure-modifiers mock-set-structure-modifiers)
   (set! wasm.api/propagate-modifiers     mock-propagate-modifiers)
@@ -171,6 +204,10 @@
   "Restore the original WASM functions saved by `setup-wasm-mocks!`."
   []
   (let [orig @originals]
+    (set! wasm.api/initialized?            (:initialized? orig))
+    (set! wasm.api/use-shape               (:use-shape orig))
+    (set! wasm.api/calculate-position-data (:calculate-position-data orig))
+    (set! wasm.api/request-render          (:request-render orig))
     (set! wasm.api/clean-modifiers         (:clean-modifiers orig))
     (set! wasm.api/set-structure-modifiers (:set-structure-modifiers orig))
     (set! wasm.api/propagate-modifiers     (:propagate-modifiers orig))
