@@ -28,7 +28,7 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
-## Lint and format
+## Lint and Format
 
 From `frontend/`:
 - CLJ/CLJS lint: `pnpm run lint:clj`.
