@@ -36,13 +36,13 @@ Use the helper script. It uses GraphQL for efficient single-pass fetching
 
 ```bash
 # All closed issues (default)
-python3 tools/gh.py issues "2.16.0"
+python3 tools/gh.py issues --milestone "2.16.0"
 
 # Include open issues too
-python3 tools/gh.py issues "2.16.0" --state all
+python3 tools/gh.py issues --milestone "2.16.0" --state all
 
 # Exclude entries that should not go in the changelog
-python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
+python3 tools/gh.py issues --milestone "2.16.0" --exclude "release blocker,no changelog"
 ```
 
 **Exclusion rules (issue-level):**
@@ -65,7 +65,7 @@ If updating from an existing `CHANGES.md`, find issues in the milestone that
 are NOT yet referenced in the changelog:
 
 ```bash
-python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog" --compare CHANGES.md
+python3 tools/gh.py issues --milestone "2.16.0" --exclude "release blocker,no changelog" --compare CHANGES.md
 ```
 
 This returns a filtered JSON array with only the missing issues.
@@ -102,11 +102,50 @@ python3 tools/gh.py prs --milestone "2.16.0" --state all
 ```
 
 The `prs` command returns JSON with `number`, `title`, `body`, `state`,
-`merged_at`, `author`, `labels`, and `closing_issues`. PRs are fetched in
-batches of 50 via GraphQL to stay within API limits (milestone mode uses
-paginated GraphQL on the milestone's `pullRequests` connection).
+`merged_at`, `milestone`, `author`, `labels`, and `closing_issues`. PRs are
+fetched in batches of 50 via GraphQL to stay within API limits (milestone mode
+uses paginated GraphQL on the milestone's `pullRequests` connection).
 
-### 5. Categorize entries — strictly by issue type, never by labels or emoji
+> **⚠️ CRITICAL: Never iterate PRs one-by-one with `for pr in ...; do gh pr view ...; done`.**
+> This causes N+1 API calls and will quickly exhaust GitHub's rate limit.
+> **Always use `tools/gh.py prs <N1> <N2> ...`** which batches up to 50 PRs
+> per GraphQL query. If a field you need is missing from `gh.py`'s output,
+> **add it to the script** (edit the `GQL_PRS_QUERY_ITEM` template and the
+> result builder in `fetch_prs_batch`) rather than working around it with
+> one-by-one calls.
+
+### 5. Fetch additional issue details (batch by number)
+
+When you need to look up specific issues (e.g. to check the `issue_type`
+field for categorization, or to find closing PRs for a particular issue),
+use the same batch-by-number pattern as PRs:
+
+```bash
+# One or more issue numbers
+python3 tools/gh.py issues 9010 9899 9900
+
+# From a file
+python3 tools/gh.py issues --file issues.txt
+
+# From stdin
+cat issues.txt | python3 tools/gh.py issues --stdin
+```
+
+This returns JSON with `number`, `title`, `state`, `issue_type`, `labels`,
+and `closing_prs` for each issue. The same batching rules apply (50 issues
+per GraphQL query).
+
+For milestone-wide listing, use the `--milestone` flag:
+
+```bash
+# All closed issues (default)
+python3 tools/gh.py issues --milestone "2.17.0"
+
+# With exclusions and comparison
+python3 tools/gh.py issues --milestone "2.17.0" --exclude "release blocker,no changelog" --compare CHANGES.md
+```
+
+### 6. Categorize entries — strictly by issue type, never by labels or emoji
 
 Use the **Issue Type** field (GitHub's native issue type, exposed as
 `issue_type` in the `gh.py` JSON output) to determine which section an entry
@@ -163,7 +202,7 @@ tracked in the milestone.
 > skip it. PR [#3](https://github.com/penpot/penpot/pull/3) (ancient License PR
 > claiming to close a plugin API issue) is a known example.
 
-### 5a. ⚠️ Verify PR merge status before writing
+### 7. ⚠️ Verify PR merge status before writing
 
 A closed issue may list closing PRs that were **closed without merging**
 (e.g., a community PR that was superseded by another). The changelog must
@@ -187,7 +226,7 @@ superseded it:
 
 Replace the reference in the changelog entry with the correct merged PR number.
 
-### 6. Read the current CHANGES.md
+### 8. Read the current CHANGES.md
 
 Read the top of `CHANGES.md` to understand the existing format and find the
 insertion point (newest version goes at the top, after the `# CHANGELOG`
@@ -222,7 +261,7 @@ Format details:
 - When an entry already exists in an earlier version section, it must be removed
   from the current version to avoid duplicates
 
-### 7. Build the description text
+### 9. Build the description text
 
 Derive the description from the issue title, not the PR title. Strip leading
 emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`) and focus on the
@@ -236,13 +275,13 @@ Examples:
 | `Comment content is not sanitized before rendering, enabling stored XSS` | `Sanitize comment content on rendering` |
 | `Custom uploaded font family names are not sanitized` | `Sanitize font family names on custom uploaded fonts` |
 
-### 8. Insert the section into CHANGES.md
+### 10. Insert the section into CHANGES.md
 
 Insert the new version section right after the `# CHANGELOG` header (before
 the previous version entry). Use the `edit` tool with enough context to make
 a unique match.
 
-### 9. Verify
+### 11. Verify
 
 Read the top of `CHANGES.md` and confirm:
 - The version header is correct
@@ -251,7 +290,7 @@ Read the top of `CHANGES.md` and confirm:
 - The section ordering is correct (newest first)
 - Formatting matches the surrounding entries
 
-### 10. Cross-reference milestone PRs against the changelog
+### 12. Cross-reference milestone PRs against the changelog
 
 Issues can be fixed by PRs that aren't in the milestone, and merged PRs in
 the milestone may not close any tracked issue. After writing, run a full

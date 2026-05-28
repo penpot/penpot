@@ -8227,7 +8227,7 @@ msgstr "Show main component"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.clear-guides"
-msgstr "Clear artboard guides"
+msgstr "Clear board guides"
 
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Remove thumbnail"
@@ -9535,7 +9535,7 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Full open-source freedom, with the governance your org needs"
 
 msgid "nitrate.form.enterprise.price"
-msgstr "$25 / member per month"
+msgstr "per member per month"
 
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"

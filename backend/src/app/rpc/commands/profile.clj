@@ -537,7 +537,10 @@
    [:name ::sm/text]
    [:slug ::sm/text]
    [:team-count ::sm/int]
-   [:member-count ::sm/int]])
+   [:member-count ::sm/int]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:custom-photo {:optional true} [:maybe ::sm/text]]])
 
 (def ^:private schema:get-owned-organizations-summary-result
   [:vector schema:owned-organization-summary])

@@ -174,41 +174,144 @@ def load_existing_issue_numbers(filepath: str) -> set[int]:
     return nums
 
 
+# ─────────────────────────────────────────────
+#  Subcommand: issues — batch fetch by number
+# ─────────────────────────────────────────────
+
+ISSUES_BATCH_SIZE = 50
+
+GQL_ISSUES_QUERY_ITEM = """\
+    issue_{num}: issue(number: {num}) {{
+      number
+      title
+      state
+      issueType {{ name }}
+      labels(first: 20) {{ nodes {{ name }} }}
+      closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
+    }}
+"""
+
+GQL_ISSUES_QUERY_WRAPPER = """\
+query($owner: String!, $repo: String!) {{
+  repository(owner: $owner, name: $repo) {{
+{items}
+  }}
+}}
+"""
+
+
+def fetch_issues_batch(issue_numbers: list[int]) -> list[dict]:
+    """
+    Fetch details for a list of issue numbers in a single GraphQL query.
+
+    Uses numbered aliases (issue_1234, issue_5678, …) so each issue is looked
+    up by number in one round-trip.
+    """
+    items = "\n".join(
+        GQL_ISSUES_QUERY_ITEM.format(num=n) for n in issue_numbers
+    )
+    query = GQL_ISSUES_QUERY_WRAPPER.format(items=items)
+    variables = {"owner": OWNER, "repo": REPO_NAME}
+
+    data = run_gh_graphql(query, variables)
+    repo = data["repository"]
+
+    results: list[dict] = []
+    for num in issue_numbers:
+        issue = repo.get(f"issue_{num}")
+        if issue is None:
+            results.append({
+                "number": num,
+                "error": "not_found",
+            })
+            continue
+        issue_type = issue.get("issueType")
+        results.append({
+            "number": issue["number"],
+            "title": issue["title"],
+            "state": issue["state"],
+            "issue_type": issue_type["name"] if issue_type else None,
+            "labels": [lbl["name"] for lbl in issue["labels"]["nodes"]],
+            "closing_prs": [pr["number"] for pr in issue["closedByPullRequestsReferences"]["nodes"]],
+        })
+    return results
+
+
 def cmd_issues(args: argparse.Namespace) -> None:
     """Handle the ``issues`` subcommand."""
 
-    # Resolve milestone
-    print(f"Looking up milestone \"{args.milestone}\"...", file=sys.stderr)
-    ms = find_milestone(args.milestone)
-    print(f"Milestone #{ms['number']}: {ms['open_issues']} open, {ms['closed_issues']} closed",
+    # ── Milestone mode: fetch all issues in a milestone ──
+    if args.milestone:
+        print(f"Looking up milestone \"{args.milestone}\"...", file=sys.stderr)
+        ms = find_milestone(args.milestone)
+        print(f"Milestone #{ms['number']}: {ms['open_issues']} open, {ms['closed_issues']} closed",
+              file=sys.stderr)
+
+        state_map = {"open": "[OPEN]", "closed": "[CLOSED]", "all": "[OPEN CLOSED]"}
+        gql_states = state_map[args.state]
+
+        print(f"Fetching {args.state} issues via GraphQL...", file=sys.stderr)
+        issues = fetch_milestone_issues(ms["number"], gql_states)
+        print(f"Fetched {len(issues)} issues total", file=sys.stderr)
+
+        # Filter by excluded labels
+        if args.exclude:
+            exclusions = set(label.strip() for label in args.exclude.split(","))
+            filtered = [issue for issue in issues
+                        if not any(lbl in exclusions for lbl in issue["labels"])]
+            print(f"After excluding labels: {len(filtered)} issues", file=sys.stderr)
+            issues = filtered
+
+        # Filter to issues NOT yet in the comparison file (if --compare given)
+        if args.compare:
+            existing_nums = load_existing_issue_numbers(args.compare)
+            missing = [iss for iss in issues if iss["number"] not in existing_nums]
+            missing.sort(key=lambda x: x["number"])
+            print(f"Issues not yet in changelog: {len(missing)}", file=sys.stderr)
+            issues = missing
+
+        print(json.dumps(issues, indent=2))
+        return
+
+    # ── Batch mode: fetch specific issues by number ──
+    issue_numbers: list[int] = []
+
+    if args.numbers:
+        issue_numbers.extend(args.numbers)
+
+    if args.file:
+        with open(args.file) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    issue_numbers.append(int(line))
+
+    if args.stdin:
+        for line in sys.stdin:
+            line = line.strip()
+            if line:
+                issue_numbers.append(int(line))
+
+    if not issue_numbers:
+        print("ERROR: no issue numbers provided (pass numbers, --file, --stdin, or --milestone)",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # Deduplicate while preserving order
+    seen: set[int] = set()
+    issue_numbers = [n for n in issue_numbers if not (n in seen or seen.add(n))]
+
+    print(f"Fetching {len(issue_numbers)} issues in batches of {ISSUES_BATCH_SIZE}...",
           file=sys.stderr)
 
-    # Map state to GraphQL enum array literal
-    state_map = {"open": "[OPEN]", "closed": "[CLOSED]", "all": "[OPEN CLOSED]"}
-    gql_states = state_map[args.state]
+    all_results: list[dict] = []
+    for i in range(0, len(issue_numbers), ISSUES_BATCH_SIZE):
+        batch = issue_numbers[i : i + ISSUES_BATCH_SIZE]
+        print(f"  batch {i // ISSUES_BATCH_SIZE + 1}: issues {batch[0]}..{batch[-1]}",
+              file=sys.stderr)
+        all_results.extend(fetch_issues_batch(batch))
 
-    # Fetch issues
-    print(f"Fetching {args.state} issues via GraphQL...", file=sys.stderr)
-    issues = fetch_milestone_issues(ms["number"], gql_states)
-    print(f"Fetched {len(issues)} issues total", file=sys.stderr)
-
-    # Filter by excluded labels
-    if args.exclude:
-        exclusions = set(label.strip() for label in args.exclude.split(","))
-        filtered = [issue for issue in issues
-                    if not any(lbl in exclusions for lbl in issue["labels"])]
-        print(f"After excluding labels: {len(filtered)} issues", file=sys.stderr)
-        issues = filtered
-
-    # Filter to issues NOT yet in the comparison file (if --compare given)
-    if args.compare:
-        existing_nums = load_existing_issue_numbers(args.compare)
-        missing = [iss for iss in issues if iss["number"] not in existing_nums]
-        missing.sort(key=lambda x: x["number"])
-        print(f"Issues not yet in changelog: {len(missing)}", file=sys.stderr)
-        issues = missing
-
-    print(json.dumps(issues, indent=2))
+    print(json.dumps(all_results, indent=2))
 
 
 # ─────────────────────────────────────────────
@@ -228,6 +331,8 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
             title
             state
             mergedAt
+            milestone { title }
+            baseRefName
             author { login }
             labels(first: 20) { nodes { name } }
             closingIssuesReferences(first: 5) { nodes { number } }
@@ -275,6 +380,8 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
                 "title": node["title"],
                 "state": node["state"],
                 "merged_at": node.get("mergedAt"),
+                "milestone": node["milestone"]["title"] if node.get("milestone") else None,
+                "base_ref": node.get("baseRefName"),
                 "author": node["author"]["login"] if node["author"] else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
                 "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
@@ -304,6 +411,8 @@ GQL_PRS_QUERY_ITEM = """\
       state
       mergedAt
       createdAt
+      milestone {{ title }}
+      baseRefName
       author {{ login }}
       labels(first: 20) {{ nodes {{ name }} }}
       closingIssuesReferences(first: 5) {{ nodes {{ number }} }}
@@ -351,6 +460,8 @@ def fetch_prs_batch(pr_numbers: list[int]) -> list[dict]:
             "state": pr["state"],
             "merged_at": pr.get("mergedAt"),
             "created_at": pr.get("createdAt"),
+            "milestone": pr["milestone"]["title"] if pr.get("milestone") else None,
+            "base_ref": pr.get("baseRefName"),
             "author": pr["author"]["login"] if pr["author"] else None,
             "labels": [lbl["name"] for lbl in pr["labels"]["nodes"]],
             "closing_issues": [iss["number"] for iss in pr["closingIssuesReferences"]["nodes"]],
@@ -431,11 +542,21 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True, title="subcommands")
 
     # --- issues ---
-    p_issues = sub.add_parser("issues", help="List issues in a milestone")
-    p_issues.add_argument("milestone", help="Milestone title, e.g. '2.16.0'")
+    p_issues = sub.add_parser(
+        "issues",
+        help="Fetch issues by number (batch) or list issues in a milestone"
+    )
+    p_issues.add_argument(
+        "numbers", type=int, nargs="*",
+        help="Issue numbers to fetch (space-separated, batch mode)"
+    )
+    p_issues.add_argument(
+        "--milestone", type=str,
+        help="Milestone title to list all issues from (e.g. '2.16.0')"
+    )
     p_issues.add_argument(
         "--state", choices=["open", "closed", "all"], default="closed",
-        help="Issue state filter (default: closed)"
+        help="Issue state filter when using --milestone (default: closed)"
     )
     p_issues.add_argument(
         "--exclude", "--exclude-labels",
@@ -444,6 +565,14 @@ def main() -> None:
     p_issues.add_argument(
         "--compare",
         help="Path to CHANGES.md; only show issues NOT yet referenced in that file"
+    )
+    p_issues.add_argument(
+        "--file", type=str,
+        help="File with one issue number per line"
+    )
+    p_issues.add_argument(
+        "--stdin", action="store_true",
+        help="Read issue numbers from stdin (one per line)"
     )
     p_issues.set_defaults(func=cmd_issues)
 

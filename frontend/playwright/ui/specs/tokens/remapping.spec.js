@@ -665,6 +665,7 @@ test.describe("Remapping group of tokens", () => {
       "Color",
       "brand.primary",
       "Value",
+      "textbox",
       "#0000FF",
     );
     await createToken(
@@ -672,6 +673,7 @@ test.describe("Remapping group of tokens", () => {
       "Color",
       "brand.secondary",
       "Value",
+      "textbox",
       "#0055FF",
     );
 
