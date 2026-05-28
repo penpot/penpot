@@ -291,6 +291,7 @@
               :stroke "var(--color-accent-tertiary)"
               :stroke-width (if show-interactions 1 0)
               :fill-opacity (if show-interactions 0.2 0)
+              :pointer-events "none"
               :transform (gsh/transform-str shape)}])))
 
 

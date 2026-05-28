@@ -56,6 +56,21 @@ export class ViewerPage extends BaseWebSocketPage {
     );
   }
 
+  async setupFileWithInteractionBlocksChild() {
+    await this.mockRPC(
+      /get\-view\-only\-bundle\?/,
+      "viewer/get-view-only-bundle-interaction-blocks-child.json",
+    );
+    await this.mockRPC(
+      "get-comment-threads?file-id=*",
+      "workspace/get-comment-threads-empty.json",
+    );
+    await this.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "viewer/get-file-fragment-interaction-blocks-child.json",
+    );
+  }
+
   async setupFileWithComments() {
     await this.mockRPC(
       /get\-view\-only\-bundle\?/,
