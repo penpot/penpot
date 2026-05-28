@@ -25,7 +25,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
-   [app.main.render :refer [component-svg]]
+   [app.main.render :refer [component-svg*]]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.link-button :as lb]
@@ -556,9 +556,9 @@
                     (let [component (ctf/load-component-objects (:data library) component)
                           root-shape (ctf/get-component-root (:data library) component)]
                       [:*
-                       [:& component-svg {:root-shape root-shape
-                                          :class (stl/css :component-svg)
-                                          :objects (:objects component)}]
+                       [:> component-svg* {:root-shape root-shape
+                                           :class (stl/css :component-svg)
+                                           :objects (:objects component)}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name component)}

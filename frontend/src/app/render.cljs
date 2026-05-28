@@ -79,7 +79,7 @@
 
     (when objects
       (if wasm
-        [:& render/object-wasm
+        [:> render/object-wasm*
          {:objects objects
           :object-id object-id
           :embed embed
@@ -87,7 +87,7 @@
           :skip-children skip-children}]
 
         [:& (mf/provider ctx/is-render?) {:value true}
-         [:& render/object-svg
+         [:> render/object-svg*
           {:objects objects
            :object-id object-id
            :embed embed
@@ -108,7 +108,7 @@
       (for [object-id (take @limit object-ids)]
         (let [objects (render/adapt-objects-for-shape objects object-id)]
           (if wasm
-            [:& render/object-wasm
+            [:> render/object-wasm*
              {:objects objects
               :key (str object-id)
               :object-id object-id
@@ -118,7 +118,7 @@
               :on-render cb-fn}]
 
             [:& (mf/provider ctx/is-render?) {:value true}
-             [:& render/object-svg
+             [:> render/object-svg*
               {:objects objects
                :key (str object-id)
                :object-id object-id
@@ -247,7 +247,7 @@
              [:a {:on-click on-click} (:name data)]]))]
 
        [:main
-        [:& render/components-svg
+        [:> render/components-svg*
          {:data (:data file)
           :embed embed}
 

@@ -175,8 +175,8 @@
               (let [root-id (:main-instance-id component)]
                 [:div {:class (stl/css :asset-list-item)
                        :key (str "assets-component-" (:id component))}
-                 [:& render/component-svg {:root-shape (get-in component [:objects root-id])
-                                           :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
+                 [:> render/component-svg* {:root-shape (get-in component [:objects root-id])
+                                            :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :item-name)
                           :title (:name component)}

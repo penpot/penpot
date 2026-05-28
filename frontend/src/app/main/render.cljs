@@ -60,7 +60,7 @@
 (def ^:const viewbox-decimal-precision 3)
 (def ^:private default-color clr/canvas)
 
-(mf/defc background
+(mf/defc background*
   [{:keys [vbox color]}]
   [:rect
    {:x (:x vbox)
@@ -209,9 +209,9 @@
 
     (reduce updt-fn objects mod-ids)))
 
-(mf/defc page-svg
+(mf/defc page-svg*
   {::mf/wrap [mf/memo]}
-  [{:keys [data use-thumbnails embed include-metadata aspect-ratio] :as props
+  [{:keys [data use-thumbnails embed include-metadata aspect-ratio]
     :or {embed false include-metadata false}}]
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
@@ -250,8 +250,7 @@
           [:& shape-wrapper {:shape item
                              :key (:id item)}])]]]]))
 
-(mf/defc frame-imposter
-  {::mf/wrap-props false}
+(mf/defc frame-imposter*
   [{:keys [objects frame vbox x y width height background]}]
   (let [shape-wrapper (shape-wrapper-factory objects)]
     [:& (mf/provider muc/render-thumbnails) {:value false}
@@ -268,9 +267,9 @@
 
 ;; Component that serves for render frame thumbnails, mainly used in
 ;; the viewer and inspector
-(mf/defc frame-svg
+(mf/defc frame-svg*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color] :or {zoom 1}}]
   (let [frame-id         (:id frame)
 
         bgcolor (d/nilv background-color default-color)
@@ -329,8 +328,7 @@
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 
-(mf/defc empty-grids
-  {::mf/wrap-props false}
+(mf/defc empty-grids*
   [{:keys [root-shape-id objects]}]
   (let [empty-grids
         (->> (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
@@ -342,9 +340,9 @@
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
-(mf/defc component-svg
+(mf/defc component-svg*
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects root-shape show-grids? is-hidden zoom class] :or {zoom 1} :as props}]
+  [{:keys [objects root-shape show-grids? is-hidden zoom class] :or {zoom 1}}]
   (when root-shape
     (let [root-shape-id (:id root-shape)
           include-metadata (mf/use-ctx export/include-metadata-ctx)
@@ -394,12 +392,12 @@
             [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
 
           (when show-grids?
-            [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])])))
+            [:> empty-grids* {:root-shape-id root-shape-id :objects objects}])])])))
 
-(mf/defc component-svg-thumbnail
+(mf/defc component-svg-thumbnail*
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [thumbnail-uri on-error show-grids? class
-           objects root-shape zoom] :or {zoom 1} :as props}]
+           objects root-shape zoom] :or {zoom 1}}]
 
   (when root-shape
     (let [root-shape-id (:id root-shape)
@@ -444,13 +442,12 @@
                 :loading "lazy"
                 :decoding "async"}]
        (when show-grids?
-         [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])))
+         [:> empty-grids* {:root-shape-id root-shape-id :objects objects}])])))
 
-(mf/defc object-svg
+(mf/defc object-svg*
   {::mf/wrap [mf/memo]}
   [{:keys [objects object-id embed skip-children]
-    :or {embed false}
-    :as props}]
+    :or {embed false}}]
   (let [object  (get objects object-id)
         object (cond-> object
                  (:hide-fill-on-export object)
@@ -484,9 +481,9 @@
        [:> ff/fontfaces-style* {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
 
-(mf/defc objects-svg
+(mf/defc objects-svg*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-ids embed] :or {embed false} :as props}]
+  [{:keys [objects object-ids embed] :or {embed false}}]
   (let [shapes
         (->> object-ids
              (keep #(get objects %))
@@ -550,9 +547,9 @@
         (js/console.error "Error initializing canvas context:" e)
         false))))
 
-(mf/defc object-wasm
+(mf/defc object-wasm*
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id skip-children scale on-render] :as props}]
+  [{:keys [objects object-id skip-children scale on-render]}]
   (let [object  (get objects object-id)
         object (cond-> object
                  (:hide-fill-on-export object)
@@ -585,8 +582,8 @@
 ;; SPRITES (DEBUG)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc component-symbol
-  [{:keys [component] :as props}]
+(mf/defc component-symbol*
+  [{:keys [component]}]
   (let [name       (:name component)
         path       (:path component)
         root-id    (or (:main-instance-id component)
@@ -635,8 +632,7 @@
           :group [:& group-wrapper {:shape root-shape :view-box vbox}]
           :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]])))
 
-(mf/defc components-svg
-  {::mf/wrap-props false}
+(mf/defc components-svg*
   [{:keys [data children embed include-metadata deleted?]}]
   (let [components (if (not deleted?)
                      (ctkl/components-seq data)
@@ -652,7 +648,7 @@
        [:defs
         (for [component components]
           (let [component (ctf/load-component-objects data component)]
-            [:& component-symbol {:key (dm/str (:id component)) :component component}]))]
+            [:> component-symbol* {:key (dm/str (:id component)) :component component}]))]
 
        children]]]))
 
@@ -705,7 +701,7 @@
    (->> (rx/of data)
         (rx/map
          (fn [data]
-           (let [elem (mf/element page-svg #js {:data data :embed true :include-metadata true})]
+           (let [elem (mf/element page-svg* #js {:data data :embed true :include-metadata true})]
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
@@ -727,7 +723,7 @@
      (->> (rx/of data)
           (rx/map
            (fn [data]
-             (let [elem (mf/element components-svg
+             (let [elem (mf/element components-svg*
                                     #js {:data data
                                          :embed true
                                          :include-metadata true
@@ -758,7 +754,7 @@
 
            data           (with-redefs [cfg/public-uri cfg/rasterizer-uri]
                             (rds/renderToStaticMarkup
-                             (mf/element frame-imposter
+                             (mf/element frame-imposter*
                                          #js {:objects objects
                                               :frame shape
                                               :vbox viewbox

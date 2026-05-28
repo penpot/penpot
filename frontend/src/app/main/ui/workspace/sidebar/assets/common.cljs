@@ -27,7 +27,7 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
-   [app.main.render :refer [component-svg component-svg-thumbnail]]
+   [app.main.render :refer [component-svg* component-svg-thumbnail*]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -378,7 +378,7 @@
              (not stale?)
              (or (contains? cf/flags :component-thumbnails)
                  wasm?))
-      [:& component-svg-thumbnail
+      [:> component-svg-thumbnail*
        {:thumbnail-uri thumbnail-uri
         :class class
         :on-error on-error
@@ -386,7 +386,7 @@
         :objects (:objects container)
         :show-grids? true}]
 
-      [:& component-svg
+      [:> component-svg*
        {:root-shape root-shape
         :class class
         :objects (:objects container)
