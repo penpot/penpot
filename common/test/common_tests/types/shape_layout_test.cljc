@@ -1469,3 +1469,140 @@
                      (layout/add-grid-row {:type :fixed :value 300}))
           result (layout/reorder-grid-row parent 0 2 false)]
       (t/is (= 3 (count (:layout-grid-rows result)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; duplicate-column regression: new shapes must be in parent.shapes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest duplicate-column-with-new-shapes-in-parent-test
+  ;; Regression test for: duplicating a column and then deleting it
+  ;; does not remove the column (issue #8300).
+  ;;
+  ;; Root cause: when delete-layout-track is called, assign-cells (inside
+  ;; remove-grid-column/row) sees the track shapes as orphaned children of
+  ;; the grid frame and recreates a new track to hold them.
+  ;;
+  ;; The fix is in remove-layout-track: shapes in the track are removed from
+  ;; the grid frame BEFORE remove-grid-column/row is called, using a single
+  ;; pcb changes transaction with apply-changes-local between the two steps.
+
+  (t/testing "shapes stay in correct cells when new shape IDs are in parent.shapes"
+    (let [track {:type :flex :value 1}
+
+          s1-id (uuid/next)  s2-id (uuid/next)
+          s3-id (uuid/next)  s4-id (uuid/next)
+          s5-id (uuid/next)  s6-id (uuid/next)  ; duplicates of S2 and S4
+
+          s1 (make-shape :id s1-id)
+          s2 (make-shape :id s2-id)
+          s3 (make-shape :id s3-id)
+          s4 (make-shape :id s4-id)
+          s5 (make-shape :id s5-id)
+          s6 (make-shape :id s6-id)
+
+          ;; 2x2 grid with S1..S4 assigned to their cells, including
+          ;; the new duplicates S5/S6 in :shapes (as apply-changes-local
+          ;; would produce).
+          base (-> (make-grid-frame)
+                   (assoc :shapes [s1-id s2-id s3-id s4-id s5-id s6-id])
+                   (layout/add-grid-column track)
+                   (layout/add-grid-column track)
+                   (layout/add-grid-row track)
+                   (layout/add-grid-row track))
+
+          ;; Manually assign cells so S1..S4 are in known positions
+          cell-a-id (uuid/next)  cell-b-id (uuid/next)
+          cell-c-id (uuid/next)  cell-d-id (uuid/next)
+
+          base (assoc base :layout-grid-cells
+                      {cell-a-id (merge layout/grid-cell-defaults {:id cell-a-id :column 1 :row 1 :shapes [s1-id]})
+                       cell-b-id (merge layout/grid-cell-defaults {:id cell-b-id :column 2 :row 1 :shapes [s2-id]})
+                       cell-c-id (merge layout/grid-cell-defaults {:id cell-c-id :column 1 :row 2 :shapes [s3-id]})
+                       cell-d-id (merge layout/grid-cell-defaults {:id cell-d-id :column 2 :row 2 :shapes [s4-id]})})
+
+          objects {s1-id s1 s2-id s2 s3-id s3 s4-id s4 s5-id s5 s6-id s6}
+
+          ids-map {s2-id s5-id  s4-id s6-id}
+
+          ;; Duplicate column at index 1 (track 2 → new track 3 with S5/S6)
+          result (layout/duplicate-column base objects 1 ids-map)
+
+          cells-by-pos (fn [parent col row]
+                         (->> (:layout-grid-cells parent)
+                              vals
+                              (filter #(and (= (:column %) col) (= (:row %) row)))
+                              first))]
+
+      ;; After duplication we expect 3 columns and 2 rows
+      (t/is (= 3 (count (:layout-grid-columns result))))
+      (t/is (= 2 (count (:layout-grid-rows result))))
+
+      ;; Original shapes stay in their original cells
+      (t/is (= [s1-id] (:shapes (cells-by-pos result 1 1))))
+      (t/is (= [s2-id] (:shapes (cells-by-pos result 2 1))))
+      (t/is (= [s3-id] (:shapes (cells-by-pos result 1 2))))
+      (t/is (= [s4-id] (:shapes (cells-by-pos result 2 2))))
+
+      ;; Duplicated shapes go into the new column 3
+      (t/is (= [s5-id] (:shapes (cells-by-pos result 3 1))))
+      (t/is (= [s6-id] (:shapes (cells-by-pos result 3 2))))))
+
+  (t/testing "deleting the duplicated column restores 2-column state without re-adding new column"
+    (let [track {:type :flex :value 1}
+
+          s1-id (uuid/next)  s2-id (uuid/next)
+          s3-id (uuid/next)  s4-id (uuid/next)
+          s5-id (uuid/next)  s6-id (uuid/next)
+
+          s1 (make-shape :id s1-id)
+          s2 (make-shape :id s2-id)
+          s3 (make-shape :id s3-id)
+          s4 (make-shape :id s4-id)
+          s5 (make-shape :id s5-id)
+          s6 (make-shape :id s6-id)
+
+          base (-> (make-grid-frame)
+                   (assoc :shapes [s1-id s2-id s3-id s4-id s5-id s6-id])
+                   (layout/add-grid-column track)
+                   (layout/add-grid-column track)
+                   (layout/add-grid-row track)
+                   (layout/add-grid-row track))
+
+          cell-a-id (uuid/next)  cell-b-id (uuid/next)
+          cell-c-id (uuid/next)  cell-d-id (uuid/next)
+
+          base (assoc base :layout-grid-cells
+                      {cell-a-id (merge layout/grid-cell-defaults {:id cell-a-id :column 1 :row 1 :shapes [s1-id]})
+                       cell-b-id (merge layout/grid-cell-defaults {:id cell-b-id :column 2 :row 1 :shapes [s2-id]})
+                       cell-c-id (merge layout/grid-cell-defaults {:id cell-c-id :column 1 :row 2 :shapes [s3-id]})
+                       cell-d-id (merge layout/grid-cell-defaults {:id cell-d-id :column 2 :row 2 :shapes [s4-id]})})
+
+          objects {s1-id s1 s2-id s2 s3-id s3 s4-id s4 s5-id s5 s6-id s6}
+          ids-map {s2-id s5-id  s4-id s6-id}
+
+          ;; First duplicate column 1 (track 2) → adds column 3 with S5/S6
+          after-dup (layout/duplicate-column base objects 1 ids-map)
+
+          ;; Then delete the duplicated column (index 2 = track 3).
+          ;; The objects passed to remove-grid-column must NOT include S5/S6
+          ;; in the parent's :shapes so assign-cells does not try to re-place them.
+          objects-after-del {s1-id s1 s2-id s2 s3-id s3 s4-id s4}
+          after-del-frame   (assoc after-dup :shapes [s1-id s2-id s3-id s4-id])
+          result (layout/remove-grid-column after-del-frame 2 objects-after-del)
+
+          cells-by-pos (fn [parent col row]
+                         (->> (:layout-grid-cells parent)
+                              vals
+                              (filter #(and (= (:column %) col) (= (:row %) row)))
+                              first))]
+
+      ;; After deletion we must be back to a 2-column grid
+      (t/is (= 2 (count (:layout-grid-columns result))))
+      (t/is (= 2 (count (:layout-grid-rows result))))
+      (t/is (= 4 (count (:layout-grid-cells result))))
+
+      ;; All original shapes in their original positions
+      (t/is (= [s1-id] (:shapes (cells-by-pos result 1 1))))
+      (t/is (= [s2-id] (:shapes (cells-by-pos result 2 1))))
+      (t/is (= [s3-id] (:shapes (cells-by-pos result 1 2))))
+      (t/is (= [s4-id] (:shapes (cells-by-pos result 2 2)))))))

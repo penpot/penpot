@@ -331,36 +331,56 @@
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
-  [ids type index & {:keys [with-shapes?] :or {with-shapes? false}}]
+  [ids type index & _opts]
   (assert (#{:row :column} type))
 
   (ptk/reify ::remove-layout-track
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
+    (watch [it state _]
+      (let [page    (dsh/lookup-page state)
+            objects (:objects page)
+            fdata   (dsh/lookup-file-data state)
             undo-id (js/Symbol)
 
-            shapes-to-delete
-            (when with-shapes?
-              (->> ids
-                   (mapcat
-                    (fn [id]
-                      (let [shape (get objects id)]
-                        (if (= type :column)
-                          (ctl/shapes-by-column shape index)
-                          (ctl/shapes-by-row shape index)))))
-                   (into #{})))]
+            shapes-in-track
+            (into []
+                  (mapcat
+                   (fn [id]
+                     (let [shape (get objects id)]
+                       (if (= type :column)
+                         (ctl/shapes-by-column shape index)
+                         (ctl/shapes-by-row shape index)))))
+                  ids)
+
+            ;; Build a single atomic changes transaction so that shapes are
+            ;; removed from the grid frame BEFORE remove-grid-column/row runs.
+            ;; This prevents assign-cells (called inside remove-grid-column/row)
+            ;; from seeing the track shapes as orphaned and recreating the track.
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-page page)
+                (pcb/with-file-data fdata))
+
+            changes
+            (if (seq shapes-in-track)
+              ;; Remove shapes in the track first; pcb/remove-objects calls
+              ;; apply-changes-local so the subsequent update-shapes sees
+              ;; updated objects without them.
+              (pcb/remove-objects changes shapes-in-track {:ignore-touched true})
+              changes)
+
+            changes
+            (pcb/update-shapes
+             changes
+             ids
+             (fn [shape objects]
+               (case type
+                 :row    (ctl/remove-grid-row shape index objects)
+                 :column (ctl/remove-grid-column shape index objects)))
+             {:with-objects? true})]
+
         (rx/of (dwu/start-undo-transaction undo-id)
-               (if shapes-to-delete
-                 (dwsh/delete-shapes shapes-to-delete)
-                 (rx/empty))
-               (dwsh/update-shapes
-                ids
-                (fn [shape objects]
-                  (case type
-                    :row    (ctl/remove-grid-row shape index objects)
-                    :column (ctl/remove-grid-column shape index objects)))
-                {:with-objects? true})
+               (dch/commit-changes changes)
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -403,6 +423,10 @@
 
             changes
             (-> changes
+                ;; Apply changes so the duplicated shapes are visible in objects when
+                ;; duplicate-row/column calls assign-cells, preventing check-deassigned-cells
+                ;; from clearing the new shape IDs and scrambling the grid layout.
+                (pcb/apply-changes-local)
                 (pcb/update-shapes
                  ids
                  (fn [shape objects]
