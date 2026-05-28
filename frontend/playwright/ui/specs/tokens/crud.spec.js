@@ -8,6 +8,7 @@ import {
   testTokenCreationFlow,
   unfoldTokenType,
   createToken,
+  createSet,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -2039,7 +2040,7 @@ test.describe("Tokens tab - delete", () => {
   });
 });
 
-test("BUG: 1425 Token is not highlighted in red when value references a token in a disabled set", async ({
+test("BUG: 14262 Token pill must be highlighted when value references a token in a disabled set", async ({
   page,
 }) => {
   const { tokensSidebar, tokenContextMenuForToken, tokenThemesSetsSidebar } =
@@ -2049,16 +2050,54 @@ test("BUG: 1425 Token is not highlighted in red when value references a token in
 
   await unfoldTokenType(tokensSidebar, "Border radius");
   await createToken(page, "Border radius", "base-radius", "Value", "20");
-  await createToken(page, "Border radius", "ref-base", "Value", "{base-radius}");
-  
+  await createToken(
+    page,
+    "Border radius",
+    "ref-base",
+    "Value",
+    "{base-radius}",
+  );
+
   const refTokenPill = tokensSidebar.getByRole("button", {
     name: "ref-base",
   });
 
   await expect(refTokenPill).toBeVisible();
 
-  const CoreSetCheckbox = tokenThemesSetsSidebar.getByRole('button', { name: 'core' }).getByRole('checkbox'); 
+  const CoreSetCheckbox = tokenThemesSetsSidebar
+    .getByRole("button", { name: "core" })
+    .getByRole("checkbox");
   await CoreSetCheckbox.click();
-  const brokenTokenPill = tokensSidebar.getByRole('button', { name: 'Missing reference ref-base' });
-  await expect(brokenTokenPill).toBeVisible();
+
+  // Pill is not highlighted if both tokens are on the same disabled set
+  const brokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Missing reference ref-base",
+  });
+  await expect(brokenTokenPill).not.toBeVisible();
+  await createSet(tokenThemesSetsSidebar, "New set");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "New set" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "New set" })
+    .getByRole("checkbox")
+    .click();
+  await createToken(page, "Border radius", "new-ref", "Value", "{base-radius}");
+
+  // Pill is highlighted if the referenced token is in a different disabled set than the token with the reference
+  const newBrokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Missing reference new-ref",
+  });
+  await expect(newBrokenTokenPill).toBeVisible();
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "core" })
+    .getByRole("checkbox")
+    .click();
+
+  // When the disabled set is activated again, pill is not highlighted anymore
+  await expect(
+    tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .getByRole("checkbox"),
+  ).toBeChecked();
+  await expect(newBrokenTokenPill).not.toBeVisible();
 });
