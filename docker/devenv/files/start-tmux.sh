@@ -54,6 +54,10 @@ if echo "$PENPOT_FLAGS" | grep -q "enable-mcp"; then
 fi
 
 if [ "${SERENA_ENABLED:-false}" = "true" ]; then
+    if [ -n "${SERENA_UPDATE_VERSION}" ]; then
+        # update Serena (use sudo since the initial Serena installation is global; see Dockerfile)
+        sudo -E uv tool install -p 3.13 serena-agent@${SERENA_UPDATE_VERSION} --prerelease=allow
+    fi
     tmux new-window -t penpot:5 -n 'serena'
     tmux select-window -t penpot:5
     tmux send-keys -t penpot "serena start-mcp-server --transport streamable-http --port 14281 --project penpot --context ${SERENA_CONTEXT} --host 0.0.0.0" enter

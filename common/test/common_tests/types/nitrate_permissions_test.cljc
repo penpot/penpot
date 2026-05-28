@@ -12,7 +12,8 @@
 (def org-perms
   {:owner-id :owner
    :permissions {:create-teams "any"
-                 :delete-teams "onlyOwners"}})
+                 :delete-teams "onlyOwners"
+                 :send-invitations "ownersAndAdmins"}})
 
 (t/deftest unknown-action-is-denied
   (t/is (false? (nitrate-perms/allowed? :unknown
@@ -20,15 +21,15 @@
                                          :profile-id :member
                                          :team-perms {:is-admin true}}))))
 
-(t/deftest org-owner-is-allowed-for-create
+(t/deftest org-owner-is-allowed-for-create-and-delete
   (t/is (true? (nitrate-perms/allowed? :create-team
                                        {:org-perms org-perms
                                         :profile-id :owner
                                         :team-perms {:is-admin false}})))
-  (t/is (false? (nitrate-perms/allowed? :delete-team
-                                        {:org-perms org-perms
-                                         :profile-id :owner
-                                         :team-perms {:is-admin false}}))))
+  (t/is (true? (nitrate-perms/allowed? :delete-team
+                                       {:org-perms org-perms
+                                        :profile-id :owner
+                                        :team-perms {:is-admin false}}))))
 
 (t/deftest create-team-permission-rules
   (t/is (true? (nitrate-perms/allowed? :create-team
@@ -56,16 +57,11 @@
                                          :profile-id :member
                                          :team-perms {:is-admin true}}))))
 
-(t/deftest delete-team-onlyme-is-gated-for-future-org-flow
+(t/deftest delete-team-onlyme-still-allows-org-owner
   (let [only-me-org (assoc org-perms :permissions {:create-teams "any"
                                                    :delete-teams "onlyMe"})]
-    (t/is (false? (nitrate-perms/allowed? :delete-team
-                                          {:org-perms only-me-org
-                                           :profile-id :owner
-                                           :team-perms {:is-owner false :is-admin false}})))
     (t/is (true? (nitrate-perms/allowed? :delete-team
                                          {:org-perms only-me-org
-                                          :allow-org-owner-delete? true
                                           :profile-id :owner
                                           :team-perms {:is-owner false :is-admin false}})))
     (t/is (false? (nitrate-perms/allowed? :delete-team
@@ -138,3 +134,45 @@
                                          {:org-perms default-org
                                           :profile-id :member
                                           :team-perms {}})))))
+
+(t/deftest send-invitations-defaults-to-owners-and-admins
+  (let [default-org (assoc org-perms :permissions {:create-teams "any"
+                                                   :delete-teams "onlyOwners"})]
+    (t/is (true? (nitrate-perms/allowed? :send-invitations
+                                         {:org-perms default-org
+                                          :profile-id :owner
+                                          :team-perms {:is-owner true :is-admin false}})))
+    (t/is (true? (nitrate-perms/allowed? :send-invitations
+                                         {:org-perms default-org
+                                          :profile-id :member
+                                          :team-perms {:is-owner false :is-admin true}})))
+    (t/is (false? (nitrate-perms/allowed? :send-invitations
+                                          {:org-perms default-org
+                                           :profile-id :member
+                                           :team-perms {:is-owner false :is-admin false}})))))
+
+(t/deftest send-invitations-owners-allows-only-team-owners
+  (let [only-owners-org (assoc org-perms :permissions {:create-teams "any"
+                                                       :delete-teams "onlyOwners"
+                                                       :send-invitations "owners"})]
+    (t/is (true? (nitrate-perms/allowed? :send-invitations
+                                         {:org-perms only-owners-org
+                                          :profile-id :member
+                                          :team-perms {:is-owner true :is-admin true}})))
+    (t/is (false? (nitrate-perms/allowed? :send-invitations
+                                          {:org-perms only-owners-org
+                                           :profile-id :owner
+                                           :team-perms {:is-owner false :is-admin false}})))
+    (t/is (false? (nitrate-perms/allowed? :send-invitations
+                                          {:org-perms only-owners-org
+                                           :profile-id :member
+                                           :team-perms {:is-owner false :is-admin true}})))))
+
+(t/deftest send-invitations-invalid-value-is-denied
+  (let [invalid-org (assoc org-perms :permissions {:create-teams "any"
+                                                   :delete-teams "onlyOwners"
+                                                   :send-invitations "invalid-value"})]
+    (t/is (false? (nitrate-perms/allowed? :send-invitations
+                                          {:org-perms invalid-org
+                                           :profile-id :member
+                                           :team-perms {:is-owner true :is-admin true}})))))

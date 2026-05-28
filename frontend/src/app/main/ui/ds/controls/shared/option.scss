@@ -71,6 +71,10 @@
   --options-icon-fg-color: var(--color-accent-primary);
 }
 
+.option-disabled {
+  opacity: 0.6;
+}
+
 .option-check {
   color: var(--token-options-icon-fg-color);
   min-width: var(--sp-l);
