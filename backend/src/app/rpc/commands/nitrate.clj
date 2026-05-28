@@ -147,10 +147,9 @@
 
 (defn get-leave-org-summary
   [cfg default-team-id teams-to-delete teams-to-transfer-count teams-to-exit-count]
-  (let [{:keys [deletable-team-ids delete-default-team? detach-from-org-team-ids]}
+  (let [{:keys [deletable-team-ids detach-from-org-team-ids]}
         (build-leave-org-plan cfg default-team-id teams-to-delete nil)]
-    {:teams-to-delete   (+ (count deletable-team-ids)
-                           (if delete-default-team? 1 0))
+    {:teams-to-delete   (count deletable-team-ids)
      :teams-to-transfer teams-to-transfer-count
      :teams-to-exit     teams-to-exit-count
      :teams-to-detach   (count detach-from-org-team-ids)}))

@@ -651,6 +651,110 @@ test.describe("Remapping a single token", () => {
 });
 
 test.describe("Remapping group of tokens", () => {
+  test("User renames a group, remaps and undoes - tokens remain applied", async ({
+    page,
+  }) => {
+    const { tokensSidebar } = await setupTokensFileRender(page);
+    const workspacePage = new WasmWorkspacePage(page);
+    const rightSidebar = workspacePage.rightSidebar;
+
+    // Create multiple tokens in a group. Use a name not present in the mock
+    // file to avoid conflicts with pre-existing token groups.
+    await createToken(
+      page,
+      "Color",
+      "brand.primary",
+      "Value",
+      "textbox",
+      "#0000FF",
+    );
+    await createToken(
+      page,
+      "Color",
+      "brand.secondary",
+      "Value",
+      "textbox",
+      "#0055FF",
+    );
+
+    const brandNode = tokensSidebar.getByRole("button", {
+      name: "brand",
+      exact: true,
+    });
+
+    await expect(brandNode).toBeVisible();
+
+    // Apply the token to a shape so that references exist and the
+    // remapping modal is triggered on rename
+    await page.getByRole("tab", { name: "Layers" }).click();
+    await page
+      .getByTestId("layer-row")
+      .filter({ hasText: "Rectangle" })
+      .first()
+      .click();
+
+    await page.getByRole("tab", { name: "Tokens" }).click();
+    const brandPrimaryToken = tokensSidebar.getByRole("button", {
+      name: "primary",
+    });
+    await brandPrimaryToken.click();
+
+    // Rename the group
+    await brandNode.click({ button: "right" });
+    const renameNodeButton = page.getByRole("button", {
+      name: "Rename",
+      exact: true,
+    });
+    await expect(renameNodeButton).toBeVisible();
+    await renameNodeButton.click();
+
+    const tokenRenameNodeModal = page.getByTestId("token-rename-node-modal");
+    await expect(tokenRenameNodeModal).toBeVisible();
+
+    const nameField = tokenRenameNodeModal.getByRole("textbox", {
+      name: "Name",
+    });
+    await nameField.fill("brandy");
+
+    const submitButton = tokenRenameNodeModal.getByRole("button", {
+      name: "Rename",
+    });
+    await submitButton.click();
+
+    // Confirm remapping
+    const remappingModal = page.getByTestId("token-remapping-modal");
+    await expect(remappingModal).toBeVisible({ timeout: 5000 });
+
+    const confirmButton = remappingModal.getByRole("button", {
+      name: "remap tokens",
+    });
+    await confirmButton.click();
+
+    // Verify the group was renamed and the token is still applied
+    const brandyNode = tokensSidebar.getByRole("button", {
+      name: "brandy",
+      exact: true,
+    });
+    await expect(brandyNode).toBeVisible();
+
+    const fillSection = rightSidebar.getByRole("region", {
+      name: "Fill section",
+    });
+    await expect(fillSection).toBeVisible();
+    await expect(
+      fillSection.getByLabel("brandy.primary", { exact: true }),
+    ).toBeVisible();
+
+    // Undo the rename and remap as a single operation
+    await page.keyboard.press("ControlOrMeta+z");
+
+    // The original group name and token application should be fully restored
+    await expect(brandNode).toBeVisible();
+    await expect(
+      fillSection.getByLabel("brand.primary", { exact: true }),
+    ).toBeVisible();
+  });
+
   test("User renames a group - and remaps", async ({ page }) => {
     const { tokensSidebar } = await setupTokensFileRender(page);
     const workspacePage = new WasmWorkspacePage(page);

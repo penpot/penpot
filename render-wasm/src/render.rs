@@ -2508,12 +2508,26 @@ impl RenderState {
             _ => {}
         }
 
-        //In clipped content strokes are drawn over the contained elements
-        if element.clip() {
+        // Strokes are drawn over children for clipped frames (all strokes), and for non-clipped
+        // frames with inner strokes (inner strokes only — non-inner were rendered before children).
+        let needs_exit_strokes = element.clip()
+            || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke());
+
+        if needs_exit_strokes {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
             element_strokes.to_mut().clear_fills();
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
+
+            // For non-clipped frames, non-inner strokes were already rendered inline.
+            if !element.clip() {
+                let is_open = element.is_open();
+                element_strokes
+                    .to_mut()
+                    .strokes
+                    .retain(|s| s.render_kind(is_open) == StrokeKind::Inner);
+            }
+
             // Frame blur is applied at the save_layer level - avoid double blur on the stroke paint
             if Self::frame_clip_layer_blur(element).is_some() {
                 element_strokes.to_mut().set_blur(None);
@@ -3273,8 +3287,24 @@ impl RenderState {
                         .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
+                // For frames without clip_content, inner strokes must render after children in
+                // render_shape_exit so children don't paint over them. Strip them here.
+                let element_for_inline: Cow<Shape> = if matches!(element.shape_type, Type::Frame(_))
+                    && !element.clip_content
+                    && element.has_inner_stroke()
+                {
+                    let is_open = element.is_open();
+                    let mut modified = element.clone();
+                    modified
+                        .strokes
+                        .retain(|s| s.render_kind(is_open) != StrokeKind::Inner);
+                    Cow::Owned(modified)
+                } else {
+                    Cow::Borrowed(element)
+                };
+
                 self.render_shape(
-                    element,
+                    &element_for_inline,
                     clip_bounds.clone(),
                     SurfaceId::Fills,
                     SurfaceId::Strokes,

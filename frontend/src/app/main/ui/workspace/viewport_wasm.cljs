@@ -460,7 +460,8 @@
             (wasm.api/initialize-viewport base-objects zoom vbox
                                           :background background
                                           :on-shapes-ready
-                                          #(st/emit! (dw/check-file-position-data file-id)))
+                                          (fn []
+                                            (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))

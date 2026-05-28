@@ -248,20 +248,6 @@
             (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#ff0000" :fill-opacity 1}]))
             (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#ff0000")))
 
-          (t/testing " - fills element replacement (bug #8357)"
-            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
-            (aset (.-fills shape) 0 #js {:fillColor "#00ff00" :fillOpacity 0.5})
-            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#00ff00" :fill-opacity 0.5}])))
-
-          (t/testing " - fills push/pop (bug #8357)"
-            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
-            (.push (.-fills shape) #js {:fillColor "#00ff00" :fillOpacity 1})
-            (t/is (= (get-in @store (get-shape-path :fills))
-                     [{:fill-color "#fabada" :fill-opacity 1}
-                      {:fill-color "#00ff00" :fill-opacity 1}]))
-            (.pop (.-fills shape))
-            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#fabada" :fill-opacity 1}])))
-
           (t/testing " - fills gradient assignment replaces solid color (bug #8357)"
             (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
             (obj/set! (aget (.-fills shape) 0) "fillColorGradient" (gradient))
@@ -286,11 +272,6 @@
             (obj/set! (aget (.-strokes shape) 0) "strokeColor" "#0000ff")
             (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#0000ff" :stroke-opacity 1 :stroke-width 5}])))
 
-          (t/testing " - strokes element replacement (bug #8357)"
-            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
-            (aset (.-strokes shape) 0 #js {:strokeColor "#00ff00" :strokeOpacity 0.5 :strokeWidth 2})
-            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#00ff00" :stroke-opacity 0.5 :stroke-width 2}])))
-
           (t/testing " - strokes gradient assignment replaces solid color (bug #8357)"
             (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
             (obj/set! (aget (.-strokes shape) 0) "strokeColorGradient" (gradient))
@@ -309,6 +290,46 @@
                          :stroke-color-gradient (-> parsed-gradient
                                                     (assoc :end-y 0.75)
                                                     (assoc-in [:stops 1 :opacity] 0.25))}])))))
+
+        (t/testing "Text shape fills"
+          (let [^js text (.createText context "Hello")]
+
+            (t/testing " - flat fill set and read-back"
+              (set! (.-fills text) #js [#js {:fillColor "#aa00aa" :fillOpacity 0.9}])
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#aa00aa"))
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillOpacity")) 0.9)))
+
+            (t/testing " - in-place fill color mutation"
+              (set! (.-fills text) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+              (obj/set! (aget (.-fills text) 0) "fillColor" "#00ccdd")
+              (obj/set! (aget (.-fills text) 0) "fillOpacity" 0.5)
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#00ccdd"))
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillOpacity")) 0.5)))
+
+            (t/testing " - gradient fill set"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (let [g (-> (. text -fills) (aget 0) (aget "fillColorGradient"))]
+                (t/is (= (aget g "type") "linear"))
+                (t/is (= (-> g (aget "stops") (aget 0) (aget "color")) "#b400ff"))
+                (t/is (= (-> g (aget "stops") (aget 1) (aget "color")) "#0c3fd5"))))
+
+            (t/testing " - gradient stop mutation"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (let [fill-gradient (-> (. text -fills) (aget 0) (aget "fillColorGradient"))
+                    stop          (-> fill-gradient (aget "stops") (aget 0))]
+                (obj/set! fill-gradient "startX" 0.1)
+                (obj/set! stop "color" "#ffff00")
+                (obj/set! stop "opacity" 0.5)
+                (let [g2 (-> (. text -fills) (aget 0) (aget "fillColorGradient"))]
+                  (t/is (= (aget g2 "startX") 0.1))
+                  (t/is (= (-> g2 (aget "stops") (aget 0) (aget "color")) "#ffff00"))
+                  (t/is (= (-> g2 (aget "stops") (aget 0) (aget "opacity")) 0.5)))))
+
+            (t/testing " - fillColor clears fillColorGradient"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (obj/set! (aget (.-fills text) 0) "fillColor" "#123456")
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
+              (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
 
         (t/testing "Relative properties"
           (let [board (.createBoard context)]

@@ -1206,18 +1206,24 @@
   [ids search replacement]
   (ptk/reify ::replace-text-in-shapes
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-group (uuid/next)]
-        (rx/of
-         (dwsh/update-shapes
-          ids
-          (fn [shape]
-            (if (and (= :text (:type shape)) (some? (:content shape)))
-              (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
-                    new-name   (txt/generate-shape-name (txt/content->text new-content))]
-                (-> shape (assoc :content new-content) (assoc :name new-name)))
-              shape))
-          {:attrs #{:content :name} :undo-group undo-group}))))))
+    (watch [_ state _]
+      (let [undo-group (uuid/next)
+            update-event
+            (dwsh/update-shapes
+             ids
+             (fn [shape]
+               (if (and (= :text (:type shape)) (some? (:content shape)))
+                 (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
+                       new-name    (txt/generate-shape-name (txt/content->text new-content))]
+                   (-> shape (assoc :content new-content) (assoc :name new-name)))
+                 shape))
+             {:attrs #{:content :name} :undo-group undo-group})]
+        (rx/concat
+         (rx/of update-event)
+         (if (features/active-feature? state "render-wasm/v1")
+           (->> (rx/from ids)
+                (rx/map #(dwwt/resize-wasm-text-debounce % {:undo-group undo-group})))
+           (rx/empty)))))))
 
 ;; -- Text Editor v3
 

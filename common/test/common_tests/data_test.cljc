@@ -888,7 +888,7 @@
   (t/is (not (d/editable-collection? "hello")))
   (t/is (not (d/editable-collection? 42))))
 
-(t/deftest num-predicate
+(t/deftest num-predicate-2
   (t/is (d/num? 1))
   (t/is (d/num? 0))
   (t/is (d/num? -3.14))

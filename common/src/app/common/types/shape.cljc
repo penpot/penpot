@@ -525,7 +525,7 @@
    :fills []
    :strokes [{:stroke-style :solid
               :stroke-alignment :inner
-              :stroke-width 2
+              :stroke-width 1
               :stroke-color clr/black
               :stroke-opacity 1}]})
 

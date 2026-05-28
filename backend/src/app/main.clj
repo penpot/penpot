@@ -154,8 +154,8 @@
     ::db/username   (cf/get :database-username)
     ::db/password   (cf/get :database-password)
     ::db/read-only  (cf/get :database-readonly false)
-    ::db/min-size   (cf/get :database-min-pool-size 0)
-    ::db/max-size   (cf/get :database-max-pool-size 60)
+    ::db/min-size   (cf/get :database-min-pool-size)
+    ::db/max-size   (cf/get :database-max-pool-size)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)
