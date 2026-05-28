@@ -54,6 +54,9 @@
 (defn- handle-font-upload
   [{:keys [id] :as item}]
   (->> (df/upload-font-variant item)
+       ;; This delay fixes the UI problem. When the font is uploaded quickly,
+       ;; the user only sees a flicker on the button. With a small delay we
+       ;; have a clear transition from uploading state to uploaded
        (rx/delay-at-least 2000)
        (rx/map (fn [font]
                  [id font]))))
