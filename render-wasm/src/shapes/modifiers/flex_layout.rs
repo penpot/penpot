@@ -3,8 +3,8 @@
 use crate::error::{Error, Result};
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
-    AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
-    Modifier, Shape,
+    AlignContent, AlignItems, AlignSelf, ConstraintH, ConstraintV, FlexData, JustifyContent,
+    LayoutData, LayoutItem, Modifier, Shape,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -749,6 +749,34 @@ pub fn reflow_flex_layout(
         scale.pre_concat(parent_transform_inv);
 
         let layout_bounds_after = layout_bounds.transform(&scale);
+
+        // Propagate the parent auto-resize to absolute children using their constraints.
+        for child_id in shape.children_ids_iter(true) {
+            let Some(child) = shapes.get(child_id) else {
+                continue;
+            };
+
+            if !child.is_absolute() {
+                continue;
+            }
+
+            let child_bounds = bounds.find(child);
+            let constraint_h = child.constraint_h(ConstraintH::Left);
+            let constraint_v = child.constraint_v(ConstraintV::Top);
+
+            let child_transform = super::constraints::propagate_shape_constraints(
+                layout_bounds,
+                &layout_bounds_after,
+                &child_bounds,
+                constraint_h,
+                constraint_v,
+                scale,
+                child.ignore_constraints,
+            )?;
+
+            result.push_back(Modifier::transform_propagate(child.id, child_transform));
+        }
+
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }
