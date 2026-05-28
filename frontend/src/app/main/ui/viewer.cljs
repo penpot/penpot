@@ -53,9 +53,9 @@
 
 (defn- calculate-size
   "Calculate the total size we must reserve for the frame, including possible paddings
-   added because shadows or blur."
+   added because shadows, blur, or strokes."
   [objects frame zoom]
-  (let [{:keys [x y width height]} (gsb/get-object-bounds objects frame)]
+  (let [{:keys [x y width height]} (gsb/get-object-bounds objects frame {:ignore-margin? false})]
     {:base-width  width
      :base-height height
      :x           x

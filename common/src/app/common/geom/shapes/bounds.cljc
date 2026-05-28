@@ -89,14 +89,23 @@
   ([shape]
    (get-shape-filter-bounds shape false))
   ([shape ignore-shadow-margin?]
-   (if (or (and (cfh/svg-raw-shape? shape)
-                (not= :svg (dm/get-in shape [:content :tag])))
-           ;; If no shadows or blur, we return the selrect as is
-           (and (empty? (-> shape :shadow))
-                (or (nil? (:blur shape))
-                    (not= :layer-blur (-> shape :blur :type))
-                    (zero? (-> shape :blur :value (or 0))))))
+   (cond
+     ;; SVG raw elements (non-root) don't have proper rotated points; use selrect
+     (and (cfh/svg-raw-shape? shape)
+          (not= :svg (dm/get-in shape [:content :tag])))
      (dm/get-prop shape :selrect)
+
+     ;; No shadows or blur: use the axis-aligned bounding box from the actual
+     ;; (possibly rotated) points. Using selrect here would be wrong for rotated
+     ;; shapes because selrect stores the unrotated rectangle, not the screen-space bbox.
+     (and (empty? (-> shape :shadow))
+          (or (nil? (:blur shape))
+              (not= :layer-blur (-> shape :blur :type))
+              (zero? (-> shape :blur :value (or 0)))))
+     (-> (dm/get-prop shape :points)
+         (grc/points->rect))
+
+     :else
      (let [filters    (shape->filters shape)
            blur-value (case (-> shape :blur :type)
                         :layer-blur (or (-> shape :blur :value) 0)
