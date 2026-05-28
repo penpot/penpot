@@ -66,7 +66,9 @@
                                       (d/merge txt/default-paragraph-attrs txt/default-text-attrs))
         ;; Recover real font-size from data attribute, which to_dom/get-paragraph-styles may have
         ;; changed to "0" ("0" trick to avoid it interfering with height calculation in the browser).
-        saved-font-size (dom/get-data element "saved-font-size")]
+        saved-font-size (dom/get-data element "saved-font-size")
+        saved-font-size (when (and (string? saved-font-size) (not (empty? saved-font-size)))
+                          saved-font-size)]
     (cond-> styles
       (some? saved-font-size)
       (assoc :font-size saved-font-size))))
