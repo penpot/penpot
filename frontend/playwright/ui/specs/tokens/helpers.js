@@ -360,6 +360,21 @@ const createToken = async (page, type, name, textFieldName, value) => {
   await expect(tokensUpdateCreateModal).not.toBeVisible();
 };
 
+  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
+    const setInput = sidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill(setName);
+    await setInput.press(finalKey);
+  };
+
+  const createSet = async (sidebar, setName, finalKey = "Enter") => {
+    const tokensTabButton = sidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
+  };
+
 export {
   setupEmptyTokensFile,
   setupEmptyTokensFileRender,
@@ -370,4 +385,6 @@ export {
   testTokenCreationFlow,
   unfoldTokenType,
   createToken,
+  createSet,
+  changeSetInput,
 };

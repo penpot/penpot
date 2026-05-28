@@ -85,7 +85,7 @@
 
 (mf/defc tokens-section*
   {::mf/private true}
-  [{:keys [tokens-lib active-tokens resolved-active-tokens resolved-active-tokens-not-forced]}]
+  [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
 
@@ -320,7 +320,6 @@
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens
-                           :active-theme-tokens-not-forced resolved-active-tokens-not-forced
                            :tokens-lib tokens-lib
                            :selected-token-set-id selected-token-set-id}]))
 
@@ -330,6 +329,4 @@
                          :type type
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens
-                         :active-theme-tokens-not-forced resolved-active-tokens-not-forced
-                         :selected-token-set-id selected-token-set-id}])]))
+                         :active-theme-tokens resolved-active-tokens}])]))

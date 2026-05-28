@@ -175,7 +175,7 @@
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
-  [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens active-theme-tokens-not-forced]}]
+  [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
   (let [{:keys [name value type]} token
 
         resolved-token (get active-theme-tokens (:name token))
@@ -216,7 +216,7 @@
         (if (contains? cf/flags :tokenscript)
           (seq (:errors resolved-token))
           (and is-reference?
-               (not (contains-reference-value? value active-theme-tokens-not-forced))))
+               (not (contains-reference-value? value active-theme-tokens))))
 
         no-valid-value (seq errors)
 

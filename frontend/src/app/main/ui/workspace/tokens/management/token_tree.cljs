@@ -134,7 +134,6 @@
            selected-shapes
            is-selected-inside-layout
            active-theme-tokens
-           active-theme-tokens-not-forced
            tokens-lib
            selected-token-set-id
            on-token-pill-click
@@ -172,7 +171,6 @@
              :selected-shapes selected-shapes
              :is-selected-inside-layout is-selected-inside-layout
              :active-theme-tokens active-theme-tokens
-             :active-theme-tokens-not-forced active-theme-tokens-not-forced
              :on-click on-token-pill-click
              :on-context-menu on-pill-context-menu}])
          ;; Render segment folder
