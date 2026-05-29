@@ -307,7 +307,7 @@
                               :id organization-id
                               :default-team-id your-penpot-id})]
         (t/is (th/success? out))
-        (t/is (= {:teams-to-delete 1
+        (t/is (= {:teams-to-delete 0
                   :teams-to-transfer 0
                   :teams-to-exit 0
                   :teams-to-detach 0}

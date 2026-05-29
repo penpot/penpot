@@ -100,20 +100,6 @@
   gap: var(--sp-s);
 }
 
-.org-avatar {
-  width: $sz-32;
-  height: $sz-32;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: var(--modal-section-background-color);
-  color: var(--modal-title-foreground-color);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
 .org-info {
   display: flex;
   flex-direction: column;

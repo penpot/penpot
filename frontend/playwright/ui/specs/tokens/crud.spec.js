@@ -919,6 +919,7 @@ test.describe("Tokens - creation", () => {
 
   test("User creates shadow token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
+    const emptyFieldError = "This field cannot be empty";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page, {
@@ -996,6 +997,14 @@ test.describe("Tokens - creation", () => {
 
     await expect(emptyNameErrorNode).toBeVisible();
     await expect(submitButton).toBeDisabled();
+
+    // 5. Empty fill -> disabled + error message
+    await offsetXField.fill("3"); // Fill should be touched in order to show the error message
+    await offsetXField.fill("");
+    const emptyFieldErrorNode =
+      tokensUpdateCreateModal.getByText(emptyFieldError);
+
+    await expect(emptyFieldErrorNode).toBeVisible();
 
     //
     // ------- SUCCESSFUL FIELDS -------
@@ -1101,6 +1110,28 @@ test.describe("Tokens - creation", () => {
     await unfoldTokenType(tokensTabPanel, "shadow");
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    ).toBeEnabled();
+
+    //
+    // ------- THIRD TOKEN WITH EMPTY BLUR AND SPREAD -------
+    //
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-3");
+    await colorField.fill("red");
+
+    // 1. Empty blur and spread
+
+    await blurField.fill("");
+
+    await spreadField.fill("");
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "shadow");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
     ).toBeEnabled();
   });
 
@@ -1691,13 +1722,21 @@ test.describe("Tokens - creation", () => {
   });
 });
 
-test("User cannot create token with a conflicting name in other set", async ({ page }) => {
-  const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
-    await setupTokensFileRender(page);
+test("User cannot create token with a conflicting name in other set", async ({
+  page,
+}) => {
+  const {
+    tokensUpdateCreateModal,
+    tokenThemesSetsSidebar,
+    tokensSidebar,
+    tokenContextMenuForToken,
+  } = await setupTokensFileRender(page);
 
   await expect(tokensSidebar).toBeVisible();
 
-  await tokenThemesSetsSidebar.getByRole('button', { name: 'light', exact: true }).click();
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "light", exact: true })
+    .click();
 
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
   await tokensTabPanel
@@ -1721,8 +1760,11 @@ test("User cannot create token with a conflicting name in other set", async ({ p
   await nameField.fill("accent.default");
 
   // An error message should appear and submit button should be disabled
-  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: accent.default'))
-    .toBeVisible()
+  await expect(
+    tokensUpdateCreateModal.getByText(
+      "A token already exists at the path: accent.default",
+    ),
+  ).toBeVisible();
 
   await expect(submitButton).toBeDisabled();
 
@@ -1730,8 +1772,11 @@ test("User cannot create token with a conflicting name in other set", async ({ p
   await nameField.fill("colors.red");
 
   // An error message should appear and submit button should be disabled
-  await expect(tokensUpdateCreateModal.getByText('A token already exists at the path: colors.red'))
-    .toBeVisible()
+  await expect(
+    tokensUpdateCreateModal.getByText(
+      "A token already exists at the path: colors.red",
+    ),
+  ).toBeVisible();
 
   await expect(submitButton).toBeDisabled();
 
@@ -2075,4 +2120,35 @@ test.describe("Tokens tab - delete", () => {
     await expect(tokenContextMenuForToken).not.toBeVisible();
     await expect(colorToken).not.toBeVisible();
   });
+});
+
+test("BUG: 1425 Token is not highlighted in red when value references a token in a disabled set", async ({
+  page,
+}) => {
+  const { tokensSidebar, tokenContextMenuForToken, tokenThemesSetsSidebar } =
+    await setupTokensFileRender(page);
+
+  await expect(tokensSidebar).toBeVisible();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await createToken(page, "Border radius", "base-radius", "Value", "textbox", "20");
+  await createToken(
+    page,
+    "Border radius",
+    "ref-base",
+    "Value",
+    "textbox",
+    "{base-radius}",
+  );
+  
+  const refTokenPill = tokensSidebar.getByRole("button", {
+    name: "ref-base",
+  });
+
+  await expect(refTokenPill).toBeVisible();
+
+  const CoreSetCheckbox = tokenThemesSetsSidebar.getByRole('button', { name: 'core' }).getByRole('checkbox'); 
+  await CoreSetCheckbox.click();
+  const brokenTokenPill = tokensSidebar.getByRole('button', { name: 'Missing reference ref-base' });
+  await expect(brokenTokenPill).toBeVisible();
 });

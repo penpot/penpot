@@ -7,7 +7,7 @@ use bezier_rs::{Bezier, BezierHandles, ProjectionOptions, TValue};
 use glam::DVec2;
 use skia_safe as skia;
 use std::cmp::Ordering;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 const INTERSECT_THRESHOLD_SAME: f32 = 0.1;
 const INTERSECT_THRESHOLD_DIFFERENT: f32 = 0.5;
@@ -62,8 +62,14 @@ pub fn path_to_beziers(path: &Path) -> Vec<Bezier> {
             Segment::Close => {
                 let (x1, y1) = prev?;
                 let (x2, y2) = start?;
-                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
                 prev = Some((x2, y2));
+                // Skip degenerate zero-length close segment: path already returned
+                // to the start point via an explicit LineTo/CurveTo, so adding a
+                // zero-length linear bezier here would confuse intersection detection.
+                if (x1 - x2).abs() < 1e-6 && (y1 - y2).abs() < 1e-6 {
+                    return None;
+                }
+                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
                 Some(s)
             }
         })
@@ -240,98 +246,49 @@ enum BezierSource {
     B,
 }
 
-#[derive(Debug, Clone)]
-struct BezierStart(BezierSource, DVec2);
+type BezierPool = Vec<Option<(BezierSource, Bezier)>>;
 
-impl PartialEq for BezierStart {
-    fn eq(&self, other: &Self) -> bool {
-        let x1 = self.1.x as f32;
-        let y1 = self.1.y as f32;
-        let x2 = other.1.x as f32;
-        let y2 = other.1.y as f32;
-
-        if self.0 == other.0 {
-            (x1 - x2).abs() <= INTERSECT_THRESHOLD_SAME
-                && (y1 - y2).abs() <= INTERSECT_THRESHOLD_SAME
-        } else {
-            (x1 - x2).abs() <= INTERSECT_THRESHOLD_DIFFERENT
-                && (y1 - y2).abs() <= INTERSECT_THRESHOLD_DIFFERENT
-        }
-    }
+fn init_pool(beziers: &[(BezierSource, Bezier)]) -> BezierPool {
+    beziers.iter().copied().map(Some).collect()
 }
 
-impl Eq for BezierStart {}
-
-impl PartialOrd for BezierStart {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
+// Pop the first remaining entry from the pool (arbitrary start for a new subpath).
+fn pop_first_from_pool(pool: &mut BezierPool) -> Option<(BezierSource, Bezier)> {
+    pool.iter_mut().find_map(|e| e.take())
 }
 
-impl Ord for BezierStart {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let x1 = self.1.x as f32;
-        let y1 = self.1.y as f32;
-        let x2 = other.1.x as f32;
-        let y2 = other.1.y as f32;
+// Find and remove the segment whose start point is closest to `end` within the
+// appropriate threshold. Same-source segments use a tight threshold
+// (INTERSECT_THRESHOLD_SAMEd) so we prefer staying on the same original path;
+// cross-source segments use a wider threshold (INTERSECT_THRESHOLD_DIFFERENT)
+// to allow switching paths at intersection points.
+fn find_next_in_pool(
+    pool: &mut BezierPool,
+    end: DVec2,
+    source: BezierSource,
+) -> Option<(BezierSource, Bezier)> {
+    let mut best_idx: Option<usize> = None;
+    let mut best_dist_sq = f64::MAX;
 
-        let (equal_x, equal_y) = if self.0 == other.0 {
-            (
-                (x1 - x2).abs() <= INTERSECT_THRESHOLD_SAME,
-                (y1 - y2).abs() <= INTERSECT_THRESHOLD_SAME,
-            )
-        } else {
-            (
-                (x1 - x2).abs() <= INTERSECT_THRESHOLD_DIFFERENT,
-                (y1 - y2).abs() <= INTERSECT_THRESHOLD_DIFFERENT,
-            )
+    for (i, entry) in pool.iter().enumerate() {
+        let Some((src, bezier)) = entry else {
+            continue;
         };
-
-        if equal_x && equal_y {
-            Ordering::Equal
-        } else if equal_x && y1 > y2 || !equal_x && x1 > x2 {
-            Ordering::Greater
+        let threshold = if *src == source {
+            INTERSECT_THRESHOLD_SAME as f64
         } else {
-            Ordering::Less
+            INTERSECT_THRESHOLD_DIFFERENT as f64
+        };
+        let dx = bezier.start.x - end.x;
+        let dy = bezier.start.y - end.y;
+        let dist_sq = dx * dx + dy * dy;
+        if dist_sq <= threshold * threshold && dist_sq < best_dist_sq {
+            best_dist_sq = dist_sq;
+            best_idx = Some(i);
         }
     }
-}
 
-type BM<'a> = BTreeMap<BezierStart, Vec<(BezierSource, Bezier)>>;
-
-fn init_bm(beziers: &[(BezierSource, Bezier)]) -> BM<'_> {
-    let mut bm = BM::default();
-    for entry @ (source, bezier) in beziers.iter() {
-        let value = *entry;
-        let key = BezierStart(*source, bezier.start);
-        if let Some(v) = bm.get_mut(&key) {
-            v.push(value);
-        } else {
-            bm.insert(key, vec![value]);
-        }
-    }
-    bm
-}
-
-fn find_next(tree: &mut BM, key: BezierStart) -> Option<(BezierSource, Bezier)> {
-    let val = tree.get_mut(&key)?;
-    let first = val.pop()?;
-
-    if val.is_empty() {
-        tree.remove(&key);
-    }
-    Some(first)
-}
-
-fn pop_first(tree: &mut BM) -> Option<(BezierSource, Bezier)> {
-    let key = tree.keys().take(1).next()?.clone();
-    let val = tree.get_mut(&key)?;
-    let first = val.pop()?;
-
-    if val.is_empty() {
-        tree.remove(&key);
-    }
-    Some(first)
+    best_idx.and_then(|i| pool[i].take())
 }
 
 fn push_bezier(result: &mut Vec<Segment>, bezier: &Bezier) {
@@ -340,10 +297,16 @@ fn push_bezier(result: &mut Vec<Segment>, bezier: &Bezier) {
             result.push(Segment::LineTo((bezier.end.x as f32, bezier.end.y as f32)));
         }
         BezierHandles::Quadratic { handle } => {
+            let s = bezier.start;
+            let e = bezier.end;
+            let cp1x = s.x + (2.0 / 3.0) * (handle.x - s.x);
+            let cp1y = s.y + (2.0 / 3.0) * (handle.y - s.y);
+            let cp2x = e.x + (2.0 / 3.0) * (handle.x - e.x);
+            let cp2y = e.y + (2.0 / 3.0) * (handle.y - e.y);
             result.push(Segment::CurveTo((
-                (handle.x as f32, handle.y as f32),
-                (handle.x as f32, handle.y as f32),
-                (bezier.end.x as f32, bezier.end.y as f32),
+                (cp1x as f32, cp1y as f32),
+                (cp2x as f32, cp2y as f32),
+                (e.x as f32, e.y as f32),
             )));
         }
         BezierHandles::Cubic {
@@ -361,23 +324,24 @@ fn push_bezier(result: &mut Vec<Segment>, bezier: &Bezier) {
 
 fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
     let mut result = Vec::new();
+    let mut pool = init_pool(beziers);
 
-    let mut bm = init_bm(beziers);
-
-    while let Some(bezier) = pop_first(&mut bm) {
-        let start = (bezier.1.start.x as f32, bezier.1.start.y as f32);
+    while let Some((mut cur_src, first_bezier)) = pop_first_from_pool(&mut pool) {
+        let start = (first_bezier.start.x as f32, first_bezier.start.y as f32);
         result.push(Segment::MoveTo(start));
-        push_bezier(&mut result, &bezier.1);
-        let mut last_end = (bezier.1.end.x as f32, bezier.1.end.y as f32);
-        let mut next_p = BezierStart(bezier.0, bezier.1.end);
+        push_bezier(&mut result, &first_bezier);
+        let mut last_end = (first_bezier.end.x as f32, first_bezier.end.y as f32);
+        let mut cur_end = first_bezier.end;
 
         loop {
-            let Some(next) = find_next(&mut bm, next_p) else {
+            let Some((next_src, next_bezier)) = find_next_in_pool(&mut pool, cur_end, cur_src)
+            else {
                 break;
             };
-            push_bezier(&mut result, &next.1);
-            last_end = (next.1.end.x as f32, next.1.end.y as f32);
-            next_p = BezierStart(next.0, next.1.end);
+            push_bezier(&mut result, &next_bezier);
+            last_end = (next_bezier.end.x as f32, next_bezier.end.y as f32);
+            cur_end = next_bezier.end;
+            cur_src = next_src;
         }
 
         // Close the subpath if the last point is close to the start.
@@ -417,6 +381,7 @@ pub fn bool_from_shapes(bool_type: BoolType, children_ids: &[Uuid], shapes: Shap
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
+        let is_even_odd = current_path.is_even_odd() || other_path.is_even_odd();
         let beziers = match bool_type {
             BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
             BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
@@ -424,7 +389,7 @@ pub fn bool_from_shapes(bool_type: BoolType, children_ids: &[Uuid], shapes: Shap
             BoolType::Exclusion => exclusion(segs_a, segs_b),
         };
 
-        current_path = Path::new(beziers_to_segments(&beziers));
+        current_path = Path::new(beziers_to_segments(&beziers)).with_even_odd(is_even_odd);
     }
 
     current_path
@@ -477,13 +442,14 @@ pub fn debug_render_bool_paths(
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
+        let is_even_odd = current_path.is_even_odd() || other_path.is_even_odd();
         let beziers = match bool_data.bool_type {
             BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
             BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
             BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
             BoolType::Exclusion => exclusion(segs_a, segs_b),
         };
-        current_path = Path::new(beziers_to_segments(&beziers));
+        current_path = Path::new(beziers_to_segments(&beziers)).with_even_odd(is_even_odd);
 
         if idx == 0 {
             for b in &beziers {

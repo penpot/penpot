@@ -607,14 +607,14 @@
 
 (mf/defc team-members-page*
   [{:keys [team profile]}]
-  (mf/with-effect [team]
+  (mf/with-effect [(:id team)]
     (dom/set-html-title
      (tr "title.team-members"
          (if (:is-default team)
            (tr "dashboard.your-penpot")
            (:name team)))))
 
-  (mf/with-effect [team]
+  (mf/with-effect [(:id team)]
     (st/emit! (dtm/fetch-members)))
 
   [:*
@@ -1159,7 +1159,7 @@
            (tr "dashboard.your-penpot")
            (:name team)))))
 
-  (mf/with-effect [(:id team) (:members team)]
+  (mf/with-effect [(:id team)]
     (st/emit! (dtm/fetch-invitations)))
 
   [:*
