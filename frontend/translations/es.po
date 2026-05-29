@@ -389,6 +389,12 @@ msgstr "+ Crear org"
 msgid "dashboard.create-new-org"
 msgstr "Crear org"
 
+msgid "dashboard.my-teams"
+msgstr "Mis equipos"
+
+msgid "dashboard.section.organizations"
+msgstr "Organizaciones"
+
 msgid "dashboard.go-to-admin-console"
 msgstr "Ir a la Admin Console"
 
@@ -1148,6 +1154,9 @@ msgstr "Este equipo no pertenece a ninguna organización"
 msgid "dashboard.team-organization.add"
 msgstr "Añadir a una organización"
 
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "No tienes permiso para añadir este equipo a ninguna de tus organizaciones."
+
 msgid "dashboard.select-org-modal.title"
 msgstr "Añadir el equipo a una organización"
 
@@ -1180,6 +1189,9 @@ msgstr "Cambiar el equipo de organización"
 
 msgid "dashboard.team-organization.remove"
 msgstr "Eliminar equipo de la organización"
+
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Solo se puede invitar a personas que estén dentro de tu organización."
 
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
@@ -2819,6 +2831,12 @@ msgstr "Nueva contraseña"
 msgid "labels.next"
 msgstr "Siguiente"
 
+#: src/app/main/ui/static.cljs:325
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot no está disponible temporalmente debido a un problema del sistema. "
+"Por favor, inténtalo de nuevo en unos momentos."
+
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "¡Ya estás al día! Nuevas notificaciones de comentarios aparecerán aquí."
@@ -3423,6 +3441,10 @@ msgstr "Si, borrar mi cuenta"
 msgid "modals.delete-account.info"
 msgstr "Si borras tu cuenta perderás todos tus proyectos y archivos."
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info.with-orgs"
+msgstr "Esta acción es irreversible. Tu cuenta, suscripción y organizaciones se eliminarán inmediatamente. También perderás el acceso a tus proyectos y archivos actuales."
+
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "¿Seguro que quieres borrar tu cuenta?"
@@ -3610,6 +3632,41 @@ msgstr "Modificar webhook"
 #: src/app/main/ui/dashboard/team.cljs:1091
 msgid "modals.edit-webhook.title"
 msgstr "Modificar webhook"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.title"
+msgstr "Algunas invitaciones no se pueden enviar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.description"
+msgstr "Solo se puede invitar a miembros existentes de la organización."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.warning"
+msgstr "Algunas personas de tu lista no recibirán las invitaciones."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Direcciones que no recibirán una invitación"
+
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "No se envió ninguna invitación"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr "Solo se puede invitar a miembros existentes de la organización. Como ninguna de las personas de tu lista es miembro, no se envió ninguna invitación."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr "Solo se puede invitar a este equipo a miembros existentes de la organización, y todas esas personas ya son miembros del equipo. Si necesitas más información, contacta con la persona propietaria de la organización."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Cancelar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.send"
+msgstr "Enviar invitaciones"
 
 #: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
@@ -5944,6 +6001,14 @@ msgstr "Rehacer"
 msgid "workspace.header.menu.select-all"
 msgstr "Seleccionar todo"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find"
+msgstr "Buscar"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Buscar y reemplazar"
+
 #: src/app/main/ui/workspace/main_menu.cljs:423
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
@@ -7958,6 +8023,10 @@ msgid "workspace.shape.menu.show-main"
 msgstr "Ver componente principal"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
+msgid "workspace.shape.menu.clear-guides"
+msgstr "Eliminar guias del tablero"
+
+#: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Quitar miniatura"
 
@@ -8034,6 +8103,9 @@ msgstr "Máscaras"
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
 msgid "workspace.sidebar.layers.search"
 msgstr "Buscar capas"
+
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Buscar y reemplazar"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
@@ -8163,6 +8235,10 @@ msgstr "Editar token de %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "errors.tokens.empty-input"
 msgstr "El valor del token no puede estar vacío"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "errors.tokens.empty-field"
+msgstr "Este campo no puede estar vacío"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
@@ -9084,6 +9160,9 @@ msgstr "¿Estás seguro de que deseas eliminar este equipo que forma parte de la
 msgid "nitrate.code-activation.title"
 msgstr "Activar Nitrate"
 
+msgid "nitrate.code-activation.renew-title"
+msgstr "RENOVAR NITRATE"
+
 msgid "nitrate.code-activation.input-label"
 msgstr "Introduce tu código de activación"
 
@@ -9128,7 +9207,7 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Total libertad open-source, con la gobernanza que tu organización necesita"
 
 msgid "nitrate.form.enterprise.price"
-msgstr "$25 / miembro por mes"
+msgstr "por miembro al mes"
 
 msgid "nitrate.form.start-enterprise"
 msgstr "Empieza a utilizar Enterprise"
@@ -9190,6 +9269,9 @@ msgstr "Cancelar subscripción"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renovar con código de activación"
 
+msgid "nitrate.subscription.renew-success"
+msgstr "Tu suscripción de Nitrate se ha renovado."
+
 msgid "subscription.settings.more-information"
 msgstr "Más información"
 
@@ -9224,7 +9306,7 @@ msgid "subscription.banner.create-org-info"
 msgstr "Crea una organización y descubre exactamente cómo funciona Enterprise. Establece normas, gestiona tus equipos y disfruta de un nuevo nivel de control sobre tu flujo de trabajo de diseño."
 
 msgid "dashboard.no-permission-create-team.message"
-msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para crear equipos en la organización %s. Si necesitas más información, contacta con el propietario de la organización."
 
 msgid "dashboard.no-org-allows-create-team.message"
 msgstr "No tienes permiso para añadir equipos a ninguna de tus organizaciones."
@@ -9233,7 +9315,11 @@ msgid "dashboard.select-org-modal.permission-info"
 msgstr "Aquí encontrarás todas las organizaciones en las que tienes permiso para crear o añadir equipos."
 
 msgid "dashboard.no-permission-delete-team.message"
-msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para eliminar equipos que pertenecen a la organización %s. Si necesitas más información, contacta con el propietario de la organización."
 
 msgid "dashboard.no-permission-move-team.message"
-msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario."
+msgstr "No tienes permiso para mover equipos que son parte de la organización %s. Si necesitas más información, contacta con el propietario de la organización."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "No tienes permiso para invitar a personas a unirse a este equipo, ni para editar o eliminar invitaciones."
+

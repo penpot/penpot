@@ -224,6 +224,7 @@
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
                                    :icon-size "s"
+                                   :class (stl/css :page-delete-button)
                                    :icon-class (stl/css :page-delete-button-icon)
                                    :icon i/delete}])]])])]])))
 

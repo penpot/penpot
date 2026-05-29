@@ -6,6 +6,7 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "ds/mixins.scss" as *;
 
 .dashboard {
   background-color: var(--app-background);
@@ -16,6 +17,8 @@
 }
 
 .dashboard-content {
+  @include custom-scrollbar;
+
   display: flex;
   flex-direction: column;
   position: relative;

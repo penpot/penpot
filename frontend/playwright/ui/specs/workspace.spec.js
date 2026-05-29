@@ -532,7 +532,7 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 13822 - Problems with z-index", async({
+test("BUG 13822 - Problems with z-index", async ({
   page
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -546,4 +546,25 @@ test("BUG 13822 - Problems with z-index", async({
 
   await workspacePage.waitForFirstRenderWithoutUI();
   await expect(workspacePage.canvas).toHaveScreenshot();
+});
+
+test("BUG 14239 - Fix default path thickness", async ({
+  page
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.goToWorkspace();
+
+  // (Workaround a bug in which mouse position can be nil and path editor crashes
+  // if we click on the Path tool without hovering over the viewport first)
+  await workspacePage.viewport.hover();
+  // 1. Draw a path
+  await workspacePage.pathButton.click();
+  await workspacePage.clickAt(779, 163);
+  await workspacePage.clickAt(951, 258);
+  // 2. Close it
+  await page.keyboard.press("Escape");
+
+  await expect(workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" })).toHaveValue("1");
 });
