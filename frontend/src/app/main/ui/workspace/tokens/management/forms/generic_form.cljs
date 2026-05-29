@@ -38,6 +38,15 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- scroll-token-type-section-on-create
+  [token-id]
+  (when token-id
+    (js/requestAnimationFrame
+     (fn []
+       (when-let [section-node (dom/get-element (str "token-pill-" token-id))]
+         (dom/scroll-into-view! section-node #js {:block "center"
+                                                  :behavior "smooth"}))))))
+
 (defn get-value-for-validator
   [active-tab value value-subfield value-type]
 
@@ -51,7 +60,6 @@
     (if (= active-tab :reference)
       (get value :reference)
       value)
-
     value))
 
 (mf/defc form*
@@ -60,7 +68,6 @@
            action
            is-create
            selected-token-set-id
-           tokens-tree-in-selected-set
            token-type
            make-schema
            input-component
@@ -69,7 +76,11 @@
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema %
+                                                                    token-type
+                                                                    selected-token-set-id
+                                                                    (when (ctob/token? token)
+                                                                      (ctob/get-id token)))
                                              (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
@@ -85,6 +96,8 @@
         (dwta/get-token-properties token)
 
         token-title (str/lower (:title token-properties))
+
+        tokens-lib (mf/deref refs/tokens-lib)
 
         ;; All tokens in the lib, as a map name -> token, flattened
         ;; including tokens in inactive sets.
@@ -123,8 +136,8 @@
                                        resolved-active-tokens))))
 
         schema
-        (mf/with-memo [tokens-tree-in-selected-set active-tab]
-          (make-schema tokens-tree-in-selected-set active-tab))
+        (mf/with-memo [tokens-lib active-tab]
+          (make-schema tokens-lib active-tab))
 
         initial
         (mf/with-memo [token initial]
@@ -179,9 +192,10 @@
 
         on-remap-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token new-name old-name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type new-name)
             (dwtl/update-token (:id token)
                                {:name new-name
                                 :value (:value valid-token)
@@ -192,9 +206,10 @@
 
         on-rename-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type name)
             (dwtl/update-token (:id token)
                                {:name name
                                 :value (:value valid-token)
@@ -204,11 +219,12 @@
         on-submit
         (mf/use-fn
          (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
-         (fn [form _event]
+         (fn [form event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
+             (dom/stop-propagation event)
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -230,19 +246,26 @@
                          (st/emit! (modal/show :tokens/remapping-confirmation {:remap-data remap-data
                                                                                :on-remap on-remap
                                                                                :on-rename on-rename}))
-                         (st/emit!
-                          (if is-create
-                            (dwtl/create-token (ctob/make-token {:name name
-                                                                 :type token-type
-                                                                 :value (:value valid-token)
-                                                                 :description description}))
-                            (dwtl/update-token (:id token)
-                                               {:name name
-                                                :value (:value valid-token)
-                                                :description description}))
-                          (dwtl/open-token-type (:type token))
-                          (dwtp/propagate-workspace-tokens)
-                          (modal/hide!)))))
+                         (do
+                           (when is-rename
+                             (st/emit! (dwtl/toggle-nested-token-path token-type name)))
+                           (let [new-token (when is-create
+                                             (ctob/make-token {:name name
+                                                               :type token-type
+                                                               :value (:value valid-token)
+                                                               :description description}))]
+                             (st/emit!
+                              (if is-create
+                                (dwtl/create-token new-token)
+                                (dwtl/update-token (:id token)
+                                                   {:name name
+                                                    :value (:value valid-token)
+                                                    :description description}))
+                              (dwtl/open-token-type (:type token))
+                              (dwtp/propagate-workspace-tokens)
+                              (when is-create
+                                (scroll-token-type-section-on-create (:id new-token)))
+                              (modal/hide!)))))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)

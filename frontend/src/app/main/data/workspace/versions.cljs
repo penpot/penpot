@@ -71,7 +71,7 @@
         ;; Force persist before creating snapshot, otherwise we could loss changes
         (rx/concat
          (rx/of ::dwp/force-persist
-                (ptk/event ::ev/event {::ev/name "create-version"}))
+                (ev/event {::ev/name "create-version"}))
 
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
@@ -93,8 +93,8 @@
       (let [file-id (:current-file-id state)]
         (rx/merge
          (rx/of (update-versions-state {:editing nil})
-                (ptk/event ::ev/event {::ev/name "rename-version"
-                                       :file-id file-id}))
+                (ev/event {::ev/name "rename-version"
+                           :file-id file-id}))
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
               (rx/map fetch-versions)))))))
 
@@ -152,7 +152,7 @@
                (rx/mapcat (fn [_]
                             (rx/of (update-versions-state {:editing id})
                                    (fetch-versions)
-                                   (ptk/event ::ev/event {::ev/name "pin-version"}))))))))))
+                                   (ev/event {::ev/name "pin-version"}))))))))))
 
 (defn lock-version
   [id]
@@ -180,6 +180,12 @@
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Clear preview state if we're restoring from preview mode
+      (-> state
+          (update :workspace-versions dissoc :backup)
+          (update :workspace-global dissoc :read-only? :preview-id)))
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
@@ -268,8 +274,24 @@
             features (features/get-enabled-features state team-id)
             snapshot (->> (dm/get-in state [:workspace-versions :data])
                           (d/seek #(= id (:id %))))
-            label    (or (:label snapshot)
-                         (tr "workspace.versions.preview.unnamed"))
+            ;; Match the History sidebar's identifying text so the
+            ;; preview banner and the sidebar entry "speak the same
+            ;; language" (#9503):
+            ;; - user-created (pinned) versions keep the user's custom
+            ;;   label; if absent, fall back to "unnamed"
+            ;; - system-created autosaves use the same auto-generated
+            ;;   label the sidebar's `snapshot-entry*` already renders
+            ;;   via `workspace.versions.autosaved.version` + a
+            ;;   localized date, instead of the internal snapshot
+            ;;   label (e.g. `internal/snapshot/20`).
+            label    (cond
+                       (= "system" (:created-by snapshot))
+                       (tr "workspace.versions.autosaved.version"
+                           (ct/format-inst (:created-at snapshot) :localized-date))
+
+                       :else
+                       (or (:label snapshot)
+                           (tr "workspace.versions.preview.unnamed")))
             output-s (rx/subject)]
         (rx/merge
          output-s
@@ -333,9 +355,6 @@
       (let [current-file-id (:current-file-id state)]
         ;; Force persist before creating snapshot, otherwise we could loss changes
         (->> (rx/concat
-              (rx/of (ptk/event ::ev/event {::ev/origin "plugins"
-                                            ::ev/name "create-version"}))
-
               (when (= file-id current-file-id)
                 (rx/of ::dwp/force-persist))
 
@@ -381,7 +400,6 @@
            (rx/catch (fn [error]
                        (reject error)
                        (rx/empty)))))))
-
 
 
 

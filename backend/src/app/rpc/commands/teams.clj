@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -193,7 +194,9 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params))
+      (contains? cf/flags :nitrate)
+      (remove #(get-in % [:organization :expired-license])))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -520,12 +523,12 @@
         (ex/raise :type :validation
                   :code :not-allowed
                   :hint "Unable to verify organization permissions")
-        (let [create-perm (:create-teams org-perms)
-              is-owner?   (= profile-id (:owner-id org-perms))]
-          (when (and (= create-perm "onlyMe") (not is-owner?))
-            (ex/raise :type :validation
-                      :code :not-allowed
-                      :hint "You are not allowed to create teams in this organization"))))))
+        (when-not (nitrate-perms/allowed? :create-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to create teams in this organization")))))
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
@@ -773,16 +776,31 @@
 
 (defn delete-team
   "Mark a team for deletion"
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
 
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
-        perms (get team :permissions)]
+        team  (if (contains? cf/flags :nitrate)
+                (nitrate/add-org-info-to-team cfg team params)
+                team)
+        perms (get team :permissions)
+        org   (:organization team)
+        in-org? (and (contains? cf/flags :nitrate) org)
+        can-delete?
+        (if in-org?
+          (nitrate-perms/allowed? :delete-team
+                                  {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
+                                               :permissions (dm/get-in team [:organization :permissions])}
+                                   :profile-id profile-id
+                                   :team-perms perms})
+          (boolean (:is-owner perms)))]
 
-    (when-not (:is-owner perms)
+    (when-not can-delete?
       (ex/raise :type :validation
                 :code :only-owner-can-delete-team))
 
-    (when (:is-default team)
+    ;; Protect the user's personal default team from deletion.
+    ;; Org-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    (when (and (:is-default team) (not in-org?))
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
@@ -934,6 +952,7 @@
   ;; Validate incoming mime type
 
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
+  (media/validate-media-size! file)
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo

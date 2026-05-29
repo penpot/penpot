@@ -71,7 +71,7 @@
 
 (mf/defc token-group*
   {::mf/schema schema:token-group}
-  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib selected-ids]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib selected-ids active-theme-tokens-not-forced]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
 
@@ -131,7 +131,7 @@
 
         on-popover-open-click
         (mf/use-fn
-         (mf/deps type title modal)
+         (mf/deps type title modal selected-token-set-id)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit!
@@ -143,11 +143,12 @@
                            :fields (:fields modal)
                            :title title
                            :action "create"
-                           :token-type type})))))
+                           :token-type type
+                           :selected-token-set-id selected-token-set-id})))))
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps not-editing? selected-ids tokens-lib)
+         (mf/deps not-editing? selected-ids tokens-lib selected-token-set-id)
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)
@@ -190,6 +191,7 @@
                         :selected-shapes selected-shapes
                         :is-selected-inside-layout is-selected-inside-layout
                         :active-theme-tokens active-theme-tokens
+                        :active-theme-tokens-not-forced  active-theme-tokens-not-forced
                         :selected-token-set-id selected-token-set-id
                         :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click

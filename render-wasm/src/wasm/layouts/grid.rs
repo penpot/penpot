@@ -1,9 +1,10 @@
 use macros::{wasm_error, ToJs};
 
+use crate::get_render_state;
 use crate::mem;
 use crate::shapes::{GridCell, GridDirection, GridTrack, GridTrackType};
 use crate::uuid::Uuid;
-use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
+use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state};
 
 use super::align;
 
@@ -241,17 +242,13 @@ pub extern "C" fn set_grid_cells() -> Result<()> {
 
 #[no_mangle]
 pub extern "C" fn show_grid(a: u32, b: u32, c: u32, d: u32) {
-    with_state_mut!(state, {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        state.render_state.show_grid = Some(id);
-    });
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    get_render_state().show_grid = Some(id);
 }
 
 #[no_mangle]
 pub extern "C" fn hide_grid() {
-    with_state_mut!(state, {
-        state.render_state.show_grid = None;
-    });
+    get_render_state().show_grid = None;
 }
 
 #[no_mangle]

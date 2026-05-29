@@ -191,9 +191,9 @@
                  (or (contains? cf/flags :login)
                      (contains? cf/flags :login-with-password)))
         [:div {:class (stl/css :fields-row :forgot-password)}
-         [:& lk/link {:action on-recovery-request
-                      :class (stl/css :forgot-pass-link)
-                      :data-testid "forgot-password"}
+         [:> lk/link* {:action on-recovery-request
+                       :class (stl/css :forgot-pass-link)
+                       :data-testid "forgot-password"}
           (tr "auth.forgot-password")]])
 
       [:div {:class (stl/css :buttons-stack)}
@@ -284,7 +284,7 @@
         [:div {:class (stl/css :register)}
          [:span {:class (stl/css :register-text)}
           (tr "auth.register") " "]
-         [:& lk/link {:action go-register
-                      :class (stl/css :register-link)
-                      :data-testid "register-submit"}
+         [:> lk/link* {:action go-register
+                       :class (stl/css :register-link)
+                       :data-testid "register-submit"}
           (tr "auth.register-submit")]])]]))

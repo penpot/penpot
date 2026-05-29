@@ -19,6 +19,7 @@
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.formats :as fmt]
+   [app.main.ui.hooks :as h]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -67,7 +68,9 @@
 (defn- get-option-by-name
   [options name]
   (let [options (if (delay? options) (deref options) options)]
-    (d/seek #(= name (get % :name)) options)))
+    (d/seek #(and (= :token (get % :type))
+                  (= name (get % :name)))
+            options)))
 
 (defn- get-token-op
   [tokens name]
@@ -288,33 +291,35 @@
         (mf/use-fn
          (mf/deps on-change update-input value nillable min max)
          (fn [raw-value]
-           (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
-             (when-not (= parsed (mf/ref-val last-value*))
-               (mf/set-ref-val! last-value* parsed)
-               (reset! token-applied-name* nil)
-               (when (fn? on-change)
-                 (on-change parsed))
-
-               (mf/set-ref-val! raw-value* (fmt/format-number parsed))
-               (update-input (fmt/format-number parsed)))
-
-             (if (and nillable (empty? raw-value))
+           (let [raw-value (str/trim (str raw-value))]
+             (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
                (do
-                 (mf/set-ref-val! last-value* nil)
-                 (mf/set-ref-val! raw-value* "")
-                 (reset! token-applied-name* nil)
-                 (update-input "")
-                 (when (fn? on-change)
-                   (on-change nil)))
+                 (when-not (= parsed (mf/ref-val last-value*))
+                   (mf/set-ref-val! last-value* parsed)
+                   (reset! token-applied-name* nil)
+                   (when (fn? on-change)
+                     (on-change parsed)))
 
-               (let [fallback-value (or (mf/ref-val last-value*) default)]
-                 (mf/set-ref-val! raw-value* fallback-value)
-                 (mf/set-ref-val!  last-value* fallback-value)
-                 (reset! token-applied-name* nil)
-                 (update-input (fmt/format-number fallback-value))
+                 (mf/set-ref-val! raw-value* (fmt/format-number parsed))
+                 (update-input (fmt/format-number parsed)))
 
-                 (when (and (fn? on-change) (not= fallback-value (str value)))
-                   (on-change fallback-value)))))))
+               (if (and nillable (empty? raw-value))
+                 (do
+                   (mf/set-ref-val! last-value* nil)
+                   (mf/set-ref-val! raw-value* "")
+                   (reset! token-applied-name* nil)
+                   (update-input "")
+                   (when (fn? on-change)
+                     (on-change nil)))
+
+                 (let [fallback-value (or (mf/ref-val last-value*) default)]
+                   (mf/set-ref-val! raw-value* fallback-value)
+                   (mf/set-ref-val!  last-value* fallback-value)
+                   (reset! token-applied-name* nil)
+                   (update-input (fmt/format-number fallback-value))
+
+                   (when (and (fn? on-change) (not= fallback-value (str value)))
+                     (on-change fallback-value))))))))
 
         apply-token
         (mf/use-fn
@@ -331,6 +336,7 @@
          (fn [event]
            (let [text (dom/get-target-val event)]
              (mf/set-ref-val! raw-value* text)
+             (mf/set-ref-val! dirty-ref true)
              (reset! filter-id* text))))
 
         on-token-apply
@@ -338,6 +344,7 @@
          (mf/deps apply-token)
          (fn [id value name]
            (mf/set-ref-val! token-selection-in-progress* true)
+           (mf/set-ref-val! dirty-ref false)
            (reset! selected-id* id)
            (reset! focused-id* nil)
            (reset! is-open* false)
@@ -388,10 +395,21 @@
                (reset! is-open* false)))
 
            (when (mf/ref-val dirty-ref)
-             (apply-value (mf/ref-val raw-value*)))
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))
            (when (fn? on-blur)
              (on-blur event))
            (dom/blur! (mf/ref-val ref))))
+
+        commit-pending-on-unmount
+        (mf/use-fn
+         (mf/deps apply-value)
+         (fn []
+           (when (mf/ref-val dirty-ref)
+             (apply-value (mf/ref-val raw-value*))
+             (mf/set-ref-val! dirty-ref false))))
+
+        handle-unmount (h/use-ref-callback commit-pending-on-unmount)
 
         on-key-down
         (mf/use-fn
@@ -417,8 +435,13 @@
                  (let [name  (clean-token-name (mf/ref-val raw-value*))
                        token (get-option-by-name options name)]
                    (if token
-                     (apply-token (:resolved-value token) name)
-                     (apply-value (mf/ref-val last-value*)))))
+                     (do
+                       (apply-token (:resolved-value token) name)
+                       (mf/set-ref-val! dirty-ref false)
+                       (reset! filter-id* "")
+                       (handle-blur event))
+                     (apply-value (mf/ref-val last-value*))))
+                 (reset! is-open* false))
 
                enter?
                (if is-open
@@ -450,9 +473,13 @@
                    (dom/prevent-default event)
                    (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
-                 (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                 (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
-                       new-val (increment current-value step min max)]
+                       eff-step      (cond
+                                       (kbd/shift? event) (* step 10)
+                                       (kbd/alt? event)   (* step 0.1)
+                                       :else              step)
+                       new-val       (increment current-value eff-step min max)]
                    (dom/prevent-default event)
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))))
@@ -463,9 +490,13 @@
                    (dom/prevent-default event)
                    (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
-                 (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                 (let [parsed  (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
-                       new-val (decrement current-value step min max)]
+                       eff-step      (cond
+                                       (kbd/shift? event) (* step 10)
+                                       (kbd/alt? event)   (* step 0.1)
+                                       :else              step)
+                       new-val       (decrement current-value eff-step min max)]
                    (dom/prevent-default event)
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))))))))
@@ -492,7 +523,7 @@
                (let [inc? (->> (dom/get-delta-position event)
                                :y
                                (neg?))
-                     parsed (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                     parsed (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                      current-value (or parsed default)
                      new-val (if inc?
                                (increment current-value step min max)
@@ -511,7 +542,7 @@
                    has-token (some? (deref token-applied-name*))]
                (when-not (or is-focused has-token)
                  (let [client-x  (.-clientX event)
-                       parsed    (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
+                       parsed    (parse-value (str/trim (mf/ref-val raw-value*)) (mf/ref-val last-value*) min max nillable)
                        start-val (or parsed default 0)]
                    (mf/set-ref-val! drag-state* :maybe-dragging)
                    (mf/set-ref-val! drag-start-x* client-x)
@@ -531,7 +562,6 @@
                    (when (and (= state :maybe-dragging)
                               (>= (js/Math.abs delta-x) 3))
                      (mf/set-ref-val! drag-state* :dragging)
-                     (dom/add-class! (dom/get-body) "cursor-drag-scrub")
                      (when (fn? on-change-start)
                        (on-change-start)))
                    (when (= (mf/ref-val drag-state*) :dragging)
@@ -559,7 +589,6 @@
                    (dom/focus! node)))
                (when (= state :dragging)
                  (mf/set-ref-val! drag-state* :idle)
-                 (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                  (dom/release-pointer event)
                  (when (fn? on-change-end)
                    (on-change-end)))))))
@@ -571,7 +600,6 @@
            (when-not is-token-applied?
              (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
                (mf/set-ref-val! drag-state* :idle)
-               (dom/remove-class! (dom/get-body) "cursor-drag-scrub")
                (when (and was-dragging (fn? on-change-end))
                  (on-change-end))))))
 
@@ -693,7 +721,9 @@
         token-props
         (when (and token-applied-name (not= :multiple token-applied-name))
           (let [token       (get-option-by-name dropdown-options token-applied-name)
-                id          (get token :id)
+                id          (or (get token :id)
+                                (some-> (get token-applied :id)
+                                        (dm/str)))
                 label       (or (get token :name) applied-token-name)
                 token-value (or (get token :resolved-value)
                                 (or (mf/ref-val last-value*)
@@ -770,6 +800,8 @@
 
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
+
+    (mf/with-effect [handle-unmount] handle-unmount)
 
     [:div {:class [class (stl/css-case :input-wrapper true
                                        :resizable (not is-token-applied?))]

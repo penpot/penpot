@@ -485,32 +485,36 @@
   [sd-tokens get-origin-token]
   (reduce
    (fn [acc ^js sd-token]
-     (let [origin-token (get-origin-token sd-token)
-           value (.-value sd-token)
-           parsed-token-value (or
-                               (parse-atomic-typography-value (:type origin-token) value)
-                               (case (:type origin-token)
-                                 :typography (parse-composite-typography-value value)
-                                 :shadow (parse-sd-token-shadow-value value)
-                                 :color (parse-sd-token-color-value value)
-                                 :opacity (parse-sd-token-opacity-value value)
-                                 :stroke-width (parse-sd-token-stroke-width-value value)
-                                 :number (parse-sd-token-number-value value)
-                                 (parse-sd-token-general-value value)))
-           output-token (cond (:errors parsed-token-value)
-                              (merge origin-token parsed-token-value)
+     (let [origin-token (get-origin-token sd-token)]
+       (if (nil? origin-token)
+         ;; Skip group nodes that StyleDictionary returns alongside
+         ;; actual tokens — they have no matching origin token.
+         acc
+         (let [value (.-value sd-token)
+               parsed-token-value (or
+                                   (parse-atomic-typography-value (:type origin-token) value)
+                                   (case (:type origin-token)
+                                     :typography (parse-composite-typography-value value)
+                                     :shadow (parse-sd-token-shadow-value value)
+                                     :color (parse-sd-token-color-value value)
+                                     :opacity (parse-sd-token-opacity-value value)
+                                     :stroke-width (parse-sd-token-stroke-width-value value)
+                                     :number (parse-sd-token-number-value value)
+                                     (parse-sd-token-general-value value)))
+               output-token (cond (:errors parsed-token-value)
+                                  (merge origin-token parsed-token-value)
 
-                              (:warnings parsed-token-value)
-                              (assoc origin-token
-                                     :resolved-value (:value parsed-token-value)
-                                     :warnings (:warnings parsed-token-value)
-                                     :unit (:unit parsed-token-value))
+                                  (:warnings parsed-token-value)
+                                  (assoc origin-token
+                                         :resolved-value (:value parsed-token-value)
+                                         :warnings (:warnings parsed-token-value)
+                                         :unit (:unit parsed-token-value))
 
-                              :else
-                              (assoc origin-token
-                                     :resolved-value (:value parsed-token-value)
-                                     :unit (:unit parsed-token-value)))]
-       (assoc acc (:name output-token) output-token)))
+                                  :else
+                                  (assoc origin-token
+                                         :resolved-value (:value parsed-token-value)
+                                         :unit (:unit parsed-token-value)))]
+           (assoc acc (:name output-token) output-token)))))
    {} sd-tokens))
 
 (defprotocol IStyleDictionary
