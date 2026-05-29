@@ -18,6 +18,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.alert]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -287,15 +288,16 @@
         on-toggle (mf/use-fn #(swap! expanded* not))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-restricted-container :modal-container)}
-      [:div {:class (stl/css :modal-header)}
-       [:h2 {:class (stl/css :modal-title)}
+      [:div {:class (stl/css :modal-restricted-header)}
+       [:h2 {:class (stl/css :modal-restricted-title)}
         (tr "modals.invite-restricted-members.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
-      [:div {:class (stl/css :modal-content)}
+      [:div {:class (stl/css :modal-restricted-content)}
        [:p (tr "modals.invite-restricted-members.description")]
        [:& context-notification {:content (tr "modals.invite-restricted-members.warning")
+                                 :class (stl/css :restricted-warning)
                                  :level :warning}]
        [:div {:class (stl/css :restricted-emails-section)}
         [:button {:class (stl/css :restricted-emails-toggle)
@@ -834,8 +836,8 @@
   [{:keys [selected delete on-confirm]}]
   [:div {:class (stl/css :modal-overlay)}
    [:div {:class (stl/css :modal-invitation-container :modal-container)}
-    [:div {:class (stl/css :modal-header)}
-     [:h2 {:class (stl/css :modal-title)}
+    [:div {:class (stl/css :modal-invitation-header)}
+     [:h2 {:class (stl/css :modal-invitation-title)}
       (if delete
         (tr "dashboard.invitation-modal.title.delete-invitations")
         (tr "dashboard.invitation-modal.title.resend-invitations"))]
@@ -883,7 +885,7 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations orgs-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key]}]
+  [{:keys [organizations orgs-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key team-id]}]
   (let [valid-organizations (mf/with-memo [organizations]
                               (remove #(= (:id %) current-organization-id) organizations))
         options (mf/with-memo [valid-organizations orgs-allowed]
@@ -905,11 +907,28 @@
 
         form (fm/use-form :schema schema:organization-form :initial {})
 
+        warning-info* (mf/use-state nil)
+        warning-info (deref warning-info*)
+        selected-org (mf/with-memo [warning-info valid-organizations]
+                       (when warning-info
+                         (d/seek #(= (:id %) (:organization-id warning-info)) valid-organizations)))
+
         on-change
         (mf/use-fn
-         (mf/deps form)
+         (mf/deps form team-id)
          (fn [id]
-           (uforms/on-input-change form :selected-id id)))
+           (uforms/on-input-change form :selected-id id)
+           ;; Check for external invitations when selection changes
+           (when (and team-id id)
+             (let [org-id (d/parse-uuid id)]
+               (->> (rp/cmd! :check-team-external-invitations
+                             {:team-id team-id
+                              :organization-id org-id})
+                    (rx/subs!
+                     (fn [result]
+                       (reset! warning-info* (assoc result :organization-id org-id)))
+                     (fn [_]
+                       (reset! warning-info* nil))))))))
 
         on-confirm'
         (mf/use-fn
@@ -918,7 +937,7 @@
            (on-confirm (dm/get-in @form [:clean-data :selected-id]))))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-select-org-container :modal-container)}
-      [:div {:class (stl/css :modal-header)}
+      [:div {:class (stl/css :modal-select-org-header)}
        [:h2 {:class (stl/css :modal-select-org-title)}
         (tr title-key)]
 
@@ -928,7 +947,7 @@
       (when text-key
         [:div {:class (stl/css :modal-content :modal-select-org-text)} (tr text-key)])
 
-      [:div
+      [:div {:class (stl/css :modal-select-org-body)}
        (when info-message-key
          [:div {:class (stl/css :modal-select-org-info)}
           (tr info-message-key)])
@@ -940,7 +959,20 @@
                       :select-only true
                       :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
                       :placeholder (tr placeholder-key)
-                      :on-change on-change}]]
+                      :on-change on-change}]
+
+       ;; Warning for external invitations
+       (when (and warning-info
+                  (:has-external-invitations warning-info)
+                  (not (:allows-anybody warning-info))
+                  selected-org)
+         [:div {:class (stl/css :modal-select-org-warning)}
+          [:& context-notification
+           {:content (tr "dashboard.select-org-modal.external-invitations-will-be-canceled")
+            :class (stl/css :external-invitations-warning)
+            :level :warning}]
+          [:div {:class (stl/css :modal-select-org-content)}
+           (tr "dashboard.select-org-modal.external-invitations-warning" (:name selected-org))]])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}

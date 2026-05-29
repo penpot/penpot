@@ -1169,6 +1169,12 @@ msgstr "Elige una organización"
 msgid "dashboard.select-org-modal.accept"
 msgstr "AÑADIR A UNA ORGANIZACIÓN"
 
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Las invitaciones pendientes a usuarios externos serán canceladas."
+
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr "\"%s\" solo permite que los miembros de la organización se unan a sus equipos. Cualquier invitación pendiente a personas fuera de la organización será revocada."
+
 msgid "dashboard.change-org-modal.title"
 msgstr "Cambiar el equipo de organización"
 
@@ -3658,7 +3664,7 @@ msgstr "Solo se puede invitar a miembros existentes de la organización. Como ni
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-restricted-members.all-org-members-in-team"
-msgstr "Solo se puede invitar a este equipo a miembros existentes de la organización, y todas esas personas ya son miembros del equipo. Si necesitas más información, contacta con la persona propietaria de la organización."
+msgstr "Solo se puede invitar a este equipo a miembros de la organización \"%s\", y todas esas personas ya son miembros del equipo. Si necesitas más información, contacta con la persona propietaria de la organización."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-restricted-members.cancel"
