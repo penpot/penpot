@@ -430,16 +430,23 @@
 }
 
 .empty-invitations {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  height: px2rem(156);
-  max-width: $sz-1000;
   width: 100%;
   margin-top: var(--sp-l);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   color: var(--color-foreground-secondary);
+  padding: var(--sp-xxxl);
+  text-align: center;
+}
+
+.empty-invitations-buttons {
+  width: fit-content;
+  margin: auto;
+}
+
+.no-permission-text {
+  max-width: $sz-512;
+  margin: auto;
 }
 
 .btn-empty-invitations {
@@ -860,6 +867,7 @@
 
 .modal-invitation-content {
   overflow: auto;
+  color: var(--color-foreground-secondary);
 }
 
 .invitation-list p {
@@ -869,6 +877,54 @@
 .modal-invitation-action-buttons {
   margin-block-start: var(--sp-xxxl);
   gap: var(--sp-s);
+}
+
+// INVITE RESTRICTED MEMBERS MODAL
+
+.modal-restricted-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-foreground-secondary);
+}
+
+.restricted-email-summary {
+  color: var(--color-accent-primary);
+}
+
+.restricted-emails-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.restricted-emails-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.restricted-emails-arrow {
+  color: var(--color-accent-primary);
+  transition: transform 0.15s ease;
+}
+
+.restricted-emails-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.restricted-email-list {
+  list-style: none;
+  margin: var(--sp-s) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
 // SELECT ORGANIZATION MODAL

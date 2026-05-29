@@ -616,7 +616,7 @@
   [ids {:keys [page-id trigger variant-id]}]
   (ptk/reify ::combine-as-variants
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [current-page  (:current-page-id state)
 
             combine
@@ -665,7 +665,8 @@
                             (dwsh/relocate-shapes #{variant-id} common-parent index)
                             (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
-                            (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}))
+                            (ev/event (-> {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}
+                                          (merge (meta it)))))
 
                      ;; NOTE: we need to schedule a commit into a
                      ;; microtask for ensure that all the scheduled
@@ -701,7 +702,7 @@
   [shape {:keys [pos val] :as params}]
   (ptk/reify ::variant-switch
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [libraries    (dsh/lookup-libraries state)
             component-id (:component-id shape)
             component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
@@ -735,20 +736,23 @@
                   (rx/empty))
                 (rx/of
                  (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)
-                 (ev/event {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}))))))))))
+                 (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
+                               (merge (meta it)))))))))))))
 
 (defn variants-switch
   "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
   [{:keys [shapes] :as params}]
   (ptk/reify ::variants-switch
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [it _ _]
       (let [ids (into (d/ordered-set) d/xf:map-id shapes)
             undo-id (js/Symbol)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
          (->> (rx/from shapes)
-              (rx/map #(variant-switch % params)))
+              (rx/map (fn [data]
+                        (-> (variant-switch data params)
+                            (with-meta (meta it))))))
          (rx/of (dwu/commit-undo-transaction undo-id)
                 (dws/select-shapes ids)))))))
 

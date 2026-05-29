@@ -30,6 +30,7 @@
     "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test:js": "pnpm run build:test && node target/tests/test.js",
+    "test:quiet": "node ./scripts/test-quiet.js",
     "test:jvm": "clojure -M:dev:test"
   }
 }

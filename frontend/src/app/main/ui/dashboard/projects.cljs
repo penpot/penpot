@@ -13,8 +13,9 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
-   [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.project :as dpj]
+   [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.deleted :as deleted]
@@ -31,7 +32,6 @@
    [app.util.storage :as storage]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
@@ -69,9 +69,8 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :hero}))))
+           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+                                                    :origin :hero}))))
         on-close'
         (mf/use-fn
          (mf/deps on-close)
@@ -318,8 +317,10 @@
         permisions      (:permissions team)
 
         can-edit        (:can-edit permisions)
-        can-invite      (or (:is-owner permisions)
-                            (:is-admin permisions))
+        can-invite      (dnt/can-send-invitations?
+                         {:organization (:organization team)
+                          :profile-id (:id profile)
+                          :team-permissions permisions})
 
         show-team-hero* (mf/use-state #(get storage/global ::show-team-hero true))
         show-team-hero? (deref show-team-hero*)
@@ -340,8 +341,8 @@
         (mf/use-fn
          (fn []
            (reset! show-team-hero* false)
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                 ::ev/origin "dashboard"}))))]
+           (st/emit! (ev/event {::ev/name "dont-show-team-up-hero"
+                                ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
       (swap! storage/global assoc ::show-team-hero show-team-hero?))
