@@ -34,6 +34,7 @@
     "lint:scss": "pnpm exec stylelint '{src,resources}/**/*.scss'",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test": "pnpm run build:wasm && pnpm run build:test && node target/tests/test.js",
+    "test:quiet": "node ./scripts/test-quiet.js",
     "test:storybook": "vitest run --project=storybook",
     "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
     "test:e2e": "playwright test --project default",

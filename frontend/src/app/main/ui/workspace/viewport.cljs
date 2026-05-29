@@ -310,7 +310,7 @@
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
-                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
@@ -362,10 +362,8 @@
                                       :zoom zoom}])
 
       (when picking-color?
-        [:& pixel-overlay/pixel-overlay {:vport vport
-                                         :vbox vbox
-                                         :layout layout
-                                         :viewport-ref viewport-ref}])]
+        [:> pixel-overlay/pixel-overlay* {:vport vport
+                                          :viewport-ref viewport-ref}])]
 
      [:svg
       {:id "render"
@@ -463,7 +461,7 @@
                     (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
-            [:& outline/shape-outlines
+            [:> outline/shape-outlines*
              {:objects base-objects
               :hover #{outlined-frame-id}
               :zoom zoom
@@ -471,13 +469,13 @@
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
-               [:& outline/shape-outlines
+               [:> outline/shape-outlines*
                 {:objects base-objects
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
-         [:& outline/shape-outlines
+         [:> outline/shape-outlines*
           {:objects base-objects
            :selected selected
            :hover #{(:id @hover) @frame-hover}
@@ -617,7 +615,7 @@
            :focus focus}])
 
        (when show-snap-distance?
-         [:& snap-distances/snap-distances
+         [:> snap-distances/snap-distances*
           {:layout layout
            :zoom zoom
            :transform transform

@@ -11,8 +11,7 @@
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc button-link
-  {::mf/wrap-props false}
+(mf/defc button-link*
   [{:keys [on-click icon label class]}]
   (let [on-key-down (mf/use-fn
                      (mf/deps on-click)

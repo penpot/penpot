@@ -2508,12 +2508,26 @@ impl RenderState {
             _ => {}
         }
 
-        //In clipped content strokes are drawn over the contained elements
-        if element.clip() {
+        // Strokes are drawn over children for clipped frames (all strokes), and for non-clipped
+        // frames with inner strokes (inner strokes only — non-inner were rendered before children).
+        let needs_exit_strokes = element.clip()
+            || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke());
+
+        if needs_exit_strokes {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
             element_strokes.to_mut().clear_fills();
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
+
+            // For non-clipped frames, non-inner strokes were already rendered inline.
+            if !element.clip() {
+                let is_open = element.is_open();
+                element_strokes
+                    .to_mut()
+                    .strokes
+                    .retain(|s| s.render_kind(is_open) == StrokeKind::Inner);
+            }
+
             // Frame blur is applied at the save_layer level - avoid double blur on the stroke paint
             if Self::frame_clip_layer_blur(element).is_some() {
                 element_strokes.to_mut().set_blur(None);
@@ -3040,24 +3054,27 @@ impl RenderState {
         // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
         // guard to decide when cached top-level crops are unsafe to reuse (something is moving
         // over/inside them), without doing expensive ancestor walks per node.
-        let moved_bounds =
-            if self.options.is_interactive_transform() && !tree.modifier_ids().is_empty() {
-                let mut acc: Option<Rect> = None;
-                for id in tree.modifier_ids().iter() {
-                    let Some(s) = tree.get(id) else { continue };
-                    let r = self.get_cached_extrect(s, tree, 1.0);
-                    acc = Some(match acc {
-                        None => r,
-                        Some(mut prev) => {
-                            prev.join(r);
-                            prev
-                        }
-                    });
-                }
-                acc
-            } else {
-                None
-            };
+        //
+        // `modifier_ids` is pre-computed once here and reused throughout the loop to avoid
+        // repeated allocations (formerly O(N_shapes) HashMap builds) per node.
+        let modifier_ids = tree.modifier_ids();
+        let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
+            let mut acc: Option<Rect> = None;
+            for id in modifier_ids.iter() {
+                let Some(s) = tree.get(id) else { continue };
+                let r = self.get_cached_extrect(s, tree, 1.0);
+                acc = Some(match acc {
+                    None => r,
+                    Some(mut prev) => {
+                        prev.join(r);
+                        prev
+                    }
+                });
+            }
+            acc
+        } else {
+            None
+        };
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -3136,7 +3153,7 @@ impl RenderState {
                 let use_cached = self.should_use_cached_top_level_during_interactive(
                     node_id,
                     tree,
-                    &tree.modifier_ids(),
+                    modifier_ids,
                     moved_bounds,
                 );
 
@@ -3270,8 +3287,24 @@ impl RenderState {
                         .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
+                // For frames without clip_content, inner strokes must render after children in
+                // render_shape_exit so children don't paint over them. Strip them here.
+                let element_for_inline: Cow<Shape> = if matches!(element.shape_type, Type::Frame(_))
+                    && !element.clip_content
+                    && element.has_inner_stroke()
+                {
+                    let is_open = element.is_open();
+                    let mut modified = element.clone();
+                    modified
+                        .strokes
+                        .retain(|s| s.render_kind(is_open) != StrokeKind::Inner);
+                    Cow::Owned(modified)
+                } else {
+                    Cow::Borrowed(element)
+                };
+
                 self.render_shape(
-                    element,
+                    &element_for_inline,
                     clip_bounds.clone(),
                     SurfaceId::Fills,
                     SurfaceId::Strokes,
@@ -3857,7 +3890,7 @@ impl RenderState {
     pub fn rebuild_modifier_tiles(
         &mut self,
         tree: ShapesPoolMutRef<'_>,
-        ids: Vec<Uuid>,
+        ids: &[Uuid],
     ) -> Result<()> {
         // During interactive transform, skip ancestor invalidation: walking up to the
         // parent frame evicts every tile the frame covers, including dense tiles with
@@ -3865,9 +3898,9 @@ impl RenderState {
         // `ShapesPool::set_modifiers`; the tile index is reconciled post-gesture by
         // the committing code path (rebuild_touched_tiles).
         if self.options.is_interactive_transform() {
-            self.update_tiles_shapes(&ids, tree)?;
+            self.update_tiles_shapes(ids, tree)?;
         } else {
-            let ancestors = all_with_ancestors(&ids, tree, false);
+            let ancestors = all_with_ancestors(ids, tree, false);
             self.update_tiles_shapes(&ancestors, tree)?;
         }
         Ok(())

@@ -60,8 +60,10 @@
         id          (d/nilv id internal-id)
         element-ref (mf/use-ref nil)
         tooltip-content (if (map? resolved)
-                          (mf/html [:> resolved-value-tooltip* {:token-name name
-                                                                :resolved-value resolved}])
+                          (mf/html
+                           [:> resolved-value-tooltip*
+                            {:token-name name
+                             :resolved-value resolved}])
                           name)]
     [:li {:value id
           :class (stl/css-case :token-option true

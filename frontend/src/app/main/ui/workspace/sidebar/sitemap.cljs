@@ -220,10 +220,12 @@
                name]
               [:div {:class (stl/css :page-actions)}
                (when (and deletable? (not read-only?))
-                 [:> icon-button* {:variant "ghost"
+                 [:> icon-button* {:variant "action"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
                                    :icon-size "s"
+                                   :class (stl/css :page-delete-button)
+                                   :icon-class (stl/css :page-delete-button-icon)
                                    :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper

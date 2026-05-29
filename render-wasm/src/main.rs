@@ -121,9 +121,11 @@ pub extern "C" fn render(timestamp: i32) -> Result<()> {
         // modifier set, so the cost is paid once per rAF rather than
         // once per pointer move.
         if get_render_state().options.is_interactive_transform() {
-            let ids = state.shapes.modifier_ids();
+            // Collect into an owned Vec to release the immutable borrow on
+            // `state.shapes` before the mutable `rebuild_modifier_tiles` call.
+            let ids = state.shapes.modifier_ids().to_vec();
             if !ids.is_empty() {
-                state.rebuild_modifier_tiles(ids)?;
+                state.rebuild_modifier_tiles(&ids)?;
             }
         }
         state
@@ -403,6 +405,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
         state.use_shape(id);
     });
     Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn has_shape(a: u32, b: u32, c: u32, d: u32) -> Result<bool> {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        return Ok(state.has_shape(id));
+    });
 }
 
 #[no_mangle]
@@ -856,9 +867,8 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 
     with_state!(state, {
         state.set_modifiers(modifiers);
-        // TO CHECK
         if !get_render_state().options.is_interactive_transform() {
-            state.rebuild_modifier_tiles(ids)?;
+            state.rebuild_modifier_tiles(&ids)?;
         }
     });
     Ok(())

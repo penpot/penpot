@@ -580,9 +580,9 @@
                      [:div {:class (stl/css :libraries-updates-item)
                             :key (dm/str (:id color))}
                       [:*
-                       [:& cb/color-bullet {:color {:color (:color color)
-                                                    :id (:id color)
-                                                    :opacity (:opacity color)}}]
+                       [:> cb/color-bullet* {:color {:color (:color color)
+                                                     :id (:id color)
+                                                     :opacity (:opacity color)}}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name color)}
