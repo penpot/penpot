@@ -60,11 +60,9 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
         }
     }
 
-    if render_state.rulers.visible {
-        let viewbox = render_state.viewbox;
-        let ruler_state = render_state.rulers;
-        rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
-    }
+    let viewbox = render_state.viewbox;
+    let ruler_state = render_state.rulers;
+    rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
 
     canvas.restore();
 

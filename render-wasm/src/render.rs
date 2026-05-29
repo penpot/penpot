@@ -859,6 +859,36 @@ impl RenderState {
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
+    /// Renders only the canvas background and UI surface (rulers/frame), without
+    /// rebuilding or drawing any shape tiles. Used to show the viewport frame
+    /// immediately before shape tiles are built (e.g., right after a DPR change).
+    pub fn render_ui_only(&mut self, tree: ShapesPoolRef) {
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+        ui::render(self, tree);
+        self.flush_and_submit();
+    }
+
+    /// Blurs the Backbuffer into Target and draws the rulers sharp on top, for
+    /// capturing an already-blurred page-transition snapshot. `blur_radius` is in
+    /// CSS pixels, scaled by DPR to match the device-resolution capture.
+    pub fn render_blurred_snapshot(&mut self, tree: ShapesPoolRef, blur_radius: f32) {
+        let sigma = (blur_radius * self.options.dpr).max(0.0);
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+
+        let mut paint = skia::Paint::default();
+        if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+            paint.set_image_filter(filter);
+        }
+        self.surfaces
+            .draw_into(SurfaceId::Backbuffer, SurfaceId::Target, Some(&paint));
+        ui::render(self, tree);
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
     pub fn reset_canvas(&mut self) {
         self.surfaces.reset(self.background_color);
     }

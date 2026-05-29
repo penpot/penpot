@@ -101,10 +101,6 @@ struct RenderCtx<'a> {
 }
 
 pub fn render(canvas: &skia::Canvas, viewbox: Viewbox, fonts: &FontStore, state: &RulerState) {
-    if !state.visible {
-        return;
-    }
-
     let zoom = viewbox.zoom;
     if zoom <= 0.0 {
         return;
@@ -124,27 +120,38 @@ pub fn render(canvas: &skia::Canvas, viewbox: Viewbox, fonts: &FontStore, state:
     font.set_size(FONT_SIZE);
     font.set_subpixel(true);
 
+    // When rulers are hidden we still draw the viewport frame (the rounded
+    // canvas border) with bar=0, matching the SVG viewport-frame* behavior
+    // which always renders the frame regardless of ruler visibility.
+    let bar = if state.visible {
+        RULER_AREA_SIZE * zi
+    } else {
+        0.0
+    };
+
     let ctx = RenderCtx {
         canvas,
         state,
         font: &font,
         vx: area.left,
         vy: area.top,
-        bar: RULER_AREA_SIZE * zi,
+        bar,
         zi,
     };
 
     draw_background(&ctx, vw, vh);
 
-    let step = calculate_step_size(zoom);
-    if step > 0.0 && step.is_finite() {
-        draw_ticks_x(&ctx, vw, step, state.offset_x);
-        draw_ticks_y(&ctx, vh, step, state.offset_y);
-    }
+    if state.visible {
+        let step = calculate_step_size(zoom);
+        if step > 0.0 && step.is_finite() {
+            draw_ticks_x(&ctx, vw, step, state.offset_x);
+            draw_ticks_y(&ctx, vh, step, state.offset_y);
+        }
 
-    if let Some(sel) = state.selection {
-        draw_selection_x(&ctx, sel, state.offset_x);
-        draw_selection_y(&ctx, sel, state.offset_y);
+        if let Some(sel) = state.selection {
+            draw_selection_x(&ctx, sel, state.offset_x);
+            draw_selection_y(&ctx, sel, state.offset_y);
+        }
     }
 }
 
@@ -275,9 +282,19 @@ fn draw_selection_x(ctx: &RenderCtx, sel: Rect, offset: f32) {
     // labels on top of everything.
     let mask_w = OVER_NUMBER_SIZE * zi;
     let left_x = sel.left - OVER_NUMBER_SIZE * OVER_NUMBER_PERCENT * zi;
-    draw_horizontal_mask(ctx, Rect::from_xywh(left_x, ctx.vy, mask_w, ctx.bar), false);
+    draw_mask(
+        ctx,
+        Rect::from_xywh(left_x, ctx.vy, mask_w, ctx.bar),
+        MaskAxis::Horizontal,
+        false,
+    );
     let right_x = sel.right - OVER_NUMBER_SIZE * (1.0 - OVER_NUMBER_PERCENT) * zi;
-    draw_horizontal_mask(ctx, Rect::from_xywh(right_x, ctx.vy, mask_w, ctx.bar), true);
+    draw_mask(
+        ctx,
+        Rect::from_xywh(right_x, ctx.vy, mask_w, ctx.bar),
+        MaskAxis::Horizontal,
+        true,
+    );
 
     let mut fill = Paint::default();
     fill.set_anti_alias(false);
@@ -313,46 +330,18 @@ fn draw_selection_x(ctx: &RenderCtx, sel: Rect, offset: f32) {
     canvas.restore();
 }
 
-/// Fills `rect` with a horizontal gradient of `state.bg_color`. When
-/// `fade_to_right` is false the gradient is transparent → opaque (used to
-/// the LEFT of the selection band). When true the gradient is opaque →
-/// transparent (used to the RIGHT of the band).
-fn draw_horizontal_mask(ctx: &RenderCtx, rect: Rect, fade_to_right: bool) {
-    let opaque = ctx.state.bg_color;
-    let transparent = with_alpha(ctx.state.bg_color, 0.0);
-    let (colors, offsets): (&[skia::Color; 3], &[f32; 3]) = if fade_to_right {
-        (
-            &[opaque, opaque, transparent],
-            &[0.0, 1.0 - GRADIENT_FADE_FRACTION, 1.0],
-        )
-    } else {
-        (
-            &[transparent, opaque, opaque],
-            &[0.0, GRADIENT_FADE_FRACTION, 1.0],
-        )
-    };
-    let shader = skia::gradient_shader::linear(
-        ((rect.left, rect.top), (rect.right, rect.top)),
-        &colors[..],
-        Some(&offsets[..]),
-        skia::TileMode::Clamp,
-        None,
-        None,
-    );
-    let mut paint = Paint::default();
-    paint.set_anti_alias(false);
-    paint.set_style(PaintStyle::Fill);
-    paint.set_shader(shader);
-    ctx.canvas.draw_rect(rect, &paint);
+enum MaskAxis {
+    Horizontal,
+    Vertical,
 }
 
-/// Same as `draw_horizontal_mask` but the gradient runs top→bottom.
-/// `fade_to_bottom = false` is the "above the band" mask (transparent
-/// at top, opaque toward the band); `true` is "below the band".
-fn draw_vertical_mask(ctx: &RenderCtx, rect: Rect, fade_to_bottom: bool) {
+/// Fills `rect` with a `bg_color` gradient along `axis` that fades the tick
+/// labels behind the selection band. `fade_to_end` flips it from
+/// transparent→opaque (before the band) to opaque→transparent (after).
+fn draw_mask(ctx: &RenderCtx, rect: Rect, axis: MaskAxis, fade_to_end: bool) {
     let opaque = ctx.state.bg_color;
     let transparent = with_alpha(ctx.state.bg_color, 0.0);
-    let (colors, offsets): (&[skia::Color; 3], &[f32; 3]) = if fade_to_bottom {
+    let (colors, offsets): (&[skia::Color; 3], &[f32; 3]) = if fade_to_end {
         (
             &[opaque, opaque, transparent],
             &[0.0, 1.0 - GRADIENT_FADE_FRACTION, 1.0],
@@ -363,8 +352,12 @@ fn draw_vertical_mask(ctx: &RenderCtx, rect: Rect, fade_to_bottom: bool) {
             &[0.0, GRADIENT_FADE_FRACTION, 1.0],
         )
     };
+    let end = match axis {
+        MaskAxis::Horizontal => (rect.right, rect.top),
+        MaskAxis::Vertical => (rect.left, rect.bottom),
+    };
     let shader = skia::gradient_shader::linear(
-        ((rect.left, rect.top), (rect.left, rect.bottom)),
+        ((rect.left, rect.top), end),
         &colors[..],
         Some(&offsets[..]),
         skia::TileMode::Clamp,
@@ -393,11 +386,17 @@ fn draw_selection_y(ctx: &RenderCtx, sel: Rect, offset: f32) {
     // labels — same order as SVG.
     let mask_h = OVER_NUMBER_SIZE * zi;
     let top_y = sel.top - OVER_NUMBER_SIZE * OVER_NUMBER_PERCENT * zi;
-    draw_vertical_mask(ctx, Rect::from_xywh(ctx.vx, top_y, ctx.bar, mask_h), false);
+    draw_mask(
+        ctx,
+        Rect::from_xywh(ctx.vx, top_y, ctx.bar, mask_h),
+        MaskAxis::Vertical,
+        false,
+    );
     let bottom_y = sel.bottom - OVER_NUMBER_SIZE * (1.0 - OVER_NUMBER_PERCENT) * zi;
-    draw_vertical_mask(
+    draw_mask(
         ctx,
         Rect::from_xywh(ctx.vx, bottom_y, ctx.bar, mask_h),
+        MaskAxis::Vertical,
         true,
     );
 

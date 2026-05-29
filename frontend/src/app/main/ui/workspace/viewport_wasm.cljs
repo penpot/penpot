@@ -280,6 +280,7 @@
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
+        transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -464,18 +465,14 @@
         (let [canvas (mf/ref-val canvas-ref)
               cancel (webapi/on-dpr-change
                       (fn [new-dpr]
-                        (let [css-w (.-clientWidth ^js canvas)
-                              css-h (.-clientHeight ^js canvas)]
-                          (set! (.-width canvas) (* new-dpr css-w))
-                          (set! (.-height canvas) (* new-dpr css-h))
-                          (wasm.api/set-render-options! new-dpr)
-                          (wasm.api/resize-viewbox css-w css-h)
-                          (wasm.api/render-sync))))]
+                        (wasm.api/resize-canvas! canvas new-dpr)
+                        (wasm.api/render-ui-only)
+                        (ts/raf (fn [_] (wasm.api/render-sync)))))]
           cancel)))
 
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))
+        (wasm.api/resize-canvas! (mf/ref-val canvas-ref))
         (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
@@ -559,6 +556,12 @@
           (wasm.api/set-rulers-selection! ruler-selection)
           (wasm.api/request-render "rulers-selection"))))
 
+    ;; Paint background + rulers instantly, before shapes finish loading. Runs
+    ;; after the ruler push effects so the WASM ruler state is already set.
+    (mf/with-effect [@canvas-init? page-id]
+      (when @canvas-init?
+        (wasm.api/render-ui-only)))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -609,8 +612,6 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (* (wasm.api/get-dpr) (:width vport 0))
-               :height (* (wasm.api/get-dpr) (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
@@ -621,14 +622,19 @@
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
                 :draggable false
+                ;; Full-bleed so the snapshot overlays the canvas 1:1.
                 :style {:position "absolute"
                         :inset 0
                         :width "100%"
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        ;; use (when page-transition? "blur(4px)") if we don't want the blur on context loss
-                        :filter "blur(4px)"}}]))
+                        ;; Initial load: clip the ruler strips (rounded to the
+                        ;; canvas corner) so the live rulers show through.
+                        :clip-path (when transition-reveal-rulers?
+                                     (dm/str "inset(" rulers/ruler-area-size "px 0 0 "
+                                             rulers/ruler-area-size "px round "
+                                             rulers/canvas-border-radius "px)"))}}]))
 
 
      [:svg.viewport-controls

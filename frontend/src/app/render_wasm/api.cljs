@@ -78,6 +78,10 @@
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
 (defonce context-loss-overlay? (atom false))
+;; When true (initial load) the overlay clips out the ruler strips so the live
+;; rulers show through. False (page switch / context loss) keeps the snapshot's
+;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
+(defonce transition-reveal-rulers? (atom false))
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
@@ -138,6 +142,7 @@
    - Installs a tiles-complete handler to end the transition
    - Uses a solid background-color placeholder as the transition image"
   [background]
+  (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
   ;; ensure we still have a deterministic placeholder on initial load.
   (when (or (not @page-transition?) (nil? @transition-image-url*))
@@ -385,6 +390,24 @@
 
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
+
+(defn render-ui-only
+  "Renders only the canvas background and UI surface (rulers/frame) without
+   rebuilding shape tiles. Fast synchronous call used to show the viewport
+   frame immediately before a potentially slow tile rebuild."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_ui_only")))
+
+;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
+(def ^:private TRANSITION_BLUR_RADIUS 4.0)
+
+(defn render-blurred-snapshot!
+  "Blurs the current page into the canvas so a following
+   `capture-canvas-snapshot-url` grabs an already-blurred transition frame."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_blurred_snapshot" TRANSITION_BLUR_RADIUS)))
 
 (defn render-sync
   []
@@ -1838,22 +1861,33 @@
     (let [setter-name (str/concat "_set_" (name param-name))]
       (h/call wasm/internal-module setter-name value))))
 
-(defn set-canvas-size
-  [canvas]
-  (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
-        height (or (.-clientHeight ^js canvas) (.-height ^js canvas))]
-    (set! (.-width canvas) (* dpr width))
-    (set! (.-height canvas) (* dpr height))))
-
 (defn set-render-options!
   "Updates WASM render options with a new DPR value."
   [new-dpr]
   (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
 
+(defn resize-canvas!
+  "Sizes the canvas drawing buffer, the WASM render surface and the DPR from a
+   single source of truth (the canvas CSS client size) so the GL framebuffer
+   and the Skia target surface stay the same size. A size mismatch leaves an
+   unpainted strip on the top/right edges because the GL framebuffer origin is
+   bottom-left, so a smaller Skia surface is anchored to the bottom-left of the
+   larger drawing buffer."
+  ([canvas]
+   (resize-canvas! canvas (get-dpr)))
+  ([canvas new-dpr]
+   (let [css-w (.-clientWidth ^js canvas)
+         css-h (.-clientHeight ^js canvas)]
+     (set! (.-width ^js canvas) (* new-dpr css-w))
+     (set! (.-height ^js canvas) (* new-dpr css-h))
+     (set-render-options! new-dpr)
+     (resize-viewbox css-w css-h))))
+
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
   (when-let [url wasm/canvas-snapshot-url]
     (when (string? url)
@@ -1906,8 +1940,8 @@
           (.getExtension context "WEBGL_debug_renderer_info")
 
           ;; Initialize Wasm Render Engine
-          (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-          (h/call wasm/internal-module "_set_render_options" flags dpr)
+          (h/call wasm/internal-module "_init" (.-clientWidth ^js canvas) (.-clientHeight ^js canvas))
+          (h/call wasm/internal-module "_set_render_options" flags (get-dpr))
 
           ;; Configurable parameters.
           (wasm-set-param-from-route-params-if-present :antialias_threshold)
@@ -1918,7 +1952,7 @@
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
-          (set-canvas-size canvas)
+          (resize-canvas! canvas)
 
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
@@ -2255,6 +2289,7 @@
 
 (defn apply-canvas-blur
   []
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (let [already? @page-transition?
         epoch    (begin-page-transition!)]
     (set-transition-tiles-complete-handler! epoch end-page-transition!)
