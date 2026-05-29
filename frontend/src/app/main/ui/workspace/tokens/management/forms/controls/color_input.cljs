@@ -457,8 +457,8 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (if (csu/group-name-conflict-error? error token-name)
-                               (swap! form assoc-in [:extra-errors ""] {:message error})
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
                                (do
                                  (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
                                  (swap! form assoc-in [:data :value value-subfield index :color-result] "")
