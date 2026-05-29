@@ -137,7 +137,7 @@
        deprecated-icon/swatches]
 
       (for [color current-colors]
-        [:& cb/color-bullet
+        [:> cb/color-bullet*
          {:key (-> color meta ::id)
           :color color
           :on-click on-color-click}])]]))

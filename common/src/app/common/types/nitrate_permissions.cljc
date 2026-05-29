@@ -8,15 +8,64 @@
 
 (def ^:private defaults
   {:create-teams "any"
-   :delete-teams "ownersAndAdmins"})
+   :delete-teams "onlyOwners"
+   :move-teams "always"
+   :send-invitations "ownersAndAdmins"
+   :new-team-members "anyone"})
+
+(defn- can-create-team?
+  [{:keys [is-org-owner? permission-value]}]
+  (or is-org-owner?
+      (= permission-value "any")))
+
+(defn- can-delete-team?
+  [{:keys [is-org-owner? permission-value team-perms]}]
+  (cond
+    ;; Org owners can always delete teams inside their organizations.
+    is-org-owner?
+    true
+    (= permission-value "onlyOwners")
+    (boolean (:is-owner team-perms))
+    :else false))
+
+(defn- can-move-team?
+  [{:keys [permission-value target-org-same-owner?]}]
+  (cond
+    (= permission-value "never")
+    false
+    (= permission-value "always")
+    true
+    (= permission-value "myOrganizations")
+    (true? target-org-same-owner?)
+    :else false))
+
+(defn- can-invite-to-team?
+  [{:keys [permission-value team-perms]}]
+  (cond
+    (= permission-value "ownersAndAdmins")
+    (or (boolean (:is-owner team-perms))
+        (boolean (:is-admin team-perms)))
+
+    (= permission-value "owners")
+    (boolean (:is-owner team-perms))
+
+    :else false))
+
+(defn- can-add-anybody-to-team?
+  [{:keys [permission-value]}]
+  (= permission-value "anyone"))
 
 (def ^:private action-rules
-  {:create-team {:permission-key  :create-teams
-                 :allowed-values  #{"any"}
-                 :requires-admin? false}
-   :delete-team {:permission-key  :delete-teams
-                 :allowed-values  #{"ownersAndAdmins"}
-                 :requires-admin? true}})
+  {:create-team          {:permission-key :create-teams
+                          :check-fn       can-create-team?}
+   :delete-team          {:permission-key :delete-teams
+                          :check-fn       can-delete-team?}
+   :move-team            {:permission-key :move-teams
+                          :check-fn       can-move-team?}
+   :send-invitations     {:permission-key :send-invitations
+                          :check-fn        can-invite-to-team?}
+   :add-anybody-to-team  {:permission-key :new-team-members
+                          :check-fn       can-add-anybody-to-team?}})
 
 (defn- normalize-org-permissions
   [org-perms]
@@ -28,14 +77,27 @@
 
 (defn allowed?
   "Returns true only for explicitly allowed actions (fail-closed)."
-  [action {:keys [org-perms profile-id team-perms]}]
-  (let [{:keys [permission-key allowed-values requires-admin?] :as rule}
+  [action {:keys [org-perms profile-id team-perms target-org-same-owner?]}]
+  (let [{:keys [permission-key check-fn] :as rule}
         (get action-rules action)
         permissions (normalize-org-permissions org-perms)
-        is-owner?   (owner? org-perms profile-id)
-        is-admin?   (boolean (:is-admin team-perms))]
+        is-org-owner? (owner? org-perms profile-id)
+        permission-value (get permissions permission-key)]
     (cond
-      (nil? rule)                             false
-      is-owner?                               true
-      (and requires-admin? (not is-admin?))  false
-      :else (contains? allowed-values (get permissions permission-key)))))
+      (nil? rule) false
+      :else (boolean (check-fn {:is-org-owner? is-org-owner?
+                                :permission-value permission-value
+                                :team-perms team-perms
+                                :target-org-same-owner? target-org-same-owner?})))))
+
+(defn can-send-invitations?
+  [{:keys [nitrate-enabled? organization profile-id team-permissions]}]
+  (let [in-org? (and nitrate-enabled? organization)]
+    (if in-org?
+      (allowed? :send-invitations
+                {:org-perms {:owner-id    (:owner-id organization)
+                             :permissions (:permissions organization)}
+                 :profile-id profile-id
+                 :team-perms team-permissions})
+      (or (boolean (:is-owner team-permissions))
+          (boolean (:is-admin team-permissions))))))

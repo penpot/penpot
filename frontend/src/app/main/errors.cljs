@@ -354,6 +354,7 @@
 (derive :not-found ::exceptional-state)
 (derive :bad-gateway ::exceptional-state)
 (derive :service-unavailable ::exceptional-state)
+(derive :nitrate-unavailable ::exceptional-state)
 
 (defmethod ptk/handle-error ::exceptional-state
   [error]

@@ -177,7 +177,9 @@
 
 (defn not-empty?
   [coll]
-  (boolean (seq coll)))
+  (if (coll? coll)
+    (boolean (seq coll))
+    (not (nil? coll))))
 
 (defn editable-collection?
   [m]

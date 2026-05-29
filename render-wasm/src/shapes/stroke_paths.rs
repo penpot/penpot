@@ -10,12 +10,17 @@ use crate::math::Rect;
 /// Uses Skia's `fill_path_with_paint` to expand the stroke into a filled region,
 /// then clips it via boolean ops for inner/outer alignment. The optional
 /// `path_transform` maps from local shape coords to the drawing space (and back).
+///
+/// When `solid_outline` is true, any dash/dot PathEffect is stripped so the result
+/// is a continuous stroke region — useful for clipping (e.g. drag crop cache) where
+/// dash gaps should not punch holes in the clip mask.
 pub fn stroke_to_path(
     stroke: &Stroke,
     shape_path: &Path,
     path_transform: Option<&skia::Matrix>,
     selrect: &Rect,
     svg_attrs: Option<&SvgAttrs>,
+    solid_outline: bool,
 ) -> Option<Path> {
     let skia_shape_path = shape_path.to_skia_path(svg_attrs);
 
@@ -27,6 +32,10 @@ pub fn stroke_to_path(
 
     let is_open = shape_path.is_open();
     let mut paint = stroke.to_paint(selrect, svg_attrs, true);
+
+    if solid_outline {
+        paint.set_path_effect(None);
+    }
 
     let render_kind = stroke.render_kind(is_open);
     if render_kind != StrokeKind::Center {

@@ -72,10 +72,14 @@
       (doseq [params (sequence (comp
                                 (map #(bfc/remap-id % :file-id))
                                 (map #(bfc/remap-id % :library-file-id))
-                                (map #(assoc % :synced-at timestamp))
                                 (map #(assoc % :created-at timestamp)))
                                flibs)]
-        (db/insert! conn :file-library-rel params ::db/return-keys false))
+        (let [rel-params (dissoc params :synced-at)]
+          (db/insert! conn :file-library-rel rel-params ::db/return-keys false)
+          (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
+                                               :library-file-id (:library-file-id rel-params)
+                                               :synced-at (or (:synced-at params)
+                                                              timestamp)})))
 
       (doseq [params (sequence (comp
                                 (map #(bfc/remap-id % :id))

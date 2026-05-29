@@ -203,7 +203,22 @@
                        (remove-path path paths)
                        (add-path path paths))))))))
 
-
+(defn toggle-nested-token-path
+  [token-type new-name]
+  (ptk/reify ::toggle-nested-token-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [type-str (name token-type)
+            segments (str/split new-name ".")
+            n-groups (dec (count segments))]
+        (if (pos? n-groups)
+          (update-in state [:workspace-tokens :folded-token-paths]
+                     (fn [paths]
+                       (reduce (fn [ps i]
+                                 (remove-path (str type-str "." (str/join "." (take i segments))) ps))
+                               (or paths [])
+                               (range 1 (inc n-groups)))))
+          state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
@@ -582,12 +597,13 @@
                            (pcb/set-token (ctob/get-id token-set)
                                           id
                                           token'))]
+         (toggle-token-path (str (name token-type) "." (:name token)))
          (rx/of (dch/commit-changes changes)
                 (ev/event (-> {::ev/name "edit-token" :type token-type}
                               (merge (meta it))))))))))
 
 (defn bulk-update-tokens
-  [set-id token-ids type old-path new-path]
+  [set-id token-ids type old-path new-path & {:keys [undo-group]}]
   (dm/assert! (uuid? set-id))
   (dm/assert! (every? uuid? token-ids))
   (ptk/reify ::bulk-update-tokens
@@ -608,7 +624,9 @@
                             (-> (pcb/empty-changes it)
                                 (pcb/with-library-data data))
 
-                            token-ids)]
+                            token-ids)
+
+            changes (cond-> changes (some? undo-group) (assoc :undo-group undo-group))]
         (toggle-token-path (str (name type) "." old-path))
         (toggle-token-path (str (name type) "." new-path))
         (rx/of (dch/commit-changes changes)
@@ -665,7 +683,11 @@
                                            token-id)]
             (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
                   unames (map :name tokens)     ;; TODO: add function duplicate-token in tokens-lib
-                  suffix (tr "workspace.tokens.duplicate-suffix")
+                  ;; "copy" is intentionally not translated here. Token names are validated
+                  ;; against a restricted set of allowed characters (currently English-compatible),
+                  ;; so translating this suffix could introduce invalid characters and break
+                  ;; token name validation.
+                  suffix "copy"
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)
                   new-token (-> token
                                 (ctob/reid (uuid/next))

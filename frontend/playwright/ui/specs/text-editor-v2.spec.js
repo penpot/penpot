@@ -315,3 +315,19 @@ test("BUG 11552 - Apply styles to the current caret", async ({ page }) => {
   await expect(fontSizeInput).toHaveValue("");
   await expect(fontSizeInput).toHaveAttribute("placeholder", "Mixed");
 });
+
+// This is to prevent QA tests from failing due to playwright
+// considering 0-width text boxes as invisible
+test("BUG 14098 - Fix text editor having 0 width or height", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.goToWorkspace();
+
+  await workspace.textShapeButton.click();
+  await workspace.clickAt(200, 200);
+
+  const textEditor = workspace.page.locator(`div[class*="viewport"]`).first().getByRole('textbox').first();
+  await expect(textEditor).toBeVisible();
+});
