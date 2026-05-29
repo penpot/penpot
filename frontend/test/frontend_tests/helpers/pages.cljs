@@ -238,7 +238,9 @@
 
           (advance-copy [file libraries page objects shape]
             (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                  0)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
                           objects

@@ -53,9 +53,14 @@
 (defn validate-file!
   ([file] (validate-file! file {}))
   ([file libraries]
-   (cfv/validate-file-schema! file)
-   (cfv/validate-file! file libraries)
-   file))
+   (try
+     (cfv/validate-file-schema! file)
+     (cfv/validate-file! file libraries)
+     file
+     (catch #?(:clj Exception :cljs :default) e
+       (println "File validation failed: " (ex-message e))
+       (pprint (ex-data e))
+       (throw e)))))
 
 (defn apply-changes
   [file changes & {:keys [validate?] :or {validate? true}}]
