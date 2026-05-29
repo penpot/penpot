@@ -84,7 +84,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/icons-plugin",
+            "outputPath": {
+              "base": "dist/apps/icons-plugin",
+              "browser": ""
+            },
             "index": "apps/icons-plugin/src/index.html",
             "browser": "apps/icons-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -153,7 +156,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/lorem-ipsum-plugin",
+            "outputPath": {
+              "base": "dist/apps/lorem-ipsum-plugin",
+              "browser": ""
+            },
             "index": "apps/lorem-ipsum-plugin/src/index.html",
             "browser": "apps/lorem-ipsum-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -296,7 +302,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/rename-layers-plugin",
+            "outputPath": {
+              "base": "dist/apps/rename-layers-plugin",
+              "browser": ""
+            },
             "index": "apps/rename-layers-plugin/src/index.html",
             "browser": "apps/rename-layers-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -441,7 +450,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/poc-state-plugin",
+            "outputPath": {
+              "base": "dist/apps/poc-state-plugin",
+              "browser": ""
+            },
             "index": "apps/poc-state-plugin/src/index.html",
             "browser": "apps/poc-state-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -511,7 +523,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/apps/poc-tokens-plugin",
+            "outputPath": {
+              "base": "dist/apps/poc-tokens-plugin",
+              "browser": ""
+            },
             "index": "apps/poc-tokens-plugin/src/index.html",
             "browser": "apps/poc-tokens-plugin/src/main.ts",
             "polyfills": ["zone.js"],
