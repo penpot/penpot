@@ -72,7 +72,11 @@
     :backend-worker
     ;; Only for development
     :component-thumbnails
-    ;; enables the default cors configuration that allows all domains (currently this configuration is only used for development).
+    ;; Enables CORS support for the RPC API. Requires an explicit
+    ;; allowlist of origins via PENPOT_ALLOWED_ORIGINS; if no allowlist
+    ;; is configured the middleware fails closed (a warning is logged
+    ;; and CORS headers are not emitted) to avoid CSRF / data
+    ;; exfiltration via origin reflection.
     :cors
     ;; Enables the templates dialog on Penpot dashboard.
     :dashboard-templates-section
