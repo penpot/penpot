@@ -1871,6 +1871,10 @@ msgid "errors.tokens.value-with-units"
 msgstr "Valor no válido: No se permiten unidades."
 
 #: src/app/main/data/media.cljs:74
+msgid "errors.token-theme-not-existing-sets"
+msgstr "El tema referencia sets que no existen: %s"
+
+#: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "Ha ocurrido un error inesperado."
 

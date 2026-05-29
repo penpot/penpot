@@ -74,13 +74,19 @@
     modified-at)
 
   (rename [this new-name]
-    (assoc this :name new-name))
+    (assoc this
+           :name new-name
+           :modified-at (ct/now)))
 
   (reid [this new-id]
-    (assoc this :id new-id))
+    (assoc this
+           :id new-id
+           :modified-at (ct/now)))
 
   (set-description [this new-description]
-    (assoc this :description new-description)))
+    (assoc this
+           :description new-description
+           :modified-at (ct/now))))
 
 (defmethod pp/simple-dispatch Token
   [^Token obj]
@@ -1154,24 +1160,25 @@ Will return a value that matches this schema:
     (if-let [theme (get-theme this id)]
       (let [group       (:group theme)
             name        (:name theme)
-            theme'      (-> (make-token-theme (f theme))
-                            (assoc :modified-at (ct/now)))
-            group'      (:group theme')
-            name'       (:name theme')
-            same-group? (= group group')
-            same-name?  (= name name')
-            same-path?  (and same-group? same-name?)]
-        (TokensLib. sets
-                    (if same-path?
-                      (update themes group' assoc name' theme')
-                      (-> themes
-                          (d/oassoc-in-before [group name] [group' name'] theme')
-                          (d/dissoc-in [group name])))
-                    (if same-path?
-                      active-themes
-                      (disj active-themes (join-theme-path group name)))))
+            theme'      (make-token-theme (f theme))]
+        (if (= theme theme')
+          this
+          (let [theme'      (assoc theme' :modified-at (ct/now))
+                group'      (:group theme')
+                name'       (:name theme')
+                same-group? (= group group')
+                same-name?  (= name name')
+                same-path?  (and same-group? same-name?)]
+            (TokensLib. sets
+                        (if same-path?
+                          (update themes group' assoc name' theme')
+                          (-> themes
+                              (d/oassoc-in-before [group name] [group' name'] theme')
+                              (d/dissoc-in [group name])))
+                        (if same-path?
+                          active-themes
+                          (disj active-themes (join-theme-path group name)))))))
       this))
-
 
   (delete-theme [this id]
     (let [theme (get-theme this id)
@@ -2162,6 +2169,39 @@ Will return a value that matches this schema:
 ;; MIGRATIONS HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn update-all-tokens
+  "Walk through all tokens in the library and apply the given function to them.
+   The function receives the library, the set and the token as arguments,
+   and should return the updated token."
+  [tokens-lib update-fn]
+  (let [update-one-set
+        (fn [lib set]
+          (reduce (fn [lib' token]
+                    (update-token lib'
+                                  (get-id set)
+                                  (get-id token)
+                                  #(update-fn lib'
+                                              (get-set lib' (get-id set))
+                                              %)))
+                  lib
+                  (vals (get-tokens lib (get-id set)))))]
+    (reduce (fn [lib set]
+              (update-one-set lib set))
+            tokens-lib
+            (get-sets tokens-lib))))
+
+(defn update-all-themes
+  "Walk through all themes in the library and apply the given function to them.
+   The function receives the library and the theme as arguments,
+   and should return the updated theme."
+  [tokens-lib update-fn]
+  (reduce (fn [lib theme]
+            (update-theme lib
+                          (get-id theme)
+                          #(update-fn lib %)))
+          tokens-lib
+          (get-themes tokens-lib)))
+
 (defn fix-duplicate-token-set-ids
   "Given an instance of TokensLib fixes it internal sets data structure
   for ensure each set has unique id;
@@ -2188,6 +2228,19 @@ Will return a value that matches this schema:
                 (update :sets d/update-vals migrate-set-node)
                 (map->tokens-lib)
                 (check)))))
+
+(defn fix-missing-sets-in-themes
+  [tokens-lib]
+  (let [existing-set-names (into #{} (map get-name) (get-sets tokens-lib))
+        fix-theme-sets
+        (fn [_ theme]
+          (let [current-sets (:sets theme)
+                valid-sets   (clojure.set/intersection current-sets existing-set-names)]
+            (if-not (= valid-sets current-sets)
+              (assoc theme :sets valid-sets)
+              theme)))]
+
+    (update-all-themes tokens-lib fix-theme-sets)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION (FRESIAN)
@@ -2226,7 +2279,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-3
      "Migrate the TokensLib data structure internals to v1.3 version; it
-  expects input from v1.2 version"
+      expects input from v1.2 version"
      [{:keys [sets themes] :as params}]
      (let [migrate-token
            (fn [token]
@@ -2274,7 +2327,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-4
      "Migrate the TokensLib data structure internals to v1.4 version; it
-  expects input from v1.3 version"
+      expects input from v1.3 version"
      [params]
      (let [migrate-set-node
            (fn recurse [node]

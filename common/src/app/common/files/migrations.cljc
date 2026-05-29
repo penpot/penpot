@@ -1833,6 +1833,10 @@
         (cfcp/fix-missing-swap-slots libraries)
         (cfcp/sync-component-id-with-ref-shape libraries))))
 
+(defmethod migrate-data "0023-repair-token-themes-with-inexistent-sets"
+  [data _]
+  (d/update-when data :tokens-lib ctob/fix-missing-sets-in-themes))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1912,4 +1916,5 @@
          "0019-fix-missing-swap-slots"
          "0020-sync-component-id-with-near-main"
          "0021-fix-shape-svg-attrs"
-         "0022-normalize-component-root-and-resync"]))
+         "0022-normalize-component-root-and-resync"
+         "0023-repair-token-themes-with-inexistent-sets"]))
