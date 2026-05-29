@@ -903,6 +903,7 @@
       (when (not small?)
         [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
          [:div {:class (stl/css :grid-editor-wrapper)
+                :data-testid "grid-track-editor-wrapper"
                 :on-context-menu handle-show-track-menu
                 :on-pointer-down handle-pointer-down
                 :on-lost-pointer-capture handle-lost-pointer-capture
@@ -916,8 +917,9 @@
             :data-default-value (format-size track-data)
             :on-key-down handle-keydown-track-input
             :on-blur handle-blur-track-input}]
-          (when (and hovering? (not medium?) (not small?))
+          (when (and (not medium?) (not small?))
             [:button {:class (stl/css :grid-editor-button)
+                      :data-testid "grid-track-options-btn"
                       :on-click handle-show-track-menu} deprecated-icon/menu])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
