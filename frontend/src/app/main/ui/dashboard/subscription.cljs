@@ -17,7 +17,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [lambdaisland.uri :as u]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-subscription-type
@@ -135,34 +134,34 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-cc-create-org)]
+        (mf/use-fn dnt/go-to-nitrate-ac-create-org)]
 
     ;; TODO add translations for this texts when we have the definitive ones
     (if (and nitrate? no-orgs-created?)
       ;; Banner for users with active nitrate license but no organizations created
       [:div {:class (stl/css :nitrate-banner :highlighted)}
        [:div {:class (stl/css :nitrate-content)}
-        [:span {:class (stl/css :nitrate-title)} "Create your first org"]]
+        [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
        [:div {:class (stl/css :nitrate-content)}
-        [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
+        [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
         [:> button* {:variant "primary"
                      :type "button"
                      :class (stl/css :nitrate-bottom-button)
-                     :on-click handle-go-to-cc} "CREATE ORGANIZATION"]]]
+                     :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
 
       ;; Banner for users without nitrate license
       (when (not nitrate?)
         [:div {:class (stl/css :nitrate-banner :highlighted)}
          [:div {:class (stl/css :nitrate-content)}
-          [:span {:class (stl/css :nitrate-title)} "Unlock Nitrate features"]]
+          [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
          [:div {:class (stl/css :nitrate-content)}
-          [:span {:class (stl/css :nitrate-info)} "Some further information and explanation."]
+          [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
           [:> button* {:variant "primary"
                        :type "button"
                        :class (stl/css :nitrate-bottom-button)
                        :on-click handle-click} (if (:subscription profile)
-                                                 "UPGRADE TO NITRATE"
-                                                 "Try 14 days for free")]]]))))
+                                                 (tr "subscription.dashboard.banner.upgrade-nitrate")
+                                                 (tr "nitrate.form.try-free"))]]]))))
 
 (mf/defc nitrate-current-plan*
   [{:keys [profile]}]
@@ -197,9 +196,9 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                            ::ev/origin "dashboard"
-                                            :section "team-settings"}))
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "dashboard"
+                                :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))
                  href (str "payments/subscriptions/show?returnUrl=" href)]

@@ -5,9 +5,8 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(mf/defc playground-clipboard
-  {::mf/wrap-props false
-   ::mf/private true}
+(mf/defc playground-clipboard*
+  {::mf/private true}
   []
   (let [on-paste (mf/use-fn
                   (fn [e]
@@ -42,10 +41,9 @@
 
     [:button#paste {:on-click on-click} "Paste"]))
 
-(mf/defc playground
-  {::mf/wrap-props false
-   ::mf/private true}
+(mf/defc playground*
+  {::mf/private true}
   []
-  [:& playground-clipboard])
+  [:> playground-clipboard*])
 
 

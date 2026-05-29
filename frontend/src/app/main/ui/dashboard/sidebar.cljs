@@ -24,7 +24,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
-   [app.main.ui.components.link :refer [link]]
+   [app.main.ui.components.link :refer [link*]]
    [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -50,7 +50,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.functions :as f]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private clear-search-icon
@@ -93,6 +92,7 @@
   (deprecated-icon/icon-xref :arrow-up-right (stl/css :arrow-up-right-icon)))
 
 (def ^:private ^:svg-id penpot-logo-icon "penpot-logo-icon")
+(def ^:private ^:svg-id penpot-logo-icon-subtle "penpot-logo-subtle")
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -315,7 +315,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         on-go-to-cc-click
@@ -325,8 +325,9 @@
            ;; Navigate to active org if user owns it, otherwise to last visited org
            (if (and (:id organization)
                     (= (:id profile) (:owner-id organization)))
-             (dnt/go-to-nitrate-cc organization)
-             (dnt/go-to-nitrate-cc))))
+             (dnt/go-to-nitrate-ac {:organization-id (:id organization)
+                                    :organization-slug (:slug organization)})
+             (dnt/go-to-nitrate-ac))))
 
         empty-org (d/seek #(nil? (:id %)) organizations)
         default-team-id (or (:default-team-id empty-org)
@@ -341,11 +342,16 @@
      [:> dropdown-menu-item* {:on-click    on-org-click
                               :data-value  default-team-id
                               :class       (stl/css :org-dropdown-item)}
-      [:span {:class (stl/css :org-icon)}
-       [:> raw-svg* {:id penpot-logo-icon}]]
-      "Penpot"
+      [:span {:class (stl/css :my-teams-icon)}
+       [:> raw-svg* {:id penpot-logo-icon-subtle}]]
+      [:span {:class (stl/css :team-text)
+              :title (tr "dashboard.my-teams")}
+       (tr "dashboard.my-teams")]
       (when (= default-team-id (:default-team-id organization))
         tick-icon)]
+     [:hr {:role "separator" :class (stl/css :team-separator)}]
+     [:li {:role "presentation" :class (stl/css :org-section-label)}
+      (tr "dashboard.section.organizations")]
 
      (for [org-item organizations]
        [:> dropdown-menu-item* {:on-click    on-org-click
@@ -367,7 +373,7 @@
        [:> dropdown-menu-item* {:on-click    on-go-to-cc-click
                                 :class       (stl/css :org-dropdown-item :action)}
         [:span {:class (stl/css :icon-wrapper)} arrow-up-right-icon]
-        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-control-center")]])]))
+        [:span {:class (stl/css :team-text)} (tr "dashboard.go-to-admin-console")]])]))
 
 (mf/defc teams-selector-dropdown*
   {::mf/private true}
@@ -467,9 +473,6 @@
 
               :owner-cant-leave-team
               (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
-
-              :not-allowed
-              (rx/of (modal/show :no-permission-modal {:type :delete-team}))
 
               (rx/throw error))))
 
@@ -578,20 +581,11 @@
                                 :class    (stl/css :team-options-item)}
         (tr "dashboard.leave-team")])
 
-     (let [is-owner?    (get-in team [:permissions :is-owner])
-           is-admin?    (get-in team [:permissions :is-admin])
-           organization (:organization team)
-           is-org-team? (some? organization)
-           in-org?      (and (contains? cf/flags :nitrate) is-org-team?)
-           show-delete? (if in-org?
-                          (or is-owner? is-admin?)
-                          is-owner?)]
-
-       (when show-delete?
-         [:> dropdown-menu-item* {:on-click    on-delete-clicked
-                                  :class       (stl/css :team-options-item :warning)
-                                  :data-testid "delete-team"}
-          (tr "dashboard.delete-team")]))]))
+     (when (get-in team [:permissions :is-owner])
+       [:> dropdown-menu-item* {:on-click    on-delete-clicked
+                                :class       (stl/css :team-options-item :warning)
+                                :data-testid "delete-team"}
+        (tr "dashboard.delete-team")])]))
 
 (mf/defc org-options-dropdown*
   {::mf/private true}
@@ -607,13 +601,11 @@
                                 (filter #(dm/get-in % [:permissions :is-owner]) non-default-teams))
         not-owned-teams       (mf/with-memo [non-default-teams]
                                 (remove #(dm/get-in % [:permissions :is-owner]) non-default-teams))
-        teams-to-delete       (mf/with-memo [owned-teams]
-                                (filter #(= (count (:members %)) 1) owned-teams))
+        owned-teams-members-loaded?
+        (mf/with-memo [owned-teams]
+          (every? #(contains? % :members) owned-teams))
         teams-to-transfer     (mf/with-memo [owned-teams]
                                 (filter #(> (count (:members %)) 1) owned-teams))
-        num-teams-to-leave    (+ (count teams-to-transfer) (count not-owned-teams))
-        num-teams-to-delete   (count teams-to-delete)
-        num-teams-to-transfer (count teams-to-transfer)
 
         on-error
         (mf/use-fn
@@ -635,14 +627,16 @@
 
         leave-fn
         (mf/use-fn
-         (mf/deps on-error organization default-team-id not-owned-teams teams-to-delete)
+         (mf/deps on-error organization default-team-id not-owned-teams owned-teams)
          (fn [{:keys [teams-to-transfer]}]
            (let [teams-to-leave (cond->> not-owned-teams
                                   :always
                                   (map #(select-keys % [:id]))
                                   (seq teams-to-transfer)
                                   (concat teams-to-transfer))
-                 teams-to-delete (map :id teams-to-delete)]
+                 teams-to-delete (->> owned-teams
+                                      (filter #(= (count (:members %)) 1))
+                                      (map :id))]
 
 
              (st/emit! (dnt/leave-org {:id (:id organization)
@@ -654,41 +648,22 @@
 
         on-leave-clicked
         (mf/use-fn
-         (mf/deps leave-fn profile organization teams-to-transfer num-teams-to-leave num-teams-to-delete num-teams-to-transfer)
+         (mf/deps leave-fn profile organization default-team-id teams-to-transfer on-error owned-teams-members-loaded?)
          (fn []
-           (cond
-             (and (pos? num-teams-to-delete)
-                  (zero? num-teams-to-transfer))
-             (st/emit! (modal/show
-                        {:type :confirm
-                         :title (tr "modals.before-leave-org.title" (:name organization))
-                         :message (tr "modals.before-leave-org.message")
-                         :accept-label (tr "modals.leave-org-confirm.accept")
-                         :on-accept leave-fn
-                         :error-msg (tr "modals.before-leave-org.warning")}))
-             (pos? num-teams-to-transfer)
-             (st/emit!
-              (modal/show
-               {:type :leave-and-reassign-org
-                :profile profile
-                :teams-to-transfer teams-to-transfer
-                :num-teams-to-delete num-teams-to-delete
-                :accept leave-fn}))
-
-             :else
-             (st/emit! (modal/show
-                        {:type :confirm
-                         :title (tr "modals.leave-org-confirm.title" (:name organization))
-                         :message (tr "modals.leave-org-confirm.message")
-                         :accept-label (tr "modals.leave-org-confirm.accept")
-                         :on-accept leave-fn})))))]
+           (when owned-teams-members-loaded?
+             (st/emit! (dnt/show-leave-org-modal {:organization organization
+                                                  :profile profile
+                                                  :default-team-id default-team-id
+                                                  :leave-fn leave-fn
+                                                  :teams-to-transfer teams-to-transfer
+                                                  :on-error on-error})))))]
     (mf/use-effect
+     (mf/deps owned-teams)
      (fn []
-       ;; We need all the team members of the owned teams
-       ;; TODO this will re-render once for each owned team, not very performance-wise
-       (do
-         (doseq [team owned-teams]
-           (st/emit! (dtm/fetch-members (:id team)))))))
+       ;; Fetch members for any owned team that doesn't have them yet.
+       (doseq [team owned-teams
+               :when (not (contains? team :members))]
+         (st/emit! (dtm/fetch-members (:id team))))))
     [:> dropdown-menu* props
 
      [:> dropdown-menu-item* {:on-click on-leave-clicked
@@ -767,7 +742,7 @@
          (mf/deps profile)
          (fn []
            (if (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-cc-create-org)
+             (dnt/go-to-nitrate-ac-create-org)
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]
     (if show-dropdown?
       [:div {:class (stl/css :sidebar-org-switch)}
@@ -780,10 +755,10 @@
          [:div {:class (stl/css :team-name)}
           (if default-org?
             [:*
-             [:span {:class (stl/css :org-penpot-icon)}
-              [:> raw-svg* {:id penpot-logo-icon}]]
+             [:span {:class (stl/css :my-teams-icon-xxxl)}
+              [:> raw-svg* {:id penpot-logo-icon-subtle}]]
              [:span {:class (stl/css :team-text)}
-              "Penpot"]]
+              (tr "dashboard.my-teams")]]
             [:*
              [:> org-avatar* {:org current-org :size "xxxl"}]
              [:span {:class (stl/css :team-text)}
@@ -1077,16 +1052,16 @@
          [:li {:class (stl/css-case :recent-projects true
                                     :sidebar-nav-item true
                                     :current projects?)}
-          [:& link {:action go-projects
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-projects-with-key}
+          [:> link* {:action go-projects
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-projects-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
          [:li {:class (stl/css-case :current drafts?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-drafts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-drafts-with-key}
+          [:> link* {:action go-drafts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-drafts-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
@@ -1096,17 +1071,17 @@
         [:ul {:class (stl/css :sidebar-nav)}
          [:li {:class (stl/css-case :sidebar-nav-item true
                                     :current fonts?)}
-          [:& link {:action go-fonts
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-fonts-with-key
-                    :data-testid "fonts"}
+          [:> link* {:action go-fonts
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-fonts-with-key
+                     :data-testid "fonts"}
            [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
          [:li {:class (stl/css-case :current libs?
                                     :sidebar-nav-item true)}
-          [:& link {:action go-libs
-                    :data-testid "libs-link-sidebar"
-                    :class (stl/css :sidebar-link)
-                    :keyboard-action go-libs-with-key}
+          [:> link* {:action go-libs
+                     :data-testid "libs-link-sidebar"
+                     :class (stl/css :sidebar-link)
+                     :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
@@ -1138,8 +1113,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))
 
         handle-feedback-click
@@ -1182,8 +1157,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -1209,7 +1184,7 @@
         show-release-notes
         (mf/use-fn
          (fn [event]
-           (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version (:main version)}))
+           (st/emit! (ev/event {::ev/name "show-release-notes" :version (:main version)}))
            (if (and (kbd/alt? event) (kbd/mod? event))
              (st/emit! (modal/show {:type :onboarding}))
              (st/emit! (modal/show {:type :release-notes :version (:main version)})))))
@@ -1221,8 +1196,8 @@
                                (dom/get-data "url"))
                  eventname (-> (dom/get-current-target event)
                                (dom/get-data "eventname"))]
-             (st/emit! (ptk/event ::ev/event {::ev/name eventname
-                                              ::ev/origin "menu:in-app"}))
+             (st/emit! (ev/event {::ev/name eventname
+                                  ::ev/origin "menu:in-app"}))
              (dom/open-new-window url))))]
 
     [:> dropdown-menu* {:show true
@@ -1320,7 +1295,7 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     (mf/with-effect [show-profile-menu?]

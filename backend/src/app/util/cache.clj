@@ -12,7 +12,6 @@
    [app.common.time :as ct]
    [promesa.exec :as px])
   (:import
-   com.github.benmanes.caffeine.cache.AsyncCache
    com.github.benmanes.caffeine.cache.Cache
    com.github.benmanes.caffeine.cache.Caffeine
    com.github.benmanes.caffeine.cache.RemovalListener
@@ -47,15 +46,18 @@
      :miss-rate  (.missRate stats)}))
 
 (defn create
-  [& {:keys [executor on-remove max-size keepalive]}]
+  "Build an in-memory cache. Loads run synchronously on the calling
+  thread, so when a load fn throws or returns nil the entry is not
+  stored — concurrent loads for the same key still deduplicate."
+  [& {:keys [executor on-remove max-size keepalive expire]}]
   (let [cache (as-> (Caffeine/newBuilder) builder
                 (if (fn? on-remove) (.removalListener builder (create-listener on-remove)) builder)
                 (if executor  (.executor builder ^Executor (px/resolve-executor executor)) builder)
                 (if keepalive (.expireAfterAccess builder ^Duration (ct/duration keepalive)) builder)
+                (if expire    (.expireAfterWrite  builder ^Duration (ct/duration expire)) builder)
                 (if (int? max-size) (.maximumSize builder (long max-size)) builder)
                 (.recordStats builder)
-                (.buildAsync builder))
-        cache (.synchronous ^AsyncCache cache)]
+                (.build builder))]
     (reify
       ICache
       (get [_ k]
@@ -69,7 +71,7 @@
       (invalidate! [_]
         (.invalidateAll ^Cache cache))
       (invalidate! [_ k]
-        (.invalidateAll ^Cache cache ^Object k))
+        (.invalidate ^Cache cache ^Object k))
 
       ICacheStats
       (stats [_]

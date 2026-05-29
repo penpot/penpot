@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { PenpotMcpServer } from "./PenpotMcpServer";
-import { createLogger, logFilePath } from "./logger";
+import { createLogger, logActiveTransports } from "./logger";
 
 /**
  * Entry point for Penpot MCP Server
@@ -14,8 +14,8 @@ import { createLogger, logFilePath } from "./logger";
 async function main(): Promise<void> {
     const logger = createLogger("main");
 
-    // log the file path early so it appears before any potential errors
-    logger.info(`Logging to file: ${logFilePath}`);
+    // announce active transports early so they appear before any potential errors
+    logActiveTransports(logger);
 
     try {
         const args = process.argv.slice(2);

@@ -22,6 +22,7 @@
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
+   [app.plugins.system-events :as se]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
    [app.util.http :as http]
@@ -54,7 +55,7 @@
            (do (swap! data assoc :label value :created-by "user")
                (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
                     (rx/take 1)
-                    (rx/subs! identity)))))}
+                    (rx/subs! #(st/emit! (se/event "rename-version" :file-id file-id)))))))}
 
       :createdBy
       {:get
@@ -78,7 +79,9 @@
 
              :else
              (let [version-id (get @data :id)]
-               (st/emit! (dwv/restore-version-from-plugin file-id version-id resolve reject)))))))
+               (st/emit!
+                (dwv/restore-version-from-plugin file-id version-id resolve reject)
+                (se/event plugin-id "restore-version" :file-id file-id)))))))
 
       :remove
       (fn []
@@ -110,10 +113,12 @@
                             :label (ct/format-inst (:created-at @data) :localized-date)}]
                (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
                             (rp/cmd! :update-file-snapshot params))
-                    (rx/subs! (fn [[users data]]
-                                (let [users (d/index-by :id users)]
-                                  (resolve (file-version-proxy plugin-id file-id users @data))))
-                              reject))))))))))
+                    (rx/subs!
+                     (fn [[users data]]
+                       (let [users (d/index-by :id users)]
+                         (st/emit! (se/event plugin-id "pin-version" :file-id file-id))
+                         (resolve (file-version-proxy plugin-id file-id users @data))))
+                     reject))))))))))
 
 (defn file-proxy? [p]
   (obj/type-of? p "FileProxy"))
@@ -220,7 +225,8 @@
 
         :else
         (let [page-id (uuid/next)]
-          (st/emit! (dw/create-page {:page-id page-id :file-id id}))
+          (st/emit! (-> (dw/create-page {:page-id page-id :file-id id})
+                        (se/add-event plugin-id)))
           (page/page-proxy plugin-id id page-id))))
 
     :export
@@ -269,6 +275,7 @@
                                       :response-type :buffer}))))
                     (rx/take 1)
                     (rx/map #(js/Uint8Array. (:body %)))
+                    (rx/tap #(st/emit! (se/event plugin-id "export-binary-files" :format format :type type)))
                     (rx/subs! resolve reject))))))))
     :findVersions
     (fn [criteria]
@@ -315,7 +322,9 @@
                  (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (st/emit! (dwv/create-version-from-plugins id label resolve reject)))))]
+                 (st/emit!
+                  (dwv/create-version-from-plugins id label resolve reject)
+                  (se/event plugin-id "create-version" :file-id id)))))]
         (-> (js/Promise.all #js [users-promise create-version-promise])
             (.then
              (fn [[users data]]

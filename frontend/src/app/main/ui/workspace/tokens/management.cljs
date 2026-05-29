@@ -5,6 +5,7 @@
    [app.common.path-names :as cpn]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
@@ -84,7 +85,7 @@
 
 (mf/defc tokens-section*
   {::mf/private true}
-  [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [tokens-lib active-tokens resolved-active-tokens resolved-active-tokens-not-forced]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
 
@@ -220,10 +221,11 @@
                  new-tokens (map (fn [token]
                                    (let [new-token-path (ctob/rename-path node token new-node-name)]
                                      (assoc token :name new-token-path)))
-                                 tokens-in-path)]
+                                 tokens-in-path)
+                 undo-group (uuid/next)]
              (st/emit!
-              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path)
-              (remap/bulk-remap-tokens tokens-in-path new-tokens)
+              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path :undo-group undo-group)
+              (remap/bulk-remap-tokens tokens-in-path new-tokens :undo-group undo-group)
               (dwtp/propagate-workspace-tokens)
               (modal/hide)))))
 
@@ -318,6 +320,7 @@
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens
+                           :active-theme-tokens-not-forced resolved-active-tokens-not-forced
                            :tokens-lib tokens-lib
                            :selected-token-set-id selected-token-set-id}]))
 
@@ -328,4 +331,5 @@
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout is-selected-inside-layout
                          :active-theme-tokens resolved-active-tokens
+                         :active-theme-tokens-not-forced resolved-active-tokens-not-forced
                          :selected-token-set-id selected-token-set-id}])]))

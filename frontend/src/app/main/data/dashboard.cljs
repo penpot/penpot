@@ -481,7 +481,7 @@
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -731,16 +731,19 @@
 
 
 (defn- handle-organization-deleted
-  [{:keys [organization-name teams deleted-teams]}]
+  [{:keys [organization-id organization-name teams deleted-teams]}]
   (ptk/reify ::handle-organization-deleted
     ptk/WatchEvent
     (watch [_ state _]
       (when (contains? cf/flags :nitrate)
         (let [team-id        (:current-team-id state)
+              current-team   (dm/get-in state [:teams team-id])
+              current-org-id (dm/get-in current-team [:organization :id])
               teams-set      (set teams)
               notify?        (contains? teams-set team-id)
               fetch?         (some (:teams state) teams)
-              go-to-default? (some #{team-id} deleted-teams)]
+              go-to-default? (or (some #{team-id} deleted-teams)
+                                 (= organization-id current-org-id))]
           (rx/concat
            (when go-to-default? ;; If the user is currently on one of the deleted teams
              (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
