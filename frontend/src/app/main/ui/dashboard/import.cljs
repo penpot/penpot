@@ -496,7 +496,22 @@
                 [:div (:name entry)]
                 (when-let [err (:error entry)]
                   [:div {:class (stl/css :import-error-detail)}
-                   (tr err)])]))]
+                   ;; Temporary frontend-side error translations to provide more meaningful
+                   ;; messages until backend error handling is improved and standardized.
+                   ;; These mappings are only a short-term workaround and should be removed
+                   ;; once the error handling enhancement is implemented.
+                   ;; https://github.com/penpot/penpot/issues/9884
+                   (cond
+                     (and (string? err)
+                          (str/includes? (str/lower err) "check error"))
+                     (tr "dashboard.import.import-error.check-error")
+
+                     (and (string? err)
+                          (str/includes? (str/lower err) "corrupt"))
+                     (tr "dashboard.import.import-error.corrupt-file")
+
+                     :else
+                     (tr "dashboard.import.import-error.unknown-error"))])]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
          (for [entry entries]
