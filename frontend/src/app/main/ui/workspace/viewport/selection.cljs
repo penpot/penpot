@@ -41,8 +41,7 @@
 (def min-selrect-width 10)
 (def min-selrect-height 10)
 
-(mf/defc selection-rect
-  {::mf/wrap-props false}
+(mf/defc selection-rect*
   [{:keys [transform rect zoom color on-move-selected on-context-menu]}]
   (let [x      (dm/get-prop rect :x)
         y      (dm/get-prop rect :y)
@@ -181,8 +180,7 @@
                         :position :bottom-left
                         :props #js {:cx x :cy (+ y height) :align align}}))))
 
-(mf/defc rotation-handler
-  {::mf/wrap-props false}
+(mf/defc rotation-handler*
   [{:keys [cx cy transform position rotation zoom on-rotate] :as props}]
   (let [size    (/ rotation-handler-size zoom)
         delta-x (if (or (= position :top-left)
@@ -211,8 +209,7 @@
             :transform (dm/str transform)
             :on-pointer-down on-rotate}]))
 
-(mf/defc resize-point-handler
-  {::mf/wrap-props false}
+(mf/defc resize-point-handler*
   [{:keys [cx cy zoom position on-resize transform rotation color align scale-text]}]
   (let [cursor     (if (or (= position :top-left)
                            (= position :bottom-right))
@@ -276,8 +273,7 @@
                          :stroke-width 0}}])]))
 
 ;; The side handler is always rendered horizontally and then rotated
-(mf/defc resize-side-handler
-  {::mf/wrap-props false}
+(mf/defc resize-side-handler*
   [{:keys [x y length align angle zoom position rotation transform on-resize color show-handler scale-text shape-id shape-type]}]
   (let [height        (/ resize-side-height zoom)
         offset-y      (if (= align :outside) (- height) (- (/ height 2)))
@@ -338,12 +334,12 @@
                         (= transform-type :rotate))))
       [:g.controls {:pointer-events (if ^boolean disabled "none" "visible")}
        ;; Selection rect
-       [:& selection-rect {:rect selrect
-                           :transform transform
-                           :zoom zoom
-                           :color color
-                           :on-move-selected on-move-selected
-                           :on-context-menu on-context-menu}]])))
+       [:> selection-rect* {:rect selrect
+                            :transform transform
+                            :zoom zoom
+                            :color color
+                            :on-move-selected on-move-selected
+                            :on-context-menu on-context-menu}]])))
 
 (mf/defc controls-handlers*
   {::mf/private true}
@@ -406,14 +402,13 @@
                               :shape-type (dm/get-prop shape :type)}
                          props)]
            (case type
-             :rotation [:> rotation-handler props]
-             :resize-point [:> resize-point-handler props]
-             :resize-side [:> resize-side-handler props])))])))
+             :rotation [:> rotation-handler* props]
+             :resize-point [:> resize-point-handler* props]
+             :resize-side [:> resize-side-handler* props])))])))
 
 ;; --- Selection Handlers (Component)
 
-(mf/defc text-edition-selection
-  {::mf/wrap-props false}
+(mf/defc text-edition-selection*
   [{:keys [shape color zoom]}]
   (let [x      (dm/get-prop shape :x)
         y      (dm/get-prop shape :y)
@@ -573,7 +568,7 @@
 
       (and (cfh/text-shape? shape)
            (= edition shape-id))
-      [:& text-edition-selection
+      [:> text-edition-selection*
        {:shape shape
         :zoom zoom
         :color color}]

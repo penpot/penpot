@@ -389,9 +389,8 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
-(mf/defc menu-entry
-  {::mf/props :obj}
-  [{:keys [title value hint on-click selected? children submenu-offset no-selectable]}]
+(mf/defc menu-entry*
+  [{:keys [title value hint on-click is-selected children submenu-offset no-selectable]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         parent-menu-dom-element-pos* (mf/use-state nil)
@@ -427,8 +426,8 @@
 
     [:li {:class (stl/css-case
                   :context-menu-item true
-                  :context-menu-item-selected (and (not no-selectable) selected?)
-                  :context-menu-item-unselected (and (not no-selectable) (not selected?))
+                  :context-menu-item-selected (and (not no-selectable) is-selected)
+                  :context-menu-item-unselected (and (not no-selectable) (not is-selected))
                   :context-menu-item-hint-wrapper hint?)
           :ref get-parent-menu-entry-position
           :data-value value
@@ -471,17 +470,17 @@
       [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
-         submenu [:& menu-entry {:title title
-                                 :hint hint
-                                 :no-selectable true
-                                 :submenu-offset submenu-offset}
+         submenu [:> menu-entry* {:title title
+                                  :hint hint
+                                  :no-selectable true
+                                  :submenu-offset submenu-offset}
                   [:& menu-tree (assoc context-data :type submenu)]]
-         :else [:& menu-entry
+         :else [:> menu-entry*
                 {:title title
                  :on-click action
                  :hint hint
                  :no-selectable no-selectable
-                 :selected? selected?}])])))
+                 :is-selected selected?}])])))
 
 (mf/defc token-context-menu-tree
   [{:keys [width errors on-delete-token] :as mdata}]
