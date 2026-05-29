@@ -69,6 +69,7 @@
            action
            is-create
            selected-token-set-id
+           tokens-tree-in-selected-set
            token-type
            make-schema
            input-component
@@ -78,11 +79,7 @@
            value-subfield
            input-value-placeholder] :as props}]
 
-  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema %
-                                                                    token-type
-                                                                    selected-token-set-id
-                                                                    (when (ctob/token? token)
-                                                                      (ctob/get-id token)))
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
                                              (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
@@ -98,8 +95,6 @@
         (dwta/get-token-properties token)
 
         token-title (str/lower (:title token-properties))
-
-        tokens-lib (mf/deref refs/tokens-lib)
 
         ;; All tokens in the lib, as a map name -> token, flattened
         ;; including tokens in inactive sets.
@@ -138,8 +133,8 @@
                                        resolved-active-tokens))))
 
         schema
-        (mf/with-memo [tokens-lib active-tab]
-          (make-schema tokens-lib active-tab))
+        (mf/with-memo [tokens-tree-in-selected-set active-tab]
+          (make-schema tokens-tree-in-selected-set active-tab))
 
         initial
         (mf/with-memo [token initial]

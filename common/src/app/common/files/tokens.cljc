@@ -134,26 +134,26 @@
 
 (defn make-token-name-schema
   "Dynamically generates a schema to check a token name, adding translated error messages
-   and additional validations:
+   and two additional validations:
     - Min and max length.
-    - Checks if other token with a path derived from the name already exists in the library.
-      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists.
-    - Also checks if there is a token with the exact same name in the current set, but different
-      from the current token."
-  [tokens-lib set-id token-id]
+    - Checks if other token with a path derived from the name already exists at `tokens-tree`.
+      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
+  [tokens-tree]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
    (-> cto/schema:token-name
        (sm/update-properties assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))))
    [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-    #(or (nil? tokens-lib)
-         (not (ctob/token-name-path-exists? % tokens-lib set-id token-id)))]])
+    #(and (some? tokens-tree)
+          (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
 (defn make-node-token-name-schema
-  "Dynamically generates a schema to check the name of a token node, that may be a final token or a group.
-   This runs same checks as make-token-name-schema, but for all tokens that will be renamed by this change,
-   if the group already contains tokens."
-  [active-tokens tokens-lib node set-id]
+  "Dynamically generates a schema to check a token node name, adding translated error messages
+   and two additional validations:
+    - Min and max length.
+    - Checks if other token with a path derived from the name already exists at `tokens-tree`.
+      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
+  [active-tokens tokens-tree node]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
    (-> cto/schema:token-node-name
@@ -164,20 +164,20 @@
             current-name (:name node)
             new-tokens (ctob/update-tokens-group active-tokens current-path current-name name)]
         (and (some? new-tokens)
-             (some (fn [[token-name token]]
-                     (not (ctob/token-name-path-exists? token-name tokens-lib set-id (ctob/get-id token))))
+             (some (fn [[token-name _]]
+                     (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
 
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn make-token-schema
-  [tokens-lib token-type set-id token-id]
+  [tokens-tree token-type]
   [:and
    (sm/merge
     cto/schema:token-attrs
     [:map
-     [:name (make-token-name-schema tokens-lib set-id token-id)]
+     [:name (make-token-name-schema tokens-tree)]
      [:value (make-token-value-schema token-type)]
      [:description {:optional true} schema:token-description]])
    [:fn {:error/field :value
@@ -187,9 +187,9 @@
         (not (cto/token-value-self-reference? name value))))]])
 
 (defn make-node-token-schema
-  [active-tokens tokens-lib node set-id]
+  [active-tokens tokens-tree node]
   [:map
-   [:name (make-node-token-name-schema active-tokens tokens-lib node set-id)]])
+   [:name (make-node-token-name-schema active-tokens tokens-tree node)]])
 
 (defn convert-dtcg-token
   "Convert token attributes as they come from a decoded json, with DTCG types, to internal types.
@@ -287,18 +287,12 @@
 
 (defn make-token-theme-schema
   [tokens-lib group name theme-id]
-  [:and
-   (sm/merge
-    ctob/schema:token-theme-attrs
-    [:map
-     [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
-     [:name (make-token-theme-name-schema tokens-lib group theme-id)]
-     [:description {:optional true} schema:token-theme-description]])
-   [:fn {:error/field :sets
-         :error/fn #(tr "errors.token-theme-not-existing-sets" (str/join ", " (:sets (:value %))))}
-    (fn [{:keys [sets]}]
-      (or (nil? tokens-lib)
-          (every? #(ctob/get-set-by-name tokens-lib %) sets)))]])
+  (sm/merge
+   ctob/schema:token-theme-attrs
+   [:map
+    [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
+    [:name (make-token-theme-name-schema tokens-lib group theme-id)]
+    [:description {:optional true} schema:token-theme-description]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

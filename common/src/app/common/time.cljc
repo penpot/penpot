@@ -202,24 +202,6 @@
       (zero? result)  false
       :else false)))
 
-(defn is-after-or-equal?
-  "Analgous to: da >= db"
-  [da db]
-  (let [result (compare da db)]
-    (cond
-      (neg? result) false
-      (zero? result) true
-      :else true)))
-
-(defn is-before-or-equal?
-  "Analgous to: da <= db"
-  [da db]
-  (let [result (compare da db)]
-    (cond
-      (neg? result)   true
-      (zero? result)  true
-      :else false)))
-
 (defn inst?
   [o]
   #?(:clj (instance? Instant o)

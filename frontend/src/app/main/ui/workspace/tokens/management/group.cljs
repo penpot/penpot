@@ -132,7 +132,7 @@
 
         on-popover-open-click
         (mf/use-fn
-         (mf/deps type title modal selected-token-set-id)
+         (mf/deps type title modal)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit!
@@ -144,8 +144,7 @@
                            :fields (:fields modal)
                            :title title
                            :action "create"
-                           :token-type type
-                           :selected-token-set-id selected-token-set-id})))))
+                           :token-type type})))))
 
         on-token-pill-click
         (mf/use-fn
