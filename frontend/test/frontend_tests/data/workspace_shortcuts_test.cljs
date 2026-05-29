@@ -19,12 +19,19 @@
        :code           code
        :preventDefault #(reset! prevented? true)})
 
+(defn- mock-emit!
+  [emitted]
+  (fn
+    ([] nil)
+    ([event] (swap! emitted conj event))
+    ([event & _more] nil)))
+
 (t/deftest display-guides-handler-detects-physical-keys
   (t/testing "US layout uses Ctrl+Quote"
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly false)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:ctrl? true :code "Quote" :prevented? prevented?})))
       (t/is (true? @prevented?))
@@ -34,7 +41,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly false)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:ctrl? true :shift? true :code "Backslash" :prevented? prevented?})))
       (t/is (true? @prevented?))
@@ -44,7 +51,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly true)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:meta? true :code "Quote" :prevented? prevented?})))
       (t/is (true? @prevented?))
@@ -54,7 +61,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly true)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:meta? true :shift? true :code "Backslash" :prevented? prevented?})))
       (t/is (true? @prevented?))
@@ -64,7 +71,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly true)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:ctrl? true :code "Quote" :prevented? prevented?})))
       (t/is (false? @prevented?))
@@ -74,7 +81,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly true)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:meta? true :shift? true :code "Quote" :prevented? prevented?})))
       (t/is (false? @prevented?))
@@ -84,7 +91,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly false)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:code "Quote" :prevented? prevented?}))
         (shortcuts/on-display-guides-keydown
@@ -96,7 +103,7 @@
     (let [prevented? (atom false)
           emitted    (atom [])]
       (with-redefs [cf/check-platform? (constantly false)
-                    st/emit! #(swap! emitted conj %)]
+                    st/emit! (mock-emit! emitted)]
         (shortcuts/on-display-guides-keydown
          (keyboard-event {:ctrl? true :shift? true :code "Quote" :prevented? prevented?}))
         (shortcuts/on-display-guides-keydown

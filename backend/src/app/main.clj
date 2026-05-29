@@ -61,21 +61,15 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
-   :rpc-mutation-timing
-   {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timing."
+   :rpc-main-timing
+   {::mdef/name "penpot_rpc_main_timing"
+    ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-command-timing
-   {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-query-timing
-   {::mdef/name "penpot_rpc_query_timing"
-    ::mdef/help "RPC query method call timing."
+   :rpc-management-timing
+   {::mdef/name "penpot_rpc_management_timing"
+    ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
@@ -160,8 +154,8 @@
     ::db/username   (cf/get :database-username)
     ::db/password   (cf/get :database-password)
     ::db/read-only  (cf/get :database-readonly false)
-    ::db/min-size   (cf/get :database-min-pool-size 0)
-    ::db/max-size   (cf/get :database-max-pool-size 60)
+    ::db/min-size   (cf/get :database-min-pool-size)
+    ::db/max-size   (cf/get :database-max-pool-size)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)
@@ -308,7 +302,9 @@
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
     ::sto/storage                   (ig/ref ::sto/storage)
-    ::session/manager               (ig/ref ::session/manager)}
+    ::session/manager               (ig/ref ::session/manager)
+    ::setup/props                   (ig/ref ::setup/props)
+    ::db/pool                       (ig/ref ::db/pool)}
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)

@@ -56,7 +56,7 @@
               :type "button"
               :on-click select-color}
      [:> swatch* {:background color :size "medium"}]
-     [:& cb/color-name {:color color :size size :origin :palette}]]))
+     [:> cb/color-name* {:color color :size size :origin :palette}]]))
 
 (mf/defc palette*
   {::mf/wrap [mf/memo]}

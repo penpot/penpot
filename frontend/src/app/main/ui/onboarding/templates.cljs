@@ -43,7 +43,7 @@
                            (open-import-modal {:name name :uri (wapi/create-uri body)}))
                          (fn [error]
                            (reset! downloading? false)
-                           (js/console.log "error" error))
+                           (js/console.error "error" error))
                          (fn []
                            (reset! downloading? false)))))]
 
