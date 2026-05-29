@@ -1162,7 +1162,7 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:files library-id :synced-at] (ct/now))
+         (d/update-in-when state [:files library-id] assoc :synced-at (ct/now))
          state))
 
      ptk/WatchEvent
@@ -1281,38 +1281,62 @@
             file         (dsh/lookup-file state file-id)
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
-            permissions (:permissions state)
+            permissions  (:permissions state)
 
             libraries-need-sync
             (->> (vals (get state :files))
                  (filter #(= (:library-of %) file-id))
-                 (filter #(seq (assets-need-sync % file-data ignore-until))))
+                 (filter #(seq (assets-need-sync % file-data ignore-until))))]
 
-            do-more-info
-            #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
+        (if-not (and (:can-edit permissions)
+                     (seq libraries-need-sync))
+          ;; Fast path: no libraries need sync based on timestamps
+          (rx/empty)
 
-            do-update
-            #(do (apply st/emit! (map (fn [library]
-                                        (sync-file (:current-file-id state)
-                                                   (:id library)))
-                                      libraries-need-sync))
-                 (st/emit! (ntf/hide)))
+          ;; Defer the expensive change generation check to avoid blocking the UI.
+          ;; For files with many libraries, this prevents stuttering/freezing.
+          (->> (rx/timer 0)
+               (rx/map (fn [_]
+                         ;; This runs asynchronously on the next tick.
+                         ;; Filter libraries to only those that would produce actual sync changes.
+                         (let [libraries (dsh/lookup-libraries state)]
+                           (filter (fn [library]
+                                     (seq (:redo-changes
+                                           (cll/generate-sync-file-changes
+                                            (pcb/empty-changes)
+                                            nil
+                                            nil
+                                            file-id
+                                            nil
+                                            (:id library)
+                                            libraries
+                                            file-id
+                                            true))))
+                                   libraries-need-sync))))
+               (rx/filter seq)
+               (rx/map (fn [libraries-with-changes]
+                         (let [do-more-info
+                               #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 
-            do-dismiss
-            #(st/emit! ignore-sync (ntf/hide))]
+                               do-update
+                               #(do (apply st/emit! (map (fn [library]
+                                                           (sync-file file-id (:id library)))
+                                                         libraries-with-changes))
+                                    (st/emit! (ntf/hide)))
 
-        (when (and (:can-edit permissions)
-                   (seq libraries-need-sync))
-          (rx/of (ntf/dialog
-                  :content (tr "workspace.updates.there-are-updates")
-                  :controls :inline-actions
-                  :links   [{:label (tr "workspace.updates.more-info")
-                             :callback do-more-info}]
-                  :cancel {:label (tr "workspace.updates.dismiss")
-                           :callback do-dismiss}
-                  :accept {:label (tr "workspace.updates.update")
-                           :callback do-update}
-                  :tag :sync-dialog)))))))
+                               do-dismiss
+                               #(st/emit! ignore-sync (ntf/hide))]
+
+                           (ntf/dialog
+                            :content (tr "workspace.updates.there-are-updates")
+                            :controls :inline-actions
+                            :links   [{:label (tr "workspace.updates.more-info")
+                                       :callback do-more-info}]
+                            :cancel {:label (tr "workspace.updates.dismiss")
+                                     :callback do-dismiss}
+                            :accept {:label (tr "workspace.updates.update")
+                                     :callback do-update}
+                            :tag :sync-dialog))))))))))
 
 (defn touch-component
   "Update the modified-at attribute of the component to now"

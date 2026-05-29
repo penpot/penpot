@@ -296,46 +296,61 @@ RETURNING id, deleted_at;")
   nil)
 
 (defn manage-deleted-organization-teams
-  "For a list of teams, rename those with files and delete those without, then notify users."
-  [cfg {:keys [teams organization-name]}]
-  (let [teams (->> teams (filter uuid?) distinct (into []))]
-    (when (seq teams)
+  "For a deleted organization, preserve org teams unchanged and only prefix or
+  delete member Your Penpot teams depending on whether they still contain files."
+  [cfg {:keys [organization-id organization-name teams]}]
+  (let [all-team-ids (->> teams
+                          (map :id)
+                          (filter uuid?)
+                          distinct
+                          (into []))
+        your-penpot-team-ids (->> teams
+                                  (filter :is-your-penpot)
+                                  (map :id)
+                                  (filter uuid?)
+                                  distinct
+                                  (into []))]
+    (when (seq all-team-ids)
       (let [org-prefix (str "[" (d/sanitize-string organization-name) "] ")]
         (db/tx-run!
          cfg
          (fn [{:keys [::db/conn] :as cfg}]
-           (let [teams-array      (db/create-array conn "uuid" teams)
-                 teams-with-files (->> (db/exec! conn [sql:get-teams-files-counts teams-array])
-                                       (filter (fn [{:keys [total]}] (pos? total)))
-                                       (map :team-id)
-                                       (into #{}))
-                 teams-to-keep    (->> teams (filter teams-with-files) (into []))
-                 teams-to-delete  (->> teams (remove teams-with-files) (into []))]
+           (let [teams-with-files (if (seq your-penpot-team-ids)
+                                    (->> (db/exec! conn [sql:get-teams-files-counts
+                                                         (db/create-array conn "uuid" your-penpot-team-ids)])
+                                         (filter (fn [{:keys [total]}] (pos? total)))
+                                         (map :team-id)
+                                         (into #{}))
+                                    #{})
+                 teams-to-prefix  (->> your-penpot-team-ids (filter teams-with-files) (into []))
+                 teams-to-delete  (->> your-penpot-team-ids (remove teams-with-files) (into []))]
 
-             ;; Rename teams that have files in one go
-             (when (seq teams-to-keep)
+             ;; Org teams move to the fallback org unchanged. Only imported
+             ;; Your Penpot teams keep the org prefix when they still have files.
+             (when (seq teams-to-prefix)
                (db/exec! conn [sql:prefix-teams-name-and-unset-default
                                org-prefix
-                               (db/create-array conn "uuid" teams-to-keep)]))
+                               (db/create-array conn "uuid" teams-to-prefix)]))
 
-             ;; Soft-delete empty teams in one go
+             ;; Empty imported Your Penpot teams disappear entirely.
              (soft-delete-teams! cfg teams-to-delete)
 
-             (notifications/notify-organization-deletion cfg organization-name teams teams-to-delete)
+             (notifications/notify-organization-deletion cfg organization-id organization-name all-team-ids teams-to-delete)
              nil)))))))
 
 
 (sv/defmethod ::notify-organization-deletion
-  "For a list of teams, rename them with the name of the deleted org, and notify
-   of the deletion to the connected users"
+  "For a deleted organization, preserve org teams and only prefix or delete
+   imported Your Penpot teams before notifying connected users."
   {::doc/added "2.15"
    ::sm/params schema:notify-organization-deletion
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
   (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        teams       (->> (:teams org-summary)
-                         (map :id))]
-    (manage-deleted-organization-teams cfg {:teams teams :organization-name (:name org-summary)})
+        teams       (:teams org-summary)]
+    (manage-deleted-organization-teams cfg {:organization-name (:name org-summary)
+                                            :organization-id (:id org-summary)
+                                            :teams teams})
     nil))
 
 ;; ---- API: notify-user-organizations-deletion
@@ -345,15 +360,18 @@ RETURNING id, deleted_at;")
    [:profile-id ::sm/uuid]])
 
 (sv/defmethod ::notify-user-organizations-deletion
-  "For a given user, find all owned organizations and rename or delete their teams."
+  "For a given user, find all owned organizations and apply the deleted-org
+   transfer rules to their imported Your Penpot teams."
   {::doc/added "2.18"
    ::sm/params schema:notify-user-organizations-deletion}
   [cfg {:keys [profile-id]}]
   (let [owned-orgs (nitrate/call cfg :get-owned-orgs {:profile-id profile-id})]
     (doseq [org owned-orgs]
       (let [organization-name (:name org)
-            teams (map :id (:teams org))]
-        (manage-deleted-organization-teams cfg {:teams teams :organization-name organization-name}))))
+            teams             (:teams org)]
+        (manage-deleted-organization-teams cfg {:organization-name organization-name
+                                                :organization-id (:id org)
+                                                :teams teams}))))
   nil)
 
 
@@ -544,6 +562,33 @@ LEFT JOIN profile AS p
     nil))
 
 
+;; API: delete-all-org-invitations
+
+(def ^:private sql:delete-all-org-invitations
+  "DELETE FROM team_invitation AS ti
+    WHERE ti.org_id = ?
+       OR ti.team_id = ANY(?);")
+
+(def ^:private schema:delete-all-org-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(sv/defmethod ::delete-all-org-invitations
+  "Delete every pending invitation associated with an organization (org-level + team-level).
+   Called from Nitrate when an organization is about to be deleted, so users that click
+   their invitation token hit the existing invalid-token landing page."
+  {::doc/added "2.18"
+   ::sm/params schema:delete-all-org-invitations-params
+   ::rpc/auth false}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (->> (:teams org-summary)
+                         (map :id))]
+    (db/run! cfg (fn [{:keys [::db/conn]}]
+                   (let [ids-array (db/create-array conn "uuid" team-ids)]
+                     (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
+    nil))
+
 
 ;; API: remove-from-org
 
@@ -603,7 +648,8 @@ LEFT JOIN profile AS p
   [:map
    [:teams-to-delete ::sm/int]
    [:teams-to-transfer ::sm/int]
-   [:teams-to-exit ::sm/int]])
+   [:teams-to-exit ::sm/int]
+   [:teams-to-detach ::sm/int]])
 
 (sv/defmethod ::get-remove-from-org-summary
   "Get a summary of the teams that would be deleted, transferred, or exited
@@ -623,7 +669,56 @@ LEFT JOIN profile AS p
     (when-not valid-default-team
       (ex/raise :type :validation
                 :code :not-valid-teams))
-    {:teams-to-delete   (count valid-teams-to-delete-ids)
-     :teams-to-transfer (count valid-teams-to-transfer)
-     :teams-to-exit     (count valid-teams-to-exit)}))
+    (cnit/get-leave-org-summary cfg
+                                default-team-id
+                                valid-teams-to-delete-ids
+                                (count valid-teams-to-transfer)
+                                (count valid-teams-to-exit))))
+
+;; API: cleanup-org-team-invitations
+
+(def ^:private sql:get-profile-emails-by-ids
+  "SELECT email
+     FROM profile
+    WHERE id = ANY(?)
+      AND deleted_at IS NULL")
+
+(def ^:private sql:delete-orphaned-team-invitations
+  "DELETE FROM team_invitation
+    WHERE team_id = ANY(?)
+      AND email_to <> ALL(?)
+      AND valid_until >= now()
+   RETURNING email_to")
+
+(def ^:private schema:cleanup-org-team-invitations-params
+  [:map
+   [:organization-id ::sm/uuid]
+   [:team-ids [:vector ::sm/uuid]]
+   [:member-ids [:vector ::sm/uuid]]])
+
+(sv/defmethod ::cleanup-org-team-invitations
+  "Delete team invitations for emails that are not organization members
+   and do not have pending org-level invitations"
+  {::doc/added "2.18"
+   ::sm/params schema:cleanup-org-team-invitations-params
+   ::db/transaction true}
+  [cfg {:keys [organization-id team-ids member-ids]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [;; Get emails of organization members
+                       member-ids-array   (db/create-array conn "uuid" member-ids)
+                       member-emails      (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
+                                               (map :email)
+                                               (into #{}))
+
+                       ;; Get emails with org-level invitations
+                       org-invitation-emails (cnit/get-org-direct-invitation-emails conn organization-id)
+
+                       ;; Combine both sets: emails that should be kept
+                       emails-to-keep     (into member-emails org-invitation-emails)
+                       emails-array       (db/create-array conn "text" (vec emails-to-keep))
+                       teams-array        (db/create-array conn "uuid" team-ids)]
+
+                   ;; Delete invitations that are not in the keep list
+                   (db/exec! conn [sql:delete-orphaned-team-invitations teams-array emails-array])
+                   nil))))
 

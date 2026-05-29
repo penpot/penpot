@@ -194,7 +194,9 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params))
+      (contains? cf/flags :nitrate)
+      (remove #(get-in % [:organization :expired-license])))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -789,16 +791,16 @@
                                   {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
                                                :permissions (dm/get-in team [:organization :permissions])}
                                    :profile-id profile-id
-                                   :team-perms perms
-                                   ;; `onlyMe` is for a future org-level flow.
-                                   :allow-org-owner-delete? false})
+                                   :team-perms perms})
           (boolean (:is-owner perms)))]
 
     (when-not can-delete?
       (ex/raise :type :validation
                 :code :only-owner-can-delete-team))
 
-    (when (:is-default team)
+    ;; Protect the user's personal default team from deletion.
+    ;; Org-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    (when (and (:is-default team) (not in-org?))
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))

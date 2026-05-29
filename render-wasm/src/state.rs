@@ -119,6 +119,10 @@ impl State {
         self.current_id = Some(id);
     }
 
+    pub fn has_shape(&mut self, id: Uuid) -> bool {
+        self.shapes.has(&id)
+    }
+
     pub fn delete_shape_children(&mut self, parent_id: Uuid, id: Uuid) {
         let render_state = get_render_state();
 
@@ -225,8 +229,7 @@ impl State {
         let _ = get_render_state().render_preview(&self.shapes, timestamp);
     }
 
-    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) -> Result<()> {
-        // Index-based storage is safe
+    pub fn rebuild_modifier_tiles(&mut self, ids: &[Uuid]) -> Result<()> {
         get_render_state().rebuild_modifier_tiles(&mut self.shapes, ids)
     }
 

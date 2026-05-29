@@ -190,7 +190,7 @@ ENV CLJKONDO_VERSION=2026.04.15 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=v1.3.0
+    SERENA_VERSION=1.5.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

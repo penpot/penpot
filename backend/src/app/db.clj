@@ -27,7 +27,9 @@
    [next.jdbc.transaction])
   (:import
    com.zaxxer.hikari.HikariConfig
+   com.zaxxer.hikari.HikariConfigMXBean
    com.zaxxer.hikari.HikariDataSource
+   com.zaxxer.hikari.HikariPoolMXBean
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    io.whitfin.siphash.SipHasher
    io.whitfin.siphash.SipHasherContainer
@@ -67,9 +69,8 @@
 
 (def defaults
   {::name :main
-   ::min-size 0
    ::max-size 60
-   ::connection-timeout 10000
+   ::connection-timeout 30000
    ::validation-timeout 10000
    ::idle-timeout 120000 ; 2min
    ::max-lifetime 1800000 ; 30m
@@ -82,7 +83,7 @@
 (defmethod ig/init-key ::pool
   [_ cfg]
   (let [{:keys [::uri ::read-only] :as cfg}
-        (merge defaults cfg)]
+        (merge defaults (d/without-nils cfg))]
     (when uri
       (l/info :hint "initialize connection pool"
               :name (d/name (::name cfg))
@@ -90,7 +91,8 @@
               :read-only read-only
               :credentials (and (contains? cfg ::username)
                                 (contains? cfg ::password))
-              :min-size (::min-size cfg)
+              :min-size (or (::min-size cfg)
+                            (::max-size cfg))
               :max-size (::max-size cfg))
       (create-pool cfg))))
 
@@ -111,7 +113,9 @@
   [{:keys [::uri] :as cfg}]
 
   ;; (app.common.pprint/pprint cfg)
-  (let [config (HikariConfig.)]
+  (let [config   (HikariConfig.)
+        max-size (::max-size cfg)
+        min-size (or (::min-size cfg) max-size)]
     (doto config
       (.setJdbcUrl           (str "jdbc:" uri))
       (.setPoolName          (d/name (::name cfg)))
@@ -121,8 +125,8 @@
       (.setValidationTimeout (::validation-timeout cfg))
       (.setIdleTimeout       (::idle-timeout cfg))
       (.setMaxLifetime       (::max-lifetime cfg))
-      (.setMinimumIdle       (::min-size cfg))
-      (.setMaximumPoolSize   (::max-size cfg))
+      (.setMinimumIdle       min-size)
+      (.setMaximumPoolSize   max-size)
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 
@@ -179,6 +183,20 @@
     (ex/raise :type :internal
               :code :invalid-connection
               :hint "invalid connection provided")))
+
+(defn pool-stats
+  "Given a HikariDataSource instance, returns a map with current pool
+  statistics: active/idle connections, threads awaiting connection,
+  total connections, maximum pool size, and minimum idle connections."
+  [^HikariDataSource pool]
+  (let [^HikariPoolMXBean pool-mxbean (.getHikariPoolMXBean pool)
+        ^HikariConfigMXBean cfg-mxbean  (.getHikariConfigMXBean pool)]
+    {:active-connections        (.getActiveConnections pool-mxbean)
+     :idle-connections          (.getIdleConnections pool-mxbean)
+     :threads-awaiting-connection (.getThreadsAwaitingConnection pool-mxbean)
+     :total-connections         (.getTotalConnections pool-mxbean)
+     :maximum-pool-size         (.getMaximumPoolSize cfg-mxbean)
+     :minimum-idle              (.getMinimumIdle cfg-mxbean)}))
 
 (defn create-pool
   [cfg]
