@@ -11,7 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
-   [app.common.types.path :as path]))
+   [app.common.types.path :as path]
+   [app.common.types.stroke :as cts]))
 
 (defn shape-stroke-margin
   [shape stroke-width]
@@ -105,6 +106,19 @@
                           (grc/points->rect))]
        (get-rect-filter-bounds srect filters blur-value ignore-shadow-margin?)))))
 
+(def ^:private stroke-margin-multiplier 4.25)
+
+(defn- stroke-cap-marker-margin
+  [strokes open-path?]
+  (if open-path?
+    (->> strokes
+         (filter (fn [s]
+                   (or (cts/stroke-caps-marker (:stroke-cap-start s))
+                       (cts/stroke-caps-marker (:stroke-cap-end s)))))
+         (map #(* stroke-margin-multiplier (:stroke-width % 0)))
+         (reduce d/max 0))
+    0))
+
 (defn calculate-padding
   ([shape]
    (calculate-padding shape false false))
@@ -126,6 +140,11 @@
          (if ignore-margin?
            0
            (shape-stroke-margin shape stroke-width))
+
+         stroke-cap-margin
+         (if ignore-margin?
+           0
+           (stroke-cap-marker-margin strokes open-path?))
 
          shadow-width
          (->> (:shadow shape)
@@ -149,8 +168,8 @@
          shadow-width
          (if ignore-shadow-margin? 0 shadow-width)]
 
-     {:horizontal (mth/ceil (+ stroke-margin shadow-width))
-      :vertical (mth/ceil (+ stroke-margin shadow-height))})))
+     {:horizontal (mth/ceil (+ stroke-margin stroke-cap-margin shadow-width))
+      :vertical (mth/ceil (+ stroke-margin stroke-cap-margin shadow-height))})))
 
 (defn- add-padding
   [bounds padding]

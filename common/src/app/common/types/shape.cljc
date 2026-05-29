@@ -30,6 +30,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.stroke :as stroke]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.variant :as ctv]
@@ -61,8 +62,8 @@
              (map->Shape attrs))
      :clj  (map->Shape attrs)))
 
-(def stroke-caps-line #{:round :square})
-(def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
+(def stroke-caps-line stroke/stroke-caps-line)
+(def stroke-caps-marker stroke/stroke-caps-marker)
 (def stroke-caps (conj (set/union stroke-caps-line stroke-caps-marker) nil))
 
 (def shape-types
