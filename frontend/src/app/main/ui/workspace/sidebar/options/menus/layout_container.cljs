@@ -1236,17 +1236,18 @@
         (mf/use-fn #(reset! show-dropdown* false))
 
         add-layout-dropdown
-        [:& dropdown {:show show-dropdown?
-                      :on-close on-hide-dropdown}
-         [:div {:class (stl/css :layout-options)}
-          [:button {:class (stl/css :layout-option)
-                    :data-type "flex"
-                    :on-click on-add-layout}
-           (tr "labels.flex-layout")]
-          [:button {:class (stl/css :layout-option)
-                    :data-type "grid"
-                    :on-click on-add-layout}
-           (tr "labels.grid-layout")]]]]
+        (mf/html
+         [:& dropdown {:show show-dropdown?
+                       :on-close on-hide-dropdown}
+          [:div {:class (stl/css :layout-options)}
+           [:button {:class (stl/css :layout-option)
+                     :data-type "flex"
+                     :on-click on-add-layout}
+            (tr "labels.flex-layout")]
+           [:button {:class (stl/css :layout-option)
+                     :data-type "grid"
+                     :on-click on-add-layout}
+            (tr "labels.grid-layout")]]])]
 
     [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
