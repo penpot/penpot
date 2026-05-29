@@ -7,7 +7,7 @@ const SHOW_WASM_INFO: u32 = 0x08;
 // Render performance options
 // This is the extra area used for tile rendering (tiles beyond viewport).
 // Higher values pre-render more tiles, reducing empty squares during pan but using more memory.
-const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
+const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 3;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 3;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
@@ -94,14 +94,6 @@ impl RenderOptions {
 
     pub fn set_interactive_transform(&mut self, enabled: bool) {
         self.interactive_transform = enabled;
-    }
-
-    /// True only when the viewport is the one being moved (pan/zoom)
-    /// and the dedicated `render_from_cache` path owns Target
-    /// presentation. In this mode `process_animation_frame` must not
-    /// flush to avoid presenting stale tile positions.
-    pub fn is_viewport_interaction(&self) -> bool {
-        self.fast_mode && !self.interactive_transform
     }
 
     pub fn is_text_editor_v3(&self) -> bool {

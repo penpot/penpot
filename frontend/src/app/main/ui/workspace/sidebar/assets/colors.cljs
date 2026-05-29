@@ -221,8 +221,8 @@
            :on-drop on-drop}
 
      [:div {:class (stl/css :bullet-block)}
-      [:& cb/color-bullet {:color color
-                           :mini true}]]
+      [:> cb/color-bullet* {:color color
+                            :mini true}]]
 
      (if ^boolean editing?
        [:input

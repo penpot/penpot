@@ -87,6 +87,10 @@ services:
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
 
+      # agentic devenv
+      # Serena update: set to a commit/tag to update Serena on startup, leave empty to skip update and use the version in the image
+      - SERENA_UPDATE_VERSION=1.5.0
+
     networks:
       default:
         aliases:

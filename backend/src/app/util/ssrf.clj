@@ -184,13 +184,17 @@
               (not (contains? allowed-schemes (str/lower scheme))))
       (ex/raise :type :validation
                 :code :ssrf-blocked-target
-                :hint "url scheme is not allowed"))
+                :hint "url scheme is not allowed"
+                :uri (str uri)
+                :scheme scheme))
 
     ;; Validate host presence
     (when (or (nil? host) (str/blank? host))
       (ex/raise :type :validation
                 :code :ssrf-blocked-target
-                :hint "url host is missing"))
+                :hint "url host is missing"
+                :uri (str uri)
+                :host host))
 
     ;; Check allowlist
     (let [allowed-hosts (cf/get :ssrf-allowed-hosts #{})
@@ -210,13 +214,15 @@
           (when (or (nil? addresses) (zero? (alength addresses)))
             (ex/raise :type :validation
                       :code :ssrf-blocked-target
-                      :hint "url host could not be resolved"))
+                      :hint "uri host could not be resolved"
+                      :uri (str uri)))
 
           ;; All-or-nothing: if ANY resolved address is blocked, reject
           (when (some blocked-address? (seq addresses))
             (ex/raise :type :validation
                       :code :ssrf-blocked-target
-                      :hint "url target is not allowed")))))
+                      :hint "uri target is not allowed"
+                      :uri (str uri))))))
     (str uri)))
 
 (defn safe-url?

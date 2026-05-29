@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.db :as db]
+   [app.http.access-token :as actoken]
    [app.http.session :as session]
    [app.storage :as sto]
    [integrant.core :as ig]
@@ -79,9 +80,17 @@
   (let [bucket (-> obj meta :bucket)]
     (not (contains? public-buckets bucket))))
 
+(defn- authenticated?
+  "Check if the request has an authenticated profile, either via session
+   or access token."
+  [request]
+  (or (some? (::session/profile-id request))
+      (some? (::actoken/profile-id request))))
+
 (defn objects-handler
   "Handler that serves storage objects by id.
-   For non-public buckets (e.g. profile), requires an authenticated session."
+   For non-public buckets (e.g. profile), requires authentication
+   via session cookie or access token."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
@@ -90,7 +99,7 @@
       {::yres/status 404}
 
       (and (requires-auth? obj)
-           (nil? (::session/profile-id request)))
+           (not (authenticated? request)))
       {::yres/status 401}
 
       :else
@@ -128,7 +137,8 @@
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  ["/assets" {:middleware [[session/authz cfg]]}
+  ["/assets" {:middleware [[session/authz cfg]
+                           [actoken/authz cfg]]}
    ["/by-id/:id" {:handler (partial objects-handler cfg)}]
    ["/by-file-media-id/:id" {:handler (partial file-objects-handler cfg)}]
    ["/by-file-media-id/:id/thumbnail" {:handler (partial file-thumbnails-handler cfg)}]])

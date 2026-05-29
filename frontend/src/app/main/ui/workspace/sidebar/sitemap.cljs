@@ -83,15 +83,17 @@
              ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
              (if (and (features/active-feature? @st/state "render-wasm/v1")
                       (not= id current-page-id))
-               (do
-                 (-> (wasm.api/apply-canvas-blur)
-                     (p/finally
-                       (fn []
-                         ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
-                         ;;       in the canvas :(
-                         (timers/raf
-                          (fn []
-                            (timers/raf navigate-fn)))))))
+               (-> (if @wasm.api/page-transition?
+                     (p/resolved nil)
+                     (wasm.api/capture-canvas-snapshot-url))
+                   (p/finally
+                     (fn []
+                       (wasm.api/apply-canvas-blur)
+                       ;; NOTE: it seems we need two RAF so the blur is actually applied and visible
+                       ;;       in the canvas :(
+                       (timers/raf
+                        (fn []
+                          (timers/raf navigate-fn))))))
                (navigate-fn)))))
 
         on-delete
@@ -217,10 +219,12 @@
                name]
               [:div {:class (stl/css :page-actions)}
                (when (and is-deletable (not read-only?))
-                 [:> icon-button* {:variant "ghost"
+                 [:> icon-button* {:variant "action"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
                                    :icon-size "s"
+                                   :class (stl/css :page-delete-button)
+                                   :icon-class (stl/css :page-delete-button-icon)
                                    :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper

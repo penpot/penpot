@@ -1,7 +1,8 @@
 use macros::{wasm_error, ToJs};
 
-use crate::get_text_editor_state;
+use crate::globals::{get_render_state, get_text_editor_state};
 use crate::math::{Matrix, Point, Rect};
+use crate::mem;
 use crate::render::text_editor as text_editor_render;
 use crate::render::SurfaceId;
 use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
@@ -12,8 +13,7 @@ use crate::wasm::fills::RawFillData;
 use crate::wasm::text::{
     helpers as text_helpers, RawTextAlign, RawTextDecoration, RawTextDirection, RawTextTransform,
 };
-use crate::{get_render_state, mem};
-use crate::{with_state, with_state_mut, STATE};
+use crate::with_state;
 use skia_safe::Color;
 
 #[derive(PartialEq, ToJs)]
@@ -42,7 +42,7 @@ pub extern "C" fn text_editor_apply_theme(selection_color: u32, cursor_color: u3
 
 #[no_mangle]
 pub extern "C" fn text_editor_focus(a: u32, b: u32, c: u32, d: u32) -> bool {
-    with_state_mut!(state, {
+    with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
 
         let Some(shape) = state.shapes.get(&shape_id) else {
@@ -107,7 +107,7 @@ pub extern "C" fn text_editor_get_active_shape_id(buffer_ptr: *mut u32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_select_all() -> bool {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return false;
         }
@@ -129,7 +129,7 @@ pub extern "C" fn text_editor_select_all() -> bool {
 
 #[no_mangle]
 pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -164,7 +164,7 @@ pub extern "C" fn text_editor_poll_event() -> u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -188,7 +188,7 @@ pub extern "C" fn text_editor_pointer_down(x: f32, y: f32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -222,7 +222,7 @@ pub extern "C" fn text_editor_pointer_move(x: f32, y: f32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -249,7 +249,7 @@ pub extern "C" fn text_editor_pointer_up(x: f32, y: f32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         // We need this flag to prevent handling the click behavior
         // just after a pointerup event.
         if get_text_editor_state().is_click_event_skipped {
@@ -282,7 +282,7 @@ pub extern "C" fn text_editor_set_cursor_from_offset(x: f32, y: f32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_set_cursor_from_point(x: f32, y: f32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -330,7 +330,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
         Err(_) => return Ok(()),
     };
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return Ok(());
         }
@@ -386,7 +386,7 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
         Err(_) => return Ok(()),
     };
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return Ok(());
         }
@@ -444,7 +444,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
         Err(_) => return Ok(()),
     };
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return Ok(());
         }
@@ -498,7 +498,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
 
 #[no_mangle]
 pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -522,7 +522,7 @@ pub extern "C" fn text_editor_delete_backward(word_boundary: bool) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -546,7 +546,7 @@ pub extern "C" fn text_editor_delete_forward(word_boundary: bool) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_insert_paragraph() {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -578,7 +578,7 @@ pub extern "C" fn text_editor_move_cursor(
     word_boundary: bool,
     extend_selection: bool,
 ) {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
         }
@@ -610,7 +610,7 @@ pub extern "C" fn text_editor_move_cursor(
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus || !get_text_editor_state().cursor_visible {
             return std::ptr::null_mut();
         }
@@ -644,7 +644,7 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return std::ptr::null_mut();
         }
@@ -812,7 +812,7 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
-    with_state_mut!(state, {
+    with_state!(state, {
         if !get_text_editor_state().has_focus {
             return std::ptr::null_mut();
         }
@@ -858,7 +858,7 @@ pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
 
 #[no_mangle]
 pub extern "C" fn text_editor_render_overlay() {
-    with_state_mut!(state, {
+    with_state!(state, {
         let Some(shape_id) = get_text_editor_state().active_shape_id else {
             return;
         };

@@ -72,6 +72,7 @@
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
@@ -108,6 +109,11 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
+
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
@@ -120,6 +126,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:font-max-file-size  {:optional true} ::sm/int]
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]

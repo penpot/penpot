@@ -12,6 +12,7 @@
     "start:multi-user": "node dist/index.js --multi-user",
     "start:dev": "node --import ts-node/register src/index.ts",
     "start:dev:multi-user": "node --loader ts-node/esm src/index.ts --multi-user",
+    "test:integration:export-sema": "tsx scripts/integration-test-export-image-semaphore.ts",
     "types:check": "tsc --noEmit",
     "clean": "rm -rf dist/"
   },
@@ -40,14 +41,15 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "@penpot/mcp-common": "workspace:../common",
     "@types/express": "^4.17.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
     "@types/ws": "^8.5.10",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.25.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.22.3",
     "typescript": "^5.0.0"
   },
   "ts-node": {

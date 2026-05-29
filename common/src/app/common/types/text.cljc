@@ -242,8 +242,11 @@
                acc)
 
              :else
-             ;; If the key is not :text, and they are different, it is an attribute differece
-             (if (not= v1 v2)
+             ;; If the key is not :text, and they are different, it is an attribute difference.
+             ;; Take into account that some processes remove empty attributes, so in some
+             ;; cases we will compare [] with nil, and this is not a difference.
+             (if (and (not= v1 v2)
+                      (or (d/not-empty? v1) (d/not-empty? v2)))
                (attribute-cb acc k)
                acc))))
        #{}
