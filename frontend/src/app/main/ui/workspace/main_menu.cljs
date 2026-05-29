@@ -44,7 +44,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc shortcuts*
@@ -63,43 +62,43 @@
   (let [nav-to-helpc-center
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-help-center-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-help-center-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://help.penpot.app")))
 
         nav-to-community
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-community-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-community-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://community.penpot.app")))
 
         nav-to-youtube
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-tutorials-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-tutorials-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://www.youtube.com/c/Penpot")))
 
         nav-to-templates
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "workspace"}))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "workspace"}))
            (dom/open-new-window "https://penpot.app/libraries-templates")))
 
         nav-to-github
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-github-repository-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-github-repository-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://github.com/penpot/penpot")))
 
         nav-to-terms
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-terms-service-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-terms-service-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://penpot.app/terms")))
 
         nav-to-feedback
@@ -120,14 +119,14 @@
 
            (st/emit!
             (-> (dw/toggle-layout-flag :shortcuts)
-                (vary-meta assoc ::ev/origin "workspace-header")))))
+                (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         show-release-notes
         (mf/use-fn
          (fn [event]
            (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
-                                              :version version}))
+             (st/emit! (ev/event {::ev/name "show-release-notes"
+                                  :version version}))
              (println version)
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -348,7 +347,7 @@
            (r/set-resize-type! :bottom)
            (st/emit! (dw/remove-layout-flag :textpalette)
                      (-> (dw/toggle-layout-flag :colorpalette)
-                         (vary-meta assoc ::ev/origin "workspace-menu")))))
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         toggle-text-palette
         (mf/use-fn
@@ -356,7 +355,7 @@
            (r/set-resize-type! :bottom)
            (st/emit! (dw/remove-layout-flag :colorpalette)
                      (-> (dw/toggle-layout-flag :textpalette)
-                         (vary-meta assoc ::ev/origin "workspace-menu")))))]
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :base-menu :sub-menu :pos-3)
@@ -475,10 +474,10 @@
          #(st/emit! (dw/select-all)))
 
         find
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find {:force? true}))))
 
         find-and-replace
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace {:force? true}))))
 
         undo
         (mf/use-fn
@@ -630,7 +629,7 @@
          (mf/deps file)
          (fn [_]
            (st/emit! (-> (fexp/open-export-dialog [file])
-                         (with-meta {::ev/origin "workspace"})))))
+                         (with-meta {::ev/origin "workspace:menu"})))))
 
         on-export-file-key-down
         (mf/use-fn
@@ -756,10 +755,10 @@
                 (fn [event]
                   (if can-open?
                     (do
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?))
                     (dom/stop-propagation event))))
                on-key-down
@@ -768,10 +767,10 @@
                 (fn [event]
                   (when can-open?
                     (when (kbd/enter? event)
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?)))))]
 
            [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
@@ -809,8 +808,8 @@
         on-nav-to-integrations
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "manage-mpc-option"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "manage-mpc-option"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "/#/settings/integrations")))
 
         on-nav-to-integrations-key-down
@@ -824,11 +823,11 @@
          (fn []
            (if mcp-connected?
              (st/emit! (mcp/user-disconnect-mcp)
-                       (ptk/event ::ev/event {::ev/name "disconnect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"}))
+                       (ev/event {::ev/name "disconnect-mcp-plugin"
+                                  ::ev/origin "workspace:menu"}))
              (st/emit! (mcp/connect-mcp)
-                       (ptk/event ::ev/event {::ev/name "connect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"})))))
+                       (ev/event {::ev/name "connect-mcp-plugin"
+                                  ::ev/origin "workspace:menu"})))))
 
         on-toggle-mcp-plugin-key-down
         (mf/use-fn
@@ -910,8 +909,8 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -923,7 +922,7 @@
                           (keyword))]
              (st/emit!
               (-> (dw/toggle-layout-flag flag)
-                  (vary-meta assoc ::ev/origin "workspace-menu")))
+                  (vary-meta assoc ::ev/origin "workspace:menu")))
              (reset! show-menu* false)
              (reset! selected-sub-menu* nil))))
 
@@ -940,7 +939,11 @@
            (dom/stop-propagation event)
            (let [renderer (or (-> profile :props :renderer) :svg)
                  next-renderer (if (= renderer :wasm) :svg :wasm)]
-             (st/emit! (du/update-profile-props {:renderer next-renderer})
+             (st/emit! (ev/event {::ev/name (if (= next-renderer :wasm)
+                                              "enable-webgl-rendering"
+                                              "disable-webgl-rendering")
+                                  ::ev/origin "workspace:menu"})
+                       (du/update-profile-props {:renderer next-renderer})
                        (ntf/success (tr (if (= next-renderer :wasm)
                                           "webgl.toast.webgl-render-enabled"
                                           "webgl.toast.webgl-render-disabled")))))))
@@ -952,8 +955,8 @@
            (reset! show-menu* false)
            (reset! selected-sub-menu* nil)
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "open-plugins-manager"
-                                   ::ev/origin "workspace:menu"})
+            (ev/event {::ev/name "open-plugins-manager"
+                       ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
         subscription           (:subscription (:props profile))
@@ -974,7 +977,7 @@
                        :icon i/menu}]
 
      [:> dropdown-menu* {:show show-menu?
-                         :id "workspace-menu"
+                         :id "workspace:menu"
                          :on-close close-menu
                          :class (stl/css :base-menu :menu)}
       [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)

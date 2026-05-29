@@ -1349,6 +1349,50 @@
          (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
 #?(:clj
+   (t/deftest parse-dtcg-group-type-inheritance
+     ;; Per DTCG spec: $type on a group is inherited by every nested token
+     ;; that does not declare its own $type. Tokens are identified by the
+     ;; presence of $value, not by the presence of $type.
+     (let [json {"colors" {"$type"  "color"
+                           "red"    {"$value" "#ff0000"}
+                           "blue"   {"$value" "#0000ff"
+                                     "$description" "Brand blue"}
+                           "danger" {"$type"  "color"
+                                     "$value" "#cc0000"}}
+                 "space"  {"$type" "dimension"
+                           "small" {"$value" "4px"}
+                           "large" {"$value" "16px"
+                                    "$type"  "dimension"}}}
+           lib  (ctob/parse-decoded-json json "set")]
+       (t/testing "group `$type` is inherited by tokens without their own `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.red")
+                                   {:name "colors.red"
+                                    :type :color
+                                    :value "#ff0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.blue")
+                                   {:name "colors.blue"
+                                    :type :color
+                                    :value "#0000ff"
+                                    :description "Brand blue"}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.small")
+                                   {:name "space.small"
+                                    :type :dimensions
+                                    :value "4px"
+                                    :description ""})))
+       (t/testing "token `$type` overrides the inherited group `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.danger")
+                                   {:name "colors.danger"
+                                    :type :color
+                                    :value "#cc0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.large")
+                                   {:name "space.large"
+                                    :type :dimensions
+                                    :value "16px"
+                                    :description ""}))))))
+
+#?(:clj
    (t/deftest parse-multi-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
@@ -2027,12 +2071,235 @@
            (t/is (= (:value imported-ref) (:value original-ref))))))))
 
 (t/deftest token-name-path-exists?-test
-  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
-  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
-  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm" {"border-radius" {:name "sm"}})))
-  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
-  (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
-  (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))
+  (let [tokens-lib (ctob/make-tokens-lib)
+        add-set (fn [lib set-label set-name token-names]
+                  (ctob/add-set lib (ctob/make-token-set
+                                     :id (thi/new-id! set-label)
+                                     :name set-name
+                                     :tokens (into {}
+                                                   (map (fn [token-name]
+                                                          [token-name (ctob/make-token
+                                                                       {:name token-name
+                                                                        :type :border-radius
+                                                                        :value "1"})]))
+                                                   token-names))))]
+
+    ;; Empty cases
+
+    (t/testing "returns match for no library or empty library or empty name"
+      (t/is (not (ctob/token-name-path-exists? nil nil nil nil)))
+      (t/is (not (ctob/token-name-path-exists? nil tokens-lib nil nil)))
+      (t/is (not (ctob/token-name-path-exists? "" tokens-lib nil nil)))
+      (t/is (not (ctob/token-name-path-exists? "bad-name" tokens-lib nil nil)))
+      (t/is (not (ctob/token-name-path-exists? "bad-name"
+                                               (ctob/add-theme tokens-lib
+                                                               (ctob/make-token-theme {:name "theme1"}))
+                                               nil
+                                               nil))))
+
+    (t/testing "throws error when giving a bad set id"
+      (t/is (thrown-with-msg? #?(:clj AssertionError :cljs js/Error)
+                              #"Set '[0-9a-f-]+' does not exist in the library"
+                              (ctob/token-name-path-exists? "some-name"
+                                                            (-> tokens-lib
+                                                                (add-set :empty-set "empty-set" []))
+                                                            (thi/new-id! :non-existent-set) nil))))
+
+    (t/testing "does not throw error when giving a nil set id"
+      (t/is (not (ctob/token-name-path-exists? "some-name"
+                                               (-> tokens-lib
+                                                   (add-set :empty-set "empty-set" []))
+                                               nil nil))))
+
+    (t/testing "returns not match for empty set"
+      (t/is (not (ctob/token-name-path-exists? "some-name"
+                                               (-> tokens-lib
+                                                   (add-set :empty-set "empty-set" []))
+                                               (thi/id :empty-set) nil))))
+
+    ;; Search in the current set
+
+    (t/testing "returns match when name matches exactly a token in the set without groups"
+      (t/is (= "token1"
+               (ctob/token-name-path-exists? "token1"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["token1" "token2" "token3"]))
+                                             (thi/id :set1) nil))))
+
+    (t/testing "returns match when name matches exactly a token in the set with groups"
+      (t/is (= "group1.subgroup1.token2"
+               (ctob/token-name-path-exists? "group1.subgroup1.token2"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"]))
+                                             (thi/id :set1) nil))))
+
+    (t/testing "returns match when name is a subpath of a token in the set"
+      (t/is (= "group1"
+               (ctob/token-name-path-exists? "group1"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"]))
+                                             (thi/id :set1) nil)))
+      (t/is (= "group1.subgroup1"
+               (ctob/token-name-path-exists? "group1.subgroup1"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"]))
+                                             (thi/id :set1) nil))))
+
+    (t/testing "returns match when one of the token names in the set is a subpath of the name"
+      (t/is (= "group2.subgroup2.token3"
+               (ctob/token-name-path-exists? "group2.subgroup2.token3.subtoken"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"]))
+                                             (thi/id :set1) nil))))
+
+    (t/testing "returns not match when name matches part of the path but not the full token name"
+      (t/is (not (ctob/token-name-path-exists? "group1.subgroup1.token4"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"]))
+                                               (thi/id :set1) nil))))
+
+    (t/testing "returns not match when name does not match any part of the token names in the set"
+      (t/is (not (ctob/token-name-path-exists? "token4"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"]))
+                                               (thi/id :set1) nil))))
+
+    ;; Search in other set
+
+    (t/testing "returns not match when name matches exactly a token in other set without groups"
+      (t/is (not (ctob/token-name-path-exists? "token1"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["token1" "token2" "token3"])
+                                                   (add-set :set2 "set2" []))
+                                               (thi/id :set2) nil))))
+
+    (t/testing "returns not match when name matches exactly a token in other set with groups"
+      (t/is (not (ctob/token-name-path-exists? "group1.subgroup1.token2"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"])
+                                                   (add-set :set2 "set2" []))
+                                               (thi/id :set2) nil))))
+
+    (t/testing "returns match when name is a subpath of a token in other set"
+      (t/is (= "group1"
+               (ctob/token-name-path-exists? "group1"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"])
+                                                 (add-set :set2 "set2" []))
+                                             (thi/id :set2) nil)))
+      (t/is (= "group1.subgroup1"
+               (ctob/token-name-path-exists? "group1.subgroup1"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"])
+                                                 (add-set :set2 "set2" []))
+                                             (thi/id :set2) nil))))
+
+    (t/testing "returns match when one of the token names in other set is a subpath of the name"
+      (t/is (= "group2.subgroup2.token3"
+               (ctob/token-name-path-exists? "group2.subgroup2.token3.subtoken"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"])
+                                                 (add-set :set2 "set2" []))
+                                             (thi/id :set2) nil))))
+
+    (t/testing "returns not match when name matches part of the path but not the full token name"
+      (t/is (not (ctob/token-name-path-exists? "group1.subgroup1.token4"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"])
+                                                   (add-set :set2 "set2" []))
+                                               (thi/id :set2) nil))))
+
+    (t/testing "returns not match when name does not match any part of the token names in the set"
+      (t/is (not (ctob/token-name-path-exists? "token4"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"])
+                                                   (add-set :set2 "set2" []))
+                                               (thi/id :set2) nil))))
+
+    ;; Additional cases
+
+    (t/testing "returns match when matches an exact token with several sets"
+      (t/is (= "group3.subgroup3.token4"
+               (ctob/token-name-path-exists? "group3.subgroup3.token4"
+                                             (-> tokens-lib
+                                                 (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                        "group1.subgroup1.token2"
+                                                                        "group2.subgroup2.token3"])
+                                                 (add-set :set2 "set2" ["group3.subgroup3.token4"]))
+                                             (thi/id :set2) nil))))
+
+    (t/testing "returns match when matches in one of the sets, even if the set is disabled"
+      (let [tokens-lib   (-> tokens-lib
+                             (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                    "group1.subgroup1.token2"
+                                                    "group2.subgroup2.token3"])
+                             (add-set :set2 "set2" ["group3.subgroup3.token4"]))
+            hidden-theme (ctob/get-hidden-theme tokens-lib)
+            tokens-lib   (ctob/toggle-set-in-theme tokens-lib (:id hidden-theme) "set2")]
+        (t/is (= "group3.subgroup3.token4"
+                 (ctob/token-name-path-exists? "group3.subgroup3.token4"
+                                               tokens-lib
+                                               (thi/id :set2)
+                                               nil)))))
+
+    (t/testing "returns not match when does not match in any of the sets"
+      (t/is (not (ctob/token-name-path-exists? "group3.subgroup3.token5"
+                                               (-> tokens-lib
+                                                   (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                                          "group1.subgroup1.token2"
+                                                                          "group2.subgroup2.token3"])
+                                                   (add-set :set2 "set2" ["group3.subgroup3.token4"]))
+                                               (thi/id :set1)
+                                               nil))))
+
+    (t/testing "returns not match when the token exists but is the one we have told it to ignore"
+      (let [tokens-lib (-> tokens-lib
+                           (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                  "group1.subgroup1.token2"
+                                                  "group2.subgroup2.token3"])
+                           (add-set :set2 "set2" ["group3.subgroup3.token4"]))
+            token4 (ctob/get-token-by-name tokens-lib "set2" "group3.subgroup3.token4")]
+        (t/is (not (ctob/token-name-path-exists? "group3.subgroup3.token4"
+                                                 tokens-lib
+                                                 (thi/id :set2)
+                                                 (:id token4))))))
+
+    (t/testing "returns match when we give an id to ignore but is not the token that matches"
+      (let [tokens-lib (-> tokens-lib
+                           (add-set :set1 "set1" ["group1.subgroup1.token1"
+                                                  "group1.subgroup1.token2"
+                                                  "group2.subgroup2.token3"])
+                           (add-set :set2 "set2" ["group3.subgroup3.token4"]))
+            token4 (ctob/get-token-by-name tokens-lib "set2" "group3.subgroup3.token4")]
+        (t/is (= "group1.subgroup1.token1"
+                 (ctob/token-name-path-exists? "group1.subgroup1.token1"
+                                               tokens-lib
+                                               (thi/id :set1)
+                                               (:id token4))))))))
 
 #?(:clj
    (t/deftest token-set-encode-decode-roundtrip-with-invalid-set-name

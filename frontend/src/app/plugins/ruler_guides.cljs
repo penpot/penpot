@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.plugins.format :as format]
    [app.plugins.register :as r]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -55,7 +56,8 @@
            :else
            (let [board-id (when value (obj/get value "$id"))
                  guide    (-> self u/proxy->ruler-guide)]
-             (st/emit! (dwgu/update-guides (assoc guide :frame-id board-id)))))))}
+             (st/emit! (-> (dwgu/update-guides (assoc guide :frame-id board-id))
+                           (se/add-event plugin-id)))))))}
 
     :orientation
     {:this true
@@ -92,7 +94,8 @@
                    (+ board-pos value))
 
                  value)]
-           (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
+           (st/emit! (-> (dwgu/update-guides (assoc guide :position position))
+                         (se/add-event plugin-id))))))}
 
     :color
     {:this true
@@ -113,4 +116,5 @@
     :remove
     (fn []
       (let [guide (u/locate-ruler-guide file-id page-id id)]
-        (st/emit! (dwgu/remove-guide guide))))))
+        (st/emit! (-> (dwgu/remove-guide guide)
+                      (se/add-event plugin-id)))))))

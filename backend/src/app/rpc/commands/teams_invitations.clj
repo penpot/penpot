@@ -14,6 +14,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -24,6 +25,7 @@
    [app.main :as-alias main]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -112,8 +114,21 @@
   (let [notifications (dm/get-in member [:props :notifications])]
     (not= :none (:email-invites notifications))))
 
+(defn- assert-email-can-be-invited
+  "Asserts that member/email is either an org member or has a pending
+  direct org invitation. org-member-ids is non-nil only when the org
+  restricts who can be added to teams."
+  [member email org-member-ids invited-emails]
+  (when (some? org-member-ids)
+    (let [is-member? (or (and (some? member) (contains? org-member-ids (:id member)))
+                         (contains? invited-emails email))]
+      (when-not is-member?
+        (ex/raise :type :validation
+                  :code :email-not-org-member
+                  :hint "The invited email is not a member of the organization")))))
+
 (defn- create-invitation
-  [{:keys [::db/conn] :as cfg} {:keys [team organization profile role email] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [team organization profile role email org-member-ids invited-emails] :as params}]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
@@ -129,6 +144,14 @@
       (ex/raise :type :restriction
                 :code :email-domain-is-not-allowed
                 :hint "email domain is in the blacklist"))
+
+    ;; When nitrate is active and the team belongs to an org, check that
+    ;; the email is already an org member or has a pending org-level
+    ;; invitation, unless the org explicitly allows adding anybody.
+    (when (and (contains? cf/flags :nitrate)
+               (:organization team))
+      (assert-email-can-be-invited member email org-member-ids invited-emails))
+
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the
@@ -205,9 +228,9 @@
                          organization "create-org-invitation"
                          :else "create-team-invitation")
                 event (-> (audit/event-from-rpc-params params)
-                          (assoc ::audit/name evname)
-                          (assoc ::audit/props props))]
-            (audit/submit! cfg event))
+                          (assoc :name evname)
+                          (assoc :props props))]
+            (audit/submit cfg event))
 
           (when (allow-invitation-emails? member)
             (if organization
@@ -223,18 +246,15 @@
                             :organization-initials (:initials organization)
                             :token itoken
                             :extra-data ptoken}))
-              (let [team (if (contains? cf/flags :nitrate)
-                           (nitrate/add-org-info-to-team cfg team {})
-                           team)]
-                (eml/send! {::eml/conn conn
-                            ::eml/factory eml/invite-to-team
-                            :public-uri (cf/get :public-uri)
-                            :to email
-                            :invited-by (:fullname profile)
-                            :team (:name team)
-                            :organization (:organization-name team)
-                            :token itoken
-                            :extra-data ptoken}))))
+              (eml/send! {::eml/conn conn
+                          ::eml/factory eml/invite-to-team
+                          :public-uri (cf/get :public-uri)
+                          :to email
+                          :invited-by (:fullname profile)
+                          :team (:name team)
+                          :organization (dm/get-in team [:organization :name])
+                          :token itoken
+                          :extra-data ptoken})))
 
           itoken)))))
 
@@ -309,7 +329,20 @@
   - emails (set) + role (single role for all emails)
   - invitations (vector of {:email :role} maps)"
   [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
-  (let [;; Normalize input to a consistent format: [{:email :role}]
+  (let [;; Enrich team with org info once for all invitations when nitrate is active
+        team             (if (contains? cf/flags :nitrate)
+                           (nitrate/add-org-info-to-team cfg team {})
+                           team)
+        org              (:organization team)
+        org-id           (:id org)
+        restricted?      (and org-id (not (nitrate-perms/allowed? :add-anybody-to-team {:org-perms org})))
+        org-member-ids   (when restricted?
+                           (into #{} (nitrate/call cfg :get-org-members {:organization-id org-id})))
+        invited-emails   (when restricted?
+                           (cnit/get-org-direct-invitation-emails conn org-id))
+        params           (assoc params :team team :org-member-ids org-member-ids :invited-emails invited-emails)
+
+        ;; Normalize input to a consistent format: [{:email :role}]
         invitation-data  (cond
                            ;; Case 1: emails + single role (create invitations style)
                            (and emails role)
@@ -487,9 +520,9 @@
 
     (let [props {:name name :features features}
           event (-> (audit/event-from-rpc-params params)
-                    (assoc ::audit/name "create-team")
-                    (assoc ::audit/props props))]
-      (audit/submit! cfg event))
+                    (assoc :name "create-team")
+                    (assoc :props props))]
+      (audit/submit cfg event))
 
     ;; Create invitations for all provided emails.
     (let [profile     (db/get-by-id conn :profile profile-id)
