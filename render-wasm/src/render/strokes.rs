@@ -302,6 +302,12 @@ fn handle_stroke_caps(
         return;
     }
 
+    // When both ends share the same simple line cap, Skia already drew it
+    // natively via `PaintCap` on the stroke paint, so skip the manual overlay.
+    if stroke.to_skia_linecap().is_some() {
+        return;
+    }
+
     // Curves can have duplicated points, so let's remove consecutive duplicated points
     let mut points = path.points().to_vec();
     points.dedup();

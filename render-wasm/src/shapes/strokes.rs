@@ -41,6 +41,10 @@ pub struct Stroke {
     pub cap_end: Option<StrokeCap>,
     pub cap_start: Option<StrokeCap>,
     pub kind: StrokeKind,
+    // Dash and gap overrides for the `Dashed` style. `None` falls back to the
+    // default `width + 10` pattern to keep existing designs visually identical.
+    pub dash: Option<f32>,
+    pub gap: Option<f32>,
 }
 
 impl Stroke {
@@ -72,6 +76,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -80,6 +86,8 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Center,
+            dash,
+            gap,
         }
     }
 
@@ -88,6 +96,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -96,6 +106,8 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Inner,
+            dash,
+            gap,
         }
     }
 
@@ -104,6 +116,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -112,11 +126,19 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Outer,
+            dash,
+            gap,
         }
     }
 
     pub fn scale_content(&mut self, value: f32) {
         self.width *= value;
+        if let Some(dash) = self.dash {
+            self.dash = Some(dash * value);
+        }
+        if let Some(gap) = self.gap {
+            self.gap = Some(gap * value);
+        }
     }
 
     /// Returns the clip operation for dotted inner/outer strokes.
@@ -256,7 +278,9 @@ impl Stroke {
                     )
                 }
                 StrokeStyle::Dashed => {
-                    skia::PathEffect::dash(&[self.width + 10., self.width + 10.], 0.)
+                    let dash = self.dash.unwrap_or(self.width + 10.);
+                    let gap = self.gap.unwrap_or(self.width + 10.);
+                    skia::PathEffect::dash(&[dash, gap], 0.)
                 }
                 StrokeStyle::Mixed => skia::PathEffect::dash(
                     &[
@@ -291,6 +315,10 @@ impl Stroke {
             StrokeKind::Outer => {
                 paint.set_stroke_width(2. * paint.stroke_width());
             }
+        }
+
+        if let Some(cap) = self.to_skia_linecap() {
+            paint.set_stroke_cap(cap);
         }
 
         paint
@@ -329,6 +357,19 @@ impl Stroke {
     pub fn cap_bounds_margin(&self) -> f32 {
         cap_margin_for_cap(self.cap_start, self.width)
             .max(cap_margin_for_cap(self.cap_end, self.width))
+    }
+
+    /// Returns a Skia `PaintCap` to apply natively on the stroke paint when
+    /// both ends share the same simple line cap (`Round/Round` or
+    /// `Square/Square`). Skia only emits cap geometry at sub-path endpoints,
+    /// so this is a no-op on closed paths and avoids the extra fill draw the
+    /// manual caps would otherwise require on open paths.
+    pub fn to_skia_linecap(&self) -> Option<skia::paint::Cap> {
+        match (self.cap_start, self.cap_end) {
+            (Some(StrokeCap::Round), Some(StrokeCap::Round)) => Some(skia::paint::Cap::Round),
+            (Some(StrokeCap::Square), Some(StrokeCap::Square)) => Some(skia::paint::Cap::Square),
+            _ => None,
+        }
     }
 }
 

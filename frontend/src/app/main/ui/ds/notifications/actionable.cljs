@@ -34,12 +34,14 @@
 
         on-accept
         (mf/use-fn
+         (mf/deps on-accept)
          (fn [e]
            (when (fn? on-accept)
              (on-accept e))))
 
         on-cancel
         (mf/use-fn
+         (mf/deps on-cancel)
          (fn [e]
            (when on-cancel (on-cancel e))))]
 

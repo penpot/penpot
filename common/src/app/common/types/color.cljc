@@ -192,6 +192,9 @@
 (def ^:const background-quaternary "#2e3434")
 (def ^:const background-quaternary-light "#eef0f2")
 (def ^:const canvas "#E8E9EA")
+(def ^:const default-pixel-grid-color "#0070E4")
+
+(def ^:const default-pixel-grid-opacity 0.2)
 
 (def names
   {"aliceblue" "#f0f8ff"

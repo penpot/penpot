@@ -5,8 +5,11 @@
 // Copyright (c) KALEIDOS INC
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/mixins.scss" as *;
 
 .dashboard-sidebar {
+  @include custom-scrollbar;
+
   grid-column: 1 / span 2;
   grid-row: 1 / span 2;
   display: grid;

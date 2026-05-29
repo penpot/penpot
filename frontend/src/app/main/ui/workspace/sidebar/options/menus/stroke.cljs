@@ -30,6 +30,8 @@
    :stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-dash
+   :stroke-gap
    :stroke-color
    :stroke-color-ref-id
    :stroke-color-ref-file
@@ -112,6 +114,18 @@
           (when-not (str/empty? value)
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
+
+        on-stroke-dash-change
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-dash value} index))))
+
+        on-stroke-gap-change
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-gap value} index))))
 
         open-caps-select
         (fn [caps-state]
@@ -226,6 +240,8 @@
                               :on-color-change on-color-change
                               :on-color-detach on-color-detach
                               :on-stroke-width-change on-stroke-width-change
+                              :on-stroke-dash-change on-stroke-dash-change
+                              :on-stroke-gap-change on-stroke-gap-change
                               :on-stroke-style-change on-stroke-style-change
                               :on-stroke-alignment-change on-stroke-alignment-change
                               :open-caps-select open-caps-select
