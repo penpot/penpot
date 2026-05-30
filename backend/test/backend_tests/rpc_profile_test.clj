@@ -526,6 +526,65 @@
           (t/is (nil? (:error out)))
           (t/is (= 0 (:call-count @mock))))))))
 
+(t/deftest prepare-register-and-register-profile-disable-email-verification
+  ;; When disable-email-verification is set and the profile is inactive
+  ;; (e.g. created before the flag was set), re-registering should be
+  ;; rejected with :email-already-exists.
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-redefs [app.config/flags #{:registration :login-with-password}]
+      (let [current-token (atom nil)]
+        ;; PREPARE REGISTER: first attempt (no profile exists yet)
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :fullname "foobar"
+                     :password "foobar"}
+              out   (th/command! data)
+              token (get-in out [:result :token])]
+          (t/is (th/success? out))
+          (reset! current-token token))
+
+        ;; DO REGISTRATION: creates active profile (email-verification disabled)
+        (let [data  {::th/type :register-profile
+                     :token @current-token}
+              out   (th/command! data)
+              mdata (-> out :result meta)]
+          (t/is (nil? (:error out)))
+          ;; No verification email sent
+          (t/is (= 0 (:call-count @mock)))
+          ;; Session is minted
+          (t/is (seq (:app.rpc/response-transform-fns mdata))))
+
+        ;; Force the profile back to inactive to simulate the case where it was
+        ;; created before disable-email-verification was set
+        (th/db-update! :profile
+                       {:is-active false}
+                       {:email "hello@example.com"})
+
+        (th/reset-mock! mock)
+
+        ;; PREPARE REGISTER: second attempt (inactive profile exists)
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :fullname "foobar"
+                     :password "foobar"}
+              out   (th/command! data)
+              token (get-in out [:result :token])]
+          (t/is (th/success? out))
+          (reset! current-token token))
+
+        ;; DO REGISTRATION: second attempt should be rejected
+        (let [data  {::th/type :register-profile
+                     :token @current-token}
+              out   (th/command! data)
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :validation))
+          (t/is (th/ex-of-code? error :email-already-exists))
+          ;; No email sent, profile remains inactive
+          (t/is (= 0 (:call-count @mock)))
+          (let [profile (th/db-get :profile {:email "hello@example.com"})]
+            (t/is (false? (:is-active profile)))))))))
+
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
   ;; With email-verification ENABLED (the default), a brand-new
   ;; profile created via the invitation flow is NOT active yet, so
