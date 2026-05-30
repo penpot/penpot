@@ -369,7 +369,7 @@
 
 
 (defn line-line-intersect
-  "Calculates the interesection point for two lines given by the points a-b and b-c"
+  "Calculates the intersection point for two lines given by the points a-b and b-c"
   [a b c d]
 
   (let [;; Line equation representation: ax + by + c = 0

@@ -45,7 +45,7 @@
      (from-data-transfer cdata options))))
 
 (defn from-synthetic-clipboard-event
-  "Get clipboard stream from syntetic clipboard event"
+  "Get clipboard stream from synthetic clipboard event"
   ([event options]
    (let [target
          (dom/get-target event)

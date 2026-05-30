@@ -82,14 +82,14 @@ Once the tiles are determined, we sort them starting from the center of the view
 2. The `TileViewbox` is updated based on the new `Viewbox` (visible area plus margins of interest).
 3. The system identifies tiles that are currently visible (`visible_rect`) and tiles just outside the viewport for preloading (`interest_rect`).
 4. For each visible tile:
-   - **If cached**:  
+   - **If cached**:
      - Draw the cached rendered tile directly from `TileTextureCache` to `Surface::Target`.
    - **If not cached**:
      - Fetch intersecting shapes using `TileHashMap`.
-     - Render shape layers onto temporary surfaces:  
-       - **Fills** → Shape fills  
-       - **Strokes** → Outlines  
-       - **Shadows** → Visual effects like drop or inner shadows to shapes   
+     - Render shape layers onto temporary surfaces:
+       - **Fills** → Shape fills
+       - **Strokes** → Outlines
+       - **Shadows** → Visual effects like drop or inner shadows to shapes
        - **Current** → Composite tile layer (the final rendered tile before caching)
        - **Target** → Final canvas image where the composed tile is drawn; this is the surface ultimately displayed on screen after composing the tile layers.
      - Compose and cache the result using `cache_current_tile_texture(tile, image)`.
@@ -132,7 +132,7 @@ When zooming or panning:
 > 💡 `visible_rect` stores the current set of tiles that intersect with the viewbox — that is, the exact area visible on screen, without any margin of interest.
 
 - These tiles are either:
-  - Pulled from the cache, or  
+  - Pulled from the cache, or
   - Rendered from scratch if not already available.
 
 ### Handling Zoom and Scale
@@ -181,28 +181,28 @@ Each rendering frame begins with the following inputs:
 - `Viewbox`: Defines the current viewport — the visible portion of the canvas, including zoom level and position.
 - `timestamp`: A time marker used for animations and time-based updates.
 
-2. **Compute `TileViewbox`**  
+2. **Compute `TileViewbox`**
    - From `Viewbox`, generate visible + interest regions.
 
-3. **Determine tiles to render**  
+3. **Determine tiles to render**
    - Compare tiles to be rendered vs cached ones.
    - Detect cache hits and misses.
    - Invalidate stale tiles if the viewport changed significantly.
 
-4. **Render cached tiles**  
+4. **Render cached tiles**
   - Fetch image from `TileTextureCache`.
   - Blit to `Surface::Target`.
 
-5. **Render uncached tiles from scratch**  
+5. **Render uncached tiles from scratch**
   - Find the shapes intersecting with this tile (`TileHashMap`).
   - Render the tile layers on their `skia::Surface` instances, using blending, opacity, masking, etc. when needed.
   - Each layer is rendered on a `skia::Surface`.
   - Use blending, opacity, masking, etc.
-  - Store the resulting texture in the cache:  
+  - Store the resulting texture in the cache:
     `cache_current_tile_texture(tile, image)`
   - Draw the tile to `Surface::Target`.
 
-6. **Handle user interactions**  
+6. **Handle user interactions**
    - When shapes are modified:
      1. Determine affected tiles.
      2. Invalidate those tiles in the cache.
@@ -217,7 +217,7 @@ Each rendering frame begins with the following inputs:
 - **Avoid unnecessary re-renders**: A cache is used to avoid re-rendering when nothing has changed.
 - **Progressive**: Only visible/nearby tiles are drawn.
 - **Efficient**: Selective invalidation of cached tiles minimizes GPU/CPU usage on large documents.
-- **Scalable with screen siz**: Works well for both small and large canvases due to tile granularity and smart caching.
+- **Scalable with screen size**: Works well for both small and large canvases due to tile granularity and smart caching.
 
 ## References
 

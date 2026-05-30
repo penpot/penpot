@@ -1435,7 +1435,7 @@ Will return a value that matches this schema:
               (d/oassoc data hidden-theme-name (make-hidden-theme))))))
 
 (defn map->tokens-lib
-  "Make a new instance of TokensLib from a map, but skiping all
+  "Make a new instance of TokensLib from a map, but skipping all
   validation; it is used for create new instances from trusted
   sources"
   [& {:keys [sets themes active-themes]}]
@@ -1552,7 +1552,7 @@ Will return a value that matches this schema:
    current-path: the path of the group being renamed, e.g. \"foo.bar\"
    current-name: the current name of the group being renamed, e.g. \"bar\"
    new-name: the new name for the group being renamed, e.g. \"baz\"
-   
+
    Returns a sequence of [name token] for each renamed token."
 
   [active-tokens current-path current-name new-name]
@@ -2222,7 +2222,7 @@ Will return a value that matches this schema:
           (get-themes tokens-lib)))
 
 (defn fix-duplicate-token-set-ids
-  "Given an instance of TokensLib fixes it internal sets data sturcture
+  "Given an instance of TokensLib fixes it internal sets data structure
   for ensure each set has unique id;
 
   Specific function for file data migrations"
