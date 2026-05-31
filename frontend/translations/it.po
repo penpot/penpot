@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-01 08:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -170,9 +170,11 @@ msgid "auth.register-title"
 msgstr "Crea un account"
 
 #: src/app/main/ui/auth.cljs
-#, fuzzy, unused
+#, unused
 msgid "auth.sidebar-tagline"
-msgstr "La soluzione open source per il design e la prototipazione."
+msgstr ""
+"Penpot è la piattaforma di design open source per i team che creano prodotti "
+"digitali su larga scala."
 
 #: src/app/main/ui/auth/register.cljs:51
 #, markdown
@@ -8642,9 +8644,8 @@ msgid "workspace.tokens.remap-warning-time"
 msgstr "Questa azione può richiedere un po' di tempo."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:347
-#, fuzzy
 msgid "dashboard.create-new-org"
-msgstr "Crea nuova organizzazione"
+msgstr "Crea org"
 
 #: src/app/main/errors.cljs:105
 msgid "errors.unexpected-exception"
@@ -8683,3 +8684,335 @@ msgstr ""
 #: src/app/main/ui/workspace/top_toolbar.cljs:231
 msgid "workspace.toolbar.debug"
 msgstr "Strumenti di debug"
+
+msgid "dashboard.org-deleted"
+msgstr "L'organizzazione %s è stata eliminata."
+
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Questo team non appartiene più all'organizzazione %s"
+
+msgid "dashboard.team-belong-org"
+msgstr "Questo team ora appartiene a %s"
+
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Non sei più un membro dell'organizzazione %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:347
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Crea org"
+
+msgid "dashboard.my-teams"
+msgstr "I miei team"
+
+msgid "dashboard.section.organizations"
+msgstr "Organizzazioni"
+
+msgid "dashboard.go-to-admin-console"
+msgstr "Vai alla console amministratore"
+
+msgid "dashboard.leave-org"
+msgstr "Lascia org"
+
+msgid "dashboard.team-organization"
+msgstr "Organizzazione del team"
+
+msgid "dashboard.team-organization.none"
+msgstr "Questo team non appartiene a nessuna organizzazione"
+
+msgid "dashboard.team-organization.add"
+msgstr "Aggiungi ad una organizzazione"
+
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr ""
+"Non hai i permessi per aggiungere questo team a nessuna delle tue "
+"organizzazioni."
+
+msgid "dashboard.select-org-modal.title"
+msgstr "Aggiungi team ad una organizzazione"
+
+msgid "dashboard.select-org-modal.choose"
+msgstr "Scegli un'organizzazione:"
+
+msgid "dashboard.select-org-modal.select"
+msgstr "Seleziona un'organizzazione"
+
+msgid "dashboard.select-org-modal.accept"
+msgstr "AGGIUNGI ALL'ORGANIZZAZIONE"
+
+msgid "dashboard.change-org-modal.title"
+msgstr "Cambia organizzazione del team"
+
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"I progetti e i file rimarranno disponibili per i membri del team. Il team "
+"riceverà la configurazione dalla nuova organizzazione."
+
+msgid "dashboard.change-org-modal.choose"
+msgstr "Sposta in:"
+
+msgid "dashboard.change-org-modal.select"
+msgstr "Seleziona un'organizzazione"
+
+msgid "dashboard.change-org-modal.accept"
+msgstr "SPOSTA TEAM"
+
+msgid "dashboard.team-organization.change"
+msgstr "Cambia organizzazione del team"
+
+msgid "dashboard.team-organization.remove"
+msgstr "Rimuovi team dall'organizzazione"
+
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr ""
+"Solo le persone all'interno della tua organizzazione possono essere invitate."
+
+msgid "dashboard.webgl-switch.title"
+msgstr "Rendering WebGL"
+
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"Il rendering WebGL può migliorare le prestazioni, ma è in versione beta e "
+"potrebbe essere meno stabile. Potrebbero apparire alcune differenze visive "
+"tra l'area di lavoro, le esportazioni (SVG/PDF) e la modalità di "
+"visualizzazione."
+
+msgid "dashboard.webgl-switch.status"
+msgstr "Stato"
+
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Abilitato"
+
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Disabilitato"
+
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Invia feedback"
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.title"
+msgstr "Importare i token dalla libreria?"
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"La libreria contiene token e temi che sono probabilmente utilizzati dai suoi "
+"componenti."
+
+#:src/app/main/ui/workspace/tokens/import_from_library.cljs
+msgid "modals.import-library-tokens.import"
+msgstr "Importa token"
+
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Ora fai parte di %s"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "not-active-token.no-name"
+msgstr ""
+"Questo token non è presente in alcun set attivo o ha un valore non valido."
+
+#: src/app/main/data/workspace/clipboard.cljs
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Accesso agli appunti negato. Consenti l'autorizzazione agli appunti nel tuo "
+"browser per incollare i contenuti"
+
+#: src/app/main/data/workspace/clipboard.cljs
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"L'API Clipboard non è disponibile. Distribuisci Penpot tramite HTTPS per "
+"abilitare l'accesso agli appunti"
+
+#: common/src/app/common/types/team.cljc:26
+msgid "errors.team-name-invalid-chars"
+msgstr ""
+"Il nome del team non può contenere nessuno dei seguenti caratteri: '.', ':' "
+"oppure '/'"
+
+#: common/src/app/common/types/font.cljc
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Il nome della famiglia di caratteri può contenere solo lettere, numeri, "
+"spazi, trattini, trattini bassi e punti."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-expired"
+msgstr ""
+"Questo invito è scaduto. Richiedi al proprietario del team di inviartene uno "
+"nuovo."
+
+#: src/app/main/ui/static.cljs
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Questo invito è per un indirizzo email diverso. Esci e accedi con l'account "
+"invitato, oppure richiedi al proprietario del team un nuovo invito."
+
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "Il proprietario dell'organizzazione non può lasciare l'organizzazione."
+
+msgid "errors.org-leave.no-valid-teams"
+msgstr ""
+"Si è verificato un problema durante l'abbandono dell'organizzazione. Riprova."
+
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Solo il proprietario di un team può eliminarlo."
+
+#: src/app/common/files/tokens.cljc:298
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Il tema fa riferimento ad alcuni set non esistenti: %s"
+
+msgid "errors.org-not-found"
+msgstr "L'organizzazione non esiste"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:308
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Famiglie di caratteri miste"
+
+#: src/app/main/ui/settings/integrations.cljs:189
+msgid "integrations.access-tokens.create"
+msgstr "Crea nuovo token di accesso"
+
+#: src/app/main/ui/settings/integrations.cljs:286
+msgid "integrations.access-tokens.empty.add-one"
+msgstr "Premi il pulsante \"Crea nuovo token di accesso\" per generarne uno."
+
+#: src/app/main/ui/settings/integrations.cljs:285
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Non hai ancora nessun token."
+
+#: src/app/main/ui/settings/integrations.cljs:184
+msgid "integrations.access-tokens.personal"
+msgstr "Token di accesso personale"
+
+#: src/app/main/ui/settings/integrations.cljs:185
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"I token di accesso personale funzionano come alternativa al nostro sistema "
+"di autenticazione tramite login/password e possono essere utilizzati per "
+"consentire a un'applicazione di accedere alle API interne di Penpot"
+
+#: src/app/main/ui/settings/integrations.cljs:152, src/app/main/ui/settings/integrations.cljs:158
+msgid "integrations.copy-to-clipboard"
+msgstr "Copia negli appunti"
+
+#: src/app/main/ui/settings/integrations.cljs:432
+msgid "integrations.create-access-token.title"
+msgstr "Crea token di accesso"
+
+#: src/app/main/ui/settings/integrations.cljs:433
+msgid "integrations.create-access-token.title.created"
+msgstr "Token di accesso creato"
+
+#: src/app/main/ui/settings/integrations.cljs:257
+msgid "integrations.delete-token.accept"
+msgstr "Elimina token"
+
+#: src/app/main/ui/settings/integrations.cljs:256
+msgid "integrations.delete-token.message"
+msgstr "Sei sicuro di voler eliminare questo token?"
+
+#: src/app/main/ui/settings/integrations.cljs:255
+msgid "integrations.delete-token.title"
+msgstr "Elimina token"
+
+#: src/app/main/ui/settings/integrations.cljs:135
+msgid "integrations.expiration-180-days"
+msgstr "180 giorni"
+
+#: src/app/main/ui/settings/integrations.cljs:132
+msgid "integrations.expiration-30-days"
+msgstr "30 giorni"
+
+#: src/app/main/ui/settings/integrations.cljs:133
+msgid "integrations.expiration-60-days"
+msgstr "60 giorni"
+
+#: src/app/main/ui/settings/integrations.cljs:134
+msgid "integrations.expiration-90-days"
+msgstr "90 giorni"
+
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "integrations.expiration-never"
+msgstr "Mai"
+
+#: src/app/main/ui/settings/integrations.cljs:268
+msgid "integrations.expired-on"
+msgstr "Scaduto il %s"
+
+#: src/app/main/ui/settings/integrations.cljs:269
+msgid "integrations.expires-on"
+msgstr "Scade il %s"
+
+#: src/app/main/ui/settings/integrations.cljs:267
+msgid "integrations.no-expiration"
+msgstr "Nessuna data di scadenza"
+
+#: src/app/main/ui/settings/integrations.cljs:130
+msgid "integrations.expiration-date.label"
+msgstr "Data di scadenza"
+
+#: src/app/main/ui/settings/integrations.cljs:290
+msgid "integrations.generate-mcp-key.title"
+msgstr "Genera chiave MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:291
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "Chiave MCP generata"
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.info.mcp-client-config"
+msgstr ""
+"Aggiungi questa configurazione al tuo client MCP (es. ~/​​​​​​.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:183
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Il server MCP di Penpot consente ai client MCP di interagire direttamente "
+"con i file di design di Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Questo token unico non è recuperabile. In caso di smarrimento, sarà "
+"necessario crearne uno nuovo."
+
+#: src/app/main/ui/settings/integrations.cljs:131
+#: src/app/main/ui/settings/integrations.cljs:131
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr ""
+"Questa chiave MCP unica non è recuperabile. In caso di smarrimento, sarà "
+"necessario crearne uno nuovo."
+
+#: src/app/main/ui/settings/integrations.cljs:336
+msgid "integrations.mcp-server.title"
+msgstr "Server MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:336
+msgid "integrations.mcp-server.title.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/integrations.cljs:347
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Il server MCP di Penpot consente ai client MCP di interagire direttamente "
+"con i file di design di Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:353
+msgid "integrations.mcp-server.status"
+msgstr "Stato"
+
+#: src/app/main/ui/settings/integrations.cljs:370
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Disabilitato"
+
+#: src/app/main/ui/settings/integrations.cljs:370
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Abilitato"
+
+#: src/app/main/ui/settings/integrations.cljs:363
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"La chiave MCP utilizzata per connettersi al server MCP è scaduta. Di "
+"conseguenza, non è possibile stabilire la connessione."
