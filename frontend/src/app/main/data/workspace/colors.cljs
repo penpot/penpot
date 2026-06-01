@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.colors
   (:require
@@ -1048,7 +1048,15 @@
           (when-let [color (-> state
                                (select-keys [:image :gradient :color :opacity])
                                (not-empty))]
-            (rx/of (add-recent-color color))))))))
+            ;; Closing the dialog while an image-fill upload is still in
+            ;; flight (or a gradient is mid-edit) leaves the colorpicker
+            ;; with a partial selection — opacity-only, or with stops not
+            ;; yet committed. ``add-recent-color`` runs the value through
+            ;; ``check-color`` and asserts; gate on the same schema here
+            ;; so the partial value is silently dropped instead of crashing
+            ;; the workspace.
+            (when (clr/valid-color? color)
+              (rx/of (add-recent-color color)))))))))
 
 (defn update-colorpicker-gradient
   [changes]

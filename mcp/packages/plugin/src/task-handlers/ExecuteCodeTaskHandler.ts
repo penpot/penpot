@@ -236,11 +236,37 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
 
         console.log("Code execution result:", result);
 
+        // transform a top-level Uint8Array result into a compact base64 envelope to avoid the
+        // ~10x JSON expansion that occurs when JSON.stringify serializes typed arrays as objects
+        // with numeric string keys (see penpot/penpot#9420)
+        if (result instanceof Uint8Array) {
+            result = ExecuteCodeTaskHandler.encodeBytesAsBase64Envelope(result);
+        }
+
         // return result and captured log
         let resultData: ExecuteCodeTaskResultData<any> = {
             result: result,
             log: this.context.console.getLog(),
         };
         task.sendSuccess(resultData);
+    }
+
+    /**
+     * Base64-encodes the given bytes and wraps the result in a tagged envelope that the
+     * server side recognizes (see `ImageContent.byteData`).
+     *
+     * @param bytes - the raw binary data to encode
+     * @returns an envelope of the form `{ __type: "base64", data: <base64 string> }`
+     */
+    private static encodeBytesAsBase64Envelope(bytes: Uint8Array): { __type: "base64"; data: string } {
+        // build the binary string in chunks; calling `String.fromCharCode(...bytes)` directly
+        // would overflow the call stack for large arrays
+        const chunkSize = 0x8000;
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+        }
+        return { __type: "base64", data: btoa(binary) };
     }
 }

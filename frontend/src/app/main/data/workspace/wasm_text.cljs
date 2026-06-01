@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.wasm-text
   "Helpers/events to resize wasm text shapes without depending on workspace.texts.
@@ -33,7 +33,10 @@
    (get-wasm-text-new-size shape (:content shape)))
 
   ([{:keys [id selrect grow-type] :as shape} content]
-   (when id
+   ;; Skip when the WASM context is not ready (e.g. switching renderer while a
+   ;; text shape is being edited): there is no design state to query, and
+   ;; returning nil makes callers skip the WASM resize/modifier path.
+   (when (and id (wasm.api/initialized?))
      (wasm.api/use-shape id)
      (wasm.api/set-shape-text-content id content)
      (wasm.api/set-shape-text-images id content)

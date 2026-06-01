@@ -10,6 +10,7 @@ const KEEP_ALIVE_TIME = 30000; // 30 seconds
 interface ClientConnection {
     socket: WebSocket;
     userToken: string | null;
+    pingInterval: NodeJS.Timeout;
 }
 
 /**
@@ -40,8 +41,6 @@ export class PluginBridge {
      * channel between the MCP mcpServer and Penpot plugin instances.
      */
     private setupWebSocketHandlers(): void {
-        let interval: NodeJS.Timeout | undefined;
-
         this.wsServer.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
@@ -60,13 +59,19 @@ export class PluginBridge {
                 this.logger.info("New WebSocket connection established");
             }
 
+            // start the per-connection keep-alive ping interval
+            const pingInterval = setInterval(() => {
+                ws.ping();
+            }, KEEP_ALIVE_TIME);
+
             // register the client connection with both indexes
-            const connection: ClientConnection = { socket: ws, userToken };
+            const connection: ClientConnection = { socket: ws, userToken, pingInterval };
             this.connectedClients.set(ws, connection);
             if (userToken) {
                 // ensure only one connection per userToken
                 if (this.clientsByToken.has(userToken)) {
                     this.logger.warn("Duplicate connection for given user token; rejecting new connection");
+                    this.removeConnection(ws);
                     ws.close(1008, "Duplicate connection for given user token; close previous connection first.");
                     return;
                 }
@@ -86,34 +91,37 @@ export class PluginBridge {
 
             ws.on("close", () => {
                 this.logger.info("WebSocket connection closed");
-                const connection = this.connectedClients.get(ws);
-                this.connectedClients.delete(ws);
-                if (connection?.userToken) {
-                    this.clientsByToken.delete(connection.userToken);
-                }
-                if (interval) {
-                    clearInterval(interval);
-                }
+                this.removeConnection(ws);
             });
 
             ws.on("error", (error) => {
                 this.logger.error(error, "WebSocket connection error");
-                const connection = this.connectedClients.get(ws);
-                this.connectedClients.delete(ws);
-                if (connection?.userToken) {
-                    this.clientsByToken.delete(connection.userToken);
-                }
-                if (interval) {
-                    clearInterval(interval);
-                }
+                this.removeConnection(ws);
             });
-
-            interval = setInterval(() => {
-                ws?.ping();
-            }, KEEP_ALIVE_TIME);
         });
 
         this.logger.info("WebSocket mcpServer started on port %d", this.port);
+    }
+
+    /**
+     * Removes a client connection and releases all resources associated with it.
+     *
+     * Clears the per-connection keep-alive interval and removes the connection
+     * from both the socket-keyed and token-keyed indexes. Safe to call with a
+     * socket that is not (or no longer) registered.
+     *
+     * @param ws - The WebSocket whose connection state should be removed
+     */
+    private removeConnection(ws: WebSocket): void {
+        const connection = this.connectedClients.get(ws);
+        if (!connection) {
+            return;
+        }
+        clearInterval(connection.pingInterval);
+        this.connectedClients.delete(ws);
+        if (connection.userToken) {
+            this.clientsByToken.delete(connection.userToken);
+        }
     }
 
     /**

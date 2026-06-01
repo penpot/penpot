@@ -108,13 +108,57 @@ function log-devenv {
 }
 
 function run-devenv-tmux {
+    local extra_env_args=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -e)
+                extra_env_args+=(-e "$2"); shift 2;;
+            -e*)
+                extra_env_args+=(-e "${1#-e}"); shift;;
+            *)
+                shift;;
+        esac
+    done
+
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
         echo "Waiting for containers fully start (5s)..."
         sleep 5;
     fi
 
-    docker exec -ti penpot-devenv-main sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
+    docker exec -ti \
+        "${extra_env_args[@]}" \
+        penpot-devenv-main sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
+}
+
+
+function run-devenv-agentic {
+    local serena_context="desktop-app"
+    local serena_external_port="14281"
+    local serena_dashboard_external_port="14282"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --serena-context)
+                serena_context="$2"; shift 2;;
+            *)
+                shift;;
+        esac
+    done
+
+    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+        SERENA_EXTERNAL_PORT="$serena_external_port" \
+        SERENA_DASHBOARD_EXTERNAL_PORT="$serena_dashboard_external_port" \
+        start-devenv
+        echo "Waiting for containers fully start (5s)..."
+        sleep 5;
+    fi
+
+    run-devenv-tmux \
+        -e SERENA_ENABLED=true \
+        -e SERENA_CONTEXT="$serena_context" \
+        -e PENPOT_FLAGS="${PENPOT_FLAGS} enable-mcp"
 }
 
 function run-devenv-shell {
@@ -195,7 +239,7 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) KALEIDOS INC
+Copyright (c) KALEIDOS INC Sucursal en España SL
 EOF
 }
 
@@ -358,6 +402,9 @@ function usage {
     echo "- stop-devenv                      Stops the development oriented docker compose service."
     echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
+    echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
+    echo "- run-devenv-agentic               Like run-devenv but with additional processes for agentic development enabled."
+    echo "                                   Options: --serena-context CONTEXT (default: desktop-app)"
     echo "- run-devenv-shell                 Attaches to the running devenv container and starts a bash shell."
     echo "- isolated-shell                   Starts a bash shell in a new devenv container."
     echo "- log-devenv                       Show logs of the running devenv docker compose service."
@@ -404,6 +451,9 @@ case $1 in
         ;;
     run-devenv)
         run-devenv-tmux ${@:2}
+        ;;
+    run-devenv-agentic)
+        run-devenv-agentic ${@:2}
         ;;
     run-devenv-shell)
         run-devenv-shell ${@:2}

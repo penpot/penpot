@@ -43,6 +43,14 @@ desc: Master Penpot's workspace basics! Learn interface navigation, zoom tools, 
   </video>
 </figure>
 
+<h4 id="page-separators">Page separators</h4>
+<p>You can add visual dividers in the page list to group pages without extra structure. Create an empty page, then rename it to <code>---</code>. The page appears as a horizontal line in the list.</p>
+<p>A page only becomes a separator if its name is <code>---</code> and the page has no content on the canvas. A page with content that is named <code>---</code> stays a normal page. Separators cannot be opened or selected; you can reorder or delete them like other pages.</p>
+<p>If you rename the active page to <code>---</code>, Penpot navigates to another page in the file. Double-click a separator to rename it; clearing the name and confirming removes the separator page.</p>
+<figure>
+  <img src="/img/layers/pages-separator.webp" alt="Page separator in the pages list">
+</figure>
+
 <h3>Layers</h3>
 <p><strong>Layers:</strong> Layers are the different objects that you can place at the design viewport. At the layers panel you can see all the layers of a file page. Drag the layers to arrange them to different positions.</p>
 <figure>
@@ -53,9 +61,10 @@ desc: Master Penpot's workspace basics! Learn interface navigation, zoom tools, 
 <h4>Navigate layers using the keyboard</h4>
 <ul>
   <li>Select a layer and press top/bottom arrows while pressing <kbd>Ctrl/⌘</kbd> to move them in the layers list.</li>
-  <li>Press <kbd>tab</kbd> to change the layer selection to the next layer.</li>
-  <li>Press <kbd>tab</kbd> + <kbd>Shift/⇧</kbd> to change the layer selection to the previous layer.</li>
-  <li>If the layer contains other layers, press <kbd>Enter</kbd> to select the first layer inside the group and <kbd>Enter</kbd>+ <kbd>Shift/⇧</kbd> to move a level up.</li>
+  <li>Press <kbd>Tab</kbd> to change the layer selection to the next layer.</li>
+  <li>Press <kbd>Tab</kbd> + <kbd>Shift/⇧</kbd> to change the layer selection to the previous layer.</li>
+  <li>While renaming a layer in the Layers panel, press <kbd>Tab</kbd> to save the name and start renaming the next layer below, or <kbd>Shift/⇧</kbd> + <kbd>Tab</kbd> for the layer above (siblings in the same group).</li>
+  <li>If the layer contains other layers, press <kbd>Enter</kbd> to select the first layer inside the group and <kbd>Enter</kbd> + <kbd>Shift/⇧</kbd> to move a level up.</li>
 </ul>
 
 <p>Layers are displayed from the bottom to the top of the layer stack, with layers above on the stack being shown on top in the image.</p>
@@ -69,16 +78,31 @@ desc: Master Penpot's workspace basics! Learn interface navigation, zoom tools, 
   </video>
 </figure>
 
+<h4 id="find-and-replace">Find and replace</h4>
+<p>Open <strong>Find and Replace</strong> from the main menu (Edit) or press <kbd>Ctrl/⌘</kbd> + <kbd>H</kbd>. The search bar at the top of the Layers panel expands with a replace field.</p>
+<ul>
+  <li><strong>Search on canvas:</strong> finds text inside text layers on the current page.</li>
+  <li><strong>Search layers:</strong> finds layer names on the current page.</li>
+</ul>
+<p>Search is not case sensitive and does not support regular expressions. Layer type filters still apply, so you can narrow matches before replacing.</p>
+<p>Use <strong>Replace</strong> for the current match or <strong>Replace all</strong> for every match on the page. Arrow buttons move between matches.</p>
+<p>You can also open <strong>Find</strong> from the main menu or press <kbd>Ctrl/⌘</kbd> + <kbd>F</kbd> to search without the replace field.</p>
+
 <h3>Collapse groups and boards</h3>
 <p>Groups and boards can have their contents expanded and collapsed. Click on the arrow at the
 right side to toggle the visibility of their contents. </p>
 <p>To collapse all the layers, and just display the boards,
 press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a board to collapse them all.</p>
+<p>To expand the entire subtree of a collapsed group or board, press <kbd>Alt/⌥</kbd> + click its disclosure arrow.</p>
 <figure>
   <video title="Collapse layer groups" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-collapse.webp" height="auto">
     <source src="/img/layers/layers-collapse.mp4" type="video/mp4">
   </video>
 </figure>
+
+<h2 id="design-sidebar-inputs">Numeric inputs in the Design sidebar</h2>
+<p>Many numeric fields in the Design sidebar support scrubbing: click and drag on the field to change the value. Hold <kbd>Shift/⇧</kbd> to change the value ten times faster.</p>
+<p>Drag-to-change is not available when a <a href="/user-guide/design-systems/design-tokens/#design-tokens-design-tab">design token</a> is applied to that field.</p>
 
 <h2 id="focus-mode">Focus mode</h2>
 <p>Focus mode zooms into the elements of a page you want to work with in a specific moment, and hides the rest so that they don’t get in the way. When the page has many elements, focus mode can also improve performance.</p>
@@ -136,6 +160,7 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
   <li>Write your comment in the text box.</li>
   <li>Press Post to leave the comment or Cancel to not do it.</li>
 </ol>
+<p>URLs in comments are detected automatically and open in a new browser tab when clicked.</p>
 <h3>How to reply a comment</h3>
 <ol>
   <li>Open a comment by clicking at its bubble (a circled number).</li>
@@ -199,6 +224,18 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
   <img src="/img/workspace-basics/history-pin.webp" alt="Pin versions" />
 </figure>
 
+<h4 id="preview-version">Preview a saved version</h4>
+<p>Open the version menu in the History tab and choose <strong>Preview version</strong>. The workspace opens in view-only mode: a banner shows the version name, and the Pages panel displays a <strong>View only</strong> badge.</p>
+<p>You can inspect the design but not edit it. Use <strong>Exit</strong> in the banner to leave preview, or <strong>Restore</strong> to revert the file to that version.</p>
+<figure>
+  <img src="/img/workspace-basics/history-preview-menu.webp" alt="Preview version option in the version menu">
+  <figcaption>Open the version menu to preview a saved version.</figcaption>
+</figure>
+<figure>
+  <img src="/img/workspace-basics/history-preview-banner.webp" alt="Version preview banner with Exit and Restore">
+  <figcaption>View-only preview. Exit returns to the current file; Restore applies this version.</figcaption>
+</figure>
+
 <h3>Actions panel</h3>
 <p>At the Actions panel, you have the layer type (rectangle, text, image...) and type of change (New, Modified, Deleted...). If you press the item, it will be reverted to its state before that specific action was performed.</p>
 <figure>
@@ -247,8 +284,14 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
   <video title="Ruler guides" muted="" playsinline="" controls="" width="auto" poster="/img/workspace-basics/ruler-guides.webp" height="auto">
     <source src="/img/workspace-basics/ruler-guides.mp4" type="video/mp4">
   </video>
-</figure><p>To <strong>delete ruler guides</strong> drag the guide to the ruler or select the guide and press delete / supr.</p>
+</figure>
+<p>To set an exact position, double-click the guide pill on the ruler and type a value.</p>
+<p>Right-click a ruler guide to change its color from the preset swatches.</p>
+<p>To <strong>delete ruler guides</strong> drag the guide to the ruler or select the guide and press delete / supr.</p>
 <p>To <strong>show/hide ruler guides</strong> use the same shortcut as for rulers: <kbd>Shift/CMD + Ctrl + R</kbd></p>
+<figure>
+  <img src="/img/workspace-basics/ruler-guide-pill-edit.webp" alt="Editing a ruler guide position from the guide pill">
+</figure>
 
 <h2 id="guides">Guides</h2>
 <p>Guides are design aids that are used to help you to align content to a
@@ -343,8 +386,12 @@ geometric structure. In Penpot there are three types of guides:
 
 <h2 id="snap-to-pixel">Snap to pixel</h2>
 <p>Layers automatically snap to the pixel grid. If you need a different kind of precision like working at subpixel level using measures with decimals you can disable this option anytime from the main menu.</p>
+<p>When the pixel grid is visible, you can customize its color from the main menu (View).</p>
 <figure>
   <img src="/img/workspace-basics/workspace-snap.webp" alt="Snap to pixel setting" />
+</figure>
+<figure>
+  <img src="/img/workspace-basics/pixel-grid-color.webp" alt="Pixel grid color setting in the main menu">
 </figure>
 
 <h2 id="nudge-amount">Nudge amount</h2>

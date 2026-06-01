@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.helpers.pages
   (:require
@@ -238,7 +238,9 @@
 
           (advance-copy [file libraries page objects shape]
             (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
-              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                  0)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
                           objects

@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
-import { createToken, setupTokensFileRender, unfoldTokenType } from "./helpers";
+import {
+  createToken,
+  setupTokensFileRender,
+  unfoldTokenType,
+  createSet,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);
@@ -169,6 +174,64 @@ test.describe("Tokens - node tree", () => {
     await expect(darkerNodeToken).toBeVisible();
   });
 
+  test("Renaming a token into a collapsed group auto-expands that group", async ({
+    page,
+  }) => {
+    const { tokensSidebar, tokensUpdateCreateModal, tokenContextMenuForToken } =
+      await setupTokensFileRender(page);
+
+    // Create tokens in two separate groups
+    await createToken(
+      page,
+      "Color",
+      "dark.base",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+
+    await createToken(
+      page,
+      "Color",
+      "light.accent",
+      "Value",
+      "textbox",
+      "#ffffff",
+    );
+
+    const lightGroup = tokensSidebar.getByRole("button", {
+      name: "light",
+      exact: true,
+    });
+
+    // Collapse the light group so its children are hidden
+    await lightGroup.click();
+
+    const lightAccentToken = tokensSidebar.getByRole("button", {
+      name: "accent",
+    });
+    await expect(lightAccentToken).not.toBeVisible();
+
+    // Open the edit modal for the dark.base token
+    const darkBaseToken = tokensSidebar.getByRole("button", { name: "base" });
+    await darkBaseToken.click({ button: "right" });
+    await tokenContextMenuForToken.getByText("Edit token").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Rename to move it into the collapsed light group
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("light.base");
+    await tokensUpdateCreateModal.getByRole("button", { name: "Save" }).click();
+
+    // After rename, light group should be auto-expanded and both tokens visible
+    await expect(lightGroup).toBeVisible();
+    await expect(lightAccentToken).toBeVisible();
+    await expect(
+      tokensSidebar.getByRole("button", { name: "base" }),
+    ).toBeVisible();
+  });
+
   test("User removes node and all child tokens", async ({ page }) => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
@@ -212,4 +275,65 @@ test.describe("Tokens - node tree", () => {
 
     await expect(tokenTypeButton).toHaveAttribute("aria-expanded", "false");
   });
+});
+
+test("User can see an error on token pill and token modal form when token has an error", async ({
+  page,
+}) => {
+  const {
+    tokensSidebar,
+    tokensUpdateCreateModal,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+  } = await setupTokensFileRender(page);
+
+  await createSet(tokenThemesSetsSidebar, "set/first");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "first" })
+    .getByRole("checkbox")
+    .click();
+
+  await createSet(tokenThemesSetsSidebar, "set/second");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "second" })
+    .getByRole("checkbox")
+    .click();
+
+  await createToken(page, "Border radius", "a.b", "Value", "23");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+  await createToken(page, "Border radius", "a", "Value", "25");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
+
+  const brokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Group name of a.b conflicts",
+  });
+  await expect(brokenTokenPill).toBeVisible();
+
+  await brokenTokenPill.click({ button: "right" });
+
+  const editTokenButton = page
+    .getByRole("listitem")
+    .filter({ hasText: "Edit token" });
+  await expect(editTokenButton).toBeVisible();
+  await editTokenButton.click();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await expect(nameField).toBeVisible();
+  await expect(nameField).toHaveValue("a.b");
+
+  const errorMessage = tokensUpdateCreateModal.getByText(
+    "Group name of a.b conflicts",
+  );
+  await expect(errorMessage).toBeVisible();
+
+  await nameField.fill("new-name");
+  await expect(errorMessage).not.toBeVisible();
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await expect(submitButton).toBeEnabled();
 });

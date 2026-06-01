@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layout-item
   (:require-macros [app.main.style :as stl])
@@ -147,6 +147,7 @@
          :icon i/margin-top-bottom
          :min 0
          :attr :m1
+         :default nil
          :input-type :vertical-margin
          :property "Vertical margin "
          :nillable true
@@ -178,6 +179,7 @@
          :min 0
          :attr :m2
          :align :right
+         :default nil
          :input-type :horizontal-margin
          :property "Horizontal margin"
          :nillable true
@@ -270,6 +272,7 @@
          :icon i/margin-top
          :class (stl/css :top-margin-wrapper)
          :min 0
+         :default nil
          :attr :m1
          :input-type :vertical-margin
          :property "Top margin"
@@ -298,6 +301,7 @@
          :icon i/margin-right
          :class (stl/css :right-margin-wrapper)
          :min 0
+         :default nil
          :attr :m2
          :align :right
          :input-type :horizontal-margin
@@ -329,6 +333,7 @@
          :class (stl/css :bottom-margin-wrapper)
          :min 0
          :attr :m3
+         :default nil
          :align :right
          :input-type :vertical-margin
          :property "Bottom margin"
@@ -358,6 +363,7 @@
          :icon i/margin-left
          :class (stl/css :left-margin-wrapper)
          :min 0
+         :default nil
          :attr :m4
          :property "Left margin"
          :input-type :horizontal-margin

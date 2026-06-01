@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.presence
   (:require-macros [app.main.style :as stl])
@@ -15,7 +15,7 @@
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
-(mf/defc session-widget
+(mf/defc session-widget*
   {::mf/props :obj
    ::mf/memo true}
   [{:keys [color profile index]}]
@@ -60,7 +60,7 @@
                  :on-blur on-close}
         [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
          (for [session sessions]
-           [:& session-widget
+           [:> session-widget*
             {:color (:color session)
              :index 0
              :profile (get profiles (:profile-id session))
@@ -73,7 +73,7 @@
          [:li {:class (stl/css :users-num)} (dm/str "+" (+ 1 (- num-sessions max-avatar-count)))])
 
        (for [[index session] (d/enumerate (take avatar-count sessions))]
-         [:& session-widget
+         [:> session-widget*
           {:color (:color session)
            :index index
            :profile (get profiles (:profile-id session))
