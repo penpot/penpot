@@ -114,7 +114,7 @@
 (def ^:icon easing-ease (icon-xref :easing-ease))
 (def ^:icon easing-linear (icon-xref :easing-linear))
 (def ^:icon effects (icon-xref :effects))
-(def ^:icon elipse (icon-xref :elipse))
+(def ^:icon ellipse (icon-xref :ellipse))
 (def ^:icon exit (icon-xref :exit))
 (def ^:icon expand (icon-xref :expand))
 (def ^:icon external-link (icon-xref :external-link))

@@ -170,7 +170,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           deprecated-icon/elipse]]
+           deprecated-icon/ellipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
