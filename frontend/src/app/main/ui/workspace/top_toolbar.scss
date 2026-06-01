@@ -5,6 +5,8 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/typography.scss" as t;
 
 .main-toolbar {
@@ -106,8 +108,8 @@
   // a muted gray when disconnected, the primary accent when connected.
   position: relative;
   flex-shrink: 0;
-  inline-size: deprecated.$s-6;
-  block-size: deprecated.$s-6;
+  inline-size: px2rem(6);
+  block-size: px2rem(6);
   border-radius: 50%;
   background-color: var(--color-background-disabled);
 
@@ -146,13 +148,13 @@
 
   position: absolute;
   inset-block-start: calc(100% + var(--sp-xs));
-  inset-inline-start: 0;
+  inset-inline-start: var(--sp-xs);
   z-index: var(--z-index-dropdown);
   margin: 0;
   padding: var(--sp-xs);
   list-style: none;
-  border: deprecated.$s-1 solid var(--panel-border-color);
-  border-radius: deprecated.$br-8;
+  border: $b-1 solid var(--panel-border-color);
+  border-radius: $br-8;
   background-color: var(--menu-background-color);
 }
 
@@ -171,9 +173,9 @@
   display: flex;
   align-items: center;
   padding: var(--sp-s) var(--sp-m);
-  border-radius: deprecated.$br-8;
+  border-radius: $br-8;
   color: var(--menu-foreground-color);
-  cursor: pointer;
+  white-space: nowrap;
 
   &:hover {
     background-color: var(--menu-background-color-hover);
