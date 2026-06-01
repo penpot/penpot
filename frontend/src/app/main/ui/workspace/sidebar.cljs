@@ -44,7 +44,6 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -120,7 +119,7 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib active-tokens resolved-active-tokens resolved-active-tokens-not-forced]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -147,7 +146,7 @@
          (fn [id]
            (st/emit! (dcm/go-to-workspace :layout (keyword id)))
            (when (= id "tokens")
-             (st/emit! (ptk/event ::ev/event {::ev/name "open-tokens-tab"})))))
+             (st/emit! (ev/event {::ev/name "open-tokens-tab"})))))
 
         tabs
         (mf/with-memo [mode-inspect? design-tokens?]
@@ -224,7 +223,8 @@
             [:> tokens-sidebar-tab*
              {:tokens-lib tokens-lib
               :active-tokens active-tokens
-              :resolved-active-tokens resolved-active-tokens}]
+              :resolved-active-tokens resolved-active-tokens
+              :resolved-active-tokens-not-forced resolved-active-tokens-not-forced}]
 
             :layers
             [:> layers-content*
@@ -400,6 +400,8 @@
         resolved-active-tokens-force-set
         (sd/use-resolved-tokens* active-tokens-force-set)]
 
+    ;; TODO: This props should be passed though context to avoid prop drilling.
+
     [:*
      (if (:collapse-left-sidebar layout)
        [:> collapsed-button*]
@@ -408,6 +410,7 @@
                           :page-id page-id
                           :tokens-lib tokens-lib
                           :active-tokens active-tokens-force-set
+                          :resolved-active-tokens-not-forced resolved-active-tokens
                           :resolved-active-tokens (if tokenscript?
                                                     tokenscript-resolved-active-tokens-force-set
                                                     resolved-active-tokens-force-set)}])

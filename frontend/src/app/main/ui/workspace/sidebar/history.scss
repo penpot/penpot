@@ -54,8 +54,49 @@
     }
 
     .history-entry-summary-text {
+      display: flex;
+      flex-direction: column;
+      gap: deprecated.$s-2;
       margin: 0 deprecated.$s-8;
       color: var(--color-foreground-primary);
+      min-inline-size: 0;
+    }
+
+    .history-entry-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    // Metadata row: short identifier, relative timestamp, and author.
+    // Plain inline layout so the literal spaces embedded in the
+    // template ("hash · time by Name") survive rendering. Issue #7660.
+    .history-entry-meta {
+      color: var(--color-foreground-secondary);
+      font-size: deprecated.$fs-10;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-entry-hash {
+      font-family: monospace;
+      letter-spacing: 0.03em;
+    }
+
+    .history-entry-meta-sep {
+      opacity: 0.6;
+    }
+
+    .history-entry-time {
+      white-space: nowrap;
+    }
+
+    // Author ("by <name>") — the surrounding meta row already
+    // truncates, so keep the author span as a plain inline. Issue
+    // #7660.
+    .history-entry-author {
+      white-space: nowrap;
     }
 
     .history-entry-summary-button {

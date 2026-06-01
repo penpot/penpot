@@ -28,7 +28,7 @@
   color: var(--options-fg-color);
   cursor: default;
 
-  &:hover,
+  &:hover:not(.option-disabled),
   &[aria-selected="true"] {
     --options-bg-color: var(--color-background-quaternary);
   }
@@ -69,6 +69,10 @@
 .option-selected {
   --options-fg-color: var(--color-accent-primary);
   --options-icon-fg-color: var(--color-accent-primary);
+}
+
+.option-disabled {
+  opacity: 0.6;
 }
 
 .option-check {

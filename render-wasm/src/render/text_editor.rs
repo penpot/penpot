@@ -21,7 +21,7 @@ pub fn render_overlay(
     };
 
     canvas.save();
-    let zoom = viewbox.zoom * options.dpr();
+    let zoom = viewbox.zoom * options.dpr;
     canvas.scale((zoom, zoom));
     canvas.translate((-viewbox.area.left, -viewbox.area.top));
 

@@ -269,10 +269,19 @@
   [group]
   (str/starts-with? (name group) "swap-slot-"))
 
+(def ^:private xf:normal-touched
+  "Transducer that removes swap-slot touched groups."
+  (remove swap-slot?))
+
 (defn normal-touched-groups
-  "Gets all touched groups that are not swap slots."
+  "Gets all touched groups that are not swap slots.
+  Returns an empty set immediately when `:touched` is nil or empty,
+  avoiding an unnecessary `into #{}` allocation for the common case."
   [shape]
-  (into #{} (remove swap-slot? (:touched shape))))
+  (let [touched (:touched shape)]
+    (if (empty? touched)
+      #{}
+      (into #{} xf:normal-touched touched))))
 
 (defn group->swap-slot
   [group]

@@ -70,9 +70,9 @@
           [:div {:class (stl/css :color-sample)
                  :style {:--bullet-size "20px"}}
            (for [color colors]
-             [:& cb/color-bullet {:key (dm/str (:id color))
-                                  :mini true
-                                  :color color}])]]])
+             [:> cb/color-bullet* {:key (dm/str (:id color))
+                                   :mini true
+                                   :color color}])]]])
 
       [:li {:class (stl/css-case
                     :file-library true
@@ -95,9 +95,9 @@
         [:div {:class (stl/css :color-sample)
                :style {:--bullet-size "20px"}}
          (for [color local-colors]
-           [:& cb/color-bullet {:key (dm/str (:id color))
-                                :mini true
-                                :color color}])]]]
+           [:> cb/color-bullet* {:key (dm/str (:id color))
+                                 :mini true
+                                 :color color}])]]]
 
       [:li {:class (stl/css
                     :recent-colors true
@@ -119,6 +119,6 @@
                :style {:--bullet-size "20px"}}
 
          (for [color recent-colors]
-           [:& cb/color-bullet {:key (dm/str (::id color))
-                                :mini true
-                                :color color}])]]]]]))
+           [:> cb/color-bullet* {:key (dm/str (::id color))
+                                 :mini true
+                                 :color color}])]]]]]))
