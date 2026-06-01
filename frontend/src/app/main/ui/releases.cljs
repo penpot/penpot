@@ -50,7 +50,6 @@
 ;;; --- RELEASE NOTES MODAL
 
 (mf/defc release-notes*
-  {::mf/props :obj}
   [{:keys [version]}]
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
