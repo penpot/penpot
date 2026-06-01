@@ -2498,7 +2498,7 @@ test("BUG: 14262 Token pill must be highlighted when value references a token in
     .getByRole("button", { name: "New set" })
     .getByRole("checkbox")
     .click();
-  await createToken(page, "Border radius", "new-ref", "Value", "{base-radius}");
+  await createToken(page, "Border radius", "new-ref", "Value", "textbox", "{base-radius}");
 
   // Pill is highlighted if the referenced token is in a different disabled set than the token with the reference
   const newBrokenTokenPill = tokensSidebar.getByRole("button", {

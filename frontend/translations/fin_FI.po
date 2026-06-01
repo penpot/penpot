@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Finnish "
 "<https://hosted.weblate.org/projects/penpot/frontend/fi/>\n"
@@ -9,9 +9,9 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
+#: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Onko sinulla jo käyttäjä?"
 
@@ -26,7 +26,7 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "Vahvista salasana"
 
-#: src/app/main/ui/auth/register.cljs:227
+#: src/app/main/ui/auth/register.cljs:226
 msgid "auth.create-demo-account"
 msgstr "Luo testikäyttäjä"
 
@@ -35,21 +35,21 @@ msgstr "Luo testikäyttäjä"
 msgid "auth.create-demo-profile"
 msgstr "Haluatko vain kokeilla?"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:40
 msgid "auth.demo-warning"
 msgstr ""
 "Tämä on DEMO versio, ÄLÄ KÄYTÄ oikeaan työhön, projektit tullaan määräajoin "
 "poistamaan."
 
-#: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
+#: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
 msgstr "Unohditko salasanasi?"
 
-#: src/app/main/ui/auth/register.cljs:160, src/app/main/ui/auth/register.cljs:328
+#: src/app/main/ui/auth/register.cljs:161, src/app/main/ui/auth/register.cljs:328
 msgid "auth.fullname"
 msgstr "Koko nimi"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
+#: src/app/main/ui/auth/register.cljs:218, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Kirjaudu sisään"
 
@@ -58,23 +58,23 @@ msgstr "Kirjaudu sisään"
 msgid "auth.login-submit"
 msgstr "Kirjaudu"
 
-#: src/app/main/ui/auth/login.cljs:231
+#: src/app/main/ui/auth/login.cljs:230
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:237
+#: src/app/main/ui/auth/login.cljs:236
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:225
+#: src/app/main/ui/auth/login.cljs:224
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:210
+#: src/app/main/ui/auth/login.cljs:209
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:243
+#: src/app/main/ui/auth/login.cljs:242
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
@@ -94,19 +94,19 @@ msgstr "Käyttäjäsi ei ole vahvistettu, vahvista se jatkaaksesi."
 msgid "auth.notifications.recovery-token-sent"
 msgstr "Salasanan vaihtoon tarvittava linkki lähetetty sähköpostiisi."
 
-#: src/app/main/ui/auth/verify_token.cljs:49
+#: src/app/main/ui/auth/verify_token.cljs:57
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Ryhmään liittyminen onnistui"
 
-#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
+#: src/app/main/ui/auth/login.cljs:187, src/app/main/ui/auth/register.cljs:175
 msgid "auth.password"
 msgstr "Salasana"
 
-#: src/app/main/ui/auth/register.cljs:173
+#: src/app/main/ui/auth/register.cljs:174
 msgid "auth.password-length-hint"
 msgstr "Vähintään 8 merkkiä"
 
-#: src/app/main/ui/auth/register.cljs:261
+#: src/app/main/ui/auth/register.cljs:259
 msgid "auth.privacy-policy"
 msgstr "Tietosuojaseloste"
 
@@ -126,15 +126,15 @@ msgstr "Unohtuiko salasana?"
 msgid "auth.recovery-submit"
 msgstr "Vaihda salasanasi"
 
-#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
+#: src/app/main/ui/auth/login.cljs:286, src/app/main/ui/static.cljs:159, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Ei käyttäjää?"
 
-#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
+#: src/app/main/ui/auth/login.cljs:290, src/app/main/ui/auth/register.cljs:186, src/app/main/ui/auth/register.cljs:339, src/app/main/ui/static.cljs:163, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Luo uusi käyttäjä"
 
-#: src/app/main/ui/auth/register.cljs:206
+#: src/app/main/ui/auth/register.cljs:205
 msgid "auth.register-title"
 msgstr "Luo uusi käyttäjä"
 
@@ -143,55 +143,55 @@ msgstr "Luo uusi käyttäjä"
 msgid "auth.sidebar-tagline"
 msgstr "Avoimen lähdekoodin ratkaisu suunnitteluun ja prototyyppien valmistukseen."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:251, src/app/main/ui/dashboard/sidebar.cljs:1221, src/app/main/ui/workspace/main_menu.cljs:204
 msgid "auth.terms-of-service"
 msgstr "Käyttöehdot"
 
-#: src/app/main/ui/auth/register.cljs:239
+#: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-email-sent"
 msgstr "Lähetimme vahvistussähköpostin osoitteeseen"
 
-#: src/app/main/ui/workspace/libraries.cljs:323
+#: src/app/main/ui/workspace/libraries.cljs:349
 msgid "common.publish"
 msgstr "Julkaise"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "Kaikki Penpotin käyttäjät"
 
-#: src/app/main/ui/viewer/share_link.cljs:204
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Oletko varma, että haluat poistaa tämän linkin? Sen jälkeen kukaan ei voi "
 "käyttää sitä"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:260, src/app/main/ui/viewer/share_link.cljs:290
 msgid "common.share-link.current-tag"
 msgstr "(nykyinen)"
 
-#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/viewer/share_link.cljs:215
 msgid "common.share-link.destroy-link"
 msgstr "Poista linkki"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:222
 msgid "common.share-link.get-link"
 msgstr "Hanki linkki"
 
-#: src/app/main/ui/viewer/share_link.cljs:142
+#: src/app/main/ui/viewer/share_link.cljs:138
 msgid "common.share-link.link-copied-success"
 msgstr "Linkin kopiointi onnistui"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:232
 msgid "common.share-link.manage-ops"
 msgstr "Muokkaa käyttöoikeuksia"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:278
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "Yksi sivu jaettu"
 msgstr[1] "%s sivua jaettu"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:299
 msgid "common.share-link.permissions-can-comment"
 msgstr "Voi kommentoida"
 
@@ -199,45 +199,45 @@ msgstr "Voi kommentoida"
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Voi tarkastella koodia"
 
-#: src/app/main/ui/viewer/share_link.cljs:199
+#: src/app/main/ui/viewer/share_link.cljs:194
 msgid "common.share-link.permissions-hint"
 msgstr "Kaikilla linkin saaneilla on käyttöoikeus"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:242
 msgid "common.share-link.permissions-pages"
 msgstr "Sivut jaettu"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:184
 msgid "common.share-link.placeholder"
 msgstr "Jaettava linkki ilmestyy tähän"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "Vain ryhmän jäsenet"
 
-#: src/app/main/ui/viewer/share_link.cljs:176
+#: src/app/main/ui/viewer/share_link.cljs:172
 msgid "common.share-link.title"
 msgstr "Jaa prototyypit"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:270
 msgid "common.share-link.view-all"
 msgstr "Valitse kaikki"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:344
 msgid "common.unpublish"
 msgstr "Peruuta julkaisu"
 
-#: src/app/main/ui/dashboard/projects.cljs:93
+#: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.management"
 msgstr "Ryhmän hallinta"
 
-#: src/app/main/ui/dashboard/projects.cljs:92
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot on tarkoitettu ryhmille. Kutsu jäseniä työstääksenne projekteja "
 "yhdessä"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:87
 msgid "dasboard.team-hero.title"
 msgstr "Ryhmäydy!"
 
