@@ -205,6 +205,7 @@
 - Fix standalone tokens ordering separated from token groups [#9733](https://github.com/penpot/penpot/issues/9733) (PR: [#9736](https://github.com/penpot/penpot/pull/9736))
 - Fix delete invitation modal readability in light theme [#9737](https://github.com/penpot/penpot/issues/9737) (PR: [#9747](https://github.com/penpot/penpot/pull/9747))
 - Fix team invitation not automatically accepted after account validation [#9776](https://github.com/penpot/penpot/issues/9776) (PR: [#9782](https://github.com/penpot/penpot/pull/9782))
+- Fix design tokens vanishing from the sidebar when a token name collides with a token-group prefix from another active set (e.g. `a` in one set and `a.b` in another); the colliding token is now kept and rendered as a broken pill [Github #9584](https://github.com/penpot/penpot/issues/9584)
 
 
 ## 2.15.4

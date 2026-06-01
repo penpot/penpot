@@ -2,7 +2,7 @@
  * Performance focused pure javascript implementation of the
  * SVG path parser.
  *
- * @author KALEIDOS INC
+ * @author KALEIDOS INC Sucursal en España SL
  * @license MPL-2.0 <https://www.mozilla.org/en-US/MPL/2.0/>
  */
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 
 (ns app.main.ui.workspace.tokens.management.group
@@ -71,7 +71,7 @@
 
 (mf/defc token-group*
   {::mf/schema schema:token-group}
-  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib selected-ids active-theme-tokens-not-forced]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens selected-token-set-id tokens-lib selected-ids]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
 
@@ -100,18 +100,19 @@
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
-
         expandable? (d/nilv (seq tokens) false)
 
         on-pill-context-menu
         (mf/use-fn
+         (mf/deps active-theme-tokens)
          (fn [event token]
            (dom/prevent-default event)
-           (st/emit! (dwtl/assign-token-context-menu
-                      {:type :token
-                       :position (dom/get-client-position event)
-                       :errors (:errors token)
-                       :token-id (:id token)}))))
+           (let [resolved-token (get active-theme-tokens (:name token))]
+             (st/emit! (dwtl/assign-token-context-menu
+                        {:type :token
+                         :position (dom/get-client-position event)
+                         :errors (:errors resolved-token)
+                         :token-id (:id token)})))))
 
         on-node-context-menu
         (mf/use-fn
@@ -191,7 +192,6 @@
                         :selected-shapes selected-shapes
                         :is-selected-inside-layout is-selected-inside-layout
                         :active-theme-tokens active-theme-tokens
-                        :active-theme-tokens-not-forced  active-theme-tokens-not-forced
                         :selected-token-set-id selected-token-set-id
                         :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click

@@ -9,7 +9,6 @@
    [app.config :as cf]
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
-   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
@@ -85,7 +84,7 @@
 
 (mf/defc tokens-section*
   {::mf/private true}
-  [{:keys [tokens-lib active-tokens resolved-active-tokens resolved-active-tokens-not-forced]}]
+  [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
 
@@ -111,9 +110,6 @@
         tokens
         (mf/with-memo [active-tokens selected-token-set-tokens]
           (merge active-tokens selected-token-set-tokens))
-
-        tokens
-        (sd/use-resolved-tokens* tokens)
 
         ;; Group tokens by their type
         tokens-by-type
@@ -320,7 +316,6 @@
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens
-                           :active-theme-tokens-not-forced resolved-active-tokens-not-forced
                            :tokens-lib tokens-lib
                            :selected-token-set-id selected-token-set-id}]))
 
@@ -330,6 +325,4 @@
                          :type type
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens
-                         :active-theme-tokens-not-forced resolved-active-tokens-not-forced
-                         :selected-token-set-id selected-token-set-id}])]))
+                         :active-theme-tokens resolved-active-tokens}])]))

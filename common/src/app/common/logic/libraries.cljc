@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.logic.libraries
   #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
@@ -836,20 +836,30 @@
       changes)))
 
 (defn- find-main-container
-  "Find the container that has the main shape."
-  [container-inst shape-inst shape-main library component]
+  "Find the container that has the main shape.
+
+  When walking up through nested component copies, each intermediate component
+  may live in a different library/file. We resolve the right file-data for each
+  component via `ctf/find-component-file` so we can locate components that span
+  multiple libraries."
+  [container-inst shape-inst shape-main library file libraries component]
   (loop [shape-inst' shape-inst
-         component' component]
-    (let [container (ctf/get-component-container library component')] ; TODO: this won't work if some intermediate component is in a different library
-      (if (some? (ctn/get-shape container (:id shape-main)))          ;       for this to work we need to have access to the libraries list here
+         library'    library
+         component'  component]
+    (let [container (ctf/get-component-container library' component')]
+      (if (some? (ctn/get-shape container (:id shape-main)))
         container
-        (let [parent (ctn/get-shape container-inst (:parent-id shape-inst'))
+        (let [parent      (ctn/get-shape container-inst (:parent-id shape-inst'))
               shape-inst' (ctn/get-head-shape (:objects container-inst) parent)
-              component' (or (ctkl/get-component library (:component-id shape-inst'))
-                             (ctkl/get-deleted-component library (:component-id shape-inst')))]
+              next-file   (some-> shape-inst'
+                                  :component-file
+                                  (->> (ctf/find-component-file file libraries)))
+              next-data   (some-> next-file :data)
+              component'  (when next-data
+                            (or (ctkl/get-component next-data (:component-id shape-inst'))
+                                (ctkl/get-deleted-component next-data (:component-id shape-inst'))))]
           (if (some? component')
-            (recur shape-inst'
-                   component')
+            (recur shape-inst' next-data component')
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
@@ -895,7 +905,7 @@
             set-remote-synced?
             (change-remote-synced shape-inst container true))
 
-          component-container (find-main-container container shape-inst shape-main library component)
+          component-container (find-main-container container shape-inst shape-main library file libraries component)
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))

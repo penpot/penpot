@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.clipboard
   (:require
@@ -21,7 +21,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.transit :as t]
-   [app.common.types.component :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
@@ -137,7 +137,7 @@
               (some? images)
               (update :images into images)
 
-              (ctc/is-variant-container? item)
+              (ctk/is-variant-container? item)
               (update :variant-properties merge (collect-variants state item))))
 
           (maybe-translate [shape objects parent-frame-id]
@@ -160,8 +160,10 @@
                                heads))))
 
           (advance-copy [file libraries page objects shape]
-            (if (and (ctc/instance-head? shape) (not (ctc/main-instance? shape)))
-              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                  0)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
                           objects
@@ -971,10 +973,10 @@
 
               add-component-to-variant? (and
                                          ;; Any of the shapes is a head
-                                         (some ctc/instance-head? orig-shapes)
+                                         (some ctk/instance-head? orig-shapes)
                                          ;; Any ancestor of the destination parent is a variant
                                          (->> (cfh/get-parents-with-self page-objects parent-id)
-                                              (some ctc/is-variant?)))
+                                              (some ctk/is-variant?)))
               undo-id      (js/Symbol)]
 
           (rx/concat
@@ -988,13 +990,13 @@
                             ;; NOTE: we don't emit the create-shape event all the time for
                             ;; avoid send a lot of events (that are not necessary); this
                             ;; decision is made explicitly by the responsible team.
-                            (if (ctc/instance-head? shape)
+                            (if (ctk/instance-head? shape)
                               (ev/event {::ev/name "use-library-component"
                                          ::ev/origin origin
                                          :is-external-library external-lib?
                                          :type (get shape :type)
                                          :parent-type parent-type
-                                         :is-variant (ctc/is-variant? component)})
+                                         :is-variant (ctk/is-variant? component)})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin

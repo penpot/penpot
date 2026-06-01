@@ -120,3 +120,8 @@
 
 (defn focusable-options [options]
   (filter #(= (:type %) :token) options))
+
+(defn group-name-conflict-error?
+  [error token-name]
+  (let [translated-string (tr "errors.tokens.name-collision" token-name)]
+    (= error translated-string)))

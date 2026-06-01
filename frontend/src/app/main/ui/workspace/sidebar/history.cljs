@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.history
   (:require-macros [app.main.style :as stl])
@@ -154,7 +154,7 @@
     :page deprecated-icon/document
     :shape deprecated-icon/svg
     :rect deprecated-icon/rectangle
-    :circle deprecated-icon/elipse
+    :circle deprecated-icon/ellipse
     :text deprecated-icon/text
     :path deprecated-icon/path
     :frame deprecated-icon/board
