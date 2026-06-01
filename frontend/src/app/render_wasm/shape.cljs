@@ -405,7 +405,7 @@
                   (= k :type))))))
 
 (defn create-shape
-  "Instanciate a shape from a map"
+  "Instantiate a shape from a map"
   [attrs]
   (ShapeProxy. (:id attrs)
                (:type attrs)

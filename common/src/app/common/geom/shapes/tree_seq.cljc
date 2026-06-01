@@ -90,7 +90,7 @@
       child-seq)))
 
 (defn resolve-subtree
-  "Resolves the subtree but only partialy from-to the parameters"
+  "Resolves the subtree but only partially from-to the parameters"
   [from-id to-id objects]
   (concat
    (->> (get-children-seq from-id objects)

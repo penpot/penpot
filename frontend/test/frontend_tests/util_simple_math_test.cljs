@@ -47,7 +47,7 @@
     (let [result (sm/expr-eval "*10" 20)]
       (t/is (= result 200))))
 
-  (t/testing "Evaluate a negative number (not relative substraction)"
+  (t/testing "Evaluate a negative number (not relative subtraction)"
     (let [result (sm/expr-eval "-10" 20)]
       (t/is (= result -10))))
 
@@ -107,4 +107,3 @@
   (t/testing "Partial invalid expression should return nil"
     (let [result (sm/expr-eval "10 + abc" 100)]
       (t/is (= result nil)))))
-

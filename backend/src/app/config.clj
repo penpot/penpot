@@ -109,6 +109,11 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
+
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]

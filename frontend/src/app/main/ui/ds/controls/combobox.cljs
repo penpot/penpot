@@ -14,11 +14,14 @@
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [goog.events :as gevents]
    [rumext.v2 :as mf]
-   [rumext.v2.util :as mfu]))
+   [rumext.v2.util :as mfu])
+  (:import goog.events.EventType))
 
 (def ^:private schema:combobox
   [:map
@@ -261,6 +264,18 @@
         (when-let [value (mf/ref-val value-ref)]
           (mf/set-ref-val! value-ref nil)
           (on-change value))))
+
+    (mf/with-effect [is-open]
+      (when is-open
+        (let [handler (fn [event]
+                        (let [wrapper-node (mf/ref-val combobox-ref)
+                              target       (dom/get-target event)]
+                          (when (and (some? wrapper-node)
+                                     (not (dom/child? target wrapper-node)))
+                            (reset! is-open* false))))
+              key     (gevents/listen globals/document EventType.MOUSEDOWN handler)]
+          (fn []
+            (gevents/unlistenByKey key)))))
 
     [:div {:ref combobox-ref
            :class (stl/css-case
