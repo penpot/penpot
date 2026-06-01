@@ -1,17 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
 import type {
   PluginMessageEvent,
   PluginUIEvent,
   ThemePluginEvent,
 } from '../model';
-import { filter, fromEvent, map, merge, take } from 'rxjs';
+import { filter, fromEvent, map, merge, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Shape } from '@penpot/plugin-types';
 
@@ -118,14 +112,11 @@ import { Shape } from '@penpot/plugin-types';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-  #route = inject(ActivatedRoute);
   #messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(window, 'message');
 
-  #initialTheme$ = this.#route.queryParamMap.pipe(
-    map((params) => params.get('theme')),
-    filter((theme) => !!theme),
-    take(1),
-  );
+  #initialTheme$ = of(
+    new URLSearchParams(window.location.search).get('theme'),
+  ).pipe(filter((theme) => !!theme));
 
   selection = toSignal(
     this.#messages$.pipe(

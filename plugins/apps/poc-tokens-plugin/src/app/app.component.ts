@@ -1,7 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
-import { fromEvent, map, filter, take, merge } from 'rxjs';
+import { fromEvent, map, filter, merge, of } from 'rxjs';
 import { PluginMessageEvent, PluginUIEvent } from '../model';
 
 type TokenTheme = {
@@ -39,18 +38,14 @@ type TokensGroup = [string, Token[]];
   },
 })
 export class AppComponent {
-  public route = inject(ActivatedRoute);
-
   public messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(
     window,
     'message',
   );
 
-  public initialTheme$ = this.route.queryParamMap.pipe(
-    map((params) => params.get('theme')),
-    filter((theme) => !!theme),
-    take(1),
-  );
+  public initialTheme$ = of(
+    new URLSearchParams(window.location.search).get('theme'),
+  ).pipe(filter((theme) => !!theme));
 
   public theme = toSignal(
     merge(
