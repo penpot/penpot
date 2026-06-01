@@ -311,14 +311,13 @@
        (fmt/format-number (- (:y1 selection-rect) offset-y))]])])
 
 (mf/defc rulers*
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes" "show-rulers"]))]}
   [{:keys [zoom zoom-inverse vbox offset-x offset-y selected-shapes show-rulers]}]
-  (let [selected-shapes (hooks/use-equal-memo selected-shapes)
+  (let [selected-shapes
+        (hooks/use-equal-memo selected-shapes)
 
         selection-rect
-        (mf/use-memo
-         (mf/deps selected-shapes)
-         #(when (d/not-empty? selected-shapes)
+        (mf/with-memo [selected-shapes]
+          (when (d/not-empty? selected-shapes)
             (gsh/shapes->rect selected-shapes)))]
 
     (when (some? vbox)
