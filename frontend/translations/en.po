@@ -686,11 +686,11 @@ msgstr ""
 msgid "dashboard.go-to-admin-console"
 msgstr "Go to Admin Console"
 
-#: src/app/main/ui/dashboard/import.cljs:465, src/app/main/ui/dashboard/project_menu.cljs:109
+#: src/app/main/ui/dashboard/import.cljs:553, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
 msgstr "Import Penpot files"
 
-#: src/app/main/ui/dashboard/import.cljs:292, src/app/worker/import.cljs:138, src/app/worker/import.cljs:141
+#: src/app/main/ui/dashboard/import.cljs:299, src/app/worker/import.cljs:138, src/app/worker/import.cljs:141
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! We couldn't import this file"
 
@@ -698,9 +698,19 @@ msgstr "Oops! We couldn't import this file"
 msgid "dashboard.import.analyze-error.components-v2"
 msgstr "File with components v2 activated but this team doesn't support it yet."
 
+#: src/app/main/ui/dashboard/import.cljs:573, src/app/main/ui/dashboard/import.cljs:589
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 library was automatically linked by name."
+msgstr[1] "%s libraries were automatically linked by name."
+
 #: src/app/main/ui/dashboard.cljs:259
 msgid "dashboard.import.bad-url"
 msgstr "Import failed. The template URL is incorrect"
+
+#: src/app/main/ui/dashboard/import.cljs:663
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirm library links"
 
 #: src/app/main/ui/dashboard.cljs:241
 #, unused
@@ -712,71 +722,85 @@ msgstr "Import failed. Please try again"
 msgid "dashboard.import.import-error"
 msgstr "There was a problem importing the file. The file wasn't imported."
 
-#: src/app/main/ui/dashboard/import.cljs:507
+#: src/app/main/ui/dashboard/import.cljs:613
 msgid "dashboard.import.import-error.check-error"
 msgstr "We couldn't verify this file."
 
-#: src/app/main/ui/dashboard/import.cljs:511
+#: src/app/main/ui/dashboard/import.cljs:617
 msgid "dashboard.import.import-error.corrupt-file"
 msgstr "This file appears to be damaged."
 
-#: src/app/main/ui/dashboard/import.cljs:486
+#: src/app/main/ui/dashboard/import.cljs:579
 msgid "dashboard.import.import-error.disclaimer"
 msgstr "Not all files have been imported"
 
-#: src/app/main/ui/dashboard/import.cljs:490
+#: src/app/main/ui/dashboard/import.cljs:596
 msgid "dashboard.import.import-error.message1"
 msgstr "The following files have errors:"
 
-#: src/app/main/ui/dashboard/import.cljs:515
+#: src/app/main/ui/dashboard/import.cljs:621
 msgid "dashboard.import.import-error.message2"
 msgstr "Files with errors will not be uploaded."
 
-#: src/app/main/ui/dashboard/import.cljs:514
+#: src/app/main/ui/dashboard/import.cljs:620
 msgid "dashboard.import.import-error.unknown-error"
 msgstr "Something went wrong while processing this file."
 
-#: src/app/main/ui/dashboard/import.cljs:480
+#: src/app/main/ui/dashboard/import.cljs:569, src/app/main/ui/dashboard/import.cljs:585
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
 msgstr[0] "1 file has been imported successfully."
 msgstr[1] "%s files have been imported successfully."
 
-#: src/app/main/ui/dashboard/import.cljs:475
+#: src/app/main/ui/dashboard/import.cljs:563
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
+
+#, unused
+msgid "dashboard.import.library-link-error"
+msgstr "Failed to link library"
+
+#, unused
+msgid "dashboard.import.library-placeholder"
+msgstr "Select a library…"
 
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
 
-#: src/app/main/ui/dashboard/import.cljs:127
+#: src/app/main/ui/dashboard/import.cljs:129
 msgid "dashboard.import.progress.process-colors"
 msgstr "Processing colors"
 
-#: src/app/main/ui/dashboard/import.cljs:136, src/app/main/ui/dashboard/import.cljs:139
+#: src/app/main/ui/dashboard/import.cljs:138, src/app/main/ui/dashboard/import.cljs:141
 msgid "dashboard.import.progress.process-components"
 msgstr "Processing components"
 
-#: src/app/main/ui/dashboard/import.cljs:133
+#: src/app/main/ui/dashboard/import.cljs:135
 msgid "dashboard.import.progress.process-media"
 msgstr "Processing media"
 
-#: src/app/main/ui/dashboard/import.cljs:124
+#: src/app/main/ui/dashboard/import.cljs:126
 msgid "dashboard.import.progress.process-page"
 msgstr "Processing page: %s"
 
-#: src/app/main/ui/dashboard/import.cljs:130
+#: src/app/main/ui/dashboard/import.cljs:132
 msgid "dashboard.import.progress.process-typographies"
 msgstr "Processing typographies"
 
-#: src/app/main/ui/dashboard/import.cljs:118
+#: src/app/main/ui/dashboard/import.cljs:120
 msgid "dashboard.import.progress.upload-data"
 msgstr "Uploading data to server (%s/%s)"
 
-#: src/app/main/ui/dashboard/import.cljs:121
+#: src/app/main/ui/dashboard/import.cljs:123
 msgid "dashboard.import.progress.upload-media"
 msgstr "Uploading file: %s"
+
+#: src/app/main/ui/dashboard/import.cljs:362
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Some libraries couldn't be linked automatically. Please select the correct "
+"library for each:"
 
 #: src/app/main/ui/dashboard/team.cljs:851
 msgid "dashboard.invitation-modal.delete"
@@ -824,7 +848,7 @@ msgstr "Here you have some Libraries and templates you can add to your project"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explore more of them and know how to contribute"
 
-#: src/app/main/ui/dashboard/import.cljs:366, src/app/main/ui/workspace/libraries.cljs:146
+#: src/app/main/ui/dashboard/import.cljs:429, src/app/main/ui/workspace/libraries.cljs:146
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "There was a problem importing the template. The template wasn't imported."
 
@@ -2691,7 +2715,7 @@ msgstr "Shortcuts"
 msgid "labels.about-penpot"
 msgstr "About Penpot"
 
-#: src/app/main/data/common.cljs:90, src/app/main/data/team.cljs:163, src/app/main/data/team.cljs:584, src/app/main/ui/dashboard/import.cljs:558
+#: src/app/main/data/common.cljs:90, src/app/main/data/team.cljs:163, src/app/main/data/team.cljs:584, src/app/main/ui/dashboard/import.cljs:671
 msgid "labels.accept"
 msgstr "Accept"
 
@@ -2751,7 +2775,7 @@ msgstr "Bad Gateway"
 msgid "labels.blur"
 msgstr "Blur"
 
-#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:543, src/app/main/ui/dashboard/team.cljs:866, src/app/main/ui/dashboard/team.cljs:1345, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:167, src/app/main/ui/settings/integrations.cljs:228, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:364, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:242
+#: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:650, src/app/main/ui/dashboard/team.cljs:866, src/app/main/ui/dashboard/team.cljs:1345, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:167, src/app/main/ui/settings/integrations.cljs:228, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:364, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:242
 msgid "labels.cancel"
 msgstr "Cancel"
 
@@ -2811,7 +2835,7 @@ msgstr "Contact support"
 msgid "labels.contact-us"
 msgstr "Contact us"
 
-#: src/app/main/ui/auth/login.cljs:203, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:274, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:549, src/app/main/ui/dashboard/team.cljs:873, src/app/main/ui/exports/files.cljs:172, src/app/main/ui/settings/subscription.cljs:310, src/app/main/ui/settings/subscription.cljs:344
+#: src/app/main/ui/auth/login.cljs:203, src/app/main/ui/dashboard/deleted.cljs:43, src/app/main/ui/dashboard/deleted.cljs:274, src/app/main/ui/dashboard/file_menu.cljs:210, src/app/main/ui/dashboard/import.cljs:656, src/app/main/ui/dashboard/team.cljs:873, src/app/main/ui/exports/files.cljs:172, src/app/main/ui/settings/subscription.cljs:310, src/app/main/ui/settings/subscription.cljs:344
 msgid "labels.continue"
 msgstr "Continue"
 
@@ -2944,7 +2968,7 @@ msgstr "Editor"
 msgid "labels.empty"
 msgstr "Empty"
 
-#: src/app/main/ui/dashboard/import.cljs:298, src/app/worker/import.cljs:197, src/app/worker/import.cljs:231
+#: src/app/main/ui/dashboard/import.cljs:305, src/app/worker/import.cljs:197, src/app/worker/import.cljs:241
 msgid "labels.error"
 msgstr "Error"
 
@@ -3103,7 +3127,7 @@ msgstr "Learning Center"
 msgid "labels.libraries-and-templates"
 msgstr "Libraries & Templates"
 
-#: src/app/main/ui/auth/verify_token.cljs:125, src/app/main/ui/dashboard/grid.cljs:126, src/app/main/ui/dashboard/grid.cljs:146, src/app/main/ui/dashboard/import.cljs:257, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:59, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:608, src/app/main/ui/viewer.cljs:641, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:247, src/app/main/ui/workspace.cljs:131, src/app/main/ui.cljs:71, src/app/main/ui.cljs:109, src/app/main/ui.cljs:128
+#: src/app/main/ui/auth/verify_token.cljs:125, src/app/main/ui/dashboard/grid.cljs:126, src/app/main/ui/dashboard/grid.cljs:146, src/app/main/ui/dashboard/import.cljs:264, src/app/main/ui/dashboard/placeholder.cljs:139, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:59, src/app/main/ui/nitrate/entry.cljs:26, src/app/main/ui/static.cljs:608, src/app/main/ui/viewer.cljs:641, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:247, src/app/main/ui/workspace.cljs:131, src/app/main/ui.cljs:71, src/app/main/ui.cljs:109, src/app/main/ui.cljs:128
 msgid "labels.loading"
 msgstr "Loading…"
 
@@ -3536,7 +3560,7 @@ msgstr "Upload custom fonts"
 msgid "labels.uploading"
 msgstr "Uploading…"
 
-#: src/app/main/ui/dashboard/import.cljs:536
+#: src/app/main/ui/dashboard/import.cljs:643
 msgid "labels.uploading-file"
 msgstr "Uploading file…"
 

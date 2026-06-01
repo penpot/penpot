@@ -67,7 +67,15 @@
 
    [:relations {:optional true}
     [:vector
-     [:tuple ::sm/uuid ::sm/uuid]]]])
+     [:tuple ::sm/uuid ::sm/uuid]]]
+
+   [:external-libraries {:optional true}
+    [:vector
+     [:map
+      [:id   ::sm/uuid]
+      [:name :string]
+      [:slug :string]
+      [:used-by {:optional true} [:vector ::sm/uuid]]]]]])
 
 (def ^:private schema:storage-object
   [:map {:title "StorageObject"}
@@ -372,11 +380,33 @@
 
 (defn- export-files
   [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
-  (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
+  (let [original-ids ids
+        ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
         rels (if include-libraries
                (->> (bfc/get-files-rels cfg ids)
                     (mapv (juxt :file-id :library-file-id)))
-               [])]
+               [])
+
+        ;; Compute external libraries: referenced by original files but
+        ;; not included in the export set. Only relevant when libraries
+        ;; are NOT bundled in the export.
+        external-libs
+        (when-not include-libraries
+          (let [original-rels (bfc/get-files-rels cfg original-ids)
+                lib-ids       (into #{} (map :library-file-id) original-rels)]
+            (when (seq lib-ids)
+              (let [lib-names (bfc/get-files-names cfg lib-ids)]
+                (->> lib-names
+                     (mapv (fn [{:keys [id name]}]
+                             (let [slug (bfc/slugify-name name)]
+                               (when-not (str/blank? slug)
+                                 {:id      id
+                                  :name    name
+                                  :slug    slug
+                                  :used-by (->> original-rels
+                                                (filter #(= (:library-file-id %) id))
+                                                (mapv :file-id))}))))
+                     (filterv some?))))))]
 
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
@@ -389,12 +419,14 @@
 
     ;; Write manifest file
     (let [files  (:files @bfc/*state*)
-          params {:type "penpot/export-files"
-                  :version 1
-                  :generated-by (str "penpot/" (:full cf/version))
-                  :refer "penpot"
-                  :files (vec (vals files))
-                  :relations rels}]
+          params (cond-> {:type "penpot/export-files"
+                          :version 1
+                          :generated-by (str "penpot/" (:full cf/version))
+                          :refer "penpot"
+                          :files (vec (vals files))
+                          :relations rels}
+                   (seq external-libs)
+                   (assoc :external-libraries external-libs))]
       (write-entry! output "manifest.json" params))))
 
 ;; --- IMPORT IMPL
@@ -880,6 +912,47 @@
 
           (vswap! bfc/*state* update :index assoc id (:id sobject)))))))
 
+(defn- resolve-external-libraries
+  "For each external library in the manifest, look for matching shared
+  files in the team by slugified name. Returns a map of
+  old-lib-id -> [{:id uuid :name string}] for libraries with matches."
+  [{:keys [::manifest ::bfc/team-id] :as cfg}]
+  (let [external-libs (:external-libraries manifest)]
+    (when (and team-id (seq external-libs))
+      (reduce (fn [result {:keys [id slug]}]
+                (let [candidates (bfc/find-shared-files-by-slug cfg team-id slug)]
+                  (if (seq candidates)
+                    (assoc result id candidates)
+                    result)))
+              {}
+              external-libs))))
+
+(defn- auto-link-libraries
+  "Auto-link imported files to libraries that have exactly one candidate
+  match. Returns a vector of {:id old-lib-id :name string :new-id uuid}
+  for each auto-linked library."
+  [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg} resolution file-ids]
+  (let [external-libs (:external-libraries manifest)]
+    (reduce (fn [linked {:keys [id name used-by] :as ext-lib}]
+              (let [candidates (get resolution id)]
+                (if (= 1 (count candidates))
+                  (let [new-lib-id (:id (first candidates))
+                        ;; Link only files that actually used this library
+                        relevant-file-ids (if (seq used-by)
+                                            (let [used-set (set (map bfc/lookup-index used-by))]
+                                              (filterv used-set file-ids))
+                                            file-ids)]
+                    (doseq [fid relevant-file-ids]
+                      (let [rel-params {:file-id fid
+                                        :library-file-id new-lib-id}]
+                        (db/insert! conn :file-library-rel rel-params
+                                    ::db/on-conflict-do-nothing? true)
+                        (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+                    (conj linked {:id id :name name :new-id new-lib-id}))
+                  linked)))
+            []
+            external-libs)))
+
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
   (bfc/disable-database-timeouts! cfg)
@@ -897,9 +970,31 @@
                        files)]
 
     (import-file-relations cfg)
-    (bfm/apply-pending-migrations! cfg)
 
-    result))
+    ;; Resolve external libraries by slug and auto-link single matches
+    (let [resolution  (resolve-external-libraries cfg)
+          auto-linked (when (seq resolution)
+                        (auto-link-libraries cfg resolution result))
+
+          ;; Collect multi-match candidates for frontend resolution
+          candidates  (when (seq resolution)
+                        (into {}
+                              (filter (fn [[_ candidates]] (> (count candidates) 1)))
+                              resolution))
+
+          ;; Build external-libraries lookup from manifest for the frontend
+          external-libs-info (when (seq resolution)
+                               (->> (:external-libraries manifest)
+                                    (filter #(contains? candidates (:id %)))
+                                    (mapv (fn [{:keys [id name slug]}]
+                                            {:id id :name name :slug slug}))))]
+
+      (bfm/apply-pending-migrations! cfg)
+
+      {:file-ids           result
+       :auto-linked        (or auto-linked [])
+       :library-candidates (or candidates {})
+       :external-libs      (or external-libs-info [])})))
 
 (defn- import-file-and-overwrite*
   [{:keys [::manifest ::bfc/file-id] :as cfg}]
@@ -927,7 +1022,10 @@
       (bfc/invalidate-thumbnails cfg file-id)
       (bfm/apply-pending-migrations! cfg)
 
-      [file-id])))
+      {:file-ids           [file-id]
+       :auto-linked        []
+       :library-candidates {}
+       :external-libs      []})))
 
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
@@ -965,9 +1063,20 @@
     (events/tap :progress {:section :manifest})
 
     (binding [bfc/*state* (volatile! {:media [] :index {}})]
-      (if (::bfc/file-id cfg)
-        (db/tx-run! cfg import-file-and-overwrite*)
-        (db/tx-run! cfg import-files*)))))
+      (let [result (if (::bfc/file-id cfg)
+                     (db/tx-run! cfg import-file-and-overwrite*)
+                     (db/tx-run! cfg import-files*))]
+
+        ;; Emit library-candidates event for frontend resolution of
+        ;; multi-match cases (if any)
+        (when (seq (:library-candidates result))
+          (events/tap :library-candidates
+                      {:file-ids           (:file-ids result)
+                       :auto-linked        (:auto-linked result)
+                       :library-candidates (:library-candidates result)
+                       :external-libs      (:external-libs result)}))
+
+        result))))
 
 ;; --- PUBLIC API
 

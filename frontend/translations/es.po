@@ -748,6 +748,23 @@ msgstr[1] "%s ficheros se han importado correctamente."
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 biblioteca fue vinculada automáticamente por nombre."
+msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
+
+msgid "dashboard.import.resolve-libraries"
+msgstr "Algunas bibliotecas no pudieron vincularse automáticamente. Selecciona la biblioteca correcta para cada una:"
+
+msgid "dashboard.import.library-placeholder"
+msgstr "Selecciona una biblioteca…"
+
+msgid "dashboard.import.library-link-error"
+msgstr "No se pudo vincular la biblioteca"
+
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmar vínculos de biblioteca"
+
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"

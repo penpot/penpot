@@ -273,3 +273,30 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.library-resolution {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-12;
+}
+
+.library-resolution-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-text-foreground-color);
+  margin-bottom: deprecated.$s-8;
+}
+
+.library-resolution-item {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-8 0;
+}
+
+.library-resolution-item-name {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-weight: 700;
+}

@@ -92,6 +92,7 @@
             (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
             (assoc ::bfc/project-id project-id)
             (assoc ::bfc/profile-id profile-id)
+            (assoc ::bfc/team-id (:id team))
             (assoc ::bfc/name name))
 
         input-path (:path file)
