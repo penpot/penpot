@@ -229,8 +229,7 @@
          (mf/deps profile)
          (fn []
            (let [team-id (:default-team-id profile)]
-             (st/emit! (rt/assign-exception nil)
-                       (dcm/go-to-dashboard-recent :team-id team-id)))))
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         on-success
         (mf/use-fn
@@ -321,6 +320,16 @@
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
+
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
 
 (mf/defc webgl-context-lost*
   []
@@ -492,6 +501,9 @@
 
       :service-unavailable
       [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 

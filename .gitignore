@@ -95,3 +95,4 @@
 /.idea
 /.claude
 /.playwright-mcp
+/tools/__pycache__

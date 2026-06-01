@@ -13,6 +13,7 @@
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.components.org-avatar :refer [org-avatar*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -67,7 +68,9 @@
       [:div {:class (stl/css :modal-content)}
        [:& context-notification
         {:level :warning
-         :content (tr "modals.delete-account.info")}]
+         :content (tr (if has-orgs?
+                        "modals.delete-account.info.with-orgs"
+                        "modals.delete-account.info"))}]
 
        (when has-orgs?
          [:div {:class (stl/css :orgs-section)}
@@ -83,10 +86,9 @@
                                            :expanded expanded?)}]]
           (when expanded?
             [:ul {:class (stl/css :org-list)}
-             (for [{:keys [id name team-count member-count]} orgs]
+             (for [{:keys [id name team-count member-count] :as org} orgs]
                [:li {:class (stl/css :org-item) :key id}
-                [:div {:class (stl/css :org-avatar)}
-                 (when (seq name) (subs name 0 1))]
+                [:> org-avatar* {:org org :size "xxl"}]
                 [:div {:class (stl/css :org-info)}
                  [:span {:class (stl/css :org-name)} name]
                  [:div {:class (stl/css :org-counts)}

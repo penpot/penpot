@@ -2970,3 +2970,68 @@
     ;; its :selrect.y is internally inconsistent and renders incorrectly.
     (t/is (= post-btn-rel-y post-btn-selrect-rel-y)
           ":y and :selrect.y must agree after switch")))
+
+(t/deftest test-switch-does-not-override-path-content-when-only-repositioned
+  ;; Regression: when a path shape inside a variant has :geometry-group touched
+  ;; (e.g. because auto-layout repositioned it after the copy's parent was
+  ;; resized), switching variants must NOT copy the old variant's path position
+  ;; to the new variant. The path should stay at the new variant's default position.
+  ;;
+  ;; Root cause: equal-geometry? did not handle the :content attr for path shapes,
+  ;; so switch-path-change-value was always invoked and placed the new path at the
+  ;; pre-switch absolute position instead of the target master's default position.
+  (let [;; A small closed triangle path whose bounding box is 24x14 px,
+        ;; anchored at absolute position (x0, y0).
+        triangle (fn [x0 y0]
+                   [{:command :move-to :params {:x x0 :y y0}}
+                    {:command :line-to :params {:x (+ x0 24) :y y0}}
+                    {:command :line-to :params {:x (+ x0 12) :y (+ y0 14)}}
+                    {:command :close-path}])
+
+        ;; V1 has the path at y=10; V2 has the same-shape path at y=30.
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                      {:variant1-params {:width 100 :height 100}
+                                       :variant2-params {:width 100 :height 100}})
+                     (ths/add-sample-shape :path1 :type :path
+                                           :parent-label :m01
+                                           :content (triangle 0 10))
+                     (ths/add-sample-shape :path2 :type :path
+                                           :parent-label :m02
+                                           :content (triangle 0 30))
+                     (thc/instantiate-component :c01 :copy01))
+
+        ;; Simulate auto-layout repositioning the path inside the copy by
+        ;; moving it to y=50. This touches :geometry-group on the copy's path.
+        page     (thf/current-page file)
+        copy01   (ths/get-shape file :copy01)
+        copy-path (->> (cfh/get-children-with-self (:objects page) (:id copy01))
+                       (filter #(= :path (:type %)))
+                       first)
+        changes  (cls/generate-update-shapes
+                  (pcb/empty-changes nil (:id page))
+                  #{(:id copy-path)}
+                  #(gsh/absolute-move % (gpt/point (:x %) 50))
+                  (:objects page) {})
+        file     (thf/apply-changes file changes)
+
+        ;; Switch copy01 from V1 (c01) to V2 (c02).
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+
+        page'      (thf/current-page file')
+        copy01'    (ths/get-shape file' :copy01)
+        copy-path' (->> (cfh/get-children-with-self (:objects page') (:id copy01'))
+                        (filter #(= :path (:type %)))
+                        first)
+
+        ;; Expected: V2's path sits at y=30 (its master default), not y=50
+        ;; (the pre-switch repositioned position).
+        m02      (ths/get-shape file :m02)
+        path2    (ths/get-shape file :path2)
+        target-rel-y (- (-> path2 :selrect :y) (-> m02 :selrect :y))
+        actual-rel-y (- (-> copy-path' :selrect :y) (-> copy01' :selrect :y))]
+
+    (t/is (some? copy-path') "path should exist in switched copy")
+    (t/is (= target-rel-y actual-rel-y)
+          (str "path :selrect.y should match target master layout (expected "
+               target-rel-y " got " actual-rel-y ")"))))

@@ -380,6 +380,12 @@ msgstr "+ Create org"
 msgid "dashboard.create-new-org"
 msgstr "Create org"
 
+msgid "dashboard.my-teams"
+msgstr "My teams"
+
+msgid "dashboard.section.organizations"
+msgstr "Organizations"
+
 msgid "dashboard.go-to-admin-console"
 msgstr "Go to Admin Console"
 
@@ -1144,6 +1150,9 @@ msgstr "This team is not part of any organization"
 msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "You don't have permission to add this team to any of your organizations."
+
 msgid "dashboard.select-org-modal.title"
 msgstr "Add team to an organization"
 
@@ -1155,6 +1164,12 @@ msgstr "Select an organization"
 
 msgid "dashboard.select-org-modal.accept"
 msgstr "ADD TO ORGANIZATION"
+
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Pending invitations to external users will be canceled."
+
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr "\"%s\" only allows organization members to join its teams. Any pending invitations to people outside the organization will be revoked."
 
 msgid "dashboard.change-org-modal.title"
 msgstr "Change team's organization"
@@ -1176,6 +1191,9 @@ msgstr "Change team organization"
 
 msgid "dashboard.team-organization.remove"
 msgstr "Remove team from organization"
+
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Only people within your organization can be invited."
 
 #: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
@@ -2910,6 +2928,12 @@ msgstr "New password"
 msgid "labels.next"
 msgstr "Next"
 
+#: src/app/main/ui/static.cljs:325
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot is temporarily unavailable due to a system issue. Please try again "
+"shortly."
+
 #: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "You're all caught up! New comment notifications will appear here."
@@ -2921,6 +2945,10 @@ msgstr "No pending invitations."
 #: src/app/main/ui/dashboard/team.cljs:739
 msgid "labels.no-invitations-gather-people"
 msgstr "Gather your people and build great things together."
+
+#: src/app/main/ui/components/select.cljs
+msgid "labels.no-matches"
+msgstr "No matches"
 
 #: src/app/main/ui/static.cljs
 #, unused
@@ -3520,6 +3548,10 @@ msgstr "Yes, delete my account"
 msgid "modals.delete-account.info"
 msgstr "By removing your account you’ll lose all your current projects and archives."
 
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info.with-orgs"
+msgstr "This action is irreversible. Your account, subscription, and organizations will be deleted immediately. You will also lose access to your current projects and files."
+
 #: src/app/main/ui/settings/delete_account.cljs:43
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
@@ -3717,6 +3749,41 @@ msgstr "Edit webhook"
 #: src/app/main/ui/dashboard/team.cljs:1091
 msgid "modals.edit-webhook.title"
 msgstr "Edit webhook"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.title"
+msgstr "Some invitations can't be sent"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.description"
+msgstr "Only existing members of the organization can be invited."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.warning"
+msgstr "Some people on your list won't receive the invitations."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Addresses that won't receive an invitation"
+
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "No invitations were sent"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr "Only existing members of the organization can be invited. Because none of the people on your list are members, no invitations were sent."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr "Only \"%s\" organization's members can be invited to this team, and they are all already team members. If you need more information, contact the organization's owner."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Cancel"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-restricted-members.send"
+msgstr "Send invites"
 
 #: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
@@ -4690,6 +4757,14 @@ msgstr "Cancel"
 msgid "shortcuts.export-shapes"
 msgstr "Export shapes"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.find"
+msgstr "Find"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.find-and-replace"
+msgstr "Find and replace"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
 msgid "shortcuts.fit-all"
 msgstr "Zoom to fit all"
@@ -4893,6 +4968,10 @@ msgstr " or "
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
 msgid "shortcuts.paste"
 msgstr "Paste"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.paste-replace"
+msgstr "Paste and replace"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
 #, unused
@@ -7556,6 +7635,14 @@ msgstr "Center"
 msgid "workspace.options.stroke.dashed"
 msgstr "Dashed"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-dash"
+msgstr "Dash"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-gap"
+msgstr "Gap"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
 msgid "workspace.options.stroke.dotted"
 msgstr "Dotted"
@@ -8146,7 +8233,7 @@ msgstr "Show main component"
 
 #: src/app/main/ui/workspace/context_menu.cljs:314
 msgid "workspace.shape.menu.clear-guides"
-msgstr "Clear artboard guides"
+msgstr "Clear board guides"
 
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Remove thumbnail"
@@ -8227,7 +8314,10 @@ msgstr "Masks"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:293
 msgid "workspace.sidebar.layers.search"
-msgstr "Search layers"
+msgstr "Find…"
+
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Find and replace"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:410
 msgid "workspace.sidebar.layers.shapes"
@@ -8259,11 +8349,11 @@ msgstr "No matches"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs
 msgid "workspace.sidebar.layers.search-scope-layers"
-msgstr "Search layers"
+msgstr "Layer names"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs
 msgid "workspace.sidebar.layers.search-scope-canvas"
-msgstr "Search on canvas"
+msgstr "Text content"
 
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:101
 msgid "workspace.sidebar.options.svg-attrs.title"
@@ -8391,6 +8481,10 @@ msgstr "Edit %s token"
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "errors.tokens.empty-input"
 msgstr "Token value cannot be empty"
+
+#: src/app/main/data/workspace/tokens/errors.cljs
+msgid "errors.tokens.empty-field"
+msgstr "This field cannot be empty"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:241
 msgid "workspace.tokens.enter-token-name"
@@ -9401,6 +9495,9 @@ msgstr "Field %s is invalid: %s"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Nitrate"
 
+msgid "nitrate.code-activation.renew-title"
+msgstr "RENEW NITRATE"
+
 msgid "nitrate.code-activation.input-label"
 msgstr "Enter your activation code"
 
@@ -9444,7 +9541,7 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Full open-source freedom, with the governance your org needs"
 
 msgid "nitrate.form.enterprise.price"
-msgstr "$25 / member per month"
+msgstr "per member per month"
 
 msgid "nitrate.form.start-enterprise"
 msgstr "Get started with Enterprise"
@@ -9506,6 +9603,9 @@ msgstr "Cancel subscription"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renew with activation code"
 
+msgid "nitrate.subscription.renew-success"
+msgstr "Your Nitrate subscription has been renewed."
+
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"
 
@@ -9537,7 +9637,7 @@ msgid "subscription.banner.create-org-info"
 msgstr "Create an organization and see exactly how Enterprise works. Set rules, manage your teams and discover a new level of control over your design workflow."
 
 msgid "dashboard.no-permission-create-team.message"
-msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to create teams within %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-org-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
@@ -9546,7 +9646,11 @@ msgid "dashboard.select-org-modal.permission-info"
 msgstr "Here you find all your organizations where you are allowed to create or add teams."
 
 msgid "dashboard.no-permission-delete-team.message"
-msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to delete teams that are part of %s organization. If you need more information, contact the organization's owner."
 
 msgid "dashboard.no-permission-move-team.message"
-msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the owner."
+msgstr "You are not allowed to move teams that are part of %s organization. If you need more information, contact the organization's owner."
+
+msgid "dashboard.invitations.no-permission"
+msgstr "You don’t have permission to invite people to join this team or to edit or delete invitations."
+
