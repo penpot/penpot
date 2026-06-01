@@ -729,7 +729,7 @@
           (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))))))
 
 (defn patch-props
-  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necesary"
+  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necessary"
   [shape props objects]
 
   (letfn [(patch-text-props [shape props]

@@ -111,7 +111,7 @@ describe("TextSpan", () => {
     expect(getTextSpanLength(emptyTextSpan)).toBe(0);
   });
 
-  test("splitTextSpan returns a new textSpan from the splitted textSpan", () => {
+  test("splitTextSpan returns a new textSpan from the split textSpan", () => {
     const textSpan = createTextSpan(new Text("Hello, World!"));
     const newTextSpan = splitTextSpan(textSpan, 5);
     expect(newTextSpan).toBeInstanceOf(HTMLSpanElement);

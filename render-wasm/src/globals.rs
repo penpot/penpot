@@ -94,7 +94,7 @@ fn gpu_init() {
 fn render_init(width: i32, height: i32) {
     unsafe {
         let render_state =
-            RenderState::try_new(width, height).expect("Cannot intialize RenderState");
+            RenderState::try_new(width, height).expect("Cannot initialize RenderState");
         RENDER_STATE = Box::into_raw(Box::new(render_state));
     }
 }

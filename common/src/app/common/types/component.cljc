@@ -159,7 +159,7 @@
       group)))
 
 (defn component-attr?
-  "Check if some attribute is one that is involved in component syncrhonization.
+  "Check if some attribute is one that is involved in component synchronization.
    Note that design tokens also are involved, although they go by an alternate
    route and thus they are not part of :sync-attrs.
    Also when detaching a nested copy it also needs to trigger a synchronization,

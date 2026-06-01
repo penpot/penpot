@@ -11,7 +11,7 @@
    [app.common.types.variant :as ctv]))
 
 (defn find-variant-components
-  "Find a list of the components thet belongs to this variant-id"
+  "Find a list of the components that belongs to this variant-id"
   ([data variant-id]
    (let [page-id (->> data
                       :components

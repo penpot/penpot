@@ -20,7 +20,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- schema-keys
-  "Converts registed map schema into set of keys."
+  "Converts registered map schema into set of keys."
   [schema]
   (->> schema
        (sm/schema)
@@ -42,7 +42,7 @@
 
 (defn token-value-self-reference?
   "Check if the token is self referencing with its `token-name` in `token-value`.
-  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  Simple 1 level check, doesn't account for circular self references across multiple tokens."
   [token-name token-value]
   (let [token-references (find-token-value-references token-value)
         self-reference? (get token-references token-name)]
