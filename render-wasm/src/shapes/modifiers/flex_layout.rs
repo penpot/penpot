@@ -54,6 +54,7 @@ struct LayoutAxis {
     gap_across: f32,
     is_auto_main: bool,
     is_auto_across: bool,
+    is_wrap: bool,
 }
 
 impl LayoutAxis {
@@ -78,6 +79,7 @@ impl LayoutAxis {
                 gap_across: layout_data.row_gap,
                 is_auto_main: num_child > 0 && shape.is_layout_horizontal_auto(),
                 is_auto_across: num_child > 0 && shape.is_layout_vertical_auto(),
+                is_wrap: flex_data.is_wrap(),
             }
         } else {
             Self {
@@ -93,6 +95,7 @@ impl LayoutAxis {
                 gap_across: layout_data.column_gap,
                 is_auto_main: num_child > 0 && shape.is_layout_vertical_auto(),
                 is_auto_across: num_child > 0 && shape.is_layout_horizontal_auto(),
+                is_wrap: flex_data.is_wrap(),
             }
         }
     }
@@ -399,7 +402,7 @@ fn calculate_track_positions(
 ) {
     let mut align_content = &layout_data.align_content;
 
-    if layout_axis.is_auto_across {
+    if layout_axis.is_auto_across || !layout_axis.is_wrap {
         align_content = &AlignContent::Start;
     }
 
@@ -427,7 +430,10 @@ fn calculate_track_positions(
 
         AlignContent::SpaceAround => {
             let effective_gap = (layout_axis.across_space() - total_across_size) / tlen as f32;
-            (effective_gap / 2.0, effective_gap)
+            (
+                layout_axis.padding_across_start + effective_gap / 2.0,
+                effective_gap,
+            )
         }
 
         AlignContent::SpaceEvenly => {
@@ -473,7 +479,9 @@ fn calculate_track_data(
 
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>();
 
-    if !layout_axis.is_auto_across && layout_data.align_content == AlignContent::Stretch {
+    let stretch_tracks = !layout_axis.is_wrap || layout_data.align_content == AlignContent::Stretch;
+
+    if !layout_axis.is_auto_across && stretch_tracks {
         stretch_tracks_sizes(&layout_axis, &mut tracks, total_across_size);
     }
 
@@ -506,12 +514,12 @@ fn first_anchor(
         }
         JustifyContent::SpaceAround => {
             let effective_gap = (layout_axis.main_space() - total_shapes_size) / slen as f32;
-            layout_axis.padding_main_end + f32::max(layout_axis.gap_main, effective_gap / 2.0)
+            layout_axis.padding_main_start + f32::max(layout_axis.gap_main, effective_gap / 2.0)
         }
         JustifyContent::SpaceEvenly => {
             let effective_gap =
                 (layout_axis.main_space() - total_shapes_size) / (track.shapes.len() + 1) as f32;
-            layout_axis.padding_main_end + f32::max(layout_axis.gap_main, effective_gap)
+            layout_axis.padding_main_start + f32::max(layout_axis.gap_main, effective_gap)
         }
         _ => layout_axis.padding_main_start,
     };
@@ -538,8 +546,11 @@ fn next_anchor(
         + child_axis.margin_main_end
         + match layout_data.justify_content {
             JustifyContent::SpaceBetween => {
-                let effective_gap = (layout_axis.main_space() - total_shapes_size)
-                    / (track.shapes.len() - 1) as f32;
+                let effective_gap = if track.shapes.len() > 1 {
+                    (layout_axis.main_space() - total_shapes_size) / (track.shapes.len() - 1) as f32
+                } else {
+                    0.0
+                };
                 child_axis.main_size + f32::max(layout_axis.gap_main, effective_gap)
             }
             JustifyContent::SpaceAround => {
