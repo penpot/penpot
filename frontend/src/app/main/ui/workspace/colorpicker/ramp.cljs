@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require-macros [app.main.style :as stl])
@@ -137,8 +137,8 @@
 
      [:div {:class (stl/css :shade-selector)
             :style {:--bullet-size "52px"}}
-      [:& cb/color-bullet {:color bullet-color
-                           :area true}]
+      [:> cb/color-bullet* {:color bullet-color
+                            :area true}]
       [:div {:class (stl/css :sliders-wrapper)}
        [:> slider-selector* {:type :hue
                              :max-value 360

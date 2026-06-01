@@ -109,7 +109,7 @@ Because **remote MCP** does not expose local file-system access:
 
 ## Quick start
 
-If you just want to try Penpot MCP quickly, follow this path for the **hosted (remote) MCP server**.
+If you just want to try Penpot AI workflows quickly through the MCP, follow this path for the **hosted (remote) MCP server**.
 
 ### Remote MCP in 5 steps
 

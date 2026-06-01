@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
@@ -17,7 +17,7 @@
 
 (defmacro select-keys
   "A macro version of `select-keys`. Useful when keys vector is known
-  at compile time (aprox 600% performance boost).
+  at compile time (approx 600% performance boost).
 
   It is not 100% equivalent, this macro does not removes not existing
   keys in contrast to clojure.core/select-keys"

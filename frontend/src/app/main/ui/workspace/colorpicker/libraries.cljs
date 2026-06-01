@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require-macros [app.main.style :as stl])
@@ -24,7 +24,6 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries*
@@ -87,8 +86,7 @@
          (mf/deps state selected on-select-color)
          (fn [event]
            (when-not (= :recent selected)
-             (st/emit! (ptk/event
-                        ::ev/event
+             (st/emit! (ev/event
                         {::ev/name "use-library-color"
                          ::ev/origin "colorpicker"
                          :external-library (not= :file selected)})))
@@ -139,7 +137,7 @@
        deprecated-icon/swatches]
 
       (for [color current-colors]
-        [:& cb/color-bullet
+        [:> cb/color-bullet*
          {:key (-> color meta ::id)
           :color color
           :on-click on-color-click}])]]))

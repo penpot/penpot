@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.interactions
   "Visually show shape interactions in workspace"
@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.embed :as embed]
-   [app.main.ui.workspace.viewport.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline*]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -196,9 +196,9 @@
                :d pdata}]
 
        (when dest-shape
-         [:& outline {:zoom zoom
-                      :shape dest-shape
-                      :color stroke-color}])
+         [:> outline* {:zoom zoom
+                       :shape dest-shape
+                       :color stroke-color}])
 
        [:> interaction-marker* {:index index
                                 :x orig-x

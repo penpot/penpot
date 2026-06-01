@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.versions
   (:require
@@ -71,7 +71,7 @@
         ;; Force persist before creating snapshot, otherwise we could loss changes
         (rx/concat
          (rx/of ::dwp/force-persist
-                (ptk/event ::ev/event {::ev/name "create-version"}))
+                (ev/event {::ev/name "create-version"}))
 
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
@@ -93,8 +93,8 @@
       (let [file-id (:current-file-id state)]
         (rx/merge
          (rx/of (update-versions-state {:editing nil})
-                (ptk/event ::ev/event {::ev/name "rename-version"
-                                       :file-id file-id}))
+                (ev/event {::ev/name "rename-version"
+                           :file-id file-id}))
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
               (rx/map fetch-versions)))))))
 
@@ -152,7 +152,7 @@
                (rx/mapcat (fn [_]
                             (rx/of (update-versions-state {:editing id})
                                    (fetch-versions)
-                                   (ptk/event ::ev/event {::ev/name "pin-version"}))))))))))
+                                   (ev/event {::ev/name "pin-version"}))))))))))
 
 (defn lock-version
   [id]
@@ -176,10 +176,35 @@
 ;; RESTORE VERSION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn exit-preview
+  "Exit from preview mode and reload the live file data"
+  []
+  (ptk/reify ::exit-preview
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [backup (dm/get-in state [:workspace-versions :backup])]
+        (-> state
+            (update :workspace-versions dissoc :backup)
+            (update :workspace-global dissoc :read-only? :preview-id)
+            (update :files assoc (:id backup) backup))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)]
+
+        (rx/of (dwpg/initialize-page file-id page-id))))))
+
 (defn- restore-version
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Clear preview state if we're restoring from preview mode
+      (-> state
+          (update :workspace-versions dissoc :backup)
+          (update :workspace-global dissoc :read-only? :preview-id)))
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
@@ -205,6 +230,7 @@
                  :cancel {:label (tr "workspace.updates.dismiss")
                           :callback #(do
                                        (rx/push! output-s (ntf/hide :tag :restore-dialog))
+                                       (rx/push! output-s (exit-preview))
                                        (rx/end! output-s))}
                  :accept {:label (tr "labels.restore")
                           :callback #(do
@@ -225,25 +251,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :files assoc id snapshot))))
-
-(defn exit-preview
-  "Exit from preview mode and reload the live file data"
-  []
-  (ptk/reify ::exit-preview
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [backup (dm/get-in state [:workspace-versions :backup])]
-        (-> state
-            (update :workspace-versions dissoc :backup)
-            (update :workspace-global dissoc :read-only? :preview-id)
-            (update :files assoc (:id backup) backup))))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)]
-
-        (rx/of (dwpg/initialize-page file-id page-id))))))
 
 (defn enter-preview
   "Load a snapshot into the workspace for read-only preview without
@@ -268,8 +275,24 @@
             features (features/get-enabled-features state team-id)
             snapshot (->> (dm/get-in state [:workspace-versions :data])
                           (d/seek #(= id (:id %))))
-            label    (or (:label snapshot)
-                         (tr "workspace.versions.preview.unnamed"))
+            ;; Match the History sidebar's identifying text so the
+            ;; preview banner and the sidebar entry "speak the same
+            ;; language" (#9503):
+            ;; - user-created (pinned) versions keep the user's custom
+            ;;   label; if absent, fall back to "unnamed"
+            ;; - system-created autosaves use the same auto-generated
+            ;;   label the sidebar's `snapshot-entry*` already renders
+            ;;   via `workspace.versions.autosaved.version` + a
+            ;;   localized date, instead of the internal snapshot
+            ;;   label (e.g. `internal/snapshot/20`).
+            label    (cond
+                       (= "system" (:created-by snapshot))
+                       (tr "workspace.versions.autosaved.version"
+                           (ct/format-inst (:created-at snapshot) :localized-date))
+
+                       :else
+                       (or (:label snapshot)
+                           (tr "workspace.versions.preview.unnamed")))
             output-s (rx/subject)]
         (rx/merge
          output-s
@@ -285,7 +308,7 @@
                  :accept {:label (tr "labels.restore")
                           :callback #(do
                                        (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (restore-version id))
+                                       (rx/push! output-s (enter-restore id))
                                        (rx/end! output-s))}
                  :tag :preview-dialog))
 
@@ -333,9 +356,6 @@
       (let [current-file-id (:current-file-id state)]
         ;; Force persist before creating snapshot, otherwise we could loss changes
         (->> (rx/concat
-              (rx/of (ptk/event ::ev/event {::ev/origin "plugins"
-                                            ::ev/name "create-version"}))
-
               (when (= file-id current-file-id)
                 (rx/of ::dwp/force-persist))
 
@@ -381,7 +401,6 @@
            (rx/catch (fn [error]
                        (reject error)
                        (rx/empty)))))))
-
 
 
 

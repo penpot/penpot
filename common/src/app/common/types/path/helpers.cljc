@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.path.helpers
   "A collection of path internal helpers that does not depend on other
@@ -10,7 +10,7 @@
 
   This NS allows separate context-less/dependency-less helpers from
   other path related namespaces and make proper domain-specific
-  namespaces without incurrying on circular depedency cycles."
+  namespaces without incurrying on circular dependency cycles."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -192,7 +192,7 @@
 (defn solve-roots*
   "Solvers a quadratic or cubic equation given by the parameters a b c d.
 
-  Implemented as reduction algorithm (this helps implemement
+  Implemented as reduction algorithm (this helps implement
   derivative algorithms that does not require intermediate results
   thanks to transducers."
   [result conj a b c d]
@@ -794,5 +794,3 @@
               #_:else   false))]
 
     (some inside-border? content)))
-
-

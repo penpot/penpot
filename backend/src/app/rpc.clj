@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc
   (:require
@@ -109,6 +109,7 @@
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
+                             (assoc ::request-id (uuid/next))
                              (assoc ::session-id (some-> session-id uuid/parse*))
                              (assoc ::cond/key etag)
                              (cond-> (uuid? profile-id)
@@ -165,12 +166,13 @@
 (defn- wrap-audit
   [_ f mdata]
   (if (or (contains? cf/flags :webhooks)
-          (contains? cf/flags :audit-log))
+          (contains? cf/flags :audit-log)
+          (contains? cf/flags :telemetry))
     (if-not (::audit/skip mdata)
       (fn [cfg params]
         (let [result (f cfg params)]
-          (->> (audit/prepare-event cfg mdata params result)
-               (audit/submit! cfg))
+          (->> (audit/prepare-rpc-event cfg mdata params result)
+               (audit/submit cfg))
           result))
       f)
     f))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.shortcuts
   (:require-macros [app.main.style :as stl])
@@ -111,6 +111,8 @@
     (tr "shortcuts.duplicate")
     (tr "shortcuts.escape")
     (tr "shortcuts.export-shapes")
+    (tr "shortcuts.find")
+    (tr "shortcuts.find-and-replace")
     (tr "shortcuts.fit-all")
     (tr "shortcuts.flip-horizontal")
     (tr "shortcuts.flip-vertical")
@@ -160,6 +162,7 @@
     (tr "shortcuts.open-viewer")
     (tr "shortcuts.open-workspace")
     (tr "shortcuts.paste")
+    (tr "shortcuts.paste-replace")
     (tr "shortcuts.prev-frame")
     (tr "shortcuts.redo")
     (tr "shortcuts.rename")

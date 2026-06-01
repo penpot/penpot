@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.svg-upload
   (:require
@@ -47,10 +47,12 @@
                      (-> item
                          (assoc :name (extract-name href))
                          (assoc :url href))))))
+       (rx/filter (fn [item]
+                    (or (contains? item :content)
+                        (let [url (:url item)]
+                          (or (str/starts-with? url "http://")
+                              (str/starts-with? url "https://"))))))
        (rx/mapcat (fn [item]
-                    ;; TODO: :create-file-media-object-from-url is
-                    ;; deprecated and this should be resolved in
-                    ;; frontend
                     (->> (rp/cmd! (if (contains? item :content)
                                     :upload-file-media-object
                                     :create-file-media-object-from-url)

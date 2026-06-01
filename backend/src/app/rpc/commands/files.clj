@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files
   (:require
@@ -1064,7 +1064,10 @@
 
 (defn link-file-to-library
   [conn {:keys [file-id library-id] :as params}]
-  (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
+  (db/exec-one! conn [sql:link-file-to-library file-id library-id])
+  (bfc/upsert-file-library-sync! conn {:file-id file-id
+                                       :library-file-id library-id
+                                       :synced-at (ct/now)}))
 
 (def ^:private
   schema:link-file-to-library
@@ -1118,11 +1121,9 @@
 
 (defn update-sync
   [conn {:keys [file-id library-id] :as params}]
-  (db/update! conn :file-library-rel
-              {:synced-at (ct/now)}
-              {:file-id file-id
-               :library-file-id library-id}
-              {::db/return-keys true}))
+  (bfc/upsert-file-library-sync! conn {:file-id file-id
+                                       :library-file-id library-id
+                                       :synced-at (ct/now)}))
 
 (def ^:private schema:update-file-library-sync-status
   [:map {:title "update-file-library-sync-status"}

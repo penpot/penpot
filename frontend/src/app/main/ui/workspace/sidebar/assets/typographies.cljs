@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets.typographies
   (:require-macros [app.main.style :as stl])
@@ -28,7 +28,6 @@
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def lens:typography-section-state
@@ -97,10 +96,10 @@
          (mf/deps typography on-asset-click read-only? local?)
          (fn [event]
            (when-not read-only?
-             (st/emit! (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-typography"
-                                        ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+             (st/emit! (ev/event
+                        {::ev/name "use-library-typography"
+                         ::ev/origin "sidebar"
+                         :external-library (not local?)}))
              (when-not (on-asset-click event (:id typography))
                (st/emit! (dwt/apply-typography typography file-id))))))]
 

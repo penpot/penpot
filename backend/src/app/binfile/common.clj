@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.binfile.common
   "A binfile related file processing common code, used for different
@@ -440,10 +440,27 @@
 
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT flr.* FROM file_library_rel AS flr "
-                                "  JOIN file AS l ON (flr.library_file_id = l.id) "
-                                " WHERE flr.file_id = ANY(?) AND l.deleted_at IS NULL")]
+                       sql (str "SELECT flr.*,"
+                                "	   fls.synced_at"
+                                "  FROM file_library_rel AS flr"
+                                "  JOIN file AS l"
+                                "    ON flr.library_file_id = l.id"
+                                "  LEFT JOIN file_library_sync AS fls"
+                                "    ON fls.file_id = flr.file_id"
+                                "   AND fls.library_file_id = flr.library_file_id"
+                                " WHERE flr.file_id = ANY(?)"
+                                "   AND l.deleted_at IS NULL;")]
                    (db/exec! conn [sql ids])))))
+
+(def ^:private sql:upsert-file-library-sync
+  "INSERT INTO file_library_sync (file_id, library_file_id, synced_at)
+   VALUES (?::uuid, ?::uuid, ?::timestamptz)
+   ON CONFLICT (file_id, library_file_id)
+   DO UPDATE SET synced_at = EXCLUDED.synced_at;")
+
+(defn upsert-file-library-sync!
+  [conn {:keys [file-id library-file-id synced-at]}]
+  (db/exec-one! conn [sql:upsert-file-library-sync file-id library-file-id synced-at]))
 
 (def ^:private sql:get-libraries
   "WITH RECURSIVE libs AS (
@@ -799,42 +816,52 @@
 
 (def ^:private sql:get-file-libraries
   "WITH RECURSIVE libs AS (
-     SELECT fl.*, flr.synced_at
-       FROM file AS fl
-       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
-      WHERE flr.file_id = ?::uuid
-    UNION
-     SELECT fl.*, flr.synced_at
-       FROM file AS fl
-       JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
-       JOIN libs AS l ON (flr.file_id = l.id)
-   )
-   SELECT l.id,
-          l.features,
-          l.project_id,
-          p.team_id,
-          l.created_at,
-          l.modified_at,
-          l.deleted_at,
-          l.name,
-          l.revn,
-          l.vern,
-          l.synced_at,
-          l.is_shared,
-          l.version
-     FROM libs AS l
-    INNER JOIN project AS p ON (p.id = l.project_id)
-    WHERE l.deleted_at IS NULL;")
+		SELECT fl.*
+		FROM file AS fl
+		JOIN file_library_rel AS flr
+		  ON flr.library_file_id = fl.id
+		WHERE flr.file_id = ?::uuid
+
+		UNION
+
+		SELECT fl.*
+		FROM file AS fl
+		JOIN file_library_rel AS flr
+		  ON flr.library_file_id = fl.id
+		JOIN libs AS l
+		  ON flr.file_id = l.id
+	)
+	SELECT l.id,
+		   l.features,
+		   l.project_id,
+		   p.team_id,
+		   l.created_at,
+		   l.modified_at,
+		   l.deleted_at,
+		   l.name,
+		   l.revn,
+		   l.vern,
+		   l.is_shared,
+		   l.version,
+		   fls.synced_at,
+		   NOT EXISTS (
+		     SELECT 1 FROM file_library_rel AS direct
+		      WHERE direct.file_id = ?::uuid
+		        AND direct.library_file_id = l.id
+		   ) AS is_indirect
+	FROM libs AS l
+	JOIN project AS p
+	  ON p.id = l.project_id
+	LEFT JOIN file_library_sync AS fls
+	  ON fls.file_id = ?::uuid
+	 AND fls.library_file_id = l.id
+	WHERE l.deleted_at IS NULL;")
 
 (defn get-file-libraries
   [conn file-id]
   (into []
-        (comp
-         ;; FIXME: :is-indirect set to false to all rows looks
-         ;; completly useless
-         (map #(assoc % :is-indirect false))
-         (map decode-row-features))
-        (db/exec! conn [sql:get-file-libraries file-id])))
+        (map decode-row-features)
+        (db/exec! conn [sql:get-file-libraries file-id file-id file-id])))
 
 (defn get-resolved-file-libraries
   "Get all file libraries including itself. Returns an instance of

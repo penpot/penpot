@@ -2,7 +2,7 @@
   "name": "penpot",
   "version": "1.20.0",
   "license": "MPL-2.0",
-  "author": "Kaleidos INC",
+  "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "repository": {
@@ -16,9 +16,10 @@
     "fmt": "./scripts/fmt"
   },
   "devDependencies": {
-    "@github/copilot": "^1.0.36",
-    "@types/node": "^25.6.0",
+    "@github/copilot": "^1.0.54",
+    "@types/node": "^25.6.2",
     "esbuild": "^0.28.0",
-    "opencode-ai": "^1.14.28"
+    "nrepl-client": "^0.3.0",
+    "opencode-ai": "^1.15.13"
   }
 }

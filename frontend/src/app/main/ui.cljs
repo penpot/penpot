@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui
   (:require
@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview*]]
-   [app.main.ui.debug.playground :refer [playground]]
+   [app.main.ui.debug.playground :refer [playground*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
@@ -189,7 +189,7 @@
        [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:? [:& verify-token-page* {:route route}]]
+       [:? [:> verify-token-page* {:route route}]]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]
@@ -215,7 +215,7 @@
 
        :debug-playground
        (when *assert*
-         [:& playground])
+         [:> playground*])
 
        (:dashboard-search
         :dashboard-recent

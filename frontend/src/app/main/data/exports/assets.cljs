@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.exports.assets
   (:require
@@ -298,8 +298,7 @@
                           counts))
                       {:png 0, :jpeg 0, :webp 0, :pdf 0, :svg 0}
                       exports)]
-    (ptk/event
-     ::ev/event (merge types
-                       {::ev/name "export-shapes"
-                        ::ev/origin origin
-                        :num-shapes (count exports)}))))
+    (ev/event (merge types
+                     {::ev/name "export-shapes"
+                      ::ev/origin origin
+                      :num-shapes (count exports)}))))
