@@ -20,8 +20,10 @@
     [:icon {:optional true} [:maybe :string]]
     [:selected {:optional true} :boolean]
     [:focused {:optional true} :boolean]
+    [:disabled {:optional true} :boolean]
     [:dimmed {:optional true} :boolean]
     [:label {:optional true} :string]
+    [:title {:optional true} [:maybe :string]]
     [:avatar {:optional true}
      [:maybe
       [:map
@@ -39,23 +41,26 @@
 
 (mf/defc option*
   {::mf/schema schema:option}
-  [{:keys [id ref label icon avatar aria-label on-click selected focused dimmed] :rest props}]
+  [{:keys [id ref label icon avatar aria-label on-click selected focused disabled dimmed title] :rest props}]
   (let [render-avatar-fn (when avatar
                            (get avatar :render-fn))
 
         class (stl/css-case :option true
                             :option-with-icon (some? icon)
                             :option-with-avatar (fn? render-avatar-fn)
+                            :option-disabled disabled
                             :option-selected selected
                             :option-current focused)]
 
     [:li {:value id
           :class class
           :aria-selected selected
+          :aria-disabled disabled
           :ref ref
           :role "option"
           :id id
-          :on-click on-click
+          :title title
+          :on-click (when-not disabled on-click)
           :data-id id
           :data-testid "dropdown-option"}
 

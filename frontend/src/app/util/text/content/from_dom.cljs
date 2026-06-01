@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.text :as txt]
+   [app.util.dom :as dom]
    [app.util.text.content.styles :as styles]))
 
 (defn is-text-node
@@ -60,7 +61,15 @@
 
 (defn get-paragraph-styles
   [element]
-  (get-attrs-from-styles element (d/concat-set txt/paragraph-attrs txt/text-node-attrs) (d/merge txt/default-paragraph-attrs txt/default-text-attrs)))
+  (let [styles (get-attrs-from-styles element
+                                      (d/concat-set txt/paragraph-attrs txt/text-node-attrs)
+                                      (d/merge txt/default-paragraph-attrs txt/default-text-attrs))
+        ;; Recover real font-size from data attribute, which to_dom/get-paragraph-styles may have
+        ;; changed to "0" ("0" trick to avoid it interfering with height calculation in the browser).
+        saved-font-size (dom/get-data element "saved-font-size")]
+    (cond-> styles
+      (some? saved-font-size)
+      (assoc :font-size saved-font-size))))
 
 (defn get-root-styles
   [element]

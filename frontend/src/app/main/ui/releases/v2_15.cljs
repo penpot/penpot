@@ -77,7 +77,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 3}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
@@ -118,7 +118,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 3}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]

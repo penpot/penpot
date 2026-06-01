@@ -133,7 +133,11 @@
   (create-element
    "div"
    {:id (or (:key paragraph) (create-random-key))
-    :data {:itype "paragraph"}
+    :data {:itype "paragraph"
+           ;; Save the real font size to be restored later in from-dom/get-paragraph-styles,
+           ;; because the function get-paragraph-styles here sets it to "0" in the css properties, 
+           ;; to avoid the browser affecting the height calculation.
+           :saved-font-size (:font-size paragraph)}
     :style (get-paragraph-styles paragraph)}
    (mapv #(create-text-span % paragraph) (:children paragraph))))
 

@@ -38,6 +38,15 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- scroll-token-type-section-on-create
+  [token-id]
+  (when token-id
+    (js/requestAnimationFrame
+     (fn []
+       (when-let [section-node (dom/get-element (str "token-pill-" token-id))]
+         (dom/scroll-into-view! section-node #js {:block "center"
+                                                  :behavior "smooth"}))))))
+
 (defn get-value-for-validator
   [active-tab value value-subfield value-type]
 
@@ -240,19 +249,23 @@
                          (do
                            (when is-rename
                              (st/emit! (dwtl/toggle-nested-token-path token-type name)))
-                           (st/emit!
-                            (if is-create
-                              (dwtl/create-token (ctob/make-token {:name name
-                                                                   :type token-type
-                                                                   :value (:value valid-token)
-                                                                   :description description}))
-                              (dwtl/update-token (:id token)
-                                                 {:name name
-                                                  :value (:value valid-token)
-                                                  :description description}))
-                            (dwtl/open-token-type (:type token))
-                            (dwtp/propagate-workspace-tokens)
-                            (modal/hide!))))))
+                           (let [new-token (when is-create
+                                             (ctob/make-token {:name name
+                                                               :type token-type
+                                                               :value (:value valid-token)
+                                                               :description description}))]
+                             (st/emit!
+                              (if is-create
+                                (dwtl/create-token new-token)
+                                (dwtl/update-token (:id token)
+                                                   {:name name
+                                                    :value (:value valid-token)
+                                                    :description description}))
+                              (dwtl/open-token-type (:type token))
+                              (dwtp/propagate-workspace-tokens)
+                              (when is-create
+                                (scroll-token-type-section-on-create (:id new-token)))
+                              (modal/hide!)))))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)
