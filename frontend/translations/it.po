@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-01 12:56+0000\n"
+"PO-Revision-Date: 2026-06-02 17:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -9070,3 +9070,15 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/data/nitrate.cljs:161
+msgid "dasboard.leave-org.toast"
+msgstr "Non fai più parte dell'organizzazione %s."
+
+#: src/app/main/ui/dashboard/import.cljs:507
+msgid "dashboard.import.import-error.check-error"
+msgstr "Impossibile verificare questo file."
+
+#: src/app/main/ui/dashboard/import.cljs:511
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Questo file sembra essere danneggiato."
