@@ -13,7 +13,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps.
-* After making changes, run the applicable lint and format checks for the affected module before considering the work done.
+* After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
 
 
 # Project modules

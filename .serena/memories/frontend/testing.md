@@ -28,16 +28,6 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
-## Lint and Format
-
-From `frontend/`:
-- CLJ/CLJS lint: `pnpm run lint:clj`.
-- JS lint currently no-ops via `pnpm run lint:js`.
-- SCSS lint: `pnpm run lint:scss`.
-- Format checks: `pnpm run check-fmt:clj`, `pnpm run check-fmt:js`, `pnpm run check-fmt:scss`.
-- Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`.
-- Translation formatting after i18n edits: `pnpm run translations`.
-
 ## Live browser verification
 
 Because CLJC compiles to both JVM and CLJS, JVM/common tests can miss frontend-only state caused by browser runtime, WASM modifier math, or real pointer events. Use `mem:frontend/cljs-repl` to inspect live app state and `mem:frontend/playwright-gestures` when real input is needed.

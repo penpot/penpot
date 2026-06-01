@@ -77,13 +77,24 @@ For an in-process backend REPL (where you control the JVM lifecycle), stop the r
 
 Fixtures can populate local data for manual testing/perf work. From the backend REPL, run `(app.cli.fixtures/run {:preset :small})`; fixture users conventionally look like `profileN@example.com` with password `123123`. Standalone fixture aliases may exist, but check current `backend/deps.edn` before relying on old command names.
 
-## Testing
+## Performance
+
+* **Type Hinting:** Use explicit JVM type hints (e.g. `^String`, `^long`) in performance-critical paths to avoid reflection overhead.
+* **Batch inserts:** Use `db/insert-many!` for bulk row inserts — generates a single SQL with multiple parameter tuples. Avoid on very large datasets (SQL length / parameter count limits).
+* **Server-side cursors:** Use `db/plan` (fetch-size 1000, forward-only, read-only) or `db/cursor` for large result sets. Never fetch large collections into memory at once.
+* **Transaction discipline:** Use `tx-run!` for writes (opens a transaction), `run!` for reads (single connection, no transaction). Set `:read-only` on `tx-run!` when applicable to let PostgreSQL optimize.
+
+## Lint and Format
 
 IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 
 * **Linting:** `pnpm run lint` from the repository root.
 * **Formatting:** `pnpm run check-fmt`. Use `pnpm run fmt` to fix. Avoid unrelated whitespace diffs.
-* **Type Hinting:** Use explicit JVM type hints (e.g. `^String`, `^long`) in performance-critical paths to avoid reflection overhead.
+
+## Testing
+
+IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
+
 * **Coverage:** If code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
 * **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
 * **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
