@@ -20,7 +20,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn- color-title
+(defn color-title
   [color-item]
   (let [{:keys [name path]} (meta color-item)
 

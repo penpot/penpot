@@ -13,10 +13,12 @@
 
 .colorpicker-tooltip {
   @extend %modal-background;
+  
+  --colorpicker-width: #{$sz-284};
 
   left: calc(10 * px2rem(140));
   padding: var(--sp-m);
-  width: $sz-284;
+  width: var(--colorpicker-width);
   overflow: auto;
   display: flex;
   flex-direction: column;
