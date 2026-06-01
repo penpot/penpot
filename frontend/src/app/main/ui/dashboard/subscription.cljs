@@ -4,6 +4,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.nitrate :as dnt]
@@ -16,6 +17,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [lambdaisland.uri :as u]
    [rumext.v2 :as mf]))
 
@@ -119,6 +121,20 @@
   [{:keys [profile teams]}]
   (let [nitrate? (dnt/is-valid-license? profile)
         nitrate-license (:subscription profile)
+        manual-license? (:manual nitrate-license)
+        subscription-warning* (mf/use-state nil)
+        subscription-warning (deref subscription-warning*)
+        days-until-expiry (or (:days-until-expiry subscription-warning)
+                              (:daysUntilExpiry subscription-warning)
+                              (:days-from-expiry subscription-warning)
+                              (:daysFromExpiry subscription-warning))
+        expiration-date (or (:expiration-date subscription-warning)
+                            (:expirationDate subscription-warning))
+        expiration-date-text (when expiration-date
+                               (ct/format-inst expiration-date "MMMM d"))
+        show-subscription-warning? (and manual-license?
+                                        (some? days-until-expiry)
+                                        (some? expiration-date-text))
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
         no-orgs-created? (mf/with-memo [teams]
                            (->> teams
@@ -134,34 +150,64 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-ac-create-org)]
+        (mf/use-fn dnt/go-to-nitrate-ac-create-org)
 
-    ;; TODO add translations for this texts when we have the definitive ones
-    (if (and nitrate? no-orgs-created?)
-      ;; Banner for users with active nitrate license but no organizations created
-      [:div {:class (stl/css :nitrate-banner :highlighted)}
-       [:div {:class (stl/css :nitrate-content)}
-        [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
-       [:div {:class (stl/css :nitrate-content)}
-        [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
-        [:> button* {:variant "primary"
-                     :type "button"
-                     :class (stl/css :nitrate-bottom-button)
-                     :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
+        handle-go-to-subscription
+        (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
 
-      ;; Banner for users without nitrate license
-      (when (not nitrate?)
-        [:div {:class (stl/css :nitrate-banner :highlighted)}
-         [:div {:class (stl/css :nitrate-content)}
-          [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
-         [:div {:class (stl/css :nitrate-content)}
-          [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
-          [:> button* {:variant "primary"
-                       :type "button"
-                       :class (stl/css :nitrate-bottom-button)
-                       :on-click handle-click} (if (:subscription profile)
-                                                 (tr "subscription.dashboard.banner.upgrade-nitrate")
-                                                 (tr "nitrate.form.try-free"))]]]))))
+    (mf/with-effect [manual-license?]
+      (if manual-license?
+        (->> (dnt/fetch-subscription-warning)
+             (rx/subs! #(reset! subscription-warning* %)))
+        (reset! subscription-warning* nil)))
+
+    [:*
+     ;; TODO add translations for this texts when we have the definitive ones
+     (if (and nitrate? no-orgs-created? (not show-subscription-warning?))
+       ;; Banner for users with active nitrate license but no organizations created
+       [:div {:class (stl/css :nitrate-banner :highlighted)}
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :nitrate-bottom-button)
+                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
+
+       ;; Banner for users without nitrate license
+       (when (not nitrate?)
+         [:div {:class (stl/css :nitrate-banner :highlighted)}
+          [:div {:class (stl/css :nitrate-content)}
+           [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
+          [:div {:class (stl/css :nitrate-content)}
+           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
+           [:> button* {:variant "primary"
+                        :type "button"
+                        :class (stl/css :nitrate-bottom-button)
+                        :on-click handle-click} (if (:subscription profile)
+                                                  (tr "subscription.dashboard.banner.upgrade-nitrate")
+                                                  (tr "nitrate.form.try-free"))]]]))
+
+     ;; Banner for users with nitrate license almost expired or expired
+     (when show-subscription-warning?
+       [:div {:class (stl/css :nitrate-banner :highlighted)}
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-title)}
+          (tr "subscription.dashboard.banner.renew-subscription")]]
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-info)}
+          (if (neg? days-until-expiry)
+            (tr "subscription.dashboard.banner.subscription-expired"
+                expiration-date-text)
+            (tr "subscription.dashboard.banner.subscription-expire-days"
+                days-until-expiry
+                expiration-date-text))]
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :nitrate-bottom-button)
+                      :on-click handle-go-to-subscription}
+          (tr "subscription.dashboard.banner.renew")]]])]))
 
 (mf/defc nitrate-current-plan*
   [{:keys [profile]}]

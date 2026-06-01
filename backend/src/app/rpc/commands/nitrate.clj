@@ -59,6 +59,22 @@
   [cfg _params]
   (nitrate/call cfg :connectivity {}))
 
+(def ^:private schema:subscription-warning
+  [:maybe
+   [:map {:title "SubscriptionWarning"}
+    [:type {:optional true} ::sm/text]
+    [:days-from-expiry {:optional true} ::sm/int]
+    [:days-until-expiry {:optional true} ::sm/int]
+    [:expiration-date {:optional true} ct/schema:inst]]])
+
+(sv/defmethod ::get-subscription-warning
+  {::rpc/auth true
+   ::doc/added "2.14"
+   ::sm/params [:map]
+   ::sm/result schema:subscription-warning}
+  [cfg {:keys [::rpc/profile-id]}]
+  (nitrate/call cfg :get-subscription-warning {:profile-id profile-id}))
+
 (def ^:private schema:redeem-activation-code-params
   [:map {:title "RedeemActivationCodeParams"}
    [:activation-code ::sm/text]])
