@@ -331,6 +331,10 @@ SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}
 # to a single Valkey Pub/Sub. See mem:devenv/core.
 PENPOT_BACKEND_WORKER=false
 
+# shadow-cljs relay proxied through nginx so the browser can reach it without
+# a separate published port. URL must match the instance's public HTTPS port.
+SHADOW_SERVER_URL=wss://localhost:${public}
+
 # Workspace bind mount (computed in manage.sh too, but recorded here for
 # clarity when inspecting the env file).
 PENPOT_SOURCE_PATH=${workspace}
