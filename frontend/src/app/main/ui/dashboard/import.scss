@@ -273,3 +273,182 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.library-resolution {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-12;
+}
+
+.library-resolution-message {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-text-foreground-color);
+  margin-bottom: deprecated.$s-8;
+}
+
+.library-resolution-item {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-8 0;
+}
+
+.library-resolution-item-name {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-weight: 700;
+}
+
+.library-resolution-summary-file {
+  margin-bottom: deprecated.$s-16;
+  padding-bottom: deprecated.$s-12;
+  border-bottom: 1px solid var(--color-foreground-secondary);
+}
+
+.library-resolution-linked {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-12;
+}
+
+.library-resolution-project {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-12;
+  margin-bottom: deprecated.$s-8;
+}
+
+// Summary file card
+.summary-file {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-8;
+  padding: deprecated.$s-12;
+  border: 1px solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
+  background: var(--color-background-primary);
+}
+
+.summary-file-header {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-8;
+  padding-bottom: deprecated.$s-8;
+  border-bottom: 1px solid var(--color-background-quaternary);
+}
+
+.summary-file-icon {
+  color: var(--color-foreground-secondary);
+  flex-shrink: 0;
+}
+
+.summary-file-name {
+  @include deprecated.body-medium-typography;
+
+  color: var(--modal-title-foreground-color);
+  font-weight: 700;
+}
+
+// Section within a file (auto-linked or user selection)
+.summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  padding-left: deprecated.$s-8;
+}
+
+.summary-section-header {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-6;
+  padding: deprecated.$s-4 0;
+}
+
+.summary-section-icon {
+  color: var(--color-foreground-secondary);
+  flex-shrink: 0;
+}
+
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-2;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summary-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: deprecated.$s-8;
+  padding: deprecated.$s-4 deprecated.$s-8;
+  border-radius: deprecated.$br-4;
+
+  &:hover {
+    background: var(--color-background-secondary);
+  }
+}
+
+.summary-item-name {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-title-foreground-color);
+  flex: 1;
+  min-width: 0;
+
+  @include deprecated.text-ellipsis;
+}
+
+// Auto-linked badge
+.summary-linked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-2 deprecated.$s-8;
+  border-radius: deprecated.$br-12;
+  background: var(--color-accent-success-bg);
+  color: var(--color-accent-success);
+  font-size: deprecated.$fs-11;
+  font-weight: deprecated.$fw500;
+  flex-shrink: 0;
+}
+
+.summary-badge-icon {
+  color: var(--color-accent-success);
+}
+
+// User-selected library info
+.summary-linked-info {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-4;
+  flex-shrink: 0;
+}
+
+.summary-linked-name {
+  @include deprecated.body-small-typography;
+
+  color: var(--modal-text-foreground-color);
+  font-weight: deprecated.$fw500;
+}
+
+.summary-linked-project {
+  @include deprecated.body-small-typography;
+
+  color: var(--color-foreground-secondary);
+  padding: deprecated.$s-2 deprecated.$s-8;
+  border-radius: deprecated.$br-12;
+  background: var(--color-background-quaternary);
+  font-size: deprecated.$fs-11;
+}
+
+// No selection state
+.summary-no-selection {
+  @include deprecated.body-small-typography;
+
+  color: var(--color-foreground-secondary);
+  font-style: italic;
+  flex-shrink: 0;
+}

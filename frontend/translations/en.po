@@ -756,6 +756,35 @@ msgstr[1] "%s files have been imported successfully."
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
 
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 library was automatically linked by name."
+msgstr[1] "%s libraries were automatically linked by name."
+
+msgid "dashboard.import.resolve-libraries"
+msgstr "Some libraries couldn't be linked automatically. Select the correct library for each:"
+
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Review the library links before confirming:"
+
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirm library links"
+
+msgid "dashboard.import.review-links"
+msgstr "Review links"
+
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Auto-linked"
+
+msgid "dashboard.import.summary.your-selection"
+msgstr "Your selection"
+
+msgid "dashboard.import.summary.linked"
+msgstr "Linked"
+
+msgid "dashboard.import.summary.no-selection"
+msgstr "No library selected"
+
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
