@@ -176,6 +176,25 @@
 ;; RESTORE VERSION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn exit-preview
+  "Exit from preview mode and reload the live file data"
+  []
+  (ptk/reify ::exit-preview
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [backup (dm/get-in state [:workspace-versions :backup])]
+        (-> state
+            (update :workspace-versions dissoc :backup)
+            (update :workspace-global dissoc :read-only? :preview-id)
+            (update :files assoc (:id backup) backup))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)]
+
+        (rx/of (dwpg/initialize-page file-id page-id))))))
+
 (defn- restore-version
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
@@ -211,6 +230,7 @@
                  :cancel {:label (tr "workspace.updates.dismiss")
                           :callback #(do
                                        (rx/push! output-s (ntf/hide :tag :restore-dialog))
+                                       (rx/push! output-s (exit-preview))
                                        (rx/end! output-s))}
                  :accept {:label (tr "labels.restore")
                           :callback #(do
@@ -231,25 +251,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :files assoc id snapshot))))
-
-(defn exit-preview
-  "Exit from preview mode and reload the live file data"
-  []
-  (ptk/reify ::exit-preview
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [backup (dm/get-in state [:workspace-versions :backup])]
-        (-> state
-            (update :workspace-versions dissoc :backup)
-            (update :workspace-global dissoc :read-only? :preview-id)
-            (update :files assoc (:id backup) backup))))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)]
-
-        (rx/of (dwpg/initialize-page file-id page-id))))))
 
 (defn enter-preview
   "Load a snapshot into the workspace for read-only preview without
@@ -291,7 +292,7 @@
                  :accept {:label (tr "labels.restore")
                           :callback #(do
                                        (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (restore-version id))
+                                       (rx/push! output-s (enter-restore id))
                                        (rx/end! output-s))}
                  :tag :preview-dialog))
 
