@@ -32,26 +32,61 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+;; ---------------------------------------------------------------------------
+;; Private helpers
+;; ---------------------------------------------------------------------------
+
+(defn- convert-grouped-colors
+  "Walk the nested group tree produced by `grp/group-assets` and replace
+  every raw library color (at the leaf `\"\"` vectors) with its converted
+  form via `ctc/library-color->color`.  Done once inside the effect so the
+  render path never needs to call `library-color->color`."
+  [groups resolved-file-id]
+  (reduce-kv
+   (fn [acc group-key value]
+     (assoc acc group-key
+            (if (= group-key "")
+              ;; leaf vector — convert each raw color
+              (mapv #(ctc/library-color->color % resolved-file-id) value)
+              ;; nested sub-tree — recurse, preserving sorted-map type
+              (convert-grouped-colors value resolved-file-id))))
+   (empty groups)
+   groups))
+
+;; ---------------------------------------------------------------------------
+;; Color row
+;; ---------------------------------------------------------------------------
+
 (mf/defc color-row-colorpicker*
+  "Single color row for the list view.  Memoized so it only re-renders when
+  `color-item` or `on-click` actually changes."
+  {::mf/memo true
+   ::mf/private true}
   [{:keys [color-item on-click]}]
-  (let [gradient (:gradient color-item)
-        image    (:image color-item)
-        color    (:color color-item)
+  (let [gradient     (:gradient color-item)
+        image        (:image color-item)
+        color        (:color color-item)
         {:keys [name]} (meta color-item)
-        element-id (mf/use-id)
-        element-ref    (mf/use-ref nil)]
+        element-id   (mf/use-id)
+        element-ref  (mf/use-ref nil)
+
+        handle-click
+        (mf/use-fn
+         (mf/deps on-click color-item)
+         (fn [_] (on-click color-item)))]
+
     [:> tooltip* {:content (su/color-title color-item)
                   :trigger-ref element-ref
                   :id element-id}
 
-     [:div {:class    (stl/css :color-row-colorpicker)
-            :ref      element-ref
+     [:div {:class           (stl/css :color-row-colorpicker)
+            :ref             element-ref
             :aria-labelledby element-id
-            :on-click on-click}
+            :on-click        handle-click}
 
-      [:> swatch* {:background color-item
+      [:> swatch* {:background   color-item
                    :show-tooltip false
-                   :size "medium"}]
+                   :size         "medium"}]
       (cond
         gradient
         (if name
@@ -84,42 +119,42 @@
         :else
         [:span (tr "unknown")])]]))
 
+;; ---------------------------------------------------------------------------
+;; Grouped color list
+;; ---------------------------------------------------------------------------
+
 (mf/defc color-group-list*
   "Renders library colors organised by group/path in list view.
-   `groups`             nested map produced by `grp/group-assets`
+   `groups`             nested map produced by `grp/group-assets`, with colors
+                        already converted via `convert-grouped-colors`
    `prefix`             accumulated group label (empty string at root)
    `resolved-file-id`   UUID of the library the colors belong to
    `on-color-click`     called with the converted color map on click
    `open-groups`        set of group paths that are currently collapsed
    `on-toggle-group`    (fn [path]) to toggle a group open/closed"
+  {::mf/memo true}
   [{:keys [groups prefix resolved-file-id on-color-click open-groups on-toggle-group]}]
   (let [direct-colors (get groups "")
         subgroups     (dissoc groups "")
         is-root?      (empty? prefix)
         collapsed?    (and (not is-root?) (contains? open-groups prefix))]
     [:*
-     ;; Group header — only shown for non-root levels
      (when (not is-root?)
        [:div {:class    (stl/css :color-group-header)
               :on-click #(on-toggle-group prefix)}
-         [:> i/icon* {:icon-id (if collapsed? i/arrow-right i/arrow-down)
-                      :size    "s"
-                      :class   (stl/css :color-group-arrow)}]
+        [:> i/icon* {:icon-id (if collapsed? i/arrow-right i/arrow-down)
+                     :size    "s"
+                     :class   (stl/css :color-group-arrow)}]
         [:span {:class (stl/css :color-group-name)} prefix]])
 
-     ;; Children — hidden when the group is collapsed
      (when-not collapsed?
        [:*
-        ;; Colors that live directly at this level
         (for [color direct-colors]
-          (let [converted    (ctc/library-color->color color resolved-file-id)
-                handle-click (fn [_] (on-color-click converted))]
-            [:> color-row-colorpicker*
-             {:key              (dm/str (:id color))
-              :color-item       converted
-              :on-click         handle-click}]))
+          [:> color-row-colorpicker*
+           {:key        (dm/str (:ref-id color))
+            :color-item color
+            :on-click   on-color-click}])
 
-        ;; Recurse into sub-groups
         (for [[group-name sub-tree] subgroups]
           [:> color-group-list*
            {:key              group-name
@@ -130,6 +165,9 @@
             :open-groups      open-groups
             :on-toggle-group  on-toggle-group}])])]))
 
+;; ---------------------------------------------------------------------------
+;; Libraries panel
+;; ---------------------------------------------------------------------------
 
 (mf/defc libraries*
   [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity disable-image]}]
@@ -205,13 +243,13 @@
         on-color-click
         (mf/use-fn
          (mf/deps state selected on-select-color)
-         (fn [event]
+         (fn [color]
            (when-not (= :recent selected)
              (st/emit! (ev/event
                         {::ev/name "use-library-color"
                          ::ev/origin "colorpicker"
                          :external-library (not= :file selected)})))
-           (on-select-color state event)))
+           (on-select-color state color)))
 
         on-toggle-group
         (mf/use-fn
@@ -222,82 +260,95 @@
                       (disj s path)
                       (conj s path))))))]
 
-    ;; Load library colors when the select is changed.
-    ;; Flat current-colors* is used for the grid view and recent list view.
-    ;; Grouped grouped-colors* is used for the library list view.
-    ;; open-groups* tracks collapsed group paths (empty set = all expanded).
+    ;; Load library colors when the selected library (or filter options) change.
+    ;;
+    ;; flat    current-colors*  — used for the grid view and the recent list view.
+    ;; grouped grouped-colors*  — used for the library grouped list view.
+    ;;
+    ;; Library colors are fully converted with `library-color->color` here so
+    ;; the render path never needs to do it.  `flat-colors` is materialised as
+    ;; an eager vector so realisation does not leak into render time.
+    ;; open-groups* is reset to #{} (all groups expanded) on every library switch.
     (mf/with-effect [selected recent-colors libraries file-id valid-color?]
       (let [resolved-file-id (if (= selected :file) file-id selected)]
         (reset! open-groups* #{})
         (if (= selected :recent)
-          (let [colors (->> (reverse recent-colors)
-                            (filter valid-color?)
-                            (map-indexed (fn [index color]
-                                           (let [color (if (map? color) color {:color color})]
-                                             (vary-meta color assoc ::id (dm/str index)))))
-                            (sort ctc/sort-colors))]
+          (let [colors (into []
+                             (comp
+                              (filter valid-color?)
+                              (map-indexed (fn [index color]
+                                             (let [color (if (map? color) color {:color color})]
+                                               (vary-meta color assoc ::id (dm/str index)))))
+                              (take-while some?))
+                             (sort ctc/sort-colors (reverse recent-colors)))]
             (reset! current-colors* colors)
             (reset! grouped-colors* {}))
 
-          (let [raw-colors  (->> (dm/get-in libraries [resolved-file-id :data :colors])
-                                 (vals)
-                                 (filter valid-color?)
-                                 (sort-by :name))
-                flat-colors (->> raw-colors
-                                 (map #(ctc/library-color->color % resolved-file-id))
-                                 (map-indexed (fn [index color]
-                                                (vary-meta color assoc ::id (dm/str index)))))
-                grouped     (grp/group-assets raw-colors false)]
+          (let [raw-colors (->> (dm/get-in libraries [resolved-file-id :data :colors])
+                                (vals)
+                                (filter valid-color?)
+                                (sort-by :name))
+
+                ;; Eager vector for the grid view — index-based ::id for keying.
+                flat-colors (into []
+                                  (map-indexed (fn [index color]
+                                                 (-> (ctc/library-color->color color resolved-file-id)
+                                                     (vary-meta assoc ::id (dm/str index)))))
+                                  raw-colors)
+
+                ;; Group tree with colors already converted — no conversions at render time.
+                grouped (some-> (grp/group-assets raw-colors false)
+                                (convert-grouped-colors resolved-file-id))]
             (reset! current-colors* flat-colors)
             (reset! grouped-colors* (or grouped {}))))))
 
     [:div {:class (stl/css :libraries)}
      [:div {:class (stl/css :select-wrapper)}
 
-      [:> select* {:on-change on-library-change
-                   :options options
-                   :class (stl/css :library-select)
+      [:> select* {:on-change        on-library-change
+                   :options          options
+                   :class            (stl/css :library-select)
                    :default-selected (or (d/name selected) "recent")}]
 
       [:> icon-button*
-       {:variant "ghost"
+       {:variant    "ghost"
         :aria-label "Toggle palette"
-        :on-click toggle-palette
-        :icon i/swatches}]
+        :on-click   toggle-palette
+        :icon       i/swatches}]
 
       [:> icon-button*
-       {:variant "ghost"
+       {:variant    "ghost"
         :aria-label (if (= :grid view-mode)
                       "Switch to list view"
                       "Switch to grid view")
-        :on-click toggle-view-mode
-        :icon (if (= :grid view-mode)
-                i/view-as-list
-                i/view-as-icons)}]
+        :on-click   toggle-view-mode
+        :icon       (if (= :grid view-mode)
+                      i/view-as-list
+                      i/view-as-icons)}]
 
       (when (= selected :file)
         [:> icon-button*
-         {:variant "ghost"
+         {:variant    "ghost"
           :aria-label "Add library color"
-          :on-click on-add-library-color
-          :icon i/add}])]
+          :on-click   on-add-library-color
+          :icon       i/add}])]
 
      (if (= view-mode :grid)
        [:div {:class (stl/css :selected-colors)}
         (for [color current-colors]
           [:> swatch* {:background color
-                       :key (-> color meta ::id)
-                       :on-click on-color-click
-                       :size "medium"}])]
+                       :key        (-> color meta ::id)
+                       :on-click   on-color-click
+                       :size       "medium"}])]
 
        [:div {:class (stl/css :selected-colors-list)}
         (if (= selected :recent)
           ;; Recent colors have no path/groups — render flat
           (for [color current-colors]
             [:> color-row-colorpicker*
-             {:key      (-> color meta ::id)
-              :color-item    color
-              :on-click on-color-click}])
+             {:key        (-> color meta ::id)
+              :color-item color
+              :on-click   on-color-click}])
 
           ;; Library colors — grouped list view
           (when (seq grouped-colors)
