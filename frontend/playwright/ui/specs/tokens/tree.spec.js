@@ -276,3 +276,64 @@ test.describe("Tokens - node tree", () => {
     await expect(tokenTypeButton).toHaveAttribute("aria-expanded", "false");
   });
 });
+
+test("User can see an error on token pill and token modal form when token has an error", async ({
+  page,
+}) => {
+  const {
+    tokensSidebar,
+    tokensUpdateCreateModal,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+  } = await setupTokensFileRender(page);
+
+  await createSet(tokenThemesSetsSidebar, "set/first");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "first" })
+    .getByRole("checkbox")
+    .click();
+
+  await createSet(tokenThemesSetsSidebar, "set/second");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "second" })
+    .getByRole("checkbox")
+    .click();
+
+  await createToken(page, "Border radius", "a.b", "Value", "textbox", "23");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+  await createToken(page, "Border radius", "a", "Value", "textbox", "25");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
+
+  const brokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Group name of a.b conflicts",
+  });
+  await expect(brokenTokenPill).toBeVisible();
+
+  await brokenTokenPill.click({ button: "right" });
+
+  const editTokenButton = page
+    .getByRole("listitem")
+    .filter({ hasText: "Edit token" });
+  await expect(editTokenButton).toBeVisible();
+  await editTokenButton.click();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await expect(nameField).toBeVisible();
+  await expect(nameField).toHaveValue("a.b");
+
+  const errorMessage = tokensUpdateCreateModal.getByText(
+    "Group name of a.b conflicts",
+  );
+  await expect(errorMessage).toBeVisible();
+
+  await nameField.fill("new-name");
+  await expect(errorMessage).not.toBeVisible();
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await expect(submitButton).toBeEnabled();
+});
