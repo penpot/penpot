@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.team :as dtm]
    [app.main.errors :as errors]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -147,6 +148,14 @@
   []
   (ptk/reify ::init-routes
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (rt/initialize-router routes)
-             (rt/initialize-history on-navigate)))))
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (rt/initialize-router routes)
+              (rt/initialize-history on-navigate))
+       (->> stream
+            (rx/filter (ptk/type? ::rt/navigated))
+            (rx/map deref)
+            (rx/map #(dm/get-in % [:query-params :wasm]))
+            (rx/buffer 2 1)
+            (rx/filter (fn [[v1 v2]] (not= v1 v2)))
+            (rx/map features/recompute-features))))))

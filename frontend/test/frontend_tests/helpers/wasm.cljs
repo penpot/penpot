@@ -8,8 +8,9 @@
   "Test helpers for mocking WASM API boundary functions.
 
    In the Node.js test environment the WASM binary is not available,
-   but the `render-wasm/v1` feature flag is enabled by default, so
-   every geometry-modifying event takes the WASM code path.
+   but `render-wasm/v1` is active when the test store uses a profile
+   with `:renderer :wasm` (see `frontend-tests.helpers.state`), so
+   geometry/text events take the WASM code path.
    This namespace provides lightweight mock implementations that let
    the Clojure-side logic execute normally while stubbing out every
    call that would touch the WASM heap.

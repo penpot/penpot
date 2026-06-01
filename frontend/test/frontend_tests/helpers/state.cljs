@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.test-helpers.files :as cthf]
    [app.main.data.workspace.layout :as layout]
+   [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -18,7 +19,10 @@
    :workspace-global layout/default-global
    :current-file-id nil
    :current-page-id nil
-   :features-team #{"components/v2"}})
+   :features-team #{"components/v2"}
+   ;; With :render-switch enabled by default, render-wasm/v1 follows the
+   ;; profile renderer preference instead of the global feature flag alone.
+   :profile {:props {:renderer :wasm}}})
 
 (defn- on-error
   [cause]
@@ -34,6 +38,9 @@
                          :permissions {:can-edit true}
                          :files {(:id file) file}))
         store (ptk/store {:state state :on-error on-error})]
+    ;; Unit tests skip team/workspace bootstrap; mirror team init so
+    ;; :features is populated the same way as features/initialize does in app.
+    (ptk/emit! store (features/initialize #{}))
     store))
 
 (defn run-store
