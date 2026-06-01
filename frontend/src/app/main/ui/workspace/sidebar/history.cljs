@@ -154,7 +154,7 @@
     :page deprecated-icon/document
     :shape deprecated-icon/svg
     :rect deprecated-icon/rectangle
-    :circle deprecated-icon/elipse
+    :circle deprecated-icon/ellipse
     :text deprecated-icon/text
     :path deprecated-icon/path
     :frame deprecated-icon/board
