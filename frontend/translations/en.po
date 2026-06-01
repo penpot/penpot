@@ -4043,9 +4043,6 @@ msgstr "Invitation sent successfully"
 msgid "notifications.invitation-link-copied"
 msgstr "Invitation link copied"
 
-msgid "notifications.mcp.active-in-another-tab"
-msgstr "MCP is active in another tab. Switch here?"
-
 msgid "notifications.mcp.active-in-this-tab"
 msgstr "MCP is now active in this tab."
 
@@ -8974,8 +8971,8 @@ msgstr "MCP"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP connected"
 
-msgid "workspace.toolbar.mcp-switch-here"
-msgstr "Switch here"
+msgid "workspace.toolbar.mcp-connect-here"
+msgstr "Connect here"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:143
 msgid "workspace.toolbar.move"
