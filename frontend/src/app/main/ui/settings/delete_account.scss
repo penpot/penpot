@@ -17,6 +17,8 @@
 .modal-container {
   @extend %modal-container-base;
 
+  display: flex;
+  flex-direction: column;
   min-width: deprecated.$s-408;
 }
 
@@ -38,8 +40,14 @@
   @include deprecated.flex-column;
   @include deprecated.body-small-typography;
 
+  flex: 1 1 auto;
+  min-height: 0;
   gap: deprecated.$s-24;
   margin-bottom: deprecated.$s-24;
+}
+
+.warning-notice {
+  flex-shrink: 0;
 }
 
 .fields-row {
@@ -57,6 +65,8 @@
 
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   gap: var(--sp-l);
 }
 
@@ -87,10 +97,13 @@
 .org-list {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   gap: var(--sp-l);
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-y: auto;
 }
 
 .org-item {
