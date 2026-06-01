@@ -313,6 +313,9 @@
    (top-nested-frame objects position nil))
 
   ([objects position excluded]
+   (top-nested-frame objects position excluded false))
+
+  ([objects position excluded read-only?]
    (assert (or (nil? excluded) (set? excluded)))
 
    (let [frames (cond->> (get-frames-by-position objects position)
@@ -323,7 +326,8 @@
 
                   :always
                   (remove #(or ^boolean (true? (:hidden %))
-                               ^boolean (true? (:blocked %)))))
+                               ^boolean (and (true? (:blocked %))
+                                             (not read-only?)))))
 
          frame-set (into #{} (map #(dm/get-prop % :id)) frames)]
 

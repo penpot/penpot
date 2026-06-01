@@ -113,7 +113,8 @@
         (mf/use-fn
          (mf/deps (:id frame) on-frame-select workspace-read-only? blocked?)
          (fn [event]
-           (when (and (dom/left-mouse? event) (not blocked?))
+           (when (and (dom/left-mouse? event)
+                      (or (not blocked?) workspace-read-only?))
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (on-frame-select event (:id frame)))))
@@ -198,7 +199,7 @@
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
                        :data-edit-grid is-grid-edition
                        :transform (vwu/title-transform frame zoom is-grid-edition)
-                       :pointer-events (when (:blocked frame) "none")}
+                       :pointer-events (when (and (:blocked frame) (not workspace-read-only?)) "none")}
        (when show-icon?
          [:svg {:x 0
                 :y -9
