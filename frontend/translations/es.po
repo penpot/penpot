@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Andrey Antukh <niwi@niwi.nz>\n"
+"PO-Revision-Date: 2026-06-01 12:56+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -1166,8 +1166,10 @@ msgstr "Este equipo no pertenece a ninguna organización"
 msgid "dashboard.team-organization.add"
 msgstr "Añadir a una organización"
 
+#, fuzzy
 msgid "dashboard.team-organization.add.no-valid-orgs"
-msgstr "No tienes permiso para añadir este equipo a ninguna de tus organizaciones."
+msgstr ""
+"No tienes permiso para añadir este equipo a ninguna de tus organizaciones."
 
 msgid "dashboard.select-org-modal.title"
 msgstr "Añadir el equipo a una organización"
