@@ -160,6 +160,11 @@
 (def ^:private coerce-render-objects-params
   (sm/coercer schema:render-objects))
 
+(defn- handle-render-error
+  [cause]
+  (log/error :hint "unexpected render error" :cause cause)
+  (mf/html [:span "Unexpected error:" (ex-message cause)]))
+
 (defn- render-objects
   [params]
   (try
@@ -189,10 +194,7 @@
            :wasm wasm
            :scale scale}])))
     (catch :default cause
-      (when-let [explain (-> cause ex-data ::sm/explain)]
-        (js/console.log "Unexpected error")
-        (js/console.log (sm/humanize-explain explain)))
-      (mf/html [:span "Unexpected error:" (ex-message cause)]))))
+      (handle-render-error cause))))
 
 ;; ---- COMPONENTS SPRITE
 
@@ -296,10 +298,7 @@
          :embed embed}]))
 
     (catch :default cause
-      (when-let [explain (-> cause ex-data ::sm/explain)]
-        (js/console.log "Unexpected error")
-        (js/console.log (sm/humanize-explain explain)))
-      (mf/html [:span "Unexpected error:" (ex-message cause)]))))
+      (handle-render-error cause))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETUP
