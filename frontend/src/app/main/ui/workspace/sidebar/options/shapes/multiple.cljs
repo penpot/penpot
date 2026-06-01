@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.shapes.multiple
   (:require-macros [app.main.style :as stl])
@@ -274,7 +274,7 @@
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc content-attrs applied-tokens)]
+                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])

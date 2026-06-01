@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.viewer
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
@@ -20,9 +21,11 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.helpers :as dsh]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.render-wasm.api :as wasm.api]
    [app.util.globals :as ug]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -82,7 +85,7 @@
              (when (some? (:profile state))
                (fetch-comment-threads params))
              (when (:share-id params)
-               (rx/of (ptk/event ::ev/event {::ev/name "shared-prototipe-visited"})))))
+               (rx/of (ev/event {::ev/name "shared-prototipe-visited"})))))
     ptk/EffectEvent
     (effect [_ _ _]
       ;; Set the window name, the window name is used on inter-tab
@@ -171,6 +174,88 @@
 (declare go-to-frame-by-index)
 (declare go-to-frame-auto)
 
+;; Applies to the viewer the changes passed as parameters
+;; will not save the data but just modify the data localy
+(defn- apply-changes-viewer
+  [changes]
+  (ptk/reify ::apply-changes-viewer
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file (-> (dm/get-in state [:viewer :file])
+                     (update :data cpc/process-changes changes false))
+
+            pages
+            (->> (dm/get-in file [:data :pages])
+                 (map (fn [page-id]
+                        (let [data (get-in file [:data :pages-index page-id])]
+                          [page-id (assoc data
+                                          :frames (ctt/get-viewer-frames (:objects data))
+                                          :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true}))])))
+                 (into {}))]
+
+        (-> state
+            (assoc-in [:viewer :file] file)
+            (assoc-in [:viewer :pages] pages))))))
+
+(defn- generate-update-position-data-changes
+  [shapes page-id]
+  (reduce
+   (fn [result shape]
+     (conj result
+           {:type :mod-obj
+            :id (:id shape)
+            :page-id page-id
+            :operations
+            [{:type :set
+              :attr :position-data
+              :val (wasm.api/calculate-position-data shape)
+              :ignore-touched true
+              :ignore-geometry true}]}))
+   []
+   shapes))
+
+(defn update-page-position-data
+  [file-id page-id]
+  (ptk/reify ::update-page-position-data
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (features/active-feature? state "render-wasm/v1")
+        (let [objects (dsh/lookup-page-objects state file-id page-id)
+
+              shapes
+              (reduce-kv
+               (fn [result _ shape]
+                 (cond-> result
+                   (and (cfh/text-shape? shape) (nil? (:position-data shape)))
+                   (conj shape)))
+               []
+               objects)
+
+              ;; Creates a stream from the async callback. This stream will only
+              ;; emit one single value after the objects have finished loading
+              ;; in the wasm memory.
+              set-objects-stream
+              (rx/create
+               (fn [subs]
+                 (wasm.api/init-canvas-context (js/OffscreenCanvas. 0 0))
+                 (wasm.api/set-objects-callback shapes #(rx/push! subs :done))
+                 nil))]
+
+          (if (d/not-empty? shapes)
+            (->> (rx/from @wasm.api/module)
+                 (rx/mapcat (constantly set-objects-stream))
+                 (rx/mapcat
+                  (fn []
+                    (let [changes (generate-update-position-data-changes shapes page-id)
+                          _ (wasm.api/clear-canvas)]
+                      (if (d/not-empty? changes)
+                        (rx/of (apply-changes-viewer changes))
+                        (rx/empty))))))
+            (rx/empty)))
+
+        ;; Render wasm disabled, we do nothing
+        (rx/empty)))))
+
 (defn bundle-fetched
   [{:keys [project file team share-links libraries users permissions thumbnails] :as bundle}]
   (let [pages (->> (dm/get-in file [:data :pages])
@@ -205,13 +290,17 @@
         (let [route    (:route state)
               qparams  (:query-params route)
               index    (some-> (rt/get-query-param qparams :index) parse-long)
-              frame-id (some-> (:frame-id qparams) uuid/parse)]
+              frame-id (some-> (:frame-id qparams) uuid/parse)
+              page-id (some-> (rt/get-query-param qparams :page-id) uuid/parse)
+              file-id (some-> (rt/get-query-param qparams :file-id) uuid/parse)]
+
           (rx/merge
            (rx/of (case (:zoom qparams)
                     "fit" zoom-to-fit
                     "fill" zoom-to-fill
                     nil))
            (rx/of
+            (update-page-position-data file-id page-id)
             (cond
               (some? frame-id) (go-to-frame frame-id)
               (some? index) (go-to-frame-by-index index)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 
 (ns app.main.ui.workspace.tokens.management.group
@@ -100,18 +100,19 @@
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
-
         expandable? (d/nilv (seq tokens) false)
 
         on-pill-context-menu
         (mf/use-fn
+         (mf/deps active-theme-tokens)
          (fn [event token]
            (dom/prevent-default event)
-           (st/emit! (dwtl/assign-token-context-menu
-                      {:type :token
-                       :position (dom/get-client-position event)
-                       :errors (:errors token)
-                       :token-id (:id token)}))))
+           (let [resolved-token (get active-theme-tokens (:name token))]
+             (st/emit! (dwtl/assign-token-context-menu
+                        {:type :token
+                         :position (dom/get-client-position event)
+                         :errors (:errors resolved-token)
+                         :token-id (:id token)})))))
 
         on-node-context-menu
         (mf/use-fn
@@ -131,7 +132,7 @@
 
         on-popover-open-click
         (mf/use-fn
-         (mf/deps type title modal)
+         (mf/deps type title modal selected-token-set-id)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit!
@@ -143,11 +144,12 @@
                            :fields (:fields modal)
                            :title title
                            :action "create"
-                           :token-type type})))))
+                           :token-type type
+                           :selected-token-set-id selected-token-set-id})))))
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps not-editing? selected-ids tokens-lib)
+         (mf/deps not-editing? selected-ids tokens-lib selected-token-set-id)
          (fn [event token]
            (let [token (ctob/get-token tokens-lib selected-token-set-id (:id token))]
              (dom/stop-propagation event)

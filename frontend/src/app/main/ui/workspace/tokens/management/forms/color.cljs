@@ -2,18 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.color
   (:require
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [rumext.v2 :as mf]))
 
 (mf/defc form*
-  [{:keys [token token-type] :as props}]
+  [{:keys [token token-type selected-token-set-id] :as props}]
   (let [initial
         (mf/with-memo [token-type token]
           {:type token-type
@@ -22,7 +23,11 @@
            :description (:description token "")
            :color-result ""})
 
-        props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type)
+        props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1
+                                                                               token-type
+                                                                               selected-token-set-id
+                                                                               (when (ctob/token? token)
+                                                                                 (ctob/get-id token)))
                                                         (sm/dissoc-key :id)
                                                         (sm/assoc-key :color-result :string))
                                       :initial initial

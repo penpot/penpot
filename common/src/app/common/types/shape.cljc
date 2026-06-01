@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape
   (:require
@@ -137,6 +137,8 @@
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
    [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-dash {:optional true} ::sm/safe-number]
+   [:stroke-gap {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}
     [::sm/one-of #{:center :inner :outer}]]
    [:stroke-cap-start {:optional true}
@@ -523,7 +525,7 @@
    :fills []
    :strokes [{:stroke-style :solid
               :stroke-alignment :inner
-              :stroke-width 2
+              :stroke-width 1
               :stroke-color clr/black
               :stroke-opacity 1}]})
 
@@ -727,7 +729,7 @@
           (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))))))
 
 (defn patch-props
-  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necesary"
+  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necessary"
   [shape props objects]
 
   (letfn [(patch-text-props [shape props]

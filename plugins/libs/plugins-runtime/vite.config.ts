@@ -4,15 +4,17 @@ import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import * as path from 'path';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import checker from 'vite-plugin-checker';
 
 export default defineConfig({
   root: __dirname,
   cacheDir: '../node_modules/.vite/plugins-runtime',
 
+  resolve: {
+    tsconfigPaths: true,
+  },
+
   plugins: [
-    tsconfigPaths(),
     dts({
       entryRoot: 'src',
       tsconfigPath: path.join(__dirname, 'tsconfig.lib.json'),
@@ -51,7 +53,7 @@ export default defineConfig({
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      external: [],
+      external: ['ses', /^@endo\//],
     },
     sourcemap: true,
   },

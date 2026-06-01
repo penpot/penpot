@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.changes
   (:require
@@ -18,7 +18,9 @@
    [app.main.data.helpers :as dsh]
    [app.main.features :as features]
    [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
+   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -76,6 +78,31 @@
 (def ^:private xf:map-page-id
   (map :page-id))
 
+(def ^:private wasm-structural-change-types
+  #{:add-obj :mov-objects})
+
+(defn- redo-changes-need-wasm-object-sync?
+  [redo-changes]
+  (some #(contains? wasm-structural-change-types (:type %)) redo-changes))
+
+(defn- sync-wasm-structural-changes
+  [{:keys [redo-changes]}]
+  (ptk/reify ::sync-wasm-structural-changes
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (and wasm/context-initialized?
+                 (not @wasm/context-lost?))
+        (let [objects (dsh/lookup-page-objects state)]
+          (doseq [{:keys [type id parent-id]} redo-changes
+                  :when (contains? wasm-structural-change-types type)
+                  :let [shape-id (case type
+                                   :add-obj id
+                                   :mov-objects parent-id)
+                        shape (get objects shape-id)]
+                  :when shape]
+            (wasm.api/process-object shape))
+          (wasm.api/request-render "sync-wasm-structural-changes"))))))
+
 (defn- apply-changes-localy
   [{:keys [file-id redo-changes ignore-wasm?] :as commit} pending]
   (ptk/reify ::apply-changes-localy
@@ -118,7 +145,16 @@
             state)
 
           ;; wasm renderer deactivated
-          (update-in state [:files file-id :data] apply-changes))))))
+          (update-in state [:files file-id :data] apply-changes))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      ;; `:add-obj` / `:mov-objects` are not tracked via `*shape-changes*`.
+      ;; Emit only for structural commits, after file data is in state.
+      (when (and (not ignore-wasm?)
+                 (features/active-feature? state "render-wasm/v1")
+                 (redo-changes-need-wasm-object-sync? redo-changes))
+        (rx/of (sync-wasm-structural-changes {:redo-changes redo-changes}))))))
 
 (defn commit
   "Create a commit event instance"

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.grid
   (:require-macros [app.main.style :as stl])
@@ -96,7 +96,7 @@
         visible?     (h/use-visible container :once? true)]
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
-      (when (and visible? (not thumbnail-id))
+      (when (and can-edit visible? (not thumbnail-id))
         (let [subscription
               (->> (ask-for-thumbnail file-id revn)
                    (rx/subs! (fn [thumbnail-id]
@@ -119,10 +119,11 @@
                 :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
-         [:> loader* {:class (stl/css :grid-loader)
-                      :draggable (dm/str can-edit)
-                      :overlay true
-                      :title (tr "labels.loading")}]))]))
+         (when can-edit
+           [:> loader* {:class (stl/css :grid-loader)
+                        :draggable (dm/str can-edit)
+                        :overlay true
+                        :title (tr "labels.loading")}])))]))
 
 ;; --- Grid Item Library
 
@@ -198,10 +199,10 @@
                                    :else (:value color))]
                 [:div {:class (stl/css :asset-list-item :color-item)
                        :key (str "assets-color-" (:id color))}
-                 [:& bc/color-bullet {:color {:color (:color color)
-                                              :id (:id color)
-                                              :opacity (:opacity color)}
-                                      :mini true}]
+                 [:> bc/color-bullet* {:color {:color (:color color)
+                                               :id (:id color)
+                                               :opacity (:opacity color)}
+                                       :mini true}]
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :color-name)} (:name color)]
                   (when-not (= (:name color) default-name)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
@@ -24,7 +24,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc image-upload*
@@ -171,7 +170,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           deprecated-icon/elipse]]
+           deprecated-icon/ellipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -209,8 +208,8 @@
               :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
               :class (stl/css :main-toolbar-options-button)
               :on-click #(st/emit!
-                          (ptk/data-event ::ev/event {::ev/name "open-plugins-manager"
-                                                      ::ev/origin "workspace:toolbar"})
+                          (ev/event {::ev/name "open-plugins-manager"
+                                     ::ev/origin "workspace:toolbar"})
                           (modal/show :plugin-management {}))
               :data-tool "plugins"
               :data-testid "plugins-btn"}

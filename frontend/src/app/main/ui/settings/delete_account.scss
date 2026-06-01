@@ -2,9 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
@@ -46,6 +50,70 @@
   @include deprecated.body-small-typography;
 
   color: var(--modal-title-foreground-color);
+}
+
+.orgs-section {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+}
+
+.orgs-section-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.orgs-section-title {
+  color: var(--color-accent-tertiary);
+}
+
+.orgs-section-arrow {
+  color: var(--color-accent-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.orgs-section-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.org-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.org-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.org-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.org-name {
+  color: var(--modal-title-foreground-color);
+}
+
+.org-counts {
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-s);
+  color: var(--df-secondary);
 }
 
 .action-buttons {

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker.color-tokens
   (:require-macros [app.main.style :as stl])
@@ -294,7 +294,7 @@
         sorted-tokens     (sort-combined-tokens filtered-combined)]
     (if (seq combined-tokens)
       [:div {:class (stl/css :color-tokens-section)}
-       [:> input* {:placeholder "Search by token name"
+       [:> input* {:placeholder (tr "workspace.tokens.search-by-token")
                    :icon i/search
                    :max-length max-input-length
                    :variant "comfortable"

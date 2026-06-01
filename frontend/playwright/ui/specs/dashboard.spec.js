@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
 });
 
-test("Dashboad page has title ", async ({ page }) => {
+test("Dashboard page has title ", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();

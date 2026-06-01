@@ -2,15 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
-   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
+   [app.main.data.team :as dtm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
    [app.main.data.workspace.history :as dwh]
@@ -186,9 +186,8 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :workspace}))))]
+           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+                                                    :origin :workspace}))))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?

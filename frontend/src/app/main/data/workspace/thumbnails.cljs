@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.thumbnails
   (:require
@@ -96,12 +96,14 @@
 
        ptk/UpdateEvent
        (update [_ state]
-         (update state :thumbnails
-                 (fn [thumbs]
-                   (if-let [uri (get thumbs object-id)]
-                     (do (vreset! pending uri)
-                         (dissoc thumbs object-id))
-                     thumbs))))
+         (-> state
+             (update :thumbnails
+                     (fn [thumbs]
+                       (if-let [uri (get thumbs object-id)]
+                         (do (vreset! pending uri)
+                             (dissoc thumbs object-id))
+                         thumbs)))
+             (update :thumbnails-meta dissoc object-id)))
 
        ptk/WatchEvent
        (watch [_ _ _]
@@ -124,10 +126,13 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:thumbnails object-id])]
+        (let [prev-uri (dm/get-in state [:thumbnails object-id])
+              now      (.now js/Date)]
           (some->> prev-uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
-          (update state :thumbnails assoc object-id uri)))
+          (-> state
+              (update :thumbnails assoc object-id uri)
+              (update :thumbnails-meta assoc object-id {:rendered-at now}))))
 
       ptk/EffectEvent
       (effect [_ _ _]
