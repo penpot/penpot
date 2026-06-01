@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
@@ -212,17 +212,17 @@
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :account)}
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login params))
-                  :class (stl/css :account-link)
-                  :data-testid "login-here-link"}
+     [:> lk/link* {:action  #(st/emit! (rt/nav :auth-login params))
+                   :class (stl/css :account-link)
+                   :data-testid "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? cf/flags :demo-users)
       [:*
        [:hr {:class (stl/css :separator)}]
        [:div {:class (stl/css :demo-account)}
-        [:& lk/link {:action login/create-demo-profile
-                     :class (stl/css :demo-account-link)}
+        [:> lk/link* {:action login/create-demo-profile
+                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
 
@@ -355,6 +355,6 @@
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {}))
-                  :class (stl/css :go-back-link)}
+     [:> lk/link* {:action  #(st/emit! (rt/nav :auth-register {}))
+                   :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])

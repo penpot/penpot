@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.tooltip.tooltip
   (:require-macros
@@ -322,7 +322,7 @@
          (let [trigger-el (mf/ref-val trigger-ref)
                tooltip-el (mf/ref-val tooltip-ref)]
            (when (and trigger-el tooltip-el)
-             (js/requestAnimationFrame
+             (ts/raf
               (fn []
                 (let [origin-brect (dom/get-bounding-rect trigger-el)
                       tooltip-brect (dom/get-bounding-rect tooltip-el)

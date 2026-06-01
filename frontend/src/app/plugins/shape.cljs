@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.shape
   (:require
@@ -48,12 +48,15 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.fills :as fills]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.strokes :as strokes]
+   [app.plugins.system-events :as se]
    [app.plugins.text :as text]
    [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
    [app.plugins.utils :as u]
@@ -759,17 +762,17 @@
            :fills
            {:this true
             :get (fn [^js self]
-                   (let [fills (if (cfh/text-shape? data)
-                                 (-> self u/proxy->shape text-props :fills)
-                                 (-> self u/proxy->shape :fills))]
-                     (format/format-fills fills #(commit-fills! plugin-id self %))))
+                   (let [fill-data (if (cfh/text-shape? data)
+                                     (-> self u/proxy->shape text-props :fills)
+                                     (-> self u/proxy->shape :fills))]
+                     (fills/format-fills fill-data #(commit-fills! plugin-id self %))))
             :set (fn [self value] (commit-fills! plugin-id self value))}
 
            :strokes
            {:this true
             :get (fn [^js self]
-                   (format/format-strokes (-> self u/proxy->shape :strokes)
-                                          #(commit-strokes! plugin-id self %)))
+                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
+                                           #(commit-strokes! plugin-id self %)))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
@@ -794,9 +797,7 @@
                 (when (ctl/grid-layout-immediate-child-id? objects id)
                   (grid/layout-cell-proxy plugin-id file-id page-id id))))}
 
-
            ;; Interactions
-
 
            :interactions
            {:this true
@@ -971,12 +972,17 @@
 
                  :else
                  (let [child-id     (obj/get child "$id")
+                       child-shape (u/locate-shape file-id page-id child-id)
                        is-reversed? (ctl/flex-layout? shape)
                        index
                        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          0
                          (count (:shapes shape)))]
-                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
+                   (st/emit!
+                    (dwsh/relocate-shapes #{child-id} id index)
+                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                              :type (:type child-shape)
+                              :parent-type (:type shape)))))))
 
            :insertChild
            (fn [index child]
@@ -996,12 +1002,17 @@
 
                  :else
                  (let [child-id (obj/get child "$id")
+                       child-shape (u/locate-shape file-id page-id child-id)
                        is-reversed? (ctl/flex-layout? shape)
                        index
                        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
                          (- (count (:shapes shape)) index)
                          index)]
-                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
+                   (st/emit!
+                    (dwsh/relocate-shapes #{child-id} id index)
+                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                              :type (:type child-shape)
+                              :parent-type (:type shape)))))))
 
            ;; Only for frames
            :addFlexLayout
@@ -1015,7 +1026,9 @@
                  (u/not-valid plugin-id :addFlexLayout "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (do (st/emit! (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false))
+                 (do (st/emit!
+                      (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false)
+                      (se/event plugin-id "create-shape-layout" :layout "flex"))
                      (flex/flex-layout-proxy plugin-id file-id page-id id)))))
 
            :addGridLayout
@@ -1030,6 +1043,7 @@
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
+                     (se/event plugin-id "create-shape-layout" :layout "grid")
                      (grid/grid-layout-proxy plugin-id file-id page-id id)))))
 
            ;; Make masks for groups
@@ -1044,7 +1058,9 @@
                  (u/not-valid plugin-id :makeMask "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (st/emit! (dwg/mask-group #{id})))))
+                 (st/emit!
+                  (dwg/mask-group #{id})
+                  (se/event plugin-id "create-shape" :type "mask")))))
 
            :removeMask
            (fn []
@@ -1229,8 +1245,8 @@
                              (rx/map :body)
                              (rx/mapcat #(.arrayBuffer %))
                              (rx/map #(js/Uint8Array. %))
+                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
                              (rx/subs! resolve reject)))))
-
 
                    ;; Old export through exporter
                    (let [shape (u/locate-shape file-id page-id id)
@@ -1257,7 +1273,9 @@
                                                (rx/map :body))))
                              (rx/mapcat #(.arrayBuffer %))
                              (rx/map #(js/Uint8Array. %))
+                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "exporter")))
                              (rx/subs! resolve reject)))))))))
+
 
            ;; Interactions
            :addInteraction
@@ -1271,7 +1289,9 @@
 
                  :else
                  (let [index (-> (u/locate-shape file-id page-id id) (:interactions [])  count)]
-                   (st/emit! (dwi/add-interaction page-id id interaction))
+                   (st/emit!
+                    (dwi/add-interaction page-id id interaction)
+                    (se/event plugin-id "add-interaction"))
                    (interaction-proxy plugin-id file-id page-id id index)))))
 
            :removeInteraction
@@ -1281,7 +1301,9 @@
                (u/not-valid plugin-id :removeInteraction interaction)
 
                :else
-               (st/emit! (dwi/remove-interaction {:id id} (obj/get interaction "$index")))))
+               (st/emit!
+                (dwi/remove-interaction {:id id} (obj/get interaction "$index"))
+                (se/event plugin-id "remove-interaction"))))
 
            ;; Ruler guides
            :addRulerGuide
@@ -1308,11 +1330,12 @@
                        board-pos (get frame axis)
                        position  (+ board-pos value)]
                    (st/emit!
-                    (dwgu/update-guides
-                     {:id       ruler-id
-                      :axis     axis
-                      :position position
-                      :frame-id id}))
+                    (-> (dwgu/update-guides
+                         {:id       ruler-id
+                          :axis     axis
+                          :position position
+                          :frame-id id})
+                        (se/add-event plugin-id)))
                    (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
@@ -1326,7 +1349,8 @@
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
-                 (st/emit! (dwgu/remove-guide guide)))))
+                 (st/emit! (-> (dwgu/remove-guide guide)
+                               (se/add-event plugin-id))))))
 
            :tokens
            {:this true
@@ -1353,10 +1377,11 @@
                     (if (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
                       (st/emit!
-                       (dwta/toggle-token {:token token
-                                           :attrs kw-attrs
-                                           :shape-ids [id]
-                                           :expand-with-children false})))))}
+                       (-> (dwta/toggle-token {:token token
+                                               :attrs kw-attrs
+                                               :shape-ids [id]
+                                               :expand-with-children false})
+                           (se/add-event plugin-id))))))}
 
            :isVariantHead
            (fn []
@@ -1382,7 +1407,8 @@
                (let [shape     (u/locate-shape file-id page-id id)
                      component (u/locate-library-component file-id (:component-id shape))]
                  (when  (and component (ctk/is-variant? component))
-                   (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value}))))))
+                   (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
+                                 (se/add-event plugin-id)))))))
 
            :combineAsVariants
            (fn [ids]
@@ -1391,9 +1417,9 @@
                (u/not-valid plugin-id :ids ids)
 
                :else
-               (let [ids (->> ids
-                              (map uuid/uuid)
-                              (into #{id}))
+               (let [ids
+                     (into #{id} (keep uuid/parse*) id)
+
                      valid?
                      (every?
                       (fn [id]
@@ -1404,9 +1430,10 @@
 
                  (if valid?
                    (let [variant-id (uuid/next)]
-                     (st/emit! (dwv/combine-as-variants
-                                ids
-                                {:trigger "plugin:combine-as-variants" :variant-id variant-id}))
+                     (st/emit! (-> (dwv/combine-as-variants
+                                    ids
+                                    {:trigger "plugin:combine-as-variants" :variant-id variant-id})
+                                   (se/add-event plugin-id)))
                      (shape-proxy plugin-id variant-id))
 
                    (u/not-valid plugin-id :ids "One of the components is not on the same page or is already a variant"))))))

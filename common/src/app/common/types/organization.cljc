@@ -16,10 +16,13 @@
    [:owner-id ::sm/uuid]
    [:avatar-bg-url ::sm/uri]
    [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:expired-license {:optional true} [:maybe :boolean]]
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
-             [:delete-teams {:optional true} [:maybe [:enum "ownersAndAdmins" "onlyOwners"]]]]]]])
+             [:delete-teams {:optional true} [:maybe [:enum "onlyMe" "onlyOwners"]]]
+             [:move-teams {:optional true} [:maybe [:enum "always" "myOrganizations" "never"]]]
+             [:new-team-members {:optional true} [:maybe [:enum "anyone" "members"]]]]]]])
 
 
 (def schema:team-with-organization
@@ -29,27 +32,23 @@
    [:organization schema:organization]])
 
 (def organization->team-keys
-  "Mapping from organization field keys to their corresponding :organization-* team keys."
-  [[:id            :organization-id]
-   [:name          :organization-name]
-   [:custom-photo  :organization-custom-photo]
-   [:slug          :organization-slug]
-   [:avatar-bg-url :organization-avatar-bg-url]
-   [:owner-id      :organization-owner-id]
-   [:permissions   :organization-permissions]])
+  "Organization field keys to include in the nested :organization map."
+  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions])
 
 (defn apply-organization
-  "Updates a team map with organization fields sourced from org.
-	Associates each org field to the corresponding :organization-* team key when
-	the value is non-nil; dissociates the key otherwise. This correctly handles
-	both attaching an org (all values present) and detaching one (org is nil or
-	all fields absent)."
+  "Updates a team map with organization fields in a nested :organization map.
+  Associates each org field within :organization when the value is non-nil;
+  dissociates the field otherwise. This correctly handles both attaching an org
+  (all values present) and detaching one (org is nil or all fields absent)."
   [team organization]
   (let [id (:id organization)]
-    (reduce (fn [acc [org-k team-k]]
-              (let [v (get organization org-k)]
-                (if (and id (some? v))
-                  (assoc acc team-k v)
-                  (dissoc acc team-k))))
-            team
-            organization->team-keys)))
+    (if id
+      (assoc team :organization
+             (reduce (fn [acc k]
+                       (let [v (get organization k)]
+                         (if (some? v)
+                           (assoc acc k v)
+                           (dissoc acc k))))
+                     (or (:organization team) {})
+                     organization->team-keys))
+      (dissoc team :organization))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns debug
   (:require
@@ -164,6 +164,15 @@
       (do
         (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_base64")
         ""))))
+
+(defn ^:export wasmSurfaceConsole
+  "Logs the render-wasm surface id as an image in the JS console."
+  [id]
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_surface_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_surface_console" id)
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_surface_console"))))
 
 (defn ^:export wasmCacheConsole
   "Logs the current render-wasm cache surface as an image in the JS console."

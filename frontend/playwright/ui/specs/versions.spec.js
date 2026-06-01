@@ -121,6 +121,11 @@ test("BUG 13385 - Fix viewport not updating when restoring version", async ({ pa
   await workspacePage.mockGetFile("workspace/get-file-13385.json");
   await workspacePage.mockRPC("get-profiles-for-file-comments?file-id=*", "workspace/get-profiles-for-file-comments-13385.json");
 
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
   // navigate to workspace and check that the circle shape is not there
   await workspacePage.goToWorkspace();
   await expect(workspacePage.layers.getByText("Ellipse")).not.toBeVisible();

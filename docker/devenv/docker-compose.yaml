@@ -57,6 +57,10 @@ services:
       - 4201:4201
       - 4202:4202
 
+      # Serena MCP server (agentic mode only)
+      - ${SERENA_EXTERNAL_PORT:-14281}:14281
+      - ${SERENA_DASHBOARD_EXTERNAL_PORT:-14282}:24282
+
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # SMTP setup
@@ -82,6 +86,10 @@ services:
       - PENPOT_LDAP_ATTRS_EMAIL=mail
       - PENPOT_LDAP_ATTRS_FULLNAME=cn
       - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
+
+      # agentic devenv
+      # Serena update: set to a commit/tag to update Serena on startup, leave empty to skip update and use the version in the image
+      - SERENA_UPDATE_VERSION=1.5.0
 
     networks:
       default:

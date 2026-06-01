@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.modifiers
   (:require
@@ -34,7 +34,7 @@
 ;;                    modif-tree))))
 
 (defn- set-children-modifiers
-  "Propagates the modifiers from a parent too its children applying constraints if necesary"
+  "Propagates the modifiers from a parent too its children applying constraints if necessary"
   [modif-tree children objects bounds parent transformed-parent-bounds ignore-constraints]
   (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
     ;; Move modifiers don't need to calculate constraints

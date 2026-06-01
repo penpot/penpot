@@ -277,13 +277,60 @@ You can also mark tests in the code by adding metadata:
 Please refer to the [kaocha manual](https://cljdoc.org/d/lambdaisland/kaocha/1.91.1392/doc/6-focusing-and-skipping)
 for how to define custom metadata and other ways of selecting tests.
 
+Common tests can also be run in the JavaScript runtime with shadow-cljs. From
+<code class="language-text">common</code>:
+
+```bash
+# To run all common JavaScript tests once
+pnpm run test:js
+
+# Quiet run for non-interactive output
+pnpm run test:quiet
+
+# To run a single common JavaScript tests module
+pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test
+
+# To run a single common JavaScript test and quiet app-level logging
+pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn
+```
+
+The common JavaScript runner accepts the same forwarded runner arguments through
+<code class="language-text">pnpm run test:js -- ...</code>,
+<code class="language-text">pnpm run test:quiet -- ...</code>, or directly through
+<code class="language-text">node target/tests/test.js ...</code> after
+<code class="language-text">pnpm run build:test</code>. Supported runner arguments
+are <code class="language-text">--focus namespace-or-var</code> and
+<code class="language-text">--log-level trace|debug|info|warn|error</code>.
+
 **NOTE**: in <code class="language-text">frontend</code> we still can't use kaocha to run the tests. We are on
 it, but for now we use shadow-cljs with <code class="language-text">package.json</code> scripts:
 
 ```bash
+# To run all frontend tests once
 pnpm run test
-pnpm run test:watch
+
+# Quiet run for non-interactive output
+pnpm run test:quiet
+
+# To run all frontend tests and keep watching for changes
+pnpm run watch:test
+
+# To run a single frontend tests module
+pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens
+
+# To run a single frontend test
+pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens/change-token-in-main
+
+# To quiet app-level logging during the run (trace|debug|info|warn|error)
+pnpm run test:quiet -- --focus frontend-tests.logic.components-and-tokens --log-level warn
 ```
+
+For non-interactive runs (CI, scripted invocations, agent loops), use the quiet
+variant. It runs the same `build:wasm && build:test && node target/tests/test.js`
+pipeline but buffers each build step's output and only replays it on failure;
+test-runner output streams through normally. Short progress hints
+(`Building wasm...`, `Running tests...`) go to `stderr`, so capturing `stdout`
+gives you just the test results.
 
 #### Test output
 

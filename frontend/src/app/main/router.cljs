@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.router
   (:refer-clojure :exclude [resolve])
@@ -76,8 +76,7 @@
       (when send-event-info?
         (let [route  (dm/get-in match [:data :name])
               params (get match :query-params)]
-          (rx/of (ptk/event
-                  ::ev/event
+          (rx/of (ev/event
                   (assoc params
                          ::ev/name "navigate"
                          :route (name route)))))))

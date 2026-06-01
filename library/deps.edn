@@ -9,12 +9,12 @@
 
  :aliases
  {:outdated
-  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
    :main-opts ["-m" "antq.core"]}
 
   :jvm-repl
   {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+   {com.bhauman/rebel-readline {:mvn/version "0.1.5"}}
    :main-opts ["-m" "rebel-readline.main"]
    :jvm-opts ["--sun-misc-unsafe-memory-access=allow"]}
 
@@ -22,9 +22,9 @@
   {:extra-paths ["dev"]
    :extra-deps
    {thheller/shadow-cljs {:mvn/version "3.2.1"}
-    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    criterium/criterium {:mvn/version "RELEASE"}}}
+    com.bhauman/rebel-readline {:mvn/version "0.1.5"}
+    org.clojure/tools.namespace {:mvn/version "1.5.0"}
+    criterium/criterium {:mvn/version "0.4.6"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]

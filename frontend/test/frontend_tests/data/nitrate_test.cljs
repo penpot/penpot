@@ -33,8 +33,8 @@
 (t/deftest build-nitrate-callback-urls-adds-regular-query-without-hash
   (t/testing "falls back to the regular URL query when there is no hash route"
     (let [callbacks (dnt/build-nitrate-callback-urls
-                     "https://localhost:3449/control-center/licenses/billing?foo=bar")]
-      (t/is (= "https://localhost:3449/control-center/licenses/billing?foo=bar&subscription=subscribed-to-penpot-nitrate"
+                     "https://localhost:3449/admin-console/licenses/billing?foo=bar")]
+      (t/is (= "https://localhost:3449/admin-console/licenses/billing?foo=bar&subscription=subscribed-to-penpot-nitrate"
                (:success-callback callbacks))))))
 
 (t/deftest build-nitrate-callback-urls-accepts-uri-object
