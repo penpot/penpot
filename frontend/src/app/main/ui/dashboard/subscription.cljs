@@ -1,4 +1,4 @@
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])

@@ -2,10 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.form-container
   (:require
+   [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.management.forms.color :as color]
@@ -18,36 +20,45 @@
    [rumext.v2 :as mf]))
 
 (mf/defc form-container*
-  [{:keys [token token-type] :rest props}]
+  [{:keys [token token-type initial-errors] :rest props}]
   (let [token-type
         (or (:type token) token-type)
 
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
+
+        token-path
+        (mf/with-memo [token]
+          (ctob/get-token-path token))
+
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
+        tokens-tree-in-selected-set
+        (mf/with-memo [token-path tokens-in-selected-set]
+          (-> (ctob/tokens-tree tokens-in-selected-set)
+              (d/dissoc-in token-path)))
+
+        props
+        (mf/spread-props props {:token-type token-type
+                                :initial-errors initial-errors
+                                :tokens-tree-in-selected-set tokens-tree-in-selected-set
+                                :selected-token-set-id selected-token-set-id
+                                :token token})
+
         props
         (if (contains? cf/flags :token-combobox)
-          (mf/spread-props props {:token-type token-type
-                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
-                                  :token token
-                                  :input-component token.controls/value-combobox*})
-          (mf/spread-props props {:token-type token-type
-                                  :selected-token-set-id (mf/deref refs/selected-token-set-id)
-                                  :token token}))
-        text-case-props (if (contains? cf/flags :token-combobox)
-                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")
-                                                  :input-component token.controls/value-combobox*})
-                          (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")}))
-        text-decoration-props (if (contains? cf/flags :token-combobox)
-                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")
-                                                        :input-component token.controls/value-combobox*})
-                                (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
+          (mf/spread-props props {:input-component token.controls/value-combobox*})
+          props)
 
-        font-weight-props (if (contains? cf/flags :token-combobox)
-                            (mf/spread-props props {:input-component token.controls/value-combobox*
-                                                    :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})
-                            (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")}))
+        text-case-props
+        (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})
 
-        border-radius-props (if (contains? cf/flags :token-combobox)
-                              (mf/spread-props props {:input-component token.controls/value-combobox*})
-                              props)]
+        text-decoration-props
+        (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})
+
+        font-weight-props
+        (mf/spread-props props {:input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})]
 
     (case token-type
       :color [:> color/form* props]
@@ -57,5 +68,5 @@
       :text-case [:> generic/form* text-case-props]
       :text-decoration [:> generic/form* text-decoration-props]
       :font-weight [:> generic/form* font-weight-props]
-      :border-radius [:> generic/form* border-radius-props]
+      :border-radius [:> generic/form* props]
       [:> generic/form* props])))

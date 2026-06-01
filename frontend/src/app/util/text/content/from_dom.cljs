@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.text.content.from-dom
   (:require
@@ -66,7 +66,9 @@
                                       (d/merge txt/default-paragraph-attrs txt/default-text-attrs))
         ;; Recover real font-size from data attribute, which to_dom/get-paragraph-styles may have
         ;; changed to "0" ("0" trick to avoid it interfering with height calculation in the browser).
-        saved-font-size (dom/get-data element "saved-font-size")]
+        saved-font-size (dom/get-data element "saved-font-size")
+        saved-font-size (when (and (string? saved-font-size) (not (empty? saved-font-size)))
+                          saved-font-size)]
     (cond-> styles
       (some? saved-font-size)
       (assoc :font-size saved-font-size))))

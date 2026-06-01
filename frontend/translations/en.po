@@ -761,6 +761,18 @@ msgstr "Uploading data to server (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Uploading file: %s"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.check-error"
+msgstr "We couldn't verify this file."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "This file appears to be damaged."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Something went wrong while processing this file."
+
 #: src/app/main/ui/dashboard/team.cljs:765
 msgid "dashboard.invitation-modal.delete"
 msgstr "You're going to delete the invitations to:"
@@ -8781,6 +8793,10 @@ msgstr "%s active sets"
 #: src/app/main/data/workspace/tokens/errors.cljs:53
 msgid "errors.tokens.number-too-large"
 msgstr "Invalid token value. The resolved value is too large: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:60
+msgid "errors.tokens.name-collision"
+msgstr "Group name of %s conflicts with a token of the same name in another active set."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "errors.tokens.opacity-range"

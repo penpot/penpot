@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.flags
   "Flags parsing algorithm."
@@ -197,7 +197,9 @@
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
-   :enable-token-import-from-library])
+   :enable-token-import-from-library
+   :enable-render-switch
+   :enable-render-wasm-info])
 
 (defn parse
   [& flags]

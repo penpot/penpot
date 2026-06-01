@@ -58,9 +58,9 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     paint.set_color(skia::Color::GRAY);
 
     let mut str = if render_state.options.is_debug_visible() {
-        "WASM RENDERER (DEBUG)"
+        "WebGL rendering (debug)"
     } else {
-        "WASM RENDERER"
+        "WebGL rendering"
     };
     let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
     let mut p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);

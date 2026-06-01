@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.style-dictionary
   (:require
@@ -557,10 +557,35 @@
 (defn sd-token-uuid [^js sd-token]
   (uuid (.-uuid (.. sd-token -original -id))))
 
+(defn- merge-name-collisions
+  "Re-attach tokens that `ctob/tokens-tree` / `backtrace-tokens-tree`
+  dropped because one token's name is a strict prefix of another's
+  (e.g. `a` vs `a.b` coming from two active sets). `assoc-in` in the
+  tree builder collapses such pairs, so StyleDictionary only sees one
+  of them and the other vanishes from the resolved map — and from the
+  sidebar, even though it still lives in the library (#9584).
+
+  We tag each dropped token with `:error.token/name-collision` so the
+  existing token-pill error rendering picks them up as broken pills,
+  matching the expected behaviour in the issue. Resolved tokens are
+  left untouched."
+  [tokens resolved]
+  (let [dropped (->> tokens
+                     (remove (fn [[k _]] (contains? resolved k)))
+                     (map (fn [[k token]]
+                            [k (assoc token
+                                      :errors
+                                      [(wte/error-with-value
+                                        :error.token/name-collision
+                                        (:name token))])]))
+                     (into {}))]
+    (merge resolved dropped)))
+
 (defn resolve-tokens
   [tokens]
   (let [tokens-tree (ctob/tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)))))
+    (->> (resolve-tokens-tree tokens-tree #(get tokens (sd-token-name %)))
+         (rx/map #(merge-name-collisions tokens %)))))
 
 (defn resolve-tokens-interactive
   "Interactive check of resolving tokens.
@@ -583,7 +608,8 @@
   same :name path by just looking up that :id in the ids map."
   [tokens]
   (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
-    (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))))
+    (->> (resolve-tokens-tree tokens-tree  #(get ids (sd-token-uuid %)))
+         (rx/map #(merge-name-collisions tokens %)))))
 
 (defn resolve-tokens-with-verbose-errors [tokens]
   (resolve-tokens-tree

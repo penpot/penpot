@@ -193,7 +193,7 @@ fn set_auto_multi_span(
     // Sort descendant order of prop-span
     selected_cells.sort_by(|a, b| {
         if column {
-            b.column_span.cmp(&a.row_span)
+            b.column_span.cmp(&a.column_span)
         } else {
             b.row_span.cmp(&a.row_span)
         }
@@ -268,7 +268,7 @@ fn set_flex_multi_span(
     // Sort descendant order of prop-span
     selected_cells.sort_by(|a, b| {
         if column {
-            b.column_span.cmp(&a.row_span)
+            b.column_span.cmp(&a.column_span)
         } else {
             b.row_span.cmp(&a.row_span)
         }
@@ -901,7 +901,7 @@ pub fn reflow_grid_layout(
             let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
                 + layout_data.padding_left
                 + layout_data.padding_right
-                + (column_tracks.len() - 1) as f32 * layout_data.column_gap;
+                + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
             scale_width = auto_width / width;
         }
 
@@ -909,7 +909,7 @@ pub fn reflow_grid_layout(
             let auto_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
                 + layout_data.padding_top
                 + layout_data.padding_bottom
-                + (row_tracks.len() - 1) as f32 * layout_data.row_gap;
+                + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
             scale_height = auto_height / height;
         }
 

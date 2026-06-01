@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.context-menu
   (:require-macros [app.main.style :as stl])
@@ -333,7 +333,7 @@
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
                        (clean-separators)))}))
 
-(defn default-actions [{:keys [token selected-token-set-id on-delete-token]}]
+(defn default-actions [{:keys [token selected-token-set-id on-delete-token errors]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)
         on-copy-name #(clipboard/to-clipboard (:name token))
         on-duplicate-token #(st/emit! (dwtl/duplicate-token (:id token)))]
@@ -347,6 +347,7 @@
                                              :y (.-clientY ^js event)
                                              :position :right
                                              :fields fields
+                                             :initial-errors errors
                                              :action "edit"
                                              :selected-token-set-id selected-token-set-id
                                              :token token}))))}
