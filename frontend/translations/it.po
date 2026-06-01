@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-01 08:01+0000\n"
+"PO-Revision-Date: 2026-06-01 12:56+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -8722,6 +8722,7 @@ msgstr "Questo team non appartiene a nessuna organizzazione"
 msgid "dashboard.team-organization.add"
 msgstr "Aggiungi ad una organizzazione"
 
+#, fuzzy
 msgid "dashboard.team-organization.add.no-valid-orgs"
 msgstr ""
 "Non hai i permessi per aggiungere questo team a nessuna delle tue "
