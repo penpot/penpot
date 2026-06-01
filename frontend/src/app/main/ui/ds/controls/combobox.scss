@@ -69,6 +69,7 @@
 .header-avatar {
   grid-template-columns: auto 1fr;
   gap: var(--sp-s);
+  width: 100%;
 }
 
 .input {

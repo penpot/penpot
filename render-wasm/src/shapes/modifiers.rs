@@ -27,11 +27,14 @@ fn propagate_children(
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Result<VecDeque<Modifier>> {
-    if identitish(&transform) {
-        return Ok(VecDeque::new());
-    }
-
     let mut result = VecDeque::new();
+
+    if identitish(&transform) {
+        for child_id in shape.children_ids_iter(true) {
+            result.push_back(Modifier::transform_propagate(*child_id, transform));
+        }
+        return Ok(result);
+    }
 
     for child_id in shape.children_ids_iter(true) {
         let Some(child) = shapes.get(child_id) else {
@@ -167,6 +170,7 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn propagate_transform(
     entry: TransformEntry,
     pixel_precision: bool,
@@ -175,6 +179,7 @@ fn propagate_transform(
     bounds: &mut HashMap<Uuid, Bounds>,
     modifiers: &mut HashMap<Uuid, Matrix>,
     reflown: &mut HashSet<Uuid>,
+    reflowed_shapes: &mut HashSet<Uuid>,
 ) -> Result<()> {
     let Some(shape) = state.shapes.get(&entry.id) else {
         return Ok(());
@@ -190,7 +195,11 @@ fn propagate_transform(
     if !is_close_to(shape_bounds_before.width(), shape_bounds_after.width())
         || !is_close_to(shape_bounds_before.height(), shape_bounds_after.height())
     {
-        if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+        if let Type::Text(text_content) = &shape.shape_type {
+            let width_changed =
+                !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
+            let height_changed =
+                !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
             let resized_selrect = math::Rect::from_xywh(
                 shape.selrect.left(),
                 shape.selrect.top(),
@@ -199,12 +208,15 @@ fn propagate_transform(
             );
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
-                    // For auto-height, always update layout when width changes
-                    // because the new width affects how text wraps
-                    let width_changed =
-                        !is_close_to(shape_bounds_before.width(), shape_bounds_after.width());
-                    if width_changed || text_content.needs_update_layout() {
-                        text_content.update_layout(resized_selrect);
+                    let height_before = text_content.size.height;
+                    let new_height = if width_changed {
+                        let mut clone = text_content.clone();
+                        clone.update_layout(resized_selrect);
+                        clone.size.height
+                    } else {
+                        height_before
+                    };
+                    if !is_close_to(height_before, new_height) && reflowed_shapes.insert(shape.id) {
                         entries.push_back(Modifier::reflow(shape.id, false));
 
                         if let Some(parent_id) = shape.parent_id {
@@ -215,31 +227,28 @@ fn propagate_transform(
                             }
                         }
                     }
-                    let height = text_content.size.height;
                     let resize_transform = math::resize_matrix(
                         &shape_bounds_after,
                         &shape_bounds_after,
                         shape_bounds_after.width(),
-                        height,
+                        new_height,
                     );
                     shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                     transform.post_concat(&resize_transform);
                 }
                 GrowType::AutoWidth => {
-                    // For auto-width, always update layout when height changes
-                    // because the new height affects how text flows
-                    let height_changed =
-                        !is_close_to(shape_bounds_before.height(), shape_bounds_after.height());
-                    if height_changed || text_content.needs_update_layout() {
-                        text_content.update_layout(resized_selrect);
-                    }
-                    let width = text_content.width();
-                    let height = text_content.size.height;
+                    let (new_width, new_height) = if height_changed {
+                        let mut clone = text_content.clone();
+                        clone.update_layout(resized_selrect);
+                        (clone.width(), clone.size.height)
+                    } else {
+                        (text_content.width(), text_content.size.height)
+                    };
                     let resize_transform = math::resize_matrix(
                         &shape_bounds_after,
                         &shape_bounds_after,
-                        width,
-                        height,
+                        new_width,
+                        new_height,
                     );
                     shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                     transform.post_concat(&resize_transform);
@@ -404,6 +413,7 @@ pub fn propagate_modifiers(
     // In order for loop to eventualy finish, we limit the flex reflow to just
     // one (the reflown set).
     while !entries.is_empty() {
+        let mut reflowed_shapes = HashSet::<Uuid>::new();
         while let Some(modifier) = entries.pop_front() {
             match modifier {
                 Modifier::Transform(entry, pixel) => propagate_transform(
@@ -414,6 +424,7 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut modifiers,
                     &mut reflown,
+                    &mut reflowed_shapes,
                 )?,
                 Modifier::Reflow(id, force_reflow) => {
                     if force_reflow {

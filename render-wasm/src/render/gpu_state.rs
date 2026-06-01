@@ -47,7 +47,14 @@ impl GpuState {
         })
     }
 
-    fn create_webgl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
+    fn delete_gl_texture(&mut self, texture_id: gl::types::GLuint) -> bool {
+        unsafe {
+            gl::DeleteTextures(1, &texture_id);
+            gl::GetError() == 0
+        }
+    }
+
+    fn create_gl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
         let mut texture_id: gl::types::GLuint = 0;
 
         unsafe {
@@ -75,6 +82,19 @@ impl GpuState {
         texture_id
     }
 
+    pub fn delete_surface(&mut self, surface: &mut skia::Surface) -> bool {
+        let Some(texture) = skia::gpu::surfaces::get_backend_texture(
+            surface,
+            skia_safe::surface::BackendHandleAccess::FlushRead,
+        ) else {
+            return false;
+        };
+        let Some(texture_info) = gpu::backend_textures::get_gl_texture_info(&texture) else {
+            return false;
+        };
+        self.delete_gl_texture(texture_info.id)
+    }
+
     pub fn create_surface_with_isize(
         &mut self,
         label: String,
@@ -90,7 +110,7 @@ impl GpuState {
         height: i32,
     ) -> Result<skia::Surface> {
         let backend_texture = unsafe {
-            let texture_id = self.create_webgl_texture(width, height);
+            let texture_id = self.create_gl_texture(width, height);
             let texture_info = TextureInfo {
                 target: gl::TEXTURE_2D,
                 id: texture_id,
