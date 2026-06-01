@@ -5674,7 +5674,27 @@ msgstr "Invita a personas mientras estás en el plan Unlimited"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
-#: src/app/main/ui/settings/subscription.cljs:409
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Desbloquea las funciones Enterprise"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Establece permisos detallados y garantiza la seguridad de tus operaciones de diseño, sin renunciar a la libertad del código abierto que tanto valora tu equipo."
+
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Renueva tu suscripción"
+
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Tu suscripción Enterprise caduca en %s días (%s)"
+
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Tu suscripción Enterprise ha caducado. (%s)"
+
+msgid "subscription.dashboard.banner.renew"
+msgstr "Renovar"
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Empieza a utilizar Enterprise"
+
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "El pago no se completó. Inténtalo de nuevo cuando quieras."
 
