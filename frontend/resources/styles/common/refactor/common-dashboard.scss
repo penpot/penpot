@@ -1,0 +1,153 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor" as *;
+
+.dashboard-header {
+  align-items: center;
+  display: flex;
+  height: $s-64;
+  max-height: $s-64;
+  justify-content: space-between;
+  padding: $s-4 $s-16 $s-4 $s-8;
+  position: relative;
+  user-select: none;
+
+  &.team {
+    display: grid;
+    grid-template-columns: 20% 1fr 20%;
+    max-height: $s-64;
+  }
+
+  .element-name {
+    margin-right: $s-8;
+  }
+
+  .btn-secondary {
+    flex-shrink: 0;
+    height: $s-32;
+    svg {
+      height: $s-16;
+      width: $s-16;
+    }
+  }
+
+  nav {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    ul {
+      display: flex;
+      font-size: $fs-14;
+      justify-content: center;
+      margin: 0;
+    }
+
+    li {
+      a {
+        display: flex;
+        align-items: center;
+        flex-basis: $s-140;
+        border-bottom: $s-3 solid transparent;
+        color: var(--color-foreground-secondary);
+        height: $s-40;
+        padding: $s-4 $s-24;
+        font-weight: $fw400;
+        &:hover {
+          color: var(--color-background-secondary);
+          text-decoration: none;
+        }
+      }
+    }
+  }
+
+  .dashboard-title {
+    display: flex;
+    align-items: center;
+    margin-left: $s-12;
+
+    h1 {
+      color: var(--color-foreground-primary);
+      display: block;
+      flex-shrink: 0;
+      font-size: $fs-24;
+      font-weight: $fw400;
+      max-width: $s-712;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: all;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .context-menu.is-open {
+      margin-top: $s-8;
+    }
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    svg {
+      stroke: var(--color-foreground-secondary);
+      fill: none;
+      width: $s-16;
+      height: $s-16;
+
+      &:hover {
+        stroke: var(--color-accent-tertiary);
+        fill: none;
+      }
+    }
+  }
+
+  .dashboard-buttons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .dashboard-header-actions {
+    display: flex;
+    column-gap: $s-16;
+  }
+
+  .dashboard-header-options {
+    li {
+      a {
+        font-size: $s-16;
+        color: var(--color-foreground-secondary);
+        border-color: transparent;
+        &:hover {
+          color: var(--color-foreground-primary);
+        }
+      }
+      &.active {
+        a {
+          color: var(--color-foreground-primary);
+        }
+      }
+    }
+  }
+}
+
+.btn-primary {
+  @extend .button-primary;
+  text-transform: uppercase;
+  font-size: $fs-14;
+  font-weight: $fw400;
+}
+
+.btn-secondary {
+  @extend .button-secondary;
+  color: var(--color-foreground-primary);
+  font-size: $fs-12;
+  text-transform: uppercase;
+  padding: 0 $s-16;
+}

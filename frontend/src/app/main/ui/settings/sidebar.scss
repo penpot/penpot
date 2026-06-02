@@ -1,0 +1,91 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.dashboard-sidebar {
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  padding-block-start: deprecated.$s-16;
+  border-right: deprecated.$s-1 solid var(--panel-border-color);
+  z-index: deprecated.$z-index-1;
+  background-color: var(--panel-background-color);
+}
+
+.sidebar-content {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  height: 100%;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.sidebar-separator {
+  border-color: transparent;
+  margin: deprecated.$s-12 deprecated.$s-16;
+}
+
+.sidebar-nav-settings {
+  display: grid;
+  grid-auto-rows: auto;
+  margin: 0;
+  overflow: unset;
+  user-select: none;
+}
+
+.settings-item {
+  --settings-foreground-color: var(--menu-foreground-color-rest);
+  --settings-background-color: transparent;
+  display: flex;
+  align-items: center;
+  padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-24;
+  color: var(--settings-foreground-color);
+  background-color: var(--settings-background-color);
+  cursor: pointer;
+
+  &:hover {
+    --settings-foreground-color: var(--sidebar-element-foreground-color-hover);
+    --settings-background-color: var(--sidebar-element-background-color-hover);
+  }
+
+  &.current {
+    --settings-foreground-color: var(--sidebar-element-foreground-color-selected);
+    --settings-background-color: var(--sidebar-element-background-color-selected);
+  }
+}
+
+.feedback-icon {
+  @extend .button-icon-small;
+  stroke: var(--settings-foreground-color);
+  margin-right: deprecated.$s-8;
+}
+
+.element-title {
+  @include deprecated.textEllipsis;
+  @include deprecated.bodyMediumTypography;
+}
+
+.back-to-dashboard {
+  @include deprecated.buttonStyle;
+  display: flex;
+  align-items: center;
+  padding: deprecated.$s-12 deprecated.$s-16;
+  font-size: deprecated.$fs-14;
+}
+
+.back-text {
+  color: var(--color-foreground-primary);
+}
+
+.arrow-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  transform: rotate(180deg);
+  margin-right: deprecated.$s-12;
+}

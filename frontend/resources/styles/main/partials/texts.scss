@@ -1,0 +1,63 @@
+.text-editor,
+.rich-text {
+  color: var(--app-black);
+  height: 100%;
+  font-family: sourcesanspro;
+
+  div {
+    line-height: inherit;
+    user-select: text;
+  }
+
+  span {
+    line-height: inherit;
+  }
+}
+
+.text-editor {
+  .DraftEditor-root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .public-DraftStyleDefault-block {
+    white-space: pre;
+  }
+
+  &.align-top {
+    .DraftEditor-root {
+      justify-content: flex-start;
+    }
+  }
+
+  &.align-center {
+    .DraftEditor-root {
+      justify-content: center;
+    }
+  }
+
+  &.align-bottom {
+    .DraftEditor-root {
+      justify-content: flex-end;
+    }
+  }
+}
+
+.rich-text .paragraphs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &.align-top {
+    justify-content: flex-start;
+  }
+
+  &.align-center {
+    justify-content: center;
+  }
+
+  &.align-bottom {
+    justify-content: flex-end;
+  }
+}

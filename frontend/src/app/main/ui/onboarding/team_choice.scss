@@ -1,0 +1,204 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  position: relative;
+  width: deprecated.$s-908;
+  max-height: deprecated.$s-800;
+  height: 100%;
+  padding-inline: deprecated.$s-100;
+  padding-block-start: deprecated.$s-40;
+  padding-block-end: deprecated.$s-40;
+  border-radius: deprecated.$br-8;
+  background-color: var(--modal-background-color);
+  border: deprecated.$s-2 solid var(--modal-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-24;
+}
+
+.modal-sections {
+  display: grid;
+  grid-template-columns: 1fr deprecated.$s-32 1fr;
+  gap: deprecated.$s-24;
+  height: 100%;
+  overflow: hidden;
+}
+
+.paginator {
+  @include deprecated.bodySmallTypography;
+  position: absolute;
+  top: deprecated.$s-40;
+  right: deprecated.$s-100;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-6;
+  color: var(--color-foreground-secondary);
+}
+
+// MODAL LEFT
+.modal-left {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: deprecated.$s-32 auto auto 1fr;
+  gap: deprecated.$s-16;
+  overflow: auto;
+}
+
+.modal-title {
+  @include deprecated.bigTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-subtitle {
+  @include deprecated.medTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.invite-subtitle {
+  padding-top: deprecated.$s-16;
+}
+
+.modal-text {
+  @include deprecated.bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+
+.modal-desc {
+  @include deprecated.smallTitleTipography;
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.team-features {
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-16;
+  margin: 0;
+}
+
+.feature {
+  @include deprecated.flexRow;
+  gap: deprecated.$s-16;
+}
+
+.icon {
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  border-radius: deprecated.$br-circle;
+  border: deprecated.$s-1 solid var(--color-accent-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-accent-primary);
+  }
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  justify-content: flex-end;
+}
+
+.accept-button {
+  @extend .modal-accept-btn;
+}
+
+.back-button {
+  @extend .modal-cancel-btn;
+}
+
+// SEPARATOR
+.separator {
+  width: deprecated.$s-8;
+  height: 100%;
+  border-radius: deprecated.$br-8;
+  opacity: 42%;
+  background-color: var(--modal-separator-background-color);
+}
+
+// MODAL RIGHT TEAM
+.modal-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  gap: deprecated.$s-24;
+  overflow: hidden;
+}
+
+.first-block {
+  overflow: auto;
+  flex-grow: 1;
+}
+
+.first-block,
+.second-block {
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-16;
+}
+
+.modal-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: deprecated.$s-16;
+}
+
+.team-name-input {
+  @extend .input-element-label;
+  label {
+    @include deprecated.flexColumn;
+    @include deprecated.bodySmallTypography;
+    align-items: flex-start;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    height: 100%;
+
+    input {
+      @include deprecated.bodySmallTypography;
+      margin-top: deprecated.$s-8;
+    }
+  }
+}
+
+// MODAL RIGHT INVITATIONS
+
+.modal-right-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: deprecated.$s-16;
+  max-height: deprecated.$s-512;
+}
+
+.modal-form-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto auto;
+  margin-block-end: deprecated.$s-72;
+  gap: deprecated.$s-8;
+}
+
+.role-title {
+  @include deprecated.uppercaseTitleTipography;
+  margin-block-end: deprecated.$s-8;
+  color: var(--modal-title-foreground-color);
+}
+
+.invitation-row {
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-hint {
+  @include deprecated.bodySmallTypography;
+  color: var(--modal-text-foreground-color);
+  text-align: right;
+}

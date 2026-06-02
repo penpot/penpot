@@ -1,0 +1,17 @@
+{
+  "~:id": "~u3622460c-3408-81e2-8005-31859c15ff91",
+  "~:file-id": "~u3622460c-3408-81e2-8005-2fc938010233",
+  "~:created-at": "~m1730217905213",
+  "~:data-backend": "objects-storage",
+  "~:data-ref-id": "~u1deef485-f8be-4a16-bd69-436e298bdfa7",
+  "~:data": {
+    "~u2e0995e6-d90f-80ed-8005-2fd0c20489ce": {
+      "~:id": "~u2e0995e6-d90f-80ed-8005-2fd0c20489ce",
+      "~:name": "Rectangle",
+      "~:path": "",
+      "~:modified-at": "~m1730103592327",
+      "~:main-instance-id": "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a",
+      "~:main-instance-page": "~u3622460c-3408-81e2-8005-2fc938010234"
+    }
+  }
+}

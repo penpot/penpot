@@ -1,0 +1,111 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.select-wrapper {
+  --select-icon-color: var(--color-icon-default);
+  --select-text-color: var(--color-foreground-primary);
+  --select-text-color-dimmed: var(--color-foreground-secondary);
+  --select-background-color: var(--color-background-tertiary);
+  --select-outline-color: none;
+  --select-border-color: none;
+
+  &:hover {
+    --select-background-color: var(--color-background-quaternary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
+
+  @include use-typography("body-small");
+  position: relative;
+  display: grid;
+  grid-template-rows: auto;
+  gap: var(--sp-xxs);
+  width: 100%;
+}
+
+.select {
+  &:focus-visible {
+    --select-background-color: var(--color-background-quaternary);
+    --select-outline-color: var(--color-accent-primary);
+  }
+
+  &:disabled {
+    --select-background-color: var(--color-background-primary);
+    --select-border-color: var(--color-background-quaternary);
+    --select-text-color: var(--color-foreground-secondary);
+  }
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+  block-size: $sz-32;
+  inline-size: 100%;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--select-outline-color);
+  border: $b-1 solid var(--select-border-color);
+  background: var(--select-background-color);
+  color: var(--select-text-color);
+  appearance: none;
+}
+
+.variant-ghost {
+  --select-background-color: transparent;
+  --select-text-color: var(--color-foreground-secondary);
+
+  inline-size: fit-content;
+  padding-inline: var(--sp-xxs);
+
+  & .arrow {
+    margin-inline-start: var(--sp-xs);
+  }
+
+  &:is(:hover, [aria-expanded="true"]) {
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
+
+  &:is(:focus-visible, :disabled) {
+    --select-background-color: transparent;
+    --select-text-color: var(--color-foreground-primary);
+    --select-icon-color: var(--color-foreground-primary);
+  }
+}
+
+.arrow {
+  color: var(--select-icon-color);
+}
+
+.select-header {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-xs);
+}
+
+.header-label {
+  @include use-typography("body-small");
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-width: 0;
+  padding-inline-start: var(--sp-xxs);
+  text-align: left;
+  color: var(--select-text-color);
+}
+
+.header-label-dimmed {
+  color: var(--select-text-color-dimmed);
+}
+
+.header-icon {
+  grid-template-columns: auto 1fr;
+  color: var(--select-icon-color);
+}

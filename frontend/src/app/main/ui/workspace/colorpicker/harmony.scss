@@ -1,0 +1,44 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.harmony-selector {
+  display: flex;
+  align-items: center;
+  gap: deprecated.$s-8;
+  margin-top: deprecated.$s-12;
+  margin-bottom: deprecated.$s-8;
+}
+
+.hue-wheel-wrapper {
+  @include deprecated.flexCenter;
+  position: relative;
+}
+
+.hue-wheel {
+  width: deprecated.$s-196;
+  height: deprecated.$s-196;
+}
+
+.handler {
+  @extend .colorpicker-handler;
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
+  border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
+}
+
+.handler.complement {
+  background-color: var(--colorpicker-handlers-color);
+  border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
+}
+
+.handlers-wrapper {
+  @include deprecated.flexRow;
+  height: deprecated.$s-200;
+  width: deprecated.$s-52;
+  flex-grow: 1;
+}

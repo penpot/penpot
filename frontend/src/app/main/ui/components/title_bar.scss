@@ -1,0 +1,86 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: deprecated.$s-32;
+  width: 100%;
+  min-height: deprecated.$s-32;
+  --arrow-icon-color: var(--icon-foreground);
+  --title-color: var(--title-foreground-color);
+}
+
+.title,
+.title-only,
+.inspect-title {
+  display: grid;
+  align-items: center;
+  justify-content: flex-start;
+  grid-auto-flow: column;
+  height: 100%;
+  min-height: deprecated.$s-32;
+  overflow: hidden;
+}
+
+.title {
+  @include t.use-typography("headline-small");
+  color: var(--title-color);
+}
+
+.title-only {
+  @include t.use-typography("headline-small");
+  --title-bar-title-margin: #{deprecated.$s-8};
+  color: var(--title-color);
+  margin-inline-start: var(--title-bar-title-margin);
+}
+
+.title-only-icon-gap {
+  --title-bar-title-margin: #{deprecated.$s-12};
+}
+
+.inspect-title {
+  color: var(--title-foreground-color-hover);
+}
+
+.icon {
+  color: var(--arrow-icon-color);
+}
+
+.title-wrapper {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+}
+
+.icon-text-btn {
+  @include deprecated.buttonStyle;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+
+  &:hover {
+    --arrow-icon-color: var(--icon-foreground-hover);
+    --title-color: var(--title-foreground-color-hover);
+  }
+}
+
+.icon-btn {
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+
+  &:hover {
+    --arrow-icon-color: var(--icon-foreground-hover);
+  }
+}

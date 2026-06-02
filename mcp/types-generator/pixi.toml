@@ -1,0 +1,20 @@
+[workspace]
+authors = ["Oraios AI <info@oraios-ai.de>"]
+channels = ["conda-forge"]
+description = "Scripts supporting the development of the Penpot MCP server"
+name = "penpot-mcp-scripts"
+platforms = ["win-64","linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.11.*"
+pixi-pycharm = ">=0.0.9,<0.0.10"
+beautifulsoup4 = ">=4.13.5,<5"
+markdownify = ">=1.1.0,<2"
+requests = ">=2.32.5,<3"
+"ruamel.yaml" = ">=0.18.15,<0.19"
+
+[pypi-dependencies]
+sensai-utils = ">=1.5.0, <2"

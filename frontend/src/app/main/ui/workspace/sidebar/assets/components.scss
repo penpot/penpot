@@ -1,0 +1,189 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/colors.scss" as *;
+@use "ds/typography.scss" as t;
+
+.component-item {
+  position: relative;
+  cursor: pointer;
+}
+
+.component-item-grid {
+  aspect-ratio: 1 / 1;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-canvas);
+  overflow: hidden;
+  &:hover {
+    .component-item-grid-name {
+      display: flex;
+    }
+  }
+
+  &.component-item-selected {
+    border: $b-2 solid var(--color-accent-primary);
+
+    &::before {
+      content: " ";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: calc($b-2 * 2) solid var(--color-background-primary);
+      border-radius: $br-8;
+    }
+  }
+}
+
+.component-item-grid-name {
+  display: none;
+  align-items: center;
+  position: absolute;
+  height: $sz-24;
+  left: var(--sp-xs);
+  right: var(--sp-xs);
+  bottom: var(--sp-xs);
+  padding: var(--sp-xxs) var(--sp-s);
+  border-radius: $br-4;
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  padding: 0;
+
+  &.component-item-editing {
+    display: flex;
+  }
+}
+
+.component-item-grid-input {
+  border-radius: $br-4;
+}
+
+.component-item-grid-label {
+  padding: 0 var(--sp-s);
+}
+
+.component-item-list {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--sp-s);
+  padding: var(--sp-xxs);
+  margin-inline-end: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &.component-item-selected {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.component-item-list-name {
+  overflow: hidden;
+  order: 2;
+  display: flex;
+  align-items: center;
+  color: var(--color-foreground-primary);
+  padding: 0;
+}
+
+.component-item-list-input {
+  border-radius: $br-8;
+  height: $sz-32;
+}
+
+.component-item-list-label {
+  padding: 0;
+}
+
+.component-item-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  border: 0;
+}
+
+.component-item-list-thumbnail {
+  flex-shrink: 0;
+  padding: var(--sp-xxs);
+  height: $sz-40;
+  width: $sz-40;
+  border-radius: $br-6;
+  background-color: var(--color-canvas);
+}
+
+.component-item-variant-mark {
+  margin-right: var(--sp-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $sz-24;
+  width: $sz-24;
+  color: var(--color-accent-secondary);
+  order: 3;
+}
+
+.component-item-grid-variant-mark {
+  margin: 0;
+  position: absolute;
+  right: var(--sp-xxs);
+  top: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.component-item-dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--sp-s);
+  border: $b-2 solid var(--color-accent-primary-muted);
+}
+
+.component-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-xs);
+}
+
+.component-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc($sz-48 * 2), 1fr));
+  max-width: 100%;
+  gap: var(--sp-xs);
+  margin-inline: var(--sp-s);
+}
+
+.component-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.component-group-placeholder {
+  width: 100%;
+  height: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-accent-primary);
+}
+
+.component-group-drop-space {
+  height: var(--sp-m);
+}
+
+.component-group-drop-space-small {
+  height: var(--sp-xxs);
+}

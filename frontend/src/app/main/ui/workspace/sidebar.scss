@@ -1,0 +1,165 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.left-settings-bar {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "content resize";
+  grid-template-rows: deprecated.$s-52 1fr;
+  grid-template-columns: 1fr 0;
+  position: relative;
+  grid-area: left-sidebar;
+  min-width: var(--left-sidebar-width);
+  max-width: var(--left-sidebar-width-max);
+  width: var(--right-sidebar-width);
+  background-color: var(--panel-background-color);
+  height: 100vh;
+  max-height: 100vh;
+  z-index: deprecated.$z-index-1;
+
+  .resize-area {
+    grid-area: resize;
+  }
+}
+
+.layers-tab {
+  padding-top: deprecated.$s-4;
+  overflow-x: hidden;
+}
+
+.left-header {
+  grid-area: header;
+}
+
+.settings-bar-content {
+  grid-area: content;
+  right: calc(-1 * deprecated.$s-8);
+}
+
+.resize-area {
+  position: absolute;
+  top: 0;
+  left: unset;
+  z-index: deprecated.$z-index-4;
+  width: deprecated.$s-8;
+  cursor: ew-resize;
+  height: 100%;
+}
+
+.tab-spacing {
+  margin-inline: deprecated.$s-12;
+}
+
+.right-settings-bar {
+  grid-area: right-sidebar;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  width: var(--right-sidebar-width);
+  background-color: var(--panel-background-color);
+  z-index: deprecated.$z-index-1;
+  &.not-expand {
+    max-width: var(--right-sidebar-width);
+  }
+  &.expanded {
+    width: var(--right-sidebar-width, var(--right-sidebar-width));
+  }
+
+  .settings-bar-inside {
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 100%;
+
+    height: calc(100vh - deprecated.$s-52);
+    overflow: hidden;
+  }
+}
+
+.resize-area-horiz {
+  background-color: var(--panel-background-color);
+  position: absolute;
+  left: 0;
+  width: 100%;
+  padding: deprecated.$s-3 0 deprecated.$s-1 0;
+  height: deprecated.$s-6;
+  cursor: ns-resize;
+}
+
+.resize-handle-horiz {
+  border-bottom: deprecated.$s-2 solid var(--resize-area-border-color);
+  cursor: ns-resize;
+}
+
+.left-sidebar-tabs {
+  --tabs-nav-padding-inline-start: var(--sp-m);
+  --tabs-nav-padding-inline-end: var(--sp-m);
+}
+
+.collapse-sidebar-button {
+  --collapse-icon-color: var(--color-foreground-secondary);
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
+  height: 100%;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-5;
+  color: var(--collapse-icon-color);
+  transform: rotate(180deg);
+  &:hover {
+    --collapse-icon-color: var(--color-foreground-primary);
+  }
+}
+
+.collapsed-sidebar {
+  @include deprecated.flexCenter;
+  position: absolute;
+  top: deprecated.$s-48;
+  left: 0;
+  padding: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  background: var(--color-background-primary);
+  margin-inline-start: var(--sp-m);
+}
+.collapsed-title {
+  @include deprecated.flexCenter;
+  height: deprecated.$s-36;
+  width: deprecated.$s-24;
+  border-radius: deprecated.$br-8;
+  background: var(--color-background-secondary);
+}
+.collapsed-button {
+  @include deprecated.buttonStyle;
+  height: deprecated.$s-24;
+  width: deprecated.$s-16;
+  padding: 0;
+  border-radius: deprecated.$br-5;
+  svg {
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
+    color: transparent;
+    fill: none;
+    stroke: var(--icon-foreground);
+  }
+  &:hover {
+    svg {
+      stroke: var(--icon-foreground-hover);
+    }
+  }
+}
+
+.versions-tab {
+  width: 100%;
+  overflow: hidden;
+  height: calc(100vh - deprecated.$s-88);
+}
+
+.history-tab {
+  overflow-y: auto;
+}

@@ -1,0 +1,284 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  max-height: initial;
+
+  &.plugin-permissions {
+    width: deprecated.$s-412;
+    max-width: deprecated.$s-412;
+  }
+
+  &.plugin-management {
+    width: deprecated.$s-472;
+    max-width: deprecated.$s-472;
+  }
+
+  &.plugin-try-out {
+    width: deprecated.$s-452;
+    max-width: deprecated.$s-452;
+  }
+
+  hr {
+    border-color: var(--color-background-tertiary);
+  }
+}
+
+.modal-footer {
+  margin-top: 2rem;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.modal-title {
+  @include deprecated.headlineMediumTypography;
+  margin-block-end: deprecated.$s-32;
+  color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: deprecated.$s-12;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+
+  .plugin-permissions & {
+    gap: deprecated.$s-20;
+  }
+
+  .plugin-management & {
+    height: deprecated.$s-380;
+    max-height: deprecated.$s-380;
+  }
+}
+
+.modal-message {
+  font-size: deprecated.$fs-14;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-paragraph {
+  font-size: deprecated.$fs-14;
+  color: var(--color-foreground-primary);
+}
+
+.primary-button {
+  @extend .button-primary;
+  @include deprecated.headlineSmallTypography;
+  padding: deprecated.$s-0 deprecated.$s-16;
+}
+
+.button-expand {
+  width: 100%;
+  margin: 0;
+}
+
+.cancel-button {
+  @extend .button-secondary;
+  @include deprecated.headlineSmallTypography;
+  padding: deprecated.$s-0 deprecated.$s-16;
+}
+
+.search-icon {
+  @include deprecated.flexCenter;
+  width: deprecated.$s-20;
+  padding: 0 0 0 deprecated.$s-8;
+
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.top-bar {
+  display: flex;
+  gap: deprecated.$s-8;
+}
+
+.open-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: deprecated.$s-68;
+  min-width: deprecated.$s-68;
+  height: deprecated.$s-32;
+  text-transform: uppercase;
+}
+
+.plugins-list {
+  padding-top: deprecated.$s-20;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-12;
+}
+
+.plugins-list-element {
+  display: flex;
+  gap: deprecated.$s-12;
+}
+
+.plugin-icon {
+  min-width: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
+  background: var(--button-secondary-background-color-rest);
+  padding: deprecated.$s-2;
+  border-radius: deprecated.$s-4;
+}
+
+.plugin-description {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-8;
+  width: 100%;
+}
+
+.plugin-title {
+  @include deprecated.bodyMediumTypography;
+  color: var(--color-foreground-primary);
+}
+
+.plugin-summary {
+  @include deprecated.bodySmallTypography;
+  color: var(--color-foreground-secondary);
+}
+
+.plugins-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: deprecated.$s-20;
+  height: 100%;
+  justify-content: center;
+  padding: deprecated.$s-36 0;
+}
+
+.plugins-empty-logo {
+  width: deprecated.$s-44;
+  height: deprecated.$s-44;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-background-tertiary);
+
+  svg {
+    width: deprecated.$s-16;
+    height: deprecated.$s-16;
+    stroke: var(--color-foreground-secondary);
+    fill: none;
+  }
+}
+
+.plugins-empty-text {
+  @include deprecated.bodySmallTypography;
+  color: var(--color-foreground-primary);
+}
+
+div.input-error {
+  border: deprecated.$s-1 solid var(--input-border-color-error);
+}
+
+.info {
+  @include deprecated.bodySmallTypography;
+  margin-top: deprecated.$s-4;
+
+  &.error {
+    color: var(--input-border-color-error);
+  }
+
+  &.success {
+    color: var(--input-border-color-success);
+  }
+}
+
+.plugins-link {
+  color: var(--color-accent-primary);
+  font-size: deprecated.$fs-12;
+  display: inline-flex;
+  align-items: center;
+  gap: deprecated.$s-4;
+
+  svg {
+    margin-top: calc(-1 * deprecated.$s-2);
+    width: deprecated.$s-12;
+    height: deprecated.$s-12;
+    stroke: var(--color-accent-primary);
+    fill: none;
+  }
+}
+
+.plugin-permissions {
+}
+
+.permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-24;
+}
+
+.permissions-list-entry {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: deprecated.$s-16;
+  align-items: center;
+
+  svg {
+    width: deprecated.$s-24;
+    height: deprecated.$s-24;
+    stroke: var(--color-accent-primary);
+    fill: none;
+  }
+}
+
+.permissions-list-text {
+  @include deprecated.bodySmallTypography;
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.permissions-disclaimer {
+  @include deprecated.bodySmallTypography;
+  padding: deprecated.$s-16;
+  background: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
+  border-radius: deprecated.$br-4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: deprecated.$s-12;
+}
+
+.discover {
+  @include deprecated.bodySmallTypography;
+  color: var(--color-foreground-secondary);
+  margin-top: deprecated.$s-24;
+
+  a {
+    color: var(--color-accent-primary);
+  }
+}

@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "sass:color";
+
+:root {
+  // DARK
+  // Dark background
+  --db-primary-60: #{color.change(#18181a, $alpha: 0.6)}; // used on overlay dark mode
+
+  //Dark foreground
+  --df-secondary: #8f9da3; // Used on button disabled background dark mode, grid metadata and some svg
+  --df-secondary-40: #{color.change(#8f9da3, $alpha: 0.4)}; // Used on button disabled foreground dark mode
+
+  //Dark accent
+  --da-tertiary-10: #{color.change(#00d1b8, $alpha: 0.1)}; // selection rect dark mode
+  --da-tertiary-70: #{color.change(#00d1b8, $alpha: 0.7)}; // selection rect background dark mode
+
+  // LIGHT
+  // Light background
+  --lb-primary-60: #{color.change(#ffffff, $alpha: 0.6)}; // overlay color light mode
+  --lb-quaternary: #eef0f2; // background disabled token
+
+  //Light foreground
+  --lf-secondary-40: #{color.change(#495e74, $alpha: 0.4)}; // foreground disabled token
+
+  //Light accent
+  --la-tertiary-10: #{color.change(#8c33eb, $alpha: 0.1)}; // selection rect light mode
+  --la-tertiary-70: #{color.change(#8c33eb, $alpha: 0.7)}; // selection rect background light mode
+
+  // STATUS COLOR
+  --status-color-success-200: #a7e8d9; // Used on Register confirmation text
+  --status-color-success-500: #2d9f8f; // Used on accept icon, and status widget
+
+  --status-color-warning-500: #f5a91b; // Used on status widget, some buttons and warnings icons and elements
+
+  --status-color-error-500: #ff3277; // Used on discard icon, some borders and svg, and on status widget
+
+  --status-color-info-500: #0e9be9; // used on pixel grid and status widget
+
+  // APP COLORS
+  --app-white: #ffffff; // Used in several places
+  --app-black: #000; // Used on interactions, measurements and editor files
+
+  // SOCIAL LOGIN BUTTONS
+  --google-login-background: #4285f4;
+  --google-login-background-hover: #{color.adjust(#4285f4, $lightness: -15%)};
+  --google-login-foreground: var(--app-white);
+
+  --github-login-background: #4c4c4c;
+  --github-login-background-hover: #{color.adjust(#4c4c4c, $lightness: -15%)};
+  --github-login-foreground: var(--app-white);
+
+  --oidc-login-background: #b3b3b3;
+  --oidc-login-background-hover: #{color.adjust(#b3b3b3, $lightness: -15%)};
+  --oidc-login-foreground: var(--app-white);
+
+  --gitlab-login-background: #fc6d26;
+  --gitlab-login-background-hover: #{color.adjust(#fc6d26, $lightness: -15%)};
+  --gitlab-login-foreground: var(--app-white);
+}

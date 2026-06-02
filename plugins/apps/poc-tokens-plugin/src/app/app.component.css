@@ -1,0 +1,127 @@
+/* @import "@penpot/plugin-styles/styles.css"; */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.title-l {
+  margin: var(--spacing-16) 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  flex-grow: 1;
+  margin-block-end: var(--spacing-16);
+}
+
+.panels {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 0 var(--spacing-8);
+}
+
+.panel {
+  padding: var(--spacing-8);
+  display: flex;
+  flex-basis: 0;
+  flex-grow: 1;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.panel:not(:first-child) {
+  border-block-start: 1px solid var(--df-secondary);
+  padding-block-start: var(--spacing-16);
+}
+
+.panel-heading,
+.token-group {
+  display: flex;
+  flex-direction: row;
+  padding-inline-end: var(--spacing-8);
+}
+
+.panel-heading p,
+.token-group span {
+  flex-grow: 1;
+}
+
+.panel-heading button,
+.token-group button {
+  background: none;
+  padding: var(--spacing-4) calc(var(--spacing-12) / 2);
+}
+
+.panel-heading button:focus,
+.token-group button:focus {
+  padding: calc(var(--spacing-4) - 2px) calc(var(--spacing-12) / 2 - 2px);
+}
+
+.panel-item button {
+  opacity: 0;
+  margin-inline-end: var(--spacing-8);
+  padding: var(--spacing-4) calc(var(--spacing-12) / 2);
+}
+
+.panel-item button:hover {
+  opacity: 1;
+}
+
+.panel-item button:focus {
+  opacity: 1;
+  padding: calc(var(--spacing-4) - 2px) calc(var(--spacing-12) / 2 - 2px);
+}
+
+.panel ul {
+  /* flex-grow: 1; */
+  overflow-y: auto;
+  padding-inline-end: var(--spacing-8);
+}
+
+.panel-item {
+  display: flex;
+  flex-direction: row;
+}
+
+.panel-item span {
+  flex-grow: 1;
+}
+
+.set-item {
+  cursor: pointer;
+}
+
+.set-item.selected {
+  background-color: var(--db-quaternary);
+}
+
+.set-item:hover {
+  color: var(--da-primary);
+  background-color: var(--db-secondary);
+}
+
+.token-group:not(:first-child) {
+  margin-top: var(--spacing-8);
+}
+
+.token-group {
+  border-block-end: 1px solid var(--df-secondary);
+  text-transform: capitalize;
+}
+
+.token-item {
+  cursor: pointer;
+}
+
+.token-item:hover {
+  color: var(--da-primary);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row-reverse;
+}

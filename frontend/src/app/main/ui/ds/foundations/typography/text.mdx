@@ -1,0 +1,37 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+  
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as TextStories from "./text.stories";
+
+<Meta of={TextStories} />
+
+# Texts
+This component will add a text element to our code that will match the tag prop.
+
+## Technical notes
+
+### Using typography IDs
+
+There are typography ID definitions you can use in your code rather than typing the
+typography ID by hand.
+
+**Using these IDs is recommended**.
+
+Assuming the namespace of the typography is required as `t`:
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]))
+```
+
+You can now use the typography IDs defined in the namespace:
+
+```clj
+[:> text* {:typography t/title-large :as "p"} "Welcome to Penpot"]
+```

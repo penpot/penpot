@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+export OPTIONS="-A:dev -J-XX:-OmitStackTraceInFastThrow";
+
+set -ex
+exec clojure $OPTIONS -M -m rebel-readline.main

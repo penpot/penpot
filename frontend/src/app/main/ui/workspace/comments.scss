@@ -1,0 +1,120 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.comments-section {
+  position: relative;
+  background-color: var(--panel-background-color);
+  display: grid;
+  grid-template-rows: deprecated.$s-40 deprecated.$s-48 1fr;
+}
+
+.from-viewer {
+  padding: 0 deprecated.$s-8;
+}
+
+.comments-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+}
+
+.mode-dropdown-wrapper {
+  @include deprecated.buttonStyle;
+  @extend .asset-element;
+  background-color: var(--color-background-tertiary);
+  display: flex;
+  width: 100%;
+  max-width: deprecated.$s-256;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
+  margin: deprecated.$s-16 auto 0 auto;
+  cursor: pointer;
+  position: relative;
+}
+
+.mode-label {
+  padding-right: 8px;
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.arrow-icon {
+  @include deprecated.flexCenter;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  svg {
+    @extend .button-icon-small;
+    transform: rotate(90deg);
+    stroke: var(--icon-foreground);
+  }
+}
+
+.comment-mode-dropdown {
+  @extend .dropdown-wrapper;
+  top: deprecated.$s-92;
+  left: deprecated.$s-12;
+  max-width: deprecated.$s-256;
+  width: 100%;
+}
+
+.viewer-dropdown {
+  left: deprecated.$s-8;
+}
+
+.dropdown-item {
+  @extend .dropdown-element-base;
+  justify-content: space-between;
+  .icon {
+    @include deprecated.flexCenter;
+    height: deprecated.$s-24;
+    width: deprecated.$s-24;
+    svg {
+      @extend .button-icon-small;
+      stroke: transparent;
+    }
+  }
+  .label {
+    @include deprecated.bodySmallTypography;
+  }
+  &:hover {
+    .icon svg {
+      stroke: transparent;
+    }
+  }
+  &.selected {
+    .label {
+      color: var(--menu-foreground-color);
+    }
+    .icon svg {
+      stroke: var(--icon-foreground-hover);
+    }
+  }
+}
+
+.separator {
+  height: deprecated.$s-12;
+}
+
+.comments-section-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.thread-groups {
+  display: flex;
+  flex-direction: column;
+}
+
+.thread-group-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
+}

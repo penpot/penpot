@@ -1,0 +1,28 @@
+.story-wrapper {
+  display: grid;
+  row-gap: 1rem;
+}
+
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--component-grid-size, 16px));
+  gap: 1rem;
+  color: var(--color-foreground-primary);
+}
+
+.story-grid-cell {
+  max-width: 100%;
+}
+
+.story-header {
+  color: var(--color-foreground-primary);
+  margin-bottom: 1rem;
+}
+
+.story-grid-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 60px;
+  gap: 1rem;
+  color: var(--color-foreground-primary);
+}

@@ -1,0 +1,109 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.shortcuts {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  // TODO: Fix this once we start implementing the DS.
+  //       We should not be doign these hardcoded calc's.
+  height: calc(100vh - #{deprecated.$s-60});
+}
+
+.search-field {
+  margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
+}
+
+.shortcuts-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+}
+
+.section {
+  margin: 0;
+}
+
+.not-found {
+  @include deprecated.bodySmallTypography;
+  color: var(--empty-message-foreground-color);
+  margin: deprecated.$s-12;
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: deprecated.$s-12;
+  overflow-y: auto;
+  font-size: deprecated.$fs-12;
+  color: var(--title-foreground-color);
+
+  .section-title,
+  .subsection-title {
+    @include deprecated.uppercaseTitleTipography;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: deprecated.$s-8 0;
+    cursor: pointer;
+
+    .subsection-name,
+    .section-name {
+      padding-left: deprecated.$s-4;
+    }
+
+    &:hover {
+      color: var(--title-foreground-color-hover);
+    }
+  }
+
+  .subsection-title {
+    text-transform: none;
+    padding-left: deprecated.$s-12;
+  }
+  .subsection-menu {
+    margin-bottom: deprecated.$s-4;
+  }
+  .sub-menu {
+    margin-bottom: deprecated.$s-4;
+
+    .shortcuts-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: deprecated.$s-32;
+      padding: deprecated.$s-6;
+      margin-bottom: deprecated.$s-4;
+      border-radius: deprecated.$br-8;
+      background-color: var(--pill-background-color);
+
+      .command-name {
+        @include deprecated.bodySmallTypography;
+        margin-left: deprecated.$s-2;
+        color: var(--pill-foreground-color);
+      }
+      .keys {
+        @include deprecated.flexCenter;
+        gap: deprecated.$s-2;
+        color: var(--pill-foreground-color);
+
+        .key {
+          @include deprecated.bodySmallTypography;
+          @include deprecated.flexCenter;
+          text-transform: capitalize;
+          height: deprecated.$s-20;
+          padding: deprecated.$s-2 deprecated.$s-6;
+          border-radius: deprecated.$s-6;
+          background-color: var(--menu-shortcut-background-color);
+        }
+        .space {
+          margin: 0 deprecated.$s-2;
+        }
+      }
+    }
+  }
+}

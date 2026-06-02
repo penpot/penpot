@@ -1,0 +1,79 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.auth-section {
+  position: relative;
+  align-items: center;
+  background: var(--panel-background-color);
+  display: grid;
+  gap: deprecated.$s-32;
+  grid-template-columns: repeat(5, 1fr);
+  height: 100%;
+  padding: deprecated.$s-32;
+  width: 100%;
+  overflow: auto;
+
+  @media (max-width: 992px) {
+    display: flex;
+    justify-content: center;
+  }
+
+  &.register {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .login-illustration {
+      display: none;
+    }
+  }
+}
+
+.logo-container {
+  position: absolute;
+  top: deprecated.$s-20;
+  left: deprecated.$s-20;
+  display: flex;
+  justify-content: flex-start;
+  width: deprecated.$s-120;
+  height: deprecated.$s-96;
+  margin-block-end: deprecated.$s-52;
+}
+
+.login-illustration {
+  display: flex;
+  justify-content: center;
+  grid-column: 1 / 4;
+  width: 40vw;
+  height: auto;
+  justify-self: center;
+
+  @media (max-width: 992px) {
+    display: none;
+  }
+}
+
+.auth-content {
+  grid-column: 4 / 6;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: deprecated.$s-24;
+  height: fit-content;
+  max-width: deprecated.$s-412;
+  padding-block-end: deprecated.$s-8;
+  position: relative;
+  width: 100%;
+}
+
+.logo-btn {
+  svg {
+    width: deprecated.$s-120;
+    height: deprecated.$s-40;
+    fill: var(--main-icon-foreground);
+  }
+}

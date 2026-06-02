@@ -1,0 +1,17 @@
+Hello!
+
+{{requested-by|abbreviate:25}} ({{requested-by-email}}) wants to have view-only access to the file named “{{file-name|abbreviate:25}}”.
+
+Since this file is in your Penpot team, you can provide access by sending a view-only link. This will allow {{requested-by|abbreviate:25}} to view the content without making any changes.
+
+To proceed, please click the link below to generate and send the view-only link:
+
+{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}&section=interactions&index=0&share=true
+
+
+
+If you do not wish to grant access at this time, you can simply disregard this email.
+Thank you
+
+
+The Penpot team.

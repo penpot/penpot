@@ -1,0 +1,42 @@
+;; Example climit.edn file
+;; Required: permits
+;; Optional: queue, ommited means Integer/MAX_VALUE
+;; Optional: timeout, ommited means no timeout
+;; Note: queue and timeout are excluding
+{:update-file/global {:permits 20}
+ :update-file/by-profile
+ {:permits 1 :queue 5}
+
+ :process-font/global {:permits 4}
+ :process-font/by-profile {:permits 1}
+
+ :process-image/global {:permits 8}
+ :process-image/by-profile {:permits 1}
+
+ :auth/global {:permits 8}
+
+ :root/global
+ {:permits 40}
+
+ :root/by-profile
+ {:permits 10 :queue 30 :timeout 30000}
+
+ :file-thumbnail-ops/global
+ {:permits 20}
+ :file-thumbnail-ops/by-profile
+ {:permits 2}
+
+ :submit-audit-events/by-profile
+ {:permits 1 :queue 3}
+
+ :restore-file-snapshot/global
+ {:permits 3}
+
+ :restore-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ :create-file-snapshot/global
+ {:permits 3}
+
+ :create-file-snapshot/by-profile
+ {:permits 1 :queue 2 :timeout 60000}}

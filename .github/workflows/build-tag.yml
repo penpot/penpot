@@ -1,0 +1,46 @@
+name: _TAG
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-bundle:
+    uses: ./.github/workflows/build-bundle.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}
+      build_wasm: "yes"
+      build_storybook: "yes"
+
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}
+
+  notify:
+    name: Notifications
+    runs-on: ubuntu-24.04
+    needs: build-docker
+
+    steps:
+      - name: Notify Mattermost
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            🐳 *[PENPOT] Docker image available: ${{ github.ref_name }}*
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
+
+  publish-final-tag:
+    if: ${{ !contains(github.ref_name, '-RC') && !contains(github.ref_name, '-alpha') && !contains(github.ref_name, '-beta')  && contains(github.ref_name, '.') }}
+    needs: build-docker
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}

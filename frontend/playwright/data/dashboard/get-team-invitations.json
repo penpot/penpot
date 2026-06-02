@@ -1,0 +1,6 @@
+[
+  { "~:email": "test1@mail.com", "~:role": "~:editor", "~:expired": true },
+  { "~:email": "test2@mail.com", "~:role": "~:editor", "~:expired": false },
+  { "~:email": "test3@mail.com", "~:role": "~:admin", "~:expired": true },
+  { "~:email": "test4@mail.com", "~:role": "~:admin", "~:expired": false }
+]

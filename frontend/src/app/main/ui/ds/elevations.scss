@@ -1,0 +1,12 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+$el-shadow-dark: 0 0 10px 0 var(--color-shadow-dark);
+
+:global(.light),
+:global(.default) {
+  --el-shadow-dark: #{$el-shadow-dark};
+}

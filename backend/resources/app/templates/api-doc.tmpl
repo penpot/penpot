@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>{{label|upper}} API Documentation</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@200;300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+      {% include "app/templates/api-doc.css" %}
+    </style>
+    <script>
+      {% include "app/templates/api-doc.js" %}
+    </script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>{{label|upper}}: API Documentation (v{{version}})</h1>
+        <small class="menu">
+          [
+          <nav>
+            <a href="?type=js" {% if param-style = "js" %}class="selected"{% endif %}>JS</a>
+            <a href="?type=clj" {% if param-style = "cljs" %}class="selected"{% endif %}>CLJ</a>
+          </nav>
+          ]
+        </small>
+      </header>
+      <section class="doc-content">
+        <h2>INTRODUCTION</h2>
+        <p>This documentation is intended to be a general overview of
+          the {{label}} API.  If you prefer, you can
+          use <a href="{{openapi}}">Swagger/OpenAPI</a> as
+          alternative.</p>
+
+        <h2>GENERAL NOTES</h2>
+
+        <h3>HTTP Transport & Methods</h3>
+        <p>The HTTP is the transport method for accesing this API; all
+        functions can be called using POST HTTP method; the functions
+        that starts with <b>get-</b> in the name, can use GET HTTP
+        method which in many cases benefits from the HTTP cache.</p>
+
+        {% block auth-section %}
+        <h3>Authentication</h3>
+        <p>The penpot backend right now offers two way for authenticate the request:
+        <b>cookies</b> (the same mechanism that we use ourselves on accessing the API from the
+        web application) and <b>access tokens</b>.</p>
+
+        <p>The cookie can be obtained using the <b>`login-with-password`</b> rpc method,
+        on successful login it sets the <b>`auth-token`</b> cookie with the session
+        token.</p>
+
+        <p>The access token can be obtained on the appropriate section on profile settings
+        and it should be provided using <b>`Authorization`</b> header with <b>`Token
+        &lt;token-string&gt;`</b> value.</p>
+        {% endblock %}
+
+        <h3>Content Negotiation</h3>
+        <p>This API operates indistinctly with: <b>`application/json`</b>
+        and <b>`application/transit+json`</b> content types. You should specify the
+        desired content-type on the <b>`Accept`</b> header, the transit encoding is used
+        by default.</p>
+
+        <h3>SSE (Server-Sent Events)</h3>
+        <p>The methods marked with <b>SSE</b> returns
+        a <a href="https://html.spec.whatwg.org/multipage/server-sent-events.html"> SSE
+        formatted</a> stream on the response body, always with status 200. The events are
+        always encoded using `application/transit+json` encoding (for now no content
+        negotiation is possible on methods that return SSE streams). </p>
+        <p>On the javascript side you can use
+        the <a href="https://github.com/rexxars/eventsource-parser">eventsoure-parser</a>
+        library for propertly parsing the response body using the
+        standard <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API">Fetch
+        API</a></p>
+
+        {% block limits-section %}
+        <h3>Limits</h3>
+        <p>The rate limit work per user basis (this means that different api keys share
+        the same rate limit). For now the limits are not documented because we are
+        studying and analyzing the data. As a general rule, it should not be abused, if an
+        abusive use is detected, we will proceed to block the user's access to the
+        API.</p>
+        {% endblock %}
+
+        {% block webhooks-section %}
+        <h3>Webhooks</h3>
+        <p>All methods that emit webhook events are marked with flag <b>WEBHOOK</b>, the
+        data structure defined on each method represents the <i>payload</i> of the
+        event.</p>
+        <p>The webhook event structure has this aspect:</p>
+        <br/>
+
+        <pre>
+{
+  "id": "db601c95-045f-808b-8002-362f08fcb621",
+  "name": "rename-file",
+  "props": &lt;payload&gt;,
+  "profileId": "db601c95-045f-808b-8002-361312e63531"
+}
+        </pre>
+        {% endblock %}
+
+      </section>
+      <section class="rpc-doc-content">
+        <h2>METHODS REFERENCE:</h2>
+        <ul class="rpc-items">
+          {% for item in methods %}
+            {% include "app/templates/api-doc-entry.tmpl" with item=item %}
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
+

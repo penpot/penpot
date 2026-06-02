@@ -1,0 +1,38 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+
+.attributes-block {
+  --box-border-color: var(--color-background-primary);
+  display: flex;
+  flex-direction: column;
+  border-block-end: $b-2 solid var(--box-border-color);
+}
+
+.title-wrapper {
+  margin-inline-start: 0;
+}
+
+.visibility-attr-title {
+  color: var(--entry-foreground-color-hover);
+  padding-block: var(--sp-s);
+}
+
+.visibility-row {
+  @extend .attr-row;
+  block-size: $sz-36;
+}
+
+.button-children {
+  @extend .copy-button-children;
+}
+
+.copy-btn-title {
+  max-inline-size: $sz-28;
+}

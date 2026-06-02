@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>{% block title %}{% endblock %}</title>
+    <style>
+      {% include "app/templates/styles.css"  %}
+    </style>
+  </head>
+  <body>
+    {% block content %}
+    {% endblock %}
+  </body>
+</html>
+

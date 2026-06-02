@@ -1,0 +1,14 @@
+{
+  "name": "POC State Read",
+  "description": "Sandbox plugin for plugins development",
+  "version": 2,
+  "code": "assets/plugin.js",
+  "permissions": [
+    "content:write",
+    "library:write",
+    "comment:write",
+    "user:read",
+    "allow:downloads",
+    "allow:localstorage"
+  ]
+}

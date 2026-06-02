@@ -1,0 +1,187 @@
+---
+title: Variants
+order: 4
+desc: Streamline your design workflow with Penpot's Components guide! Learn to create, duplicate, group, and manage reusable components.
+---
+
+<h1 id="variants">Variants</h1>
+<p class="main-paragraph">Variants allow you to group similar components, such as buttons, icons, or toggles, into a single, customizable component. Rather than navigating through separate components for every possible state, size, or style, you can manage them all from one unified component using clearly defined properties.</p>
+<p class="main-paragraph">Imagine a single button component that can switch between primary and secondary styles, active and disabled states, and small to large sizes. Useful, right? That’s the power of Variants.</p>
+
+<h3 id="component-variants-why-are-variants-important">Why are Variants Important?</h3>
+<ul>
+  <li><strong>Cleaner libraries</strong><br>
+    Keep related designs organized in the Design viewport, Layers panel, and swap menu. Variants streamline your components into tidy, manageable sets, allowing you to retain overrides when switching between them.
+  </li>
+  <li><strong>Faster design workflows</strong><br>
+    Make it easier to find and select the right version by quickly switching between states or styles using simple property controls.
+  </li>
+  <li><strong>Better team collaboration</strong><br>
+    With variants, you can match the way states are handled in code, helping designers and developers stay in sync, fostering better collaboration between design and development teams.
+  </li>
+</ul>
+
+<figure>
+  <iframe 
+    width="672px" 
+    height="378px"
+    src="https://peertube.kaleidos.net/videos/embed/v9Yh79hom5otcBEnqondBY"
+    title="Penpot Variants Demo"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen>
+  </iframe>
+  <figcaption>Penpot – Variants release</figcaption>
+</figure>
+
+<h3 id="component-understanding-variants-properties-and-values">Understanding variants: properties and values</h3>
+<p>A component’s variants are organized by properties and their values.</p>
+<ul>
+  <li><strong>Properties</strong> define the dimensions that distinguish your variants (for example: <em>Color</em>, <em>Size</em>, <em>State</em>).</li>
+  <li><strong>Values</strong> are the specific options within a property (for example: <em>Primary/Secondary</em>, <em>Small/Large, Default/Hover/Pressed</em>)</li>
+</ul>
+<p>Each variant is simply one unique combination of values across all properties (for example, <code class="language-js">Color=Primary + Size=Small + State=Hover</code>).</p>
+<p>Variants must have at least one property, and property values should be kept consistent to make switching predictable and to preserve overrides across connected layers.</p>
+
+<h3 id="component-create-and-modify-variants">Create and modify variants</h3>
+
+<h4 id="component-create-variants">Create variants</h4>
+<p>You can create variants from an existing component or from another variant:</p>
+<ul>
+  <li><strong>From a component:</strong> Press Ctrl + K or right-click and select the menu option <strong>Create variant</strong>.</li>
+  <li><strong>From a variant:</strong> Select the variant and press Ctrl + K or right-click and select the menu option <strong>Create variant</strong>.</li>
+  <li><strong>By dragging:</strong> Drag a main component into an existing component with variants to add it as a new variant.</li>
+  <li><strong>From the Design tab</strong> (right sidebar): Select a component or a variant, open the context menu next to the component name and select the menu option <strong>Create variant</strong>.</li>
+</ul>
+<figure>
+  <img src="/img/variants/01-variants-create.webp" alt="Variants creation button" />
+</figure>
+<p><strong>When a variant is created:</strong></p>
+<ul>
+  <li>It appears next to the original in a dedicated variant area (by default in horizontal flex layout).</li>
+  <li>Shared layers between variants are automatically connected (<a href="#component-use-variants">connection conditions</a>) so that overrides can be preserved.</li>
+  <li>Variants are named using their property values (e.g., <em>Primary / Hover</em>).</li>
+</ul>
+<figure>
+  <img src="/img/variants/02-variants-created.webp" alt="Variant created" />
+</figure>
+
+<h4 id="component-manage-variant-properties">Manage variant properties</h4>
+<p>Properties are key to defining and differentiating your variants. They appear in the Design tab when a variant or component with variants is selected.</p>
+<figure>
+  <img src="/img/variants/03-variants-property-add.webp" alt="Add variant property" />
+</figure>
+<h5>Add new properties</h5>
+<ul>
+  <li><strong>From the Design tab:</strong> When the component or one of its variants is selected, you can add a new property via a menu. This property will be added to all existing variants with a default value (e.g., <em>Value 1</em>).</li>
+  <li><strong>From the Layers panel:</strong> using the formula <code class="language-js">[property_name]=[value]</code>.</li>
+</ul>
+
+<h5>Edit properties</h5>
+<ul>
+  <li><strong>From the Design tab:</strong> Select a component or a variant, then click on the property name to edit its name and/or value.</li>
+  <li><strong>From the Layers panel:</strong> using the formula <code class="language-js">[property_name]=[value]</code>.</li>
+</ul>
+<figure>
+  <img src="/img/variants/04-variants-properties-edit.webp" alt="Edit variant property" />
+</figure>
+
+<h5>Delete properties</h5>
+<ul>
+  <li><strong>From the Design tab:</strong> Select the main component (not an individual variant) and press the minus button next to the property.</li>
+  <li><strong>From the Layers panel:</strong> You can delete a property by editing the names of all variants so that none of them contain that property in their formula.</li>
+</ul>
+<p class="advice">Variants must have at least one property. You can’t delete the last one.</p>
+<p>When <strong>multiple variants are selected</strong>, the Design tab will show all their properties and values. If a property has different values across the selected variants, it will display “Mixed,” allowing you to override them collectively.</p>
+
+<h4 id="component-delete-variants">Delete Variants</h4>
+<ul>
+  <li>Select the variant, press right-click, and select the menu option <strong>Delete</strong>.</li>
+  <li><strong>Dragging</strong> a variant outside its component turns it into an independent component instead of deleting it.</li>
+</ul>
+<p class="advice">If you delete the last variant, the entire component is removed.</p>
+
+<h4 id="component-restore-variants">Restore Variants</h4>
+<p>If you have a copy of a variant whose original was deleted, you can restore it:</p>
+<ul>
+  <li>Select the variant copy, press right-click, and select the menu option <strong>Restore variant</strong> (will show if the main component still exists).</li>
+</ul>
+
+<h3 id="component-variants-toggle">Toggle for boolean variants</h3>
+<p>When a variant property represents a boolean state, Penpot can display it as a toggle instead of a dropdown. This offers a quicker and more visual way to switch between two opposite values when working with copies.</p>
+<p>The toggle appears in place of the property values dropdown, <strong>only when a copy is selected</strong>.</p>
+<figure>
+  <img src="/img/variants/07-variants-boolean.webp" alt="Boolean variant option" />
+</figure>
+<h4>Accepted value pairs</h4>
+<p>For Penpot to recognize the property as a boolean and display the toggle, the property must be defined with exactly two opposing values. These can be any of the following pairs:</p>
+<ul>
+  <li><code>true</code> / <code>false</code></li>
+  <li><code>on</code> / <code>off</code></li>
+  <li><code>yes</code> / <code>no</code></li>
+</ul>
+<p>The order of the values does not matter. Penpot automatically maps them to ON and OFF states:</p>
+<ul>
+  <li><strong>ON state:</strong> <code>true</code>, <code>yes</code>, <code>on</code></li>
+  <li><strong>OFF state:</strong> <code>false</code>, <code>no</code>, <code>off</code></li>
+</ul>
+
+<h3 id="component-use-variants">Use variants</h3>
+<p>Once you have created your variants, you can place a copy of a component with variants into your design and then switch between its different versions.</p>
+
+<h4 id="component-from-the-assets-tab">From the Assets tab</h4>
+<p>Drag and drop a component with variants from the Assets tab onto the design viewport, just like you would with any other component. Once placed, you can then use its properties in the Design tab to switch to the desired variant.</p>
+
+<h4 id="component-from-the-design-tab">From the Design tab</h4>
+<p>When a variant is selected:</p>
+<ul>
+  <li>You’ll see its properties and values.</li>
+  <li>Change one or more property values to switch to another variant.</li>
+  <li>If your chosen combination doesn’t exist, Penpot will suggest the closest match.</li>
+</ul>
+<figure>
+  <img src="/img/variants/05-variants-use.webp" alt="Using variants" />
+</figure>
+
+<h4 id="component-understanding-overrides">Understanding overrides</h4>
+<p>A key benefit of variants is the ability to <strong>preserve overrides when you switch between them</strong>. An override is a specific change you make to a component instance that diverges from its original definition (e.g., changing text content or a specific color).</p>
+<p>Layers between variants are considered connected if they:</p>
+<ol>
+  <li>Share the <strong>same name</strong>.</li>
+  <li><strong>Are the same type</strong>. Rectangle, ellipse, paths, and boolean operations count as the same type.</li>
+  <li><strong>Have the same hierarchy level.</strong> Groups, boards, and layouts are considered equivalent.</li>
+</ol>
+<figure>
+  <img src="/img/variants/variants-connections-conditions.png" alt="Variants connections conditions" />
+</figure>
+<p><strong>Example:</strong> If <code class="language-js">Variant 1</code> has a text layer named <em>label</em> with red color, and you change its content to <em>Click here</em> in an instance, then switch to <code class="language-js">Variant 2</code> (which also has a <em>label</em> text layer), the <em>Click here</em> content will be preserved, and <code class="language-js">Variant 2</code>’s color will be applied.</p>
+<p><strong>Changing any of these</strong> (e.g., renaming or grouping a layer) breaks the connection, but reverting the change will restore it.</p>
+
+<h4 id="component-bulk-converting-components-to-variants">Bulk converting components to variants</h4>
+<p>If you already have multiple related components, you can combine them into a single component with variants:</p>
+<ul>
+  <li><strong>From Assets tab</strong>: Select components in the same group and right-click → <strong>Combine as variants</strong>.</li>
+  <li><strong>From viewport</strong>: Select multiple components → Right-click → <strong>Combine as variants</strong>.</li>
+  <li><strong>From Design tab</strong>: If conditions are met, a Combine as variants button appears on the component card.</li>
+</ul>
+<figure>
+  <img src="/img/variants/06-variants-combine.webp" alt="Combining components as variants" />
+</figure>
+<p><strong>Conditions:</strong></p>
+<ul>
+  <li>Components must be on the same page.</li>
+  <li>Components that already have variants cannot be combined.</li>
+</ul>
+<p><strong>When combined:</strong></p>
+<ul>
+  <li>A variant area is created containing all former components.</li>
+  <li>Property names and values are generated from the component names.</li>
+</ul>
+
+<h4 id="component-transforming-variants-back-into-components">Transforming Variants Back into Components</h4>
+<p>To turn a variant into an independent component:</p>
+<ul>
+  <li>Drag it outside the variant area (Design viewport or Layers panel).</li>
+  <li>Cut and paste it outside the variant area.</li>
+</ul>
+<p>The new component’s name includes the original component name and the variant’s property values.</p>

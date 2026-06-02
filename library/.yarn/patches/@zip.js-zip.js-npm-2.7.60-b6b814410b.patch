@@ -1,0 +1,18 @@
+diff --git a/lib/zip-fs.js b/lib/zip-fs.js
+index 1444c0f00e5f1ad6c13521f90a7f3c6659d81116..90e38baef5365c2abbcb9337f7ab37f800e883a4 100644
+--- a/lib/zip-fs.js
++++ b/lib/zip-fs.js
+@@ -33,12 +33,7 @@ import { initShimAsyncCodec } from "./core/util/stream-codec-shim.js";
+ import { terminateWorkers } from "./core/codec-pool.js";
+ 
+ let baseURL;
+-try {
+-	baseURL = import.meta.url;
+-	// eslint-disable-next-line no-unused-vars
+-} catch (_) {
+-	// ignored
+-}
++
+ configure({ baseURL });
+ configureWebWorker(configure);
+ 

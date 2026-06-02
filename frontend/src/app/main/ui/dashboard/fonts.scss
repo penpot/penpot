@@ -1,0 +1,304 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "common/refactor/common-dashboard";
+
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.dashboard-fonts {
+  border-top: $b-1 solid var(--color-background-quaternary);
+  display: flex;
+  flex-direction: column;
+  padding-left: px2rem(120);
+  padding-bottom: px2rem(120);
+  overflow-y: auto;
+
+  .btn-primary {
+    font-size: px2rem(11);
+    height: $sz-32;
+    min-width: px2rem(100);
+  }
+}
+
+.dashboard-installed-fonts {
+  max-width: px2rem(1000);
+  width: 100%;
+  display: flex;
+  margin-top: var(--sp-xxl);
+  flex-direction: column;
+
+  h3 {
+    @include t.use-typography("title-small");
+    color: var(--color-foreground-secondary);
+    margin: var(--sp-xs);
+  }
+
+  .font-item {
+    color: var(--color-background-secondary);
+  }
+}
+
+.installed-fonts-header {
+  @include t.use-typography("headline-small");
+  align-items: center;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  height: $sz-40;
+  padding-left: var(--sp-xxl);
+
+  > .family {
+    @include twoLineTextEllipsis;
+    min-width: $sz-200;
+    width: $sz-200;
+  }
+
+  > .variants {
+    padding-left: var(--sp-m);
+  }
+}
+
+.search-input {
+  display: flex;
+  flex-grow: 1;
+  justify-content: flex-end;
+
+  input {
+    @include t.use-typography("body-medium");
+    background-color: var(--color-background-tertiary);
+    border-color: transparent;
+    border-radius: $br-8;
+    border: $b-1 solid transparent;
+    color: var(--color-foreground-primary);
+    height: $sz-32;
+    margin: 0;
+    padding: 0 var(--sp-s);
+    width: px2rem(152);
+
+    &:focus {
+      outline: $b-1 solid var(--color-accent-primary);
+    }
+    &::placeholder {
+      color: var(--color-foreground-secondary);
+    }
+  }
+}
+
+.font-item {
+  @include t.use-typography("body-medium");
+  align-items: center;
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-4;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--sp-xs);
+  max-width: px2rem(1000);
+  padding: var(--sp-m) var(--sp-xxl);
+  width: 100%;
+
+  input {
+    @include t.use-typography("body-medium");
+    @include textEllipsis;
+    border: $b-1 solid transparent;
+    margin: 0;
+    padding: var(--sp-s);
+
+    background-color: var(--color-background-tertiary);
+    border-radius: $br-8;
+    color: var(--color-foreground-primary);
+
+    &:focus {
+      outline: $b-1 solid var(--color-accent-primary);
+      overflow: visible;
+      text-overflow: unset;
+    }
+  }
+
+  > .family {
+    @include twoLineTextEllipsis;
+    min-width: $sz-200;
+    width: $sz-200;
+    &.is-edition {
+      overflow: visible;
+    }
+  }
+
+  > .filenames {
+    @include textEllipsis;
+    min-width: $sz-200;
+  }
+
+  > .variants {
+    @include t.use-typography("body-medium");
+    display: flex;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    padding-left: var(--sp-l);
+    gap: $sz-6;
+
+    .variant {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--sp-s) var(--sp-m);
+      cursor: pointer;
+      gap: var(--sp-xs);
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: $sz-16;
+        width: $sz-16;
+        svg {
+          fill: none;
+          width: $sz-12;
+          height: $sz-12;
+          transform: rotate(45deg);
+        }
+      }
+
+      &:hover {
+        .icon svg {
+          stroke: var(--color-foreground-secondary);
+        }
+      }
+    }
+    .inhert-variant {
+      cursor: default;
+    }
+  }
+
+  .table-field {
+    color: var(--color-foreground-primary);
+    .variant {
+      background-color: var(--color-background-quaternary);
+      border-radius: $br-8;
+    }
+  }
+
+  .filenames {
+    @include t.use-typography("body-small");
+    @include textEllipsis;
+    min-width: $sz-400;
+    padding-left: var(--sp-xxxl);
+  }
+
+  .options {
+    display: flex;
+    justify-content: flex-end;
+    min-width: px2rem(180);
+
+    .icon {
+      width: $sz-24;
+      cursor: pointer;
+      display: flex;
+      margin-left: var(--sp-m);
+      justify-content: center;
+      align-items: center;
+      svg {
+        width: $sz-16;
+        height: $sz-16;
+        stroke: var(--color-foreground-secondary);
+        fill: none;
+      }
+
+      &.failure {
+        margin-right: var(--sp-m);
+        svg {
+          stroke: var(--element-foreground-warning);
+        }
+      }
+
+      &.close {
+        background: none;
+        border: none;
+        svg {
+          stroke: var(--color-foreground-secondary);
+        }
+      }
+    }
+  }
+}
+
+.dashboard-fonts-upload {
+  max-width: px2rem(1000);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .upload-button {
+    width: px2rem(100);
+  }
+
+  .btn-secondary {
+    margin-left: var(--sp-m);
+  }
+}
+
+.dashboard-fonts-hero {
+  @include t.use-typography("body-medium");
+  padding: var(--sp-xxxl) 0;
+  margin-top: px2rem(80);
+  display: flex;
+  justify-content: space-between;
+
+  .btn-primary {
+    height: $sz-40;
+    width: 100%;
+  }
+
+  .desc {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-xxl);
+    color: var(--color-background-secondary);
+    width: $sz-500;
+
+    h2 {
+      color: var(--color-foreground-primary);
+      font-weight: 400;
+    }
+
+    p {
+      @include t.use-typography("body-large");
+      color: var(--color-foreground-secondary);
+    }
+  }
+
+  .btn-primary {
+    flex-shrink: 0;
+  }
+}
+
+.fonts-placeholder {
+  align-items: center;
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
+  display: flex;
+  flex-direction: column;
+  height: $sz-160;
+  justify-content: center;
+  margin-top: var(--sp-l);
+  max-width: px2rem(1000);
+  width: 100%;
+
+  .icon svg {
+    stroke: var(--color-foreground-secondary);
+    fill: none;
+    width: $sz-32;
+    height: $sz-32;
+  }
+
+  .label {
+    @include t.use-typography("body-medium");
+    color: var(--color-foreground-secondary);
+  }
+}

@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.title-name {
+  @include deprecated.uppercaseTitleTipography;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.title-tokens {
+  @include deprecated.bodySmallTypography;
+  text-transform: capitalize;
+}
+
+.title-tokens-active {
+  color: var(--assets-item-name-foreground-color, --color-foreground-primary);
+}
+
+.section-icon {
+  @include deprecated.flexCenter;
+  padding-right: deprecated.$s-2;
+  svg {
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
+    fill: none;
+    stroke: currentColor;
+  }
+}
+
+.section-name {
+  display: flex;
+  align-items: center;
+  margin: 0 deprecated.$s-2;
+}
+
+.num-assets {
+  @include deprecated.flexCenter;
+  height: 100%;
+  padding-left: deprecated.$s-8;
+}
+
+.title-spacing {
+  padding-block-start: deprecated.$s-4;
+}
+
+.asset-section.opened {
+  margin-bottom: deprecated.$s-12;
+}
+
+.drag-counter {
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(deprecated.$s-24 - deprecated.$s-2);
+  background-color: var(--assets-item-name-background-color);
+  color: var(--assets-item-name-foreground-color);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: deprecated.$s-4;
+  padding-inline: deprecated.$s-4;
+  z-index: 2;
+}

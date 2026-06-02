@@ -1,0 +1,589 @@
+import { test, expect } from "@playwright/test";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
+
+test.beforeEach(async ({ page }) => {
+  await WasmWorkspacePage.init(page);
+  await WasmWorkspacePage.mockConfigFlags(page, [
+    "enable-feature-render-wasm",
+    "enable-render-wasm-dpr",
+  ]);
+});
+
+async function mockGetEmojiFont(workspace) {
+  await workspace.mockGetAsset(
+    /notocoloremoji.*\.ttf$/,
+    "render-wasm/assets/notocoloremojisubset.ttf",
+  );
+}
+
+async function mockGetJapaneseFont(workspace) {
+  await workspace.mockGetAsset(
+    /notosansjp.*\.ttf$/,
+    "render-wasm/assets/notosansjpsubset.ttf",
+  );
+  await workspace.mockGetAsset(
+    /notosanssc.*\.ttf$/,
+    "render-wasm/assets/notosansjpsubset.ttf",
+  );
+}
+
+async function mockGetSymbolsFont(workspace) {
+  await workspace.mockGetAsset(
+    /notosanssymbols.*\.ttf$/,
+    "render-wasm/assets/notosanssymbolssubset.ttf",
+  );
+  await workspace.mockGetAsset(
+    /notosanssymbols2.*\.ttf$/,
+    "render-wasm/assets/notosanssymbols2subset.ttf",
+  );
+  await workspace.mockGetAsset(
+    /notomusic.*\.ttf$/,
+    "render-wasm/assets/notomusicsubset.ttf",
+  );
+}
+
+test("Renders a file with texts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text.json");
+
+  await workspace.goToWorkspace({
+    id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
+    pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Updates a text font", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text.json");
+
+  await workspace.goToWorkspace({
+    id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
+    pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
+  });
+  await workspace.waitForFirstRender();
+
+  await workspace.clickLeafLayer("this is a text");
+  await page.keyboard.press("Control+b");
+
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts that use google fonts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-google-fonts.json");
+  await workspace.mockGoogleFont(
+    "ebgaramond",
+    "render-wasm/assets/ebgaramond.ttf",
+  );
+  await workspace.mockGoogleFont("firacode", "render-wasm/assets/firacode.ttf");
+
+  await workspace.goToWorkspace({
+    id: "434b0541-fa2f-802f-8006-5981e47bd732",
+    pageId: "434b0541-fa2f-802f-8006-5981e47bd733",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts that use custom fonts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-custom-fonts.json");
+  await workspace.mockRPC(
+    "get-font-variants?team-id=*",
+    "render-wasm/get-font-variants-custom-fonts.json",
+  );
+  await workspace.mockAsset(
+    "2d1ffeb6-e70b-4027-bbcc-910248ba45f8",
+    "render-wasm/assets/mreaves.ttf",
+  );
+  await workspace.mockAsset(
+    "69e76833-0816-49fa-8c7b-4b97c71c6f1a",
+    "render-wasm/assets/nodesto-condensed.ttf",
+  );
+
+  await workspace.goToWorkspace({
+    id: "434b0541-fa2f-802f-8006-59827d964a9b",
+    pageId: "434b0541-fa2f-802f-8006-59827d964a9c",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with styled texts", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-styles.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c2559af4939",
+    pageId: "6bd7c17d-4f59-815e-8006-5c2559af493a",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with images", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockFileMediaAsset(
+    [
+      "4f89252d-ebbc-813e-8006-8699e4170e17",
+      "4f89252d-ebbc-813e-8006-8699e4170e18",
+    ],
+    "render-wasm/assets/pattern.png",
+    "render-wasm/assets/pattern-thumbnail.png",
+  );
+  await mockGetEmojiFont(workspace);
+  await mockGetJapaneseFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-images.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
+    pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with emoji and different symbols", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await mockGetEmojiFont(workspace);
+  await mockGetSymbolsFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-symbols.json");
+
+  await workspace.goToWorkspace({
+    id: "74d31005-5d0c-81fe-8006-949a8226e8c4",
+    pageId: "74d31005-5d0c-81fe-8006-949a8226e8c5",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with text decoration", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockFileMediaAsset(
+    ["d6c33e7b-7b64-80f3-8006-78509a3a2d21"],
+    "render-wasm/assets/pattern.png",
+    "render-wasm/assets/pattern-thumbnail.png",
+  );
+  await mockGetEmojiFont(workspace);
+  await mockGetJapaneseFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-decoration.json");
+
+  await workspace.goToWorkspace({
+    id: "d6c33e7b-7b64-80f3-8006-785098582f1d",
+    pageId: "d6c33e7b-7b64-80f3-8006-785098582f1e",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with emoji and text decoration", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await mockGetEmojiFont(workspace);
+
+  await workspace.mockGetFile(
+    "render-wasm/get-file-emoji-and-text-decoration.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "82d128e1-d3b1-80a5-8006-ae60fedcd5e7",
+    pageId: "82d128e1-d3b1-80a5-8006-ae60fedcd5e8",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple emoji", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-emoji-board.json");
+
+  await mockGetEmojiFont(workspace);
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5e999f38f210",
+    pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple text shadows, strokes, and blur combinations", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-and-blurs.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
+    pageId: "15b74473-2908-8094-8006-bdb4fbd2c6a4",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with different text leaves decoration", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-leaves-decoration.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bda76b230c6a",
+    pageId: "b4cb802d-4245-807d-8006-b4a4b90b79cd",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with different text shadows combinations", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-combination.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
+    pageId: "15b74473-2908-8094-8006-bc90c3982c74",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with multiple text shadows in order", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-shadows-order.json");
+
+  await workspace.goToWorkspace({
+    id: "48ffa82f-6950-81b5-8006-e49a2a39657f",
+    pageId: "48ffa82f-6950-81b5-8006-e49a2a396580",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with text in frames and different strokes, shadows, and blurs", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-frame-clipping-shadows-and-texts.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "44471494-966a-8178-8006-c5bd93f0fe72",
+    pageId: "44471494-966a-8178-8006-c5bd93f0fe73",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with different alignments", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-align.json");
+
+  await workspace.goToWorkspace({
+    id: "692f368b-63ca-8141-8006-62925640b827",
+    pageId: "692f368b-63ca-8141-8006-62925640b828",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with with text spans of different sizes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-spans-different-sizes.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "a0b1a70e-0d02-8082-8006-ff6d160f15ce",
+    pageId: "a0b1a70e-0d02-8082-8006-ff6d160f15cf",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with paragraphs and breaking lines", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-paragraph-new-lines.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "a5f238bd-dd8a-8164-8007-1bc3481eaf05",
+    pageId: "a5f238bd-dd8a-8164-8007-1bc3481eaf06",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with tabs", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-tabs.json");
+
+  await workspace.goToWorkspace({
+    id: "55ed444c-1179-8175-8007-09da51f502e7",
+    pageId: "55ed444c-1179-8175-8007-09da51f502e8",
+  });
+
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("shape-list");
+  await workspace.hideUI();
+  await workspace.page.keyboard.press("Enter");
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with empty lines", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-empty-lines.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0ecbaf9da983",
+    pageId: "15222a7a-d3bc-80f1-8007-0d8e166e650f",
+  });
+
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("text-with-empty-lines-2");
+  await workspace.hideUI();
+  await workspace.page.keyboard.press("Enter");
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+// TODO: enable this test once we use the wasm renderer in the new editor
+test.skip("Renders a file with texts with breaking words", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-empty-lines.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0ecbaf9da983",
+    pageId: "15222a7a-d3bc-80f1-8007-0d8e166e650f",
+  });
+
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("text-with-empty-lines-3");
+  await workspace.hideUI();
+  await workspace.page.keyboard.press("Enter");
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with group with text with inherited shadows", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-group-with-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "58c5cc60-d124-81bd-8007-0f30f1ac452a",
+    pageId: "58c5cc60-d124-81bd-8007-0f30f1ac452b",
+  });
+
+  await workspace.waitForFirstRenderWithoutUI();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test.skip("Updates text alignment edition - part 1", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
+  const autoWidthButton = workspace.page.getByTitle("Auto width");
+  const autoHeightButton = workspace.page.getByTitle("Auto height");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignRightButton = workspace.page.getByTitle(
+    "Align right (Ctrl+Alt+R)",
+  );
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 1");
+  await autoWidthButton.click();
+
+  await workspace.clickLeafLayer("Text 2");
+  await autoHeightButton.click();
+
+  await workspace.clickLeafLayer("Text 3");
+  await alignMiddleButton.click();
+  await alignRightButton.click();
+
+  await workspace.clickLeafLayer("Text 4");
+  await alignBottomButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
+});
+
+test.skip("Updates text alignment edition - part 2", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
+  const alignTopButton = workspace.page.getByTitle("Align top");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignCenterButton = workspace.page.getByTitle(
+    "Align center (Ctrl+Alt+T)",
+  );
+  const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
+  const LTRButton = workspace.page.getByTitle("LTR");
+  const RTLButton = workspace.page.getByTitle("RTL");
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 5");
+  await alignBottomButton.click();
+  await alignTopButton.click();
+  await alignCenterButton.click();
+
+  await workspace.clickLeafLayer("Text 6");
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.clickLeafLayer("Text 7");
+  await alignJustifyButton.click();
+  await RTLButton.click();
+  await LTRButton.click();
+
+  await workspace.clickLeafLayer("Text 8");
+  await alignMiddleButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
+});
+
+test.skip("Updates text alignment edition - part 3", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
+
+  await workspace.goToWorkspace({
+    id: "6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    pageId: "f8b42814-8653-81cf-8006-638aacdc3ffb",
+  });
+  await workspace.waitForFirstRender();
+  await workspace.clickLeafLayer("Text 1");
+
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
+  const autoWidthButton = workspace.page.getByTitle("Auto width");
+  const autoHeightButton = workspace.page.getByTitle("Auto height");
+  const alignMiddleButton = workspace.page.getByTitle("Align middle");
+  const alignBottomButton = workspace.page.getByTitle("Align bottom");
+  const alignLeftButton = workspace.page.getByTitle("Align left (Ctrl+Alt+L)");
+  const alignCenterButton = workspace.page.getByTitle(
+    "Align center (Ctrl+Alt+T)",
+  );
+  const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
+  const RTLButton = workspace.page.getByTitle("RTL");
+
+  await textOptionsButton.click();
+
+  await workspace.clickLeafLayer("Text 9");
+  await autoHeightButton.click();
+  await alignBottomButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+
+  await workspace.clickLeafLayer("Text 10");
+  await alignBottomButton.click();
+  await alignJustifyButton.click();
+  await RTLButton.click();
+  await autoWidthButton.click();
+
+  await workspace.clickLeafLayer("Text 11");
+  await alignCenterButton.click();
+  await alignBottomButton.click();
+
+  await workspace.clickLeafLayer("Text 12");
+  await alignCenterButton.click();
+  await alignLeftButton.click();
+  await alignMiddleButton.click();
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
+});

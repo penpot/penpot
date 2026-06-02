@@ -1,0 +1,36 @@
+FROM nginxinc/nginx-unprivileged:1.30.0
+LABEL maintainer="Penpot <docker@penpot.app>"
+
+USER root
+
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
+    mkdir -p /opt/data/assets; \
+    chown -R penpot:penpot /opt/data; \
+    mkdir -p /etc/nginx/overrides/main.d/; \
+    mkdir -p /etc/nginx/overrides/http.d/; \
+    mkdir -p /etc/nginx/overrides/server.d/; \
+    mkdir -p /etc/nginx/overrides/assets.d/; \
+    mkdir -p /etc/nginx/overrides/location.d/;
+
+ARG BUNDLE_PATH="./bundle-frontend/"
+COPY $BUNDLE_PATH /var/www/app/
+COPY ./files/config.js /var/www/app/js/config.js
+COPY ./files/nginx.conf.template /tmp/nginx.conf.template
+COPY ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
+COPY ./files/nginx-mcp-locations.conf.template /tmp/nginx-mcp-locations.conf.template
+COPY ./files/nginx-security-headers.conf /etc/nginx/nginx-security-headers.conf
+COPY ./files/nginx-mime.types /etc/nginx/mime.types
+COPY ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
+COPY ./files/nginx-entrypoint.sh /entrypoint.sh
+
+RUN chown -R 1001:0 /var/cache/nginx; \
+    chmod -R g+w /var/cache/nginx; \
+    chown -R 1001:0 /etc/nginx; \
+    chmod -R g+w /etc/nginx; \
+    chown -R 1001:0 /var/www; \
+    chmod -R g+w /var/www;
+
+USER penpot:penpot
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

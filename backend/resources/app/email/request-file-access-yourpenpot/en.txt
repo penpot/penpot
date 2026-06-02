@@ -1,0 +1,30 @@
+Hello!
+
+
+Hello!
+
+{{requested-by|abbreviate:25}} ({{requested-by-email}}) has requested access to the file named “{{file-name|abbreviate:25}}”.
+
+Please note that the file is currently in Your Penpot 's team, so direct access cannot be granted. However, you have two options to provide the requested access:
+
+- Move the File to Another Team:
+
+You can move the file to another team and then give access to that team, inviting {{requested-by|abbreviate:25}}.
+
+
+
+- Send a View-Only Link:
+
+Alternatively, you can create and share a view-only link to the file. This will allow {{requested-by|abbreviate:25}} to view the content without making any changes.
+
+Click the link below to generate and send the link:
+
+{{ public-uri }}/#/view?file-id={{file-id}}&page-id={{page-id}}&section=interactions&index=0&share=true
+
+
+
+If you do not wish to grant access at this time, you can simply disregard this email.
+Thank you
+
+
+The Penpot team.

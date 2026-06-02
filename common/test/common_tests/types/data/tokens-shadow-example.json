@@ -1,0 +1,60 @@
+{
+  "test": {
+    "shadow-single": {
+      "$value": {
+        "x": "0",
+        "y": "2px",
+        "blur": "4px",
+        "spread": "0",
+        "color": "#000"
+      },
+      "$type": "boxShadow"
+    },
+    "shadow-multiple": {
+      "$value": [
+        {
+          "x": "0",
+          "y": "2px",
+          "blur": "4px",
+          "spread": "0",
+          "color": "#000",
+          "inset": true
+        },
+        {
+          "x": "0",
+          "y": "8px",
+          "blur": "16px",
+          "spread": "0",
+          "color": "#000",
+          "inset": "true"
+        }
+      ],
+      "$type": "boxShadow"
+    },
+    "shadow-ref": {
+      "$value": "{shadow-single}",
+      "$type": "boxShadow"
+    },
+    "shadow-with-type": {
+        "$value": {
+            "x": "0",
+            "y": "4px",
+            "blur": "8px",
+            "spread": "0",
+            "color": "rgba(0,0,0,0.2)",
+            "type": "innerShadow"
+        },
+        "$type": "boxShadow"
+    },
+    "shadow-with-description": {
+        "$value": {
+            "x": "1px",
+            "y": "1px",
+            "blur": "3px",
+            "color": "gray"
+        },
+        "$type": "boxShadow",
+        "$description": "A simple shadow token"
+    }
+  }
+}

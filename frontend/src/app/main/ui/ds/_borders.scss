@@ -1,0 +1,17 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_utils.scss" as *;
+
+// TODO: create actual tokens once we have them from design
+$br-4: px2rem(4);
+$br-6: px2rem(6);
+$br-8: px2rem(8);
+$br-12: px2rem(12);
+$br-circle: 50%;
+
+$b-1: px2rem(1);
+$b-2: px2rem(2);

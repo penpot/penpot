@@ -1,0 +1,147 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+// TODO: Legacy sass vars. We should use DS tokens.
+$color-gray-50: #303236;
+$fs12: 0.75rem;
+$fs14: 0.875rem;
+$fs18: 1.125rem;
+$fs24: 1.5rem;
+$fs34: 2.125rem;
+$fs44: 2.75rem;
+$fw300: 300;
+$fw500: 500;
+$lh-115: 1.15;
+$lh-133: 1.33;
+$size-4: 1rem;
+
+body {
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  display: flex;
+  flex-direction: column;
+  font-family: "worksans", "vazirmatn", sans-serif;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+}
+
+img {
+  height: auto;
+  width: 100%;
+}
+
+svg {
+  * {
+    transition: none;
+  }
+}
+
+a {
+  cursor: pointer;
+  font-weight: $fw500;
+  color: $color-gray-50;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  font-family: "worksans", "vazirmatn", sans-serif;
+}
+
+p {
+  font-size: $fs12;
+  margin-bottom: 1rem;
+  line-height: $lh-133;
+}
+
+li {
+  line-height: $lh-133;
+}
+
+ul {
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: $fs34;
+  font-weight: $fw500;
+  line-height: $lh-115;
+}
+
+h2 {
+  font-size: $fs24;
+  font-weight: $fw300;
+  line-height: $lh-115;
+}
+
+h3 {
+  font-size: $fs24;
+  font-weight: $fw300;
+  padding: 0.5rem 0;
+}
+
+h4 {
+  font-size: $fs18;
+  font-weight: $fw300;
+}
+
+hr {
+  border-top: solid 1px var(--color-background-primary);
+  border-right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  margin: 1rem 0;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+input,
+select {
+  box-sizing: border-box;
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-size: $fs14;
+  margin-bottom: $size-4;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+[draggable] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
+}

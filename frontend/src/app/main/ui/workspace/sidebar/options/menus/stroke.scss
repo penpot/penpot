@@ -1,0 +1,53 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.stroke-section {
+  @include sidebar.option-grid-structure;
+}
+
+.stroke-title {
+  grid-column: span 8;
+}
+
+.stroke-title-bar {
+  padding-inline-start: var(--sp-xxs);
+}
+
+.stroke-content {
+  grid-column: span 8;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+  margin: var(--sp-xs) 0 var(--sp-s) 0;
+
+  &.stroke-content-empty {
+    margin: 0;
+  }
+}
+
+.stroke-multiple {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.stroke-multiple-label {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+}

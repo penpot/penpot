@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work.
+
+set -ex
+
+export BUILD_TS=$(date +%s);
+export BUILD_DATE=$(date -R);
+
+export VERSION=${1:-develop};
+export VERSION_TAG="${VERSION}-${BUILD_TS}";
+
+export NODE_ENV=production;
+
+corepack enable;
+corepack install;
+pnpm install;
+
+pnpm run build:storybook;

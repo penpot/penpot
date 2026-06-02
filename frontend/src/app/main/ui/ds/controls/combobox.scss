@@ -1,0 +1,98 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+
+.wrapper {
+  --combobox-icon-color: var(--color-icon-default);
+  --combobox-text-color: var(--color-foreground-primary);
+  --combobox-background-color: var(--color-background-tertiary);
+  --combobox-outline-color: none;
+  --combobox-border-color: none;
+  --combobox-error-outline-color: var(--color-accent-error);
+
+  &:hover:not(.disabled) {
+    --combobox-background-color: var(--color-background-quaternary);
+  }
+
+  &:focus-within:not(.disabled) {
+    --combobox-outline-color: var(--color-accent-primary);
+    --combobox-background-color: var(--color-background-primary);
+  }
+
+  @include use-typography("body-small");
+  position: relative;
+  display: grid;
+  grid-template-rows: auto;
+  gap: var(--sp-xxs);
+  width: 100%;
+}
+
+.combobox {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+  height: $sz-32;
+  width: 100%;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--combobox-outline-color);
+  border: $b-1 solid var(--combobox-border-color);
+  background: var(--combobox-background-color);
+  color: var(--combobox-text-color);
+  appearance: none;
+}
+
+.arrow {
+  color: var(--combobox-icon-color);
+}
+
+.header {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-xs);
+}
+
+.header-icon {
+  grid-template-columns: auto 1fr;
+  color: var(--combobox-icon-color);
+}
+
+.input {
+  all: unset;
+
+  @include use-typography("body-small");
+  background-color: transparent;
+  overflow: hidden;
+  text-align: left;
+  inline-size: 100%;
+  padding-inline-start: var(--sp-xxs);
+  color: var(--combobox-text-color);
+
+  &::placeholder {
+    color: var(--input-placeholder-color);
+    text-overflow: ellipsis;
+  }
+}
+
+.button-toggle-list {
+  all: unset;
+  display: flex;
+}
+
+.disabled {
+  cursor: default;
+  --combobox-background-color: var(--color-background-primary);
+  --combobox-border-color: var(--color-background-quaternary);
+  --combobox-text-color: var(--color-foreground-secondary);
+}
+
+.has-error {
+  --combobox-outline-color: var(--combobox-error-outline-color);
+}

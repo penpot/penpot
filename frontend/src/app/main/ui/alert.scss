@@ -1,0 +1,73 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+
+  &.transparent {
+    background-color: transparent;
+  }
+}
+
+.modal-container {
+  @extend .modal-container-base;
+}
+
+.modal-header {
+  margin-bottom: deprecated.$s-24;
+}
+
+.modal-title {
+  @include deprecated.headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include deprecated.bodyLargeTypography;
+  margin-bottom: deprecated.$s-24;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include deprecated.bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+  line-height: 1.5;
+}
+
+.link {
+  color: var(--color-accent-primary);
+}
+
+.link::before {
+  content: " ";
+}
+
+.link::after {
+  content: " ";
+}

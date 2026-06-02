@@ -1,0 +1,33 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+$width-settings-bar: 256px;
+
+.container {
+  background-color: var(--color-background-primary);
+  border-radius: deprecated.$br-4;
+  bottom: 0px;
+  padding: deprecated.$s-2 deprecated.$s-8;
+  position: fixed;
+  right: calc(#{$width-settings-bar} + #{deprecated.$s-24});
+  text-align: center;
+  white-space: nowrap;
+  transition: bottom 0.5s;
+  z-index: 2;
+  display: flex;
+  column-gap: 0.5rem;
+}
+
+.container-color-palette-open {
+  bottom: deprecated.$s-64;
+}
+
+.coordinate {
+  color: var(--color-foreground-primary);
+  font-size: deprecated.$fs-12;
+}

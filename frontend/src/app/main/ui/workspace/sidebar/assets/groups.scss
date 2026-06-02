@@ -1,0 +1,94 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.group-title-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+
+  &:hover {
+    cursor: pointer;
+
+    .title-menu {
+      visibility: visible;
+    }
+  }
+}
+
+.group-title-wrapper > :first-child {
+  flex: 1 1 auto;
+}
+
+.title-menu {
+  visibility: hidden;
+}
+
+.group-title {
+  padding-left: deprecated.$s-4;
+}
+
+.pre-path {
+  margin-left: deprecated.$s-2;
+  text-transform: initial;
+  color: var(--title-foreground-color);
+}
+
+.path {
+  @include deprecated.textEllipsis;
+  margin-left: deprecated.$s-2;
+  text-transform: initial;
+  color: var(--title-foreground-color-hover);
+}
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+}
+
+.modal-header {
+  margin-bottom: deprecated.$s-24;
+}
+
+.modal-title {
+  @include deprecated.uppercaseTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
+}
+
+.input-wrapper {
+  @extend .input-with-label;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-8;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}

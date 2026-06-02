@@ -1,0 +1,224 @@
+use skia_safe as skia;
+
+use crate::mem::SerializableResult;
+use crate::utils::{uuid_from_u32_quartet, uuid_to_u32_quartet};
+use crate::uuid::Uuid;
+use skia::Matrix;
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum Modifier {
+    Transform(TransformEntry),
+    Reflow(Uuid, bool),
+}
+
+impl Modifier {
+    pub fn transform_propagate(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry::from_propagate(id, transform))
+    }
+    pub fn parent(id: Uuid, transform: Matrix) -> Self {
+        Modifier::Transform(TransformEntry::parent(id, transform))
+    }
+    pub fn reflow(id: Uuid, force_reflow: bool) -> Self {
+        Modifier::Reflow(id, force_reflow)
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum TransformEntrySource {
+    Input,
+    Propagate,
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+#[repr(C)]
+pub struct TransformEntry {
+    pub id: Uuid,
+    pub transform: Matrix,
+    pub source: TransformEntrySource,
+    pub propagate: bool,
+}
+
+impl TransformEntry {
+    // FIXME: We should be able to refactor code so we don't need these from_* methods
+    pub fn from_input(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry {
+            id,
+            transform,
+            source: TransformEntrySource::Input,
+            propagate: true,
+        }
+    }
+
+    // FIXME: We should be able to refactor code so we don't need these from_* methods
+    pub fn from_propagate(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry {
+            id,
+            transform,
+            source: TransformEntrySource::Propagate,
+            propagate: true,
+        }
+    }
+    pub fn parent(id: Uuid, transform: Matrix) -> Self {
+        TransformEntry {
+            id,
+            transform,
+            source: TransformEntrySource::Propagate,
+            propagate: false,
+        }
+    }
+}
+
+impl From<[u8; 40]> for TransformEntry {
+    fn from(bytes: [u8; 40]) -> Self {
+        let id = uuid_from_u32_quartet(
+            u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+            u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
+            u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+        );
+
+        let transform = Matrix::new_all(
+            f32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            f32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            f32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
+            f32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
+            f32::from_le_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]),
+            f32::from_le_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
+            0.0,
+            0.0,
+            1.0,
+        );
+        TransformEntry::from_input(id, transform)
+    }
+}
+
+impl TryFrom<&[u8]> for TransformEntry {
+    type Error = String;
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 40] = bytes
+            .try_into()
+            .map_err(|_| "Invalid transform entry bytes".to_string())?;
+        Ok(TransformEntry::from(bytes))
+    }
+}
+
+impl From<TransformEntry> for [u8; 40] {
+    fn from(value: TransformEntry) -> Self {
+        let mut result = [0; 40];
+        let (a, b, c, d) = uuid_to_u32_quartet(&value.id);
+        result[0..4].clone_from_slice(&a.to_le_bytes());
+        result[4..8].clone_from_slice(&b.to_le_bytes());
+        result[8..12].clone_from_slice(&c.to_le_bytes());
+        result[12..16].clone_from_slice(&d.to_le_bytes());
+
+        result[16..20].clone_from_slice(&value.transform[0].to_le_bytes());
+        result[20..24].clone_from_slice(&value.transform[3].to_le_bytes());
+        result[24..28].clone_from_slice(&value.transform[1].to_le_bytes());
+        result[28..32].clone_from_slice(&value.transform[4].to_le_bytes());
+        result[32..36].clone_from_slice(&value.transform[2].to_le_bytes());
+        result[36..40].clone_from_slice(&value.transform[5].to_le_bytes());
+
+        result
+    }
+}
+
+// FIXME: Use a DTO for this
+impl SerializableResult for TransformEntry {
+    type BytesType = [u8; 40];
+
+    // The generic trait doesn't know the size of the array. This is why the
+    // clone needs to be here even if it could be generic.
+    fn clone_to_slice(&self, slice: &mut [u8]) {
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum StructureEntryType {
+    RemoveChild,
+    AddChild,
+    ScaleContent,
+}
+
+impl StructureEntryType {
+    pub fn from_u32(value: u32) -> Self {
+        match value {
+            1 => Self::RemoveChild,
+            2 => Self::AddChild,
+            3 => Self::ScaleContent,
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+#[repr(C)]
+pub struct StructureEntry {
+    pub entry_type: StructureEntryType,
+    pub index: u32,
+    pub parent: Uuid,
+    pub id: Uuid,
+    pub value: f32,
+}
+
+impl StructureEntry {
+    pub fn new(
+        entry_type: StructureEntryType,
+        index: u32,
+        parent: Uuid,
+        id: Uuid,
+        value: f32,
+    ) -> Self {
+        StructureEntry {
+            entry_type,
+            index,
+            parent,
+            id,
+            value,
+        }
+    }
+
+    pub fn from_bytes(bytes: [u8; 44]) -> Self {
+        let entry_type = StructureEntryType::from_u32(u32::from_le_bytes([
+            bytes[0], bytes[1], bytes[2], bytes[3],
+        ]));
+
+        let index = u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]);
+
+        let parent = uuid_from_u32_quartet(
+            u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
+            u32::from_le_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]),
+            u32::from_le_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]),
+        );
+
+        let id = uuid_from_u32_quartet(
+            u32::from_le_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]),
+            u32::from_le_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]),
+            u32::from_le_bytes([bytes[32], bytes[33], bytes[34], bytes[35]]),
+            u32::from_le_bytes([bytes[36], bytes[37], bytes[38], bytes[39]]),
+        );
+
+        let value = f32::from_le_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
+
+        StructureEntry::new(entry_type, index, parent, id, value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialization() {
+        let entry = TransformEntry::from_input(
+            Uuid::new_v4(),
+            Matrix::new_all(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.0, 0.0, 1.0),
+        );
+
+        let bytes: [u8; 40] = entry.into();
+
+        assert_eq!(entry, TransformEntry::from(bytes));
+    }
+}

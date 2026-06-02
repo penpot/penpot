@@ -1,0 +1,55 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography" as t;
+@use "ds/_utils.scss" as *;
+
+.radius {
+  display: grid;
+  grid-template-columns: subgrid;
+  gap: var(--sp-xs);
+}
+
+.radius-1 {
+  @extend .input-element;
+  @include t.use-typography("body-small");
+}
+
+.radius-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-xs);
+}
+
+.small-input {
+  @extend .input-element;
+  @include t.use-typography("body-small");
+}
+
+.selected {
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--color-accent-primary);
+}
+
+.selected {
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--button-icon-foreground-color-selected);
+}
+
+.icon {
+  margin-inline: var(--sp-xs);
+}
+
+.no-icon-input {
+  padding-inline-start: px2rem(6);
+}
+
+.dropdown-offset {
+  --dropdown-offset: #{px2rem(-65)};
+}

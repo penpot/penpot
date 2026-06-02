@@ -1,0 +1,83 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+}
+
+.title-spacing-export {
+  padding-left: deprecated.$s-2;
+  margin: 0;
+}
+
+.element-set-content {
+  @include sidebar.option-grid-structure;
+  gap: var(--sp-xs);
+}
+
+.multiple-exports {
+  @include deprecated.flexRow;
+  grid-column: 1 / span 9;
+  .label {
+    @extend .mixed-bar;
+  }
+  .actions {
+    @include deprecated.flexRow;
+  }
+}
+
+.element-group {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
+
+.input-wrapper {
+  grid-column: span 7;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.format-select {
+  grid-column: span 2;
+  padding: 0;
+
+  .dropdown-upwards {
+    bottom: deprecated.$s-36;
+    width: deprecated.$s-80;
+    top: unset;
+  }
+}
+
+.size-select {
+  grid-column: span 2;
+  padding: 0;
+  .dropdown-upwards {
+    bottom: deprecated.$s-36;
+    top: unset;
+    width: deprecated.$s-80;
+  }
+}
+
+.suffix-input {
+  grid-column: span 3;
+  @extend .input-element;
+  @include deprecated.bodySmallTypography;
+}
+
+.export-btn {
+  @extend .button-secondary;
+  @include deprecated.uppercaseTitleTipography;
+  grid-column: 1 / span 9;
+  height: deprecated.$s-32;
+}

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>WebAssembly - Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body>
+    <script type="module">
+      import {
+        init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
+        getRandomFloat, useShape, setShapeChildren, setupInteraction
+      } from './js/lib.js';
+
+      const url = new URL(location);
+      const files = url.searchParams.getAll('files');
+      if (!files) {
+        createError('URL param "files" not specified', 'You need to specify a file list using "files" like: ?files=/js/a.js&files=/js/b.js');
+      }
+
+      const fn = url.searchParams.get('fn');
+      if (!fn) {
+        createError('URL param "fn" not specified', 'You need to specify the module function to call');
+      }
+
+      const width = parseInt(url.searchParams.get('width') ?? 320, 10);
+      const height = parseInt(url.searchParams.get('height') ?? 200, 10);
+      const shapes = parseInt(url.searchParams.get('shapes') ?? 10, 10);
+      const iterations = parseInt(url.searchParams.get('iterations') ?? 1_000, 10);
+
+      function prepare(Module, canvas) {
+        init(Module);
+        assignCanvas(canvas);
+        Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+        Module._set_view(1, 0, 0);
+
+        const children = [];
+        for (let shape = 0; shape < shapes; shape++) {
+          const uuid = crypto.randomUUID();
+          children.push(uuid);
+
+          useShape(uuid);
+
+          Module._set_parent(0, 0, 0, 0);
+          Module._set_shape_type(3);
+          const x1 = getRandomInt(0, canvas.width);
+          const y1 = getRandomInt(0, canvas.height);
+          const width = getRandomInt(20, 100);
+          const height = getRandomInt(20, 100);
+          Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
+
+          const color = getRandomColor();
+          const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
+          addShapeSolidFill(argb)
+        }
+
+        useShape("00000000-0000-0000-0000-000000000000");
+        setShapeChildren(children);
+      }
+
+      function createElement(tag, attribs, children) {
+        const e = document.createElement(tag);
+        if (attribs) {
+          for (const [name, value] of Object.entries(attribs)) {
+            if (name === 'style') {
+              for (const [styleName, styleValue] of Object.entries(value)) {
+                e.style.setPropertyValue(styleName, styleValue);
+              }
+            } else if (name === 'class') {
+              if (typeof value === 'string') {
+                e.className = value;
+              } else if (Array.isArray(value)) {
+                e.classList.add(...value);
+              }
+            } else {
+              e.setAttribute(name, value);
+            }
+          }
+        }
+        if (children) {
+          if (typeof children === 'string'
+           || typeof children === 'number'
+           || typeof children === 'boolean'
+          ) {
+            e.textContent = children;
+          } else if (Array.isArray(children)) {
+            e.append(...children);
+          } else {
+            e.append(children);
+          }
+        }
+        return e;
+      }
+
+      function createError(title, description) {
+        document.body.append(
+          createElement('div', { class: ['error'] }, [
+            createElement('h1', { class: ['title'] }, title),
+            createElement('p', { class: ['description'] }, description)
+          ])
+        );
+      }
+
+      function createCanvas(width, height) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        return canvas;
+      }
+
+      const durations = new Map()
+      for (const file of files) {
+        try {
+          const module = await import(file);
+          // console.log(module.default);
+          const instance = await module.default();
+          const canvas = createCanvas(width, height);
+          prepare(instance, canvas);
+          let totalDuration = 0;
+          for (let iteration = 0; iteration < iterations; iteration++) {
+            const startMark = performance.mark(`${file}:begin`);
+            instance[fn]();
+            const endMark = performance.mark(`${file}:end`);
+
+            const { duration } = performance.measure(file, startMark.name, endMark.name);
+            totalDuration += duration;
+          }
+          totalDuration /= iterations;
+          console.log(file, fn, totalDuration);
+          durations.set(file, totalDuration);
+
+          document.body.append(canvas);
+        } catch (error) {
+          createError('Error', error.toString());
+        }
+      }
+
+      function min([aFile, aDuration], [bFile, bDuration]) {
+        if (aDuration < bDuration) {
+          return [aFile, aDuration];
+        }
+        return [bFile, bDuration];
+      }
+
+      function max([aFile, aDuration], [bFile, bDuration]) {
+        if (aDuration > bDuration) {
+          return [aFile, aDuration];
+        }
+        return [bFile, bDuration];
+      }
+
+      const [minFile, minDuration] = durations.entries().reduce((a, b) => min(a, b), ['', Infinity]);
+      const [maxFile, maxDuration] = durations.entries().reduce((a, b) => max(a, b), ['', -Infinity]);
+      console.log('Min', minFile, minDuration);
+      console.log('Max', maxFile, maxDuration);
+    </script>
+  </body>
+</html>

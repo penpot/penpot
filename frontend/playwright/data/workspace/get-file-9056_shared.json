@@ -1,0 +1,60 @@
+{
+  "~:features": {
+    "~#set": [
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": true,
+  "~:comment-thread-seqn": 0,
+  "~:name": "published component",
+  "~:data-ref-id": "~u31c32f2e-cb47-46ee-97ac-47092ff754fc",
+  "~:revn": 3,
+  "~:modified-at": "~m1730103592325",
+  "~:vern": 0,
+  "~:id": "~u3622460c-3408-81e2-8005-2fc938010233",
+  "~:data-backend": "objects-storage",
+  "~:is-shared": true,
+  "~:version": 56,
+  "~:project-id": "~u3622460c-3408-81e2-8005-2fc9059741e0",
+  "~:created-at": "~m1730101410834",
+  "~:data": {
+    "~:pages": [
+      "~u3622460c-3408-81e2-8005-2fc938010234"
+    ],
+    "~:pages-index": {
+      "~u3622460c-3408-81e2-8005-2fc938010234": {
+        "~#penpot/pointer": [
+          "~u3622460c-3408-81e2-8005-31859c15ff90",
+          {
+            "~:created-at": "~m1730217905239"
+          }
+        ]
+      }
+    },
+    "~:id": "~u3622460c-3408-81e2-8005-2fc938010233",
+    "~:options": {
+      "~:components-v2": true
+    },
+    "~:components": {
+      "~#penpot/pointer": [
+        "~u3622460c-3408-81e2-8005-31859c15ff91",
+        {
+          "~:created-at": "~m1730217905239"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,97 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+}
+
+.title-spacing-blur {
+  padding-left: deprecated.$s-2;
+  margin: 0;
+}
+
+.element-set-content {
+  @include deprecated.flexColumn;
+  margin-bottom: deprecated.$s-8;
+}
+
+.first-row {
+  @include sidebar.option-grid-structure;
+
+  .blur-info {
+    grid-column: span 6;
+    display: flex;
+    align-items: center;
+    gap: deprecated.$s-1;
+    flex-grow: 1;
+    border-radius: deprecated.$br-8;
+    background-color: var(--input-details-color);
+    .show-more {
+      @extend .button-secondary;
+      height: deprecated.$s-32;
+      width: deprecated.$s-28;
+      border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
+      box-sizing: border-box;
+      border: deprecated.$s-1 solid var(--button-secondary-background-color-rest);
+      svg {
+        @extend .button-icon;
+      }
+      &.selected {
+        background-color: var(--button-radio-background-color-active);
+        svg {
+          stroke: var(--button-radio-foreground-color-active);
+        }
+      }
+    }
+    .label {
+      @include deprecated.bodySmallTypography;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      height: deprecated.$s-32;
+      padding: 0 deprecated.$s-8;
+      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+      background-color: var(--input-background-color);
+      color: var(--menu-foreground-color);
+      box-sizing: border-box;
+      border: deprecated.$s-1 solid var(--input-border-color);
+    }
+  }
+  .actions {
+    @include deprecated.flexRow;
+  }
+
+  &.hidden {
+    .blur-info {
+      @include deprecated.hiddenElement;
+      .show-more {
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      }
+      .label {
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      }
+    }
+  }
+}
+
+.second-row {
+  @extend .input-element;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-92;
+  .label {
+    padding-left: deprecated.$s-8;
+    width: deprecated.$s-60;
+  }
+}

@@ -1,0 +1,92 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.view-options {
+  @include deprecated.bodySmallTypography;
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: deprecated.$s-4;
+  height: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
+  background-color: var(--input-background-color);
+  padding: deprecated.$s-8;
+  cursor: pointer;
+}
+.dropdown-title {
+  @include deprecated.bodySmallTypography;
+  flex-grow: 1;
+  color: var(--input-foreground-color-active);
+}
+
+.label {
+  flex-grow: 1;
+  color: var(--input-foreground-color);
+}
+
+.dropdown {
+  @extend .menu-dropdown;
+  right: deprecated.$s-2;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
+  padding: deprecated.$s-6;
+  max-height: calc(100vh - 3 * (deprecated.$s-2 + deprecated.$s-48));
+  overflow: auto;
+}
+
+.dropdown-element {
+  @extend .dropdown-element-base;
+  min-height: deprecated.$s-32;
+  .icon {
+    @include deprecated.flexCenter;
+    height: 100%;
+    width: deprecated.$s-16;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover .label {
+    color: var(--input-foreground-color-active);
+  }
+}
+
+.dropdown-element.selected {
+  .label {
+    color: var(--input-foreground-color-active);
+  }
+  .icon svg {
+    stroke: var(--input-foreground-color);
+  }
+}
+
+.icon,
+.icon-dropdown {
+  @include deprecated.flexCenter;
+  height: 100%;
+  width: deprecated.$s-16;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.icon-dropdown svg {
+  transform: rotate(90deg);
+}
+
+// breakpoint 1013px
+
+.fixed {
+  position: fixed;
+  pointer-events: none;
+
+  :global(.frame-children) g {
+    pointer-events: auto;
+  }
+}

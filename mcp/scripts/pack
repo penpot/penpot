@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# pnpm-lock.yaml is hard-excluded by npm, but we need it; ship it under a neutral name
+cp pnpm-lock.yaml pnpm-lock.dist.yaml
+trap 'rm -f pnpm-lock.dist.yaml' EXIT
+
+npm pack

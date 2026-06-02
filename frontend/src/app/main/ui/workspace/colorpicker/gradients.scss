@@ -1,0 +1,166 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.gradient-panel {
+  margin-top: deprecated.$s-12;
+  display: grid;
+  gap: deprecated.$s-4;
+  grid-template-rows: deprecated.$s-56 deprecated.$s-32 1fr;
+}
+
+.gradient-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 0 var(--sp-m);
+}
+
+.gradient-background {
+  width: 100%;
+  height: deprecated.$s-20;
+  border-radius: deprecated.$br-4;
+  position: relative;
+  cursor: pointer;
+}
+
+.gradient-preview-stop-wrapper {
+  position: absolute;
+  width: calc(100% - deprecated.$s-24 - deprecated.$s-4);
+  height: 100%;
+  left: deprecated.$s-2;
+  top: calc(-1 * deprecated.$s-4);
+  pointer-events: none;
+}
+
+.gradient-preview-stop {
+  background-color: var(--color-foreground-primary);
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=");
+  background-position: left center;
+  background-size: deprecated.$s-8;
+  border-radius: deprecated.$br-6;
+  border: deprecated.$s-2 solid var(--color-foreground-primary);
+  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  height: calc(deprecated.$s-24 - deprecated.$s-2);
+  left: var(--position);
+  overflow: hidden;
+  pointer-events: initial;
+  position: absolute;
+  width: calc(deprecated.$s-24 - deprecated.$s-2);
+
+  &.is-selected,
+  &:hover {
+    outline: deprecated.$s-2 solid var(--color-accent-primary);
+  }
+}
+.gradient-preview-stop-decoration {
+  background: var(--color-foreground-primary);
+  border-radius: 100%;
+  bottom: deprecated.$s-32;
+  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  height: deprecated.$s-4;
+  left: calc(var(--position) + deprecated.$s-8);
+  position: absolute;
+  width: deprecated.$s-4;
+}
+
+.gradient-preview-stop-color {
+  position: absolute;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--color-solid);
+}
+
+.gradient-preview-stop-alpha {
+  position: absolute;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  background: var(--color-alpha);
+}
+
+.gradient-options {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--sp-m);
+}
+
+.gradient-options-buttons {
+  display: flex;
+}
+
+.gradient-options-select {
+  width: deprecated.$s-140;
+}
+
+.rotate-icon {
+  transform: scaleX(-1);
+}
+
+.gradient-stops-list {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  max-height: deprecated.$s-180;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 0 var(--sp-s) var(--sp-m);
+}
+
+.gradient-stops-entry {
+  display: flex;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-2;
+  border-radius: deprecated.$br-12;
+  border: deprecated.$s-1 solid transparent;
+
+  position: relative;
+
+  &.is-selected {
+    border-color: var(--color-accent-primary-muted);
+  }
+
+  &:hover {
+    --reorder-icon-visibility: visible;
+  }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
+  &.dnd-over-bot {
+    --reorder-bottom-display: block;
+  }
+}
+
+.offset-input-wrapper {
+  @extend .input-element;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-92;
+}
+
+.gradient-separator {
+  border-color: var(--color-background-quaternary);
+  border-width: deprecated.$s-3;
+  margin-left: calc(var(--sp-m) / 2);
+  position: relative;
+  width: calc(100% - var(--sp-m));
+}
+
+.gradient-preview-stop-preview {
+  background: var(--color-foreground-primary);
+  border-radius: 50%;
+  height: deprecated.$s-4;
+  left: calc(var(--preview-position, 0%) - deprecated.$s-2);
+  pointer-events: none;
+  position: absolute;
+  top: calc(50% - deprecated.$s-2);
+  width: deprecated.$s-4;
+}

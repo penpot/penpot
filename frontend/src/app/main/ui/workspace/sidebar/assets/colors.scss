@@ -1,0 +1,102 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+// TODO: we should be using subgrid in the common "assets component" to avoid
+// using this SCSS variable here (we cannot use a CSS var in this CSS module because
+// the elements are not part of the same cascade).
+$assets-button-width: deprecated.$s-28;
+
+.colors-group {
+  margin-top: deprecated.$s-4;
+}
+
+.asset-list {
+  padding: 0 0 0 deprecated.$s-4;
+}
+
+.asset-list-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr #{$assets-button-width};
+  align-items: center;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  padding-inline-end: 0;
+  margin-bottom: deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  background-color: var(--assets-item-background-color);
+  cursor: pointer;
+
+  &.selected {
+    border: deprecated.$s-1 solid var(--assets-item-border-color);
+  }
+
+  &.editing {
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
+    input.element-name {
+      @include deprecated.textEllipsis;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.removeInputStyle;
+      flex-grow: 1;
+      margin: 0;
+      color: var(--layer-row-foreground-color);
+    }
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+  }
+}
+
+.bullet-block {
+  @include deprecated.flexCenter;
+  height: 100%;
+  justify-content: flex-start;
+  margin-inline-end: deprecated.$s-4;
+}
+
+.name-block {
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
+  margin: 0;
+  color: var(--assets-item-name-foreground-color);
+}
+
+.default-name {
+  margin-inline-start: deprecated.$s-4;
+  color: var(--assets-item-name-foreground-color-rest);
+}
+
+.default-name-with-color {
+  margin-left: deprecated.$s-6;
+}
+
+.element-name {
+  @include deprecated.textEllipsis;
+  color: var(--color-foreground-primary);
+}
+
+.grid-placeholder {
+  height: deprecated.$s-2;
+  margin-bottom: deprecated.$s-2;
+  background-color: var(--color-accent-primary);
+}
+
+.drop-space {
+  height: deprecated.$s-12;
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: deprecated.$s-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
+}

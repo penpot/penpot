@@ -1,0 +1,109 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.color-palette {
+  height: 100%;
+  display: flex;
+}
+
+.left-arrow,
+.right-arrow {
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  position: relative;
+  height: 100%;
+  width: deprecated.$s-24;
+  padding: 0;
+  z-index: deprecated.$z-index-5;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: deprecated.$z-index-1;
+    bottom: 0;
+    left: calc(-1 * deprecated.$s-80);
+    height: 100%;
+    width: deprecated.$s-80;
+    background-image: linear-gradient(
+      to left,
+      var(--palette-button-shadow-initial) 0%,
+      var(--palette-button-shadow-final) 100%
+    );
+    pointer-events: none;
+  }
+  &:hover {
+    svg {
+      stroke: var(--button-foreground-hover);
+    }
+  }
+  &:disabled {
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+    &::after {
+      background-image: none;
+    }
+  }
+}
+.left-arrow {
+  &::after {
+    left: deprecated.$s-24;
+    background-image: linear-gradient(
+      to right,
+      var(--palette-button-shadow-initial) 0%,
+      var(--palette-button-shadow-final) 100%
+    );
+  }
+
+  &:disabled::after {
+    background-image: none;
+  }
+
+  svg {
+    transform: rotate(180deg);
+  }
+}
+
+.color-palette-content {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.color-palette-inside {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--color-cell-width);
+  gap: deprecated.$s-8;
+}
+
+.color-cell {
+  appearance: none;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  height: 100%;
+
+  &.no-text {
+    @include deprecated.flexCenter;
+    width: deprecated.$s-32;
+  }
+}
+
+.color-palette-empty {
+  @include deprecated.bodySmallTypography;
+  color: var(--palette-text-color);
+}

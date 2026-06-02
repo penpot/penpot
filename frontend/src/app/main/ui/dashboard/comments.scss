@@ -1,0 +1,108 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.dashboard-comments-section {
+  @include deprecated.flexCenter;
+  position: relative;
+  border-radius: deprecated.$br-8;
+}
+
+.thread-groups {
+  height: calc(100% - deprecated.$s-32);
+  max-height: deprecated.$s-440;
+  overflow: auto;
+}
+
+.thread-group {
+  display: flex;
+  flex-direction: column;
+  font-size: deprecated.$fs-12;
+}
+
+.thread-groups-placeholder {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: deprecated.$fs-12;
+  padding: deprecated.$s-24;
+  text-align: center;
+  color: var(--color-foreground-secondary);
+}
+
+.comments-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  margin-bottom: deprecated.$s-24;
+}
+
+.comment-button {
+  position: relative;
+  .unread {
+    position: absolute;
+    width: deprecated.$s-8;
+    height: deprecated.$s-8;
+    border: deprecated.$s-2 solid var(--color-background-tertiary);
+    border-radius: 50%;
+    background: red;
+    top: deprecated.$s-6;
+    right: deprecated.$s-6;
+  }
+}
+
+.comments-icon-small {
+  @extend .button-icon;
+  stroke: var(--comment-icon-small-foreground-color);
+}
+
+.dropdown {
+  @include deprecated.menuShadow;
+  background-color: var(--color-background-tertiary);
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid transparent;
+  bottom: deprecated.$s-4;
+  height: 40vh;
+  max-height: deprecated.$s-480;
+  min-height: deprecated.$s-200;
+  position: absolute;
+  overflow: hidden;
+  width: 100%;
+  z-index: deprecated.$z-index-4;
+
+  hr {
+    margin: 0;
+    border-color: var(--color-foreground-secondary);
+  }
+}
+
+.header {
+  display: flex;
+  height: deprecated.$s-40;
+  align-items: center;
+  padding: 0 deprecated.$s-12;
+  gap: deprecated.$s-4;
+}
+
+.header-title {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-11;
+  line-height: 1.28;
+  flex-grow: 1;
+  text-transform: uppercase;
+}
+
+.notifications-button {
+  &:hover {
+    cursor: pointer;
+  }
+  &.mark-all-as-read-button {
+    border-radius: deprecated.$s-8;
+    border: deprecated.$s-1 solid;
+  }
+}

@@ -1,0 +1,53 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.edit-wrapper {
+  border-radius: deprecated.$br-4;
+  display: flex;
+  padding-right: deprecated.$s-24;
+  position: relative;
+  margin-right: deprecated.$s-24;
+}
+
+input.element-title {
+  background-color: var(--input-background-color-active);
+  border-radius: deprecated.$br-8;
+  color: var(--color-foreground-primary);
+  font-size: deprecated.$fs-16;
+  height: deprecated.$s-32;
+  margin: 0;
+  border: none;
+  padding: deprecated.$s-6;
+  width: 100%;
+
+  &:focus-visible {
+    border: deprecated.$s-1 solid var(--color-accent-primary);
+    outline: none;
+  }
+}
+
+.close {
+  cursor: pointer;
+  position: absolute;
+
+  top: deprecated.$s-1;
+  right: calc(-1 * deprecated.$s-8);
+
+  svg {
+    fill: var(--color-foreground-secondary);
+    height: deprecated.$s-16;
+    transform: rotate(45deg) translateY(7px);
+    width: deprecated.$s-16;
+    margin: 0;
+  }
+  &:hover {
+    svg {
+      fill: var(--element-foreground-warning);
+    }
+  }
+}

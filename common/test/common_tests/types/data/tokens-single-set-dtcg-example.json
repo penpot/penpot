@@ -1,0 +1,11 @@
+{
+    "color": {
+        "red": {
+            "100": {
+                "$value": "red",
+                "$type": "color",
+                "$description": ""
+            }
+        }
+    }
+}

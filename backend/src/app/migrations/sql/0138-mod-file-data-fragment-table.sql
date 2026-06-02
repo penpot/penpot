@@ -1,0 +1,2 @@
+ALTER TABLE file_data_fragment
+ALTER CONSTRAINT file_data_fragment_file_id_fkey DEFERRABLE INITIALLY DEFERRED;

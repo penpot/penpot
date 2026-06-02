@@ -1,0 +1,128 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.workspace-header-left {
+  display: flex;
+  align-items: center;
+  padding: deprecated.$s-12 deprecated.$s-12 deprecated.$s-8 deprecated.$s-12;
+  min-height: deprecated.$s-52;
+}
+
+.main-icon {
+  @include deprecated.flexCenter;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin-right: deprecated.$s-4;
+  svg {
+    min-height: deprecated.$s-32;
+    width: deprecated.$s-32;
+    fill: var(--icon-foreground-hover);
+  }
+}
+
+.project-tree {
+  position: relative;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+}
+
+.project-name,
+.file-name {
+  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.textEllipsis;
+  height: deprecated.$s-16;
+  width: 100%;
+  padding-bottom: deprecated.$s-2;
+  color: var(--title-foreground-color);
+  cursor: pointer;
+}
+
+.file-name {
+  @include deprecated.smallTitleTipography;
+  text-transform: none;
+  color: var(--title-foreground-color-hover);
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
+.file-name-label {
+  @include deprecated.textEllipsis;
+}
+
+.file-name-input {
+  @include deprecated.flexCenter;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  border-radius: deprecated.$br-4;
+  background-color: var(--input-background-color);
+  font-size: deprecated.$fs-14;
+  color: var(--input-foreground-color);
+  z-index: deprecated.$z-index-20;
+  white-space: break-spaces;
+  &:focus {
+    outline: none;
+  }
+}
+
+.shared-badge {
+  @include deprecated.flexCenter;
+  width: deprecated.$s-16;
+  height: deprecated.$s-32;
+  margin-right: deprecated.$s-4;
+  svg {
+    stroke: var(--button-secondary-foreground-color-rest);
+    fill: none;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
+  }
+}
+
+.status-notification {
+  width: deprecated.$s-6;
+  height: deprecated.$s-6;
+  border-radius: 50%;
+  margin-right: deprecated.$s-4;
+  flex-shrink: 0;
+  background-color: var(--status-widget-background-color-pending);
+
+  &.pending-status {
+    background-color: var(--status-widget-background-color-warning);
+  }
+
+  &.saving-status {
+    background-color: var(--status-widget-background-color-pending);
+  }
+
+  &.saved-status {
+    background-color: var(--status-widget-background-color-success);
+    animation: jump 0.3s ease-out;
+  }
+
+  &.error-status {
+    background-color: var(--status-widget-background-color-error);
+  }
+}
+
+@keyframes jump {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

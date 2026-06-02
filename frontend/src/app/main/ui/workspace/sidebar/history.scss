@@ -1,0 +1,107 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.history-toolbox {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-background-color);
+}
+
+.history-entry-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
+}
+
+.history-entries {
+  height: calc(100vh - deprecated.$s-100);
+  padding: deprecated.$s-12;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-size: deprecated.$fs-12;
+}
+
+.history-entry {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-4;
+  padding: deprecated.$s-4 deprecated.$s-8;
+  border: deprecated.$s-2 solid transparent;
+  border-radius: deprecated.$s-8;
+  background-color: var(--entry-background-color);
+  cursor: pointer;
+  transition: border 0.2s;
+
+  .history-entry-summary {
+    display: flex;
+    align-items: center;
+    .history-entry-summary-icon {
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--entry-foreground-color);
+      }
+    }
+    .history-entry-summary-text {
+      margin: 0 deprecated.$s-8;
+      color: var(--color-foreground-primary);
+    }
+    .history-entry-summary-button {
+      opacity: deprecated.$op-0;
+      margin-left: auto;
+      &.button-opened {
+        svg {
+          transform: rotate(90deg);
+        }
+      }
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--entry-foreground-color);
+      }
+    }
+  }
+
+  .history-entry-detail {
+    display: block;
+    padding-top: deprecated.$s-16;
+    color: var(--modal-text-foreground-color);
+    .history-entry-details-list {
+      margin: 0;
+    }
+  }
+
+  &.disabled {
+    border-color: var(--entry-border-color-disabled);
+    background-color: var(--entry-background-color-disabled);
+  }
+
+  &.hover,
+  &:hover {
+    background-color: var(--entry-background-color-hover);
+    color: var(--entry-foreground-color-hover);
+    .history-entry-summary {
+      .history-entry-summary-icon {
+        svg {
+          stroke: var(--entry-foreground-color-hover);
+        }
+      }
+      .history-entry-summary-button {
+        opacity: deprecated.$op-10;
+        &.button-opened {
+          svg {
+            transform: rotate(90deg);
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,148 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "./grid.scss" as g;
+@use "ds/typography.scss" as t;
+
+.grid-empty-placeholder {
+  border-radius: deprecated.$br-12;
+  display: grid;
+  padding: deprecated.$s-12 0;
+
+  &.libs {
+    background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
+    background-position:
+      15% bottom,
+      85% top;
+    background-repeat: no-repeat;
+    align-items: center;
+    border: deprecated.$s-1 solid var(--color-background-quaternary);
+    border-radius: deprecated.$br-4;
+    display: flex;
+    flex-direction: column;
+    height: deprecated.$s-200;
+    margin: deprecated.$s-16;
+    padding: deprecated.$s-48;
+    justify-content: center;
+
+    .text {
+      a {
+        color: var(--color-foreground-primary);
+      }
+
+      p {
+        max-width: deprecated.$s-360;
+        text-align: center;
+        font-size: deprecated.$fs-16;
+      }
+    }
+  }
+
+  .create-new {
+    background-color: var(--color-background-tertiary);
+    border-radius: deprecated.$br-8;
+    color: var(--color-foreground-primary);
+    cursor: pointer;
+    height: deprecated.$s-160;
+    margin: deprecated.$s-8;
+    border: deprecated.$s-2 solid transparent;
+    width: var(--th-width, #{g.$thumbnail-default-width});
+    height: var(--th-height, #{g.$thumbnail-default-height});
+
+    svg {
+      width: deprecated.$s-32;
+      height: deprecated.$s-32;
+      stroke: var(--color-foreground-secondary);
+    }
+
+    &:hover {
+      border: deprecated.$s-2 solid var(--color-accent-tertiary);
+      background-color: var(--color-background-quaternary);
+      color: var(--color-accent-primary);
+
+      svg {
+        stroke: var(--color-accent-tertiary);
+      }
+    }
+  }
+
+  .text {
+    margin-top: deprecated.$s-12;
+    color: var(--color-foreground-secondary);
+    font-size: deprecated.$fs-16;
+  }
+}
+
+.placeholder-loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  row-gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) 0 var(--sp-m) 0;
+}
+
+.placeholder-text {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-16;
+  text-align: center;
+}
+
+.placeholder-markdown {
+  @include t.use-typography("body-large");
+
+  a {
+    color: var(--color-accent-primary);
+  }
+}
+
+.empty-placeholder-libraries {
+  margin: deprecated.$s-16;
+}
+
+.empty-project-container {
+  width: 100%;
+  display: grid;
+  gap: deprecated.$s-16;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-top: deprecated.$s-12;
+}
+
+.empty-project-card {
+  @include t.use-typography("body-small");
+  --color-card-background: var(--color-background-tertiary);
+  --color-card-title: var(--color-foreground-primary);
+  --color-card-subtitle: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-card-background);
+  border: deprecated.$s-2 solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
+  padding: var(--sp-m) 0;
+
+  &:hover {
+    --color-card-background: var(--color-accent-primary);
+    --color-card-title: var(--color-background-secondary);
+    --color-card-subtitle: var(--color-background-secondary);
+    cursor: pointer;
+
+    .empty-project-card-title {
+      font-weight: deprecated.$fw500;
+    }
+  }
+
+  flex-grow: 1;
+}
+
+.empty-project-card-title {
+  color: var(--color-card-title);
+}
+
+.empty-project-card-subtitle {
+  color: var(--color-card-subtitle);
+}

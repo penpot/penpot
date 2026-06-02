@@ -1,0 +1,62 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "sass:string";
+
+@mixin font-face(
+  $style-name,
+  $file,
+  $unicode-range,
+  $weight: unquote("normal"),
+  $style: string.unquote("normal")
+) {
+  $filepath: "../fonts/" + $file;
+
+  @font-face {
+    font-family: "#{$style-name}";
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
+    font-weight: string.unquote($weight);
+    font-style: string.unquote($style);
+    @if $unicode-range {
+      unicode-range: $unicode-range;
+    }
+  }
+}
+
+@mixin font-face-variable($style-name, $file, $unicode-range) {
+  $filepath: "../fonts/" + $file;
+
+  @font-face {
+    font-family: "#{$style-name}";
+    src: url($filepath + ".ttf") format("truetype");
+    unicode-range: $unicode-range;
+  }
+}
+
+$_arabic-unicode-list: "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0898-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EFD-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1";
+$_latin-unicode-list: "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD, U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF";
+
+@include font-face-variable("worksans", "WorkSans-VariableFont", $_latin-unicode-list);
+@include font-face-variable("vazirmatn", "Vazirmatn-VariableFont", $_arabic-unicode-list);
+
+// Source Sans Pro
+@include font-face("sourcesanspro", "sourcesanspro-extralight", null, "200");
+@include font-face("sourcesanspro", "sourcesanspro-extralightitalic", null, "200", italic);
+@include font-face("sourcesanspro", "sourcesanspro-light", null, "300");
+@include font-face("sourcesanspro", "sourcesanspro-lightitalic", null, "300", italic);
+@include font-face("sourcesanspro", "sourcesanspro-regular", null, normal);
+@include font-face("sourcesanspro", "sourcesanspro-italic", null, normal, italic);
+@include font-face("sourcesanspro", "sourcesanspro-semibold", null, "600");
+@include font-face("sourcesanspro", "sourcesanspro-semibolditalic", null, "600", italic);
+@include font-face("sourcesanspro", "sourcesanspro-bold", null, bold);
+@include font-face("sourcesanspro", "sourcesanspro-bolditalic", null, bold, italic);
+@include font-face("sourcesanspro", "sourcesanspro-black", null, "900");
+@include font-face("sourcesanspro", "sourcesanspro-blackitalic", null, "900", italic);
+
+// Roboto mono
+@include font-face("robotomono", "RobotoMono-Regular", $_latin-unicode-list, normal);

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work.
+
+set -ex
+
+export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
+
+export BUILD_DATE=$(date -R);
+export BUILD_TS=$(date +%s);
+
+export VERSION=${1:-develop};
+export VERSION_TAG="${VERSION}-${BUILD_TS}";
+
+# Some cljs reacts on this environment variable for define more
+# performant code on macros (example: rumext)
+export NODE_ENV=production;
+
+rm -rf node_modules;
+
+corepack enable;
+corepack install;
+pnpm install;
+
+rm -rf target/dist;
+rm -rf resources/public;
+
+mkdir -p resources/public;
+mkdir -p target/dist;
+
+# Build render wasm binary
+pushd ../render-wasm;
+./build
+popd
+
+pushd ../mcp;
+rm -rf node_modules;
+./scripts/setup
+WS_URI="/mcp/ws" pnpm run --filter "mcp-plugin" build
+popd;
+
+pnpm run build:app:main $EXTRA_PARAMS;
+pnpm run build:app:libs;
+pnpm run build:app:assets;
+
+sed -i "s/\.\/render.js/.\/render.js?version=$VERSION_TAG/g" resources/public/js/worker/main*.js
+
+rsync -avr resources/public/ target/dist/
+
+# Include the MCP plugin on the bundle
+mkdir -p target/dist/plugins/mcp/;
+rsync -avr ../mcp/packages/plugin/dist/ target/dist/plugins/mcp/

@@ -1,0 +1,141 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.plugins.register
+  (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
+   [app.common.types.plugins :as ctp]
+   [app.common.uri :as u]
+   [app.common.uuid :as uuid]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.util.object :as obj]
+   [beicon.v2.core :as rx]))
+
+;; Needs to be here because moving it to `app.main.data.workspace.mcp` will
+;; cause a circular dependency
+(def mcp-plugin-id "96dfa740-005d-8020-8007-55ede24a2bae")
+
+;; Stores the installed plugins information
+(defonce ^:private registry (atom {}))
+
+(defn plugins-list
+  "Retrieves the plugin data as an ordered list of plugin elements"
+  []
+  (->> (:ids @registry)
+       (mapv #(dm/get-in @registry [:data %]))))
+
+(defn get-plugin
+  [id]
+  (dm/get-in @registry [:data id]))
+
+(defn parse-manifest
+  "Read the manifest.json defined by the plugins definition and transforms it into an
+  object that will be stored in the register."
+  [plugin-url ^js manifest]
+  (let [name (obj/get manifest "name")
+        desc (obj/get manifest "description")
+        code (obj/get manifest "code")
+        icon (obj/get manifest "icon")
+        vers (d/nilv (obj/get manifest "version") 1)
+
+        permissions (into #{} (obj/get manifest "permissions" []))
+        permissions
+        (cond-> permissions
+          (contains? permissions "content:write")
+          (conj "content:read")
+
+          (contains? permissions "library:write")
+          (conj "library:read")
+
+          (contains? permissions "comment:write")
+          (conj "comment:read"))
+
+        plugin-url
+        (u/uri plugin-url)
+
+        origin
+        (if (= vers 1)
+          (-> plugin-url
+              (assoc :path "")
+              (str))
+          (-> plugin-url
+              (u/join ".")
+              (str)))
+
+        prev-plugin
+        (->> (:data @registry)
+             (vals)
+             (d/seek (fn [plugin]
+                       (and (= name (:name plugin))
+                            (= origin (:host plugin))))))
+
+        plugin-id
+        (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
+
+        manifest
+        (d/without-nils
+         {:plugin-id plugin-id
+          :url (str plugin-url)
+          :version vers
+          :name name
+          :description desc
+          :host origin
+          :code code
+          :icon icon
+          :permissions (into #{} (map str) permissions)})]
+    (if (sm/validate ctp/schema:registry-entry manifest)
+      manifest
+      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
+
+(defn save-to-store
+  []
+  ;; TODO: need this for the transition to the new schema. We can remove eventually
+  (let [registry (update @registry :data d/update-vals d/without-nils)]
+    (->> (rp/cmd! :update-profile-props {:props {:plugins registry}})
+         (rx/subs! identity))))
+
+(defn load-from-store
+  []
+  (reset! registry (get-in @st/state [:profile :props :plugins] {})))
+
+(defn init
+  []
+  (load-from-store))
+
+(defn install-plugin!
+  [plugin]
+  (letfn [(update-ids [ids]
+            (conj
+             (->> ids (remove #(= % (:plugin-id plugin))))
+             (:plugin-id plugin)))]
+    (swap! registry #(-> %
+                         (update :ids update-ids)
+                         (update :data assoc (:plugin-id plugin) plugin)))
+    (save-to-store)))
+
+(defn remove-plugin!
+  [{:keys [plugin-id]}]
+  (letfn [(update-ids [ids]
+            (->> ids
+                 (remove #(= % plugin-id))))]
+    (swap! registry #(-> %
+                         (update :ids update-ids)
+                         (update :data dissoc plugin-id)))
+    (save-to-store)))
+
+(defn check-permission
+  [plugin-id permission]
+  (or (= plugin-id "00000000-0000-0000-0000-000000000000")
+      (= plugin-id mcp-plugin-id)
+      (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
+        (contains? permissions permission))))
+
+(defn get-plugin-data
+  [state plugin-id]
+  (get-in state [:profile :props :plugins :data plugin-id]))

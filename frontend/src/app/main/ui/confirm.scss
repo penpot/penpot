@@ -1,0 +1,61 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  &.transparent {
+    background-color: transparent;
+  }
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+}
+
+.modal-title {
+  @include deprecated.headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: var(--sp-m);
+  right: var(--sp-m);
+}
+
+.modal-content {
+  @include deprecated.bodyLargeTypography;
+}
+
+.modal-item-element {
+  @include deprecated.flexRow;
+}
+
+.modal-component-icon {
+  @include deprecated.flexCenter;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-component-name {
+  @include deprecated.bodyLargeTypography;
+  color: var(--color-foreground-secondary);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include deprecated.bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+}

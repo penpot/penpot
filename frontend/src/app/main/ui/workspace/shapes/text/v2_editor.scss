@@ -1,0 +1,103 @@
+:global {
+  .selection-imposter-rect {
+    position: absolute;
+    background-color: var(--text-editor-selection-background-color);
+  }
+}
+
+.text-editor-container {
+  height: 100%;
+  position: relative;
+
+  cursor: text;
+}
+
+.text-editor-selection-imposter {
+  position: relative;
+}
+
+.text-editor-content {
+  height: 100%;
+  font-family: sourcesanspro;
+
+  outline: none;
+  user-select: text;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+
+  caret-color: var(--text-editor-caret-color);
+
+  color: transparent;
+
+  // Match Skia's text layout precision: prevent browser text-size
+  // adjustments and ensure consistent kerning across browsers.
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  font-kerning: normal;
+
+  &::selection,
+  *::selection {
+    color: transparent;
+    -webkit-text-fill-color: transparent; // WebKit/Safari
+  }
+
+  &::-moz-selection,
+  *::-moz-selection {
+    color: transparent;
+  }
+
+  [data-itype="paragraph"] {
+    line-height: inherit;
+    user-select: text;
+    margin: 0px;
+    font-size: 0px;
+  }
+
+  [data-itype="inline"] {
+    box-sizing: content-box;
+    display: inline;
+    line-height: inherit;
+    caret-color: var(--text-editor-caret-color);
+    white-space-collapse: pre;
+    word-break: normal;
+    overflow-wrap: break-word;
+    tab-size: 2;
+    -o-tab-size: 2;
+  }
+
+  [data-itype="root"] {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+.grow-type-auto-width {
+  [data-itype="inline"],
+  [data-itype="paragraph"] {
+    white-space: nowrap;
+  }
+
+  [data-itype="inline"] {
+    white-space-collapse: preserve;
+  }
+}
+
+// Vertical align.
+.align-top {
+  [data-itype="root"] {
+    justify-content: start;
+  }
+}
+
+.align-center {
+  [data-itype="root"] {
+    justify-content: center;
+  }
+}
+
+.align-bottom {
+  [data-itype="root"] {
+    justify-content: end;
+  }
+}

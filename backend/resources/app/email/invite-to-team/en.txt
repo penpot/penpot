@@ -1,0 +1,10 @@
+Hello!
+
+{{invited-by|abbreviate:25}} has invited you to join the team “{{ team|abbreviate:25 }}”.
+
+Accept invitation using this link:
+
+{{ public-uri }}/#/auth/verify-token?token={{token}}
+
+Enjoy!
+The Penpot team.

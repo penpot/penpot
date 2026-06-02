@@ -1,0 +1,46 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.element-set {
+  @include sidebar.option-grid-structure;
+}
+
+.element-title {
+  grid-column: span 8;
+}
+
+.title-spacing-selected-colors {
+  padding-left: deprecated.$s-2;
+  margin: 0;
+}
+
+.add-fill {
+  @extend .button-tertiary;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-content {
+  grid-column: span 8;
+  @include deprecated.flexColumn;
+  margin-bottom: deprecated.$s-8;
+}
+
+.selected-color-group {
+  @include deprecated.flexColumn;
+}
+
+.more-colors-btn {
+  @extend .button-secondary;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+}

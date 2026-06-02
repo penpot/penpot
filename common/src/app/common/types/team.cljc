@@ -1,0 +1,34 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.common.types.team
+  (:require
+   [app.common.schema :as sm]))
+
+(def valid-roles
+  #{:owner :admin :editor :viewer})
+
+(def permissions-for-role
+  {:viewer {:can-edit false :is-admin false :is-owner false}
+   :editor {:can-edit true :is-admin false :is-owner false}
+   :admin  {:can-edit true :is-admin true :is-owner false}
+   :owner  {:can-edit true :is-admin true :is-owner true}})
+
+(def schema:role
+  [::sm/one-of {:title "TeamRole"} valid-roles])
+
+(def schema:team-name
+  [:and
+   [::sm/text {:max 250}]
+   [:fn {:error/code "errors.team-name-invalid-chars"}
+    (fn [s] (not (re-find #"[.:/]" s)))]])
+
+;; FIXME: specify more fields
+(def schema:team
+  [:map {:title "Team"}
+   [:id ::sm/uuid]
+   [:name :string]])
+

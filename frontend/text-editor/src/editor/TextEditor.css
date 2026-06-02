@@ -1,0 +1,40 @@
+.text-editor-content {
+  height: 100%;
+  font-family: sourcesanspro;
+
+  outline: none;
+  user-select: text;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+
+  caret-color: black;
+
+  /* color: transparent; */
+  color: black;
+
+  div {
+    line-height: inherit;
+    user-select: text;
+
+    white-space: pre;
+    margin: 0px;
+    /* font-size: 0px; */
+  }
+
+  span {
+    line-break: auto;
+    line-height: inherit;
+  }
+}
+
+.align-top[data-itype="root"] {
+  justify-content: flex-start;
+}
+
+.align-center[data-itype="root"] {
+  justify-content: center;
+}
+
+.align-bottom[data-itype="root"] {
+  justify-content: flex-end;
+}

@@ -1,0 +1,37 @@
+description: Suggest an idea for this project.
+labels: ["needs triage", "enhancement"]
+name: "Feature request"
+title: "feature: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you start
+
+        Please search our [existing issues](https://github.com/penpot/penpot/issues) and open [pull requests](https://github.com/penpot/penpot/pulls) to lessen the change of filing duplicate issues or feature requests. Thank you.
+
+        ---
+  - type: textarea
+    id: problem
+    attributes:
+      description: A clear and concise description of what the problem is. Ex. I'm always frustrated when (...)
+      label: Is your feature request related to a problem? Please describe.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      description: A clear and concise description of what you want to happen.
+      label: Describe the solution you'd like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered.
+      description: A clear and concise description of any alternative solutions or features you've considered.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.

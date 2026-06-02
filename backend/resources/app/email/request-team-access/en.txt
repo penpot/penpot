@@ -1,0 +1,14 @@
+Hello!
+
+{{requested-by|abbreviate:25}} ({{requested-by-email}}) wants to have access to the “{{team-name|abbreviate:25}}” Team.
+
+To provide access, please click the link below:
+
+{{ public-uri }}/#/dashboard/members?team-id={{team-id}}&invite-email={{requested-by-email|urlescape}}
+
+
+If you do not wish to grant access at this time, you can simply disregard this email.
+Thank you
+
+
+The Penpot team.

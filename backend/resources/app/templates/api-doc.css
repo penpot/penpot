@@ -1,0 +1,217 @@
+* {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+
+pre {
+  margin: 0px;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 900px;
+  width: 900px;
+}
+
+header {
+  border-bottom: 1px solid #c0c0c0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+header .menu {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+header .menu nav {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  display: flex;
+  width: 45px;
+  justify-content: space-between;
+}
+
+header .menu nav > a {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+  cursor: pointer;
+}
+
+header .menu nav > a.selected {
+  font-weight: 600;
+}
+
+b {
+  font-weight: 500;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+h3 {
+  font-weight: 400;
+  font-size: 11px;
+  margin-top: 20px;
+  text-decoration: underline;
+}
+
+h4 {
+  font-weight: 300;
+  font-size: 11px;
+}
+
+.doc-content {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid red; */
+  padding: 5px;
+}
+
+.doc-content p {
+  line-height: 22px;
+  margin-bottom: 0px;
+}
+
+.doc-content h3 {
+  margin-bottom: 0px;
+}
+
+.rpc-doc-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid red; */
+  padding: 5px;
+}
+
+.rpc-doc-content > h2:not(:first-child) {
+  margin-top: 30px;
+}
+
+
+.rpc-items {
+  list-style: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.rpc-item {
+  /* border: 1px solid red; */
+  /* cursor: pointer; */
+  display: flex;
+  flex-direction: column;
+}
+
+.rpc-item:not(:last-child) {
+  margin-bottom: 3px;
+}
+
+.rpc-row-info {
+  cursor: pointer;
+  display: flex;
+  background-color: #e5e5e5;
+  padding: 5px 10px;
+}
+
+.rpc-row-info > *:not(:last-child) {
+  margin-right: 10px;
+}
+
+.rpc-row-info > * {
+  /* border: 1px solid green; */
+}
+
+.rpc-row-info > .type {
+  font-weight: bold;
+  width: 70px;
+}
+
+.rpc-row-info > .name {
+  width: 280px;
+  /* font-weight: bold; */
+  border-right: 1px dotted #777;
+  padding-right: 10px;
+}
+
+.rpc-row-info > .module {
+  width: 150px;
+  font-weight: bold;
+  border-right: 1px dotted #777;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.rpc-row-info > .tags > .tag > span:first-child {
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.rpc-row-detail {
+  padding: 5px 10px;
+  padding-bottom: 20px;
+  border-left: 2px solid #e5e5e5;
+  border-right: 2px solid #e5e5e5;
+}
+
+.rpc-row-detail p {
+  font-weight: 200;
+}
+
+.rpc-row-detail p.small {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.rpc-row-detail p.small {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.rpc-row-detail strong {
+  font-weight: 500;
+}
+
+.rpc-row-detail .changes {
+  font-weight: 200;
+  list-style: none;
+  padding: 0px;
+}
+
+.rpc-row-detail .padded-section {
+  padding: 0px 10px;
+}
+
+p.small strong {
+  font-size: 10px;
+}
+
+p.small a {
+  font-size: 10px;
+}

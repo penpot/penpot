@@ -1,0 +1,207 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "common/refactor/common-dashboard";
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+
+.cta-power-up {
+  display: flex;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: var(--sp-s);
+  flex-direction: column;
+  margin: var(--sp-m);
+  padding: var(--sp-m);
+}
+
+.cta-power-up.highlighted {
+  background: var(--color-background-quaternary);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  padding: var(--sp-l);
+}
+
+.cta-top-section {
+  @include deprecated.buttonStyle;
+  display: grid;
+  color: var(--color-foreground-secondary);
+  grid-template-columns: 1fr auto;
+  padding: 0;
+}
+
+.cta-top-section.cta-without-dropdown {
+  cursor: default;
+}
+
+.cta-top-section .content {
+  display: flex;
+  flex-direction: column;
+}
+
+.icon-dropdown {
+  @include deprecated.flexCenter;
+  height: 100%;
+  width: var(--sp-l);
+}
+
+.icon-dropdown svg {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  transform: rotate(90deg);
+}
+
+.cta-bottom-section {
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  color: var(--color-foreground-secondary);
+  margin-block-start: var(--sp-m);
+  padding-block-start: var(--sp-m);
+}
+
+.highlighted .cta-bottom-section {
+  border-block-start: $b-1 solid var(--color-accent-primary-muted);
+}
+
+.cta-bottom-section .content {
+  @include t.use-typography("body-medium");
+  @include deprecated.buttonStyle;
+  color: var(--color-foreground-secondary);
+  display: inline-block;
+  text-align: left;
+}
+
+.cta-bottom-button {
+  margin-block-start: var(--sp-s);
+}
+
+.highlighted .cta-bottom-button {
+  margin-block-start: var(--sp-m);
+}
+
+.cta-text,
+.cta-title {
+  text-align: left;
+}
+
+.cta-title {
+  @include t.use-typography("body-small");
+  margin-block-end: var(--sp-xs);
+}
+
+.highlighted .cta-title {
+  @include t.use-typography("body-medium");
+  margin-block-end: 0;
+}
+
+.cta-text {
+  @include t.use-typography("title-small");
+}
+
+.highlighted .cta-text {
+  @include t.use-typography("body-large");
+  color: var(--color-foreground-primary);
+}
+
+.cta-bottom-section .content a {
+  @include t.use-typography("body-medium");
+  color: var(--color-accent-tertiary);
+  margin-inline-start: var(--sp-xs);
+}
+
+.cta-link {
+  @include deprecated.buttonStyle;
+  align-self: end;
+  margin-inline-start: var(--sp-xs);
+}
+
+.team {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: var(--sp-s);
+  max-width: deprecated.$s-1000;
+  width: 100%;
+}
+
+.team-label {
+  @include t.use-typography("headline-small");
+  color: var(--title-foreground-color);
+}
+
+.team-text {
+  @include t.use-typography("title-medium");
+  color: var(--color-foreground-primary);
+}
+
+.manage-subscription-link {
+  @include deprecated.buttonStyle;
+  @include t.use-typography("body-medium");
+  color: var(--color-accent-tertiary);
+  display: flex;
+  margin-block-start: -8px;
+  padding: 0;
+}
+
+.subscription-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-background-primary);
+  border-radius: $br-6;
+  border: 1.75px solid var(--color-foreground-secondary);
+  block-size: var(--sp-xl);
+  inline-size: var(--sp-xl);
+}
+
+.subscription-icon {
+  stroke: var(--color-foreground-secondary);
+  stroke-width: 2.25px;
+}
+
+.menu-item {
+  @extend .menu-item-base;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+
+    .open-arrow {
+      svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}
+
+.members-cta {
+  height: fit-content;
+  margin-block-start: var(--sp-s);
+  margin-inline-start: deprecated.$s-52;
+  max-width: deprecated.$s-220;
+
+  .cta-title {
+    line-height: 1.2;
+  }
+}
+
+.dashboard-cta {
+  height: fit-content;
+  margin: var(--sp-l);
+
+  .cta-title {
+    line-height: 1.2;
+  }
+}
+
+.cta-message {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+  line-height: 1;
+
+  a {
+    color: var(--color-accent-primary);
+    overflow-wrap: break-word;
+  }
+}

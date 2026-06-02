@@ -1,0 +1,27 @@
+[
+  {
+    "~:features": {
+      "~#set": [
+        "plugins/runtime",
+        "design-tokens/v1",
+        "layout/grid",
+        "styles/v2",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:permissions": {
+      "~:type": "~:membership",
+      "~:is-owner": true,
+      "~:is-admin": true,
+      "~:can-edit": true
+    },
+    "~:name": "Default",
+    "~:modified-at": "~m1743598498553",
+    "~:id": "~u5116481d-f4e1-80c0-8005-f8e885bdc14d",
+    "~:created-at": "~m1743598498553",
+    "~:is-default": true
+  }
+]

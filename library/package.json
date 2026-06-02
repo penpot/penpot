@@ -1,0 +1,44 @@
+{
+  "name": "@penpot/library",
+  "version": "1.2.0-RC1",
+  "license": "MPL-2.0",
+  "author": "Kaleidos INC Sucursal en España SL",
+  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/penpot/penpot.git"
+  },
+  "files": [
+    "target/library/penpot.js",
+    "target/library/penpot.js.map"
+  ],
+  "main": "./target/library/penpot.js",
+  "exports": {
+    ".": "./target/library/penpot.js"
+  },
+  "imports": {
+    "#self": {
+      "default": "./target/library/penpot.js"
+    }
+  },
+  "scripts": {
+    "clear:shadow-cache": "rm -rf .shadow-cljs",
+    "build": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs release library",
+    "build:bundle": "./scripts/build",
+    "fmt": "cljfmt fix --parallel=true src/ test/",
+    "check-fmt": "cljfmt check --parallel=true src/ test/",
+    "lint": "clj-kondo --parallel --lint src/",
+    "test": "node --test",
+    "watch:test": "node --test --watch",
+    "watch": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.12",
+    "@zip.js/zip.js": "2.8.11",
+    "concurrently": "^9.2.1",
+    "date-fns": "^4.1.0",
+    "nodemon": "^3.1.10",
+    "source-map-support": "^0.5.21"
+  }
+}

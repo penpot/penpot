@@ -1,0 +1,21 @@
+{
+  "name": "@penpot/draft-js",
+  "version": "1.0.0",
+  "description": "Penpot Draft-JS Wrapper",
+  "main": "index.js",
+  "type": "module",
+  "packageManager": "pnpm@10.26.2+sha512.0e308ff2005fc7410366f154f625f6631ab2b16b1d2e70238444dd6ae9d630a8482d92a451144debc492416896ed16f7b114a86ec68b8404b2443869e68ffda6",
+  "author": "Andrey Antukh",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "draft-js": "penpot/draft-js.git#4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0",
+    "immutable": "^5.1.4"
+  },
+  "peerDependencies": {
+    "react": ">=0.17.0",
+    "react-dom": ">=0.17.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
+  }
+}

@@ -1,0 +1,24 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.new-inline {
+  position: absolute;
+  top: deprecated.$s-72;
+  margin: auto;
+  left: 0;
+  right: 0;
+  min-height: deprecated.$s-48;
+  min-width: deprecated.$s-640;
+  width: fit-content;
+  max-width: deprecated.$s-960;
+  z-index: deprecated.$z-index-modal;
+}
+
+.link {
+  margin: 0;
+}

@@ -1,0 +1,19 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+
+.code-display {
+  @include t.use-typography("code-font");
+  user-select: text;
+  border-radius: $br-8;
+  margin-top: var(--sp-s);
+  padding: var(--sp-m);
+  background-color: var(--menu-background-color);
+  color: var(--input-foreground-color-active);
+  overflow: auto;
+}

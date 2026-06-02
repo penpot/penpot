@@ -1,0 +1,128 @@
+<li class="rpc-item">
+  <div class="rpc-row-info">
+    <div class="module">{{item.module}}:</div>
+    <div class="name">{{item.name}}</div>
+    <div class="tags">
+      {% if item.deprecated %}
+        <span class="tag">
+          <span>DEPRECATED</span>
+        </span>
+      {% endif %}
+
+      {% if item.auth %}
+        <span class="tag">
+          <span>AUTH</span>
+        </span>
+      {% endif %}
+
+      {% if item.webhook %}
+        <span class="tag">
+          <span>WEBHOOK</span>
+        </span>
+      {% endif %}
+
+      {% if item.params-schema-js %}
+        <span class="tag">
+          <span>SCHEMA</span>
+        </span>
+      {% endif %}
+
+      {% if item.spec %}
+        <span class="tag">
+          <span>SPEC</span>
+        </span>
+      {% endif %}
+
+      {% if item.sse %}
+        <span class="tag">
+          <span>SSE</span>
+        </span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="rpc-row-detail hidden">
+    <h4>DOCSTRING:</h4>
+
+    <section class="padded-section">
+      {% if item.added %}
+        <p class="small"><strong>Added:</strong> on v{{item.added}}</p>
+      {% endif %}
+
+      {% if item.deprecated %}
+        <p class="small"><strong>Deprecated:</strong> since v{{item.deprecated}}</p>
+      {% endif %}
+
+      {% if item.entrypoint %}
+        <p class="small"><strong>URI:</strong> <a href="{{item.entrypoint}}">{{item.entrypoint}}</a></p>
+      {% endif %}
+
+      {% if item.docs %}
+        <p class="docstring"> {{item.docs}}</p>
+      {% endif %}
+
+    </section>
+
+    {% if item.changes %}
+      <h4>CHANGES:</h4>
+      <section class="padded-section">
+
+        <ul class="changes">
+          {% for change in item.changes %}
+            <li><strong>{{change.0}}</strong> - {{change.1}}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if item.spec %}
+      <h4>PARAMS (SPEC):</h4>
+      <section class="padded-section">
+        <pre class="spec-explain">{{item.spec}}</pre>
+      </section>
+    {% endif %}
+
+    {% if param-style = "js" %}
+      {% if item.params-schema-js %}
+        <h4>PARAMS:</h4>
+        <section class="padded-section">
+          <pre class="params-schema">{{item.params-schema-js}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.result-schema-js %}
+        <h4>RESPONSE:</h4>
+        <section class="padded-section">
+          <pre class="result">{{item.result-schema-js}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.webhook-schema-js %}
+        <h4>WEBHOOK PAYLOAD:</h4>
+        <section class="padded-section">
+          <pre class="webhook">{{item.webhook-schema-js}}</pre>
+        </section>
+      {% endif %}
+    {% else %}
+      {% if item.params-schema-clj %}
+        <h4>PARAMS:</h4>
+        <section class="padded-section">
+          <pre class="params-schema">{{item.params-schema-clj}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.result-schema-clj %}
+        <h4>RESPONSE:</h4>
+        <section class="padded-section">
+          <pre class="result">{{item.result-schema-clj}}</pre>
+        </section>
+      {% endif %}
+
+      {% if item.webhook-schema-clj %}
+        <h4>WEBHOOK PAYLOAD:</h4>
+        <section class="padded-section">
+          <pre class="webhook">{{item.webhook-schema-clj}}</pre>
+        </section>
+      {% endif %}
+    {% endif %}
+  </div>
+</li>

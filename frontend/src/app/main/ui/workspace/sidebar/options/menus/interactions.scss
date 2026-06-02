@@ -1,0 +1,226 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as t;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding-inline-start: var(--sp-m);
+}
+
+.section {
+  @include sidebar.option-grid-structure;
+}
+
+.title {
+  grid-column: span 8;
+}
+
+.title-bar {
+  padding-inline-start: var(--sp-xxs);
+}
+
+.content {
+  grid-column: span 8;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
+}
+
+.content-interactions {
+  gap: var(--sp-l);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
+}
+
+.interaction-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.prototype-pill {
+  display: flex;
+  align-items: center;
+  gap: px2rem(1);
+  border-radius: $br-8;
+  padding: var(--sp-s) var(--sp-m);
+  block-size: $sz-32;
+  padding: 0;
+
+  &.double {
+    block-size: $sz-48;
+    .prototype-pill-button {
+      block-size: $sz-48;
+    }
+  }
+
+  &:has(.prototype-pill-input:focus) {
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.prototype-pill-button {
+  &.left {
+    border-end-end-radius: 0;
+    border-start-end-radius: 0;
+  }
+
+  &.right {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+}
+
+.prototype-pill-main {
+  display: flex;
+  flex-grow: 1;
+  block-size: 100%;
+  inline-size: 100%;
+}
+
+.prototype-pill-center {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  block-size: 100%;
+  padding: 0 var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+}
+
+.prototype-pill-info {
+  display: grid;
+  inline-size: 100%;
+}
+
+.prototype-pill-input {
+  @include t.use-typography("body-small");
+  border: none;
+  background: none;
+  outline: none;
+  block-size: 100%;
+  inline-size: 100%;
+  flex-grow: 1;
+  margin: var(--sp-xxs) 0;
+  padding: 0 0 0 var(--sp-s);
+  margin: 0;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  display: grid;
+  inline-size: 100%;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+    &:active {
+      background-color: var(--color-background-quaternary);
+    }
+  }
+
+  &:focus {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.prototype-pill-name {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--color-foreground-primary);
+}
+
+.prototype-pill-description {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--color-foreground-secondary);
+}
+
+.interaction-row {
+  @include sidebar.option-grid-structure;
+}
+
+.interaction-row-label {
+  grid-column: span 3;
+  display: flex;
+  align-items: center;
+  color: var(--color-foreground-secondary);
+}
+
+.interaction-row-name {
+  @include twoLineTextEllipsis;
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-secondary);
+}
+
+.interaction-row-select {
+  grid-column: span 5;
+}
+
+.interaction-row-checkbox {
+  grid-column: 4 / span 5;
+  min-block-size: $sz-32;
+  display: flex;
+  align-items: center;
+}
+
+.interaction-row-input {
+  grid-column: span 5;
+}
+
+.interaction-row-radio {
+  grid-column: 4 / span 5;
+}
+
+.interaction-row-position {
+  grid-column: 4 / span 5;
+  display: grid;
+  grid-template-areas:
+    "topleft top topright"
+    "left center right"
+    "bottomleft bottom bottomright";
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  inline-size: calc($sz-32 * 3);
+  block-size: calc($sz-32 * 3);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+
+  .center {
+    grid-area: center;
+  }
+  .top-left {
+    grid-area: topleft;
+  }
+  .top-center {
+    grid-area: top;
+  }
+  .top-right {
+    grid-area: topright;
+  }
+  .bottom-left {
+    grid-area: bottomleft;
+  }
+  .bottom-center {
+    grid-area: bottom;
+  }
+  .bottom-right {
+    grid-area: bottomright;
+  }
+}

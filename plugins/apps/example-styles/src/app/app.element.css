@@ -1,0 +1,123 @@
+html,
+body {
+  background: var(--app-black);
+  color: var(--app-white);
+  margin: 0 var(--spacing-20);
+}
+
+app-root {
+  display: block;
+  padding-block: var(--spacing-16);
+}
+
+section {
+  border-bottom: 1px solid var(--app-white);
+  padding-block: var(--spacing-32);
+
+  &:last-child {
+    padding-block-end: 0;
+    border-bottom: 0;
+  }
+}
+
+.theme-group {
+  border-radius: var(--spacing-20);
+  margin-block-end: var(--spacing-20);
+  padding: var(--spacing-32);
+
+  &[data-theme='dark'] {
+    border: 1px solid var(--db-quaternary);
+  }
+
+  &[data-theme='light'] {
+    border: 1px solid var(--lb-quaternary);
+  }
+}
+
+.component-section {
+  margin-block-end: var(--spacing-40);
+
+  &:last-child {
+    margin-block-end: 0;
+  }
+}
+
+.title-margin {
+  margin-block-end: var(--spacing-16);
+}
+
+/* COLOR */
+.color-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--spacing-40) * 2);
+  list-style: none;
+  width: 100%;
+}
+
+.color {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-block-end: var(--spacing-16);
+}
+
+.color-preview {
+  block-size: var(--spacing-36);
+  border: 1px solid #8f9da3;
+  border-radius: var(--spacing-4);
+  display: block;
+  inline-size: var(--spacing-36);
+  margin-inline-start: var(--spacing-16);
+}
+
+/* SPACING */
+.spacing-group {
+  display: grid;
+  margin-block-end: var(--spacing-16);
+  grid-template-columns: calc(var(--spacing-4) * 30) 1fr;
+}
+
+.spacing-label {
+  margin-inline-end: var(--spacing-24);
+}
+
+.spacing-preview {
+  background-color: var(--error-500);
+}
+
+/* INPUT / BUTTONS */
+.inputs-list,
+.button-list {
+  display: flex;
+  gap: var(--spacing-20);
+
+  &:not(:last-child) {
+    margin-block-end: var(--spacing-20);
+  }
+}
+
+/* ICON */
+.icons-section {
+  display: flex;
+  gap: var(--spacing-8);
+}
+
+.select-section {
+  .form-group {
+    min-inline-size: 200px;
+  }
+}
+
+/* SWITCH */
+.switch-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-12);
+  }
+}

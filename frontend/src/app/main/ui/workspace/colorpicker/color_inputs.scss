@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.color-values {
+  @include deprecated.flexColumn;
+  margin-top: deprecated.$s-8;
+
+  &.disable-opacity {
+    grid-template-columns: 3.5rem repeat(3, 1fr);
+  }
+  .colors-row {
+    @include deprecated.flexRow;
+    .input-wrapper {
+      @extend .input-element;
+      @include deprecated.bodySmallTypography;
+      width: deprecated.$s-84;
+      display: flex;
+      align-items: baseline;
+    }
+  }
+  .hex-alpha-wrapper {
+    @include deprecated.flexRow;
+    .input-wrapper {
+      @extend .input-element;
+      @include deprecated.bodySmallTypography;
+      width: deprecated.$s-84;
+      &.hex {
+        width: deprecated.$s-172;
+        display: flex;
+        align-items: baseline;
+        gap: deprecated.$s-8;
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} has commented at "{{ comment-reference }}".
+
+--
+
+{{ comment-content }}
+
+--
+
+{{ comment-url }}
+
+The Penpot team.

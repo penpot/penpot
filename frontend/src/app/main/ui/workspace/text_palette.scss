@@ -1,0 +1,140 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.text-palette {
+  height: 100%;
+  display: flex;
+}
+.left-arrow,
+.right-arrow {
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  position: relative;
+  height: 100%;
+  width: deprecated.$s-24;
+  padding: 0;
+  z-index: deprecated.$z-index-2;
+  svg {
+    @extend .button-icon;
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: calc(-1 * deprecated.$s-80);
+    height: 100%;
+    width: deprecated.$s-80;
+    z-index: deprecated.$z-index-1;
+    background-image: linear-gradient(
+      to left,
+      var(--palette-button-shadow-initial) 0%,
+      var(--palette-button-shadow-final) 100%
+    );
+    pointer-events: none;
+  }
+  &:hover {
+    svg {
+      stroke: var(--button-foreground-hover);
+    }
+  }
+  &:disabled {
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+    &::after {
+      background-image: none;
+    }
+  }
+}
+.left-arrow {
+  &::after {
+    left: deprecated.$s-24;
+    background-image: linear-gradient(
+      to right,
+      var(--palette-button-shadow-initial) 0%,
+      var(--palette-button-shadow-final) 100%
+    );
+  }
+  &.disabled ::after {
+    background-image: none;
+  }
+
+  svg {
+    transform: rotate(180deg);
+  }
+}
+
+.text-palette-content {
+  display: flex;
+  overflow: hidden;
+}
+
+.text-palette-inside {
+  display: flex;
+  gap: deprecated.$s-8;
+}
+
+.typography-item {
+  @include deprecated.bodySmallTypography;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  width: deprecated.$s-136;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
+  background-color: var(--palette-text-background-color);
+  &:first-child {
+    margin-left: deprecated.$s-8;
+  }
+
+  .typography-name {
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
+    color: var(--palette-text-color-selected);
+  }
+
+  .typography-font {
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
+    color: var(--palette-text-color);
+  }
+
+  .typography-data {
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
+    color: var(--palette-text-color);
+  }
+
+  &.mid-item {
+    .typography-name {
+      height: deprecated.$s-16;
+    }
+    .typography-data {
+      display: none;
+    }
+  }
+  &.small-item {
+    .typography-data,
+    .typography-font {
+      display: none;
+    }
+  }
+  &:hover {
+    background-color: var(--palette-text-background-color-hover);
+  }
+}
+
+.text-palette-empty {
+  @include deprecated.bodySmallTypography;
+  color: var(--palette-text-color);
+}

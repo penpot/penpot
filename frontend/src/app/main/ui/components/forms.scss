@@ -1,0 +1,460 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+// INPUT
+.input-wrapper {
+  --input-icon-padding: var(--sp-l);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  &.valid {
+    input {
+      border: deprecated.$s-1 solid var(--input-border-color-success);
+      @extend .disabled-input;
+      &:hover,
+      &:focus {
+        border: deprecated.$s-1 solid var(--input-border-color-success);
+      }
+    }
+  }
+  &.invalid {
+    input {
+      border: deprecated.$s-1 solid var(--input-border-color-error);
+      @extend .disabled-input;
+      &:hover,
+      &:focus {
+        border: deprecated.$s-1 solid var(--input-border-color-error);
+      }
+    }
+  }
+  &.valid .help-icon,
+  &.invalid .help-icon {
+    right: deprecated.$s-40;
+  }
+}
+
+.input-with-label-form {
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-8;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+  color: var(--modal-title-foreground-color);
+  text-transform: uppercase;
+  input {
+    @extend .input-element;
+    color: var(--input-foreground-color-active);
+    margin-top: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    padding: 0 deprecated.$s-8;
+
+    &:focus {
+      outline: none;
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      border-radius: deprecated.$br-8;
+    }
+  }
+
+  // Input autofill
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--input-foreground-color-active);
+    -webkit-box-shadow: inset 0 0 20px 20px var(--input-background-color);
+    border: deprecated.$s-1 solid var(--input-border-color);
+    -webkit-background-clip: text;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: var(--input-foreground-color-active);
+  }
+}
+
+.input-and-icon {
+  position: relative;
+  width: var(--input-width, calc(100% - deprecated.$s-1));
+  min-width: var(--input-min-width);
+  height: var(--input-height, deprecated.$s-32);
+}
+
+.help-icon {
+  cursor: pointer;
+  position: absolute;
+  right: deprecated.$s-16;
+  top: calc(50% - deprecated.$s-8);
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--color-foreground-secondary);
+    width: deprecated.$s-16;
+    height: deprecated.$s-16;
+  }
+}
+
+.invalid-icon {
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  background: var(--input-border-color-error);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: var(--input-icon-padding);
+  top: calc(50% - deprecated.$s-8);
+  svg {
+    width: deprecated.$s-12;
+    height: deprecated.$s-12;
+    stroke: var(--input-background-color);
+  }
+}
+
+.valid-icon {
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  background: var(--input-border-color-success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: deprecated.$s-16;
+  top: calc(50% - deprecated.$s-8);
+  svg {
+    width: deprecated.$s-12;
+    height: deprecated.$s-12;
+    fill: var(--input-border-color-success);
+    stroke: var(--input-background-color);
+  }
+}
+
+.error {
+  color: var(--input-border-color-error);
+  width: 100%;
+  font-size: deprecated.$fs-14;
+}
+
+.hint {
+  @include deprecated.bodySmallTypography;
+  width: 99%;
+  margin-block-start: deprecated.$s-8;
+  color: var(--modal-text-foreground-color);
+}
+
+.checkbox {
+  @extend .input-checkbox;
+  .checkbox-label {
+    @include deprecated.bodySmallTypography;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+    gap: deprecated.$s-6;
+    min-height: deprecated.$s-32;
+    cursor: pointer;
+    span {
+      @extend .checkbox-icon;
+    }
+    input {
+      display: none !important;
+    }
+    &:hover {
+      span {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+    }
+    a {
+      // Need for terms and conditions links on register checkbox
+      color: var(--link-foreground-color);
+    }
+  }
+}
+
+// SELECT
+.custom-select {
+  @extend .select-wrapper;
+  height: deprecated.$s-32;
+  .input-container {
+    @include deprecated.flexRow;
+    height: deprecated.$s-32;
+    width: 100%;
+    border-radius: deprecated.$br-8;
+    border: deprecated.$s-1 solid var(--input-border-color);
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+    .main-content {
+      @include deprecated.flexColumn;
+      @include deprecated.bodySmallTypography;
+      position: relative;
+      justify-content: center;
+      flex-grow: 1;
+      height: 100%;
+      padding: deprecated.$s-8;
+
+      .label {
+        color: var(--input-foreground-color);
+      }
+      .value {
+        width: 100%;
+        padding: 0px;
+        margin: 0px;
+        border: 0px;
+        color: var(--input-foreground-color-active);
+      }
+    }
+    .icon {
+      @include deprecated.flexCenter;
+      height: deprecated.$s-32;
+      width: deprecated.$s-24;
+      pointer-events: none;
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--icon-foreground);
+        transform: rotate(90deg);
+      }
+    }
+
+    &.disabled {
+      background-color: var(--input-background-color-disabled);
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      color: var(--input-foreground-color-disabled);
+    }
+    &.focus {
+      outline: none;
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-active);
+      border: deprecated.$s-1 solid var(--input-border-color-active);
+    }
+  }
+
+  select {
+    @extend .menu-dropdown;
+    @include deprecated.bodySmallTypography;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: deprecated.$s-32;
+    height: auto;
+    width: calc(100% - 1px);
+    padding: 0 deprecated.$s-12;
+    margin: 0;
+    border: none;
+    opacity: 0;
+    z-index: deprecated.$z-index-10;
+    background-color: transparent;
+    cursor: pointer;
+    option {
+      @include deprecated.bodySmallTypography;
+      color: var(--title-foreground-color-hover);
+      background-color: var(--menu-background-color);
+      appearance: none;
+      height: deprecated.$s-32;
+    }
+  }
+}
+
+// SUBMIT-BUTTON
+.button-submit {
+  @extend .button-primary;
+  &:disabled {
+    @extend .button-disabled;
+    min-height: deprecated.$s-32;
+  }
+}
+
+// MULTI INPUT
+.custom-multi-input {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: deprecated.$s-40;
+  max-height: deprecated.$s-180;
+  width: 100%;
+  overflow-y: hidden;
+  .inside-input {
+    @include deprecated.removeInputStyle;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.textEllipsis;
+    width: 100%;
+    max-width: calc(100% - deprecated.$s-1);
+    min-height: deprecated.$s-32;
+    padding-top: 0;
+    height: deprecated.$s-32;
+    padding: deprecated.$s-8;
+    margin: 0;
+    border-radius: deprecated.$br-8;
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+    &:focus {
+      outline: none;
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
+    }
+    &.invalid {
+      border: deprecated.$s-1 solid var(--input-border-color-error);
+      &:hover,
+      &:focus {
+        border: deprecated.$s-1 solid var(--input-border-color-error);
+      }
+    }
+  }
+  label {
+    display: none;
+  }
+  .selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: deprecated.$s-4;
+    max-height: deprecated.$s-136;
+    padding: deprecated.$s-4 0;
+    overflow-y: auto;
+
+    .selected-item {
+      .around {
+        @include deprecated.flexRow;
+        height: deprecated.$s-24;
+        width: fit-content;
+        padding-left: deprecated.$s-6;
+        border-radius: deprecated.$br-6;
+        background-color: var(--pill-background-color);
+        border: deprecated.$s-1 solid var(--pill-background-color);
+        box-sizing: border-box;
+        .text {
+          @include deprecated.bodySmallTypography;
+          padding-right: deprecated.$s-8;
+          color: var(--pill-foreground-color);
+        }
+
+        .icon {
+          @include deprecated.flexCenter;
+          @include deprecated.buttonStyle;
+          height: deprecated.$s-32;
+          width: deprecated.$s-24;
+          svg {
+            @extend .button-icon-small;
+            stroke: var(--icon-foreground);
+          }
+        }
+        &.invalid {
+          background-color: var(--status-widget-background-color-error);
+          .text {
+            color: var(--alert-text-foreground-color-error);
+          }
+          .icon svg {
+            stroke: var(--alert-text-foreground-color-error);
+          }
+        }
+      }
+    }
+  }
+}
+
+// RADIO BUTTONS
+.custom-radio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: deprecated.$s-16;
+}
+
+.radio-label {
+  @include deprecated.bodySmallTypography;
+  @include deprecated.flexRow;
+  align-items: flex-start;
+  gap: deprecated.$s-8;
+  min-height: deprecated.$s-32;
+  height: fit-content;
+  border-radius: deprecated.$br-8;
+  padding: deprecated.$s-8;
+  color: var(--input-foreground-color-rest);
+  border: deprecated.$s-1 solid transparent;
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: deprecated.$s-1 solid var(--input-border-color-active);
+  }
+}
+
+.radio-dot {
+  height: deprecated.$s-8;
+  width: deprecated.$s-8;
+  border-radius: deprecated.$br-circle;
+  background-color: var(--color-background-tertiary);
+}
+
+.radio-input {
+  width: 0;
+  margin: 0;
+}
+
+.radio-icon {
+  @extend .checkbox-icon;
+  border-radius: deprecated.$br-circle;
+}
+
+.radio-label-image {
+  @include deprecated.smallTitleTipography;
+  display: grid;
+  grid-template-rows: auto auto 0px;
+  justify-items: center;
+  gap: 0;
+  border-radius: deprecated.$br-8;
+  margin: 0;
+  border: 1px solid var(--color-background-tertiary);
+  cursor: pointer;
+  &:global(.checked) {
+    border: 1px solid var(--color-accent-primary);
+  }
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: deprecated.$s-1 solid var(--input-border-color-active);
+  }
+  .image-text {
+    color: var(--input-foreground-color-rest);
+    display: grid;
+    align-self: center;
+    margin-bottom: deprecated.$s-16;
+    padding-inline: deprecated.$s-8;
+    text-align: center;
+  }
+}
+
+.image-inside {
+  margin: deprecated.$s-16;
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-inside {
+  margin: deprecated.$s-16;
+  @include deprecated.flexCenter;
+  svg {
+    width: 40px;
+    height: 60px;
+    stroke: var(--icon-foreground);
+    fill: none;
+  }
+}
+
+//TEXTAREA
+
+.textarea-label {
+  @include deprecated.uppercaseTitleTipography;
+  color: var(--modal-title-foreground-color);
+  text-transform: uppercase;
+  margin-bottom: deprecated.$s-8;
+}
+
+.textarea-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}

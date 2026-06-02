@@ -1,0 +1,43 @@
+{
+    "~#set": [
+        {
+            "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+            "~:name": "Lorem Ipsum",
+            "~:revn": 2,
+            "~:modified-at": "~m1739356261950",
+            "~:vern": 0,
+            "~:id": "~u69b52fcf-7de0-81cd-8005-b9b180a0bfb5",
+            "~:thumbnail-id": "~u55bb9e08-6eed-4a64-a94d-2bcce7006e79",
+            "~:is-shared": true,
+            "~:project-id": "~u1ad2931c-eb80-8098-8005-b86c1d9d26c2",
+            "~:created-at": "~m1739356217030",
+            "~:library-summary": {
+                "~:components": {
+                    "~:count": 0,
+                    "~:sample": []
+                },
+                "~:media": {
+                    "~:count": 0,
+                    "~:sample": []
+                },
+                "~:colors": {
+                    "~:count": 1,
+                    "~:sample": [
+                        {
+                            "~:path": "",
+                            "~:color": "#0087ff",
+                            "~:name": "#0087ff",
+                            "~:modified-at": "~m1739356244863",
+                            "~:opacity": 1,
+                            "~:id": "~u0449ccff-62fe-805c-8005-b9b194b094dd"
+                        }
+                    ]
+                },
+                "~:typographies": {
+                    "~:count": 0,
+                    "~:sample": []
+                }
+            }
+        }
+    ]
+}

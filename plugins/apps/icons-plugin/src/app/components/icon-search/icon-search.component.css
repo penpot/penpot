@@ -1,0 +1,20 @@
+.search-icon {
+  width: 100%;
+  border-radius: var(--spacing-8);
+  padding: var(--spacing-8);
+  padding-left: var(--spacing-28);
+  background: var(--background-tertiary)
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" class="main-grid-item-icon" fill="none" stroke="%238f9da3" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y2="16.65" /></svg>')
+    var(--spacing-8) no-repeat;
+  color: var(--foreground-secondary);
+  font-size: var(--font-size-s);
+  font-weight: var(--font-weight-regular);
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    opacity: 1;
+  }
+}

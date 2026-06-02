@@ -1,0 +1,49 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "common/refactor/common-dashboard";
+@use "./placeholder.scss";
+
+.dashboard-container {
+  flex: 1 0 0;
+  margin-right: deprecated.$s-16;
+  overflow-y: auto;
+  width: 100%;
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
+
+  &.dashboard-projects {
+    user-select: none;
+  }
+  &.dashboard-shared {
+    width: calc(100vw - deprecated.$s-320);
+    margin-right: deprecated.$s-52;
+  }
+
+  &.search {
+    margin-top: deprecated.$s-12;
+  }
+}
+
+.grid-empty-placeholder.search {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  height: deprecated.$s-200;
+  background: transparent;
+  border: deprecated.$s-1 solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
+
+  .text {
+    color: var(--color-foreground-primary);
+  }
+  .icon svg {
+    stroke: var(--color-foreground-secondary);
+    width: deprecated.$s-32;
+    height: deprecated.$s-32;
+  }
+}

@@ -1,0 +1,51 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/_utils.scss" as *;
+
+.element-set-content {
+  @include sidebar.option-grid-structure;
+  height: deprecated.$s-32;
+  margin-bottom: deprecated.$s-8;
+  .select {
+    grid-column: span 4;
+    padding: 0;
+  }
+  .input {
+    @extend .input-element;
+    @include deprecated.bodySmallTypography;
+    grid-column: span 2;
+  }
+  .actions {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: subgrid;
+  }
+
+  &.hidden {
+    .hidden-select {
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+    }
+    .input {
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      .icon {
+        stroke: var(--input-foreground-color-disabled);
+      }
+      .numeric-input {
+        color: var(--input-foreground-color-disabled);
+      }
+    }
+  }
+}
+
+.numeric-input-wrapper {
+  grid-column: span 2;
+  --dropdown-offset: #{px2rem(-35)};
+}

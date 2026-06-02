@@ -1,0 +1,281 @@
+{
+  "~:id": "~u3622460c-3408-81e2-8005-31859c15ff90",
+  "~:file-id": "~u3622460c-3408-81e2-8005-2fc938010233",
+  "~:created-at": "~m1730217905213",
+  "~:data-backend": "objects-storage",
+  "~:data-ref-id": "~u4c8075b8-53ce-486a-b6ca-22ad32b838db",
+  "~:data": {
+    "~:options": {},
+    "~:objects": {
+      "~u00000000-0000-0000-0000-000000000000": {
+        "~#shape": {
+          "~:y": 0,
+          "~:hide-fill-on-export": false,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:name": "Root Frame",
+          "~:width": 0.01,
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 0.0,
+                "~:y": 0.0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0.0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0.01
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.0,
+                "~:y": 0.01
+              }
+            }
+          ],
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~u00000000-0000-0000-0000-000000000000",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 0,
+          "~:proportion": 1.0,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 0,
+              "~:y": 0,
+              "~:width": 0.01,
+              "~:height": 0.01,
+              "~:x1": 0,
+              "~:y1": 0,
+              "~:x2": 0.01,
+              "~:y2": 0.01
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#FFFFFF",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 0.01,
+          "~:flip-y": null,
+          "~:shapes": [
+            "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a"
+          ]
+        }
+      },
+      "~u2e0995e6-d90f-80ed-8005-2fd0bd35e183": {
+        "~#shape": {
+          "~:y": 214,
+          "~:r1": 0,
+          "~:r2": 0,
+          "~:r3": 0,
+          "~:r4": 0,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:fixed",
+          "~:hide-in-viewer": false,
+          "~:name": "Rectangle",
+          "~:width": 237,
+          "~:type": "~:rect",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 238,
+                "~:y": 214
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 475,
+                "~:y": 214
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 475,
+                "~:y": 375
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 238,
+                "~:y": 375
+              }
+            }
+          ],
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:constraints-v": "~:scale",
+          "~:constraints-h": "~:scale",
+          "~:id": "~u2e0995e6-d90f-80ed-8005-2fd0bd35e183",
+          "~:parent-id": "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a",
+          "~:frame-id": "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a",
+          "~:strokes": [],
+          "~:x": 238,
+          "~:proportion": 1,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 238,
+              "~:y": 214,
+              "~:width": 237,
+              "~:height": 161,
+              "~:x1": 238,
+              "~:y1": 214,
+              "~:x2": 475,
+              "~:y2": 375
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#3656b4",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:ry": 0,
+          "~:height": 161,
+          "~:flip-y": null
+        }
+      },
+      "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a": {
+        "~#shape": {
+          "~:y": 214,
+          "~:hide-fill-on-export": false,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:hide-in-viewer": true,
+          "~:name": "Rectangle",
+          "~:width": 237,
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 238,
+                "~:y": 214
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 475,
+                "~:y": 214
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 475,
+                "~:y": 375
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 238,
+                "~:y": 375
+              }
+            }
+          ],
+          "~:component-root": true,
+          "~:show-content": true,
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~u2e0995e6-d90f-80ed-8005-2fd0c2033a5a",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:component-id": "~u2e0995e6-d90f-80ed-8005-2fd0c20489ce",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 238,
+          "~:main-instance": true,
+          "~:proportion": 1,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 238,
+              "~:y": 214,
+              "~:width": 237,
+              "~:height": 161,
+              "~:x1": 238,
+              "~:y1": 214,
+              "~:x2": 475,
+              "~:y2": 375
+            }
+          },
+          "~:fills": [],
+          "~:flip-x": null,
+          "~:height": 161,
+          "~:component-file": "~u3622460c-3408-81e2-8005-2fc938010233",
+          "~:flip-y": null,
+          "~:shapes": [
+            "~u2e0995e6-d90f-80ed-8005-2fd0bd35e183"
+          ]
+        }
+      }
+    },
+    "~:id": "~u3622460c-3408-81e2-8005-2fc938010234",
+    "~:name": "Page 1"
+  }
+}

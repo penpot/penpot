@@ -1,0 +1,48 @@
+[
+  {
+    "~:features": {
+        "~#set": [
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true
+    },
+    "~:name": "Default",
+    "~:modified-at": "~m1713533116375",
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+    "~:created-at": "~m1713533116375",
+    "~:is-default": true
+},
+  {
+      "~:features": {
+          "~#set": [
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+      },
+      "~:permissions": {
+          "~:type": "~:membership",
+          "~:is-owner": false,
+          "~:is-admin": true,
+          "~:can-edit": true
+      },
+      "~:name": "Second team",
+      "~:modified-at": "~m1701164272671",
+      "~:id": "~udd33ff88-f4e5-8033-8003-8096cc07bdf3",
+      "~:created-at": "~m1701164272671",
+      "~:is-default": false
+  }
+]

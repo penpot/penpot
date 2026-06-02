@@ -1,0 +1,61 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/_sizes.scss" as *;
+
+.tool-window {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.tab-spacing {
+  margin-inline-end: var(--sp-m);
+}
+
+.content-class {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - #{$sz-96});
+  scrollbar-gutter: stable;
+}
+
+.element-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  width: 100%;
+  /* FIXME: This is hacky and prone to break, we should tackle the whole layout
+            of the sidebar differently */
+  --sidebar-element-options-height: calc(100vh - #{$sz-88});
+  height: var(--sidebar-element-options-height);
+  padding-block-start: var(--sp-s);
+}
+
+.read-only {
+  grid-template-areas: "right-sidebar";
+  padding: var(--sp-s);
+}
+
+.design-options,
+.interaction-options {
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.design-options {
+  padding-inline: var(--sp-m);
+}
+
+.inspect {
+  scrollbar-gutter: unset;
+}
+
+.options-tab-switcher {
+  --tabs-nav-padding-inline-start: var(--sp-m);
+  --tabs-nav-padding-inline-end: var(--sp-m);
+}

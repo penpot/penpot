@@ -1,0 +1,131 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.sidebar-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  // Overflow on the bottom section can't be done without hardcoded values for the height
+  // This has to be changed from the wrapping sidebar styles
+  height: calc(100vh - #{deprecated.$s-92});
+  overflow: hidden;
+}
+
+.token-management-section-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+  height: var(--resize-height);
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  position: relative;
+  padding-block-end: var(--sp-l);
+}
+
+.tokens-section-wrapper {
+  height: 100%;
+  padding-left: var(--sp-m);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: var(--sp-m);
+  padding-top: var(--sp-m);
+  color: var(--layer-row-foreground-color);
+}
+
+.section-text-icon {
+  font-size: deprecated.$fs-12;
+  width: var(--sp-l);
+  height: var(--sp-l);
+  display: flex;
+  place-content: center;
+}
+
+.section-icon {
+  margin-right: var(--sp-xs);
+  // Align better with the label
+  translate: 0px -1px;
+}
+
+.import-export-button-wrapper {
+  position: relative;
+  display: flex;
+  gap: var(--sp-s);
+  flex-direction: row;
+  align-items: end;
+  justify-content: end;
+  padding: var(--sp-s);
+  background-color: var(--color-background-primary);
+  box-shadow: var(--el-shadow-dark);
+}
+
+.import-export-button {
+  @extend .button-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  padding: deprecated.$s-6 var(--sp-s);
+  text-transform: uppercase;
+  gap: var(--sp-s);
+  background-color: var(--color-background-primary);
+
+  box-shadow: var(--el-shadow-dark);
+}
+
+.import-export-menu {
+  @extend .menu-dropdown;
+  top: -#{deprecated.$s-6};
+  right: 0;
+  translate: 0 -100%;
+  width: deprecated.$s-192;
+  margin: 0;
+}
+
+.import-export-menu-item {
+  @extend .menu-item-base;
+  cursor: pointer;
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+  }
+}
+
+.import-export-menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.import-menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
+.resize-area-horiz {
+  background-color: var(--panel-background-color);
+  position: absolute;
+  left: 0;
+  width: 100%;
+  padding: deprecated.$s-3 0 deprecated.$s-1 0;
+  height: deprecated.$s-6;
+  cursor: ns-resize;
+  z-index: 1;
+}
+
+.resize-handle-horiz {
+  border-bottom: deprecated.$s-2 solid var(--resize-area-border-color);
+  cursor: ns-resize;
+}

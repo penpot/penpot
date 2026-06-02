@@ -1,0 +1,62 @@
+{:paths ["src" "vendor" "resources" "test"]
+ :deps
+ {penpot/common
+  {:local/root "../common"}
+
+  org.clojure/clojure {:mvn/version "1.12.2"}
+  binaryage/devtools {:mvn/version "RELEASE"}
+  metosin/reitit-core {:mvn/version "0.9.1"}
+  funcool/okulary {:mvn/version "2022.04.11-16"}
+
+  funcool/tubax
+  {:git/tag "v2025.11.28"
+   :git/sha "2d9a986"
+   :git/url "https://github.com/funcool/tubax.git"}
+
+  funcool/potok2
+  {:git/tag "v2.2"
+   :git/sha "0f7e15a"
+   :git/url "https://github.com/funcool/potok.git"
+   :exclusions [funcool/beicon2]}
+
+  funcool/beicon2
+  {:git/tag "v2.2"
+   :git/sha "8744c66"
+   :git/url "https://github.com/funcool/beicon.git"}
+
+  funcool/rumext
+  {:git/tag "v2.25"
+   :git/sha "27e5a1a"
+   :git/url "https://github.com/funcool/rumext.git"}
+
+  instaparse/instaparse {:mvn/version "1.5.0"}
+  garden/garden {:git/url "https://github.com/noprompt/garden"
+                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
+  }
+
+ :aliases
+ {:outdated
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
+
+  :jvm-repl
+  {:extra-deps
+   {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "rebel-readline.main"]}
+
+  :dev
+  {:extra-paths ["dev"]
+   :extra-deps
+   {thheller/shadow-cljs {:mvn/version "3.2.2"}
+    com.bhauman/rebel-readline {:mvn/version "RELEASE"}
+    org.clojure/tools.namespace {:mvn/version "RELEASE"}
+    criterium/criterium {:mvn/version "0.4.6"}
+    cider/cider-nrepl {:mvn/version "0.57.0"}}}
+
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]
+   :jvm-opts ["--sun-misc-unsafe-memory-access=allow"
+              "-Dpenpot.wasm.profile-marks=true"
+              "-XX:+UnlockExperimentalVMOptions"
+              "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
+  }}

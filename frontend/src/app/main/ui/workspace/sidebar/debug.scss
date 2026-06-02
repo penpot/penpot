@@ -1,0 +1,32 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.debug-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-background-color);
+}
+
+.debug-panel-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
+}
+
+.debug-panel-inner {
+  padding: deprecated.$s-16 deprecated.$s-8;
+}
+
+.checkbox-wrapper {
+  @extend .input-checkbox;
+  height: deprecated.$s-32;
+  padding: 0;
+}
+
+.checkbox-icon {
+  @extend .checkbox-icon;
+  cursor: pointer;
+}

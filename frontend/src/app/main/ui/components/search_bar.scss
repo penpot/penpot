@@ -1,0 +1,74 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+
+.search-box {
+  display: flex;
+  gap: deprecated.$s-2;
+  height: deprecated.$s-32;
+  width: 100%;
+  border-radius: deprecated.$br-8;
+  background-color: var(--search-bar-background-color);
+}
+
+.icon {
+  margin-left: deprecated.$s-8;
+  flex: 0 0 deprecated.$s-16;
+  color: var(--color-foreground-primary);
+}
+
+.search-input-wrapper {
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
+  width: 100%;
+  border: deprecated.$s-1 solid var(--search-bar-input-border-color);
+  border-radius: deprecated.$br-8;
+  background-color: var(--search-bar-input-background-color);
+
+  &:hover {
+    border: deprecated.$s-1 solid var(--input-border-color-hover);
+    background-color: var(--input-background-color-hover);
+    .search-input {
+      background-color: var(--input-background-color-hover);
+    }
+  }
+
+  &:focus-within {
+    background-color: var(--input-background-color-active);
+    color: var(--input-foreground-color-active);
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
+    .search-input {
+      background-color: var(--input-background-color-active);
+    }
+  }
+}
+
+.search-input {
+  width: 100%;
+  height: 100%;
+  margin: 0 deprecated.$s-8 0 deprecated.$s-4;
+  border: 0;
+  background-color: var(--input-background-color);
+  font-size: deprecated.$fs-12;
+  color: var(--input-foreground-color);
+  border-radius: deprecated.$br-8;
+  &:focus {
+    outline: none;
+  }
+}
+
+.clear-icon {
+  @extend .button-tag;
+  flex: 0 0 deprecated.$s-32;
+  height: 100%;
+  color: var(--color-icon-default);
+}
+
+.search-box.has-children .search-input-wrapper {
+  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+  margin-left: 0;
+}

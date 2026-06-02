@@ -1,0 +1,20 @@
+[
+  {
+      "~:id": "~u29ce7ec9-e75d-81b4-8004-08100373558a",
+      "~:uri": {
+          "~#uri": "https://www.abc.es"
+      },
+      "~:mtype": "application/json",
+      "~:is-active": false,
+      "~:error-count": 0
+  },
+  {
+      "~:id": "~u43d6b3b1-40f7-807b-8003-f9846292b4c7",
+      "~:uri": {
+          "~#uri": "https://www.google.com"
+      },
+      "~:mtype": "application/json",
+      "~:is-active": true,
+      "~:error-count": 0
+  }
+]

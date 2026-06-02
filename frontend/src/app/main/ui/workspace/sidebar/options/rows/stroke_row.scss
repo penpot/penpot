@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.stroke-data {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+
+  position: relative;
+
+  --reorder-left-position: calc(-1 * var(--sp-l));
+
+  &:hover {
+    --reorder-icon-visibility: visible;
+  }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
+  &.dnd-over-bot {
+    --reorder-bottom-display: block;
+  }
+}
+
+.stroke-options {
+  @include sidebar.option-grid-structure;
+  align-items: center;
+}
+
+.stroke-width-input {
+  grid-column: span 2;
+
+  // TODO replace with numeric-input* from DS
+  @extend .input-element;
+
+  @include t.use-typography("body-small");
+  padding-inline-start: var(--sp-xs);
+}
+
+.numeric-input-wrapper {
+  grid-column: span 2;
+}
+
+.stroke-alignment-select {
+  grid-column: span 3;
+}
+
+.stroke-style-select {
+  grid-column: span 3;
+}
+
+.stroke-caps-options {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: var(--sp-xs);
+}

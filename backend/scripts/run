@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $0);
+
+source $SCRIPT_DIR/_env;
+
+if [ -f $SCRIPT_DIR/_env.local ]; then
+    source $SCRIPT_DIR/_env.local;
+fi
+
+export OPTIONS="-A:dev"
+
+entrypoint=${1:-app.main};
+
+shift 1;
+set -ex
+
+exec clojure $OPTIONS -A:dev -M -m $entrypoint "$@";
