@@ -570,7 +570,7 @@
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
          ;; TODO add translations for this texts when we have the definitive ones
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-b
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
@@ -719,7 +719,7 @@
 
        ;; TODO add translations for this texts when we have the definitive ones
        (when (and (contains? cf/flags :nitrate) (not nitrate?))
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-n
                          :price-value "$25"
                          :price-period (tr "subscription.settings.organization-member-month")
@@ -757,7 +757,7 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
-       "Subcribe to the Business Nitrate plan"]
+       "Subscribe to the Enterprise plan"]
 
       (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}
