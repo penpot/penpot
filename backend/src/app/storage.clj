@@ -135,7 +135,8 @@
         ;; still not deleted.
         result (when (and (::deduplicate? params)
                           (:hash mdata)
-                          (:bucket mdata))
+                          (:bucket mdata)
+                          (not= "tempfile" (:bucket mdata)))
                  (let [result (get-database-object-by-hash connectable backend
                                                            (:bucket mdata)
                                                            (:hash mdata))]

@@ -19,7 +19,8 @@
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [buddy.core.bytes :as b]
    [clojure.test :as t]
-   [datoteka.fs :as fs]))
+   [datoteka.fs :as fs]
+   [datoteka.io :as io]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -38,6 +39,23 @@
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
     (:result out)))
+
+(t/deftest upload-tempfile-returns-fresh-object-for-same-content
+  (let [profile (th/create-profile* 1 {:is-active true})
+        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
+        _       (io/write* path "content")
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "export.png"
+                           :path path
+                           :mtype "image/png"
+                           :size 7}}
+        out1    (th/management-command! params)
+        out2    (th/management-command! params)]
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+    (t/is (not= (get-in out1 [:result :id])
+                (get-in out2 [:result :id])))))
 
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
