@@ -73,7 +73,9 @@
         handle-click
         (mf/use-fn
          (mf/deps on-click color-item)
-         (fn [_] (on-click color-item)))]
+         (fn [_] (on-click color-item)))
+        opacity-text (str " (" (mth/round (* (:opacity color-item) 100)) "%)")
+        gradient-text (str " (" (uc/gradient-type->string (:type gradient)) ")")]
 
     [:> tooltip* {:content (su/color-title color-item)
                   :trigger-ref element-ref
@@ -81,6 +83,7 @@
 
      [:div {:class           (stl/css :color-row-colorpicker)
             :ref             element-ref
+            :role            "listitem"
             :aria-labelledby element-id
             :on-click        handle-click}
 
@@ -93,12 +96,12 @@
           [:span {:class (stl/css :color-row-colorpicker-label)}
            (str name)
            [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
-            (str " (" (uc/gradient-type->string (:type gradient)) ")")]]
+            gradient-text]]
 
           [:span {:class (stl/css :color-row-colorpicker-label)}
            (tr "media.gradient")
            [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
-            (str " (" (uc/gradient-type->string (:type gradient)) ")")]])
+            gradient-text]])
 
         image
         [:span (tr "media.image")]
@@ -109,15 +112,15 @@
            name
            (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
              [:span {:class (stl/css :color-row-colorpicker-opacity)}
-              (str " (" (mth/round (* (:opacity color-item) 100)) "%)")])]
+              opacity-text])]
           [:span {:class (stl/css :color-row-colorpicker-label)}
            color
            (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
              [:span {:class (stl/css :color-row-colorpicker-opacity)}
-              (str " (" (mth/round (* (:opacity color-item) 100)) "%)")])])
+              opacity-text])])
 
         :else
-        [:span (tr "unknown")])]]))
+        [:span (tr "labels.other")])]]))
 
 ;; ---------------------------------------------------------------------------
 ;; Grouped color list
@@ -132,16 +135,29 @@
    `on-color-click`     called with the converted color map on click
    `open-groups`        set of group paths that are currently collapsed
    `on-toggle-group`    (fn [path]) to toggle a group open/closed"
-  {::mf/memo true}
+  {::mf/memo true
+   ::mf/private true}
   [{:keys [groups prefix resolved-file-id on-color-click open-groups on-toggle-group]}]
   (let [direct-colors (get groups "")
         subgroups     (dissoc groups "")
         is-root?      (empty? prefix)
-        collapsed?    (and (not is-root?) (contains? open-groups prefix))]
+        collapsed?    (and (not is-root?) (contains? open-groups prefix))
+        handle-toggle-group (mf/use-fn
+                             (mf/deps prefix on-toggle-group)
+                             (fn [_]
+                               (on-toggle-group prefix)))]
     [:*
      (when (not is-root?)
-       [:div {:class    (stl/css :color-group-header)
-              :on-click #(on-toggle-group prefix)}
+       [:div {:class         (stl/css :color-group-header)
+              :role          "button"
+              :tab-index     0
+              :aria-expanded (not collapsed?)
+              :aria-label    prefix
+              :on-key-down   (fn [e]
+                               (when (or (= (.-key e) "Enter") (= (.-key e) " "))
+                                 (.preventDefault e)
+                                 (handle-toggle-group e)))
+              :on-click      handle-toggle-group}
         [:> i/icon* {:icon-id (if collapsed? i/arrow-right i/arrow-down)
                      :size    "s"
                      :class   (stl/css :color-group-arrow)}]
@@ -312,15 +328,15 @@
 
       [:> icon-button*
        {:variant    "ghost"
-        :aria-label "Toggle palette"
+        :aria-label (tr "workspace.libraries.colors.show-color-palette")
         :on-click   toggle-palette
         :icon       i/swatches}]
 
       [:> icon-button*
        {:variant    "ghost"
         :aria-label (if (= :grid view-mode)
-                      "Switch to list view"
-                      "Switch to grid view")
+                      (tr "workspace.assets.list-view")
+                      (tr "workspace.assets.grid-view"))
         :on-click   toggle-view-mode
         :icon       (if (= :grid view-mode)
                       i/view-as-list
@@ -329,19 +345,24 @@
       (when (= selected :file)
         [:> icon-button*
          {:variant    "ghost"
-          :aria-label "Add library color"
+          :aria-label (tr "workspace.libraries.colors.add-library-color")
           :on-click   on-add-library-color
           :icon       i/add}])]
 
      (if (= view-mode :grid)
-       [:div {:class (stl/css :selected-colors)}
+       [:div {:class     (stl/css :selected-colors)
+              :role      "list"
+              :aria-label (tr "workspace.assets.colors")}
         (for [color current-colors]
-          [:> swatch* {:background color
-                       :key        (-> color meta ::id)
-                       :on-click   on-color-click
-                       :size       "medium"}])]
+          [:div {:role "listitem"
+                 :key  (-> color meta ::id)}
+           [:> swatch* {:background color
+                        :on-click   on-color-click
+                        :size       "medium"}]])]
 
-       [:div {:class (stl/css :selected-colors-list)}
+       [:div {:class      (stl/css :selected-colors-list)
+              :role       "list"
+              :aria-label (tr "workspace.assets.colors")}
         (if (= selected :recent)
           ;; Recent colors have no path/groups — render flat
           (for [color current-colors]

@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/typography.scss" as t;
 @use "ds/_sizes.scss" as *;
 @use "ds/colors.scss" as *;
-@use "ds/typography.scss" as t;
 @use "ds/mixins.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/borders.scss" as *;
@@ -102,6 +102,7 @@
 .select-wrapper {
   --dropdown-start: auto;
   --dropdown-end: #{$sz-36};
+  --dropdown-width: var(--seven-columns-width);
 
   display: flex;
   align-items: center;
