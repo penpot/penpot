@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -32,22 +31,16 @@
 
 (mf/defc mcp-indicator*
   []
-  (let [profile (mf/deref refs/profile)
-        tokens  (mf/deref refs/access-tokens)
-        mcp     (mf/deref refs/mcp)
+  (let [profile          (mf/deref refs/profile)
+        mcp              (mf/deref refs/mcp)
+        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
 
-        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-        mcp-connected? (= "connected" (:connection-status mcp))
+        mcp-enabled?      (true? (-> profile :props :mcp-enabled))
+        mcp-connected?    (= "connected" (:connection-status mcp))
+        show-indicator?   (and mcp-enabled? (false? mcp-key-expired?))
 
-        expires-at (some->> tokens
-                            (some #(when (= (:type %) "mcp") %))
-                            :expires-at)
-        expired?   (and (some? expires-at) (> (ct/now) expires-at))
-
-        show-indicator? (and mcp-enabled? (false? expired?))
-
-        mcp-menu-open* (mf/use-state false)
-        mcp-menu-open? (deref mcp-menu-open*)
+        mcp-menu-open*   (mf/use-state false)
+        mcp-menu-open?   (deref mcp-menu-open*)
 
         toggle-mcp-menu
         (mf/use-fn
