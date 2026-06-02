@@ -419,7 +419,12 @@ export class PenpotUtils {
      *   - For mode="shape", it will be PNG or SVG data depending on the value of `asSVG`.
      *   - For mode="fill", it will be whatever format the fill image is stored in.
      */
-    public static async exportImage(shape: Shape, mode: "shape" | "fill", asSVG: boolean): Promise<Uint8Array> {
+    public static async exportImage(
+        shape: Shape,
+        mode: "shape" | "fill",
+        asSVG: boolean,
+        options: { scale?: number } = {}
+    ): Promise<Uint8Array> {
         // Updates are asynchronous in Penpot, so wait a tick to ensure any pending updates are applied before export.
         // The constant wait time is a temporary workardound until a better solution for penpot/penpot-mcp#27
         // is implemented.
@@ -427,7 +432,7 @@ export class PenpotUtils {
         // Perform export
         switch (mode) {
             case "shape":
-                return shape.export({ type: asSVG ? "svg" : "png" });
+                return shape.export({ type: asSVG ? "svg" : "png", scale: options.scale ?? 1 });
             case "fill":
                 if (asSVG) {
                     throw new Error("Image fills cannot be exported as SVG");

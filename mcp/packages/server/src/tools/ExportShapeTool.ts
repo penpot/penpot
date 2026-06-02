@@ -29,6 +29,12 @@ export class ExportShapeArgs {
                 "The export mode: either 'shape' (full shape as it appears in the design, including descendants; the default) or " +
                     "'fill' (export the raw image that is used as a fill for the shape; PNG format only)"
             ),
+        scale: z
+            .number()
+            .min(0.1)
+            .max(8)
+            .optional()
+            .describe("Optional export scale for shape PNG/SVG export. Defaults to 1. Ignored for fill mode."),
         filePath: z
             .string()
             .optional()
@@ -44,7 +50,45 @@ export class ExportShapeArgs {
 
     mode: "shape" | "fill" = "shape";
 
+    scale?: number;
+
     filePath?: string;
+}
+
+export function normalizeExportScale(scale: number | undefined): number {
+    if (scale === undefined) {
+        return 1;
+    }
+    if (!Number.isFinite(scale) || scale < 0.1 || scale > 8) {
+        throw new Error("export_shape scale must be a number between 0.1 and 8");
+    }
+    return scale;
+}
+
+export function buildExportImageCode(
+    shapeId: string,
+    mode: "shape" | "fill",
+    asSvg: boolean,
+    scale: number | undefined
+): string {
+    let shapeCode: string;
+    if (shapeId === "selection") {
+        shapeCode = `penpot.selection[0]`;
+    } else if (shapeId === "page") {
+        shapeCode = `penpot.root`;
+    } else {
+        shapeCode = `penpotUtils.findShapeById(${JSON.stringify(shapeId)})`;
+    }
+    return `return penpotUtils.exportImage(${shapeCode}, ${JSON.stringify(mode)}, ${asSvg}, { scale: ${normalizeExportScale(scale)} });`;
+}
+
+export function getInvalidImagePayloadHint(bytes: Uint8Array): string | null {
+    const prefix = Buffer.from(bytes.slice(0, 512)).toString("utf8").replace(/\s+/g, " ").trim();
+    const lower = prefix.toLowerCase();
+    if (lower.startsWith("<!doctype html") || lower.startsWith("<html")) {
+        return `Penpot export returned HTML instead of image bytes. This usually means the exported asset URL resolved to an error page rather than PNG/JPEG data. Body prefix: ${prefix.slice(0, 240)}`;
+    }
+    return null;
 }
 
 /**
@@ -137,17 +181,8 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
             FileUtils.checkPathIsAbsolute(args.filePath);
         }
 
-        // create code for exporting the shape
-        let shapeCode: string;
-        if (args.shapeId === "selection") {
-            shapeCode = `penpot.selection[0]`;
-        } else if (args.shapeId === "page") {
-            shapeCode = `penpot.root`;
-        } else {
-            shapeCode = `penpotUtils.findShapeById("${args.shapeId}")`;
-        }
         const asSvg = args.format === "svg";
-        const code = `return penpotUtils.exportImage(${shapeCode}, "${args.mode}", ${asSvg});`;
+        const code = buildExportImageCode(args.shapeId, args.mode, asSvg, args.scale);
 
         // execute the code and obtain the image data
         const task = new ExecuteCodePluginTask({ code: code });
@@ -185,6 +220,11 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
      */
     private async toPngImageBytes(data: Uint8Array | object): Promise<Uint8Array> {
         const originalBytes = ImageContent.byteData(data);
+
+        const invalidPayloadHint = getInvalidImagePayloadHint(originalBytes);
+        if (invalidPayloadHint) {
+            throw new Error(invalidPayloadHint);
+        }
 
         // use sharp to detect format and convert to PNG if necessary
         const image = sharp(originalBytes);
