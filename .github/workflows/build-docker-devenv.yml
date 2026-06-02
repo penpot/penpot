@@ -6,7 +6,6 @@ on:
 jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
-    environment: release-admins
     runs-on: penpot-runner-02
 
     steps:
