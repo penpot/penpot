@@ -187,46 +187,52 @@
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <div
                         style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;">
-                        <b>{{invited-by|abbreviate:25}}</b> sent you an invitation to join the organization:
+                        Your Enterprise subscription is coming up for renewal. Here's a summary of what's included.
                       </div>
+                      <div style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;margin-top:20px">
+                        <b>Renewal date:</b> {{ renewal-date }}
+                      </div>
+                      <div style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;margin-top:10px">
+                        <b>Estimated amount:</b> {{ estimated-amount }}
+                      </div>
+                      <div style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;margin:10px 0">
+                        <b>Organizations covered:</b> {% if organizations|empty? %}No organizations yet.{% endif %}
+                      </div>
+
+                      {% for org in organizations %}
+                      <div
+                        style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;margin-bottom:5px">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="20" height="20" style="display:inline-block;vertical-align:middle;">
+                          <tr>
+                            <td width="20" height="20" align="center" valign="middle"
+                                background="{% if org.logo %}{{org.logo}}{% else %}{{org.avatar-bg-url}}{% endif %}"
+                                style="width:20px;height:20px;text-align:center;font-weight:bold;font-size:9px;line-height:20px;color:#ffffff;background-size:cover;background-position:center;background-repeat:no-repeat;border-radius: 50%;color:black">
+                              {% if org.initials %}{{org.initials}}{% endif %}
+                            </td>
+                          </tr>
+                        </table>
+                        <span style="display:inline-block; vertical-align: middle;padding-left:5px;height:20px;line-height: 20px;">
+                        {{ org.name|abbreviate:50 }}
+                        </span>
+                      </div>
+                      {% endfor %}
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <div
                         style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="20" height="20" style="display:inline-block;vertical-align:middle;">
-                          <tr>
-                            <td width="20" height="20" align="center" valign="middle"
-                                background="{% if organization.logo %}{{organization.logo}}{% else %}{{organization.avatar-bg-url}}{% endif %}"
-                                style="width:20px;height:20px;text-align:center;font-weight:bold;font-size:9px;line-height:20px;color:#ffffff;background-size:cover;background-position:center;background-repeat:no-repeat;border-radius: 50%;color:black">
-                              {% if organization.initials %}{{organization.initials}}{% endif %}
-                            </td>
-                          </tr>
-                        </table>
-                        <span style="display:inline-block; vertical-align: middle;padding-left:5px;height:20px;line-height: 20px;">
-                        {{ organization.name|abbreviate:50 }}
-                        </span>
-                      </div>
+                        This amount is based on current member counts across your organizations. You can adjust members from the <a href="{{ public-uri }}/admin-console/" target="_blank">Admin Console</a>.</div>
                     </td>
                   </tr>
                   <tr>
-                    <td align="center" vertical-align="middle"
-                      style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <table border="0" cellpadding="0" cellspacing="0" role="presentation"
-                        style="border-collapse:separate;line-height:100%;">
-                        <tr>
-                          <td align="center" bgcolor="#6911d4" role="presentation"
-                            style="border:none;border-radius:8px;cursor:auto;mso-padding-alt:10px 25px;background:#6911d4;"
-                            valign="middle">
-                            <a href="{{ public-uri }}/#/auth/verify-token?token={{token}}"
-                              style="display:inline-block;background:#6911d4;color:#FFFFFF;font-family:Source Sans Pro, sans-serif;font-size:16px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:8px;"
-                              target="_blank"> ACCEPT INVITE </a>
-                          </td>
-                        </tr>
-                      </table>
+                    <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <div
+                        style="font-family:Source Sans Pro, sans-serif;font-size:16px;line-height:150%;text-align:left;color:#000000;">
+                        Check our <a href="https://penpot.app/terms" target="_blank">Terms and Conditions</a> and <a href="https://penpot.app/privacy" target="_blank">Privacy Policy.</a></div>
                     </td>
                   </tr>
+
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <div

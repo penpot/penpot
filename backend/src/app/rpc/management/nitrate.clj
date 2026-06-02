@@ -12,11 +12,12 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization]]
+   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
    [app.media :as media]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -29,7 +30,8 @@
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]))
+   [app.worker :as wrk]
+   [cuerdas.core :as str]))
 
 
 (defn- profile-to-map [profile]
@@ -472,10 +474,7 @@ RETURNING id, deleted_at;")
   {::doc/added "2.15"
    ::sm/params [:map
                 [:email ::sm/email]
-                [:id ::sm/uuid]
-                [:name ::sm/text]
-                [:initials [:maybe :string]]
-                [:logo ::sm/uri]]}
+                [:organization schema:organization-with-avatar]]}
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
   nil)
@@ -676,6 +675,38 @@ LEFT JOIN profile AS p
                                 valid-teams-to-delete-ids
                                 (count valid-teams-to-transfer)
                                 (count valid-teams-to-exit))))
+
+;; API: send-renewal-email
+
+(def ^:private schema:send-renewal-email-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:user-email ::sm/email]
+   [:user-name [:maybe ::sm/text]]
+   [:renewal-date :string]
+   [:estimated-amount :double]
+   [:organizations [:vector schema:organization-with-avatar]]])
+
+(sv/defmethod ::send-renewal-email
+  "Send an Enterprise subscription renewal notice email to a user."
+  {::doc/added "2.17"
+   ::sm/params schema:send-renewal-email-params
+   ::rpc/auth false}
+  [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
+  (let [amount-str (format "$%.2f" estimated-amount)
+        user-name  (if (str/empty? user-name)
+                     (:fullname (profile/get-profile cfg profile-id))
+                     user-name)]
+    (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                      (eml/send! {::eml/conn    conn
+                                  ::eml/factory eml/renewal-notice
+                                  :public-uri   (cf/get :public-uri)
+                                  :to           user-email
+                                  :user-name    user-name
+                                  :renewal-date renewal-date
+                                  :estimated-amount amount-str
+                                  :organizations organizations}))))
+  nil)
 
 ;; API: cleanup-org-team-invitations
 
