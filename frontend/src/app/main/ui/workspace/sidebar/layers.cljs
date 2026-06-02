@@ -173,7 +173,7 @@
     [:> layers-tree* props]))
 
 (mf/defc filters-tree*
-  {::mf/wrap [mf/memo #(mf/throttle % 200)]
+  {::mf/wrap [mf/memo #(mf/throttle % 50)]
    ::mf/private true}
   [{:keys [objects parent-size]}]
   (let [selected    (use-selected-shapes)
