@@ -23,6 +23,7 @@
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
+   [frontend-tests.logic.variant-switch-test]
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.parser-test]
@@ -72,6 +73,7 @@
     frontend-tests.logic.frame-guides-test
     frontend-tests.logic.groups-test
     frontend-tests.logic.pasting-in-containers-test
+    frontend-tests.logic.variant-switch-test
     frontend-tests.plugins.context-shapes-test
     frontend-tests.plugins.parser-test
     frontend-tests.plugins.tokens-test

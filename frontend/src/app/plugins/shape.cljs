@@ -1406,7 +1406,10 @@
                :else
                (let [shape     (u/locate-shape file-id page-id id)
                      component (u/locate-library-component file-id (:component-id shape))]
-                 (when  (and component (ctk/is-variant? component))
+                 (cond
+                   (not (and component (ctk/is-variant? component))) nil
+                   (>= pos (count (:variant-properties component))) (u/not-valid plugin-id :pos pos)
+                   :else
                    (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
                                  (se/add-event plugin-id)))))))
 

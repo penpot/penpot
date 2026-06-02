@@ -18,6 +18,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
    [clojure.test :as t]))
 
@@ -491,6 +492,56 @@
     (t/is (= (:touched copy2-root') nil))
     (t/is (= (:touched copy2-child') nil))))
 
+(t/deftest test-inverse-sync-when-moving-shape
+  ;; Exercises the `moved` callback in generate-sync-shape-inverse-recursive,
+  ;; which uses the precomputed children-inst-index / children-main-index maps.
+  (let [;; ==== Setup
+        file (-> (thf/sample-file :file1)
+                 (tho/add-component-with-many-children-and-copy :component1
+                                                                :main-root
+                                                                [:main-child1 :main-child2 :main-child3]
+                                                                :copy-root
+                                                                :copy-root-params {:children-labels [:copy-child1
+                                                                                                     :copy-child2
+                                                                                                     :copy-child3]}))
+
+        page        (thf/current-page file)
+        main-child1 (ths/get-shape file :main-child1)
+
+        ;; ==== Action: reorder main so child1 moves to the end → [child2, child3, child1]
+        ;; Reordering the main (component root) is allowed; only copy structures are locked.
+        changes1 (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                            (pcb/with-page-id (:id page))
+                                            (pcb/with-objects (:objects page)))
+                                        (thi/id :main-root)
+                                        2
+                                        #{(:id main-child1)})
+
+        updated-file (thf/apply-changes file changes1)
+        updated-page (thf/current-page updated-file)
+        copy-root    (ths/get-shape updated-file :copy-root)
+
+        ;; ==== Action: inverse sync — push instance child order back into the main component
+        changes2 (cll/generate-sync-shape-inverse (pcb/empty-changes)
+                                                  updated-file
+                                                  {(:id updated-file) updated-file}
+                                                  updated-page
+                                                  (:id copy-root))
+
+        file'        (thf/apply-changes updated-file changes2)
+
+        ;; ==== Get
+        main-root'   (ths/get-shape file' :main-root)
+        main-child1' (ths/get-shape file' :main-child1)
+        main-child2' (ths/get-shape file' :main-child2)
+        main-child3' (ths/get-shape file' :main-child3)]
+
+    ;; ==== Check: main children restored to [child1, child2, child3] — matching instance order
+    (t/is (some? main-root'))
+    (t/is (= (first (:shapes main-root'))   (:id main-child1')))
+    (t/is (= (second (:shapes main-root'))  (:id main-child2')))
+    (t/is (= (nth (:shapes main-root') 2)   (:id main-child3')))))
+
 (t/deftest test-no-sync-changes-when-only-position-changes
   ;; Regression: the library sync dialog was shown even when a library component
   ;; was only moved (x/y changed). Position changes are normalised by
@@ -539,3 +590,72 @@
     ;; A position-only change in the main component must not propagate to copies
     ;; and therefore must produce no redo-changes.
     (t/is (empty? (:redo-changes sync-changes)))))
+
+(t/deftest test-inverse-sync-remap-changes-marks-page-changes-as-local
+  ;; BUG-07: When doing inverse sync on an instance whose copy has a shape that
+  ;; does not exist in the main component (only-inst), add-shape-to-main emits
+  ;; :mod-obj changes that update :shape-ref on the existing instance shapes.
+  ;; These target the local page, so they must be :local-change? true. Without
+  ;; the fix, the per-node check-local walker missed child IDs and they were
+  ;; routed to the remote library file instead.
+  ;;
+  ;; Also verifies that change-touched page changes are marked :local-change? true
+  ;; (those were previously handled by the O(K²) check-local loop; now tagged at
+  ;; creation time).
+  (let [;; ==== Setup: library with a minimal component (root only, no children)
+        library (-> (thf/sample-file :library)
+                    (tho/add-frame :main-root)
+                    (thc/make-component :component1 :main-root))
+
+        ;; Local file: instantiate the component, then add an extra child that
+        ;; has no counterpart in the main component (only-inst scenario)
+        file    (-> (thf/sample-file :file)
+                    (thc/instantiate-component :component1 :copy-root
+                                               :library library))
+
+        file    (ths/add-sample-shape file :extra-child
+                                      :type :rect
+                                      :parent-label :copy-root)
+
+        page      (thf/current-page file)
+        copy-root (ths/get-shape file :copy-root)
+        libraries {(:id library) library}
+
+        ;; ==== Action: inverse sync — push instance changes back to the component
+        changes   (cll/generate-sync-shape-inverse
+                   (-> (pcb/empty-changes nil (:id page))
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-objects (:objects page)))
+                   (:data file)
+                   libraries
+                   (ctn/get-container (:data file) :page (:id page))
+                   (:id copy-root))
+
+        all-redo (:redo-changes changes)
+
+        ;; :mod-obj changes that set :shape-ref come from add-shape-to-main and
+        ;; must be local (they update instance shapes on the page)
+        shape-ref-changes
+        (->> all-redo
+             (filter (fn [c]
+                       (and (= (:type c) :mod-obj)
+                            (some #(= (:attr %) :shape-ref) (:operations c))))))
+
+        ;; :mod-obj :set-touched changes for the copy-root come from change-touched
+        ;; on the page container and must also be local
+        touched-local-changes
+        (->> all-redo
+             (filter (fn [c]
+                       (and (= (:type c) :mod-obj)
+                            (= (:id c) (:id copy-root))
+                            (some #(= (:type %) :set-touched) (:operations c))))))]
+
+    (t/is (seq shape-ref-changes)
+          "Expected at least one :mod-obj :shape-ref change from add-shape-to-main")
+    (t/is (every? :local-change? shape-ref-changes)
+          "All :shape-ref mod-obj changes must be :local-change? true")
+
+    (t/is (seq touched-local-changes)
+          "Expected at least one :set-touched change for copy-root on the page")
+    (t/is (every? :local-change? touched-local-changes)
+          "All page-side :set-touched changes must be :local-change? true")))

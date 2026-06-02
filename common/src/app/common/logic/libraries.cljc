@@ -512,7 +512,7 @@
                  (and early-return? (seq (:redo-changes changes))))
            changes
            (recur (next containers)
-                  (pcb/concat-changes ;;TODO Remove concat changes
+                  (pcb/concat-changes
                    changes
                    (generate-sync-container (pcb/empty-changes nil)
                                             asset-type
@@ -554,7 +554,7 @@
                  (and early-return? (seq (:redo-changes changes))))
            changes
            (recur (next local-components)
-                  (pcb/concat-changes ;;TODO Remove concat changes
+                  (pcb/concat-changes
                    changes
                    (generate-sync-container (pcb/empty-changes nil)
                                             asset-type
@@ -832,7 +832,14 @@
 
           ;; If the component is not found, because the master component has been
           ;; deleted or the library unlinked, do nothing.
-          changes))
+          (do
+            (shape-log :debug shape-id container
+                       :msg "Sync shape direct: skipped (component not found)"
+                       :shape-id (str shape-id)
+                       :component-id (str (:component-id shape-inst))
+                       :component-file (str (:component-file shape-inst))
+                       :library-linked? (some? library))
+            changes)))
       changes)))
 
 (defn- find-main-container
@@ -871,7 +878,13 @@
 
   (if (nil? shape-main)
     ;; This should not occur, but protect against it in any case
-    changes
+    (do
+      (shape-log :debug (:id shape-inst) container
+                 :msg "Sync shape direct recursive: skipped (ref-shape not found)"
+                 :shape-id (str (:id shape-inst))
+                 :component-id (str (:id component))
+                 :component-name (:name component))
+      changes)
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
@@ -909,6 +922,8 @@
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
+          children-inst-index (into {} (map-indexed (fn [i s] [(:id s) i])) children-inst)
+          children-main-index (into {} (map-indexed (fn [i s] [(:id s) i])) children-main)
 
           only-inst (fn [changes child-inst]
                       (shape-log :trace (:id child-inst) container
@@ -932,8 +947,7 @@
                                               :shapes-group))
                         (add-shape-to-instance changes
                                                child-main
-                                               (d/index-of children-main
-                                                           child-main)
+                                               (get children-main-index (:id child-main))
                                                component-container
                                                container
                                                root-inst
@@ -976,8 +990,8 @@
                   (move-shape
                    changes
                    child-inst
-                   (d/index-of children-inst child-inst)
-                   (d/index-of children-main child-main)
+                   (get children-inst-index (:id child-inst))
+                   (get children-main-index (:id child-main))
                    container
                    omit-touched?))
 
@@ -1110,12 +1124,13 @@
                                 (:shapes shape-inst))
           children-main   (mapv #(ctn/get-shape component-container %)
                                 (:shapes shape-main))
+          children-inst-index (into {} (map-indexed (fn [i s] [(:id s) i])) children-inst)
+          children-main-index (into {} (map-indexed (fn [i s] [(:id s) i])) children-main)
 
           only-inst (fn [changes child-inst]
                       (add-shape-to-main changes
                                          child-inst
-                                         (d/index-of children-inst
-                                                     child-inst)
+                                         (get children-inst-index (:id child-inst))
                                          component
                                          component-container
                                          container
@@ -1153,8 +1168,8 @@
                   (move-shape
                    changes
                    child-main
-                   (d/index-of children-main child-main)
-                   (d/index-of children-inst child-inst)
+                   (get children-main-index (:id child-main))
+                   (get children-inst-index (:id child-inst))
                    component-container
                    false))
 
@@ -1175,17 +1190,13 @@
                             true
                             true)
 
-          ;; The inverse sync may be made on a component that is inside a
-          ;; remote library. We need to separate changes that are from
-          ;; local and remote files.
-          check-local (fn [change]
-                        (cond-> change
-                          (= (:id change) (:id shape-inst))
-                          (assoc :local-change? true)))]
+          ;; Local-file tagging for the remote-library split is done eagerly at
+          ;; change-creation time (change-touched, change-remote-synced, mod-obj-change
+          ;; in add-shape-to-main), so no per-node re-mapping of the full accumulator
+          ;; is needed here.
+          ]
 
-      (-> changes
-          (update :redo-changes (partial mapv check-local))
-          (update :undo-changes (partial map check-local))))))
+      changes)))
 
 
 ;; ---- Operation generation helpers ----
@@ -1193,76 +1204,104 @@
 (defn- compare-children
   [changes shape-inst children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (shape-log :trace (:id shape-inst) container-inst :msg "Compare children")
-  (loop [children-inst (seq (or children-inst []))
-         children-main (seq (or children-main []))
-         changes       changes]
-    (let [child-inst (first children-inst)
-          child-main (first children-main)]
-      (shape-log :trace (:id shape-inst) container-inst
-                 :msg "Comparing"
-                 :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
-                 :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
-      (cond
-        (and (nil? child-inst) (nil? child-main))
-        changes
+  (let [;; Precompute swap slots once per child to avoid repeated cross-file ref-chain lookups
+        inst-slots (when-not reset?
+                     (into {} (keep (fn [c]
+                                      (when-let [s (ctf/find-swap-slot c container-inst file libraries)]
+                                        [(:id c) s])))
+                           (or children-inst [])))
+        main-slots (when-not reset?
+                     (into {} (keep (fn [c]
+                                      (when-let [s (ctf/find-swap-slot c container-main file libraries)]
+                                        [(:id c) s])))
+                           (or children-main [])))
+        match-pair? (fn [main-child inst-child]
+                      (or (ctk/is-main-of? main-child inst-child)
+                          (let [slot-inst (get inst-slots (:id inst-child))]
+                            (when (some? slot-inst)
+                              (let [slot-main (get main-slots (:id main-child))]
+                                (or (= slot-main slot-inst)
+                                    (= (:id main-child) slot-inst)))))))]
+    (loop [children-inst (seq (or children-inst []))
+           children-main (seq (or children-main []))
+           consumed-inst #{}
+           consumed-main #{}
+           changes       changes]
+      (let [children-inst (drop-while #(consumed-inst (:id %)) children-inst)
+            children-main (drop-while #(consumed-main (:id %)) children-main)
+            child-inst    (first children-inst)
+            child-main    (first children-main)]
+        (shape-log :trace (:id shape-inst) container-inst
+                   :msg "Comparing"
+                   :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
+                   :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
+        (cond
+          (and (nil? child-inst) (nil? child-main))
+          changes
 
-        (nil? child-inst)
-        (reduce only-main-cb changes children-main)
+          (nil? child-inst)
+          (reduce only-main-cb changes (remove #(consumed-main (:id %)) children-main))
 
-        (nil? child-main)
-        (reduce only-inst-cb changes children-inst)
+          (nil? child-main)
+          (reduce only-inst-cb changes (remove #(consumed-inst (:id %)) children-inst))
 
-        :else
-        (if (or (ctk/is-main-of? child-main child-inst)
-                (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries)
-                     (not reset?)))
-          (recur (next children-inst)
-                 (next children-main)
-                 (if (ctk/is-main-of? child-main child-inst)
-                   (both-cb changes child-inst child-main)
-                   (swapped-cb changes child-inst child-main)))
+          :else
+          (if (match-pair? child-main child-inst)
+            (recur (next children-inst)
+                   (next children-main)
+                   consumed-inst
+                   consumed-main
+                   (if (ctk/is-main-of? child-main child-inst)
+                     (both-cb changes child-inst child-main)
+                     (swapped-cb changes child-inst child-main)))
 
-          (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
-                                         (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries)
-                                              (not reset?)))
-                                    children-inst)
-                child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
-                                         (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries)
-                                              (not reset?)))
-                                    children-main)]
-            (cond
-              (nil? child-inst')
-              (recur children-inst
-                     (next children-main)
-                     (only-main-cb changes child-main))
+            (let [child-inst' (d/seek #(and (not (consumed-inst (:id %)))
+                                            (match-pair? child-main %))
+                                      children-inst)
+                  child-main' (d/seek #(and (not (consumed-main (:id %)))
+                                            (match-pair? % child-inst))
+                                      children-main)]
+              (cond
+                (nil? child-inst')
+                (recur children-inst
+                       (next children-main)
+                       consumed-inst
+                       consumed-main
+                       (only-main-cb changes child-main))
 
-              (nil? child-main')
-              (recur (next children-inst)
-                     children-main
-                     (only-inst-cb changes child-inst))
+                (nil? child-main')
+                (recur (next children-inst)
+                       children-main
+                       consumed-inst
+                       consumed-main
+                       (only-inst-cb changes child-inst))
 
-              :else
-              (if inverse?
-                (let [is-main? (ctk/is-main-of? child-inst child-main')]
-                  (recur (next children-inst)
-                         (remove #(= (:id %) (:id child-main')) children-main)
-                         (cond-> changes
-                           is-main?
-                           (both-cb child-inst child-main')
-                           (not is-main?)
-                           (swapped-cb child-inst child-main')
-                           :always
-                           (moved-cb child-inst child-main'))))
-                (let [is-main? (ctk/is-main-of? child-inst' child-main)]
-                  (recur (remove #(= (:id %) (:id child-inst')) children-inst)
-                         (next children-main)
-                         (cond-> changes
-                           is-main?
-                           (both-cb child-inst' child-main)
-                           (not is-main?)
-                           (swapped-cb child-inst' child-main)
-                           :always
-                           (moved-cb child-inst' child-main))))))))))))
+                :else
+                (if inverse?
+                  (let [is-main? (ctk/is-main-of? child-inst child-main')]
+                    (recur (next children-inst)
+                           children-main
+                           consumed-inst
+                           (conj consumed-main (:id child-main'))
+                           (cond-> changes
+                             is-main?
+                             (both-cb child-inst child-main')
+                             (not is-main?)
+                             (swapped-cb child-inst child-main')
+                             :always
+                             (moved-cb child-inst child-main'))))
+                  (let [is-main? (ctk/is-main-of? child-inst' child-main)]
+                    (recur children-inst
+                           (next children-main)
+                           (conj consumed-inst (:id child-inst'))
+                           consumed-main
+                           (cond-> changes
+                             is-main?
+                             (both-cb child-inst' child-main)
+                             (not is-main?)
+                             (swapped-cb child-inst' child-main)
+                             :always
+                             (moved-cb child-inst' child-main)))))))))))))
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
@@ -1394,6 +1433,7 @@
                                        {:type :mod-obj
                                         :page-id (:id page)
                                         :id (:id shape')
+                                        :local-change? true
                                         :operations [{:type :set
                                                       :attr :component-id
                                                       :val (:component-id shape')}
@@ -1413,6 +1453,7 @@
                                        {:type :mod-obj
                                         :page-id (:id page)
                                         :id (:id shape-original)
+                                        :local-change? true
                                         :operations [{:type :set
                                                       :attr :component-id
                                                       :val (:component-id shape-original)}
@@ -1431,10 +1472,11 @@
 
         del-obj-change (fn [changes shape']
                          (update changes :undo-changes conj
-                                 {:type :del-obj
-                                  :id (:id shape')
-                                  :page-id (:id page)
-                                  :ignore-touched true}))
+                                 (make-change
+                                  component-container
+                                  {:type :del-obj
+                                   :id (:id shape')
+                                   :ignore-touched true})))
 
         changes' (reduce add-obj-change changes new-shapes)
         changes' (update changes' :redo-changes conj {:type :reg-objects
@@ -1566,22 +1608,25 @@
                           :else
                           (:touched dest-shape))]
 
-        (-> changes
-            (update :redo-changes conj (make-change
-                                        container
-                                        {:type :mod-obj
-                                         :id (:id dest-shape)
-                                         :operations
-                                         [{:type :set-touched
-                                           :touched new-touched}]}))
-            (update :undo-changes conj (make-change
-                                        container
-                                        {:type :mod-obj
-                                         :id (:id dest-shape)
-                                         :operations
-                                         [{:type :set-touched
-                                           :touched (:touched dest-shape)}]}))
-            (pcb/apply-changes-local))))))
+        (let [local? (cfh/page? container)]
+          (-> changes
+              (update :redo-changes conj (cond-> (make-change
+                                                   container
+                                                   {:type :mod-obj
+                                                    :id (:id dest-shape)
+                                                    :operations
+                                                    [{:type :set-touched
+                                                      :touched new-touched}]})
+                                           local? (assoc :local-change? true)))
+              (update :undo-changes conj (cond-> (make-change
+                                                   container
+                                                   {:type :mod-obj
+                                                    :id (:id dest-shape)
+                                                    :operations
+                                                    [{:type :set-touched
+                                                      :touched (:touched dest-shape)}]})
+                                           local? (assoc :local-change? true)))
+              (pcb/apply-changes-local)))))))
 
 (defn- change-remote-synced
   [changes shape container remote-synced?]
@@ -1596,22 +1641,25 @@
                            " "
                            (pretty-uuid (:id shape)))
                  :remote-synced remote-synced?)
-      (-> changes
-          (update :redo-changes conj (make-change
-                                      container
-                                      {:type :mod-obj
-                                       :id (:id shape)
-                                       :operations
-                                       [{:type :set-remote-synced
-                                         :remote-synced remote-synced?}]}))
-          (update :undo-changes conj (make-change
-                                      container
-                                      {:type :mod-obj
-                                       :id (:id shape)
-                                       :operations
-                                       [{:type :set-remote-synced
-                                         :remote-synced (:remote-synced shape)}]}))
-          (pcb/apply-changes-local)))))
+      (let [local? (cfh/page? container)]
+        (-> changes
+            (update :redo-changes conj (cond-> (make-change
+                                                 container
+                                                 {:type :mod-obj
+                                                  :id (:id shape)
+                                                  :operations
+                                                  [{:type :set-remote-synced
+                                                    :remote-synced remote-synced?}]})
+                                          local? (assoc :local-change? true)))
+            (update :undo-changes conj (cond-> (make-change
+                                                 container
+                                                 {:type :mod-obj
+                                                  :id (:id shape)
+                                                  :operations
+                                                  [{:type :set-remote-synced
+                                                    :remote-synced (:remote-synced shape)}]})
+                                          local? (assoc :local-change? true)))
+            (pcb/apply-changes-local))))))
 
 (defn- update-tokens
   "Token synchronization algorithm. Copy the applied tokens that have changed

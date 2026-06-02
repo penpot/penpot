@@ -8,6 +8,7 @@
   (:require
    [app.common.features :as ffeat]
    [app.common.files.changes :as ch]
+   [app.common.files.changes-builder :as pcb]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
@@ -861,3 +862,18 @@
               (nil? (get-in result2 [:pages-index page-id :default-grids])))))
 
      {:num 1000})))
+
+(t/deftest concat-changes-is-eager-and-order-preserving
+  ;; Regression test for the lazy concat bug: concat-changes used to build
+  ;; :undo-changes as N nested lazy clojure.core/concat thunks when called in a
+  ;; loop (as generate-sync-file and generate-sync-library do), causing a
+  ;; StackOverflowError on large files when the seq was realized.
+  (let [n      500
+        singles (for [i (range n)]
+                  {:redo-changes [{:type :mod-obj :i i}]
+                   :undo-changes (list {:type :mod-obj :i i})})
+        merged  (reduce pcb/concat-changes (pcb/empty-changes) singles)]
+    ;; redo order: 0 1 2 … n-1 (applied in sequence)
+    (t/is (= (range n) (map :i (:redo-changes merged))))
+    ;; undo order: n-1 … 1 0 (reverse, so undoing reverses redo application order)
+    (t/is (= (range (dec n) -1 -1) (map :i (:undo-changes merged))))))

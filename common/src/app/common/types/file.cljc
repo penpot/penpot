@@ -395,6 +395,13 @@
   (->> (gsts/get-children-seq (:id root-copy) (:objects file-data))
        (d/seek #(= (:shape-ref %) (:id main-shape)))))
 
+;; Call-local volatile map for memoizing find-ref-shape within a single
+;; variant-switch pass (or any other call-scoped context). Keyed on
+;; [shape-id include-deleted? with-context?]. nil when not active; bind
+;; to (volatile! {}) to enable. Never use a global binding — stale entries
+;; across edits would silently corrupt override resolution.
+(def ^:dynamic *find-ref-shape-cache* nil)
+
 (defn find-ref-shape
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
@@ -405,8 +412,16 @@
                 component      (when (some? component-file)
                                  (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
             (when (some? component)
-              (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
-    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
+              (get-ref-shape (:data component-file) component shape :with-context? with-context?))))
+        compute (fn [] (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape)))]
+    (if-let [cache *find-ref-shape-cache*]
+      (let [k [(:id shape) include-deleted? with-context?]]
+        (if (contains? @cache k)
+          (get @cache k)
+          (let [result (compute)]
+            (vswap! cache assoc k result)
+            result)))
+      (compute))))
 
 (defn find-near-match
   "Locate the shape that occupies the same position in the near main component.
