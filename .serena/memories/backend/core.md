@@ -2,7 +2,11 @@
 
 Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; mail; audit/logging; workers.
 
-Focused routing: RPC/DB/workers -> `mem:backend/rpc-db-worker-subtleties`; HTTP/session/storage/media/file-data -> `mem:backend/http-storage-filedata-subtleties`; auth/permissions/product domains -> `mem:backend/auth-permissions-product-domains`.
+## Focused memories
+
+- RPC, DB helpers, workers, cron: `mem:backend/rpc-db-worker-subtleties`
+- HTTP sessions, config, storage, media, file data persistence: `mem:backend/http-storage-filedata-subtleties`
+- Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
 
 ## Stable namespace map
 
@@ -16,7 +20,7 @@ Focused routing: RPC/DB/workers -> `mem:backend/rpc-db-worker-subtleties`; HTTP/
 - `app.worker`: task execution/cron plumbing.
 - `app.main`: Integrant system map and component wiring.
 - `app.config`: `PENPOT_*` env config and feature flags.
-- `app.srepl.*`: development REPL helpers for manual backend operations.
+- `app.srepl.*`: development REPL helpers for manual backend operations (data inspection, migration helpers, one-off admin tasks).
 - `app.nitrate`, `app.rpc.commands.nitrate`, and `app.rpc.management.nitrate`: external Nitrate subscription/organization integration, gated by the `:nitrate` feature flag and shared-key HTTP calls.
 
 ## RPC conventions
@@ -32,32 +36,65 @@ Backend RPC command areas without focused memories include access tokens, binfil
 - Use `db/run!` for multiple operations on one connection.
 - Use `db/tx-run!` for transactions.
 
-Development DB: `postgresql://penpot:penpot@postgres/penpot`.
-Test DB: `postgresql://penpot:penpot@postgres/penpot_test`.
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
-To inspect the whole DB schema in devenv, use `pg_dump -h postgres -s > schema.sql` from inside the environment.
+For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/rpc-db-worker-subtleties`.
 
 ## Background tasks
 
 A task handler is an Integrant component with `ig/assert-key`, `ig/expand-key`, and `ig/init-key`, returning the function run by the worker. New tasks also need wiring in `app.main`: handler config, worker registry entry, and cron entry if scheduled.
 
-## REPL and fixtures
+For worker dispatch, cron, retry semantics, deduplication, and queue internals: `mem:backend/rpc-db-worker-subtleties`.
 
-In devenv, backend nREPL is exposed on port 6064. `backend/scripts/nrepl` starts a REPLy client.
+## REPL
 
-For an in-process backend REPL, stop the running backend first so port 9090 is free, then run `backend/scripts/repl`. Useful top-level helpers include `(start)`, `(stop)`, `(restart)`, `(run-tests)`, and `(repl/refresh-all)`. Many `app.srepl.main` helpers accept the global `system` var, e.g. manual email or maintenance operations.
+In devenv, backend nREPL is exposed on port 6064.
+
+### Non-interactive eval (preferred for agents)
+
+`./tools/nrepl-eval.mjs` connects to an already-running nREPL server and evaluates code. Session state (defs, `in-ns`) persists across invocations via a stored session ID in `/tmp/penpot-nrepl-session-<host>-<port>`.
+
+```bash
+./tools/nrepl-eval.mjs '(+ 1 2)'                            # single expression
+./tools/nrepl-eval.mjs "(require '[my.ns :as ns] :reload)"  # reload after edits
+./tools/nrepl-eval.mjs -e                                   # inspect last exception (*e)
+./tools/nrepl-eval.mjs --reset-session '(def x 0)'          # discard session, start fresh
+./tools/nrepl-eval.mjs <<'EOF'                              # multi-expression heredoc
+(def x 10)
+(+ x 20)
+EOF
+```
+
+Default port is 6064. Use `-p <PORT>` for a different port. Use `-t <MS>` to override the 120s timeout. Do not start the nREPL server — assume it is already running.
+
+### Interactive REPL
+
+`backend/scripts/nrepl` starts a REPLy client connected to the running nREPL.
+
+For an in-process backend REPL (where you control the JVM lifecycle), stop the running backend first so port 9090 is free, then run `backend/scripts/repl`. Useful top-level helpers include `(start)`, `(stop)`, `(restart)`, `(run-tests)`, and `(repl/refresh-all)`. Many `app.srepl.main` helpers accept the global `system` var, e.g. manual email or maintenance operations.
+
+## Fixtures
 
 Fixtures can populate local data for manual testing/perf work. From the backend REPL, run `(app.cli.fixtures/run {:preset :small})`; fixture users conventionally look like `profileN@example.com` with password `123123`. Standalone fixture aliases may exist, but check current `backend/deps.edn` before relying on old command names.
 
-## Commands
+## Performance
 
-From `backend/`:
-- Focused test: `clojure -M:dev:test --focus backend-tests.some-ns-test`.
-- Full backend test suite: `clojure -M:dev:test` or `pnpm run test`.
-- Watch/focused testing is also available through `(run-tests ...)` in the backend REPL.
-- Lint: `pnpm run lint`.
-- Format check: `pnpm run check-fmt`.
-- Format fix: `pnpm run fmt`.
+* **Type Hinting:** Use explicit JVM type hints (e.g. `^String`, `^long`) in performance-critical paths to avoid reflection overhead.
+* **Batch inserts:** Use `db/insert-many!` for bulk row inserts — generates a single SQL with multiple parameter tuples. Avoid on very large datasets (SQL length / parameter count limits).
+* **Server-side cursors:** Use `db/plan` (fetch-size 1000, forward-only, read-only) or `db/cursor` for large result sets. Never fetch large collections into memory at once.
+* **Transaction discipline:** Use `tx-run!` for writes (opens a transaction), `run!` for reads (single connection, no transaction). Set `:read-only` on `tx-run!` when applicable to let PostgreSQL optimize.
 
-Use JVM type hints in performance-critical paths to avoid reflection.
+## Lint and Format
+
+IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
+
+* **Linting:** `pnpm run lint` from the repository root.
+* **Formatting:** `pnpm run check-fmt`. Use `pnpm run fmt` to fix. Avoid unrelated whitespace diffs.
+
+## Testing
+
+IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
+
+* **Coverage:** If code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
+* **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
+* **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
