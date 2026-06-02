@@ -36,6 +36,14 @@
 
 (defonce interval-sub (atom nil))
 
+(defn connect-mcp
+  []
+  (ptk/reify ::connect-mcp
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (mbc/event :mcp/force-disconnect {})
+             (ptk/data-event ::connect)))))
+
 (defn finalize-workspace?
   [event]
   (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
@@ -80,7 +88,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (case value
-        true  (rx/of (ptk/data-event ::connect))
+        true  (rx/of (connect-mcp))
         false (rx/of (ptk/data-event ::disconnect))
         nil))))
 
@@ -99,15 +107,7 @@
       ;; several tabs stay connected at once and the MCP server reports
       ;; "multiple instances connected" and the agent fails.
       (when (= "connected" value)
-        (rx/of (mbc/event :mcp/force-disconect {}))))))
-
-(defn connect-mcp
-  []
-  (ptk/reify ::connect-mcp
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (mbc/event :mcp/force-disconect {})
-             (ptk/data-event ::connect)))))
+        (rx/of (mbc/event :mcp/force-disconnect {}))))))
 
 ;; This event will arrive when the user selects disconnect on the menu
 ;; or there is a broadcast message for disconnection
@@ -182,7 +182,7 @@
                  (init-mcp stream)
 
                  (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/force-disconect))
+                      (rx/filter (mbc/type? :mcp/force-disconnect))
                       (rx/filter (fn [{:keys [id]}]
                                    (not= session-id id)))
                       (rx/map deref)
@@ -192,9 +192,9 @@
               (->> mbc/stream
                    (rx/filter (mbc/type? :mcp/enable))
                    (rx/mapcat (fn [_]
-                                ;; NOTE: we don't need an explicit
-                                ;; connect because the plugin has
-                                ;; auto-connect
+                                ;; Re-init so the force-disconnect
+                                ;; listener is set up now that MCP
+                                ;; is enabled.
                                 (rx/of (update-mcp-status true)
                                        (init)))))
 
@@ -202,7 +202,6 @@
                    (rx/filter (mbc/type? :mcp/disable))
                    (rx/mapcat (fn [_]
                                 (rx/of (update-mcp-status false)
-                                       (init)
                                        (user-disconnect-mcp))))))
 
              (rx/take-until stoper-s))))))
