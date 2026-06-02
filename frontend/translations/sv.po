@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
-"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-06-02 17:01+0000\n"
+"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8362,3 +8362,270 @@ msgstr "Autosparade versioner sparas i %s dagar."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Du är nu med i %s"
+
+#: src/app/main/data/nitrate.cljs:161
+msgid "dasboard.leave-org.toast"
+msgstr "Du är inte längre med i organisationen %s."
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "FLYTTA TEAM"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "Flytta till:"
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "Välj en organisation"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"Projekt och filer kommer att förbli tillgängliga för teammedlemmar. Teamet "
+"kommer att hämta konfigurationen från den nya organisationen."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr ""
+"Är du säker på att du vill ta bort %s permanent? Detta är en åtgärd som inte "
+"kan ångras."
+
+#: src/app/main/data/dashboard.cljs:840
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s filer har raderats."
+
+#: src/app/main/ui/dashboard/deleted.cljs:51, src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:260, src/app/main/ui/dashboard/deleted.cljs:262, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "Radera permanent"
+
+#: src/app/main/ui/dashboard/deleted.cljs:84
+msgid "dashboard.delete-project-button"
+msgstr "Radera projekt"
+
+#: src/app/main/ui/dashboard/deleted.cljs:52
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"Är du säker på att du vill radera projekt %s permanent? Du kommer att radera "
+"det permanent och alla filer i det. Detta är en åtgärd som inte kan ångras."
+
+#: src/app/main/data/dashboard.cljs:839, src/app/main/data/dashboard.cljs:873
+msgid "dashboard.delete-success-notification"
+msgstr "%s har raderats."
+
+#: src/app/main/ui/dashboard/deleted.cljs:326
+msgid "dashboard.deleted.empty-state-description"
+msgstr "Din papperskorg är tom. Borttagna filer och projekt visas här."
+
+#: src/app/main/ui/dashboard/grid.cljs:247
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "%s kommer att raderas"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "Det uppstod ett fel när filen %s skulle tas bort."
+
+#: src/app/main/data/dashboard.cljs:843
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "Det uppstod ett fel när filerna skulle raderas."
+
+#: src/app/main/data/dashboard.cljs:876
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "Det uppstod ett fel när projekt %s skulle raderas."
+
+#: src/app/main/data/dashboard.cljs:971, src/app/main/ui/dashboard/file_menu.cljs:202
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "Det uppstod ett fel när filen %s skulle återställas."
+
+#: src/app/main/data/dashboard.cljs:972
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "Det uppstod ett fel när filerna skulle återställas."
+
+#: src/app/main/data/dashboard.cljs:1004
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "Det uppstod ett fel när projekt %s och dess filer skulle återställas."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:267
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "Radera fil"
+msgstr[1] "Radera filer"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "Återställ fil"
+msgstr[1] "Återställ filer"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Gå till administratörskonsolen"
+
+#: src/app/main/ui/dashboard/import.cljs:507
+msgid "dashboard.import.import-error.check-error"
+msgstr "Vi kunde inte verifiera den här filen."
+
+#: src/app/main/ui/dashboard/import.cljs:511
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Den här filen verkar vara skadad."
+
+#: src/app/main/ui/dashboard/import.cljs:514
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Något gick fel när den här filen bearbetades."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Du har inte behörighet att bjuda in personer i det här teamet eller att "
+"redigera eller ta bort inbjudningar."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "Lämna organisation"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "Mina team"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr ""
+"Du har inte behörighet att lägga till team i någon av dina organisationer."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Du har inte tillåtelse att skapa team inom organisationen %s. Om du behöver "
+"mer information, kontakta organisationens ägare."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Du har inte tillåtelse att ta bort team som ingår i organisation %s. Om du "
+"behöver mer information, kontakta organisationens ägare."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Du har inte tillåtelse att flytta team som ingår i organisation %s. Om du "
+"behöver mer information, kontakta organisationens ägare."
+
+#: src/app/main/data/dashboard.cljs:752
+msgid "dashboard.org-deleted"
+msgstr "Organisationen %s har tagits bort."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Skapa org"
+
+#: src/app/main/data/dashboard.cljs:784
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "Raderar filer…"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "Du kommer att återställa %s."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "Återställ fil"
+
+#: src/app/main/data/nitrate.cljs:395, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "Ändra teamets organisation"
+
+#: src/app/main/ui/dashboard/deleted.cljs:312
+msgid "dashboard.clear-trash-button"
+msgstr "Töm papperskorgen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:371
+msgid "dashboard.create-new-org"
+msgstr "Skapa org"
+
+#: src/app/main/ui/dashboard/deleted.cljs:261
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr ""
+"Är du säker på att du vill radera alla dina borttagna projekt och filer "
+"permanent? Detta är en åtgärd som inte kan ångras."
+
+#: src/app/main/data/dashboard.cljs:905
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "Återställer filer…"
+
+#: src/app/main/data/dashboard.cljs:785
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "Raderingen är oväntat långsam"
+
+#: src/app/main/data/dashboard.cljs:906
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "Återställningen är oväntat långsam"
+
+#: src/app/main/ui/dashboard/deleted.cljs:273
+msgid "dashboard.restore-all-confirmation.description"
+msgstr ""
+"Du kommer att återställa alla dina projekt och filer. Det kan ta ett tag."
+
+#: src/app/main/ui/dashboard/deleted.cljs:272
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "Återställ alla projekt och filer"
+
+#: src/app/main/ui/dashboard/deleted.cljs:307
+msgid "dashboard.restore-all-deleted-button"
+msgstr "Återställ allt"
+
+#: src/app/main/data/dashboard.cljs:965
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s filer har återställts."
+
+#: src/app/main/ui/dashboard/deleted.cljs:81
+msgid "dashboard.restore-project-button"
+msgstr "Återställ projekt"
+
+#: src/app/main/ui/dashboard/deleted.cljs:41
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "Du kommer att återställa projekt %s och alla filer som finns i det."
+
+#: src/app/main/ui/dashboard/deleted.cljs:40
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "Återställ projekt"
+
+#: src/app/main/data/dashboard.cljs:937, src/app/main/data/dashboard.cljs:964, src/app/main/data/dashboard.cljs:1001, src/app/main/ui/dashboard/file_menu.cljs:199
+msgid "dashboard.restore-success-notification"
+msgstr "%s har återställts."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Organisationer"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "LÄGG TILL I ORGANISATION"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "Välj en organisation:"
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"\"%s\" tillåter endast organisationsmedlemmar att gå med i dess team. Alla "
+"väntande inbjudningar till personer utanför organisationen kommer att "
+"återkallas."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Väntande inbjudningar till externa användare kommer att avbrytas."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr ""
+"Här hittar du alla dina organisationer där du har rätt att skapa eller lägga "
+"till team."
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "Välj en organisation"
