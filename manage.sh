@@ -34,16 +34,19 @@ export PENPOT_SOURCE_PATH="${PENPOT_SOURCE_PATH:-$PWD}"
 export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_workspaces}"
 
 # Port allocation for parallel instances. Each wsN reserves a stride-wide port
-# block starting at N*stride; per-service base ports sit at well-known offsets
-# inside ws0's block. Single source of truth for both write-instance-env (the
-# values baked into the per-instance compose env file) and print-instance-info
-# (the URLs printed at startup).
+# block starting at N*stride; ws0 sits at offset 0, so a per-service base port
+# IS ws0's published port. To keep a single source of truth, the bases are
+# derived from the ws0 values sourced from defaults.env above rather than
+# duplicated here -- this makes it impossible for ws0's compose substitution and
+# the ws1+ overlay arithmetic to drift apart. `:?` aborts loudly if defaults.env
+# is missing one. Consumed by write-instance-env (the values baked into the
+# per-instance compose env file) and print-instance-info (the startup URLs).
 PENPOT_INSTANCE_PORT_STRIDE=10000
-PENPOT_PORT_BASE_PUBLIC=3449
-PENPOT_PORT_BASE_MCP=4401
-PENPOT_PORT_BASE_MCP_REPL=4403
-PENPOT_PORT_BASE_SERENA=14181
-PENPOT_PORT_BASE_SERENA_DASHBOARD=14182
+PENPOT_PORT_BASE_PUBLIC=${PENPOT_PUBLIC_HTTP_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_MCP=${PENPOT_MCP_SERVER_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_MCP_REPL=${PENPOT_MCP_REPL_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_SERENA=${SERENA_EXTERNAL_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_SERENA_DASHBOARD=${SERENA_DASHBOARD_EXTERNAL_PORT:?missing in defaults.env}
 
 # Per-instance values like PENPOT_REDIS_URI must live in each instance's env
 # file (not in this shell), because docker compose's --env-file mechanism
@@ -285,6 +288,20 @@ function instance-port {
 
 # Generate (or refresh) the per-instance Compose env-file overlay. Idempotent;
 # safe to call on every reconciler pass.
+# For ws0, this is a no-op since it uses the baseline defaults.env directly.
+#
+# The overlay is layered on top of defaults.env by instance-compose's
+# `--env-file defaults.env --env-file instances/wsN.env` (compose applies the
+# later file last), so this writes only the values that differ per instance --
+# ports, container/volume names, the Redis/public URIs, worker flag. Everything
+# else falls through to defaults.env.
+#
+# Note the split: the overlay lives in the *control checkout* at
+# docker/devenv/instances/wsN.env (gitignored, regenerated each pass), keyed by
+# instance name -- NOT inside the wsN workspace clone it configures (that lives
+# at $PENPOT_WORKSPACES_DIR/wsN and holds only source). It has to live here
+# because compose runs from $PWD, so the relative --env-file path resolves
+# against this repo. Hand edits do not survive a reconciler pass.
 function write-instance-env {
     local instance="$1"
     if [[ "$instance" == "ws0" ]]; then

@@ -37,8 +37,8 @@ Container-internal ports fixed; host side offset `10000·N`.
 | 3449/udp | 13449/udp | … | 3449/udp | HTTP/3 |
 | 4401 | 14401 | … | 4401 | MCP HTTP stream |
 | 4403 | 14403 | … | 4403 | MCP REPL |
-| 14281 | 24281 | … | 14281 | Serena MCP |
-| 14282 | 24282 | … | 24282 | Serena dashboard |
+| 14181 | 24181 | … | 14281 | Serena MCP |
+| 14182 | 24182 | … | 24282 | Serena dashboard |
 
 Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes: mailer 1080, ldap 10389/10636 (singletons, not offset).
 

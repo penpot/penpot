@@ -99,7 +99,7 @@ Host ports are offset by `10000 × N`:
 |---|---|---|---|
 | Penpot UI (HTTPS) | `https://localhost:3449` | `https://localhost:13449` | `https://localhost:23449` |
 | MCP HTTP stream | `http://localhost:4401/mcp` | `http://localhost:14401/mcp` | `http://localhost:24401/mcp` |
-| Serena MCP | `http://localhost:14281` | `http://localhost:24281` | `http://localhost:34281` |
+| Serena MCP | `http://localhost:14181` | `http://localhost:24181` | `http://localhost:34181` |
 
 Container-internal ports stay fixed. Target a specific instance with
 `--ws N` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`,
@@ -109,6 +109,33 @@ rejected, keeping the flag shape uniform across commands. `run-devenv` is
 ws0-only and takes no workspace flag. `run-devenv-agentic` also accepts
 `--serena-context CTX` and `--git-user-name NAME` / `--git-user-email
 EMAIL` (see below).
+
+### Per-instance configuration
+
+Instance configuration is layered, with two sources:
+
+- `docker/devenv/defaults.env` — the baseline, tracked in git. `ws0` uses it
+  directly, and it supplies every value that does not vary per instance
+  (database/object-storage settings, shared-infra hostnames, the worker
+  default, …).
+- `docker/devenv/instances/wsN.env` — a generated overlay for each `ws1+`
+  instance. `manage.sh` writes it on every start/reconciler pass with only the
+  values that differ per instance: the offset host ports, the per-instance
+  container/volume names, and the Redis/public URIs. Compose loads it *after*
+  `defaults.env` (`--env-file defaults.env --env-file instances/wsN.env`), so
+  these override the baseline; everything else falls through to `defaults.env`.
+
+Two things to keep in mind:
+
+- **The overlays are auto-generated and gitignored** (`docker/devenv/instances/`
+  is in `.gitignore`). They are regenerated from scratch on each run, so hand
+  edits do not survive — change `defaults.env` (or the port/naming logic in
+  `manage.sh`) instead of editing an overlay.
+- **The overlay lives in the control checkout, not in the workspace it
+  configures.** `wsN`'s overlay sits at `docker/devenv/instances/wsN.env` inside
+  the repo you run `manage.sh` from, while the workspace clone it configures
+  lives separately at `${PENPOT_WORKSPACES_DIR}/wsN/`. Compose is invoked from
+  that control checkout, so the relative `--env-file` path has to resolve there.
 
 ### Git identity inside the container
 
