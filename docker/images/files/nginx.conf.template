@@ -3,7 +3,7 @@ pid /tmp/nginx.pid;
 include /etc/nginx/overrides/main.d/*.conf;
 
 events {
-    worker_connections 2048;
+    worker_connections 65535;
     multi_accept on;
 }
 
@@ -72,7 +72,7 @@ http {
     include /etc/nginx/overrides/http.d/*.conf;
 
     server {
-        listen 8080 default_server;
+        listen 8080 default_server reuseport backlog=16384;
         ${PENPOT_IPV6_LISTEN_DIRECTIVE}
         server_name _;
 
