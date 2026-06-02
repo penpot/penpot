@@ -306,6 +306,20 @@
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
 
+;; These are the type of frames we have in our
+;; render pipeline.
+(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
+(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
+(def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+
+(defn- internal-render
+  ([]
+   (internal-render 0))
+  ([timestamp]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+     (request-render "frame-type-partial"))))
+
 (defn- build-reload-payload
   "Builds renderer reload payload from current application state.
    Avoids keeping heavyweight object snapshots in memory."
@@ -337,8 +351,8 @@
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
-  (when (initialized?)
-    (h/call wasm/internal-module "_render" timestamp)
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (internal-render timestamp)
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
@@ -1201,7 +1215,7 @@
               ;; completes in the first frame.  For zoom, interest-
               ;; area tiles (~3 tile margin) don't block the main
               ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
+              (internal-render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1804,50 +1818,19 @@
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
 
-(defn- wasm-aa-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
+(defn- wasm-get-numeric-value
+  [name]
   (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:aa_threshold p))]
+                   (get p name))]
     (let [n (if (string? raw) (js/parseFloat raw) raw)]
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
-(defn- wasm-blur-downscale-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:blur_downscale_threshold p))]
-    (let [n (if (string? raw) (js/parseFloat raw) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-max-blocking-time-ms-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:max_blocking_time_ms p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-node-batch-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:node_batch_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-viewport-interest-area-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:viewport_interest_area_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+(defn- wasm-set-param-from-route-params-if-present
+  [param-name]
+  (when-let [value (wasm-get-numeric-value param-name)]
+    (let [setter-name (str/concat "_set_" (name param-name))]
+      (h/call wasm/internal-module setter-name value))))
 
 (defn set-canvas-size
   [canvas]
@@ -1914,18 +1897,13 @@
           ;; Initialize Wasm Render Engine
           (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
           (h/call wasm/internal-module "_set_render_options" flags dpr)
-          (when-let [t (wasm-aa-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_antialias_threshold" t))
-          (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
-          (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
-            (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
-          (when-let [t (wasm-node-batch-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_node_batch_threshold" t))
-          (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
-          (when-let [max-tex (webgl/max-texture-size context)]
-            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+
+          ;; Configurable parameters.
+          (wasm-set-param-from-route-params-if-present :antialias_threshold)
+          (wasm-set-param-from-route-params-if-present :viewport_interest_area_threshold)
+          (wasm-set-param-from-route-params-if-present :max_blocking_time_ms)
+          (wasm-set-param-from-route-params-if-present :node_batch_threshold)
+          (wasm-set-param-from-route-params-if-present :blur_downscale_threshold)
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
