@@ -3,11 +3,11 @@ use std::ops::Mul;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {
-    pub pan: Point,
-    pub size: Size,
-    pub zoom: f32,
-    pub dpr: f32,
-    pub area: Rect,
+    pan: Point,
+    size: Size,
+    zoom: f32,
+    dpr: f32,
+    area: Rect,
 }
 
 impl Default for Viewbox {
@@ -67,16 +67,26 @@ impl Viewbox {
             .set_wh(self.size.width / self.zoom, self.size.height / self.zoom);
     }
 
-    pub fn set_dpr(&mut self, dpr: f32) {
+    pub fn set_dpr(&mut self, dpr: f32) -> f32 {
         self.dpr = dpr;
+        self.dpr
+    }
+
+    pub fn set_zoom(&mut self, new_zoom: f32) -> f32 {
+        self.zoom = new_zoom;
+        self.zoom
     }
 
     pub fn get_scale(&self) -> f32 {
         self.zoom * self.dpr
     }
 
-    pub fn get_offset(&self) -> Point {
+    pub fn offset(&self) -> Point {
         self.area.tl().mul(self.get_scale())
+    }
+
+    pub fn area(&self) -> Rect {
+        self.area
     }
 
     pub fn pan(&self) -> Point {
@@ -85,6 +95,10 @@ impl Viewbox {
 
     pub fn zoom(&self) -> f32 {
         self.zoom
+    }
+
+    pub fn scale(&self) -> (f32, f32) {
+        (self.get_scale(), self.get_scale())
     }
 
     pub fn get_matrix(&self) -> Matrix {

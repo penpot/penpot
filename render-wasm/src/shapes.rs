@@ -335,6 +335,23 @@ impl Shape {
         self.shape_type = shape_type;
     }
 
+    pub fn is_potentially_cacheable_as_image(&self) -> bool {
+        // It is a container.
+        let is_container = self.is_recursive();
+
+        // It is a costly to draw shape.
+        let is_costly = matches!(self.shape_type, Type::Path(_) | Type::Bool(_) | Type::Text(_))
+            || self.has_layout();
+
+        // It is prolific.
+        let is_prolific = self.children.len() > 2;
+
+        // We know how big the shape is.
+        let is_extrect_cached = !self.extrect_cache.borrow().is_none();
+
+        (is_container || is_costly || is_prolific) && is_extrect_cached
+    }
+
     #[allow(dead_code)]
     pub fn is_frame(&self) -> bool {
         matches!(self.shape_type, Type::Frame(_))
@@ -345,7 +362,7 @@ impl Shape {
     }
 
     pub fn is_group_like(&self) -> bool {
-        matches!(self.shape_type, Type::Group(_)) || matches!(self.shape_type, Type::Bool(_))
+        matches!(self.shape_type, Type::Group(_) | Type::Bool(_))
     }
 
     pub fn has_layout(&self) -> bool {

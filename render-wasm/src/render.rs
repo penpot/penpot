@@ -22,6 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::error::{Error, Result};
+use crate::globals::get_design_state;
 use crate::math;
 use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
@@ -400,19 +401,59 @@ pub(crate) struct RenderState {
     pub interactive_target_seeded: bool,
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
-    pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    pub shape_cache: ShapeCacheMap,
 }
 
-pub struct InteractiveDragCrop {
+#[derive(Debug)]
+pub struct ShapeCache {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
+
     /// Viewbox origin (doc-space) at capture time.
     pub capture_vb_left: f32,
     pub capture_vb_top: f32,
+
     /// Backbuffer pixel origin used for `snapshot_rect` (so we can do 1:1 blits).
     pub capture_src_left: i32,
     pub capture_src_top: i32,
+
     pub image: skia::Image,
+}
+
+#[derive(Debug)]
+pub struct PotentiallyCacheableShape {
+    pub id: Uuid,
+    bounds: Rect,
+    selrect: Rect,
+}
+
+impl PartialEq for PotentiallyCacheableShape {
+    fn eq(&self, other: &PotentiallyCacheableShape) -> bool {
+        self.id == other.id
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ShapeCacheMap {
+    potentially_cacheable: HashMap<Uuid, PotentiallyCacheableShape>,
+    pub map: HashMap<Uuid, ShapeCache>,
+}
+
+impl ShapeCacheMap {
+    pub fn new() -> Self {
+        Self {
+            potentially_cacheable: HashMap::new(),
+            map: HashMap::new(),
+        }
+    }
+
+    pub fn add_potentially_cacheable(&mut self, shape: &Shape, bounds: Rect, selrect: Rect) {
+        self.potentially_cacheable.insert(shape.id, PotentiallyCacheableShape {
+            id: shape.id,
+            bounds,
+            selrect
+        });
+    }
 }
 
 /// Chooses a window inside the full workspace-pixel crop `[0, out_w) × [0, out_h)` with each side
@@ -475,7 +516,7 @@ impl RenderState {
         moved_ids: &[Uuid],
         moved_bounds: Option<Rect>,
     ) -> bool {
-        if !self.backbuffer_crop_cache.contains_key(&node_id) {
+        if !self.shape_cache.map.contains_key(&node_id) {
             return false;
         }
         let Some(raw) = tree.get_raw(&node_id) else {
@@ -499,7 +540,7 @@ impl RenderState {
                 return false;
             }
 
-            if !self.backbuffer_crop_cache.contains_key(&node_id) {
+            if !self.shape_cache.map.contains_key(&node_id) {
                 return false;
             }
 
@@ -516,7 +557,8 @@ impl RenderState {
         // becomes valid again (stationary shape unchanged).
         if let Some(moved) = moved_bounds {
             let intersects = self
-                .backbuffer_crop_cache
+                .shape_cache
+                .map
                 .get(&node_id)
                 .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
 
@@ -581,7 +623,7 @@ impl RenderState {
             cache_cleared_this_render: false,
             current_tile_had_shapes: false,
             interactive_target_seeded: false,
-            backbuffer_crop_cache: HashMap::default(),
+            shape_cache: ShapeCacheMap::default(),
         })
     }
 
@@ -1787,15 +1829,16 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
-    fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
-        self.backbuffer_crop_cache.clear();
+    fn rebuild_shape_cache(&mut self, tree: ShapesPoolRef) {
+        performance::begin_measure!("rebuild_backbuffer_crop_cache");
+        self.shape_cache.map.clear();
 
         // Collect candidate shapes that are "recortable" and visible in the current viewport.
 
         // This is intentionally conservative; we only cache shapes that do not overlap with
         // ANY other candidate to guarantee the pixels under their bounds belong exclusively
         // to that shape in Backbuffer.
-        let viewport = self.viewbox.area;
+        let viewport = self.viewbox.area();
         let scale = self.get_scale();
         let mut candidates: Vec<(Uuid, Rect, Rect)> = Vec::new(); // (id, doc_bounds, selrect)
 
@@ -1863,8 +1906,8 @@ impl RenderState {
             })
             .collect();
 
-        let vb_left = self.viewbox.area.left;
-        let vb_top = self.viewbox.area.top;
+        let vb_left = self.viewbox.area().left;
+        let vb_top = self.viewbox.area().top;
         let (bb_w, bb_h) = self.surfaces.surface_size(SurfaceId::Backbuffer);
         let max_snap_px = get_gpu_state().max_texture_size();
 
@@ -1971,9 +2014,9 @@ impl RenderState {
                 img
             };
 
-            self.backbuffer_crop_cache.insert(
+            self.shape_cache.map.insert(
                 id,
-                InteractiveDragCrop {
+                ShapeCache {
                     src_doc_bounds: src_doc_window,
                     src_selrect: selrect,
                     capture_vb_left: vb_left,
@@ -1984,6 +2027,8 @@ impl RenderState {
                 },
             );
         }
+        println!("rebuild_backbuffer_crop_cache {:?}", self.shape_cache.map);
+        performance::end_measure!("rebuild_backbuffer_crop_cache");
     }
 
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
@@ -2005,21 +2050,21 @@ impl RenderState {
         }
 
         // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
-        if self.cached_viewbox.area.width() > 0.0 {
+        if self.cached_viewbox.area().width() > 0.0 {
             // Scale and translate the target according to the cached data
-            let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
+            let navigate_zoom = self.viewbox.zoom() / self.cached_viewbox.zoom();
 
             let interest = self.options.dpr_viewport_interest_area_threshold;
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(&self.cached_viewbox, interest);
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
+            let offset_x = self.viewbox.area().left * self.cached_viewbox.zoom() * self.options.dpr;
+            let offset_y = self.viewbox.area().top * self.cached_viewbox.zoom() * self.options.dpr;
             let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
             let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
 
             // For zoom-out, prefer cache only if it fully covers the viewport.
             // Otherwise, atlas will provide a more correct full-viewport preview.
-            let zooming_out = self.viewbox.zoom < self.cached_viewbox.zoom;
+            let zooming_out = self.viewbox.zoom() < self.cached_viewbox.zoom();
             if zooming_out {
                 let cache_dim = self.surfaces.cache_dimensions();
                 let cache_w = cache_dim.width as f32;
@@ -2079,14 +2124,11 @@ impl RenderState {
             // render after set_view_end handle it.
             if !self.zoom_changed() {
                 let visible_rect = tiles::get_tiles_for_viewbox(&self.viewbox);
-                let offset = self.viewbox.get_offset();
-                for tx in visible_rect.x1()..=visible_rect.x2() {
-                    for ty in visible_rect.y1()..=visible_rect.y2() {
-                        let tile = tiles::Tile::from(tx, ty);
-                        if self.surfaces.has_cached_tile_surface(tile) {
-                            let rect = tile.get_rect_with_offset(&offset);
-                            self.surfaces.draw_cached_tile_into_backbuffer(tile, &rect);
-                        }
+                let offset = self.viewbox.offset();
+                for tile in visible_rect.iter(true) {
+                    if self.surfaces.has_cached_tile_surface(tile) {
+                        let rect = tile.get_rect_with_offset(&offset);
+                        self.surfaces.draw_cached_tile_into_backbuffer(tile, &rect);
                     }
                 }
             }
@@ -2317,7 +2359,7 @@ impl RenderState {
                 // cache from the clean Backbuffer (no UI overlay yet) so that
                 // interactive drag backgrounds don't include the grid overlay.
                 if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.rebuild_backbuffer_crop_cache(tree);
+                    self.rebuild_shape_cache(tree);
                 }
                 // present_frame: copy clean Backbuffer → Target, draw UI/debug
                 // overlays on Target only, then flush. Backbuffer stays overlay-free.
@@ -2717,6 +2759,7 @@ impl RenderState {
         }
 
         self.focus_mode.exit(&element.id);
+
         Ok(())
     }
 
@@ -2724,17 +2767,16 @@ impl RenderState {
         let tile = self
             .current_tile
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
-        let offset = self.viewbox.get_offset();
+        let offset = self.viewbox.offset();
         Ok(tile.get_rect_with_offset(&offset))
     }
 
     pub fn get_rect_bounds(&mut self, rect: skia::Rect) -> Rect {
         let scale = self.get_scale();
-        let offset_x = self.viewbox.area.left * scale;
-        let offset_y = self.viewbox.area.top * scale;
+        let offset = self.viewbox.offset();
         Rect::from_xywh(
-            (rect.left * scale) - offset_x,
-            (rect.top * scale) - offset_y,
+            (rect.left * scale) - offset.x,
+            (rect.top * scale) - offset.y,
             rect.width() * scale,
             rect.height() * scale,
         )
@@ -2752,11 +2794,11 @@ impl RenderState {
     }
 
     pub fn get_aligned_tile_bounds(&mut self, tile: tiles::Tile) -> Rect {
-        let scale = self.get_scale();
+        let offset = self.viewbox.offset();
         let start_tile_x =
-            (self.viewbox.area.left * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
+            (offset.x / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
         let start_tile_y =
-            (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
+            (offset.y / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
         Rect::from_xywh(
             (tile.x() as f32 * tiles::TILE_SIZE) - start_tile_x,
             (tile.y() as f32 * tiles::TILE_SIZE) - start_tile_y,
@@ -3266,7 +3308,7 @@ impl RenderState {
 
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
 
-                let is_visible = export
+                let is_renderable = export
                     || mask
                     || if is_container || has_effects {
                         let element_extrect =
@@ -3278,13 +3320,12 @@ impl RenderState {
                         selrect.intersects(self.render_area_with_margins)
                             && !transformed_element.visually_insignificant(scale, tree)
                     };
-
                 if self.options.is_debug_visible() {
                     let shape_extrect_bounds = self.get_shape_extrect_bounds(element, tree);
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
-                if !is_visible {
+                if !is_renderable {
                     continue;
                 }
             }
@@ -3301,7 +3342,7 @@ impl RenderState {
                 );
 
                 if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
+                    if let Some(crop) = self.shape_cache.map.get(&node_id) {
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
 
@@ -4030,7 +4071,7 @@ impl RenderState {
     }
 
     pub fn zoom_changed(&self) -> bool {
-        (self.viewbox.zoom - self.cached_viewbox.zoom).abs() > f32::EPSILON
+        (self.viewbox.zoom() - self.cached_viewbox.zoom()).abs() > f32::EPSILON
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {
@@ -4056,7 +4097,7 @@ impl RenderState {
 
     pub fn prepare_context_loss_cleanup(&mut self) {
         // Drop cached GPU-backed snapshots before dropping the render state.
-        self.backbuffer_crop_cache.clear();
+        self.shape_cache.map.clear();
         self.surfaces.invalidate_tile_cache();
         // Mark context as abandoned so resource destructors avoid issuing
         // GL commands when the browser has already lost/restored the context.

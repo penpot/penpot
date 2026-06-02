@@ -5,12 +5,12 @@ use crate::emscripten::init_gl;
 
 use crate::mem;
 use crate::render::{gpu_state::GpuState, RenderState};
-use crate::state::{State, TextEditorState};
+use crate::state::{DesignState, TextEditorState};
 
-static mut DESIGN_STATE: *mut State = std::ptr::null_mut();
+static mut DESIGN_STATE: *mut DesignState = std::ptr::null_mut();
 
 /// Design State.
-pub(crate) fn get_design_state() -> &'static mut State {
+pub(crate) fn get_design_state() -> &'static mut DesignState {
     unsafe {
         debug_assert!(!DESIGN_STATE.is_null(), "Design State is null");
         &mut *DESIGN_STATE
@@ -105,7 +105,7 @@ fn render_init(width: i32, height: i32) {
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
-        let design_state = State::new();
+        let design_state = DesignState::new();
         DESIGN_STATE = Box::into_raw(Box::new(design_state));
     }
 }

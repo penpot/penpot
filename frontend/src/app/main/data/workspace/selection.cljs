@@ -29,10 +29,12 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.streams :as ms]
    [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -159,7 +161,13 @@
                 ::dwsp/interrupt
                 (if (some #(= % uuid/zero) frame-ids)
                   (rt/nav :workspace params-without-board {::rt/replace true})
-                  (rt/nav :workspace params-board {::rt/replace true}))))))))
+                  (rt/nav :workspace params-board {::rt/replace true})))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+             (when (features/active-feature? state "render-wasm/v1")
+               (js/console.log "select-shape" id)
+               (wasm.api/set-selected id))))))
 
 (defn select-prev-shape
   ([]
@@ -276,7 +284,14 @@
             expand-s (->> (rx/of (dwc/expand-all-parents ids objects))
                           (rx/observe-on :async))
             interrupt-s (rx/of ::dwsp/interrupt)]
-        (rx/merge expand-s interrupt-s)))))
+        (rx/merge expand-s interrupt-s)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+            (js/console.log "select-shapes" (clj->js ids))
+            ;; TODO: Que set-selected permita tanto un único identificador
+            ;; como una lista de identificadores.
+            #_(wasm.api/set-selected ids))))
 
 (defn select-all
   []

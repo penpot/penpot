@@ -1614,6 +1614,13 @@
             (keep #(get objects %))
             all-ordered-ids))))
 
+(defn set-selected
+  [id]
+  (let [c1 (uuid/get-u32 id)]
+    (h/call wasm/internal-module "_set_selected" (aget c1 0) (aget c1 1) (aget c1 2) (aget c1 3))))
+
+(unchecked-set js/globalThis "setSelected" set-selected)
+
 (defn set-objects
   "Set all shape objects for rendering.
 

@@ -563,8 +563,8 @@ impl Surfaces {
         let s = viewbox.get_scale();
         let scale = self.atlas.scale.max(0.01);
         canvas.translate((
-            (self.atlas.origin.x + viewbox.pan.x) * s,
-            (self.atlas.origin.y + viewbox.pan.y) * s,
+            (self.atlas.origin.x + viewbox.pan().x) * s,
+            (self.atlas.origin.y + viewbox.pan().y) * s,
         ));
         canvas.scale((s / scale, s / scale));
 
@@ -1589,7 +1589,7 @@ impl TileTextureCache {
             texture.set_empty();
         }
 
-        let offset = viewbox.get_offset();
+        let offset = viewbox.offset();
         let mut index = 0;
         for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {

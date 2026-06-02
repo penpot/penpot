@@ -29,7 +29,7 @@ fn render_debug_view(render_state: &mut RenderState) {
     paint.set_color(skia::Color::GREEN);
     paint.set_stroke_width(1.);
 
-    let rect = get_debug_rect(render_state.viewbox.area);
+    let rect = get_debug_rect(render_state.viewbox.area());
     render_state
         .surfaces
         .canvas(SurfaceId::Debug)
@@ -99,7 +99,7 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     paint.set_stroke_width(1.);
 
     let tile_size = tiles::get_tile_size(scale);
-    let tile_rect = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
+    let tile_rect = tiles::get_tiles_for_rect(render_state.viewbox.area(), tile_size);
     let tiles::TileRect(sx, sy, ex, ey) = tile_rect;
 
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);

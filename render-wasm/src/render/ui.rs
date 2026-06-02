@@ -7,18 +7,17 @@ use crate::shapes::{Layout, Type};
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
     let viewbox = render_state.viewbox;
-    let zoom = viewbox.zoom * render_state.options.dpr;
     let show_grid_id = render_state.show_grid;
 
     canvas.clear(Color4f::new(0.0, 0.0, 0.0, 0.0));
     canvas.save();
-    canvas.scale((zoom, zoom));
-    canvas.translate((-viewbox.area.left, -viewbox.area.top));
+    canvas.scale(viewbox.scale());
+    canvas.translate(viewbox.pan());
 
     if let Some(id) = show_grid_id {
         if let Some(shape) = shapes.get(&id) {
             grid_layout::render_overlay(
-                zoom,
+                viewbox.get_scale(),
                 render_state.options.antialias_threshold,
                 canvas,
                 shape,
@@ -51,7 +50,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
 
         if let Some(shape) = shapes.get(&shape.id) {
             grid_layout::render_overlay(
-                zoom,
+                viewbox.get_scale(),
                 render_state.options.antialias_threshold,
                 canvas,
                 shape,

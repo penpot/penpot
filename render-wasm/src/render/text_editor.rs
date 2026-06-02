@@ -21,16 +21,15 @@ pub fn render_overlay(
     };
 
     canvas.save();
-    let zoom = viewbox.zoom * options.dpr;
-    canvas.scale((zoom, zoom));
-    canvas.translate((-viewbox.area.left, -viewbox.area.top));
+    canvas.scale(viewbox.scale());
+    canvas.translate(viewbox.pan());
 
     if editor_state.selection.is_selection() {
         render_selection(canvas, editor_state, text_content, shape);
     }
 
     if editor_state.cursor_visible {
-        render_cursor(canvas, zoom, editor_state, text_content, shape);
+        render_cursor(canvas, viewbox.get_scale(), editor_state, text_content, shape);
     }
 
     canvas.restore();

@@ -934,6 +934,21 @@ pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*m
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_selected(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    with_state!(state, {
+        println!("set_selected {}", id);
+        // TODO: Right now we're working only with one shape.
+        state.selected.clear();
+        state.selected.insert(id);
+        Ok(())
+    })
+}
+
+// TODO: Add `add_selected, delete_selected, clear_selected`
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn render_shape_pixels(
     a: u32,
     b: u32,

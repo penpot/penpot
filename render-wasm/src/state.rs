@@ -1,5 +1,5 @@
 use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 mod rulers;
 mod shapes_pool;
@@ -19,7 +19,8 @@ use crate::{get_render_state, tiles};
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State {
+pub(crate) struct DesignState {
+    pub selected: HashSet<Uuid>,
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
     pub shapes: ShapesPool,
@@ -28,9 +29,10 @@ pub(crate) struct State {
     pub loading: bool,
 }
 
-impl State {
+impl DesignState {
     pub fn new() -> Self {
         Self {
+            selected: HashSet::new(),
             current_id: None,
             current_browser: 0,
             shapes: ShapesPool::new(),
@@ -135,6 +137,10 @@ impl State {
             self.shapes.add_shape(id);
         }
         self.current_id = Some(id);
+    }
+
+    pub fn is_potentially_cacheable_as_image(&self, id: Uuid) -> bool {
+        return self.selected.contains(&id)
     }
 
     pub fn has_shape(&mut self, id: Uuid) -> bool {
