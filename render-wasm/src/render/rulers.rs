@@ -139,7 +139,9 @@ pub fn render(canvas: &skia::Canvas, viewbox: Viewbox, fonts: &FontStore, state:
         zi,
     };
 
-    draw_background(&ctx, vw, vh);
+    if state.frame {
+        draw_background(&ctx, vw, vh);
+    }
 
     if state.visible {
         let step = calculate_step_size(zoom);

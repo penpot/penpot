@@ -56,9 +56,8 @@
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
-   [app.util.color :as uc]
+   [app.render-wasm.rulers-state :as rs]
    [app.util.debug :as dbg]
-   [app.util.dom :as dom]
    [app.util.text-editor :as ted]
    [app.util.theme :as theme]
    [app.util.timers :as ts]
@@ -66,27 +65,6 @@
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
-
-;; --- Ruler theme color resolution
-
-(def ^:private ruler-color-vars
-  {:bg     "--panel-background-color"
-   :border "--panel-border-color"
-   :label  "--layer-row-foreground-color"
-   :accent "--color-accent-tertiary"})
-
-(defn- resolve-ruler-color [k]
-  (uc/parse-css-color (dom/get-css-variable (get ruler-color-vars k) js/document.body)))
-
-(defn- push-ruler-colors! []
-  (let [bg     (resolve-ruler-color :bg)
-        border (resolve-ruler-color :border)
-        label  (resolve-ruler-color :label)
-        accent (resolve-ruler-color :accent)]
-    (if (and bg border label accent)
-      (wasm.api/set-rulers-colors! bg border label accent)
-      (js/console.error "Failed to resolve ruler CSS colors"
-                        (pr-str {:bg bg :border border :label label :accent accent})))))
 
 ;; --- Viewport
 
@@ -350,8 +328,16 @@
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
-        show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
+        rulers-ui                (rs/display-state
+                                  {:layout layout
+                                   :selected-shapes selected-shapes
+                                   :base-objects base-objects})
+        show-rulers?             (:show-rulers? rulers-ui)
+        frame-visible?           (:frame-visible? rulers-ui)
+        offset-x                 (:offset-x rulers-ui)
+        offset-y                 (:offset-y rulers-ui)
+        ruler-selection          (:ruler-selection rulers-ui)
 
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
@@ -384,17 +370,6 @@
              single-select?
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
-
-        selecting-first-level-frame?
-        (and single-select? (cfh/root-frame? first-shape))
-
-        offset-x (if selecting-first-level-frame?
-                   (:x first-shape)
-                   (:x selected-frame))
-
-        offset-y (if selecting-first-level-frame?
-                   (:y first-shape)
-                   (:y selected-frame))
 
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
@@ -528,33 +503,34 @@
 
     ;; Rulers-wasm: push visibility / offsets / selection band into the
     ;; render-wasm overlay (always active, no feature flag).
-    (let [ruler-selection (when (and show-rulers?
-                                     (d/not-empty? selected-shapes))
-                            (gsh/shapes->rect selected-shapes))]
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/push-ruler-theme-colors!)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/push-ruler-theme-colors!)
+           (wasm.api/request-render "rulers-colors-theme")))))
 
-      (mf/with-effect [@canvas-init?]
-        (when @canvas-init?
-          (push-ruler-colors!)
-          (theme/add-color-scheme-listener!
-           (fn []
-             (push-ruler-colors!)
-             (wasm.api/request-render "rulers-colors-theme")))))
+    (mf/with-effect [@canvas-init? frame-visible?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-frame-visible! frame-visible?)
+        (wasm.api/request-render "rulers-frame")))
 
-      (mf/with-effect [@canvas-init? show-rulers?]
-        (when @canvas-init?
-          (wasm.api/set-rulers-visible! show-rulers?)
-          (wasm.api/request-render "rulers-visible")))
+    (mf/with-effect [@canvas-init? show-rulers?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-visible! show-rulers?)
+        (wasm.api/request-render "rulers-visible")))
 
-      (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
-        (when (and @canvas-init? show-rulers?)
-          (wasm.api/set-rulers-offsets! offset-x offset-y)))
+    (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-offsets! offset-x offset-y)))
 
-      (mf/with-effect [@canvas-init? show-rulers?
-                       (some-> ruler-selection :x) (some-> ruler-selection :y)
-                       (some-> ruler-selection :width) (some-> ruler-selection :height)]
-        (when (and @canvas-init? show-rulers?)
-          (wasm.api/set-rulers-selection! ruler-selection)
-          (wasm.api/request-render "rulers-selection"))))
+    (mf/with-effect [@canvas-init? show-rulers?
+                     (some-> ruler-selection :x) (some-> ruler-selection :y)
+                     (some-> ruler-selection :width) (some-> ruler-selection :height)]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-selection! ruler-selection)
+        (wasm.api/request-render "rulers-selection")))
 
     ;; Paint background + rulers instantly, before shapes finish loading. Runs
     ;; after the ruler push effects so the WASM ruler state is already set.
@@ -629,12 +605,13 @@
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        ;; Initial load: clip the ruler strips (rounded to the
-                        ;; canvas corner) so the live rulers show through.
-                        :clip-path (when transition-reveal-rulers?
-                                     (dm/str "inset(" rulers/ruler-area-size "px 0 0 "
-                                             rulers/ruler-area-size "px round "
-                                             rulers/canvas-border-radius "px)"))}}]))
+                        ;; Initial load: clip to the live canvas frame (rounded
+                        ;; corner + ruler strips when present) so it shows
+                        ;; through. No frame in hide-UI mode -> no clip.
+                        :clip-path (when (and transition-reveal-rulers? frame-visible?)
+                                     (let [strip (if show-rulers? rulers/ruler-area-size 0)]
+                                       (dm/str "inset(" strip "px 0 0 " strip "px round "
+                                               rulers/canvas-border-radius "px)")))}}]))
 
 
      [:svg.viewport-controls

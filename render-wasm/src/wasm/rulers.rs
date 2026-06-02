@@ -14,6 +14,13 @@ pub extern "C" fn set_rulers_visible(visible: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn set_rulers_frame_visible(visible: u32) -> Result<()> {
+    get_render_state().rulers.frame = visible != 0;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn set_rulers_offsets(offset_x: f32, offset_y: f32) -> Result<()> {
     let r = &mut get_render_state().rulers;
     r.offset_x = offset_x;

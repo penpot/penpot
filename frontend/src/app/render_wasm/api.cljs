@@ -42,6 +42,7 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
+   [app.render-wasm.rulers-state :as rulers-state]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
@@ -351,6 +352,28 @@
      :zoom zoom
      :vbox vbox
      :background background}))
+
+(declare set-rulers-colors!
+         set-rulers-visible!
+         set-rulers-frame-visible!
+         set-rulers-offsets!
+         set-rulers-selection!)
+
+(defn push-ruler-theme-colors!
+  []
+  (if-let [{:keys [bg border label accent]} (rulers-state/theme-colors)]
+    (set-rulers-colors! bg border label accent)
+    (js/console.error "Failed to resolve ruler CSS colors")))
+
+(defn- sync-rulers-to-wasm!
+  [{:keys [show-rulers? frame-visible? offset-x offset-y ruler-selection push-colors?]
+    :or {push-colors? true frame-visible? true}}]
+  (when push-colors? (push-ruler-theme-colors!))
+  (set-rulers-frame-visible! frame-visible?)
+  (set-rulers-visible! show-rulers?)
+  (when show-rulers?
+    (set-rulers-offsets! offset-x offset-y)
+    (set-rulers-selection! ruler-selection)))
 
 (defn free-gpu-resources
   []
@@ -2070,6 +2093,7 @@
                                 :on-render on-render
                                 :on-shapes-ready on-shapes-ready
                                 :force-sync force-sync)
+           (sync-rulers-to-wasm! (rulers-state/from-store @st/state))
            (request-render "reload-renderer")
            (ug/dispatch! (ug/event "penpot:wasm:reload-complete"))
            payload))
@@ -2092,6 +2116,10 @@
 (defn set-rulers-visible!
   [visible?]
   (h/call wasm/internal-module "_set_rulers_visible" (if visible? 1 0)))
+
+(defn set-rulers-frame-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_frame_visible" (if visible? 1 0)))
 
 (defn set-rulers-offsets!
   [offset-x offset-y]

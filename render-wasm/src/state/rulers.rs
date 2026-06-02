@@ -3,6 +3,9 @@ use skia_safe::{self as skia, Rect};
 #[derive(Debug, Clone, Copy)]
 pub struct RulerState {
     pub visible: bool,
+    // The rounded canvas frame/border. Drawn even when `visible` is false
+    // (rulers toggled off), but hidden in hide-UI mode.
+    pub frame: bool,
     pub offset_x: f32,
     pub offset_y: f32,
     pub selection: Option<Rect>,
@@ -16,6 +19,7 @@ impl Default for RulerState {
     fn default() -> Self {
         Self {
             visible: false,
+            frame: true,
             offset_x: 0.0,
             offset_y: 0.0,
             selection: None,
