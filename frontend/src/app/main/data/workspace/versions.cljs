@@ -176,24 +176,35 @@
 ;; RESTORE VERSION EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn exit-preview
-  "Exit from preview mode and reload the live file data"
+(defn- exit-preview-cleanup
+  "Restore the backed-up live file data and clear the preview flags."
   []
-  (ptk/reify ::exit-preview
+  (ptk/reify ::exit-preview-cleanup
     ptk/UpdateEvent
     (update [_ state]
       (let [backup (dm/get-in state [:workspace-versions :backup])]
         (-> state
             (update :workspace-versions dissoc :backup)
             (update :workspace-global dissoc :read-only? :preview-id)
-            (update :files assoc (:id backup) backup))))
+            (update :files assoc (:id backup) backup))))))
 
+(defn exit-preview
+  "Exit from preview mode and reload the live file data.
+
+  No-op when there is no preview to exit (no backup stored), so it is
+  safe to call from the restore dialog dismiss action even when the
+  restore was triggered directly without entering preview first."
+  []
+  (ptk/reify ::exit-preview
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)]
-
-        (rx/of (dwpg/initialize-page file-id page-id))))))
+      ;; Ensure we are actually in preview mode. Otherwise there
+      ;; is no backup to restore and wasm crashes
+      (when (dm/get-in state [:workspace-versions :backup])
+        (let [file-id (:current-file-id state)
+              page-id (:current-page-id state)]
+          (rx/of (exit-preview-cleanup)
+                 (dwpg/initialize-page file-id page-id)))))))
 
 (defn- restore-version
   [id]
