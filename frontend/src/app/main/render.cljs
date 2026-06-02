@@ -661,17 +661,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- get-image-data [shape]
-  (cond
-    (= :image (:type shape))
-    [(:metadata shape)]
+  (let [fill-images (->> (:fills shape)
+                         (keep :fill-image))]
+    (cond
+      (= :image (:type shape))
+      (cond-> [(:metadata shape)]
+        (seq fill-images) (into fill-images))
 
-    (some? (:fill-image shape))
-    [(:fill-image shape)]
+      (some? (:fill-image shape))
+      (cond-> [(:fill-image shape)]
+        (seq fill-images) (into fill-images))
 
-    :else
-    []))
+      :else
+      (vec fill-images))))
 
-(defn- populate-images-cache
+(defn populate-images-cache
   [objects]
   (let [images (->> objects
                     (vals)

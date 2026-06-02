@@ -44,7 +44,8 @@
         height     (dm/get-prop selrect :height)
 
         has-image? (or (some? metadata)
-                       (some? image))
+                       (some? image)
+                       (some :fill-image fills))
 
         uri        (cond
                      (some? metadata)
@@ -53,7 +54,7 @@
                      (some? image)
                      (cf/resolve-file-media image))
 
-        uris       (into [uri]
+        uris       (into (cond-> [] (some? uri) (conj uri))
                          (comp
                           (keep :fill-image)
                           (map cf/resolve-file-media))
@@ -129,19 +130,22 @@
                    [:> :image image-props])
                  [:> :rect props])))
 
-           (when ^boolean has-image?
+           (when (some? uri)
              [:g
-              ;; We add this shape to add a padding so the patter won't repeat
+              ;; We add this shape to add a padding so the pattern won't repeat
               ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
+              ;;
+              ;; This padding image only applies to legacy/top-level shape images.
+              ;; Nested fill images already render inside the fill loop above; emitting
+              ;; an extra <image> without a href can break SVG pattern rasterization
+              ;; during bitmap export.
               [:rect {:x 0
                       :y 0
                       :width (* width no-repeat-padding)
                       :height (* height no-repeat-padding)
                       :fill "none"}]
-              [:image {:href uri
+              [:image {:href (get embed uri uri)
                        :preserveAspectRatio "none"
-                       :x 0
-                       :y 0
                        :width width
                        :height height}]])]])])))
 

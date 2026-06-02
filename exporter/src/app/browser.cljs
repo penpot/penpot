@@ -60,6 +60,35 @@
                           :cause (ex-message cause))
                   (p/resolved nil))))))
 
+(defn wait-for-images
+  "Wait until HTML and SVG images currently present in the page are loadable."
+  ([page] (wait-for-images page nil))
+  ([page {:keys [timeout] :or {timeout 15000}}]
+   (-> (.evaluate ^js page
+                  (js* "() => {
+  const hrefOf = (node) => {
+    if (node.currentSrc) return node.currentSrc;
+    if (node.src) return node.src;
+    const href = node.getAttribute && (node.getAttribute('href') || node.getAttribute('xlink:href'));
+    return href || '';
+  };
+  const urls = Array.from(document.querySelectorAll('img, image'))
+    .map(hrefOf)
+    .filter((href) => href && !href.startsWith('data:'));
+  return Promise.all(urls.map((url) => new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  }))).then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+}"))
+       (p/timeout timeout)
+       (p/catch (fn [cause]
+                  (l/warn :hint "wait-for-images timed out; continuing anyway"
+                          :cause (ex-message cause))
+                  (p/resolved nil))))))
+
 (defn wait-for
   ([locator] (wait-for locator nil))
   ([locator {:keys [state timeout] :or {state "visible" timeout 10000}}]
