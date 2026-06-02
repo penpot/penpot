@@ -133,6 +133,10 @@
   []
   (rp/cmd! ::get-nitrate-connectivity {}))
 
+(defn fetch-subscription-warning
+  []
+  (rp/cmd! ::get-subscription-warning {}))
+
 (defn is-valid-license?
   [profile]
   (and (contains? cf/flags :nitrate)
