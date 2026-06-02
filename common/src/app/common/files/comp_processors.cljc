@@ -57,9 +57,9 @@
            {:result :update :updated-shape (dissoc shape :component-root)})
          {:result :keep})))
     (catch #?(:clj Throwable :cljs :default) e
-      (log/error :msg "Failed to normalize :component-root on shapes"
-                 :file-id (:id file-data)
-                 :cause e)
+      (log/warn :msg "Failed to normalize :component-root on shapes"
+                :file-id (:id file-data)
+                :cause e)
       file-data)))
 
 (defn fix-missing-swap-slots
@@ -89,9 +89,9 @@
              {:result :keep}))
          {:result :keep})))
     (catch #?(:clj Throwable :cljs :default) e
-      (log/error :msg "Failed to fix missing swap slots on shapes"
-                 :file-id (:id file-data)
-                 :cause e)
+      (log/warn :msg "Failed to fix missing swap slots on shapes"
+                :file-id (:id file-data)
+                :cause e)
       file-data)))
 
 (defn sync-component-id-with-ref-shape
@@ -136,9 +136,9 @@
                        {:result :keep}))
                    {:result :keep})))
               (catch #?(:clj Throwable :cljs :default) e
-                (log/error :msg "Failed to sync component id and file with ref shape"
-                           :file-id (:id file-data)
-                           :cause e)
+                (log/warn :msg "Failed to sync component id and file with ref shape"
+                          :file-id (:id file-data)
+                          :cause e)
                 file-data)))]
     ;; If a copy inside a main is updated, we need to repeat the process for the change to be
     ;; propagated to all copies.
