@@ -9,7 +9,6 @@
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
@@ -30,7 +29,7 @@
       (default-validate-token)))
 
 (mf/defc form*
-  [{:keys [token token-type selected-token-set-id] :rest props}]
+  [{:keys [token token-type] :rest props}]
   (let [token
         (mf/with-memo [token]
           (if token
@@ -38,11 +37,7 @@
             {:type token-type}))
         props (mf/spread-props props {:token token
                                       :token-type token-type
-                                      :make-schema #(-> (cfo/make-token-schema %1
-                                                                               token-type
-                                                                               selected-token-set-id
-                                                                               (when (ctob/token? token)
-                                                                                 (ctob/get-id token)))
+                                      :make-schema #(-> (cfo/make-token-schema %1 token-type)
                                                         (sm/dissoc-key :id)
                                                         ;; The value as edited in the form is a simple stirng.
                                                         ;; It's converted to vector in the validator.
