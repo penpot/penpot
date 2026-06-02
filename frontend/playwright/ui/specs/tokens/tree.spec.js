@@ -303,9 +303,9 @@ test("User can see an error on token pill and token modal form when token has an
     .getByRole("checkbox")
     .click();
 
-  await createToken(page, "Border radius", "a.b", "Value", "23");
+  await createToken(page, "Border radius", "a.b", "Value", "textbox", "23");
   await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
-  await createToken(page, "Border radius", "a", "Value", "25");
+  await createToken(page, "Border radius", "a", "Value", "textbox", "25");
   await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
 
   const brokenTokenPill = tokensSidebar.getByRole("button", {

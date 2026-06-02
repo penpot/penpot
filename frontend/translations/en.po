@@ -1941,6 +1941,10 @@ msgid "errors.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
 
 #: src/app/main/data/media.cljs:74
+msgid "errors.token-theme-not-existing-sets"
+msgstr "The theme refers to some not existing sets: %s"
+
+#: src/app/main/data/media.cljs:73
 msgid "errors.unexpected-error"
 msgstr "An unexpected error occurred."
 
@@ -5832,7 +5836,27 @@ msgstr "Inviting people while on the Unlimited plan"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Power up"
 
-#: src/app/main/ui/settings/subscription.cljs:409
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Unlock Enterprise features"
+
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "Set fine-grained permissions and keep your design operations secure, without compromising the open-source freedom your team already loves."
+
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Renew your subscription"
+
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Your Enterprise subscription expires in %s days (%s)"
+
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Your Enterprise subscription has expired. (%s)"
+
+msgid "subscription.dashboard.banner.renew"
+msgstr "Renew"
+
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Get started with Enterprise"
+
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Payment was not completed. Try again whenever you're ready."
 

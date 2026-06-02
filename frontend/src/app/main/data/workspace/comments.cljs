@@ -274,7 +274,8 @@
   (ptk/reify ::navigate-to-comment-id
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (if-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-comment-threads {:file-id file-id})
              (rx/map #(d/seek (fn [{:keys [id]}] (= thread-id id)) %))
-             (rx/map navigate-to-comment))))))
+             (rx/map navigate-to-comment))
+        (rx/empty)))))

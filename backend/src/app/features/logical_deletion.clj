@@ -22,7 +22,8 @@
       (and (= "unlimited" type) (not (contains? canceled-status status)))
       (ct/duration {:days 30})
 
-      (and (= "enterprise" type) (not (contains? canceled-status status)))
+      (and (contains? #{"enterprise" "nitrate"} type)
+           (not (contains? canceled-status status)))
       (ct/duration {:days 90})
 
       :else

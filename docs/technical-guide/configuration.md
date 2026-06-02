@@ -19,13 +19,13 @@ with <code class="language-bash">PENPOT_</code>. **Flags** use the format
 
 Flags are used to enable/disable a feature or behaviour (registration, feedback),
 while environment variables are used to configure the settings (auth, smtp, etc).
-Flags and evironment variables are also used together; for example:
+Flags and environment variables are also used together; for example:
 
 ```bash
 # This flag enables the use of SMTP email
 PENPOT_FLAGS: [...] enable-smtp
 
-# These environment variables configure the specific SMPT service
+# These environment variables configure the specific SMTP service
 # Backend
 PENPOT_SMTP_HOST: <host>
 PENPOT_SMTP_PORT: 587
@@ -217,7 +217,7 @@ Added the ability to specify custom OIDC scopes.
 
 ```bash
 # This settings allow overwrite the required scopes, use with caution
-# because Penpot requres at least `name` and `email` attrs found on the
+# because Penpot requires at least `name` and `email` attrs found on the
 # user info. Optional, defaults to `openid profile`.
 PENPOT_OIDC_SCOPES: "scope1 scope2"
 ```
@@ -230,11 +230,11 @@ the userinfo object for the profile creation.
 
 ```bash
 # Attribute to use for lookup the name on the user object. Optional,
-# if not perovided, the `name` prop will be used.
+# if not provided, the `name` prop will be used.
 PENPOT_OIDC_NAME_ATTR:
 
 # Attribute to use for lookup the email on the user object. Optional,
-# if not perovided, the `email` prop will be used.
+# if not provided, the `email` prop will be used.
 PENPOT_OIDC_EMAIL_ATTR:
 ```
 <br />
@@ -343,9 +343,9 @@ By default, <code class="language-bash">smtp</code> flag is disabled, the email 
 printed to the console, which means that the emails will be shown in the stdout.
 
 Note that if you plan to invite members to a team, it is recommended that you enable SMTP
-as they will need to login to their account after recieving the invite link sent an in email.
+as they will need to login to their account after receiving the invite link sent an in email.
 It is currently not possible to just add someone to a team without them accepting an
-invatation email.
+invitation email.
 
 If you have an SMTP service, uncomment the appropriate settings section in
 <code class="language-bash">docker-compose.yml</code> and configure those
@@ -506,7 +506,7 @@ POSTGRES_PASSWORD: penpot
 
 Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
 
-Objects storage is implemented using "plugable" backends. Currently there are two
+Objects storage is implemented using "pluggable" backends. Currently there are two
 backends available: <code class="language-bash">fs</code> and <code class="language-bash">s3</code> (for AWS S3).
 
 __Since version 2.11.0__
