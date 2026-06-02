@@ -22,6 +22,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*] :as su]
    [app.main.ui.hooks :as h]
@@ -81,46 +82,49 @@
                   :trigger-ref element-ref
                   :id element-id}
 
-     [:div {:class           (stl/css :color-row-colorpicker)
-            :ref             element-ref
-            :role            "listitem"
-            :aria-labelledby element-id
-            :on-click        handle-click}
+     [:li {:aria-labelledby element-id
+           :ref             element-ref}
+      [:button {:class           (stl/css :color-row-colorpicker)
+                :on-key-down     (fn [e]
+                                   (when (or (= (.-key e) "Enter") (= (.-key e) " "))
+                                     (.preventDefault e)
+                                     (handle-click e)))
+                :on-click        handle-click}
 
-      [:> swatch* {:background   color-item
-                   :show-tooltip false
-                   :size         "medium"}]
-      (cond
-        gradient
-        (if name
-          [:span {:class (stl/css :color-row-colorpicker-label)}
-           (str name)
-           [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
-            gradient-text]]
+       [:> swatch* {:background   color-item
+                    :show-tooltip false
+                    :size         "medium"}]
+       (cond
+         gradient
+         (if name
+           [:span {:class (stl/css :color-row-colorpicker-label)}
+            (str name)
+            [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
+             gradient-text]]
 
-          [:span {:class (stl/css :color-row-colorpicker-label)}
-           (tr "media.gradient")
-           [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
-            gradient-text]])
+           [:span {:class (stl/css :color-row-colorpicker-label)}
+            (tr "media.gradient")
+            [:span {:class (stl/css :color-row-colorpicker-gradient-type)}
+             gradient-text]])
 
-        image
-        [:span (tr "media.image")]
+         image
+         [:span (tr "media.image")]
 
-        color
-        (if name
-          [:span {:class (stl/css :color-row-colorpicker-label)}
-           name
-           (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
-             [:span {:class (stl/css :color-row-colorpicker-opacity)}
-              opacity-text])]
-          [:span {:class (stl/css :color-row-colorpicker-label)}
-           color
-           (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
-             [:span {:class (stl/css :color-row-colorpicker-opacity)}
-              opacity-text])])
+         color
+         (if name
+           [:span {:class (stl/css :color-row-colorpicker-label)}
+            name
+            (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
+              [:span {:class (stl/css :color-row-colorpicker-opacity)}
+               opacity-text])]
+           [:span {:class (stl/css :color-row-colorpicker-label)}
+            color
+            (when (and (number? (:opacity color-item)) (< (:opacity color-item) 1))
+              [:span {:class (stl/css :color-row-colorpicker-opacity)}
+               opacity-text])])
 
-        :else
-        [:span (tr "labels.other")])]]))
+         :else
+         [:span (tr "labels.other")])]]]))
 
 ;; ---------------------------------------------------------------------------
 ;; Grouped color list
@@ -278,8 +282,8 @@
 
     ;; Load library colors when the selected library (or filter options) change.
     ;;
-    ;; flat    current-colors*  — used for the grid view and the recent list view.
-    ;; grouped grouped-colors*  — used for the library grouped list view.
+    ;; flat    current-colors*  -- used for the grid view and the recent list view.
+    ;; grouped grouped-colors*  -- used for the library grouped list view.
     ;;
     ;; Library colors are fully converted with `library-color->color` here so
     ;; the render path never needs to do it.  `flat-colors` is materialised as
@@ -305,14 +309,14 @@
                                 (filter valid-color?)
                                 (sort-by :name))
 
-                ;; Eager vector for the grid view — index-based ::id for keying.
+                ;; Eager vector for the grid view -- index-based ::id for keying.
                 flat-colors (into []
                                   (map-indexed (fn [index color]
                                                  (-> (ctc/library-color->color color resolved-file-id)
                                                      (vary-meta assoc ::id (dm/str index)))))
                                   raw-colors)
 
-                ;; Group tree with colors already converted — no conversions at render time.
+                ;; Group tree with colors already converted -- no conversions at render time.
                 grouped (some-> (grp/group-assets raw-colors false)
                                 (convert-grouped-colors resolved-file-id))]
             (reset! current-colors* flat-colors)
@@ -350,34 +354,48 @@
           :icon       i/add}])]
 
      (if (= view-mode :grid)
-       [:div {:class     (stl/css :selected-colors)
-              :role      "list"
-              :aria-label (tr "workspace.assets.colors")}
-        (for [color current-colors]
-          [:div {:role "listitem"
-                 :key  (-> color meta ::id)}
-           [:> swatch* {:background color
-                        :on-click   on-color-click
-                        :size       "medium"}]])]
-
-       [:div {:class      (stl/css :selected-colors-list)
-              :role       "list"
-              :aria-label (tr "workspace.assets.colors")}
-        (if (= selected :recent)
-          ;; Recent colors have no path/groups — render flat
+       ;; Grid view
+       (if (seq current-colors)
+         [:ul {:class      (stl/css :selected-colors)
+               :aria-label (tr "workspace.assets.colors")}
           (for [color current-colors]
-            [:> color-row-colorpicker*
-             {:key        (-> color meta ::id)
-              :color-item color
-              :on-click   on-color-click}])
+            [:li {:key  (-> color meta ::id)}
+             [:> swatch* {:background color
+                          :on-click   on-color-click
+                          :size       "medium"}]])]
+         [:> empty-state* {:icon "swatches"
+                           :class (stl/css :empty-state)
+                           :text (if (= selected :recent)
+                                   (tr "workspace.libraries.colors.empty-recent-colors")
+                                   (tr "workspace.libraries.colors.empty-palette"))}])
 
-          ;; Library colors — grouped list view
-          (when (seq grouped-colors)
-            (let [resolved-file-id (if (= selected :file) file-id selected)]
+       ;; List view
+       (if (= selected :recent)
+         ;; Recent colors -- flat list or empty state
+         (if (seq current-colors)
+           [:ul {:class      (stl/css :selected-colors-list)
+                 :aria-label (tr "workspace.assets.colors")}
+            (for [color current-colors]
+              [:> color-row-colorpicker*
+               {:key        (-> color meta ::id)
+                :color-item color
+                :on-click   on-color-click}])]
+           [:> empty-state* {:icon "swatches"
+                             :class (stl/css :empty-state)
+                             :text (tr "workspace.libraries.colors.empty-recent-colors")}])
+
+         ;; Library colors -- grouped list view or empty state
+         (if (seq grouped-colors)
+           (let [resolved-file-id (if (= selected :file) file-id selected)]
+             [:ul {:class      (stl/css :selected-colors-list)
+                   :aria-label (tr "workspace.assets.colors")}
               [:> color-group-list*
                {:groups           grouped-colors
                 :prefix           ""
                 :resolved-file-id resolved-file-id
                 :on-color-click   on-color-click
                 :open-groups      open-groups
-                :on-toggle-group  on-toggle-group}])))])]))
+                :on-toggle-group  on-toggle-group}]])
+           [:> empty-state* {:icon "swatches"
+                             :class (stl/css :empty-state)
+                             :text (tr "workspace.libraries.colors.empty-palette")}])))]))

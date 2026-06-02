@@ -6983,6 +6983,10 @@ msgstr "Add color to library"
 msgid "workspace.libraries.colors.show-color-palette"
 msgstr "Show color palette"
 
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "There are no recent colors yet"
+
 #: src/app/main/ui/workspace/colorpicker.cljs
 #, unused
 msgid "workspace.libraries.colors.rgb-complementary"

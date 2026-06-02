@@ -11,6 +11,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.json :as json]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.types.color :as ct]
    [app.config :as cfg]
@@ -31,10 +32,16 @@
 
         gradient (:gradient color-item)
         image    (:image color-item)
-        color    (:color color-item)]
+        color    (:color color-item)
+        opacity  (:opacity color-item)
+        opacity-text (when (< (:opacity color-item) 1)
+                       (str  (mth/round (* (:opacity color-item) 100)) "%"))]
 
     (if (some? name)
       (cond
+        (and (some? opacity) (some? color) (< (:opacity color-item) 1))
+        (str/ffmt "% (% - %)" path-and-name color opacity-text)
+
         (some? color)
         (str/ffmt "% (%)" path-and-name color)
 
@@ -48,6 +55,9 @@
         path-and-name)
 
       (cond
+        (and (some? opacity) (some? color) (< (:opacity color-item) 1))
+        (str/ffmt "% (%)" color opacity-text)
+
         (some? color)
         color
 

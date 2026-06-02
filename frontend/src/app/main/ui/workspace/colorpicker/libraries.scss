@@ -42,6 +42,7 @@
 
   inline-size: calc(var(--colorpicker-width) - #{px2rem(67)});
   color: var(--color-foreground-primary);
+  text-align: left;
 }
 
 .color-row-colorpicker-gradient-type,
@@ -50,13 +51,16 @@
 }
 
 .color-row-colorpicker {
+  border: none;
+  background: none;
+  cursor: pointer;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--sp-xs);
   min-block-size: $sz-32;
   inline-size: calc(var(--colorpicker-width) - #{px2rem(35)});
-  cursor: pointer;
   align-items: center;
+  justify-content: start;
   border-radius: $br-8;
   padding-block: 0;
   padding-inline: var(--sp-xs);
@@ -108,4 +112,8 @@
   align-items: center;
   overflow: initial;
   gap: var(--sp-xs);
+}
+
+.empty-state {
+  margin-block: px2rem(40) px2rem(48);
 }
