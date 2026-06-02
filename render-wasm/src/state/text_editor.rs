@@ -426,8 +426,6 @@ impl TextEditorState {
         let Some(last_paragraph) = text_content.paragraphs().last() else {
             return false;
         };
-        #[allow(dead_code)]
-        let _num_spans = last_paragraph.children().len() - 1;
         let Some(_last_text_span) = last_paragraph.children().last() else {
             return false;
         };

@@ -7,6 +7,7 @@ pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::error::{Error, Result};
+use crate::render::FrameType;
 use crate::shapes::{grid_layout::grid_cell_data, Shape};
 use crate::uuid::Uuid;
 use crate::{get_render_state, tiles};
@@ -64,11 +65,11 @@ impl State {
         get_render_state().render_from_cache(&self.shapes);
     }
 
-    pub fn render_sync(&mut self, timestamp: i32) -> Result<()> {
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<FrameType> {
         get_render_state().start_render_loop(None, &self.shapes, timestamp, true)
     }
 
-    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<()> {
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<FrameType> {
         get_render_state().start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
@@ -81,7 +82,7 @@ impl State {
         get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
         let render_state = get_render_state();
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the
@@ -92,12 +93,11 @@ impl State {
         if render_state.zoom_changed() {
             render_state.rebuild_tile_index(&self.shapes);
         }
-
         render_state.start_render_loop(None, &self.shapes, timestamp, false)
     }
 
-    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<()> {
-        get_render_state().process_animation_frame(None, &self.shapes, timestamp)
+    pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
+        get_render_state().continue_render_loop(None, &self.shapes, timestamp)
     }
 
     pub fn clear_focus_mode(&mut self) {

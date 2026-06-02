@@ -149,7 +149,7 @@ Stroke caps are serialized as `u8`:
 | 7     | Square        |
 | \_    | None          |
 
-## Stroke Sytles
+## Stroke Styles
 
 Stroke styles are serialized as `u8`:
 

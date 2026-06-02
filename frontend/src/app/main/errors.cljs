@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.errors
   "Generic error handling"
@@ -36,7 +36,7 @@
 (defn is-plugin-error?
   "This is a placeholder that always return false. It will be
   overwritten when plugin system is initialized. This works this way
-  because we can't import plugins here because plugins requries full
+  because we can't import plugins here because plugins requires full
   DOM.
 
   This placeholder is set on app.plugins/initialize event"
@@ -553,4 +553,3 @@
     (fn []
       (.removeEventListener g/window "error" on-unhandled-error)
       (.removeEventListener g/window "unhandledrejection" on-unhandled-rejection))))
-

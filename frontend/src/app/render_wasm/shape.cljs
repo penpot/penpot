@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.shape
   (:require
@@ -405,7 +405,7 @@
                   (= k :type))))))
 
 (defn create-shape
-  "Instanciate a shape from a map"
+  "Instantiate a shape from a map"
   [attrs]
   (ShapeProxy. (:id attrs)
                (:type attrs)

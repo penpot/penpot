@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.container
   (:require
@@ -405,7 +405,7 @@
       (map remap-ids new-shapes)])))
 
 (defn get-first-valid-parent
-  "Go trough the parents until we find a shape that is not a copy of a component nor
+  "Go through the parents until we find a shape that is not a copy of a component nor
    a variant container."
   [objects id]
   (let [shape (get objects id)]
@@ -517,7 +517,7 @@
      :any-main-descendant any-main-descendant}))
 
 (defn find-valid-parent-and-frame-ids
-  "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
+  "Navigate through the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
   ([parent-id objects children]
    (find-valid-parent-and-frame-ids parent-id objects children false nil nil))
   ([parent-id objects children pasting? libraries]

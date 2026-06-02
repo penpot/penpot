@@ -391,6 +391,24 @@
                              profile-id)
                         schema:subscription params)))
 
+(def ^:private schema:subscription-warning
+  [:maybe
+   [:map {:title "SubscriptionWarning"}
+    [:type {:optional true} ::sm/text]
+    [:days-from-expiry {:optional true} ::sm/int]
+    [:days-until-expiry {:optional true} ::sm/int]
+    [:expiration-date {:optional true} schema:timestamp]]])
+
+(defn- get-subscription-warning-api
+  [cfg {:keys [penpot-id profile-id] :as params}]
+  (let [baseuri   (cf/get :nitrate-backend-uri)
+        penpot-id (or penpot-id profile-id)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/subscription-warning/"
+                             penpot-id)
+                        schema:subscription-warning params)))
+
 (defn- get-connectivity-api
   [cfg params]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -459,6 +477,7 @@
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
+     :get-subscription-warning     (partial get-subscription-warning-api cfg)
      :connectivity                 (partial get-connectivity-api cfg)
      :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
 
@@ -527,6 +546,3 @@
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
-
-
-

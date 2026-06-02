@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.plugins.context-shapes-test
   (:require
@@ -54,7 +54,7 @@
              :stops [{:color "#b400ff" :opacity 1 :offset 0}
                      {:color "#0c3fd5" :opacity 1 :offset 1}]}]
 
-        (t/testing "Basic shape properites"
+        (t/testing "Basic shape properties"
           (t/testing " - name"
             (set! (.-name shape) "TEST")
             (t/is (= (.-name shape) "TEST"))

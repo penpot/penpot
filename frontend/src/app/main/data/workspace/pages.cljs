@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.pages
   (:require
@@ -379,15 +379,18 @@
             pages   (:pages fdata)
 
             index   (d/index-of pages id)
-            page    (get pindex id)
-            page    (assoc page :index index)
-            pages   (filter #(not= % id) pages)
+            page    (get pindex id)]
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data fdata)
-                        (delete-page-components page)
-                        (pcb/del-page page))]
+        (if (nil? page)
+          (rx/empty)
+          (let [page    (assoc page :index index)
+                pages   (filter #(not= % id) pages)
 
-        (rx/of (dch/commit-changes changes)
-               (when (= id (:current-page-id state))
-                 (dcm/go-to-workspace {:page-id (first pages)})))))))
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data fdata)
+                            (delete-page-components page)
+                            (pcb/del-page page))]
+
+            (rx/of (dch/commit-changes changes)
+                   (when (= id (:current-page-id state))
+                     (dcm/go-to-workspace {:page-id (first pages)})))))))))

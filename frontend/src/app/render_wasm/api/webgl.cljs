@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.api.webgl
   "WebGL utilities for pixel capture and rendering"
@@ -10,15 +10,6 @@
    [app.common.logging :as log]
    [app.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
-
-(defn max-texture-size
-  "Returns `gl.MAX_TEXTURE_SIZE` (max dimension of a 2D texture), or nil if
-  unavailable."
-  [gl]
-  (when gl
-    (let [n (.getParameter ^js gl (.-MAX_TEXTURE_SIZE ^js gl))]
-      (when (and (number? n) (pos? n) (js/isFinite n))
-        (js/Math.floor n)))))
 
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"

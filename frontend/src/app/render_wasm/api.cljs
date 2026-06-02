@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.api
   "A WASM based render API"
@@ -85,6 +85,15 @@
 
 (def ^:private snapshot-capture-debounce-ms 250)
 
+
+(defn initialized?
+  "True when the WASM render context is ready to receive design-state
+  operations. Use it to skip WASM work during transient states (e.g. while
+  switching renderer with a text shape being edited)."
+  []
+  (and wasm/context-initialized? (not @wasm/context-lost?)))
+
+
 (defn set-transition-image-from-background!
   "Sets `transition-image-url*` to a data URL representing a solid background color."
   [background]
@@ -161,8 +170,7 @@
 (defonce ^:private schedule-canvas-snapshot-capture!
   (fns/debounce
    (fn []
-     (when (and wasm/context-initialized?
-                (not @wasm/context-lost?)
+     (when (and (initialized?)
                 (some? wasm/canvas))
        (-> (webgl/capture-canvas-snapshot-url)
            (p/catch (fn [_] nil)))))
@@ -298,6 +306,20 @@
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
 
+;; These are the type of frames we have in our
+;; render pipeline.
+(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
+(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
+(def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+
+(defn- internal-render
+  ([]
+   (internal-render 0))
+  ([timestamp]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+     (request-render "frame-type-partial"))))
+
 (defn- build-reload-payload
   "Builds renderer reload payload from current application state.
    Avoids keeping heavyweight object snapshots in memory."
@@ -323,15 +345,14 @@
   []
   ;; check if the context has not been lost already or we will get warnings about
   ;; removing objects from a non-current context
-  (when (and wasm/context-initialized?
-             (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_free_gpu_resources")))
 
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render" timestamp)
+    (internal-render timestamp)
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
@@ -361,13 +382,13 @@
 
 (defn render-sync
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_render_sync")
     (set! wasm/internal-frame-id nil)))
 
 (defn render-sync-shape
   [id]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_render_sync_shape"
               (aget buffer 0)
@@ -380,7 +401,7 @@
   "Render a lightweight preview without tile caching.
    Used during progressive loading for fast feedback."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_render_preview")))
 
 
@@ -394,7 +415,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
+  (when (and (initialized?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -431,7 +452,7 @@
 
 (defn use-shape
   [id]
-  (when wasm/context-initialized?
+  (when (initialized?)
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_use_shape"
               (aget buffer 0)
@@ -441,7 +462,7 @@
 
 (defn has-shape
   [id]
-  (when wasm/context-initialized?
+  (when (initialized?)
     (let [buffer (uuid/get-u32 id)
 
           result
@@ -459,17 +480,20 @@
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
 
-  (h/call wasm/internal-module "_clear_shape_text")
+  ;; The WASM design state may not be ready (e.g. while switching renderer
+  ;; with a text shape being edited). Skip the WASM layout calls in that case.
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_shape_text")
 
-  (set-shape-vertical-align (get content :vertical-align))
+    (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (f/get-content-fonts content)
-        fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts all-fonts)]
-    (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
-    result))
+    (let [fonts         (f/get-content-fonts content)
+          fallback-fonts (fonts-from-text-content content true)
+          all-fonts (concat fonts fallback-fonts)
+          result (f/store-fonts all-fonts)]
+      (f/load-fallback-fonts-for-editor! fallback-fonts)
+      (h/call wasm/internal-module "_update_shape_text_layout")
+      result)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -1135,21 +1159,23 @@
    (use-shape id)
    (get-text-dimensions))
   ([]
-   (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
-                       (mem/->offset-32))
-         heapf32   (mem/get-heap-f32)
-         width     (aget heapf32 (+ offset 0))
-         height    (aget heapf32 (+ offset 1))
-         max-width (aget heapf32 (+ offset 2))
+   (if-not (initialized?)
+     {:x 0 :y 0 :width 0 :height 0 :max-width 0}
+     (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
+                         (mem/->offset-32))
+           heapf32   (mem/get-heap-f32)
+           width     (aget heapf32 (+ offset 0))
+           height    (aget heapf32 (+ offset 1))
+           max-width (aget heapf32 (+ offset 2))
 
-         x (aget heapf32 (+ offset 3))
-         y (aget heapf32 (+ offset 4))]
-     (mem/free)
-     {:x x :y y :width width :height height :max-width max-width})))
+           x (aget heapf32 (+ offset 3))
+           y (aget heapf32 (+ offset 4))]
+       (mem/free)
+       {:x x :y y :width width :height height :max-width max-width}))))
 
 (defn intersect-position-in-shape
   [id position]
-  (if (and wasm/context-initialized? (not @wasm/context-lost?))
+  (if (initialized?)
     (let [buffer (uuid/get-u32 id)
           result
           (h/call wasm/internal-module "_intersect_position_in_shape"
@@ -1180,7 +1206,7 @@
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
-            (when (and wasm/context-initialized? (not @wasm/context-lost?))
+            (when (initialized?)
               (view-interaction-end!)
               ;; Use async _render: visible tiles render synchronously
               ;; (no yield), interest-area tiles render progressively
@@ -1189,7 +1215,7 @@
               ;; completes in the first frame.  For zoom, interest-
               ;; area tiles (~3 tile margin) don't block the main
               ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
+              (internal-render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1207,8 +1233,7 @@
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
   [state]
-  (when (and wasm/context-initialized?
-             (not @wasm/context-lost?))
+  (when (initialized?)
     (let [zoom (get-in state [:workspace-local :zoom])
           vbox (get-in state [:workspace-local :vbox])]
       (when (and zoom vbox)
@@ -1666,7 +1691,8 @@
 
 (defn clean-modifiers
   []
-  (h/call wasm/internal-module "_clean_modifiers"))
+  (when (initialized?)
+    (h/call wasm/internal-module "_clean_modifiers")))
 
 (defn set-modifiers-start
   "Enter interactive transform mode (drag / resize / rotate). Enables
@@ -1674,7 +1700,7 @@
    backdrop so tiles do not appear sequentially or flicker while the
    gesture is in progress."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_set_modifiers_start")))
 
 (defn set-modifiers-end
@@ -1682,7 +1708,7 @@
    scheduled under it; the caller is expected to trigger a full-quality
    render (via `request-render`) once the gesture is committed."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_set_modifiers_end")))
 
 (defn set-modifiers
@@ -1792,50 +1818,19 @@
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
 
-(defn- wasm-aa-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
+(defn- wasm-get-numeric-value
+  [name]
   (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:aa_threshold p))]
+                   (get p name))]
     (let [n (if (string? raw) (js/parseFloat raw) raw)]
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
-(defn- wasm-blur-downscale-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:blur_downscale_threshold p))]
-    (let [n (if (string? raw) (js/parseFloat raw) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-max-blocking-time-ms-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:max_blocking_time_ms p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-node-batch-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:node_batch_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
-
-(defn- wasm-viewport-interest-area-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:viewport_interest_area_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+(defn- wasm-set-param-from-route-params-if-present
+  [param-name]
+  (when-let [value (wasm-get-numeric-value param-name)]
+    (let [setter-name (str/concat "_set_" (name param-name))]
+      (h/call wasm/internal-module setter-name value))))
 
 (defn set-canvas-size
   [canvas]
@@ -1902,18 +1897,13 @@
           ;; Initialize Wasm Render Engine
           (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
           (h/call wasm/internal-module "_set_render_options" flags dpr)
-          (when-let [t (wasm-aa-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_antialias_threshold" t))
-          (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
-          (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
-            (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
-          (when-let [t (wasm-node-batch-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_node_batch_threshold" t))
-          (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
-          (when-let [max-tex (webgl/max-texture-size context)]
-            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+
+          ;; Configurable parameters.
+          (wasm-set-param-from-route-params-if-present :antialias_threshold)
+          (wasm-set-param-from-route-params-if-present :viewport_interest_area_threshold)
+          (wasm-set-param-from-route-params-if-present :max_blocking_time_ms)
+          (wasm-set-param-from-route-params-if-present :node_batch_threshold)
+          (wasm-set-param-from-route-params-if-present :blur_downscale_threshold)
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
@@ -2169,7 +2159,7 @@
 
 (defn calculate-position-data
   [shape]
-  (when wasm/context-initialized?
+  (when (initialized?)
     (use-shape (:id shape))
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)

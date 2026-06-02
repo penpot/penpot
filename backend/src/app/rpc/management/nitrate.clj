@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.management.nitrate
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
@@ -490,6 +490,7 @@ RETURNING id, deleted_at;")
           ti.email_to AS email,
           ti.created_at AS sent_at,
           p.fullname AS name,
+          p.id AS profile_id,
           p.photo_id
      FROM team_invitation AS ti
 LEFT JOIN profile AS p
@@ -511,6 +512,7 @@ LEFT JOIN profile AS p
     [:email ::sm/email]
     [:sent-at ::sm/inst]
     [:name {:optional true} [:maybe ::sm/text]]
+    [:profile-id {:optional true} [:maybe ::sm/uuid]]
     [:photo-url {:optional true} ::sm/uri]]])
 
 (sv/defmethod ::get-org-invitations
@@ -687,22 +689,19 @@ LEFT JOIN profile AS p
   "DELETE FROM team_invitation
     WHERE team_id = ANY(?)
       AND email_to <> ALL(?)
-      AND valid_until >= now()
    RETURNING email_to")
 
 (def ^:private schema:cleanup-org-team-invitations-params
   [:map
-   [:organization-id ::sm/uuid]
    [:team-ids [:vector ::sm/uuid]]
    [:member-ids [:vector ::sm/uuid]]])
 
 (sv/defmethod ::cleanup-org-team-invitations
-  "Delete team invitations for emails that are not organization members
-   and do not have pending org-level invitations"
+  "Delete team invitations for emails that are not organization members"
   {::doc/added "2.18"
    ::sm/params schema:cleanup-org-team-invitations-params
    ::db/transaction true}
-  [cfg {:keys [organization-id team-ids member-ids]}]
+  [cfg {:keys [team-ids member-ids]}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [;; Get emails of organization members
                        member-ids-array   (db/create-array conn "uuid" member-ids)
@@ -710,12 +709,7 @@ LEFT JOIN profile AS p
                                                (map :email)
                                                (into #{}))
 
-                       ;; Get emails with org-level invitations
-                       org-invitation-emails (cnit/get-org-direct-invitation-emails conn organization-id)
-
-                       ;; Combine both sets: emails that should be kept
-                       emails-to-keep     (into member-emails org-invitation-emails)
-                       emails-array       (db/create-array conn "text" (vec emails-to-keep))
+                       emails-array       (db/create-array conn "text" (vec member-emails))
                        teams-array        (db/create-array conn "uuid" team-ids)]
 
                    ;; Delete invitations that are not in the keep list

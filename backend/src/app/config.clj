@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -108,6 +108,11 @@
     [:http-server-max-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
+
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
 
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]

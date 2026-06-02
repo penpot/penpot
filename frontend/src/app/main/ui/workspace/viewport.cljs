@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport
   (:require-macros [app.main.style :as stl])
@@ -641,14 +641,14 @@
           {:page-id page-id}])
 
        (when-not hide-ui?
-         [:& rulers/rulers
+         [:> rulers/rulers*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
            :offset-y offset-y
-           :show-rulers? show-rulers?}])
+           :show-rulers show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*

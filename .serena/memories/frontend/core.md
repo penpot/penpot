@@ -14,6 +14,18 @@ Frontend: CLJS SPA; React/Rumext; Potok; RxJS; okulary refs; SCSS modules; share
 - `frontend/packages/*` and `frontend/text-editor`: JS/TS workspace packages consumed by the app.
 - Nitrate subscription/organization UI and flows live under `app.main.data.nitrate` and `app.main.ui.nitrate*`; backend/API behavior is covered by backend memories, and shared permission rules are in `common/src/app/common/types/nitrate_permissions.cljc`.
 
+
+## Lint and Format
+
+From `frontend/`:
+
+- CLJ/CLJS lint: `pnpm run lint:clj`.
+- JS lint currently no-ops via `pnpm run lint:js`.
+- SCSS lint: `pnpm run lint:scss`.
+- Format checks: `pnpm run check-fmt:clj`, `pnpm run check-fmt:js`, `pnpm run check-fmt:scss`.
+- Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`.
+- Translation formatting after i18n edits: `pnpm run translations`.
+
 ## Focused memory routing
 
 UI and packages:
@@ -34,7 +46,7 @@ Diagnostics and validation:
 - Runtime inspection and navigation: `mem:frontend/cljs-repl`.
 - Source-edit compile/hot-reload diagnostics: `mem:frontend/compile-diagnostics`.
 - Runtime crash recovery: `mem:frontend/handling-crashes`.
-- Tests, lint, format, and live verification: `mem:frontend/testing`.
+- Tests and live verification: `mem:frontend/testing`.
 - Real pointer/keyboard gesture reproduction: `mem:frontend/playwright-gestures`.
 
 ## Areas without focused memories

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.input
   (:require
@@ -17,6 +17,7 @@
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.forms :as fc]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -181,7 +182,9 @@
                                    resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+                (rx/of {:error (if errors
+                                 (first errors)
+                                 (wte/error-with-value :error/unknown value))}))))))))
 
 (mf/defc input*
   [{:keys [name tokens token] :rest props}]
@@ -246,9 +249,11 @@
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
                                       (if error
-                                        (do
-                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                          (reset! hint* {:message error :type "error"}))
+                                        (if (csu/group-name-conflict-error? error token-name)
+                                          (swap! form assoc-in [:extra-errors ""] {:message error})
+                                          (do
+                                            (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                            (reset! hint* {:message error :type "error"})))
                                         (let [message (tr "workspace.tokens.resolved-value" value)]
                                           (swap! form update :extra-errors dissoc input-name)
                                           (reset! hint* {:message message :type "hint"}))))))))]
@@ -272,7 +277,8 @@
                        (assoc-in [:data :value field] (if trim? (str/trim value) value))
                        (assoc-in [:touched :value field] true)
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (mf/defc input-composite*
   [{:keys [name tokens token] :rest props}]
@@ -283,6 +289,9 @@
 
         error
         (get-in @form [:errors :value input-name])
+
+        extra-error
+        (get-in @form [:extra-errors :value input-name])
 
         value
         (get-in @form [:data :value input-name] "")
@@ -317,9 +326,9 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if (and touched? error)
+        (if (or extra-error (and touched? error))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)
 
         props (if (and (not error) (= input-name :reference))
@@ -345,8 +354,11 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
-                             (reset! hint* {:message error' :type "error"}))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+                               (do
+                                 (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
+                                 (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [input-value (get-in @form [:data :value input-name] "")
@@ -387,7 +399,8 @@
                        (update :errors dissoc :value)
                        (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (mf/defc input-indexed*
   [{:keys [name tokens token index value-subfield nillable] :rest props}]
@@ -399,6 +412,9 @@
 
         touched?
         (get-in @form [:touched :value value-subfield index input-name])
+
+        extra-error
+        (get-in @form [:extra-errors :value value-subfield index input-name])
 
         value-from-form
         (get-in @form [:data :value value-subfield index input-name] "")
@@ -444,9 +460,10 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if error
+        (if (or error extra-error)
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (or (:message error) (tr "errors.field-missing"))})
+                                  :hint-message (or (:message (or error extra-error))
+                                                    (tr "errors.field-missing"))})
           props)
 
         props
@@ -473,8 +490,11 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
-                             (reset! hint* {:message error' :type "error"}))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+
+                               (do (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
+                                   (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))

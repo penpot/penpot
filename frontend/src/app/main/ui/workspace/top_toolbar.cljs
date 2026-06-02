@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
@@ -170,7 +170,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           deprecated-icon/elipse]]
+           deprecated-icon/ellipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
