@@ -49,8 +49,7 @@
 
 ;;; --- RELEASE NOTES MODAL
 
-(mf/defc release-notes
-  {::mf/props :obj}
+(mf/defc release-notes*
   [{:keys [version]}]
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
@@ -103,7 +102,7 @@
         version  (obj/get props "version")]
     (when (contains? versions version)
       [:div.relnotes
-       [:> release-notes props]])))
+       [:> release-notes* props]])))
 
 (defmethod rc/render-release-notes "0.0"
   [params]
