@@ -864,6 +864,30 @@ impl Surfaces {
         );
     }
 
+    /// Replace `Target` pixels with `Backbuffer` (Src blend).
+    ///
+    /// Used for viewer masked passes: transparent backbuffer regions must not
+    /// preserve prior `Target` content from an earlier pass.
+    pub fn copy_backbuffer_to_target_replace(&mut self) {
+        let sampling_options = self.sampling_options;
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(skia::BlendMode::Src);
+        self.backbuffer.draw(
+            self.target.canvas(),
+            (0.0, 0.0),
+            sampling_options,
+            Some(&paint),
+        );
+    }
+
+    pub fn clear_target(&mut self, color: skia::Color) {
+        self.target.canvas().clear(color);
+    }
+
+    pub fn clear_tile_atlas(&mut self) {
+        self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
+    }
+
     /// Seed `Backbuffer` from `Target` (last presented frame).
     pub fn seed_backbuffer_from_target(&mut self) {
         let sampling_options = self.sampling_options;
@@ -1024,6 +1048,17 @@ impl Surfaces {
                 canvas.draw_path(&path, paint);
             }
         }
+    }
+
+    /// Full backbuffer clear (viewer layer passes must not reuse prior pass pixels).
+    pub fn clear_backbuffer(&mut self, color: skia::Color) {
+        self.backbuffer.canvas().clear(color);
+    }
+
+    pub fn clear_backbuffer_rect(&mut self, rect: skia::Rect, color: skia::Color) {
+        let mut paint = Paint::default();
+        paint.set_color(color);
+        self.backbuffer.canvas().draw_rect(rect, &paint);
     }
 
     pub fn reset(&mut self, color: skia::Color) {

@@ -23,7 +23,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.viewer.interactions :refer [prepare-objects]]
+   [app.main.ui.viewer.viewport-common :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
