@@ -18,6 +18,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.loggers.audit :as audit]
    [app.media :as media]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -746,4 +747,44 @@ LEFT JOIN profile AS p
                    ;; Delete invitations that are not in the keep list
                    (db/exec! conn [sql:delete-orphaned-team-invitations teams-array emails-array])
                    nil))))
+
+;; ---- API: push-audit-events
+
+(def ^:private schema:nitrate-audit-event
+  [:map {:title "NitrateAuditEvent"}
+   [:name [:and [:string {:max 250}]
+           [:re #"[\d\w-]{1,50}"]]]
+   [:profile-id ::sm/uuid]
+   [:props {:optional true} [:map-of :keyword :any]]])
+
+(def ^:private schema:push-audit-events-params
+  [:map {:title "PushAuditEventsParams"}
+   [:events [:vector schema:nitrate-audit-event]]])
+
+(defn- submit-nitrate-audit-event
+  [cfg {:keys [name profile-id props]}]
+  (let [now (ct/now)]
+    (audit/submit* cfg {:type "action"
+                        :name name
+                        :profile-id profile-id
+                        :props (or props {})
+                        :context {}
+                        :tracked-at now
+                        :created-at now
+                        :source "nitrate"
+                        :ip-addr "0.0.0.0"})))
+
+(sv/defmethod ::push-audit-events
+  "Push audit events from Nitrate to Penpot audit log"
+  {::doc/added "2.19"
+   ::sm/params schema:push-audit-events-params
+   ::rpc/auth false}
+  [{:keys [::db/pool] :as cfg} {:keys [events]}]
+  (let [telemetry? (contains? cf/flags :telemetry)
+        audit-log? (contains? cf/flags :audit-log)
+        enabled?   (and (not (db/read-only? pool))
+                        (or audit-log? telemetry?))]
+    (when (and enabled? (seq events))
+      (run! (partial submit-nitrate-audit-event cfg) events))
+    nil))
 
