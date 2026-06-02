@@ -518,10 +518,18 @@ impl Surfaces {
         self.tiles.clear();
     }
 
-    pub fn draw_tile_atlas_to_backbuffer(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
+    pub fn draw_tile_atlas_to_backbuffer(
+        &mut self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+        background: skia::Color,
+    ) {
         self.tiles.update(viewbox, tile_viewbox);
-        self.backbuffer.canvas().draw_atlas(
-            &self.tile_atlas.image_snapshot(),
+        let atlas_image = self.tile_atlas.image_snapshot();
+        let canvas = self.backbuffer.canvas();
+        canvas.clear(background);
+        canvas.draw_atlas(
+            &atlas_image,
             &self.tiles.transforms,
             &self.tiles.textures,
             None,

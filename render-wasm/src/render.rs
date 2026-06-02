@@ -2180,8 +2180,11 @@ impl RenderState {
         let frame_type = self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
 
         if !self.options.is_interactive_transform() {
-            self.surfaces
-                .draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox);
+            self.surfaces.draw_tile_atlas_to_backbuffer(
+                &self.viewbox,
+                &self.tile_viewbox,
+                self.background_color,
+            );
         }
 
         match frame_type {
