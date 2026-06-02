@@ -106,6 +106,22 @@ The `prs` command returns JSON with `number`, `title`, `body`, `state`,
 batches of 50 via GraphQL to stay within API limits (milestone mode uses
 paginated GraphQL on the milestone's `pullRequests` connection).
 
+You can also list all PRs in a milestone in a single call:
+
+```bash
+# All merged PRs in a milestone (default)
+python3 tools/gh.py prs --milestone "2.16.0"
+
+# All states (merged, open, closed)
+python3 tools/gh.py prs --milestone "2.16.0" --state all
+
+# Open PRs only
+python3 tools/gh.py prs --milestone "2.16.0" --state open
+```
+
+The milestone path uses paginated GraphQL on the milestone's `pullRequests`
+connection (100 per page), avoiding one-by-one fetches.
+
 ### 5. Categorize entries — strictly by issue type, never by labels or emoji
 
 Use the **Issue Type** field (GitHub's native issue type, exposed as
@@ -327,6 +343,72 @@ if closed:
 - <fix description> [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 - <fix description> (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 ```
+
+### 10. Cross-reference milestone PRs against the changelog
+
+Issues can be fixed by PRs that aren't in the milestone, and merged PRs in
+the milestone may not close any tracked issue. After writing, run a full
+cross-reference to catch gaps:
+
+```bash
+# List all merged PRs in the milestone
+python3 tools/gh.py prs --milestone "<MILESTONE>" --state merged > /tmp/milestone-prs.json
+
+# Extract PR numbers from the changelog section
+python3 -c "
+import json, re
+
+with open('CHANGES.md') as f:
+    content = f.read()
+
+# Extract the version section (adjust regex to match the actual version)
+match = re.search(r'## <MILESTONE> \(Unreleased\)\n(.*?)(?:\n## |\Z)', content, re.DOTALL)
+section = match.group(1)
+
+# Collect all PR numbers referenced
+changelog_prs = set()
+for m in re.findall(r'\[#(\d+)\]\(https://github\.com/penpot/penpot/pull/\d+\)', section):
+    changelog_prs.add(int(m))
+
+# Collect all milestone PRs (filtered)
+with open('/tmp/milestone-prs.json') as f:
+    milestone_prs = json.load(f)
+
+milestone_merged = {pr['number'] for pr in milestone_prs}
+
+# PRs in milestone but not in changelog
+missing = sorted(milestone_merged - changelog_prs)
+print(f'Milestone merged PRs: {len(milestone_merged)}')
+print(f'Changelog referenced PRs: {len(changelog_prs)}')
+print(f'PRs in milestone but NOT in changelog: {len(missing)}')
+for num in missing:
+    pr = next(p for p in milestone_prs if p['number'] == num)
+    print(f'  #{num} {pr[\"title\"][:80]}')
+"
+```
+
+For each missing PR found, decide whether it should be added to the
+changelog or is legitimately excluded (check its labels).
+
+Also verify that no closed-unmerged PRs remain in the changelog:
+
+```bash
+python3 tools/gh.py prs --milestone "<MILESTONE>" --state all | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+closed = [p for p in data if p['state'] == 'CLOSED']
+if closed:
+    print('WARNING: CLOSED (unmerged) PRs in milestone:')
+    for p in closed:
+        print(f'  #{p[\"number\"]} {p[\"title\"][:80]}')
+"
+```
+
+**Post-edit audit checklist:**
+- ✅ All referenced PRs are merged (no closed-unmerged artifacts)
+- ✅ Every merged milestone PR is either in the changelog or excluded by label
+- ✅ PR and issue counts are internally consistent
+- ✅ No false-positive PR-to-issue associations
 
 ## Key Principles
 
