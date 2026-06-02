@@ -53,7 +53,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     }
 
     let canvas = render_state.surfaces.canvas(SurfaceId::Target);
-    let skia::ISize { width, height } = canvas.base_layer_size();
+    let canvas_width = canvas.base_layer_size().width as f32;
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
@@ -62,18 +62,19 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     } else {
         "WebGL rendering"
     };
+    let dpr = render_state.options.dpr;
     let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-    let mut p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
+    let mut p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
 
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
 
     if render_state.options.is_text_editor_v3() {
-        str = "TEXT EDITOR / V3";
+        str = "Text Editor v3";
 
         let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-        p.x = width as f32 - 25.0 - scalar;
-        p.y -= 20.0;
+        p.x = canvas_width - (20.0 * dpr) - scalar;
+        p.y += 15.0 * dpr;
         canvas.draw_str(str, p, debug_font, &paint);
     }
 }
