@@ -83,7 +83,6 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - PENPOT_BACKEND_WORKER=${PENPOT_BACKEND_WORKER}
-      - PENPOT_TMUX_SESSION=${PENPOT_TMUX_SESSION}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
 
       # Agentic devenv: set to a commit/tag to update Serena on startup,

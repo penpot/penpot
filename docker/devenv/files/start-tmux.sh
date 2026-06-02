@@ -6,7 +6,7 @@ cd ~;
 
 source ~/.bashrc
 
-PENPOT_TMUX_SESSION="${PENPOT_TMUX_SESSION:-penpot}"
+PENPOT_TMUX_SESSION="penpot"
 PENPOT_TMUX_ATTACH="${PENPOT_TMUX_ATTACH:-true}"
 
 function attach_or_exit() {

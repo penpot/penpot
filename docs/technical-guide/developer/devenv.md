@@ -110,32 +110,9 @@ ws0-only and takes no workspace flag. `run-devenv-agentic` also accepts
 `--serena-context CTX` and `--git-user-name NAME` / `--git-user-email
 EMAIL` (see below).
 
-### Per-instance configuration
-
-Instance configuration is layered, with two sources:
-
-- `docker/devenv/defaults.env` — the baseline, tracked in git. `ws0` uses it
-  directly, and it supplies every value that does not vary per instance
-  (database/object-storage settings, shared-infra hostnames, the worker
-  default, …).
-- `docker/devenv/instances/wsN.env` — a generated overlay for each `ws1+`
-  instance. `manage.sh` writes it on every start/reconciler pass with only the
-  values that differ per instance: the offset host ports, the per-instance
-  container/volume names, and the Redis/public URIs. Compose loads it *after*
-  `defaults.env` (`--env-file defaults.env --env-file instances/wsN.env`), so
-  these override the baseline; everything else falls through to `defaults.env`.
-
-Two things to keep in mind:
-
-- **The overlays are auto-generated and gitignored** (`docker/devenv/instances/`
-  is in `.gitignore`). They are regenerated from scratch on each run, so hand
-  edits do not survive — change `defaults.env` (or the port/naming logic in
-  `manage.sh`) instead of editing an overlay.
-- **The overlay lives in the control checkout, not in the workspace it
-  configures.** `wsN`'s overlay sits at `docker/devenv/instances/wsN.env` inside
-  the repo you run `manage.sh` from, while the workspace clone it configures
-  lives separately at `${PENPOT_WORKSPACES_DIR}/wsN/`. Compose is invoked from
-  that control checkout, so the relative `--env-file` path has to resolve there.
+Configuration lives in one tracked file, `docker/devenv/defaults.env` (the
+ws0 baseline); `ws1+` values (offset ports, `wsN` container/volume names) are
+derived and injected automatically, so there is no per-instance file to edit.
 
 ### Git identity inside the container
 
@@ -184,8 +161,8 @@ into separate compose projects per runtime instance:
   runs once per runtime instance under `penpotdev-ws0`, `penpotdev-ws1`, ….
 - Both projects join the external Docker network `penpot_shared`, created
   idempotently by `manage.sh`.
-- Per-instance configuration lives in `docker/devenv/defaults.env` (ws0
-  baseline) plus generated overlays under `docker/devenv/instances/`.
+- Configuration lives in `docker/devenv/defaults.env` (the ws0 baseline);
+  ws1+ overrides are computed and injected at compose time.
 
 If you had the devenv running on the previous single-project (`penpotdev`)
 layout, leftover containers and the auto-generated `penpotdev_default`

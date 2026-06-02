@@ -38,9 +38,9 @@ export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_work
 # IS ws0's published port. To keep a single source of truth, the bases are
 # derived from the ws0 values sourced from defaults.env above rather than
 # duplicated here -- this makes it impossible for ws0's compose substitution and
-# the ws1+ overlay arithmetic to drift apart. `:?` aborts loudly if defaults.env
-# is missing one. Consumed by write-instance-env (the values baked into the
-# per-instance compose env file) and print-instance-info (the startup URLs).
+# the ws1+ offset arithmetic to drift apart. `:?` aborts loudly if defaults.env
+# is missing one. Consumed by instance-env-overrides (the values injected into
+# the per-instance compose env) and print-instance-info (the startup URLs).
 PENPOT_INSTANCE_PORT_STRIDE=10000
 PENPOT_PORT_BASE_PUBLIC=${PENPOT_PUBLIC_HTTP_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MCP=${PENPOT_MCP_SERVER_PORT:?missing in defaults.env}
@@ -77,7 +77,10 @@ set -e
 #
 # Devenv compose plumbing (used by every *-devenv command below)
 #   ensure-devenv-network   create the external 'penpot_shared' network
-#   devenv-compose          wrap 'docker compose' with --env-file + both files
+#   infra-compose           wrap 'docker compose' for the shared-infra project
+#   instance-compose        wrap 'docker compose' for one instance's main
+#                           project, injecting that instance's overrides
+#   instance-env-overrides  the per-instance KEY=VALUE overrides (ws1+)
 #   devenv-main-container   resolve the 'main' container id via compose ps
 #   devenv-main-running     true if 'main' is up
 #
@@ -179,16 +182,17 @@ function ensure-devenv-network {
 # - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
 #   under project `penpotdev-infra`.
 # - Each runtime instance (ws0, ws1, ...) runs its own main + valkey under
-#   project `penpotdev-wsN`. ws0 uses only `defaults.env`; ws1+ additionally
-#   layer a generated overlay file under `docker/devenv/instances/`.
-# `env -i` strips the shell env before invoking docker compose so the
-# per-instance overlay --env-file actually overrides defaults.env. Without
-# stripping, the shell would still hold whatever values defaults.env was
-# sourced into at startup (PENPOT_MAIN_CONTAINER_NAME, etc.), and Docker
-# Compose's substitution gives the shell precedence over --env-file.
-# Only the values that genuinely need to be per-call (HOME/PATH for tooling,
-# CURRENT_USER_ID/PENPOT_SOURCE_PATH for the compose substitution) are
-# re-exported.
+#   project `penpotdev-wsN`. ws0 uses the `defaults.env` baseline as-is; ws1+
+#   override the per-instance values by injecting them as environment
+#   variables -- see instance-env-overrides (no files are written).
+# `env -i` strips the ambient shell before invoking docker compose, then we
+# re-inject exactly what compose needs. The stripping matters because
+# defaults.env is sourced into manage.sh's own shell at startup, so otherwise
+# those stale values would leak into substitution. And because Docker Compose
+# gives shell-env precedence over --env-file, the re-injected per-instance
+# overrides cleanly override the defaults.env baseline. Re-injected: HOME/PATH
+# (tooling), CURRENT_USER_ID/PENPOT_SOURCE_PATH (always per-call), and for ws1+
+# the instance-env-overrides block.
 function infra-compose {
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         docker compose -p penpotdev-infra \
@@ -199,19 +203,20 @@ function infra-compose {
 
 function instance-compose {
     local instance="$1"; shift
-    local source_path env_files
-    env_files=(--env-file "$DEVENV_DEFAULTS_FILE")
+    local source_path
+    local -a overrides=()
     if [[ "$instance" == "ws0" ]]; then
         source_path="$PWD"
     else
         source_path="$(workspace-path "$instance")"
-        env_files+=(--env-file "docker/devenv/instances/${instance}.env")
+        mapfile -t overrides < <(instance-env-overrides "$instance")
     fi
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
         PENPOT_SOURCE_PATH="$source_path" \
+        "${overrides[@]}" \
         docker compose -p "penpotdev-${instance}" \
-            "${env_files[@]}" \
+            --env-file "$DEVENV_DEFAULTS_FILE" \
             -f docker/devenv/docker-compose.main.yml \
             "$@"
 }
@@ -227,9 +232,9 @@ function list-running-instances {
 
 function devenv-main-container {
     local instance="${1:-ws0}"
-    # For ws1+, skip compose if the env-file hasn't been generated yet — the
-    # instance has never been brought up so there is no container to find.
-    if [[ "$instance" != "ws0" && ! -f "docker/devenv/instances/${instance}.env" ]]; then
+    # For ws1+, skip compose if the workspace clone doesn't exist yet — the
+    # instance has never been set up, so there is no container to find.
+    if [[ "$instance" != "ws0" && ! -d "$(workspace-path "$instance")" ]]; then
         return 0
     fi
     instance-compose "$instance" ps -q main 2>/dev/null
@@ -286,76 +291,38 @@ function instance-port {
     echo $(( base + n * PENPOT_INSTANCE_PORT_STRIDE ))
 }
 
-# Generate (or refresh) the per-instance Compose env-file overlay. Idempotent;
-# safe to call on every reconciler pass.
-# For ws0, this is a no-op since it uses the baseline defaults.env directly.
+# Echo the per-instance Compose variable overrides for a ws1+ instance, one
+# KEY=VALUE per line, for instance-compose to inject into its `env -i` line.
+# Compose gives shell-env precedence over --env-file, so these override the
+# defaults.env baseline. Every value is a pure function of the instance number,
+# so nothing is persisted: they are recomputed on every compose invocation and
+# can never drift from this logic. ws0 has no overrides (it uses defaults.env
+# as-is) and is never passed here.
 #
-# The overlay is layered on top of defaults.env by instance-compose's
-# `--env-file defaults.env --env-file instances/wsN.env` (compose applies the
-# later file last), so this writes only the values that differ per instance --
-# ports, container/volume names, the Redis/public URIs, worker flag. Everything
-# else falls through to defaults.env.
-#
-# Note the split: the overlay lives in the *control checkout* at
-# docker/devenv/instances/wsN.env (gitignored, regenerated each pass), keyed by
-# instance name -- NOT inside the wsN workspace clone it configures (that lives
-# at $PENPOT_WORKSPACES_DIR/wsN and holds only source). It has to live here
-# because compose runs from $PWD, so the relative --env-file path resolves
-# against this repo. Hand edits do not survive a reconciler pass.
-function write-instance-env {
+# Omitted on purpose: COMPOSE_PROJECT_NAME (set via compose's -p flag),
+# PENPOT_SOURCE_PATH (injected directly by instance-compose), and
+function instance-env-overrides {
     local instance="$1"
-    if [[ "$instance" == "ws0" ]]; then
-        return 0
-    fi
-
-    if [[ ! "$instance" =~ ^ws([0-9]+)$ ]]; then
-        echo "write-instance-env: invalid instance '$instance'" >&2
-        return 1
-    fi
-
-    local file="docker/devenv/instances/${instance}.env"
-    mkdir -p docker/devenv/instances
-    local workspace
-    workspace=$(workspace-path "$instance")
     local public mcp mcp_repl serena serena_dash
     public=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC")
     mcp=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP")
     mcp_repl=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP_REPL")
     serena=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA")
     serena_dash=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA_DASHBOARD")
-    cat >"$file" <<EOF
-# Auto-generated by manage.sh for instance '$instance'.
-# Edits are overwritten on the next reconciler pass.
-
-COMPOSE_PROJECT_NAME=penpotdev-${instance}
-PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main
-PENPOT_VALKEY_CONTAINER_NAME=penpot-devenv-${instance}-valkey
-PENPOT_VALKEY_HOSTNAME=penpot-devenv-${instance}-valkey
-PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data
-PENPOT_VALKEY_DATA_VOLUME=penpotdev_${instance}_valkey_data
-
-PENPOT_PUBLIC_URI=https://localhost:${public}
-PENPOT_REDIS_URI=redis://penpot-devenv-${instance}-valkey/0
-PENPOT_TMUX_SESSION=penpot
-
-PENPOT_PUBLIC_HTTP_PORT=${public}
-PENPOT_MCP_SERVER_PORT=${mcp}
-PENPOT_MCP_REPL_PORT=${mcp_repl}
-SERENA_EXTERNAL_PORT=${serena}
-SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}
-
-# Background workers run only on ws0 to keep async-task notifications bound
-# to a single Valkey Pub/Sub. See mem:devenv/core.
-PENPOT_BACKEND_WORKER=false
-
-# shadow-cljs relay proxied through nginx so the browser can reach it without
-# a separate published port. URL must match the instance's public HTTPS port.
-SHADOW_SERVER_URL=wss://localhost:${public}
-
-# Workspace bind mount (computed in manage.sh too, but recorded here for
-# clarity when inspecting the env file).
-PENPOT_SOURCE_PATH=${workspace}
-EOF
+    printf '%s\n' \
+        "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
+        "PENPOT_VALKEY_CONTAINER_NAME=penpot-devenv-${instance}-valkey" \
+        "PENPOT_VALKEY_HOSTNAME=penpot-devenv-${instance}-valkey" \
+        "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
+        "PENPOT_VALKEY_DATA_VOLUME=penpotdev_${instance}_valkey_data" \
+        "PENPOT_PUBLIC_URI=https://localhost:${public}" \
+        "PENPOT_REDIS_URI=redis://penpot-devenv-${instance}-valkey/0" \
+        "PENPOT_PUBLIC_HTTP_PORT=${public}" \
+        "PENPOT_MCP_SERVER_PORT=${mcp}" \
+        "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
+        "SERENA_EXTERNAL_PORT=${serena}" \
+        "SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}" \
+        "PENPOT_BACKEND_WORKER=false"
 }
 
 # Thin wrappers around .devenv/scripts/merge-mcp-config.py. The script does
@@ -868,7 +835,6 @@ function run-devenv-agentic {
         if [[ "$do_sync" == "true" ]]; then
             sync-workspace "$target"
         fi
-        write-instance-env "$target"
     fi
 
     echo "Starting $target..."
@@ -931,7 +897,7 @@ function attach-devenv {
         return 1
     fi
 
-    local session="${PENPOT_TMUX_SESSION:-penpot}"
+    local session="penpot"
     local container
     container=$(devenv-main-container "$instance")
 
@@ -1072,7 +1038,7 @@ function run-devenv-isolated-shell {
 
     # Resolve the user_data volume and source tree for the target workspace.
     # ws0 uses the baseline volume name from defaults.env; wsN follows the
-    # write-instance-env naming convention (penpotdev_<instance>_user_data)
+    # instance-env-overrides naming convention (penpotdev_<instance>_user_data)
     # and bind-mounts the workspace clone instead of $PWD.
     local user_data_volume source_path
     if [[ "$instance" == "ws0" ]]; then
