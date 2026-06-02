@@ -237,9 +237,7 @@
                             :to email
                             :invited-by (:fullname profile)
                             :user-name (:fullname member)
-                            :organization-name (:name organization)
-                            :organization-logo (:logo organization)
-                            :organization-initials (:initials organization)
+                            :organization organization
                             :token itoken
                             :extra-data ptoken}))
               (eml/send! {::eml/conn conn
@@ -255,11 +253,10 @@
           itoken)))))
 
 (defn create-org-invitation
-  [cfg {:keys [::rpc/profile-id id name initials logo] :as params}]
+  [cfg {:keys [::rpc/profile-id] :as params}]
   (let [profile  (db/get-by-id cfg :profile profile-id)]
     (create-invitation cfg
                        (assoc params
-                              :organization {:id id :name name :initials initials :logo logo}
                               :profile profile
                               :role :editor))))
 
