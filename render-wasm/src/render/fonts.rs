@@ -39,7 +39,7 @@ impl FontStore {
                 "Failed to match default font".to_string(),
             ))?;
 
-        let debug_font = skia::Font::new(debug_typeface, 10.0);
+        let debug_font = skia::Font::new(debug_typeface, 12.0);
 
         Ok(Self {
             font_mgr,
@@ -51,7 +51,7 @@ impl FontStore {
     }
 
     pub fn set_scale_debug_font(&mut self, dpr: f32) {
-        let debug_font = skia::Font::new(self.debug_font.typeface(), 10.0 * dpr);
+        let debug_font = skia::Font::new(self.debug_font.typeface(), 12.0 * dpr);
         self.debug_font = debug_font;
     }
 
