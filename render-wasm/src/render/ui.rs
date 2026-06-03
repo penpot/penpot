@@ -4,6 +4,8 @@ use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::render::{grid_layout, rulers};
 use crate::shapes::{Layout, Type};
 
+pub mod guides;
+
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
     let viewbox = render_state.viewbox;
@@ -63,6 +65,8 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let viewbox = render_state.viewbox;
     let ruler_state = render_state.rulers;
     rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
+    // TODO: pass guides data here
+    guides::render(canvas, zoom, viewbox.area);
 
     canvas.restore();
 
