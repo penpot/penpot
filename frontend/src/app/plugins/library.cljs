@@ -1130,7 +1130,7 @@
            (let [file-id (:current-file-id @st/state)
                  library-id (uuid/parse library-id)]
              (->> st/stream
-                  (rx/filter (ptk/type? ::dwl/attach-library-finished))
+                  (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
                   (rx/take 1)
                   (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
              (st/emit! (-> (dwl/link-file-to-library file-id library-id)

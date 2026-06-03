@@ -425,9 +425,15 @@
      [:before-group [:maybe :boolean]]]]
 
    [:set-base-font-size
-    [:map {:title "ModBaseFontSize"}
-     [:type [:= :set-base-font-size]]
-     [:base-font-size :string]]]])
+     [:map {:title "ModBaseFontSize"}
+      [:type [:= :set-base-font-size]]
+      [:base-font-size :string]]]
+
+   [:set-tokens-file
+    [:map {:title "SetTokensFile"}
+     [:type [:= :set-tokens-file]]
+     [:file-id ::sm/uuid]
+     [:library-id [:maybe ::sm/uuid]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1064,6 +1070,10 @@
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
+
+(defmethod process-change :set-tokens-file
+  [data {:keys [library-id]}]
+  (assoc data :tokens-file library-id))
 
 
 ;; === Operations

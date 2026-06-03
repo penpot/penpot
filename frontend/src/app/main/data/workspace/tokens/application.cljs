@@ -675,8 +675,7 @@
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
                   :else attributes-to-remove)]
-            (when-let [tokens (some-> (dsh/lookup-file-data state)
-                                      (get :tokens-lib)
+            (when-let [tokens (some-> (dsh/lookup-tokens-lib state)
                                       (ctob/get-tokens-in-active-sets))]
               (->> (if (contains? cf/flags :tokenscript)
                      (rx/of (ts/resolve-tokens tokens))

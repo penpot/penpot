@@ -1545,16 +1545,17 @@
 
 (defn link-file-to-library
   [file-id library-id]
-  (ptk/reify ::attach-library
+  (ptk/reify ::link-file-to-library
     ev/Event
     (-data [_]
-      {::ev/name "attach-library"
+      {::ev/name "link-file-to-library"
        :file-id file-id
        :library-id library-id})
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [libraries        (:shared-files state)
+      (let [file-data        (dm/get-in state [:files file-id :data])
+            libraries        (:shared-files state)
             library          (get libraries library-id)
             variants-count   (-> library :library-summary :variants count)
 
@@ -1565,18 +1566,20 @@
                                   (map first)
                                   set)]
         (rx/concat
-         (rx/merge
-          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-               (rx/merge-map (fn [libraries-to-load]
-                               (as-> libraries-to-load $
-                                 (remove loaded-libraries $)
-                                 (conj $ library-id)
-                                 (map #(load-library-file file-id %) $))))))
-         (rx/of (ptk/reify ::attach-library-finished))
+         (rx/of (dch/commit-changes (-> (pcb/empty-changes nil)
+                                        (pcb/with-file-data file-data)
+                                        (pcb/set-tokens-file library-id))))
+         (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+              (rx/merge-map (fn [libraries-to-load]
+                              (as-> libraries-to-load $
+                                (remove loaded-libraries $)
+                                (conj $ library-id)
+                                (map #(load-library-file file-id %) $)))))
+         (rx/of (ptk/reify ::link-file-to-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ev/event {::ev/name "attach-library-variants"
+                          (ev/event {::ev/name "link-file-to-library-variants"
                                      :file-id file-id
                                      :library-id library-id
                                      :variants-count variants-count
