@@ -322,7 +322,8 @@ function instance-env-overrides {
         "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
         "SERENA_EXTERNAL_PORT=${serena}" \
         "SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}" \
-        "PENPOT_BACKEND_WORKER=false"
+        "PENPOT_BACKEND_WORKER=false" \
+        "SHADOW_SERVER_URL=wss://localhost:${public}"
 }
 
 # Thin wrappers around .devenv/scripts/merge-mcp-config.py. The script does
