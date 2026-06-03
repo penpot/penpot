@@ -74,6 +74,9 @@ services:
       - PENPOT_SMTP_SSL=false
       - PENPOT_SMTP_TLS=false
 
+      # Exporter URI for RPC proxy
+      - PENPOT_EXPORTER_URI=http://localhost:6061
+
       # LDAP setup
       - PENPOT_LDAP_HOST=ldap
       - PENPOT_LDAP_PORT=10389
