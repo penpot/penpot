@@ -23,6 +23,10 @@ if tmux has-session -t "$PENPOT_TMUX_SESSION" 2>/dev/null; then
     attach_or_exit
 fi
 
+# Create the tmux session first so attach-devenv can connect immediately
+# even while setup scripts are still running.
+tmux -2 new-session -d -s "$PENPOT_TMUX_SESSION"
+
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/penpot/frontend/
 ./scripts/setup;
@@ -30,8 +34,6 @@ popd
 pushd ~/penpot/exporter/
 ./scripts/setup;
 popd
-
-tmux -2 new-session -d -s "$PENPOT_TMUX_SESSION"
 
 tmux rename-window -t "$PENPOT_TMUX_SESSION:0" 'frontend watch'
 tmux select-window -t "$PENPOT_TMUX_SESSION:0"

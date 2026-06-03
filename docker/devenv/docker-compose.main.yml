@@ -6,8 +6,6 @@ networks:
 volumes:
   user_data:
     name: ${PENPOT_USER_DATA_VOLUME}
-  valkey_data:
-    name: ${PENPOT_VALKEY_DATA_VOLUME}
 
 services:
   main:
@@ -17,13 +15,6 @@ services:
       context: "."
     container_name: "${PENPOT_MAIN_CONTAINER_NAME}"
     stop_signal: SIGINT
-
-    # postgres / minio / minio-setup live in the penpotdev-infra compose
-    # project and cannot be referenced via depends_on across projects.
-    # manage.sh waits for infra readiness before bringing main up.
-    depends_on:
-      redis:
-        condition: service_started
 
     volumes:
       - "user_data:/home/penpot/"
@@ -44,6 +35,8 @@ services:
 
     environment:
       - EXTERNAL_UID=${CURRENT_USER_ID}
+      - COLORTERM=truecolor
+      - TERM=xterm-256color
 
       # SMTP setup (shared infra service; identical across instances)
       - PENPOT_SMTP_ENABLED=true
@@ -83,24 +76,13 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - PENPOT_BACKEND_WORKER=${PENPOT_BACKEND_WORKER}
+      - PENPOT_TENANT=${PENPOT_TENANT}
       - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
 
       # Agentic devenv: set to a commit/tag to update Serena on startup,
       # leave empty to skip update and use the version baked into the image.
       - SERENA_UPDATE_VERSION=1.5.0
       - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
-
-    networks:
-      - default
-
-  redis:
-    image: valkey/valkey:8.1
-    hostname: "${PENPOT_VALKEY_HOSTNAME}"
-    container_name: "${PENPOT_VALKEY_CONTAINER_NAME}"
-    restart: always
-    command: valkey-server --save 120 1 --loglevel warning
-    volumes:
-      - "valkey_data:/data"
 
     networks:
       - default

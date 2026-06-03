@@ -8,6 +8,8 @@ volumes:
     name: ${PENPOT_POSTGRES_DATA_VOLUME}
   minio_data:
     name: ${PENPOT_MINIO_DATA_VOLUME}
+  valkey_data:
+    name: penpotdev_valkey_data
 
 services:
   minio:
@@ -65,6 +67,17 @@ services:
       default:
         aliases:
           - postgres
+
+  valkey:
+    image: valkey/valkey:8.1
+    restart: always
+    command: valkey-server --save 120 1 --loglevel warning
+    volumes:
+      - "valkey_data:/data"
+    networks:
+      default:
+        aliases:
+          - valkey
 
   mailer:
     image: sj26/mailcatcher:latest
