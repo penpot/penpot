@@ -95,4 +95,7 @@
 /.idea
 /.claude
 /.playwright-mcp
+/.devenv/mcp/
+/opencode.json
+/.codex/
 /tools/__pycache__
