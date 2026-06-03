@@ -59,6 +59,7 @@
 - Clarify self-hosted OIDC configuration for containerized (by @sancfc) [#9764](https://github.com/penpot/penpot/issues/9764) (PR: [#9758](https://github.com/penpot/penpot/pull/9758))
 - Update User Guide with 2.16 features (by @myfunnyandy) [#9767](https://github.com/penpot/penpot/issues/9767) (PR: [#9768](https://github.com/penpot/penpot/pull/9768))
 - Improve file validation performance and fix orphan shape detection [#9790](https://github.com/penpot/penpot/issues/9790) (PR: [#9789](https://github.com/penpot/penpot/pull/9789))
+- Add v2.16 release notes (What's new modal) [#9945](https://github.com/penpot/penpot/issues/9945) (PR: [#9940](https://github.com/penpot/penpot/pull/9940))
 
 ### :bug: Bugs fixed
 - Add Shift+Numpad aliases for zoom shortcuts (by @RenzoMXD) [#2457](https://github.com/penpot/penpot/issues/2457) (PR: [#9063](https://github.com/penpot/penpot/pull/9063))
@@ -139,6 +140,7 @@
 - Fix delete invitation modal readability in light theme [#9737](https://github.com/penpot/penpot/issues/9737) (PR: [#9747](https://github.com/penpot/penpot/pull/9747))
 - Fix team invitation not automatically accepted after account validation [#9776](https://github.com/penpot/penpot/issues/9776) (PR: [#9782](https://github.com/penpot/penpot/pull/9782))
 - Fix design tokens vanishing from the sidebar when a token name collides with a token-group prefix from another active set (e.g. `a` in one set and `a.b` in another); the colliding token is now kept and rendered as a broken pill [Github #9584](https://github.com/penpot/penpot/issues/9584)
+- Fix Plugin API addRulerGuide creating guides on page instead of board (by @girafic) [#8225](https://github.com/penpot/penpot/issues/8225) (PR: [#8632](https://github.com/penpot/penpot/pull/8632))
 
 
 ## 2.15.4

@@ -115,6 +115,16 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
               issueType { name }
               labels(first: 20) { nodes { name } }
               closedByPullRequestsReferences(first: 5) { nodes { number } }
+              projectItems(first: 10) {
+                nodes {
+                  project { title }
+                  fieldValueByName(name: "Status") {
+                    ... on ProjectV2ItemFieldSingleSelectValue {
+                      name
+                    }
+                  }
+                }
+              }
             }
         }
       }
@@ -154,6 +164,14 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
             if node is None:
                 continue
             issue_type = node.get("issueType")
+            # Extract project status from the "Main" project board (if present)
+            project_status = None
+            for pi in (node.get("projectItems") or {}).get("nodes") or []:
+                project = pi.get("project") or {}
+                if project.get("title") == "Main":
+                    status_field = pi.get("fieldValueByName") or {}
+                    project_status = status_field.get("name")
+                    break
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
@@ -161,6 +179,7 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
                 "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
+                "project_status": project_status,
             })
 
         total = len(all_nodes)
@@ -209,6 +228,13 @@ def cmd_issues(args: argparse.Namespace) -> None:
                     if not any(lbl in exclusions for lbl in issue["labels"])]
         print(f"After excluding labels: {len(filtered)} issues", file=sys.stderr)
         issues = filtered
+
+    # Filter out issues with "Rejected" project status (unless --include-rejected)
+    if not args.include_rejected:
+        rejected = [iss for iss in issues if iss.get("project_status") == "Rejected"]
+        if rejected:
+            issues = [iss for iss in issues if iss.get("project_status") != "Rejected"]
+            print(f"After excluding rejected: {len(issues)} issues (removed {len(rejected)}: {[r['number'] for r in rejected]})", file=sys.stderr)
 
     # Filter to issues NOT yet in the comparison file (if --compare given)
     if args.compare:
@@ -451,6 +477,10 @@ def main() -> None:
     p_issues.add_argument(
         "--compare",
         help="Path to CHANGES.md; only show issues NOT yet referenced in that file"
+    )
+    p_issues.add_argument(
+        "--include-rejected", action="store_true",
+        help="Include issues with 'Rejected' project status (excluded by default)"
     )
     p_issues.set_defaults(func=cmd_issues)
 
