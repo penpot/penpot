@@ -37,6 +37,13 @@
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
 
+(defn lookup-tokens-lib
+  [state]
+  (let [current-file-data (lookup-file-data state)
+        tokens-file-id (or (:tokens-file current-file-data) (:id current-file-data))
+        tokens-file-data (lookup-file-data state tokens-file-id)]
+    (:tokens-lib tokens-file-data)))
+
 (defn get-page
   [fdata page-id]
   (dm/get-in fdata [:pages-index page-id]))

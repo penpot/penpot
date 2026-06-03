@@ -13,26 +13,22 @@
 
 (defn- get-selected-token-set-id [state]
   (or (get-in state [:workspace-tokens :selected-token-set-id])
-      (some-> (dsh/lookup-file-data state)
-              (get :tokens-lib)
+      (some-> (dsh/lookup-tokens-lib state)
               (ctob/get-sets)
               (first)
               (ctob/get-id))))
 
 (defn get-selected-token-set [state]
   (when-let [set-id (get-selected-token-set-id state)]
-    (some-> (dsh/lookup-file-data state)
-            (get :tokens-lib)
+    (some-> (dsh/lookup-tokens-lib state)
             (ctob/get-set set-id))))
 
 (defn get-token-in-selected-set [state token-id]
   (when-let [set-id (get-selected-token-set-id state)]
-    (some-> (dsh/lookup-file-data state)
-            (get :tokens-lib)
+    (some-> (dsh/lookup-tokens-lib state)
             (ctob/get-token set-id token-id))))
 
 (defn get-all-tokens-in-selected-set [state]
   (when-let [set-id (get-selected-token-set-id state)]
-    (some-> (dsh/lookup-file-data state)
-            (get :tokens-lib)
+    (some-> (dsh/lookup-tokens-lib state)
             (ctob/get-tokens set-id))))
