@@ -48,7 +48,7 @@ pub fn render_debug_cache_surface(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    if !render_state.options.show_wasm_info() {
+    if render_state.preview_mode || !render_state.options.show_wasm_info() {
         return;
     }
 

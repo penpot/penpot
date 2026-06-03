@@ -2254,7 +2254,10 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<()> {
         self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
+        let saved_preview_mode = self.preview_mode;
+        self.preview_mode = true;
         self.present_frame(tree);
+        self.preview_mode = saved_preview_mode;
         Ok(())
     }
 
