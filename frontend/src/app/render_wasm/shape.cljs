@@ -130,6 +130,7 @@
 (defn- set-wasm-attr!
   [shape k]
   (when wasm/context-initialized?
+    ;;TODO_BLUR: ask about this,
     (let [shape (case k
                   :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
                   (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
@@ -187,6 +188,9 @@
         :blur
         (api/set-shape-blur v)
 
+        :background-blur
+        (api/set-shape-background-blur v)
+
         :shadow
         (api/set-shape-shadows v)
 
@@ -230,6 +234,7 @@
           ;; Always update fills/blur/shadow to clear previous state if filters disappear
           (api/set-shape-fills id (:fills shape) false)
           (api/set-shape-blur (:blur shape))
+          (api/set-shape-background-blur (:background-blur shape))
           (api/set-shape-shadows (:shadow shape)))
 
         :masked-group

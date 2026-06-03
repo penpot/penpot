@@ -24,3 +24,7 @@
   [shape scale]
   (update-in shape [:blur :value] * scale))
 
+(defn update-background-blur-scale
+  [shape scale]
+  (update-in shape [:background-blur :value] * scale))
+

@@ -217,8 +217,8 @@
            :penpot:spread (str spread)}])))
 
 (defn- export-blur-data [{:keys [blur]}]
-  (when-let [{:keys [type hidden value]} blur]
-    (mf/html
+   (when-let [{:keys [type hidden value]} blur]
+     (mf/html
      [:> "penpot:blur"
       #js {:penpot:blur-type (d/name type)
            :penpot:hidden    (str hidden)
