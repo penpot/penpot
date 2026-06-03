@@ -2240,6 +2240,20 @@
   (h/call wasm/internal-module "_hide_grid")
   (request-render "clear-grid"))
 
+;; Ruler guides ----------------------------------------------------------------
+
+(defn set-guides
+  "Serializes the page guides and sends them to the render engine.
+  `guides` is the page `:guides` map (id -> guide)."
+  [guides]
+  (let [size    (sr/get-guides-byte-size guides)
+        offset  (mem/alloc->offset-32 size)
+        heapu32 (mem/get-heap-u32)
+        heapf32 (mem/get-heap-f32)]
+    (sr/write-guides guides heapu32 heapf32 offset)
+    (h/call wasm/internal-module "_set_guides")
+    (request-render "set-guides")))
+
 (defn get-grid-coords
   [position]
   (let [offset  (h/call wasm/internal-module

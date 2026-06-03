@@ -1,19 +1,16 @@
-use crate::shapes::Color;
+use crate::ui::Guide;
+use crate::uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub enum GuideKind {
-    Vertical(f32),
-    Horizontal(f32),
+pub struct UIState {
+    pub guides: Vec<Guide>,
+    pub _show_grid: Option<Uuid>,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct Guide {
-    pub kind: GuideKind,
-    pub color: Color,
-}
-
-impl Guide {
-    pub fn new(kind: GuideKind, color: Color) -> Self {
-        Self { kind, color }
+impl UIState {
+    pub fn new() -> Self {
+        Self {
+            guides: Vec::new(),
+            _show_grid: None,
+        }
     }
 }

@@ -9,6 +9,7 @@ mod render;
 mod shapes;
 mod state;
 mod tiles;
+mod ui;
 mod utils;
 mod uuid;
 mod view;

@@ -1,9 +1,9 @@
 use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
+use crate::globals::get_ui_state;
 use crate::render::{grid_layout, rulers};
 use crate::shapes::{Layout, Type};
-
 pub mod guides;
 
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
@@ -66,7 +66,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let ruler_state = render_state.rulers;
     rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
     // TODO: pass guides data here
-    guides::render(canvas, zoom, viewbox.area);
+    guides::render(canvas, zoom, viewbox.area, &get_ui_state().guides);
 
     canvas.restore();
 

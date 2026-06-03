@@ -538,6 +538,12 @@
       (when @canvas-init?
         (wasm.api/render-ui-only)))
 
+    ;; Ruler guides: push the page guides to the render engine whenever they
+    ;; change or their visibility toggles. When hidden we send an empty set.
+    (mf/with-effect [@canvas-init? guides show-rulers? show-grids?]
+      (when @canvas-init?
+        (wasm.api/set-guides (if (and show-rulers? show-grids?) guides {}))))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -824,35 +830,18 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       (when-not hide-ui?
-         [:> rulers/rulers*
-          {:zoom zoom
-           :zoom-inverse zoom-inverse
-           :vbox vbox
-           :selected-shapes selected-shapes
-           :offset-x offset-x
-           :offset-y offset-y
-           :show-rulers show-rulers?}])
+       ;; NOTE: ruler guides are being migrated to the WASM render engine.
+       ;; The SVG-overlay rendering is temporarily disabled while we implement
+       ;; the new path.
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
-           :guides guides
+           ;;             :guides guides
+           :guides #{}
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers wasm-modifiers}])
-
-       ;; NOTE: ruler guides are being migrated to the WASM render engine.
-       ;; The SVG-overlay rendering is temporarily disabled while we implement
-       ;; the new path.
-       #_(when (and show-rulers? show-grids?)
-           [:> guides/viewport-guides*
-            {:zoom zoom
-             :vbox vbox
-             :guides guides
-             :hover-frame guide-frame
-             :disabled-guides disabled-guides?
-             :modifiers wasm-modifiers}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)

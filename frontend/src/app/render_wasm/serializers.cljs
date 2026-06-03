@@ -8,7 +8,9 @@
    (:require
     [app.common.data :as d]
     [app.common.data.macros :as dm]
+    [app.common.types.color :as clr]
     [app.common.uuid :as uuid]
+    [app.render-wasm.serializers.color :as sr-clr]
     [app.render-wasm.wasm :as wasm]
     [cuerdas.core :as str]))
 
@@ -281,3 +283,47 @@
   (let [values (unchecked-get wasm/serializers "transform-entry-kind")
         default (unchecked-get values "parent")]
     (d/nilv (unchecked-get values (d/name kind)) default)))
+
+;; --- Guides
+
+;; Each guide is serialized as 3 x 32-bit words:
+;;   kind (u32) | color (u32 argb) | position (f32)
+(def ^:private guide-entry-size 12)
+
+;; Default guide color used when a guide has no explicit color (matches the
+;; previous SVG overlay `default-guide-color`).
+(def ^:private default-guide-color clr/new-danger)
+
+(defn- translate-guide-axis
+  "Maps a guide axis to the RawGuideKind discriminant expected by WASM.
+  `:x` (constant x) is a vertical guide, `:y` is a horizontal one."
+  [axis]
+  (let [values  (unchecked-get wasm/serializers "guide-kind")
+        default (unchecked-get values "vertical")]
+    (case axis
+      :x (unchecked-get values "vertical")
+      :y (unchecked-get values "horizontal")
+      default)))
+
+(defn get-guides-byte-size
+  "Total heap size (in bytes) needed to serialize `guides` (a map id -> guide),
+  including the 4-byte header that holds the guide count."
+  [guides]
+  (+ 4 (* (count guides) guide-entry-size)))
+
+(defn write-guides
+  "Writes `guides` (a map id -> guide) into the heap views starting at the
+  32-bit `offset`. Layout: count header (u32) followed by
+  `kind | color | position` per guide."
+  [guides heapu32 heapf32 offset]
+  (let [guides (vec (vals guides))
+        total  (count guides)]
+    (aset heapu32 offset total)
+    (loop [i 0]
+      (when (< i total)
+        (let [guide (nth guides i)
+              base  (+ offset 1 (* i 3))]
+          (aset heapu32 base (translate-guide-axis (get guide :axis)))
+          (aset heapu32 (+ base 1) (sr-clr/hex->u32argb (or (get guide :color) default-guide-color) 1))
+          (aset heapf32 (+ base 2) (get guide :position)))
+        (recur (inc i))))))
