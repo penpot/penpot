@@ -188,8 +188,7 @@
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens-tree (-> (dsh/lookup-file-data state)
-                                 (get :tokens-lib)
+      (when-let [tokens-tree (-> (dsh/lookup-tokens-lib state)
                                  (ctob/get-tokens-in-active-sets))]
         (->> (if (contains? cf/flags :tokenscript)
                (rx/of (-> (ts/resolve-tokens tokens-tree)
