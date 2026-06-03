@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-02 17:01+0000\n"
+"PO-Revision-Date: 2026-06-03 19:01+0000\n"
 "Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -1416,7 +1416,7 @@ msgstr "Ogiltigt färgvärde: %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:108
 msgid "errors.tokens.invalid-font-family-token-value"
-msgstr "Ogiltigt token-värde: du kan bara referera till en teckensnittsfamiljs-token"
+msgstr "Ogiltigt token-värde: du kan bara referera till en typsnitts-token"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:104
 msgid "errors.tokens.invalid-font-weight-token-value"
@@ -5229,7 +5229,7 @@ msgstr "Storlek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:572
 msgid "workspace.assets.typography.font-style"
-msgstr "Teckensnitt"
+msgstr "Typsnitt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:594
 msgid "workspace.assets.typography.go-to-edit"
@@ -8629,3 +8629,161 @@ msgstr ""
 #, unused
 msgid "dashboard.select-org-modal.select"
 msgstr "Välj en organisation"
+
+#: src/app/main/ui/dashboard/fonts.cljs:343
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Teckenfamiljens namn får bara innehålla bokstäver, siffror, mellanslag, "
+"bindestreck, understreck och punkter."
+
+#: src/app/main/ui/static.cljs:82
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Denna inbjudan är till en annan e-postadress. Logga ut och logga in med det "
+"inbjudna kontot, eller be teamägaren om en ny inbjudan."
+
+#: src/app/main/ui/static.cljs:86
+msgid "errors.invite-expired"
+msgstr "Denna inbjudan har gått ut. Be teamägaren att skicka en ny till dig."
+
+#, unused
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Det uppstod ett fel när du skulle lämna organisationen. Försök igen."
+
+#, unused
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "Organisationsägaren kan inte lämna organisationen."
+
+#: src/app/main/ui/auth/verify_token.cljs:97
+msgid "errors.org-not-found"
+msgstr "Den organisationen finns inte"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Endast ägaren till ett team kan ta bort det."
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr ""
+"Teamnamnet får inte innehålla något av följande tecken: '.', ':' eller '/'"
+
+#: src/app/common/files/tokens.cljc:298
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Temat refererar till några icke-existerande uppsättningar: %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:431
+msgid "errors.tokens.empty-field"
+msgstr "Detta fält får inte vara tomt"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:68, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr ""
+"Gruppnamnet %s står i konflikt med en token med samma namn i en annan aktiv "
+"uppsättning."
+
+#: src/app/main/errors.cljs:105
+#, unused
+msgid "errors.unexpected-exception"
+msgstr "Oväntat fel: %s"
+
+#: src/app/main/ui/static.cljs:339
+msgid "errors.webgl-context-lost.desc-message"
+msgstr ""
+"WebGL har slutat fungera. Vänligen ladda om sidan för att återställa den"
+
+#: src/app/main/data/nitrate.cljs:338, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "Lägg till team i en organisation"
+
+#, unused
+msgid "dashboard.team-belong-org"
+msgstr "Detta team tillhör nu %s"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Detta team tillhör inte längre organisation %s"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Teamorganisation"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Lägg till i en organisation"
+
+#: src/app/main/data/nitrate.cljs:337, src/app/main/data/nitrate.cljs:394
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr ""
+"Du har inte behörighet att lägga till det här teamet i någon av dina "
+"organisationer."
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Ändra teamorganisation"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Endast personer inom din organisation kan bjudas in."
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Detta team är inte en del av någon organisation"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Ta bort teamet från organisationen"
+
+#: src/app/main/ui/dashboard/deleted.cljs:297
+msgid "dashboard.trash-info-text-part1"
+msgstr "Raderade filer kommer att finnas kvar i papperskorgen i"
+
+#: src/app/main/ui/dashboard/deleted.cljs:299
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s dagar. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:300
+msgid "dashboard.trash-info-text-part3"
+msgstr "Efter det kommer de att raderas permanent."
+
+#: src/app/main/ui/dashboard/deleted.cljs:302
+msgid "dashboard.trash-info-text-part4"
+msgstr ""
+"Om du ångrar dig kan du återställa dem eller ta bort dem permanent från "
+"varje fils meny."
+
+#, unused
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Du är inte längre medlem i organisation %s"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/options.cljs:111
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"WebGL-rendering kan förbättra prestandan, men den är i beta och kan vara "
+"mindre stabil. Visuella skillnader kan förekomma mellan arbetsytan, "
+"exporterna (SVG/PDF) och visningsläget."
+
+#: src/app/main/ui/settings/options.cljs:114
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Inaktiverad"
+
+#: src/app/main/ui/settings/integrations.cljs:514
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Inaktiverad"
+
+#: src/app/main/ui/settings/integrations.cljs:433
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "MCP-server inaktiverad"
+
+#, unused
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "WebGL-rendering inaktiverad"
+
+#: src/app/main/ui/workspace/main_menu.cljs:862
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Hantera (Status: inaktiverad)"
