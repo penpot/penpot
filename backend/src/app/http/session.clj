@@ -336,3 +336,28 @@
   (l/dbg :hint "initializing session gc task" :max-age max-age)
   (fn [_]
     (db/tx-run! cfg collect-expired-tasks)))
+
+(defn create-session-token
+  "Creates a session in the database and returns a map with :id (the session
+   DB row id) and :token (the raw JWE token string). Used for service-to-service
+   auth where we need a valid Bearer token without going through the full
+   login/cookie flow (e.g., proxying to the exporter from an access-token RPC call).
+
+   Unlike `create-fn`, this does NOT set a Set-Cookie header. Caller is
+   responsible for using and cleaning up the token."
+  [cfg profile-id & {:keys [sso-provider-id sso-session-id user-agent]}]
+  (let [params  (d/without-nils
+                 {:profile-id profile-id
+                  :user-agent (or user-agent "penpot-exporter-proxy")
+                  :sso-provider-id sso-provider-id
+                  :sso-session-id sso-session-id})
+        session (create-session (::manager cfg) params)
+        session (assign-token cfg session)]
+    {:id (:id session)
+     :token (:token session)}))
+
+(defn delete-session-by-id
+  "Deletes a session row from the database by its session-id.
+   Used for cleaning up temp sessions created via `create-session-token`."
+  [cfg session-id]
+  (delete-session (::manager cfg) session-id))

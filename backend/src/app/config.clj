@@ -90,7 +90,9 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}})
+   :ssrf-extra-blocked-cidrs #{}
+
+   :exporter-uri "http://localhost:6061"})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -244,6 +246,7 @@
     [:executor-threads {:optional true} ::sm/int]
 
     [:nitrate-backend-uri {:optional true} ::sm/uri]
+    [:exporter-uri {:optional true} ::sm/uri]
 
     ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]

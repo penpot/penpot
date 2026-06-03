@@ -142,6 +142,8 @@ services:
 
       PENPOT_REDIS_URI: redis://penpot-valkey/0
 
+      PENPOT_EXPORTER_URI: http://penpot-exporter:6061
+
       ## Default configuration for assets storage: using filesystem based with all files
       ## stored in a docker volume.
 
