@@ -24,6 +24,7 @@ use std::collections::{HashMap, HashSet};
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
+// TODO_BLUR: should we add here BackgroundBlur
 use crate::error::{Error, Result};
 use crate::math;
 use crate::shapes::{
@@ -370,7 +371,7 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     // Frames contained in groups must reset this nested_fills stack pushing a new empty vector.
     pub nested_fills: Vec<Vec<Fill>>,
-    pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
+    pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?, sholud be an option now? TODO_BLUR
     pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
     pub rulers: RulerState,
@@ -587,7 +588,7 @@ impl RenderState {
             backbuffer_crop_cache: HashMap::default(),
         })
     }
-
+    /// TODO_BLUR: ?
     /// Combines every visible layer blur currently active (ancestors + shape)
     /// into a single equivalent blur. Layer blur radii compound by adding their
     /// variances (σ² = radius²), so we:

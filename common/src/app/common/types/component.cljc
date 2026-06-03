@@ -91,6 +91,7 @@
    :blend-mode              :layer-effects-group
    :shadow                  :shadow-group
    :blur                    :blur-group
+   :background-blur         :blur-group
    :masked-group            :mask-group
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
