@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-03 19:01+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -2146,7 +2146,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Etkin temalar"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS kısaltmasını panoya kopyala"
 
@@ -5046,7 +5045,6 @@ msgid "subscription.settings.success.dialog.title"
 msgstr "%s oldunuz!"
 
 #: src/app/main/ui/settings/subscription.cljs:656
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Bu planla bizi şu zamandan beri destekliyorsunuz: %s"
 
@@ -8532,7 +8530,7 @@ msgstr "Geçmiş"
 
 #: src/app/main/data/workspace/libraries.cljs:1335, src/app/main/data/workspace/versions.cljs:230
 msgid "workspace.updates.dismiss"
-msgstr "Yoksay"
+msgstr "Yok say"
 
 #: src/app/main/data/workspace/libraries.cljs:1333
 msgid "workspace.updates.more-info"
@@ -8640,3 +8638,1166 @@ msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Artık %s organizasyonunun bir parçasısınız"
+
+#: src/app/main/data/nitrate.cljs:161
+msgid "dasboard.leave-org.toast"
+msgstr "Artık %s organizasyonunun bir parçası değilsiniz."
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "TAKIMI TAŞI"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "Şuraya taşı:"
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "Organizasyon seç"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"Projeler ve dosyalar takım üyeleri tarafından erişilebilir olmaya devam "
+"edecek. Takım, yeni organizasyondan yapılandırmayı alacak."
+
+#: src/app/main/data/nitrate.cljs:395, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "Takımın organizasyonunu değiştir"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Yönetici Arayüzüne Git"
+
+#: src/app/main/ui/dashboard/import.cljs:507
+msgid "dashboard.import.import-error.check-error"
+msgstr "Bu dosyayı doğrulayamadık."
+
+#: src/app/main/ui/dashboard/import.cljs:511
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Bu dosya bozuk gibi görünüyor."
+
+#: src/app/main/ui/dashboard/import.cljs:514
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Bu dosya işlenirken bir hata oluştu."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Bu takıma kişileri davet etme, davetleri düzenleme veya silme izniniz yok."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "Organizasyondan ayrıl"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "Takımlarım"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "Hiçbir organizasyonunuza takım ekleme izniniz yok."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"%s organizasyonu içinde takım oluşturmanıza izin verilmiyor. Daha fazla "
+"bilgiye ihtiyacınız varsa, organizasyonun sahibiyle iletişime geçin."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"%s organizasyonuna ait takımları silmenize izin verilmiyor. Daha fazla "
+"bilgiye ihtiyacınız varsa, organizasyonun sahibiyle iletişime geçin."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"%s organizasyonuna ait takımları taşımanıza izin verilmiyor. Daha fazla "
+"bilgiye ihtiyacınız varsa, organizasyonun sahibiyle iletişime geçin."
+
+#: src/app/main/data/dashboard.cljs:752
+msgid "dashboard.org-deleted"
+msgstr "%s organizasyonu silindi."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Organizasyon oluştur"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Organizasyonlar"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "ORGANİZASYONA EKLE"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "Organizasyon seç:"
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"\"%s\", yalnızca organizasyon üyelerinin takımlarına katılmasına izin "
+"veriyor. Organizasyon dışındaki kişilere gönderilmiş bekleyen davetler iptal "
+"edilecektir."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Dış kullanıcılara gönderilen bekleyen davetler iptal edilecektir."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr ""
+"Burada, takım oluşturmanıza veya eklemenize izin verilen tüm "
+"organizasyonlarınızı bulabilirsiniz."
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "Organizasyon seç"
+
+#: src/app/main/data/nitrate.cljs:338, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "Takımı bir organizasyona ekle"
+
+#, unused
+msgid "dashboard.team-belong-org"
+msgstr "Bu takım artık %s organizasyonuna ait"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Bu takım artık %s organizasyonuna ait değil"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Takım organizasyonu"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Organizasyona ekle"
+
+#: src/app/main/data/nitrate.cljs:337, src/app/main/data/nitrate.cljs:394
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "Bu takımı hiçbir organizasyonunuza ekleme izniniz yok."
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Takım organizasyonunu değiştir"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Yalnızca organizasyonunuzdaki kişiler davet edilebilir."
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Bu takım herhangi bir organizasyonun parçası değil"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Takımı organizasyondan kaldır"
+
+#, unused
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Artık %s organizasyonunun üyesi değilsiniz"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/options.cljs:111
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"WebGL görselleştirme performansı iyileştirebilir, ancak bu özellik henüz "
+"beta aşamasındadır ve daha az kararlı olabilir. Tuval, dışa aktarımlar (SVG/"
+"PDF) ve görüntüleme modu arasında bazı görsel farklılıklar ortaya çıkabilir."
+
+#: src/app/main/ui/settings/options.cljs:114
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Devre dışı"
+
+#: src/app/main/ui/settings/options.cljs:114
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Etkin"
+
+#: src/app/main/ui/settings/options.cljs:117
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Geri bildirimde bulun"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.status"
+msgstr "Durum"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL görselleştirme"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"{%s} herhangi bir etkin kümede bulunmuyor veya geçersiz bir değere sahip."
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"Pano API'si kullanılabilir değil. Pano erişimini etkinleştirmek için "
+"Penpot'u HTTPS üzerinden sunun"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Pano erişimi reddedildi. İçeriği yapıştırmak için lütfen tarayıcınızda pano "
+"izinlerini etkinleştirin"
+
+#: src/app/main/ui/dashboard/fonts.cljs:343
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Yazı tipi ailesi adı yalnızca harfler, rakamlar, boşluklar, tireler, alt "
+"çizgiler ve noktalardan oluşabilir."
+
+#: src/app/main/ui/static.cljs:82
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Bu davet, farklı bir e-posta adresi içindir. Oturumunuzu kapatıp davet "
+"edilen hesapla oturum açın veya takım sahibinden yeni bir davet isteyin."
+
+#: src/app/main/ui/static.cljs:86
+msgid "errors.invite-expired"
+msgstr ""
+"Bu davetin süresi doldu. Takım sahibinden size yeni bir davet göndermesini "
+"isteyin."
+
+#, unused
+msgid "errors.org-leave.no-valid-teams"
+msgstr ""
+"Organizasyondan ayrılma sırasında bir hata oluştu. Lütfen tekrar deneyin."
+
+#, unused
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "Organizasyon sahibi organizasyondan ayrılamaz."
+
+#: src/app/main/ui/auth/verify_token.cljs:97
+msgid "errors.org-not-found"
+msgstr "Bu organizasyon yok"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Bir takımı yalnızca sahibi silebilir."
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr "Takım adı şu karakterleri içeremez:'.', ':' veya '/'"
+
+#: src/app/common/files/tokens.cljc:298
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Tema, var olmayan bazı kümelere referans veriyor: %s"
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:431
+msgid "errors.tokens.empty-field"
+msgstr "Bu alan boş olamaz"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:68, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr "%s grup adı, başka bir etkin kümedeki aynı adlı bir tokenle çakışıyor."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Karışık Yazı Tipi Aileleri"
+
+#: src/app/main/ui/settings/integrations.cljs:598
+msgid "integrations.access-tokens.create"
+msgstr "Yeni erişim tokeni oluştur"
+
+#: src/app/main/ui/settings/integrations.cljs:606
+msgid "integrations.access-tokens.empty.add-one"
+msgstr ""
+"Bir tane oluşturmak için \"Yeni erişim tokeni oluştur\" düğmesine basın."
+
+#: src/app/main/ui/settings/integrations.cljs:605
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Şu ana kadar hiç tokeniniz yok."
+
+#: src/app/main/ui/settings/integrations.cljs:588
+msgid "integrations.access-tokens.personal"
+msgstr "Kişisel erişim tokenleri"
+
+#: src/app/main/ui/settings/integrations.cljs:593
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"Kişisel erişim tokenleri, kullanıcı adı/parola kimlik doğrulama sistemimize "
+"benzer şekilde çalışır ve bir uygulamanın Penpot API’sine erişmesine izin "
+"vermek için kullanılabilir"
+
+#: src/app/main/ui/settings/integrations.cljs:67
+msgid "integrations.copy-to-clipboard"
+msgstr "Panoya kopyala"
+
+#: src/app/main/ui/settings/integrations.cljs:258
+msgid "integrations.create-access-token.title"
+msgstr "Erişim tokeni oluştur"
+
+#: src/app/main/ui/settings/integrations.cljs:257
+msgid "integrations.create-access-token.title.created"
+msgstr "Erişim tokeni oluşturuldu"
+
+#: src/app/main/ui/settings/integrations.cljs:367
+msgid "integrations.delete-token.accept"
+msgstr "Tokeni sil"
+
+#: src/app/main/ui/settings/integrations.cljs:366
+msgid "integrations.delete-token.message"
+msgstr "Bu tokeni silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/settings/integrations.cljs:365
+msgid "integrations.delete-token.title"
+msgstr "Tokeni sil"
+
+#: src/app/main/ui/settings/integrations.cljs:221
+msgid "integrations.expiration-180-days"
+msgstr "180 gün"
+
+#: src/app/main/ui/settings/integrations.cljs:218
+msgid "integrations.expiration-30-days"
+msgstr "30 gün"
+
+#: src/app/main/ui/settings/integrations.cljs:219
+msgid "integrations.expiration-60-days"
+msgstr "60 gün"
+
+#: src/app/main/ui/settings/integrations.cljs:220
+msgid "integrations.expiration-90-days"
+msgstr "90 gün"
+
+#: src/app/main/ui/settings/integrations.cljs:216
+msgid "integrations.expiration-date.label"
+msgstr "Sona erme süresi"
+
+#: src/app/main/ui/settings/integrations.cljs:217
+msgid "integrations.expiration-never"
+msgstr "Asla"
+
+#: src/app/main/ui/settings/integrations.cljs:389
+msgid "integrations.expired-on"
+msgstr "%s tarihinde süresi doldu"
+
+#: src/app/main/ui/settings/integrations.cljs:390
+msgid "integrations.expires-on"
+msgstr "%s tarihinde süresi dolar"
+
+#: src/app/main/ui/settings/integrations.cljs:296
+msgid "integrations.generate-mcp-key.title"
+msgstr "MCP anahtarı oluştur"
+
+#: src/app/main/ui/settings/integrations.cljs:294
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP anahtarı oluşturuldu"
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "integrations.info.mcp-client-config"
+msgstr "Bu yapılandırmayı MCP istemcinize ekleyin (örn. ~/.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:201
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Penpot MCP Sunucusu, MCP istemcilerinin Penpot tasarım dosyalarıyla doğrudan "
+"etkileşime girmesini sağlar."
+
+#: src/app/main/ui/settings/integrations.cljs:101
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr ""
+"Bu benzersiz MCP anahtarı geri kurtarılamaz. Kaybederseniz, yeni bir tane "
+"oluşturmanız gerekecektir."
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.mcp-key.will-expire"
+msgstr "MCP anahtarının geçerlilik süresi %s tarihinde sona erecek"
+
+#: src/app/main/ui/settings/integrations.cljs:116
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "MCP anahtarının geçerlilik süresinin sonu yok"
+
+#: src/app/main/ui/settings/integrations.cljs:488
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Penpot MCP Sunucusu, MCP istemcilerinin Penpot tasarım dosyalarıyla doğrudan "
+"etkileşime girmesini sağlar."
+
+#: src/app/main/ui/settings/integrations.cljs:415
+#, unused
+msgid "integrations.mcp-server.mcp-keys.copy"
+msgstr "Bağlantıyı kopyala"
+
+#: src/app/main/ui/settings/integrations.cljs:566
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "MCP istemcileri nasıl yapılandırılır"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Bu, MCP istemcinizi Penpot MCP sunucusuna bağlamak için yapılandırmanız "
+"gereken sunucu adresidir."
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "MCP anahtarını yeniden oluştur"
+
+#: src/app/main/ui/settings/integrations.cljs:529
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "MCP anahtarı"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "MCP istemcisinin kurulumu için MCP anahtarı gereklidir"
+
+#: src/app/main/ui/settings/integrations.cljs:494
+msgid "integrations.mcp-server.status"
+msgstr "Durum"
+
+#: src/app/main/ui/settings/integrations.cljs:514
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Devre dışı"
+
+#: src/app/main/ui/settings/integrations.cljs:513
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Etkin"
+
+#: src/app/main/ui/settings/integrations.cljs:504
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"MCP sunucusuna bağlanmak için kullanılan MCP anahtarının geçerlilik süresi "
+"doldu. Bu nedenle bağlantı kurulamıyor."
+
+#: src/app/main/ui/settings/integrations.cljs:509
+msgid "integrations.mcp-server.status.expired.1"
+msgstr ""
+"Lütfen MCP anahtarını yeniden oluşturun ve istemci yapılandırmanızı yeni "
+"anahtarla güncelleyin."
+
+#: src/app/main/ui/settings/integrations.cljs:479
+msgid "integrations.mcp-server.title"
+msgstr "MCP Sunucusu"
+
+#: src/app/main/ui/settings/integrations.cljs:483
+msgid "integrations.mcp-server.title.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/integrations.cljs:208
+msgid "integrations.name.label"
+msgstr "Ad"
+
+#: src/app/main/ui/settings/integrations.cljs:209
+msgid "integrations.name.placeholder"
+msgstr "Adı, bu tokenin ne için olduğunu anlamaya yardımcı olabilir"
+
+#: src/app/main/ui/settings/integrations.cljs:388
+msgid "integrations.no-expiration"
+msgstr "Son geçerlilik tarihi yok"
+
+#: src/app/main/ui/settings/integrations.cljs:468
+msgid "integrations.notification.success.copied-link"
+msgstr "Bağlantı panoya kopyalandı"
+
+#: src/app/main/ui/settings/integrations.cljs:162
+msgid "integrations.notification.success.created"
+msgstr "Token başarıyla oluşturuldu"
+
+#: src/app/main/ui/settings/integrations.cljs:85
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "MCP anahtarı kopyalandı"
+
+#: src/app/main/ui/settings/integrations.cljs:433
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "MCP sunucusu devre dışı"
+
+#: src/app/main/ui/settings/integrations.cljs:432
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "MCP sunucusu etkin"
+
+#: src/app/main/ui/settings/integrations.cljs:86
+msgid "integrations.notification.success.token-copied"
+msgstr "Token kopyalandı"
+
+#: src/app/main/ui/settings/integrations.cljs:338
+msgid "integrations.regenerate-mcp-key.info"
+msgstr ""
+"MCP anahtarını yeniden oluşturmak, şu anki anahtarı derhal geçersiz "
+"kılacaktır. Bu anahtarı kullanan tüm uygulamalar çalışmayı durduracaktır."
+
+#: src/app/main/ui/settings/integrations.cljs:337
+msgid "integrations.regenerate-mcp-key.title"
+msgstr "MCP anahtarını yeniden oluştur"
+
+#: src/app/main/ui/settings/integrations.cljs:335
+msgid "integrations.regenerate-mcp-key.title.created"
+msgstr "MCP anahtarı yeniden oluşturuldu"
+
+#: src/app/main/ui/settings/integrations.cljs:626
+msgid "integrations.title"
+msgstr "Bütünleşmeler"
+
+#: src/app/main/ui/settings/integrations.cljs:102
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Bu benzersiz token geri alınamaz. Kaybederseniz, yeni bir tane oluşturmanız "
+"gerekecektir."
+
+#: src/app/main/ui/settings/integrations.cljs:114
+msgid "integrations.token.will-expire"
+msgstr "Tokenin geçerlilik süresi %s tarihinde sona erecek"
+
+#: src/app/main/ui/settings/integrations.cljs:117
+msgid "integrations.token.will-not-expire"
+msgstr "Tokenin geçerlilik süresinin sonu yok"
+
+#: src/app/main/ui/settings/profile.cljs:116
+msgid "labels.delete-profile-photo.message"
+msgstr "Profil fotoğrafınızı silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/settings/profile.cljs:115
+msgid "labels.delete-profile-photo.title"
+msgstr "Profil fotoğrafını sil"
+
+#: src/app/main/data/workspace/mcp.cljs:186
+msgid "labels.dismiss"
+msgstr "Yok say"
+
+#: src/app/main/ui/dashboard/fonts.cljs:284
+msgid "labels.download-simple"
+msgstr "İndir"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "labels.downloading-file"
+msgstr "Dosya indiriliyor…"
+
+#: src/app/main/data/workspace/versions.cljs:303
+msgid "labels.exit"
+msgstr "Çıkış"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1246
+msgid "labels.flex-layout"
+msgstr "Esnek düzen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1250
+msgid "labels.grid-layout"
+msgstr "Izgara düzen"
+
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Bütünleşmeler"
+
+#: src/app/main/ui/static.cljs:330
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot, bir sistem sorunu nedeniyle geçici olarak kullanılamıyor. Lütfen "
+"biraz sonra tekrar deneyin."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "Eşleşme yok"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:705
+msgid "labels.open"
+msgstr "Aç"
+
+#: src/app/main/ui/dashboard/import.cljs:536
+msgid "labels.uploading-file"
+msgstr "Dosya karşıya yükleniyor…"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+#, unused
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s uyarı"
+msgstr[1] "%s uyarı"
+
+#: src/app/main/data/nitrate.cljs:195
+msgid "modals.before-leave-org.message"
+msgstr ""
+"Bazı takımların tek üyesi sizsiniz. Bu takımlar, projeleriyle ve "
+"dosyalarıyla birlikte silinecek."
+
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/change_owner.cljs:151
+msgid "modals.before-leave-org.title"
+msgstr "ORGANİZASYONDAN AYRILMADAN ÖNCE"
+
+#: src/app/main/data/nitrate.cljs:198
+msgid "modals.before-leave-org.warning"
+msgstr "Tek üyesi olduğunuz tüm takımlar silinecektir."
+
+#: src/app/main/ui/settings/delete_account.cljs
+#, unused
+msgid "modals.delete-account.info.with-orgs"
+msgstr ""
+"Bu işlem geri alınamaz. Hesabınız, aboneliğiniz ve organizasyonlarınız hemen "
+"silinecektir. Ayrıca var olan projelerinize ve dosyalarınıza erişiminizi de "
+"kaybedeceksiniz."
+
+#: src/app/main/ui/settings/delete_account.cljs:82
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Silinecek organizasyonlar"
+
+#: src/app/main/ui/settings/delete_account.cljs:97
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s üye"
+
+#: src/app/main/ui/settings/delete_account.cljs:95
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s takım"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Bu varlığı silmek istediğinizden emin misiniz?"
+msgstr[1] "Bu %s varlığı silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
+msgid "modals.delete-asset-group.title"
+msgstr "Grubu sil"
+
+#: src/app/main/data/team.cljs:129
+msgid "modals.delete-org-team-confirm.message"
+msgstr ""
+"%s organizasyonunun parçası olan bu takımı silmek istediğinizden emin "
+"misiniz?"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"Kütüphane, bileşenleri tarafından kullanılabilecek token ve temalara sahip."
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
+msgid "modals.import-library-tokens.import"
+msgstr "Tokenleri içe aktar"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:72
+msgid "modals.import-library-tokens.title"
+msgstr "Kütüphaneden tokenler içe aktarılsın mı?"
+
+#: src/app/main/data/team.cljs:583
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr ""
+"Yalnızca organizasyonun var olan üyeleri davet edilebilir. Listenizdeki hiç "
+"kimse üye olmadığı için davet gönderilmedi."
+
+#: src/app/main/data/team.cljs:582
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "Davet gönderilmedi"
+
+#: src/app/main/data/team.cljs:162
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr ""
+"Bu takıma yalnızca \"%s\" organizasyonunun üyeleri davet edilebilir ve bu "
+"kişiler zaten takımın üyeleridir. Daha fazla bilgiye ihtiyacınız varsa, "
+"organizasyonun sahibiyle iletişime geçin."
+
+#: src/app/main/ui/dashboard/team.cljs:308
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Davet almayacak adresler"
+
+#: src/app/main/ui/dashboard/team.cljs:325
+msgid "modals.invite-restricted-members.cancel"
+msgstr "İptal"
+
+#: src/app/main/ui/dashboard/team.cljs:298
+msgid "modals.invite-restricted-members.description"
+msgstr "Yalnızca organizasyonun var olan üyeleri davet edilebilir."
+
+#: src/app/main/ui/dashboard/team.cljs:333
+msgid "modals.invite-restricted-members.send"
+msgstr "Davetleri gönder"
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "Bazı davetler gönderilemiyor"
+
+#: src/app/main/ui/dashboard/team.cljs:299
+msgid "modals.invite-restricted-members.warning"
+msgstr "Listenizdeki bazı kişiler davet almayacak."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:158
+msgid "modals.leave-org-and-reassign.hint"
+msgstr ""
+"Bazı organizasyon takımlarının sahibi sizsiniz. Lütfen başka bir üyeyi "
+"sahibi olarak atayın."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:161
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr ""
+"Bazı takımların tek üyesi sizsiniz. Bu takımlar, projeleriyle ve "
+"dosyalarıyla birlikte silinecek."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:163
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr ""
+"Ayrıca, bazı organizasyon takımlarının sahibi sizsiniz. Lütfen başka bir "
+"üyeyi sahibi olarak atayın."
+
+#: src/app/main/data/nitrate.cljs:196, src/app/main/data/nitrate.cljs:205
+msgid "modals.leave-org-confirm.accept"
+msgstr "Organizasyondan ayrıl"
+
+#: src/app/main/data/nitrate.cljs:204
+msgid "modals.leave-org-confirm.message"
+msgstr ""
+"İçindeki tüm takımlara, projelere ve dosyalara erişiminizi kalıcı olarak "
+"kaybedeceksiniz."
+
+#: src/app/main/data/nitrate.cljs:203
+msgid "modals.leave-org-confirm.title"
+msgstr "%s organizasyonundan ayrılıyor musunuz?"
+
+#: src/app/main/data/nitrate.cljs:252
+msgid "modals.remove-team-org.accept"
+msgstr "Organizasyondan kaldır"
+
+#: src/app/main/data/nitrate.cljs:250
+msgid "modals.remove-team-org.info"
+msgstr ""
+"Projeler ve dosyalar takım üyeleri tarafından kullanılabilir olmaya devam "
+"edecek, ancak organizasyonun ayarları artık geçerli olmayacaktır."
+
+#: src/app/main/data/nitrate.cljs:249
+msgid "modals.remove-team-org.text"
+msgstr ""
+"'%s' takımını '%s' organizasyonundan kaldırmak istediğinizden emin misiniz?"
+
+#: src/app/main/data/nitrate.cljs:248
+msgid "modals.remove-team-org.title"
+msgstr "TAKIMI ORGANİZASYONDAN KALDIR"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
+msgid "nitrate.activation-code.expired-error"
+msgstr "Bu kodun geçerlilik süresi doldu."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Geçersiz kod."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
+msgid "nitrate.activation-success.active-until"
+msgstr "Planınız %s tarihine kadar etkindir."
+
+#: src/app/main/ui/dashboard/subscription.cljs:150, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
+msgid "nitrate.activation-success.create-org"
+msgstr "Organizasyon oluştur"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
+msgid "nitrate.activation-success.enjoy"
+msgstr "Planınızın tadını çıkarın!"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+msgid "nitrate.activation-success.manage-info"
+msgstr ""
+"Hesap ayarlarınızdaki Abonelik sayfasından aboneliğinizi istediğiniz zaman "
+"yönetebilirsiniz."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
+msgid "nitrate.activation-success.title"
+msgstr "Business Nitrate'siniz!"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+msgid "nitrate.code-activation.footer"
+msgstr "Koda mı ihtiyacınız var? Bizimle iletişime geçin:"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
+msgid "nitrate.code-activation.input-label"
+msgstr "Etkinleştirme kodunuzu girin"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:90
+msgid "nitrate.code-activation.placeholder"
+msgstr "Etkinleştirme kodunuzu buraya yapıştırın"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+msgid "nitrate.code-activation.renew-title"
+msgstr "NITRATE'Yİ YENİLE"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
+msgid "nitrate.code-activation.submit"
+msgstr "Etkinleştir"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+msgid "nitrate.code-activation.title"
+msgstr "Nitrate'yi etkinleştir"
+
+#, unused
+msgid "nitrate.contact-sales.button"
+msgstr "Satış birimiyle iletişime geçin"
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr ""
+"Bu plana geçmek için lütfen satış birimimizle iletişime geçin. Aboneliğinizi "
+"güncellemenize yardımcı olacak ve her şeyin doğru şekilde ayarlandığından "
+"emin olacağız."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgstr "Organizasyonunuz silinecek."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr ""
+"Toplam depolama alanınız, otomatik sürüm geçmişiniz ve dosya kurtarma "
+"süreniz sınırlandırılacak."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr ""
+"Takımlar, projeler ve dosyalar artık hiçbir organizasyonun parçası "
+"olmayacak, ancak kullanılabilir olmaya devam edecek."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "Sürüm düşürdüğünüzde:"
+
+#, unused
+msgid "nitrate.contact-sales.title"
+msgstr "%s planına geçmek ister misiniz?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77
+msgid "nitrate.form.cancel-anytime"
+msgstr ""
+"Ödeme, deneme süresinin sonunda gerçekleştirilecektir. İstediğiniz zaman "
+"iptal edebilirsiniz."
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:92
+msgid "nitrate.form.contact-trial"
+msgstr "Kurumsal planı 14 gün boyunca denemek için bizimle iletişime geçin:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:91
+msgid "nitrate.form.contact-upgrade"
+msgstr "Kurumsal plana yükseltmek için bizimle iletişime geçin:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:82, src/app/main/ui/nitrate/nitrate_form.cljs:102
+msgid "nitrate.form.enter-code"
+msgstr "Etkinleştirme kodunu girin"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:57
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Takımlar ve projeler genelinde genel ve ayrıntılı izinler"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:59
+msgid "nitrate.form.enterprise-feature-2"
+msgstr ""
+"Özel bir Yönetici Arayüzü üzerinden kimin, neyi, nerede yaptığıyla ilgili "
+"merkezi denetim"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:61
+msgid "nitrate.form.enterprise-feature-3"
+msgstr ""
+"Organizasyonunuzun ihtiyaç duyduğu yönetim ile tam açık kaynak özgürlüğü"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:54
+msgid "nitrate.form.enterprise-intro"
+msgstr ""
+"Takımlarınızın güvenli ve geniş ölçekte çalışabilmesi için gereken her şey:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:768
+msgid "nitrate.form.enterprise.price"
+msgstr "üye başına aylık"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
+msgid "nitrate.form.have-code"
+msgstr "Etkinleştirme kodunuz var mı?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:86
+msgid "nitrate.form.see-plan"
+msgstr "Geçerli planımı gör"
+
+#, unused
+msgid "nitrate.form.start-enterprise"
+msgstr "Kurumsal planı kullanmaya başlayın"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:51
+msgid "nitrate.form.title"
+msgstr "Kurumsal plan özelliklerinin kilidini açın"
+
+#: src/app/main/ui/dashboard/subscription.cljs:164, src/app/main/ui/nitrate/nitrate_form.cljs:75
+msgid "nitrate.form.try-free"
+msgstr "14 gün boyunca ücretsiz deneyin"
+
+#: src/app/main/ui/settings/subscription.cljs:576
+msgid "nitrate.subscription.active-until"
+msgstr "%s tarihine kadar etkin"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+msgid "nitrate.subscription.renew-success"
+msgstr "Nitrate aboneliğiniz yenilendi."
+
+#: src/app/main/ui/settings/subscription.cljs:585
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Aboneliği iptal et"
+
+#: src/app/main/ui/settings/subscription.cljs:105
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Etkinleştirme koduyla yenile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+msgid "not-active-token.no-name"
+msgstr ""
+"Bu token herhangi bir etkin kümede yer almıyor veya geçersiz bir değere "
+"sahip."
+
+#: src/app/main/data/workspace/mcp.cljs:185
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP başka bir sekmede etkin. Buraya geçmek ister misiniz?"
+
+#, unused
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP şimdi bu sekmede etkin."
+
+#: src/app/plugins/utils.cljs:311
+msgid "plugins.validation.message"
+msgstr "%s alanı geçersiz: %s"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.find"
+msgstr "Bul"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.find-and-replace"
+msgstr "Bul ve değiştir"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.paste-replace"
+msgstr "Yapıştır ve değiştir"
+
+#: src/app/main/ui/dashboard/subscription.cljs:146
+msgid "subscription.banner.create-org-info"
+msgstr ""
+"Bir organizasyon oluşturun ve Kurumsal planın tam olarak nasıl çalıştığını "
+"görün. Kurallar belirleyin, takımlarınızı yönetin ve tasarım iş akışınız "
+"üzerinde yepyeni bir denetim düzeyi keşfedin."
+
+#: src/app/main/ui/dashboard/subscription.cljs:144
+msgid "subscription.banner.see-enterprise"
+msgstr "Kurumsal planı çalışırken görün"
+
+#: src/app/main/ui/dashboard/subscription.cljs:188
+msgid "subscription.current-plan.enterprise"
+msgstr "Kurumsal"
+
+#: src/app/main/ui/dashboard/subscription.cljs:187
+msgid "subscription.current-plan.nitrate"
+msgstr "Kurumsal"
+
+#: src/app/main/ui/dashboard/subscription.cljs:186
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Kurumsal Planı Deneyin"
+
+#: src/app/main/ui/dashboard/subscription.cljs:181
+msgid "subscription.current-plan.professional"
+msgstr "Profesyonel"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+msgid "subscription.current-plan.title"
+msgstr "Aboneliğiniz"
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.current-plan.unlimited"
+msgstr "Sınırsız"
+
+#: src/app/main/ui/dashboard/subscription.cljs:183
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Sınırsız Deneyin"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Kurumsal plan özelliklerinin kilidini açın"
+
+#: src/app/main/ui/dashboard/subscription.cljs:158
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr ""
+"Takımınızın çok sevdiği açık kaynak özgürlüğünden ödün vermeden, ayrıntılı "
+"izinler belirleyin ve tasarım işlemlerinizin güvenliğini sağlayın."
+
+#: src/app/main/ui/dashboard/subscription.cljs:163
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Kurumsal planı kullanmaya başlayın"
+
+#: src/app/main/ui/settings/subscription.cljs:409
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "Ödeme işlemi tamamlanmadı. Hazır olduğunuzda lütfen tekrar deneyin."
+
+#: src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr ""
+"Ödeme işlemini başlatamadık. Lütfen tekrar deneyin. Sorun devam ederse "
+"bizimle iletişime geçin: support@penpot.app."
+
+#: src/app/main/ui/settings/subscription.cljs:408
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr ""
+"Aboneliğinizi doğrulayamadık. Lütfen Abonelik sayfasından abonelik "
+"durumunuzu gözden geçirin. Gerekirse tekrar deneyebilirsiniz."
+
+#: src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.activate-by-code"
+msgstr "Etkinleştirme kodunu girin"
+
+#: src/app/main/ui/settings/subscription.cljs:725
+msgid "subscription.settings.organization-member-month"
+msgstr "aylık organizasyon üyesi"
+
+#: src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "Topluluğun desteklediği tüm tasarım ve prototip oluşturma özellikleri."
+
+#: src/app/main/ui/settings/subscription.cljs:595, src/app/main/ui/settings/subscription.cljs:673
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Veriler ve altyapı üzerinde tam denetim."
+
+#: src/app/main/ui/settings/subscription.cljs:598, src/app/main/ui/settings/subscription.cljs:676
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Sınırsız kullanıcı, takım ve dosya."
+
+#: src/app/main/ui/settings/integrations.cljs:619
+msgid "title.settings.integrations"
+msgstr "Bütünleşmeler - Penpot"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Denetim paneline git"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:78
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Sorun giderme kılavuzu"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr ""
+"Tarayıcınızda, Penpot'un çalışması için gerekli olan WebGL kullanılabilir "
+"değil. Lütfen tarayıcı ayarlarınızı gözden geçirin ve/veya görsel ağırlıklı "
+"sekmeleri kapatın."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oops! WebGL kullanılabilir değil"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " takip edin."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr ""
+"Tarayıcı ayarlarını, GPU hızlandırmayı, sürücüleri ve yaygın sistem "
+"sorunlarını denetlemek için "
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:70
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "WebGL sorun giderme kılavuzumuzu"
+
+#, unused
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "WebGL görselleştirme devre dışı"
+
+#, unused
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "WebGL görselleştirme etkin"
+
+#: src/app/render_wasm/api.cljs:1869
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL içeriği kayboldu"
+
+#: src/app/render_wasm/api.cljs:1885
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL içeriği kurtarıldı"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
+msgid "workspace.assets.delete-group"
+msgstr "Grubu sil"
+
+#: src/app/main/data/workspace/clipboard.cljs:1175
+msgid "workspace.clipboard.copying"
+msgstr "Görsel kopyalanıyor…"
+
+#: src/app/main/data/workspace/clipboard.cljs:1198
+msgid "workspace.clipboard.image-copied"
+msgstr "Görsel panoya kopyalandı"
+
+#: src/app/main/data/workspace/clipboard.cljs:1204
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Görsel kopyalanırken hata oluştu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:873
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Sütunları kopyala"
+
+#: src/app/main/ui/workspace/context_menu.cljs:869
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Satırları kopyala"
+
+#: src/app/main/ui/workspace/context_menu.cljs:877
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Yapıştır"
+
+#: src/app/main/ui/workspace/context_menu.cljs:911
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Kılavuz rengi"
+
+#: src/app/main/ui/workspace/context_menu.cljs:923
+msgid "workspace.context-menu.guides.remove"
+msgstr "Kılavuzu kaldır"
+
+#: src/app/main/ui/workspace/main_menu.cljs:335
+msgid "workspace.header.menu.disable-webgl"
+msgstr "WebGL görselleştirmeyi devre dışı bırak (beta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.enable-webgl"
+msgstr "WebGL görselleştirmeyi etkinleştir (beta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:508
+msgid "workspace.header.menu.find"
+msgstr "Bul"
+
+#: src/app/main/ui/workspace/main_menu.cljs:515
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Bul ve Değiştir"
+
+#: src/app/main/ui/workspace/main_menu.cljs:401
+msgid "workspace.header.menu.lock-guides"
+msgstr "Kılavuzları kilitle"
+
+#: src/app/main/ui/workspace/main_menu.cljs:853
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Bağlan"
+
+#: src/app/main/ui/workspace/main_menu.cljs:852
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Bağlantıyı kes"
+
+#: src/app/main/ui/workspace/main_menu.cljs:862
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Yönet (Durum: devre dışı)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:861
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Yönet (Durum: etkin)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:1074
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP sunucusu"
+
+#: src/app/main/ui/workspace/main_menu.cljs:400
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Kılavuzların kilidini aç"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:496
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Karışık tokenler"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:491
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Karışık tokenler ve varlıklar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Karışık varlıklar"
