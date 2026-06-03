@@ -454,7 +454,7 @@
 ;; ---- Token refs
 
 (def tokens-lib
-  (l/derived :tokens-lib workspace-data))
+  (l/derived dsh/lookup-tokens-lib st/state))
 
 (def workspace-token-theme-groups
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))

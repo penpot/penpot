@@ -38,8 +38,7 @@
 
 (defn get-tokens-lib
   [state]
-  (-> (dsh/lookup-file-data state)
-      (get :tokens-lib)))
+  (dsh/lookup-tokens-lib state))
 
 (defn lookup-token-set
   ([state]
@@ -231,8 +230,7 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [data       (dsh/lookup-file-data state)
-              tokens-lib (get data :tokens-lib)]
-
+              tokens-lib (dsh/lookup-tokens-lib state)]
           (if (and tokens-lib (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
             (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
                               :type :toast
@@ -249,8 +247,8 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [data             (dsh/lookup-file-data state)
-            tokens-lib       (get data :tokens-lib)]
+      (let [data       (dsh/lookup-file-data state)
+            tokens-lib (dsh/lookup-tokens-lib state)]
         (if (and (not= id (ctob/get-id token-theme))
                  (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
           (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
@@ -348,7 +346,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data       (dsh/lookup-file-data state)
-            tokens-lib (get data :tokens-lib)
+            tokens-lib (dsh/lookup-tokens-lib state)
             suffix     (tr "workspace.tokens.duplicate-suffix")]
 
         (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]

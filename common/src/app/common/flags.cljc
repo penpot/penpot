@@ -133,6 +133,7 @@
     :token-tokenscript
     :token-import-from-library
     :token-typography-row
+    :token-lib-sync
 
     ;; Only for developtment.
     :transit-readable-response
