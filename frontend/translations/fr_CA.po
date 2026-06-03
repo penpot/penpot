@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-03 19:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8553,3 +8553,29 @@ msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquer pour fermer le chemin"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Tu fais maintenant partie de %s"
+
+#: src/app/main/data/nitrate.cljs:161
+msgid "dasboard.leave-org.toast"
+msgstr "Tu ne fais plus partie de l'organisation %s."
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "DÉPLACER L'ÉQUIPE"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "Déplacer vers :"
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "Sélectionner une organisation"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"Les membres de l'équipe maintiendront l'accès aux projets et fichiers. "
+"L'équipe recevra les configurations de la nouvelle organisation."
