@@ -1084,6 +1084,21 @@
                                     :base-font-size previous-font-size})
         (apply-changes-local))))
 
+(defn set-tokens-file
+  [changes library-id]
+  (assert-file-data! changes)
+  (let [file-data (::file-data (meta changes))
+        file-id   (:id file-data)
+        prev-val  (:tokens-file file-data)]
+    (-> changes
+        (update :redo-changes conj {:type :set-tokens-file
+                                    :file-id file-id
+                                    :library-id library-id})
+        (update :undo-changes conj {:type :set-tokens-file
+                                    :file-id file-id
+                                    :library-id prev-val})
+        (apply-changes-local))))
+
 ;; Misc changes
 
 (defn reorder-children
