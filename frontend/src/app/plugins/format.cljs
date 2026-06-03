@@ -232,7 +232,7 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur';
+;;   type?: 'layer-blur' | 'background-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }

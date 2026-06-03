@@ -256,14 +256,12 @@
 (defn- get-filter
   [shape]
   (when-not (cgc/svg-markup? shape)
-    (when (= :layer-blur (get-in shape [:blur :type]))
-      (get-in shape [:blur :value]))))
+    (get-in shape [:blur :value])))
 
 (defn- get-backdrop-filter
   [shape]
   (when-not (cgc/svg-markup? shape)
-    (when (= :background-blur (get-in shape [:blur :type]))
-      (get-in shape [:blur :value]))))
+    (get-in shape [:background-blur :value])))
 
 (defn- get-display
   [shape]

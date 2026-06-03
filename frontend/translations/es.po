@@ -2685,6 +2685,10 @@ msgstr "Error del servidor (Bad Gateway)"
 msgid "labels.blur"
 msgstr "Desenfoque"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs
+msgid "labels.blur-effects"
+msgstr "Efectos de desenfoque"
+
 #: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:543, src/app/main/ui/dashboard/team.cljs:866, src/app/main/ui/dashboard/team.cljs:1345, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:167, src/app/main/ui/settings/integrations.cljs:228, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:364, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:242
 msgid "labels.cancel"
 msgstr "Cancelar"
@@ -6986,9 +6990,29 @@ msgstr "Desenfoque de capa"
 msgid "workspace.options.blur-options.remove-blur"
 msgstr "Eliminar desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Mostrar/ocultar más opciones"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr "El desenfoque de fondo (Background Blur) solo está disponible en el nuevo motor de renderizado. Actívalo desde el menú de Preferencias para utilizar este efecto."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:113, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Efectos de desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Efectos de desenfoque del grupo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Efectos de desenfoque de la selección"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title.group"

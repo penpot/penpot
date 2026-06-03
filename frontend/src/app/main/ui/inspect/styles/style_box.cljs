@@ -8,6 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.config :as cf]
+   [app.main.features :as features]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.clipboard :as clipboard]
@@ -16,22 +18,27 @@
 
 (defn- panel->title
   [type]
-  (case type
-    :variant    (tr "inspect.tabs.styles.variants-panel")
-    :token      (tr "inspect.tabs.styles.token-panel")
-    :geometry   (tr "inspect.attributes.size")
-    :fill       (tr "labels.fill")
-    :stroke     (tr "labels.stroke")
-    :text       (tr "labels.text")
-    :blur       (tr "labels.blur")
-    :shadow     (tr "labels.shadow")
-    :layout     (tr "labels.layout")
-    :flex-element "Flex Element"
-    :grid-element "Grid Element"
-    :layout-element "Layout Element"
-    :visibility (tr "labels.visibility")
-    :svg        (tr "labels.svg")
-    nil))
+  (let [render-wasm?        (features/use-feature "render-wasm/v1")
+        bg-blur?            (and render-wasm?
+                                 (contains? cf/flags :background-blur))]
+    (case type
+      :variant    (tr "inspect.tabs.styles.variants-panel")
+      :token      (tr "inspect.tabs.styles.token-panel")
+      :geometry   (tr "inspect.attributes.size")
+      :fill       (tr "labels.fill")
+      :stroke     (tr "labels.stroke")
+      :text       (tr "labels.text")
+      :blur       (if bg-blur?
+                    (tr "labels.blur-effects")
+                    (tr "labels.blur"))
+      :shadow     (tr "labels.shadow")
+      :layout     (tr "labels.layout")
+      :flex-element "Flex Element"
+      :grid-element "Grid Element"
+      :layout-element "Layout Element"
+      :visibility (tr "labels.visibility")
+      :svg        (tr "labels.svg")
+      nil)))
 
 (mf/defc style-box*
   [{:keys [panel shorthand children]}]

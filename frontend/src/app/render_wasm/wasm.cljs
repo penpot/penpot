@@ -44,7 +44,7 @@
   (set! context-initialized? false)
   (reset! context-lost? false))
 
-
+;; TODO_BLUR: ask for blur-type?? 
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode
