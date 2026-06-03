@@ -708,7 +708,8 @@ LEFT JOIN profile AS p
                                   :organizations organizations}))))
   nil)
 
-;; API: cleanup-org-team-invitations
+;; API: exists-org-team-invitations-for-non-members /
+;;      delete-org-team-invitations-for-non-members
 
 (def ^:private sql:get-profile-emails-by-ids
   "SELECT email
@@ -716,34 +717,67 @@ LEFT JOIN profile AS p
     WHERE id = ANY(?)
       AND deleted_at IS NULL")
 
-(def ^:private sql:delete-orphaned-team-invitations
+(def ^:private sql:exists-non-member-org-team-invitations
+  "SELECT EXISTS (
+            SELECT 1
+              FROM team_invitation
+             WHERE team_id = ANY(?)
+               AND email_to <> ALL(?)
+         ) AS non_member")
+
+(def ^:private sql:delete-non-member-org-team-invitations
   "DELETE FROM team_invitation
     WHERE team_id = ANY(?)
       AND email_to <> ALL(?)
    RETURNING email_to")
 
-(def ^:private schema:cleanup-org-team-invitations-params
+(def ^:private schema:org-team-invitations-for-non-members-params
   [:map
    [:team-ids [:vector ::sm/uuid]]
    [:member-ids [:vector ::sm/uuid]]])
 
-(sv/defmethod ::cleanup-org-team-invitations
-  "Delete team invitations for emails that are not organization members"
+(def ^:private schema:exists-org-team-invitations-for-non-members-result
+  [:map [:exists ::sm/boolean]])
+
+(defn- org-team-invitations-for-non-members-arrays
+  "Member emails and PG arrays used by exists/delete org team invitation endpoints."
+  [conn {:keys [team-ids member-ids]}]
+  (let [member-ids-array (db/create-array conn "uuid" member-ids)
+        member-emails    (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
+                              (map :email)
+                              (into #{}))]
+    {:emails-array (db/create-array conn "text" (vec member-emails))
+     :teams-array  (db/create-array conn "uuid" team-ids)}))
+
+(defn- non-member-org-team-invitations-exist?
+  [conn params]
+  (let [{:keys [emails-array teams-array]}
+        (org-team-invitations-for-non-members-arrays conn params)]
+    (-> (db/exec-one! conn [sql:exists-non-member-org-team-invitations
+                            teams-array
+                            emails-array])
+        :non-member)))
+
+(sv/defmethod ::exists-org-team-invitations-for-non-members
+  "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
-   ::sm/params schema:cleanup-org-team-invitations-params
-   ::db/transaction true}
-  [cfg {:keys [team-ids member-ids]}]
+   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::sm/result schema:exists-org-team-invitations-for-non-members-result}
+  [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [;; Get emails of organization members
-                       member-ids-array   (db/create-array conn "uuid" member-ids)
-                       member-emails      (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
-                                               (map :email)
-                                               (into #{}))
+                 {:exists (boolean (non-member-org-team-invitations-exist? conn params))})))
 
-                       emails-array       (db/create-array conn "text" (vec member-emails))
-                       teams-array        (db/create-array conn "uuid" team-ids)]
-
-                   ;; Delete invitations that are not in the keep list
-                   (db/exec! conn [sql:delete-orphaned-team-invitations teams-array emails-array])
+(sv/defmethod ::delete-org-team-invitations-for-non-members
+  "Delete team invitations for emails that are not organization members."
+  {::doc/added "2.18"
+   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::db/transaction true}
+  [cfg params]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [{:keys [emails-array teams-array]}
+                       (org-team-invitations-for-non-members-arrays conn params)]
+                   (db/exec! conn [sql:delete-non-member-org-team-invitations
+                                   teams-array
+                                   emails-array])
                    nil))))
 

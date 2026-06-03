@@ -973,7 +973,7 @@
 .modal-select-org-body {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xxl);
+  gap: var(--sp-s);
 }
 
 .modal-select-org-warning {
@@ -998,7 +998,6 @@
   @include t.use-typography("headline-large");
 
   color: var(--color-foreground-primary);
-  height: $sz-40;
 }
 
 .modal-select-org-text {
