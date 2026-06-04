@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -78,8 +78,8 @@ RUN set -ex; \
       libwebp7 \
       libwebpdemux2 \
       libwebpmux3 \
-      libxml2 \
-      libzip4t64 \
+      libxml2-16 \
+      libzip5 \
       libzstd1 \
     ; \
     apt-get clean; \
@@ -111,7 +111,7 @@ RUN set -eux; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
-COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
