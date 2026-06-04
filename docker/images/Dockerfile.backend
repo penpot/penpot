@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS build
+FROM ubuntu:26.04 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -71,7 +71,7 @@ RUN set -eux; \
        --add-modules java.base,jdk.net,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
        --output /opt/jre;
 
-FROM ubuntu:24.04 AS image
+FROM ubuntu:26.04 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -105,8 +105,8 @@ RUN set -ex; \
         libwebp7 \
         libwebpdemux2 \
         libwebpmux3 \
-        libxml2 \
-        libzip4t64 \
+        libxml2-16 \
+        libzip5 \
         libzstd1 \
         python3 \
         python3-tabulate \
@@ -125,7 +125,7 @@ RUN set -ex; \
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
-COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 
 ARG BUNDLE_PATH="./bundle-backend/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/backend/
