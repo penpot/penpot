@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -416,7 +416,7 @@ RUN set -ex; \
       libfreetype6 \
       libfontconfig1 \
       libglib2.0-0 \
-      libxml2 \
+      libxml2-16 \
       liblcms2-2 \
       libheif1 \
       libopenjp2-7 \
@@ -425,7 +425,7 @@ RUN set -ex; \
       libgomp1 \
       libwebpmux3 \
       libwebpdemux2 \
-      libzip4t64 \
+      libzip5 \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -458,7 +458,7 @@ ENV LANG='C.UTF-8' \
     SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
