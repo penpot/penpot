@@ -1839,18 +1839,32 @@
 
 ;; This will fix incorrectly created strokes from SVG imports
 ;; that have the stroke-cap at the shape level instead of at the stroke level
-(defmethod migrate-data "0024-fix-stroke-cap-placement"
+(defmethod migrate-data "0024b-fix-stroke-cap-placement"
   [data _]
-  (letfn [(fix-shape [shape]
-            (let [cap-start (get shape :stroke-cap-start)
-                  cap-end   (get shape :stroke-cap-end)]
-              (if (or (some? cap-start) (some? cap-end))
-                (cond-> (dissoc shape :stroke-cap-start :stroke-cap-end)
-                  (and (some? cap-start) (seq (:strokes shape)))
-                  (assoc-in [:strokes 0 :stroke-cap-start] cap-start)
+  (letfn [(check-strokes [strokes]
+            (->> strokes
+                 (mapv (fn [stroke]
+                         (cond-> stroke
+                           (string? (:stroke-cap-start stroke))
+                           (update :stroke-cap-start keyword)
+                           (string? (:stroke-cap-end stroke))
+                           (update :stroke-cap-end keyword))))))
 
-                  (and (some? cap-end) (seq (:strokes shape)))
-                  (assoc-in [:strokes 0 :stroke-cap-end] cap-end))
+          (fix-shape [shape]
+            (let [cap-start (keyword (get shape :stroke-cap-start))
+                  cap-end   (keyword (get shape :stroke-cap-end))]
+              (if (or (some? cap-start) (some? cap-end))
+                (-> shape
+                    (dissoc :stroke-cap-start :stroke-cap-end)
+
+                    (cond-> (seq (:strokes shape))
+                      (update :strokes check-strokes)
+
+                      (and (some? cap-start) (seq (:strokes shape)))
+                      (assoc-in [:strokes 0 :stroke-cap-start] cap-start)
+
+                      (and (some? cap-end) (seq (:strokes shape)))
+                      (assoc-in [:strokes 0 :stroke-cap-end] cap-end)))
                 shape)))
 
           (update-container [container]
@@ -1941,4 +1955,4 @@
          "0021-fix-shape-svg-attrs"
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
-         "0024-fix-stroke-cap-placement"]))
+         "0024b-fix-stroke-cap-placement"]))
