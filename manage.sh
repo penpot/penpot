@@ -42,16 +42,17 @@ export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_work
 # is missing one. Consumed by instance-env-overrides (the values injected into
 # the per-instance compose env) and print-instance-info (the startup URLs).
 PENPOT_INSTANCE_PORT_STRIDE=10000
+PENPOT_PORT_BASE_PUBLIC_HTTPS=${PENPOT_PUBLIC_HTTPS_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_PUBLIC=${PENPOT_PUBLIC_HTTP_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MCP=${PENPOT_MCP_SERVER_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MCP_REPL=${PENPOT_MCP_REPL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_SERENA=${SERENA_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_SERENA_DASHBOARD=${SERENA_DASHBOARD_EXTERNAL_PORT:?missing in defaults.env}
 
-# Per-instance values like PENPOT_REDIS_URI must live in each instance's env
-# file (not in this shell), because docker compose's --env-file mechanism
-# lets a per-instance overlay override the baseline while the shell env
-# would otherwise shadow both for every project.
+# Per-instance values like PENPOT_REDIS_URI are injected by
+# instance-env-overrides as shell env variables (not set in this shell),
+# because docker compose gives shell-env precedence over --env-file, letting
+# per-instance values override the defaults.env baseline.
 
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
@@ -80,28 +81,20 @@ set -e
 #   infra-compose           wrap 'docker compose' for the shared-infra project
 #   instance-compose        wrap 'docker compose' for one instance's main
 #                           project, injecting that instance's overrides
-#   instance-env-overrides  the per-instance KEY=VALUE overrides (ws1+)
+#   instance-env-overrides  the per-instance KEY=VALUE overrides
 #   devenv-main-container   resolve the 'main' container id via compose ps
 #   devenv-main-running     true if 'main' is up
 #
-# Devenv lifecycle (operate on the whole compose project)
-#   start-devenv, create-devenv, stop-devenv, drop-devenv, log-devenv
+# Devenv bring-up commands (bring a workspace up + start background tmux)
+#   run-devenv               bring one workspace up; supports --ws, --sync,
+#                            --agentic (enables MCP + Serena), -e,
+#                            --serena-context, git identity
 #
-# Devenv interactive entry points (all operate on the running 'main' container)
-#   run-devenv-tmux         starts 'main' if needed and execs start-tmux.sh
-#                           interactively (this is what 'run-devenv' resolves to)
-#   run-devenv-agentic      same as run-devenv-tmux but enables MCP + Serena;
-#                           also regenerates .devenv/mcp/<tool>.json for the
-#                           target workspace (via write-instance-mcp-configs)
-#   attach-devenv           pure attach to the existing tmux session; fails
-#                           fast if the devenv or session is missing
-#   start-coding-agent      launches Claude Code or opencode against the
-#                           current workspace's generated MCP config
-#   run-devenv-shell        starts 'main' if needed and execs a bash shell
-#   run-devenv-isolated-shell  one-shot 'docker run' (NOT compose) against the
-#                           project user_data volume and the current PWD; used
-#                           for ad-hoc operations that should not touch a
-#                           running devenv
+# Devenv interactive entry points (operate on the running 'main' container)
+#   attach-devenv            pure attach to the existing tmux session; fails
+#                            fast if the devenv or session is missing
+#   start-coding-agent       launches Claude Code or opencode against the
+#                            current workspace's generated MCP config
 #
 # Production build pipeline
 #   build                   one-shot 'docker run' that invokes a per-module
@@ -181,18 +174,20 @@ function ensure-devenv-network {
 #
 # - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
 #   under project `penpotdev-infra`.
-# - Each runtime instance (ws0, ws1, ...) runs its own main + valkey under
-#   project `penpotdev-wsN`. ws0 uses the `defaults.env` baseline as-is; ws1+
-#   override the per-instance values by injecting them as environment
-#   variables -- see instance-env-overrides (no files are written).
+# - Shared infrastructure (postgres, minio, mailer, ldap, valkey, minio-setup)
+#   runs under project `penpotdev-infra`.
+# - Each runtime instance (ws0, ws1, ...) runs only its own main container
+#   under project `penpotdev-wsN`. All workspaces uniformly overlay their
+#   per-instance values via instance-env-overrides injected as shell env
+#   variables (no files are written).
 # `env -i` strips the ambient shell before invoking docker compose, then we
 # re-inject exactly what compose needs. The stripping matters because
 # defaults.env is sourced into manage.sh's own shell at startup, so otherwise
 # those stale values would leak into substitution. And because Docker Compose
 # gives shell-env precedence over --env-file, the re-injected per-instance
 # overrides cleanly override the defaults.env baseline. Re-injected: HOME/PATH
-# (tooling), CURRENT_USER_ID/PENPOT_SOURCE_PATH (always per-call), and for ws1+
-# the instance-env-overrides block.
+# (tooling), CURRENT_USER_ID/PENPOT_SOURCE_PATH (always per-call), and the
+# instance-env-overrides block.
 function infra-compose {
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         docker compose -p penpotdev-infra \
@@ -204,13 +199,15 @@ function infra-compose {
 function instance-compose {
     local instance="$1"; shift
     local source_path
-    local -a overrides=()
     if [[ "$instance" == "ws0" ]]; then
         source_path="$PWD"
     else
         source_path="$(workspace-path "$instance")"
-        mapfile -t overrides < <(instance-env-overrides "$instance")
     fi
+
+    # Per-instance overrides apply to all workspaces uniformly.
+    mapfile -t overrides < <(instance-env-overrides "$instance")
+
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
         PENPOT_SOURCE_PATH="$source_path" \
@@ -291,19 +288,23 @@ function instance-port {
     echo $(( base + n * PENPOT_INSTANCE_PORT_STRIDE ))
 }
 
-# Echo the per-instance Compose variable overrides for a ws1+ instance, one
+# Echo the per-instance Compose variable overrides for a workspace, one
 # KEY=VALUE per line, for instance-compose to inject into its `env -i` line.
 # Compose gives shell-env precedence over --env-file, so these override the
 # defaults.env baseline. Every value is a pure function of the instance number,
 # so nothing is persisted: they are recomputed on every compose invocation and
-# can never drift from this logic. ws0 has no overrides (it uses defaults.env
-# as-is) and is never passed here.
+# can never drift from this logic. Called for every workspace (ws0, ws1, ...).
+# All overrides are pure functions of the instance number; no per-instance
+# post-processing is needed.
 #
 # Omitted on purpose: COMPOSE_PROJECT_NAME (set via compose's -p flag),
 # PENPOT_SOURCE_PATH (injected directly by instance-compose), and
 function instance-env-overrides {
     local instance="$1"
-    local public mcp mcp_repl serena serena_dash
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    local public_https public mcp mcp_repl serena serena_dash
+    public_https=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC_HTTPS")
     public=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC")
     mcp=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP")
     mcp_repl=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP_REPL")
@@ -311,19 +312,17 @@ function instance-env-overrides {
     serena_dash=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA_DASHBOARD")
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
-        "PENPOT_VALKEY_CONTAINER_NAME=penpot-devenv-${instance}-valkey" \
-        "PENPOT_VALKEY_HOSTNAME=penpot-devenv-${instance}-valkey" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
-        "PENPOT_VALKEY_DATA_VOLUME=penpotdev_${instance}_valkey_data" \
-        "PENPOT_PUBLIC_URI=https://localhost:${public}" \
-        "PENPOT_REDIS_URI=redis://penpot-devenv-${instance}-valkey/0" \
+        "PENPOT_PUBLIC_URI=https://localhost:${public_https}" \
+        "PENPOT_REDIS_URI=redis://valkey/${n}" \
+        "PENPOT_PUBLIC_HTTPS_PORT=${public_https}" \
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
         "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
         "SERENA_EXTERNAL_PORT=${serena}" \
         "SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}" \
-        "PENPOT_BACKEND_WORKER=false" \
-        "SHADOW_SERVER_URL=wss://localhost:${public}"
+        "SHADOW_SERVER_URL=wss://localhost:${public_https}" \
+        "PENPOT_TENANT=devenv-${instance}"
 }
 
 # Thin wrapper around .devenv/scripts/merge-mcp-config.py for the JSON clients
@@ -458,14 +457,6 @@ function sync-workspace {
         cd "$workspace"
         git switch -C "${instance}/${CURRENT_BRANCH}" >/dev/null
     )
-}
-
-function start-devenv {
-    pull-devenv-if-not-exists $@;
-    ensure-devenv-network;
-
-    ensure-infra-up
-    instance-compose ws0 up -d
 }
 
 function create-devenv {
@@ -603,34 +594,6 @@ function log-devenv {
     instance-compose "$target" logs -f --tail=50
 }
 
-function run-devenv-tmux {
-    local extra_env_args=()
-
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -e)
-                extra_env_args+=(-e "$2"); shift 2;;
-            -e*)
-                extra_env_args+=(-e "${1#-e}"); shift;;
-            *)
-                echo "run-devenv: unknown argument '$1'" >&2
-                return 1;;
-        esac
-    done
-
-    if ! devenv-main-running ws0; then
-        start-devenv
-        echo "Waiting for containers fully start (5s)..."
-        sleep 5
-    fi
-
-    local container
-    container=$(devenv-main-container ws0)
-    docker exec -ti \
-        "${extra_env_args[@]}" \
-        "$container" sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
-}
-
 # Strict parser for --ws values. Accepts a bare integer in the supported
 # range (0..PENPOT_MAX_WS_INDEX) and returns the canonical "wsN" form.
 # Anything else fails fast. The upper bound exists because the host ports
@@ -653,16 +616,19 @@ function parse-ws-integer {
 }
 
 
-# Bring a single agentic instance up: compose up + detached tmux start with
-# MCP and Serena enabled. Workspace sync and env-file generation are the
-# caller's responsibility (run-devenv-agentic handles them for ws1+).
+# Bring a single instance up: compose up + detached tmux start. When agentic
+# is true (the default) the tmux session gets MCP + Serena enabled; when false
+# it is a plain non-agentic workspace (no MCP, no Serena). Workspace sync and
+# env-file generation are the caller's responsibility (run-devenv handles
+# them for ws1+).
 function start-instance {
     local instance="$1"
-    local serena_context="$2"
+    local serena_context="${2:-}"
     local git_user_name="${3:-}"
     local git_user_email="${4:-}"
+    local agentic="${5:-true}"
 
-    instance-compose "$instance" up -d --no-deps main redis
+    instance-compose "$instance" up -d main
 
     # Wait briefly for main to be reachable; the tmux session lives inside.
     local container deadline
@@ -676,6 +642,12 @@ function start-instance {
         sleep 1
     done
 
+    # Ensure /home/penpot is writable by the penpot user before touching
+    # any files inside it (e.g. .gitconfig). start-tmux.sh also does this
+    # but runs later asynchronously, so the container may still be root-owned
+    # from a fresh volume mount at this point.
+    docker exec "$container" sudo chown penpot:users /home/penpot 2>/dev/null || true
+
     # Seed the container's global git config from the values resolved on the
     # host so commits made inside the devenv carry a real author/committer. Empty
     # values are skipped — the host-identity warning is the caller's job.
@@ -686,13 +658,18 @@ function start-instance {
         docker exec "$container" sudo -u penpot git config --global user.email "$git_user_email"
     fi
 
-    # Detached tmux so callers don't block on attach. Agentic mode is the only
-    # mode here, so MCP and Serena are always on.
+    # Detached tmux so callers don't block on attach. Agentic mode adds the
+    # MCP and Serena env vars that start-tmux.sh checks.
+    local -a tmux_env=(-e PENPOT_TMUX_ATTACH=false)
+    if [[ "$agentic" == "true" ]]; then
+        tmux_env+=(
+            -e PENPOT_FLAGS="${PENPOT_FLAGS:-} enable-mcp"
+            -e SERENA_ENABLED=true
+            -e SERENA_CONTEXT="$serena_context"
+        )
+    fi
     docker exec -d \
-        -e PENPOT_TMUX_ATTACH=false \
-        -e PENPOT_FLAGS="${PENPOT_FLAGS:-} enable-mcp" \
-        -e SERENA_ENABLED=true \
-        -e SERENA_CONTEXT="$serena_context" \
+        "${tmux_env[@]}" \
         "$container" \
         sudo -EH -u penpot PENPOT_PLUGIN_DEV="${PENPOT_PLUGIN_DEV:-}" /home/start-tmux.sh
 }
@@ -721,7 +698,7 @@ function print-instance-info {
 
     echo
     echo "[$instance]"
-    echo "  Penpot UI:           https://localhost:${public}"
+    echo "  Penpot UI:           https://localhost:${public_https}"
     echo "  MCP stream:          http://localhost:${mcp}/mcp"
     echo "  Serena MCP:          http://localhost:${serena}"
     echo "  Serena dashboard:    http://localhost:${serena_dash}"
@@ -729,31 +706,17 @@ function print-instance-info {
     echo "  Coding agent:        ./manage.sh start-coding-agent claude${ws_flag}  (or: opencode|vscode|codex)"
 }
 
-# Bring up a single agentic instance (always with MCP + Serena).
-#
-#   --ws N       target instance (non-negative integer). Default: 0 (ws0).
-#   --sync       re-seed the workspace from the live repo. Forbidden on main;
-#                ws1+ also sync implicitly the first time when their workspace
-#                directory does not exist yet.
-#   --serena-context CTX  passed to Serena (default: desktop-app).
-#   --git-user-name NAME  Git author/committer name to wire into the
-#                container's global git config (so commits made inside the
-#                devenv carry a real identity). Defaults to the host's
-#                effective `git config user.name` when omitted (resolved at
-#                the current working directory, so a per-repo local override
-#                in <repo>/.git/config takes precedence over ~/.gitconfig).
-#   --git-user-email EMAIL  matching email; defaults to the host's effective
-#                `git config user.email` (same local-over-global precedence).
-#
-# ws0 is the worker-bearer and must be running whenever any ws1+ is up. When
-# starting ws1+, ws0 is brought up first automatically if it is not already
-# running. Errors out if the requested target itself is already running.
-function run-devenv-agentic {
+# Bring a single workspace up. Without --agentic it's non-agentic (no MCP, no
+# Serena); with --agentic it enables MCP + Serena for AI-driven development.
+# Supports --ws for parallel workspace targets; ws0 is the default.
+function run-devenv {
     local target="ws0"
     local do_sync=false
+    local agentic=false
     local serena_context="desktop-app"
     local git_user_name=""
     local git_user_email=""
+    local -a extra_env_args=()
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -761,31 +724,57 @@ function run-devenv-agentic {
                 target="$(parse-ws-integer "$2")" || return 1; shift 2;;
             --sync)
                 do_sync=true; shift;;
+            --agentic)
+                agentic=true; shift;;
             --serena-context)
                 serena_context="$2"; shift 2;;
             --git-user-name)
                 git_user_name="$2"; shift 2;;
             --git-user-email)
                 git_user_email="$2"; shift 2;;
+            -e)
+                extra_env_args+=(-e "$2"); shift 2;;
+            -e*)
+                extra_env_args+=(-e "${1#-e}"); shift;;
+            -h|--help)
+                echo "Usage: run-devenv [--ws N] [--sync] [--agentic] [--serena-context CTX] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
+                echo "  Bring a single workspace up."
+                echo "  --ws N                target workspace (default: 0)."
+                echo "  --sync                re-seed the wsN clone from the live repo (forbidden on ws0)."
+                echo "  --agentic             enable MCP + Serena (AI-agent mode)."
+                echo "  --serena-context CTX  context passed to Serena (default: desktop-app)."
+                echo "  --git-user-name NAME  git author name inside the container (default: host git config)."
+                echo "  --git-user-email EMAIL  git author email inside the container."
+                echo "  -e KEY=VAL            forward env var to docker exec on attach."
+                return 0;;
             *)
-                echo "run-devenv-agentic: unknown argument '$1'" >&2
+                echo "run-devenv: unknown argument '$1' (use --help for usage)" >&2
                 return 1;;
         esac
     done
 
     if [[ "$target" == "ws0" && "$do_sync" == "true" ]]; then
-        echo "run-devenv-agentic: --sync is not allowed on main (ws0)." >&2
+        echo "run-devenv: --sync is not allowed on main (ws0)." >&2
         return 1
     fi
 
-    # Fall back to the host developer's effective git identity when the
-    # respective flag is not provided. Plain `git config user.X` (no --global)
-    # honours the local->global->system precedence, so a per-repo override in
-    # <repo>/.git/config takes precedence over ~/.gitconfig -- matching what
-    # `git commit` on the host would actually record. `|| true` swallows the
-    # non-zero exit for a missing entry; the empty result is propagated
-    # untouched and surfaces as a no-op inside the container (start-tmux.sh
-    # skips `git config --global` when the env var is empty).
+    # Pre-flight: config.js must exist for agentic mode. The file is gitignored;
+    # without it the frontend never sets 'enable-mcp', so the agent can't drive
+    # Penpot via MCP.
+    if [[ "$agentic" == "true" ]]; then
+        local cfg="frontend/resources/public/js/config.js"
+        if [[ ! -f "$PWD/$cfg" ]]; then
+            echo "$cfg is missing in the live repo." >&2
+            echo "Create it before running with --agentic -- the file is gitignored," >&2
+            echo "read directly from \$PWD on ws0 and copied into wsN only on its initial" >&2
+            echo "sync. Without it the Penpot frontend will not establish the MCP" >&2
+            echo "connection, so the agent cannot drive it. Minimal content:" >&2
+            echo "  var penpotFlags = \"enable-mcp\";" >&2
+            return 1
+        fi
+    fi
+
+    # Resolve git identity from the host when flags are omitted.
     if [[ -z "$git_user_name" ]]; then
         git_user_name="$(git config user.name 2>/dev/null || true)"
     fi
@@ -799,40 +788,13 @@ function run-devenv-agentic {
     fi
 
     if devenv-main-running "$target"; then
-        echo "run-devenv-agentic: instance '$target' is already running." >&2
-        return 1
-    fi
-
-    # Pre-flight: frontend/resources/public/js/config.js must exist in the
-    # live repo. The file is gitignored; ws0 reads it directly from $PWD and
-    # wsN gets a one-shot copy on its initial sync. Without it the frontend
-    # never sets the 'enable-mcp' flag, so the agent can't drive Penpot via
-    # MCP. Fail fast (before any side effects) so the developer can fix it
-    # without leaving infra / containers half-started behind.
-    local cfg="frontend/resources/public/js/config.js"
-    if [[ ! -f "$PWD/$cfg" ]]; then
-        echo "$cfg is missing in the live repo." >&2
-        echo "Create it before running run-devenv-agentic -- the file is gitignored," >&2
-        echo "read directly from \$PWD on ws0 and copied into wsN only on its initial" >&2
-        echo "sync. Without it the Penpot frontend will not establish the MCP" >&2
-        echo "connection, so the agent cannot drive it. Minimal content:" >&2
-        echo "  var penpotFlags = \"enable-mcp\";" >&2
+        echo "run-devenv: instance '$target' is already running." >&2
         return 1
     fi
 
     pull-devenv-if-not-exists
     ensure-devenv-network
     ensure-infra-up
-
-    # ws0 invariant: must be up whenever any ws1+ runs. Bring it up first if a
-    # non-main instance is being requested and ws0 is not yet running.
-    if [[ "$target" != "ws0" ]] && ! devenv-main-running "ws0"; then
-        echo "[ws0] not running; starting it first (workers run only on ws0)."
-        echo "Starting ws0..."
-        write-instance-mcp-configs "ws0"
-        start-instance "ws0" "$serena_context" "$git_user_name" "$git_user_email"
-        print-instance-info "ws0"
-    fi
 
     if [[ "$target" != "ws0" ]]; then
         local workspace
@@ -846,46 +808,13 @@ function run-devenv-agentic {
         fi
     fi
 
+    if [[ "$agentic" == "true" ]]; then
+        write-instance-mcp-configs "$target"
+    fi
+
     echo "Starting $target..."
-    write-instance-mcp-configs "$target"
-    start-instance "$target" "$serena_context" "$git_user_name" "$git_user_email"
+    start-instance "$target" "$serena_context" "$git_user_name" "$git_user_email" "$agentic"
     print-instance-info "$target"
-}
-
-function run-devenv-shell {
-    local instance="ws0"
-    local positional=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --ws)
-                instance="$(parse-ws-integer "$2")" || return 1; shift 2;;
-            *)
-                positional+=("$1"); shift;;
-        esac
-    done
-
-    if ! devenv-main-running "$instance"; then
-        if [[ "$instance" == "ws0" ]]; then
-            start-devenv
-        else
-            echo "Instance '$instance' is not running." >&2
-            echo "Bring it up first with './manage.sh run-devenv-agentic --ws ${instance#ws}'." >&2
-            return 1
-        fi
-    fi
-    # No positional args -> drop the user into a bash shell. Without this,
-    # `sudo -EH -u penpot` would be called with no command and just print its
-    # own usage.
-    if [[ ${#positional[@]} -eq 0 ]]; then
-        positional=(bash)
-    fi
-    local container
-    container=$(devenv-main-container "$instance")
-    docker exec -ti \
-           -w /home/penpot/penpot \
-           -e JAVA_OPTS="$JAVA_OPTS" \
-           -e EXTERNAL_UID=$CURRENT_USER_ID \
-           "$container" sudo -EH -u penpot "${positional[@]}"
 }
 
 function attach-devenv {
@@ -902,7 +831,7 @@ function attach-devenv {
 
     if ! devenv-main-running "$instance"; then
         echo "Instance '$instance' is not running." >&2
-        echo "Start it first with './manage.sh run-devenv-agentic [--ws N]'." >&2
+        echo "Start it first with './manage.sh run-devenv [--ws N] [--agentic]'." >&2
         return 1
     fi
 
@@ -968,7 +897,7 @@ function start-coding-agent {
     fi
 
     # --ws is the default-elided flag: only emit it in suggestion strings for
-    # ws1+; ws0 is the default target so 'run-devenv-agentic' is the right hint.
+    # ws1+; ws0 is the default target so 'run-devenv --agentic' is the right hint.
     local ws_flag=""
     [[ "$instance" != "ws0" ]] && ws_flag=" --ws ${instance#ws}"
 
@@ -981,7 +910,7 @@ function start-coding-agent {
         workspace="$(workspace-path "$instance")"
         if [[ ! -d "$workspace" ]]; then
             echo "start-coding-agent: workspace for $instance not found at $workspace." >&2
-            echo "Bring '$instance' up first with './manage.sh run-devenv-agentic${ws_flag}'." >&2
+            echo "Bring '$instance' up first with './manage.sh run-devenv${ws_flag} --agentic'." >&2
             return 1
         fi
     fi
@@ -990,7 +919,7 @@ function start-coding-agent {
     # Refuse rather than launch an agent that would error on every tool call.
     if ! devenv-main-running "$instance"; then
         echo "start-coding-agent: instance '$instance' is not running." >&2
-        echo "Start it first with './manage.sh run-devenv-agentic${ws_flag}'." >&2
+        echo "Start it first with './manage.sh run-devenv${ws_flag} --agentic'." >&2
         return 1
     fi
 
@@ -1015,7 +944,7 @@ function start-coding-agent {
 
     if [[ ! -f "$workspace/$cfg_rel" ]]; then
         echo "start-coding-agent: $workspace/$cfg_rel not found." >&2
-        echo "Bring '$instance' up with './manage.sh run-devenv-agentic${ws_flag}'," >&2
+        echo "Bring '$instance' up with './manage.sh run-devenv${ws_flag} --agentic'," >&2
         echo "which sets up the per-workspace MCP config." >&2
         return 1
     fi
@@ -1054,55 +983,6 @@ function start-coding-agent {
             exec codex "${codex_args[@]}" "$@"
             ;;
     esac
-}
-
-function run-devenv-isolated-shell {
-    local instance="ws0"
-    local positional=()
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --ws)
-                instance="$(parse-ws-integer "$2")" || return 1; shift 2;;
-            *)
-                positional+=("$1"); shift;;
-        esac
-    done
-
-    # Resolve the user_data volume and source tree for the target workspace.
-    # ws0 uses the baseline volume name from defaults.env; wsN follows the
-    # instance-env-overrides naming convention (penpotdev_<instance>_user_data)
-    # and bind-mounts the workspace clone instead of $PWD.
-    local user_data_volume source_path
-    if [[ "$instance" == "ws0" ]]; then
-        user_data_volume="$PENPOT_USER_DATA_VOLUME"
-        source_path="$PWD"
-    else
-        user_data_volume="penpotdev_${instance}_user_data"
-        source_path="$(workspace-path "$instance")"
-        if [[ ! -d "$source_path" ]]; then
-            echo "isolated-shell: workspace for $instance not found at $source_path." >&2
-            return 1
-        fi
-    fi
-
-    # No command -> drop into bash. Always cwd to the source-tree root;
-    # callers that need a subdir can `cd` inside the shell or pass
-    # `bash -c 'cd subdir && cmd'`.
-    if [[ ${#positional[@]} -eq 0 ]]; then
-        positional=(bash)
-    fi
-
-    docker volume create "$user_data_volume" >/dev/null
-    docker run -ti --rm \
-           --mount source="$user_data_volume",type=volume,target=/home/penpot/ \
-           --mount source="$source_path",type=bind,target=/home/penpot/penpot \
-           -e EXTERNAL_UID=$CURRENT_USER_ID \
-           -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
-           -e BUILD_WASM=$BUILD_WASM \
-           -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
-           -e JAVA_OPTS="$JAVA_OPTS" \
-           -w /home/penpot/penpot \
-           "$DEVENV_IMGNAME:latest" sudo -EH -u penpot "${positional[@]}"
 }
 
 function build-imagemagick-docker-image {
@@ -1326,23 +1206,22 @@ function usage {
     echo "- build-devenv [--local]           Build the devenv docker image (--local skips the registry push)."
     echo ""
     echo "Bring a devenv up / down"
-    echo "- run-devenv-agentic               Bring one workspace up with AI-agent tooling enabled (MCP + Serena),"
-    echo "                                   start its tmux session in the background, regenerate the per-workspace"
-    echo "                                   MCP configs, and print the workspace's URLs. Errors out if the target"
-    echo "                                   is already running."
+    echo "- run-devenv                       Bring one workspace up, start its tmux session in the background,"
+    echo "                                   and print the workspace's URLs. Pass --agentic to enable MCP + Serena"
+    echo "                                   for AI-driven development (also regenerates per-workspace MCP configs)."
     echo "                                   Options:"
-    echo "                                     --ws N                target workspace (default: 0). N >= 1 auto-starts"
-    echo "                                                           ws0 first if it is not already up."
+    echo "                                     --ws N                target workspace (default: 0)."
     echo "                                     --sync                re-seed the wsN clone from the live repo before"
     echo "                                                           starting (forbidden on ws0; implicit on first"
     echo "                                                           start of a wsN with no on-disk workspace yet)."
+    echo "                                     --agentic             enable MCP + Serena (AI-agent mode)."
     echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
+    echo "                                     -e KEY=VAL            forwarded to 'docker exec' on attach."
     echo "                                     --git-user-name NAME / --git-user-email EMAIL"
     echo "                                                           identity wired into the container's git config"
     echo "                                                           (default: host's effective 'git config user.X',"
     echo "                                                           honouring per-repo local overrides; see"
     echo "                                                           devenv.md > 'Git identity inside the container')."
-    echo "- start-devenv                     Bring ws0 + shared infra up in the background (no tmux, no MCP/Serena)."
     echo "- create-devenv                    Create ws0 + shared-infra compose services without starting them."
     echo "- stop-devenv                      Stop one or more workspaces. Shared infra stops with the last one."
     echo "                                   Options: --ws N (stop wsN, N >= 1) | (no flag) (stop ws0 + infra;"
@@ -1364,17 +1243,6 @@ function usage {
     echo "                                   client: claude | opencode | vscode | codex"
     echo "                                   Options: --ws N (default: 0). See agentic-devenv.md and"
     echo "                                   .devenv/README.md for per-client setup and override paths."
-    echo "- run-devenv-shell                 Open a bash shell inside the workspace's running devenv container"
-    echo "                                   ('docker exec' into the live 'main' container alongside the tmux"
-    echo "                                   session). Requires the workspace to be up."
-    echo "                                   Options: --ws N (default: 0)."
-    echo "- run-devenv                       Start ws0 if needed and attach to its tmux session interactively."
-    echo "                                   Optional -e flags are forwarded to 'docker exec' (e.g. -e MY_VAR=value)."
-    echo "- isolated-shell                   Spawn a fresh, ephemeral devenv container ('docker run', not 'docker exec')"
-    echo "                                   with the workspace's source tree and build-cache volume mounted. Use this"
-    echo "                                   for ad-hoc work that should not touch the running devenv (e.g. manual"
-    echo "                                   builds); the workspace does not need to be running."
-    echo "                                   Options: --ws N (default: 0)."
     echo ""
     echo "- build-bundle                     Build all bundles (frontend, backend, exporter, storybook and mcp)."
     echo "- build-frontend-bundle            Build frontend bundle"
@@ -1413,14 +1281,11 @@ case $1 in
         create-devenv ${@:2}
         ;;
 
-    start-devenv)
-        start-devenv ${@:2}
-        ;;
     run-devenv)
-        run-devenv-tmux ${@:2}
+        run-devenv ${@:2}
         ;;
     run-devenv-agentic)
-        run-devenv-agentic ${@:2}
+        run-devenv --agentic ${@:2}
         ;;
     attach-devenv)
         attach-devenv ${@:2}
@@ -1428,14 +1293,6 @@ case $1 in
     start-coding-agent)
         start-coding-agent "${@:2}"
         ;;
-    run-devenv-shell)
-        run-devenv-shell ${@:2}
-        ;;
-
-    isolated-shell)
-        run-devenv-isolated-shell ${@:2}
-        ;;
-
     stop-devenv)
         stop-devenv ${@:2}
         ;;
