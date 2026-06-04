@@ -6807,6 +6807,18 @@ msgstr "HSV"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Colores recientes"
 
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs
+msgid "workspace.libraries.colors.add-library-color"
+msgstr "Añadir color a la biblioteca del archivo"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs
+msgid "workspace.libraries.colors.show-color-palette"
+msgstr "Mostrar paleta de colores"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "Aún no hay colores recientes"
+
 #: src/app/main/ui/workspace/colorpicker.cljs
 #, unused
 msgid "workspace.libraries.colors.rgb-complementary"
