@@ -7,6 +7,7 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
+pub mod raster;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
@@ -529,12 +530,45 @@ impl RenderState {
         let sampling_options =
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
 
-        let fonts = FontStore::try_new()?;
         let surfaces = Surfaces::try_new(
             (width, height),
             sampling_options,
             tiles::get_tile_dimensions(),
         )?;
+
+        Self::assemble(width, height, sampling_options, surfaces, ImageStore::new())
+    }
+
+    /// GPU-free `RenderState` for the headless export path (raster/PDF). Tile/
+    /// atlas surfaces are CPU placeholders the export path never reads; the
+    /// interactive render loop is not supported on this instance.
+    pub fn try_new_headless(width: i32, height: i32) -> Result<RenderState> {
+        let sampling_options =
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+
+        let surfaces = Surfaces::try_new_headless(
+            (width, height),
+            sampling_options,
+            tiles::get_tile_dimensions(),
+        )?;
+
+        Self::assemble(
+            width,
+            height,
+            sampling_options,
+            surfaces,
+            ImageStore::without_gpu(),
+        )
+    }
+
+    fn assemble(
+        width: i32,
+        height: i32,
+        sampling_options: skia::SamplingOptions,
+        surfaces: Surfaces,
+        images: ImageStore,
+    ) -> Result<RenderState> {
+        let fonts = FontStore::try_new()?;
 
         // This is used multiple times everywhere so instead of creating new instances every
         // time we reuse this one.
@@ -550,7 +584,7 @@ impl RenderState {
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            images: ImageStore::new(),
+            images,
             background_color: skia::Color::TRANSPARENT,
             pending_nodes: vec![],
             current_tile: None,

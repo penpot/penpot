@@ -61,7 +61,9 @@ enum StoredImage {
 
 pub struct ImageStore {
     images: HashMap<(Uuid, bool), StoredImage>,
-    context: Box<DirectContext>,
+    /// GPU context for decoding images to textures. `None` in headless mode,
+    /// where image fills are skipped (other shapes render normally).
+    context: Option<Box<DirectContext>>,
 }
 
 /// Creates a Skia image from an existing WebGL texture.
@@ -149,7 +151,16 @@ impl ImageStore {
         let context = &gpu_state.context;
         Self {
             images: HashMap::with_capacity(2048),
-            context: Box::new(context.clone()),
+            context: Some(Box::new(context.clone())),
+        }
+    }
+
+    /// `ImageStore` with no GPU context (headless export); images are decoded on
+    /// the CPU at draw time (see `get_cpu_image`) instead of uploaded as textures.
+    pub fn without_gpu() -> Self {
+        Self {
+            images: HashMap::with_capacity(16),
+            context: None,
         }
     }
 
@@ -167,10 +178,18 @@ impl ImageStore {
 
         let raw_data = image_data.to_vec();
 
-        if let Some(gpu_image) = decode_image(&mut self.context, &raw_data) {
-            self.images.insert(key, StoredImage::Gpu(gpu_image));
-        } else {
-            self.images.insert(key, StoredImage::Raw(raw_data));
+        match self.context.as_mut() {
+            Some(context) => {
+                if let Some(gpu_image) = decode_image(context, &raw_data) {
+                    self.images.insert(key, StoredImage::Gpu(gpu_image));
+                } else {
+                    self.images.insert(key, StoredImage::Raw(raw_data));
+                }
+            }
+            // GPU-free: keep the encoded bytes; decoded on the CPU at draw time.
+            None => {
+                self.images.insert(key, StoredImage::Raw(raw_data));
+            }
         }
         Ok(())
     }
@@ -193,7 +212,12 @@ impl ImageStore {
         }
 
         // Create a Skia image from the existing GL texture
-        let image = create_image_from_gl_texture(&mut self.context, texture_id, width, height)?;
+        let Some(context) = self.context.as_mut() else {
+            return Err(crate::error::Error::CriticalError(
+                "Cannot register a GL texture without a GPU context".to_string(),
+            ));
+        };
+        let image = create_image_from_gl_texture(context, texture_id, width, height)?;
         self.images.insert(key, StoredImage::Gpu(image));
 
         Ok(())
@@ -214,8 +238,27 @@ impl ImageStore {
     }
 
     pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
-        let gpu_image = self.get(id)?.clone();
-        gpu_image.make_non_texture_image(self.context.as_mut())
+        // GPU path: promote to a texture, then copy to a CPU image.
+        if self.context.is_some() {
+            let gpu_image = self.get(id)?.clone();
+            let context = self.context.as_mut()?;
+            return gpu_image.make_non_texture_image(context.as_mut());
+        }
+        // Headless (no GPU context): decode the stored encoded bytes directly to
+        // a CPU image, which draws fine on a raster/PDF canvas. Try full first,
+        // then thumbnail.
+        self.decode_raw_cpu_image(id, false)
+            .or_else(|| self.decode_raw_cpu_image(id, true))
+    }
+
+    fn decode_raw_cpu_image(&self, id: &Uuid, is_thumbnail: bool) -> Option<Image> {
+        match self.images.get(&(*id, is_thumbnail))? {
+            StoredImage::Raw(raw_data) => {
+                let data = unsafe { skia::Data::new_bytes(raw_data) };
+                Image::from_encoded(&data)
+            }
+            StoredImage::Gpu(img) => Some(img.clone()),
+        }
     }
 
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
@@ -225,7 +268,9 @@ impl ImageStore {
             match entry {
                 StoredImage::Gpu(ref img) => Some(img),
                 StoredImage::Raw(raw_data) => {
-                    let gpu_image = decode_image(&mut self.context, raw_data)?;
+                    // GPU-texture path only; the headless CPU path is `get_cpu_image`.
+                    let context = self.context.as_mut()?;
+                    let gpu_image = decode_image(context, raw_data)?;
                     *entry = StoredImage::Gpu(gpu_image);
 
                     if let StoredImage::Gpu(ref img) = entry {

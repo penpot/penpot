@@ -86,6 +86,12 @@ pub struct DocAtlas {
     pub tile_doc_rects: HashMap<Tile, skia::Rect>,
 }
 
+/// CPU raster surface (no GPU/WebGL), for the headless render state.
+fn headless_surface(width: i32, height: i32) -> Result<skia::Surface> {
+    skia::surfaces::raster_n32_premul((width.max(1), height.max(1)))
+        .ok_or_else(|| Error::CriticalError("Failed to create raster surface".to_string()))
+}
+
 impl DocAtlas {
     pub fn try_new() -> Result<Self> {
         // Keep atlas as a regular surface like the rest. Start with a tiny
@@ -93,6 +99,21 @@ impl DocAtlas {
         let mut surface =
             get_gpu_state().create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
 
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+
+        Ok(Self {
+            surface,
+            origin: skia::Point::new(0.0, 0.0),
+            size: skia::ISize::new(0, 0),
+            scale: 1.0,
+            doc_bounds: None,
+            tile_doc_rects: HashMap::default(),
+        })
+    }
+
+    /// GPU-free [`DocAtlas::try_new`]; never written to on the export path.
+    pub fn try_new_headless() -> Result<Self> {
+        let mut surface = headless_surface(1, 1)?;
         surface.canvas().clear(skia::Color::TRANSPARENT);
 
         Ok(Self {
@@ -498,6 +519,48 @@ impl Surfaces {
             tile_atlas,
             tiles,
             atlas,
+            sampling_options,
+            atlas_sampling_options: skia::SamplingOptions::new(
+                skia::FilterMode::Nearest,
+                skia::MipmapMode::None,
+            ),
+            margins,
+            dirty_surfaces: 0,
+            extra_tile_dims,
+            dpr: 1.0,
+        })
+    }
+
+    /// GPU-free [`Surfaces::try_new`]: CPU-raster placeholders (1×1, except
+    /// `target`) the canvas export renderers never read.
+    pub fn try_new_headless(
+        (width, height): (i32, i32),
+        sampling_options: skia::SamplingOptions,
+        tile_dims: skia::ISize,
+    ) -> Result<Self> {
+        let extra_tile_dims = skia::ISize::new(
+            tile_dims.width * TILE_SIZE_MULTIPLIER,
+            tile_dims.height * TILE_SIZE_MULTIPLIER,
+        );
+        let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
+
+        Ok(Self {
+            target: headless_surface(width, height)?,
+            filter: headless_surface(1, 1)?,
+            cache: headless_surface(1, 1)?,
+            current: headless_surface(1, 1)?,
+            drop_shadows: headless_surface(1, 1)?,
+            inner_shadows: headless_surface(1, 1)?,
+            text_drop_shadows: headless_surface(1, 1)?,
+            shape_fills: headless_surface(1, 1)?,
+            shape_strokes: headless_surface(1, 1)?,
+            ui: headless_surface(1, 1)?,
+            debug: headless_surface(1, 1)?,
+            export: headless_surface(1, 1)?,
+            backbuffer: headless_surface(1, 1)?,
+            tile_atlas: headless_surface(1, 1)?,
+            tiles: TileTextureCache::new(1, 512),
+            atlas: DocAtlas::try_new_headless()?,
             sampling_options,
             atlas_sampling_options: skia::SamplingOptions::new(
                 skia::FilterMode::Nearest,

@@ -8,7 +8,7 @@ pub use text_editor::*;
 
 use crate::error::{Error, Result};
 use crate::render::FrameType;
-use crate::shapes::{grid_layout::grid_cell_data, Shape};
+use crate::shapes::{grid_layout::grid_cell_data, FontFamily, Shape};
 use crate::uuid::Uuid;
 use crate::{get_render_state, tiles};
 
@@ -84,6 +84,32 @@ impl State {
 
     pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
         crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
+    }
+
+    /// GPU-free counterpart of [`State::render_shape_pixels`]: PNG on a CPU
+    /// raster surface, no GPU/WebGL.
+    pub fn render_shape_raster(&mut self, id: &Uuid, scale: f32) -> Result<(Vec<u8>, i32, i32)> {
+        crate::render::raster::render_to_raster(get_render_state(), id, &self.shapes, scale)
+    }
+
+    /// Distinct font families used by the (visible) subtree rooted at `id`, in
+    /// first-seen order — the on-demand set the headless exporter provisions.
+    pub fn fonts_used_by_shape(&self, id: &Uuid) -> Vec<FontFamily> {
+        let Some(root) = self.shapes.get(id) else {
+            return Vec::new();
+        };
+
+        let mut result: Vec<FontFamily> = Vec::new();
+        for child_id in root.all_children_iter(&self.shapes, false, true) {
+            if let Some(shape) = self.shapes.get(&child_id) {
+                for family in shape.font_families() {
+                    if !result.contains(&family) {
+                        result.push(family);
+                    }
+                }
+            }
+        }
+        result
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
@@ -286,3 +312,7 @@ impl State {
         }
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+#[path = "state_tests.rs"]
+mod tests;

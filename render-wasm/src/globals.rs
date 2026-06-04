@@ -23,7 +23,9 @@ static mut GPU_STATE: *mut GpuState = std::ptr::null_mut();
 #[inline(always)]
 pub(crate) fn get_gpu_state() -> &'static mut GpuState {
     unsafe {
-        debug_assert!(!GPU_STATE.is_null(), "GPU State is null");
+        // `assert!` (not `debug_assert!`): a headless instance never inits GPU
+        // state, so an interactive call must fail-fast rather than deref null.
+        assert!(!GPU_STATE.is_null(), "GPU State is null (headless instance?)");
         &mut *GPU_STATE
     }
 }
@@ -102,6 +104,15 @@ fn render_init(width: i32, height: i32) {
     }
 }
 
+/// Initializes a GPU-free RenderState for the headless export path.
+fn render_init_headless(width: i32, height: i32) {
+    unsafe {
+        let render_state = RenderState::try_new_headless(width, height)
+            .expect("Cannot initialize headless RenderState");
+        RENDER_STATE = Box::into_raw(Box::new(render_state));
+    }
+}
+
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
@@ -130,6 +141,19 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     Ok(())
 }
 
+/// Boots the engine for headless export with no GPU/WebGL context (skips
+/// `init_gl!()`/`gpu_init()`). Only the canvas-based export paths
+/// (`render_shape_raster`/`render_shape_pdf`) and font provisioning work on an
+/// instance initialized this way; the interactive render loop does not.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn init_headless(width: i32, height: i32) -> Result<()> {
+    render_init_headless(width, height);
+    text_editor_init();
+    design_init();
+    Ok(())
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clean_up() -> Result<()> {
@@ -141,3 +165,7 @@ pub extern "C" fn clean_up() -> Result<()> {
     mem::free_bytes()?;
     Ok(())
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+#[path = "globals_tests.rs"]
+mod tests;
