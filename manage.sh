@@ -42,6 +42,7 @@ export PENPOT_WORKSPACES_DIR="${PENPOT_WORKSPACES_DIR:-$HOME/.penpot/penpot_work
 # is missing one. Consumed by instance-env-overrides (the values injected into
 # the per-instance compose env) and print-instance-info (the startup URLs).
 PENPOT_INSTANCE_PORT_STRIDE=10000
+PENPOT_PORT_BASE_PUBLIC_HTTPS=${PENPOT_PUBLIC_HTTPS_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_PUBLIC=${PENPOT_PUBLIC_HTTP_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MCP=${PENPOT_MCP_SERVER_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MCP_REPL=${PENPOT_MCP_REPL_PORT:?missing in defaults.env}
@@ -302,7 +303,8 @@ function instance-env-overrides {
     local instance="$1"
     local n=0
     [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
-    local public mcp mcp_repl serena serena_dash
+    local public_https public mcp mcp_repl serena serena_dash
+    public_https=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC_HTTPS")
     public=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC")
     mcp=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP")
     mcp_repl=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP_REPL")
@@ -311,14 +313,15 @@ function instance-env-overrides {
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
-        "PENPOT_PUBLIC_URI=https://localhost:${public}" \
+        "PENPOT_PUBLIC_URI=https://localhost:${public_https}" \
         "PENPOT_REDIS_URI=redis://valkey/${n}" \
+        "PENPOT_PUBLIC_HTTPS_PORT=${public_https}" \
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
         "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
         "SERENA_EXTERNAL_PORT=${serena}" \
         "SERENA_DASHBOARD_EXTERNAL_PORT=${serena_dash}" \
-        "SHADOW_SERVER_URL=wss://localhost:${public}" \
+        "SHADOW_SERVER_URL=wss://localhost:${public_https}" \
         "PENPOT_TENANT=devenv-${instance}"
 }
 
@@ -695,7 +698,7 @@ function print-instance-info {
 
     echo
     echo "[$instance]"
-    echo "  Penpot UI:           https://localhost:${public}"
+    echo "  Penpot UI:           https://localhost:${public_htts}"
     echo "  MCP stream:          http://localhost:${mcp}/mcp"
     echo "  Serena MCP:          http://localhost:${serena}"
     echo "  Serena dashboard:    http://localhost:${serena_dash}"
