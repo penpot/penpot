@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-03 19:01+0000\n"
+"PO-Revision-Date: 2026-06-04 23:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -8579,3 +8579,103 @@ msgid "dashboard.change-org-modal.text"
 msgstr ""
 "Les membres de l'équipe maintiendront l'accès aux projets et fichiers. "
 "L'équipe recevra les configurations de la nouvelle organisation."
+
+#: src/app/main/data/nitrate.cljs:395, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "Changer l'organisation de l'équipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Aller à la console admin"
+
+#: src/app/main/ui/dashboard/import.cljs:507
+msgid "dashboard.import.import-error.check-error"
+msgstr "Nous ne pouvions vérifier ce fichier."
+
+#: src/app/main/ui/dashboard/import.cljs:511
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Ce fichier semble endommagé."
+
+#: src/app/main/ui/dashboard/import.cljs:514
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Une erreur s'est produite lors du traitement de ce fichier."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Tu n'as pas la permission d'inviter des gens à cette équipe, de modifier ou "
+"supprimer des invitations."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "Quitter l'organisation"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "Mes équipes"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "Tu n'as pas la permission d'ajouter des équipes à tes organisations."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Tu ne peux pas créer des équipes au sein l'organisation %s. Pour plus "
+"d'informations, contacter le propriétaire de l'organisation."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Tu n'as pas le droit de supprimer des équipes au sein de l'organisation %s. "
+"Pour plus d'informations, contacter le propriétaire de l'organisation."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Tu n'as pas le droit de déplacer des équipes au sein l'organisation %s. Pour "
+"plus d'informations, contacter le propriétaire de l'organisation."
+
+#: src/app/main/data/dashboard.cljs:752
+msgid "dashboard.org-deleted"
+msgstr "L'organisation %s a été supprimée."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Créer une org"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Organisations"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "AJOUTER À L'ORGANISATION"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "Choisir une organisation :"
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"« %s » ne permet qu'aux membres d'organisations de joindre ses équipes. Les "
+"invitations en attente à des gens externes à l'organisation seront révoquées."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Les invitations en attente à des usagers externes seront annulées."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr ""
+"Ici tu trouveras toutes les organisations auxquelles tu as le droit de créer "
+"ou ajouter des équipes."
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "Choisir une organisation :"
+
+#: src/app/main/data/nitrate.cljs:338, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "Ajouter une équipe à l'organisation"
