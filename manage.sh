@@ -1281,16 +1281,17 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
-    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-mcp-bundle                 Build mcp bundle."
+    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
-    echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
+    echo "- build-docker-images              Build all docker images (frontend, backend, exporter, mcp and storybook)."
     echo "- build-frontend-docker-image      Build frontend docker images."
     echo "- build-backend-docker-image       Build backend docker images."
     echo "- build-exporter-docker-image      Build exporter docker images."
     echo "- build-mcp-docker-image           Build exporter docker images."
     echo "- build-storybook-docker-image     Build storybook docker images."
+    echo "- build-imagemagick-docker-image   Build imagemagic docker images."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -1369,11 +1370,6 @@ case $1 in
         build-docs-bundle;
         ;;
 
-    build-imagemagick-docker-image)
-        shift;
-        build-imagemagick-docker-image $@;
-        ;;
-
     build-docker-images)
         build-frontend-docker-image
         build-backend-docker-image
@@ -1400,6 +1396,11 @@ case $1 in
 
     build-storybook-docker-image)
         build-storybook-docker-image
+        ;;
+
+    build-imagemagick-docker-image)
+        shift;
+        build-imagemagick-docker-image $@;
         ;;
 
     *)
