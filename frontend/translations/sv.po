@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-03 19:01+0000\n"
+"PO-Revision-Date: 2026-06-04 23:01+0000\n"
 "Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -1964,7 +1964,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Aktiva teman"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Kopiera CSS-förkortning till urklipp"
 
@@ -2012,7 +2011,7 @@ msgstr "Acceptera"
 #: src/app/main/ui/settings/sidebar.cljs:123
 #, unused
 msgid "labels.access-tokens"
-msgstr "Accesstokens"
+msgstr "Åtkomsttokens"
 
 #: src/app/main/ui/dashboard/team.cljs:1445
 msgid "labels.active"
@@ -8485,7 +8484,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs:671
 msgid "dashboard.leave-org"
-msgstr "Lämna organisation"
+msgstr "Lämna org"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
 msgid "dashboard.my-teams"
@@ -8787,3 +8786,614 @@ msgstr "WebGL-rendering inaktiverad"
 #: src/app/main/ui/workspace/main_menu.cljs:862
 msgid "workspace.header.menu.mcp.server.status.disabled"
 msgstr "Hantera (Status: inaktiverad)"
+
+#: src/app/main/ui/settings/options.cljs:114
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Aktiverad"
+
+#: src/app/main/ui/settings/options.cljs:117
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Ge feedback"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL-rendering"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"Urklipps-API:et är inte tillgängligt. Hosta Penpot via HTTPS för att "
+"aktivera åtkomst till urklipp"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Åtkomst till urklipp nekad. Vänligen ge urklippsbehörighet i din webbläsare "
+"för att klistra in innehåll"
+
+#: src/app/main/ui/static.cljs:338
+msgid "errors.webgl-context-lost.main-message"
+msgstr "Hoppsan! Kontexten för arbetsytan försvann"
+
+#: src/app/main/ui/exports/files.cljs:123
+msgid "files-download-modal.title"
+msgstr "Ladda ner filer"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Blandade teckenfamiljer"
+
+#: src/app/main/ui/settings/integrations.cljs:598
+msgid "integrations.access-tokens.create"
+msgstr "Skapa ny åtkomsttoken"
+
+#: src/app/main/ui/settings/integrations.cljs:606
+msgid "integrations.access-tokens.empty.add-one"
+msgstr "Tryck på knappen \"Skapa ny åtkomsttoken\" för att generera en."
+
+#: src/app/main/ui/settings/integrations.cljs:605
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Du har inga tokens än."
+
+#: src/app/main/ui/settings/integrations.cljs:588
+msgid "integrations.access-tokens.personal"
+msgstr "Personliga åtkomsttokens"
+
+#: src/app/main/ui/settings/integrations.cljs:593
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"Personliga åtkomsttokens fungerar som ett alternativ till vårt system för "
+"inloggning/lösenordsautentisering och kan användas för att ge en applikation "
+"åtkomst till det interna Penpot API:et"
+
+#: src/app/main/ui/settings/integrations.cljs:67
+msgid "integrations.copy-to-clipboard"
+msgstr "Kopiera till urklipp"
+
+#: src/app/main/ui/settings/integrations.cljs:258
+msgid "integrations.create-access-token.title"
+msgstr "Skapa åtkomsttoken"
+
+#: src/app/main/ui/settings/integrations.cljs:257
+msgid "integrations.create-access-token.title.created"
+msgstr "Åtkomsttoken skapad"
+
+#: src/app/main/ui/settings/integrations.cljs:367
+msgid "integrations.delete-token.accept"
+msgstr "Radera token"
+
+#: src/app/main/ui/settings/integrations.cljs:366
+msgid "integrations.delete-token.message"
+msgstr "Är du säker på att du vill ta bort denna token?"
+
+#: src/app/main/ui/settings/integrations.cljs:365
+msgid "integrations.delete-token.title"
+msgstr "Radera token"
+
+#: src/app/main/ui/settings/integrations.cljs:221
+msgid "integrations.expiration-180-days"
+msgstr "180 dagar"
+
+#: src/app/main/ui/settings/integrations.cljs:218
+msgid "integrations.expiration-30-days"
+msgstr "30 dagar"
+
+#: src/app/main/ui/settings/integrations.cljs:219
+msgid "integrations.expiration-60-days"
+msgstr "60 dagar"
+
+#: src/app/main/ui/settings/integrations.cljs:220
+msgid "integrations.expiration-90-days"
+msgstr "90 dagar"
+
+#: src/app/main/ui/settings/integrations.cljs:216
+msgid "integrations.expiration-date.label"
+msgstr "Utgångsdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:217
+msgid "integrations.expiration-never"
+msgstr "Aldrig"
+
+#: src/app/main/ui/settings/integrations.cljs:389
+msgid "integrations.expired-on"
+msgstr "Gick ut den %s"
+
+#: src/app/main/ui/settings/integrations.cljs:390
+msgid "integrations.expires-on"
+msgstr "Går ut den %s"
+
+#: src/app/main/ui/settings/integrations.cljs:296
+msgid "integrations.generate-mcp-key.title"
+msgstr "Generera MCP-nyckel"
+
+#: src/app/main/ui/settings/integrations.cljs:294
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "MCP-nyckel genererad"
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "integrations.info.mcp-client-config"
+msgstr ""
+"Lägg till denna konfiguration i din MCP-klient (t.ex. ~/​​​​​​.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:201
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Penpots MCP-server gör det möjligt för MCP-klienter att interagera direkt "
+"med Penpot-designfiler."
+
+#: src/app/main/ui/settings/integrations.cljs:101
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr ""
+"Denna unika MCP-nyckel kan inte återställas. Om du förlorar den måste du "
+"skapa en ny."
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.mcp-key.will-expire"
+msgstr "MCP-nyckeln går ut den %s"
+
+#: src/app/main/ui/settings/integrations.cljs:116
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "MCP-nyckeln har inget utgångsdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:488
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Penpots MCP-server gör det möjligt för MCP-klienter att interagera direkt "
+"med Penpot-designfiler."
+
+#: src/app/main/ui/settings/integrations.cljs:415
+#, unused
+msgid "integrations.mcp-server.mcp-keys.copy"
+msgstr "Kopiera länk"
+
+#: src/app/main/ui/settings/integrations.cljs:566
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "Så här konfigurerar du MCP-klienter"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Detta är server-URL:en du behöver för att konfigurera din MCP-klient för att "
+"ansluta den till Penpot MCP-servern."
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "Återskapa MCP-nyckel"
+
+#: src/app/main/ui/settings/integrations.cljs:529
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "MCP-nyckel"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "MCP-nyckeln behövs för MCP-klientkonfigurationen"
+
+#: src/app/main/ui/settings/integrations.cljs:494
+msgid "integrations.mcp-server.status"
+msgstr "Status"
+
+#: src/app/main/ui/settings/integrations.cljs:513
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Aktiverad"
+
+#: src/app/main/ui/settings/integrations.cljs:504
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"MCP-nyckeln som användes för att ansluta till MCP-servern har gått ut. "
+"Därför kan anslutningen inte upprättas."
+
+#: src/app/main/ui/settings/integrations.cljs:509
+msgid "integrations.mcp-server.status.expired.1"
+msgstr ""
+"Återskapa MCP-nyckeln och uppdatera din klientkonfiguration med den nya "
+"nyckeln."
+
+#: src/app/main/ui/settings/integrations.cljs:479
+msgid "integrations.mcp-server.title"
+msgstr "MCP-server"
+
+#: src/app/main/ui/settings/integrations.cljs:483
+msgid "integrations.mcp-server.title.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/integrations.cljs:208
+msgid "integrations.name.label"
+msgstr "Namn"
+
+#: src/app/main/ui/settings/integrations.cljs:209
+msgid "integrations.name.placeholder"
+msgstr "Namnet kan hjälpa till att veta vad token är till för"
+
+#: src/app/main/ui/settings/integrations.cljs:388
+msgid "integrations.no-expiration"
+msgstr "Inget utgångsdatum"
+
+#: src/app/main/ui/settings/integrations.cljs:468
+msgid "integrations.notification.success.copied-link"
+msgstr "Länk kopierad till urklipp"
+
+#: src/app/main/ui/settings/integrations.cljs:162
+msgid "integrations.notification.success.created"
+msgstr "Token skapades"
+
+#: src/app/main/ui/settings/integrations.cljs:85
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "MCP-nyckel kopierad"
+
+#: src/app/main/ui/settings/integrations.cljs:432
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "MCP-server aktiverad"
+
+#: src/app/main/ui/settings/integrations.cljs:86
+msgid "integrations.notification.success.token-copied"
+msgstr "Kopierade token"
+
+#: src/app/main/ui/settings/integrations.cljs:338
+msgid "integrations.regenerate-mcp-key.info"
+msgstr ""
+"Återställande av MCP-nyckeln gör att den nuvarande återkallas omedelbart. "
+"Alla program som använder den kommer att sluta fungera."
+
+#: src/app/main/ui/settings/integrations.cljs:337
+msgid "integrations.regenerate-mcp-key.title"
+msgstr "Återskapa MCP-nyckel"
+
+#: src/app/main/ui/settings/integrations.cljs:335
+msgid "integrations.regenerate-mcp-key.title.created"
+msgstr "MCP-nyckel återskapad"
+
+#: src/app/main/ui/settings/integrations.cljs:626
+msgid "integrations.title"
+msgstr "Integrationer"
+
+#: src/app/main/ui/settings/integrations.cljs:102
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Denna unika token kan inte återskapas. Om du förlorar den måste du skapa en "
+"ny."
+
+#: src/app/main/ui/settings/integrations.cljs:114
+msgid "integrations.token.will-expire"
+msgstr "Denna token går ut den %s"
+
+#: src/app/main/ui/settings/integrations.cljs:117
+msgid "integrations.token.will-not-expire"
+msgstr "Token har inget utgångsdatum"
+
+#: src/app/main/ui/settings/profile.cljs:116
+msgid "labels.delete-profile-photo.message"
+msgstr "Är du säker på att du vill ta bort ditt profilfoto?"
+
+#: src/app/main/ui/settings/profile.cljs:115
+msgid "labels.delete-profile-photo.title"
+msgstr "Radera profilfoto"
+
+#: src/app/main/ui/dashboard/deleted.cljs:214
+msgid "labels.deleted"
+msgstr "Raderad"
+
+#: src/app/main/data/workspace/mcp.cljs:186
+msgid "labels.dismiss"
+msgstr "Avfärda"
+
+#: src/app/main/ui/dashboard/fonts.cljs:284
+msgid "labels.download-simple"
+msgstr "Ladda ner"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "labels.downloading-file"
+msgstr "Laddar ner fil…"
+
+#: src/app/main/data/workspace/versions.cljs:303
+msgid "labels.exit"
+msgstr "Gå bort"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1246
+msgid "labels.flex-layout"
+msgstr "Flex-layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1250
+msgid "labels.grid-layout"
+msgstr "Rutnätslayout"
+
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Integrationer"
+
+#: src/app/main/ui/static.cljs:330
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot är tillfälligt otillgänglig på grund av ett systemfel. Försök igen om "
+"en liten stund."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "Inga träffar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:705
+msgid "labels.open"
+msgstr "Öppna"
+
+#: src/app/main/ui/dashboard/deleted.cljs:207
+msgid "labels.recent"
+msgstr "Senaste"
+
+#: src/app/main/ui/static.cljs:342
+msgid "labels.reload-page"
+msgstr "Ladda om sidan"
+
+#: src/app/main/ui/dashboard/import.cljs:536
+msgid "labels.uploading-file"
+msgstr "Laddar upp fil…"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+#, unused
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s varning"
+msgstr[1] "%s varningar"
+
+#: src/app/main/data/nitrate.cljs:195
+msgid "modals.before-leave-org.message"
+msgstr ""
+"Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
+"tillsammans med deras projekt och filer."
+
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/change_owner.cljs:151
+msgid "modals.before-leave-org.title"
+msgstr "INNAN DU LÄMNAR ORGANISATIONEN"
+
+#: src/app/main/data/nitrate.cljs:198
+msgid "modals.before-leave-org.warning"
+msgstr "Alla team där du är den enda medlemmen kommer att raderas."
+
+#: src/app/main/ui/settings/delete_account.cljs
+#, unused
+msgid "modals.delete-account.info.with-orgs"
+msgstr ""
+"Denna åtgärd kan inte ångras. Ditt konto, din prenumeration och dina "
+"organisationer kommer att raderas omedelbart. Du kommer också att förlora "
+"åtkomsten till dina nuvarande projekt och filer."
+
+#: src/app/main/ui/settings/delete_account.cljs:82
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organisationer som kommer att raderas"
+
+#: src/app/main/ui/settings/delete_account.cljs:97
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s medlemmar"
+
+#: src/app/main/ui/settings/delete_account.cljs:95
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s team"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Är du säker på att du vill ta bort det här objektet?"
+msgstr[1] "Är du säker på att du vill ta bort dessa %s objekt?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
+msgid "modals.delete-asset-group.title"
+msgstr "Ta bort grupp"
+
+#: src/app/main/data/team.cljs:129
+msgid "modals.delete-org-team-confirm.message"
+msgstr ""
+"Är du säker på att du vill ta bort det här teamet som är en del av "
+"organisation %s?"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"Biblioteket har tokens och teman som sannolikt används av dess komponenter."
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
+msgid "modals.import-library-tokens.import"
+msgstr "Importera tokens"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:72
+msgid "modals.import-library-tokens.title"
+msgstr "Importera tokens från biblioteket?"
+
+#: src/app/main/data/team.cljs:583
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr ""
+"Endast befintliga medlemmar i organisationen kan bjudas in. Eftersom ingen "
+"av personerna på din lista är medlemmar har inga inbjudningar skickats."
+
+#: src/app/main/data/team.cljs:582
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "Inga inbjudningar skickades"
+
+#: src/app/main/data/team.cljs:162
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr ""
+"Endast medlemmar i organisationen \"%s\" kan bjudas in till det här teamet, "
+"och de är alla redan teammedlemmar. Om du behöver mer information, kontakta "
+"organisationens ägare."
+
+#: src/app/main/ui/dashboard/team.cljs:308
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Adresser som inte kommer att få en inbjudan"
+
+#: src/app/main/ui/dashboard/team.cljs:325
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Avbryt"
+
+#: src/app/main/ui/dashboard/team.cljs:298
+msgid "modals.invite-restricted-members.description"
+msgstr "Endast befintliga medlemmar i organisationen kan bjudas in."
+
+#: src/app/main/ui/dashboard/team.cljs:333
+msgid "modals.invite-restricted-members.send"
+msgstr "Skicka inbjudningar"
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "Vissa inbjudningar kan inte skickas"
+
+#: src/app/main/ui/dashboard/team.cljs:299
+msgid "modals.invite-restricted-members.warning"
+msgstr "Vissa personer på din lista kommer inte att få inbjudningarna."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:158
+msgid "modals.leave-org-and-reassign.hint"
+msgstr ""
+"Du är ägare till teamen i vissa organisationer. Vänligen befordra en annan "
+"medlem till att bli ägare."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:161
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr ""
+"Du är den enda medlemmen i vissa av teamen. Dessa team kommer att raderas "
+"tillsammans med deras projekt och filer."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:163
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr ""
+"Du är också ägare till vissa organisationers team. Vänligen befordra en "
+"annan medlem till att bli ägare."
+
+#: src/app/main/data/nitrate.cljs:196, src/app/main/data/nitrate.cljs:205
+msgid "modals.leave-org-confirm.accept"
+msgstr "Lämna organisation"
+
+#: src/app/main/data/nitrate.cljs:204
+msgid "modals.leave-org-confirm.message"
+msgstr ""
+"Du kommer permanent att förlora åtkomsten till alla team, projekt och filer "
+"i den."
+
+#: src/app/main/data/nitrate.cljs:203
+msgid "modals.leave-org-confirm.title"
+msgstr "Lämnar du organisation %s?"
+
+#: src/app/main/data/nitrate.cljs:252
+msgid "modals.remove-team-org.accept"
+msgstr "Ta bort från organisationen"
+
+#: src/app/main/data/nitrate.cljs:250
+msgid "modals.remove-team-org.info"
+msgstr ""
+"Projekt och filer kommer att förbli tillgängliga för teammedlemmar, men "
+"organisationens inställningar kommer inte längre att gälla."
+
+#: src/app/main/data/nitrate.cljs:249
+msgid "modals.remove-team-org.text"
+msgstr ""
+"Är du säker på att du vill ta bort teamet '%s' från organisationen '%s'?"
+
+#: src/app/main/data/nitrate.cljs:248
+msgid "modals.remove-team-org.title"
+msgstr "TA BORT TEAMET FRÅN ORGANISATIONEN"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
+msgid "nitrate.activation-code.expired-error"
+msgstr "Den här koden har gått ut."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Ogiltig kod."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
+msgid "nitrate.activation-success.active-until"
+msgstr "Ditt abonnemang är aktivt till %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:150, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
+msgid "nitrate.activation-success.create-org"
+msgstr "Skapa organisation"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
+msgid "nitrate.activation-success.enjoy"
+msgstr "Lycka till med ditt abonnemang!"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+msgid "nitrate.activation-success.manage-info"
+msgstr ""
+"Du kan hantera din prenumeration när som helst från prenumerationssidan i "
+"dina kontoinställningar."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
+msgid "nitrate.activation-success.title"
+msgstr "Du är Business Nitrate!"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+msgid "nitrate.code-activation.footer"
+msgstr "Behöver du en kod? Kontakta oss:"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
+msgid "nitrate.code-activation.input-label"
+msgstr "Ange din aktiveringskod"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:90
+msgid "nitrate.code-activation.placeholder"
+msgstr "Klistra in din aktiveringskod här"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+msgid "nitrate.code-activation.renew-title"
+msgstr "FÖRNYA NITRATE"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
+msgid "nitrate.code-activation.submit"
+msgstr "Aktivera"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+msgid "nitrate.code-activation.title"
+msgstr "Aktivera Nitrate"
+
+#, unused
+msgid "nitrate.contact-sales.button"
+msgstr "Kontakta säljare"
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr ""
+"För att byta till det här abonnemanget, vänligen kontakta vårt säljteam. Vi "
+"hjälper dig att uppdatera din prenumeration och ser till att allt är korrekt "
+"konfigurerat."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgstr "Din organisation kommer att raderas."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr ""
+"Ditt totala lagringsutrymme, din automatiska versionshistorik och din "
+"filåterställningsperiod kommer att bli begränsad."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr ""
+"Teamen, projekten och filerna kommer inte längre att ingå i någon "
+"organisation men de kommer att förbli tillgängliga."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "När du nedgraderar:"
+
+#, unused
+msgid "nitrate.contact-sales.title"
+msgstr "Byt till abonnemang %s?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77
+msgid "nitrate.form.cancel-anytime"
+msgstr ""
+"Betalningen behandlas i slutet av provperioden. Du kan avsluta när som helst."
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:92
+msgid "nitrate.form.contact-trial"
+msgstr "Kontakta oss för att prova Enterprise i 14 dagar:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:91
+msgid "nitrate.form.contact-upgrade"
+msgstr "Kontakta oss för att uppgradera till Enterprise:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:82, src/app/main/ui/nitrate/nitrate_form.cljs:102
+msgid "nitrate.form.enter-code"
+msgstr "Ange aktiveringskod"
