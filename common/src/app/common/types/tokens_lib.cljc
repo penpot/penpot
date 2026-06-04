@@ -1452,10 +1452,6 @@ Will return a value that matches this schema:
       (check-tokens-lib-map)
       (map->tokens-lib)))
 
-(defn ensure-tokens-lib
-  [tokens-lib]
-  (or tokens-lib (make-tokens-lib)))
-
 (def schema:tokens-lib
   (sm/type-schema
    {:type ::tokens-lib
