@@ -43,7 +43,7 @@ impl From<RawGuide> for Guide {
             RawGuideKind::Vertical => GuideKind::Vertical(value.position),
             RawGuideKind::Horizontal => GuideKind::Horizontal(value.position),
         };
-        Guide::new(kind, value.color.into())
+        Guide::new(kind, value.color.into(), None)
     }
 }
 
@@ -67,7 +67,14 @@ fn read_guides_from_bytes(buffer: &[u8], count: usize) -> Result<Vec<Guide>> {
     buffer
         .chunks_exact(RAW_GUIDE_SIZE)
         .take(count)
-        .map(|bytes| RawGuide::try_from(bytes).map(|guide| guide.into()))
+        .enumerate()
+        .map(|(i, bytes)| {
+            RawGuide::try_from(bytes).map(|raw_guide| {
+                let mut guide: Guide = raw_guide.into();
+                guide.index = i;
+                guide
+            })
+        })
         .collect::<Result<Vec<Guide>>>()
 }
 
@@ -83,7 +90,7 @@ pub extern "C" fn set_guides() -> Result<()> {
             .unwrap_or([0; 4]),
     ) as usize;
     let guides = read_guides_from_bytes(&bytes[4..], count)?;
-    get_ui_state().guides = guides;
+    get_ui_state().set_guides(guides);
 
     mem::free_bytes()?;
     Ok(())

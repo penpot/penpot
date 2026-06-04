@@ -5,8 +5,17 @@ use crate::ui::{Guide, GuideKind};
 
 /// Renders the ruler guides overlay using the guides provided by the host
 /// (ClojureScript) and stored in the render state.
-pub fn render(canvas: &skia::Canvas, zoom: f32, area: Rect, guides: &[Guide]) {
-    for guide in guides {
+pub fn render(
+    canvas: &skia::Canvas,
+    zoom: f32,
+    area: Rect,
+    horizontal: &[Guide],
+    vertical: &[Guide],
+) {
+    for guide in horizontal {
+        render_guide(canvas, zoom, area, *guide);
+    }
+    for guide in vertical {
         render_guide(canvas, zoom, area, *guide);
     }
 }

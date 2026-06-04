@@ -66,7 +66,8 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let ruler_state = render_state.rulers;
     rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
     // TODO: pass guides data here
-    guides::render(canvas, zoom, viewbox.area, &get_ui_state().guides);
+    let (horizontal, vertical) = get_ui_state().guides();
+    guides::render(canvas, zoom, viewbox.area, horizontal, vertical);
 
     canvas.restore();
 
