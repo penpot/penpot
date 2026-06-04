@@ -271,3 +271,25 @@
       (t/is (true? (:flip-y result)))
       ;; rotation must not be negated when both axes are flipped
       (t/is (mth/close? 30 (:rotation result))))))
+
+;; ---- transform recovery for degenerate (collapsed) points ----
+
+(t/deftest resize-recovers-shape-with-degenerate-points
+  (t/testing "Resizing a shape whose points collapsed to a zero-length basis recovers its size"
+    ;; Simulate a collapsed layout container: selrect keeps a (clamped) 0.01 width, but the
+    ;; points degenerated to a vertical line (zero horizontal basis). A resize transform must
+    ;; still grow it, instead of staying collapsed (scaling a zero basis stays zero).
+    (let [base   (create-test-shape :rect {})
+          x      (get-in base [:selrect :x])
+          y      (get-in base [:selrect :y])
+          h      (get-in base [:selrect :height])
+          shape  (assoc base
+                        :selrect (grc/make-rect x y 0.01 h)
+                        :width 0.01
+                        :points [(gpt/point x y) (gpt/point x y)
+                                 (gpt/point x (+ y h)) (gpt/point x (+ y h))])
+          ;; scale x by 100/0.01 around the left edge -> target width 100
+          mods   (ctm/resize-modifiers (gpt/point (/ 100 0.01) 1) (gpt/point x y))
+          result (gsh/transform-shape shape mods)]
+      (t/is (mth/close? 100 (:width result) 0.5))
+      (t/is (mth/close? h (:height result) 0.5)))))

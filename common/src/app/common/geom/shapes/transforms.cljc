@@ -335,11 +335,31 @@
         (assoc :points points))))
 
 
+(defn- degenerate-points?
+  "True when the points collapsed to a zero-length basis (a line or a point), so they
+  can't be used as the source of a transform."
+  [[p1 p2 _ p4]]
+  (and (some? p1) (some? p2) (some? p4)
+       (or (mth/almost-zero? (gpt/length (gpt/to-vec p1 p2)))
+           (mth/almost-zero? (gpt/length (gpt/to-vec p1 p4))))))
+
 (defn- apply-transform-generic
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
-  (let [points    (-> (dm/get-prop shape :points)
+  (let [shape-selrect (dm/get-prop shape :selrect)
+        stored-points (dm/get-prop shape :points)
+
+        ;; A shape whose points collapsed to a zero-length basis (e.g. a layout container that
+        ;; was collapsed to ~0 size) can't be transformed: scaling a degenerate basis keeps it
+        ;; degenerate, so resizes and auto-size recoveries have no effect. Fall back to the
+        ;; selrect, which keeps a non-zero basis, so the transform applies and the points get
+        ;; repaired.
+        base-points   (if (and (some? shape-selrect) (degenerate-points? stored-points))
+                        (grc/rect->points shape-selrect)
+                        stored-points)
+
+        points    (-> base-points
                       (gco/transform-points transform-mtx))
 
         shape     (adjust-shape-flips shape points)

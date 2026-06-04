@@ -414,3 +414,22 @@
         ;; Width and height should be clamped to at least 0.01
         (t/is (>= (gpo/width-points bounds) 0.01))
         (t/is (>= (gpo/height-points bounds) 0.01))))))
+
+(t/deftest objects->bounds-map-degenerate-points-falls-back-to-selrect-test
+  (t/testing "A shape whose points collapsed to a zero-length basis falls back to its selrect"
+    ;; A collapsed basis (e.g. produced by hiding every child of an auto-sized layout) cannot
+    ;; be used as a coordinate frame: the auto-size is reapplied as a scale and a zero basis
+    ;; can't be scaled back up. The bounds-map must derive usable points from the selrect so the
+    ;; next reflow can recover the real size.
+    (let [id    (uuid/next)
+          shape (-> (make-rect id 10 20 30 40)
+                    ;; horizontal basis collapsed: all points share the same x
+                    (assoc :points [(gpt/point 10 20) (gpt/point 10 20)
+                                    (gpt/point 10 60) (gpt/point 10 60)]))
+          bm    (gbm/objects->bounds-map {id shape})
+          bounds @(get bm id)]
+      ;; basis recovered from the selrect (30x40), not the collapsed points (0 width)
+      (t/is (mth/close? 30.0 (gpo/width-points bounds)))
+      (t/is (mth/close? 40.0 (gpo/height-points bounds)))
+      (t/is (mth/close? 10.0 (:x (gpo/origin bounds))))
+      (t/is (mth/close? 20.0 (:y (gpo/origin bounds)))))))

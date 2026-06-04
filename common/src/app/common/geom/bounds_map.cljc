@@ -9,6 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
@@ -16,11 +18,31 @@
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
+(defn- degenerate-points?
+  "True when the points have a zero-length basis (their bounds collapsed to a line or a
+  point), so they can't be used as a coordinate frame for layout."
+  [[p1 p2 _ p4]]
+  (and (some? p1) (some? p2) (some? p4)
+       (or (mth/almost-zero? (gpt/length (gpt/to-vec p1 p2)))
+           (mth/almost-zero? (gpt/length (gpt/to-vec p1 p4))))))
+
+(defn- shape->bounds-points
+  [{:keys [selrect] :as shape}]
+  (let [points (gco/shape->points shape)]
+    ;; A collapsed basis (produced e.g. by hiding every child of an auto-sized layout) makes
+    ;; the bounds unusable as a coordinate frame and prevents the layout from recovering its
+    ;; size on reflow: the auto-size is reapplied as a scale, and a zero basis can't be scaled
+    ;; back up. Fall back to the selrect (whose dimensions are clamped to a minimum) so the
+    ;; next reflow can recompute the real size from the visible children.
+    (if (and (some? selrect) (degenerate-points? points))
+      (grc/rect->points selrect)
+      points)))
+
 (defn objects->bounds-map
   [objects]
   (d/lazy-map
    (keys objects)
-   #(gco/shape->points (get objects %))))
+   #(shape->bounds-points (get objects %))))
 
 (defn- create-bounds
   "Create the bounds object for the current shape in this context"
