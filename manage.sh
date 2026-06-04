@@ -698,7 +698,7 @@ function print-instance-info {
 
     echo
     echo "[$instance]"
-    echo "  Penpot UI:           https://localhost:${public_htts}"
+    echo "  Penpot UI:           https://localhost:${public_https}"
     echo "  MCP stream:          http://localhost:${mcp}/mcp"
     echo "  Serena MCP:          http://localhost:${serena}"
     echo "  Serena dashboard:    http://localhost:${serena_dash}"
