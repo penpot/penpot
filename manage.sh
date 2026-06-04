@@ -87,7 +87,7 @@ set -e
 #
 # Devenv bring-up commands (bring a workspace up + start background tmux)
 #   run-devenv               bring one workspace up; supports --ws, --sync,
-#                            --agentic (enables MCP + Serena), -e,
+#                            --attach, --agentic (enables MCP + Serena), -e,
 #                            --serena-context, git identity
 #
 # Devenv interactive entry points (operate on the running 'main' container)
@@ -687,6 +687,7 @@ function print-instance-info {
     local instance="$1"
     local public mcp serena serena_dash
     public=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC")
+    public_https=$(instance-port "$instance" "$PENPOT_PORT_BASE_PUBLIC_HTTPS")
     mcp=$(instance-port "$instance" "$PENPOT_PORT_BASE_MCP")
     serena=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA")
     serena_dash=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA_DASHBOARD")
@@ -699,6 +700,7 @@ function print-instance-info {
     echo
     echo "[$instance]"
     echo "  Penpot UI:           https://localhost:${public_https}"
+    echo "  Penpot UI:           http://localhost:${public}"
     echo "  MCP stream:          http://localhost:${mcp}/mcp"
     echo "  Serena MCP:          http://localhost:${serena}"
     echo "  Serena dashboard:    http://localhost:${serena_dash}"
@@ -712,6 +714,7 @@ function print-instance-info {
 function run-devenv {
     local target="ws0"
     local do_sync=false
+    local do_attach=false
     local agentic=false
     local serena_context="desktop-app"
     local git_user_name=""
@@ -726,6 +729,8 @@ function run-devenv {
                 do_sync=true; shift;;
             --agentic)
                 agentic=true; shift;;
+            --attach)
+                do_attach=true; shift;;
             --serena-context)
                 serena_context="$2"; shift 2;;
             --git-user-name)
@@ -737,10 +742,11 @@ function run-devenv {
             -e*)
                 extra_env_args+=(-e "${1#-e}"); shift;;
             -h|--help)
-                echo "Usage: run-devenv [--ws N] [--sync] [--agentic] [--serena-context CTX] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
+                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--serena-context CTX] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
                 echo "  Bring a single workspace up."
                 echo "  --ws N                target workspace (default: 0)."
                 echo "  --sync                re-seed the wsN clone from the live repo (forbidden on ws0)."
+                echo "  --attach              attach to the tmux session after startup."
                 echo "  --agentic             enable MCP + Serena (AI-agent mode)."
                 echo "  --serena-context CTX  context passed to Serena (default: desktop-app)."
                 echo "  --git-user-name NAME  git author name inside the container (default: host git config)."
@@ -815,6 +821,24 @@ function run-devenv {
     echo "Starting $target..."
     start-instance "$target" "$serena_context" "$git_user_name" "$git_user_email" "$agentic"
     print-instance-info "$target"
+
+    if [[ "$do_attach" == "true" ]]; then
+        local container
+        container=$(devenv-main-container "$target")
+        echo "[$target] waiting for tmux session..."
+        local deadline=$(( SECONDS + 120 ))
+        while ! docker exec "$container" sudo -EH -u penpot tmux has-session -t penpot 2>/dev/null; do
+            [[ $SECONDS -ge $deadline ]] && {
+                echo "[$target] tmux session did not appear within 120s" >&2
+                return 1
+            }
+            sleep 2
+        done
+        echo "[$target] attaching to tmux session..."
+        docker exec -ti \
+            "${extra_env_args[@]}" \
+            "$container" sudo -EH -u penpot tmux attach -t penpot
+    fi
 }
 
 function attach-devenv {
@@ -1214,6 +1238,7 @@ function usage {
     echo "                                     --sync                re-seed the wsN clone from the live repo before"
     echo "                                                           starting (forbidden on ws0; implicit on first"
     echo "                                                           start of a wsN with no on-disk workspace yet)."
+    echo "                                     --attach              attach to the tmux session after startup."
     echo "                                     --agentic             enable MCP + Serena (AI-agent mode)."
     echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
     echo "                                     -e KEY=VAL            forwarded to 'docker exec' on attach."
