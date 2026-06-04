@@ -21,7 +21,7 @@
 
 (defn add-tokens-lib
   [file]
-  (ctf/update-file-data file #(update % :tokens-lib ctob/ensure-tokens-lib)))
+  (ctf/update-file-data file ctf/ensure-tokens-lib))
 
 (defn update-tokens-lib
   [file f]
