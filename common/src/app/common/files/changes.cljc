@@ -998,9 +998,9 @@
 
 (defmethod process-change :set-token
   [data {:keys [set-id token-id attrs]}]
-  (update data :tokens-lib
-          (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)]
+  (let [data (ctf/ensure-tokens-lib data)]
+    (update data :tokens-lib
+            (fn [lib']
               (cond
                 (not attrs)
                 (ctob/delete-token lib' set-id token-id)
@@ -1015,9 +1015,9 @@
 
 (defmethod process-change :set-token-set
   [data {:keys [id attrs]}]
-  (update data :tokens-lib
-          (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)]
+  (let [data (ctf/ensure-tokens-lib data)]
+    (update data :tokens-lib
+            (fn [lib']
               (cond
                 (not attrs)
                 (ctob/delete-set lib' id)
@@ -1030,9 +1030,9 @@
 
 (defmethod process-change :set-token-theme
   [data {:keys [id attrs]}]
-  (update data :tokens-lib
-          (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)]
+  (let [data (ctf/ensure-tokens-lib data)]
+    (update data :tokens-lib
+            (fn [lib']
               (cond
                 (not attrs)
                 (ctob/delete-theme lib' id)
@@ -1048,27 +1048,23 @@
 
 (defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
-  (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
-                                (ctob/set-active-themes theme-paths))))
+  (-> (ctf/ensure-tokens-lib data)
+      (update :tokens-lib ctob/set-active-themes theme-paths)))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
-  (update data :tokens-lib (fn [lib]
-                             (-> lib
-                                 (ctob/ensure-tokens-lib)
-                                 (ctob/rename-set-group set-group-path set-group-fname)))))
+  (-> (ctf/ensure-tokens-lib data)
+      (update :tokens-lib ctob/rename-set-group set-group-path set-group-fname)))
 
 (defmethod process-change :move-token-set
   [data {:keys [from-path to-path before-path before-group] :as changes}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/move-set from-path to-path before-path before-group))))
+  (-> (ctf/ensure-tokens-lib data)
+      (update :tokens-lib ctob/move-set from-path to-path before-path before-group)))
 
 (defmethod process-change :move-token-set-group
   [data {:keys [from-path to-path before-path before-group]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/move-set-group from-path to-path before-path before-group))))
+  (-> (ctf/ensure-tokens-lib data)
+      (update :tokens-lib ctob/move-set-group from-path to-path before-path before-group)))
 
 ;; === Design Tokens configuration
 
