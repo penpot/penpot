@@ -59,7 +59,7 @@ PENPOT_PORT_BASE_MDTS=${MDTS_EXTERNAL_PORT:?missing in defaults.env}
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.2-13
+export IMAGEMAGICK_VERSION=7.1.2-24
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
