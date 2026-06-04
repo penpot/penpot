@@ -50,7 +50,8 @@
   [cfg {:keys [::rpc/profile-id] :as params}]
   (let [profile            (profile/get-profile cfg profile-id)]
     (-> (profile-to-map profile)
-        (assoc :theme (:theme profile)))))
+        (assoc :theme (:theme profile))
+        (assoc :lang (:lang profile)))))
 
 ;; ---- API: get-teams
 
