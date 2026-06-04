@@ -266,7 +266,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc :thumbnails thumbnails)
+          (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
           (update :files assoc file-id file)))))
 
 (defn zoom-to-frame
