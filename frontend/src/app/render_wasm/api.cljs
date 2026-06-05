@@ -265,7 +265,12 @@
   "Returns the current device pixel ratio. Use instead of `dpr` wherever
    the value must reflect browser-zoom changes that happen after load."
   []
-  (if use-dpr? (.-devicePixelRatio ^js ug/window) 1.0))
+  (if use-dpr?
+    (let [d (.-devicePixelRatio ^js ug/window)]
+      ;; In workers `ug/window` is a mock without `devicePixelRatio`,
+      ;; so guard against nil/NaN/non-positive values.
+      (if (and (number? d) (pos? d)) d 1.0))
+    1.0))
 
 (def noop-fn
   (constantly nil))
@@ -1889,6 +1894,20 @@
   [new-dpr]
   (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
 
+(defn- canvas-css-size
+  "Return canvas size in CSS pixels.
+
+  - For DOM canvases: use `clientWidth/clientHeight`.
+  - For OffscreenCanvas: fall back to `width/height` (physical px) converted by DPR."
+  [canvas dpr]
+  (let [cw (.-clientWidth ^js canvas)
+        ch (.-clientHeight ^js canvas)]
+    (if (and (number? cw) (pos? cw)
+             (number? ch) (pos? ch))
+      [cw ch]
+      [(/ (.-width ^js canvas) dpr)
+       (/ (.-height ^js canvas) dpr)])))
+
 (defn resize-canvas!
   "Sizes the canvas drawing buffer, the WASM render surface and the DPR from a
    single source of truth (the canvas CSS client size) so the GL framebuffer
@@ -1899,8 +1918,7 @@
   ([canvas]
    (resize-canvas! canvas (get-dpr)))
   ([canvas new-dpr]
-   (let [css-w (.-clientWidth ^js canvas)
-         css-h (.-clientHeight ^js canvas)]
+   (let [[css-w css-h] (canvas-css-size canvas new-dpr)]
      (set! (.-width ^js canvas) (* new-dpr css-w))
      (set! (.-height ^js canvas) (* new-dpr css-h))
      (set-render-options! new-dpr)
@@ -1952,7 +1970,10 @@
           context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
           context (.getContext ^js canvas context-id default-context-options)
           context-init? (not (nil? context))
-          browser (sr/translate-browser cf/browser)]
+          browser (sr/translate-browser cf/browser)
+          dpr     (get-dpr)
+          [css-w css-h] (canvas-css-size canvas dpr)
+          can-listen? (fn? (.-addEventListener ^js canvas))]
       (when-not (nil? context)
         (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
           (.makeContextCurrent ^js gl handle)
@@ -1963,8 +1984,8 @@
           (.getExtension context "WEBGL_debug_renderer_info")
 
           ;; Initialize Wasm Render Engine
-          (h/call wasm/internal-module "_init" (.-clientWidth ^js canvas) (.-clientHeight ^js canvas))
-          (h/call wasm/internal-module "_set_render_options" flags (get-dpr))
+          (h/call wasm/internal-module "_init" css-w css-h)
+          (h/call wasm/internal-module "_set_render_options" flags dpr)
 
           ;; Configurable parameters.
           (wasm-set-param-from-route-params-if-present :antialias_threshold)
@@ -1975,12 +1996,18 @@
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
-          (resize-canvas! canvas)
+          ;; DOM canvas: keep drawing buffer synced to CSS size.
+          ;; OffscreenCanvas: no CSS size, so only sync WASM viewbox.
+          (if (and (number? (.-clientWidth ^js canvas))
+                   (pos? (.-clientWidth ^js canvas)))
+            (resize-canvas! canvas dpr)
+            (resize-viewbox css-w css-h))
 
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
-          (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-          (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
+          (when can-listen?
+            (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
+            (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored))
           (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
