@@ -103,21 +103,21 @@
                sets      (ctob/get-sets token-lib)]
 
            (t/testing "Token lib contains one set"
-             (t/is (= (count sets) 1))))))))
+             (t/is (= (count sets) 1)))))))))
 
-  (t/deftest delete-set
-    (t/async
-      done
-      (let [file       (setup-file-with-token-lib)
-            store      (ths/setup-store file)
-            events     [(dwtl/delete-token-set (cthi/id :test-token-set))]]
+(t/deftest delete-set
+  (t/async
+    done
+    (let [file       (setup-file-with-token-lib)
+          store      (ths/setup-store file)
+          events     [(dwtl/delete-token-set (cthi/id :test-token-set))]]
 
-        (tohs/run-store-async
-         store done events
-         (fn [new-state]
-           (let [file'       (ths/get-file-from-state new-state)
-                 tokens-lib' (toht/get-tokens-lib file')
-                 sets'       (ctob/get-sets tokens-lib')]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file'       (ths/get-file-from-state new-state)
+               tokens-lib' (toht/get-tokens-lib file')
+               sets'       (ctob/get-sets tokens-lib')]
 
-             (t/testing "Set has been deleted"
-               (t/is (= (count sets') 0))))))))))
+           (t/testing "Set has been deleted"
+             (t/is (= (count sets') 0)))))))))

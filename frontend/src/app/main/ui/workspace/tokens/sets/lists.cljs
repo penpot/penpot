@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -313,7 +314,6 @@
   [{:keys [is-draggable
            selected
            is-token-set-group-active
-           is-token-set-active
            on-start-edition
            on-reset-edition
            on-edit-submit-set
@@ -326,7 +326,9 @@
            new-path
            edition-id]}]
 
-  (let [collapsed-paths* (mf/use-state #{})
+  (let [tokens-status (mf/use-ctx ctx/tokens-status)
+
+        collapsed-paths* (mf/use-state #{})
         collapsed-paths  (deref collapsed-paths*)
 
         collapsed?
@@ -418,7 +420,7 @@
             :set token-set
             :label (peek path)
             :is-editing (= edition-id id)
-            :is-active (is-token-set-active (ctob/get-name token-set))
+            :is-active (ctos/set-active? tokens-status id)
             :is-selected (= selected id)
             :is-draggable is-draggable
             :is-new false
@@ -440,7 +442,6 @@
            selected
            on-update-token-set
            on-update-token-set-group
-           is-token-set-active
            is-token-set-group-active
            on-create-token-set
            on-toggle-token-set
@@ -453,7 +454,6 @@
            edition-id]}]
 
   (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
-  (assert (fn? is-token-set-active) "expected a function for `is-token-set-active` prop")
 
   (let [theme-modal? (= origin "theme-modal")
         can-edit?    (mf/use-ctx ctx/can-edit?)
@@ -492,7 +492,6 @@
          :token-sets token-sets
          :selected selected
          :on-select on-select
-         :is-token-set-active is-token-set-active
          :is-token-set-group-active is-token-set-group-active
          :on-toggle-set on-toggle-token-set
          :on-toggle-set-group on-toggle-token-set-group

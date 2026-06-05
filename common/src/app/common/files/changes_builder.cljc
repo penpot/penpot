@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cfc]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -22,6 +23,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.datafy :refer [datafy]]))
 
@@ -1019,6 +1021,21 @@
                                     :id id
                                     :attrs (datafy prev-theme)})
         (apply-changes-local))))
+
+(defn set-tokens-status
+  ([changes tokens-status]
+   (assert-library! changes)
+   (assert (ctos/tokens-status? tokens-status))
+   (let [theme-ids (ctos/get-active-theme-ids tokens-status)
+         set-ids (ctos/get-active-set-ids tokens-status)
+         library-data (::library-data (meta changes))
+         prev-tokens-status (cfo/get-tokens-status library-data)
+         prev-theme-ids  (ctos/get-active-theme-ids prev-tokens-status)
+         prev-set-ids  (ctos/get-active-set-ids prev-tokens-status)]
+     (-> changes
+         (update :redo-changes conj {:type :set-tokens-status :theme-ids theme-ids :set-ids set-ids})
+         (update :undo-changes conj {:type :set-tokens-status :theme-ids prev-theme-ids :set-ids prev-set-ids})
+         (apply-changes-local)))))
 
 (defn set-active-token-themes
   [changes active-theme-paths]

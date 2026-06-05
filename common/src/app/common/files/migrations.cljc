@@ -13,6 +13,7 @@
    [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -1874,6 +1875,13 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0025-separate-tokens-status"
+  [data _]
+  (if-let [tokens-lib (:tokens-lib data)]
+    (assoc data :tokens-status
+           (cfo/make-tokens-status-from-lib tokens-lib))
+    data))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1955,4 +1963,5 @@
          "0021-fix-shape-svg-attrs"
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
-         "0024b-fix-stroke-cap-placement"]))
+         "0024b-fix-stroke-cap-placement"
+         "0025-separate-tokens-status"]))

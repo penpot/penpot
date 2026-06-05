@@ -29,6 +29,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -86,7 +87,9 @@
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} schema:plugin-data]
-   [:tokens-lib {:optional true} ctob/schema:tokens-lib]])
+   [:tokens-file {:optional true} ::sm/uuid]                 ;; The tokens-lib may be in this file or in an external library
+   [:tokens-lib {:optional true} ctob/schema:tokens-lib]
+   [:tokens-status {:optional true} ctos/schema:tokens-status]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
@@ -195,11 +198,6 @@
           :deleted-at deleted-at})]
 
     (check-file file)))
-
-(defn ensure-tokens-lib
-  "Ensure file-data has a :tokens-lib key, creating one if necessary."
-  [file-data]
-  (update file-data :tokens-lib #(or % (ctob/make-tokens-lib))))
 
 ;; Helpers
 
@@ -311,6 +309,7 @@
        (update-objects-tree container f)))))
 
 ;; Asset helpers
+
 (defn find-component-file
   [file libraries component-file]
   (if (and (some? file) (= component-file (:id file)))
