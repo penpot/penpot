@@ -16,10 +16,12 @@ use super::{get_dest_rect, get_source_rect};
 // VectorTarget — vector export backend selector
 // ---------------------------------------------------------------------------
 
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
+/// Vector export backend selector. Drawing is identical for every variant;
+/// `Raster` draws to a bitmap surface instead of a PDF document.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum VectorTarget {
     Pdf,
+    Raster,
 }
 
 // ---------------------------------------------------------------------------
