@@ -456,6 +456,9 @@
 (def tokens-lib
   (l/derived dsh/lookup-tokens-lib st/state))
 
+(def tokens-status
+  (l/derived dsh/lookup-tokens-status st/state))
+
 (def workspace-token-theme-groups
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
 

@@ -9,12 +9,17 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.i18n :refer [tr]]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [malli.core :as m]))
+
+;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
+(log/set-level! :warn)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL SCHEMAS
@@ -165,8 +170,8 @@
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
-(defn find-refs [value]
-  (prn value)
+
+(defn- find-refs [value]
   (cond
     (string? value)
     (cto/find-token-value-references value)
@@ -345,6 +350,8 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Token
+
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
   This regexp also trims whitespace around the value."
@@ -416,3 +423,128 @@
 ;; FIXME: this should be precalculated ?
 (defn is-reference? [token]
   (str/includes? (:value token) "{"))
+
+;; Tokens lib in file data
+
+(defn make-tokens-status-from-lib
+  "Make a TokensStatus from a TokensLib, activating the themes and sets
+   marked as active in the library (to migrate from legacy files)."
+  [tokens-lib]
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [active-theme-ids (into #{}
+                               (comp (map :id)
+                                     (filter #(not= % ctob/hidden-theme-id)))
+                               (ctob/get-active-themes tokens-lib))
+        active-set-ids   (into #{}
+                               (comp (map #(ctob/get-set-by-name tokens-lib %))
+                                     (remove nil?)
+                                     (map ctob/get-id))
+                               (ctob/get-active-themes-set-names tokens-lib))]
+    (ctos/make-tokens-status :active-theme-ids active-theme-ids
+                             :active-set-ids active-set-ids)))
+
+(defn ensure-tokens-lib
+  "Ensure file-data has a :tokens-lib or :tokens-file, and also a :tokens-status, creating them if necessary."
+  [file-data]
+  (cond-> file-data
+    (nil? (:tokens-file file-data))
+    (update :tokens-lib #(or % (ctob/make-tokens-lib)))
+
+    :always
+    (update :tokens-status #(or % (ctos/make-tokens-status)))))
+
+(defn get-tokens-file
+  [file-data]
+  (:tokens-file file-data))
+
+(defn set-tokens-file
+  [file-data tokens-file]
+  (assoc file-data :tokens-file tokens-file))
+
+(defn get-tokens-lib
+  [file-data]
+  (:tokens-lib file-data))
+
+(defn get-tokens-status
+  [file-data]
+  (:tokens-status file-data))
+
+(defn update-tokens-lib
+  "Update the tokens-lib inside file-data through a callback function.
+   The function will receive the tokens lib and the rest of args."
+  [file-data f & args]
+  (d/update-when file-data :tokens-lib #(apply f % args)))
+
+(defn update-tokens-status
+  "Update the tokens-status inside file-data through a callback function.
+   The function will receive the tokens status and the rest of args."
+  [file-data f & args]
+  (d/update-when file-data :tokens-status #(apply f % args)))
+
+;; Tokens status with tokens lib
+
+(defn- calculate-active-sets
+  "Obtain the set-ids that needs to be active for a particular set of theme ids"
+  [active-theme-ids tokens-lib]
+  (let [active-themes (map #(ctob/get-theme tokens-lib %) active-theme-ids)
+        active-set-names (reduce set/union #{} (map :sets active-themes))
+        active-sets (map #(ctob/get-set-by-name tokens-lib %) active-set-names)
+        active-set-ids (into #{} (map ctob/get-id) active-sets)]
+    active-set-ids))
+
+(defn get-active-themes
+  "Return an ordered sequence of active themes"
+  [tokens-status tokens-lib]
+  (->> (ctob/get-themes tokens-lib)
+       (filter #(ctos/theme-active? tokens-status (ctob/get-id %)))))
+
+(defn activate-theme
+  "Activate a theme and all its sets"
+  [tokens-status tokens-lib id]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (assert (uuid? id) "expected valid theme id")
+  (if-not (ctos/theme-active? tokens-status id)
+    (if-let [theme (ctob/get-theme tokens-lib id)]
+      (let [group-themes      (into #{} (ctob/get-themes-in-group tokens-lib (:group theme)))
+            active-theme-ids  (ctos/get-active-theme-ids tokens-status)
+            active-theme-ids' (-> (set/difference active-theme-ids group-themes)
+                                  (conj id))
+            active-set-ids'   (calculate-active-sets active-theme-ids' tokens-lib)]
+        (ctos/set-tokens-status tokens-status active-theme-ids' active-set-ids'))
+      tokens-status)
+    tokens-status))
+
+(defn deactivate-theme
+  "Deactivate a theme and all its sets that are not in other active themes"
+  [tokens-status tokens-lib id]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (assert (uuid? id) "expected valid theme id")
+  (if (ctos/theme-active? tokens-status id)
+    (let [active-theme-ids' (disj (ctos/get-active-theme-ids tokens-status) id)
+          active-set-ids'   (calculate-active-sets active-theme-ids' tokens-lib)]
+      (ctos/set-tokens-status tokens-status active-theme-ids' active-set-ids'))
+    tokens-status))
+
+(defn sync-tokens-status-with-lib
+  "Synchronizes tokens status with the current tokens lib:
+   - Delete any theme or set that no longer exists in the lib."
+  [tokens-status tokens-lib]
+  (let [active-theme-ids (ctos/get-active-theme-ids tokens-status)
+        valid-theme-ids  (into #{}
+                               (filter #(some? (ctob/get-theme tokens-lib %)))
+                               active-theme-ids)
+        active-set-ids   (ctos/get-active-set-ids tokens-status)
+        valid-set-ids    (into #{}
+                               (filter #(some? (ctob/get-set tokens-lib %)))
+                               active-set-ids)]
+
+    (if (or (not= active-theme-ids valid-theme-ids)
+            (not= active-set-ids valid-set-ids))
+      (do
+        (log/info :hint "syncing token status"
+                  :removed-themes (count (set/difference active-theme-ids valid-theme-ids))
+                  :removed-sets (count (set/difference active-set-ids valid-set-ids)))
+        (ctos/set-tokens-status tokens-status valid-theme-ids valid-set-ids))
+      tokens-status)))

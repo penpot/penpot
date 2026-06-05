@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
@@ -29,6 +30,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
    [app.common.types.variant :as ctv]
@@ -397,6 +399,13 @@
      [:id ::sm/uuid]
      [:attrs [:maybe ctob/schema:token-theme-attrs]]]]
 
+   [:set-tokens-status
+    [:map {:title "SetTokensStatus"}
+     [:type [:= :set-tokens-status]]
+     [:theme-ids [:set ::sm/uuid]]
+     [:set-ids [:set ::sm/uuid]]]]
+
+   ;; TODO deprecate this once everyone uses set-tokens-status
    [:set-active-token-themes
     [:map {:title "SetActiveTokenThemes"}
      [:type [:= :set-active-token-themes]]
@@ -425,9 +434,9 @@
      [:before-group [:maybe :boolean]]]]
 
    [:set-base-font-size
-     [:map {:title "ModBaseFontSize"}
-      [:type [:= :set-base-font-size]]
-      [:base-font-size :string]]]
+    [:map {:title "ModBaseFontSize"}
+     [:type [:= :set-base-font-size]]
+     [:base-font-size :string]]]
 
    [:set-tokens-file
     [:map {:title "SetTokensFile"}
@@ -993,73 +1002,78 @@
 
 (defmethod process-change :set-token
   [data {:keys [set-id token-id attrs]}]
-  (let [data (ctf/ensure-tokens-lib data)]
-    (update data :tokens-lib
-            (fn [lib']
-              (cond
-                (not attrs)
-                (ctob/delete-token lib' set-id token-id)
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib
+       (fn [lib']
+         (cond
+           (not attrs)
+           (ctob/delete-token lib' set-id token-id)
 
-                (not (ctob/get-token lib' set-id token-id))
-                (ctob/add-token lib' set-id (ctob/make-token attrs))
+           (not (ctob/get-token lib' set-id token-id))
+           (ctob/add-token lib' set-id (ctob/make-token attrs))
 
-                :else
-                (ctob/update-token lib' set-id token-id
-                                   (fn [prev-token]
-                                     (ctob/make-token (merge prev-token attrs)))))))))
+           :else
+           (ctob/update-token lib' set-id token-id
+                              (fn [prev-token]
+                                (ctob/make-token (merge prev-token attrs)))))))))
 
 (defmethod process-change :set-token-set
   [data {:keys [id attrs]}]
-  (let [data (ctf/ensure-tokens-lib data)]
-    (update data :tokens-lib
-            (fn [lib']
-              (cond
-                (not attrs)
-                (ctob/delete-set lib' id)
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib
+       (fn [lib']
+         (cond
+           (not attrs)
+           (ctob/delete-set lib' id)
 
-                (not (ctob/get-set lib' id))
-                (ctob/add-set lib' (ctob/make-token-set attrs))
+           (not (ctob/get-set lib' id))
+           (ctob/add-set lib' (ctob/make-token-set attrs))
 
-                :else
-                (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
+           :else
+           (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
 
 (defmethod process-change :set-token-theme
   [data {:keys [id attrs]}]
-  (let [data (ctf/ensure-tokens-lib data)]
-    (update data :tokens-lib
-            (fn [lib']
-              (cond
-                (not attrs)
-                (ctob/delete-theme lib' id)
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib
+       (fn [lib']
+         (cond
+           (not attrs)
+           (ctob/delete-theme lib' id)
 
-                (not (ctob/get-theme lib' id))
-                (ctob/add-theme lib' (ctob/make-token-theme attrs))
+           (not (ctob/get-theme lib' id))
+           (ctob/add-theme lib' (ctob/make-token-theme attrs))
 
-                :else
-                (ctob/update-theme lib'
-                                   id
-                                   (fn [prev-token-theme]
-                                     (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
+           :else
+           (ctob/update-theme lib'
+                              id
+                              (fn [prev-token-theme]
+                                (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
+
+(defmethod process-change :set-tokens-status
+  [data {:keys [theme-ids set-ids]}]
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-status ctos/set-tokens-status theme-ids set-ids)))
 
 (defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
-  (-> (ctf/ensure-tokens-lib data)
-      (update :tokens-lib ctob/set-active-themes theme-paths)))
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib ctob/set-active-themes theme-paths)))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]
-  (-> (ctf/ensure-tokens-lib data)
-      (update :tokens-lib ctob/rename-set-group set-group-path set-group-fname)))
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib ctob/rename-set-group set-group-path set-group-fname)))
 
 (defmethod process-change :move-token-set
   [data {:keys [from-path to-path before-path before-group] :as changes}]
-  (-> (ctf/ensure-tokens-lib data)
-      (update :tokens-lib ctob/move-set from-path to-path before-path before-group)))
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib ctob/move-set from-path to-path before-path before-group)))
 
 (defmethod process-change :move-token-set-group
   [data {:keys [from-path to-path before-path before-group]}]
-  (-> (ctf/ensure-tokens-lib data)
-      (update :tokens-lib ctob/move-set-group from-path to-path before-path before-group)))
+  (-> (cfo/ensure-tokens-lib data)
+      (cfo/update-tokens-lib ctob/move-set-group from-path to-path before-path before-group)))
 
 ;; === Design Tokens configuration
 
@@ -1069,12 +1083,11 @@
 
 (defmethod process-change :set-tokens-file
   [data {:keys [library-id]}]
-  (assoc data :tokens-file library-id))
-
+  (cfo/set-tokens-file data library-id))
 
 ;; === Operations
 
-(def  decode-shape-attrs
+(def decode-shape-attrs
   (sm/decoder cts/schema:shape-attrs sm/json-transformer))
 
 (defmethod process-operation :assign
@@ -1243,3 +1256,22 @@
 (defmethod frames-changed :default
   [_ _]
   nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Design Tokens changes detection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private tokens-lib-change-types
+  "Set of change types that modify the tokens library."
+  #{:set-tokens-lib
+    :set-token
+    :set-token-set
+    :set-token-theme
+    :rename-token-set-group
+    :move-token-set
+    :move-token-set-group})
+
+(defn tokens-lib-changed?
+  "Check if a commit contains changes that modify the tokens library."
+  [changes]
+  (some #(tokens-lib-change-types (:type %)) changes))

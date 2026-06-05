@@ -247,6 +247,16 @@
           theme' (ctob/toggle-set theme nil)]
       (t/is (= (:sets theme') #{})))))
 
+(t/deftest get-theme-path
+  (let [theme1 (ctob/make-token-theme :name "theme1")
+        theme2 (ctob/make-token-theme :group "group1" :name "theme2")]
+    (t/is (= "/theme1" (ctob/get-theme-path theme1)))
+    (t/is (= "/theme1" (ctob/get-theme-path theme1 false)))
+    (t/is (= "theme1" (ctob/get-theme-path theme1 true)))
+    (t/is (= "group1/theme2" (ctob/get-theme-path theme2)))
+    (t/is (= "group1/theme2" (ctob/get-theme-path theme2 false)))
+    (t/is (= "group1 / theme2" (ctob/get-theme-path theme2 true)))))
+
 (t/deftest make-tokens-lib
   (let [tokens-lib (ctob/make-tokens-lib)]
     (t/is (= (ctob/set-count tokens-lib) 0))))
