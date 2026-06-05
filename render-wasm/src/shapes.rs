@@ -1711,6 +1711,16 @@ impl Shape {
         }
     }
 
+    pub fn masked_group_layer_blur(&self) -> Option<Blur> {
+        use crate::shapes::BlurType;
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => self.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            }),
+            _ => None,
+        }
+    }
+
     /// Checks if this shape has visual effects that might extend its bounds beyond selrect
     /// Shapes with these effects require expensive extrect calculation for accurate visibility checks
     pub fn has_effects_that_extend_bounds(&self) -> bool {
