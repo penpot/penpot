@@ -34,7 +34,6 @@
 - Remove `corepack` from the MCP local launcher so it runs on Node.js 25+, where corepack is no longer bundled [Github #8877](https://github.com/penpot/penpot/issues/8877)
 - Fix Copy as SVG: emit a single valid SVG document when multiple shapes are selected, and publish `image/svg+xml` to the clipboard so the paste target works in Inkscape and other SVG-native tools [Github #838](https://github.com/penpot/penpot/issues/838)
 - Reset profile submenu state when the account menu closes (by @eureka0928) [Github #8947](https://github.com/penpot/penpot/issues/8947)
-- Fix French Canada locale (`fr_CA`) falling back to plain French due to a casing mismatch in `supported-locales` (by @alexismo) [#10017](https://github.com/penpot/penpot/issues/10017)
 - Add export panel to inspect styles tab [Taiga #13582](https://tree.taiga.io/project/penpot/issue/13582)
 - Fix styles between grid layout inputs [Taiga #13526](https://tree.taiga.io/project/penpot/issue/13526)
 - Fix id prop on switch component [Taiga #13534](https://tree.taiga.io/project/penpot/issue/13534)
