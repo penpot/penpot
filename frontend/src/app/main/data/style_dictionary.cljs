@@ -302,36 +302,38 @@
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-typography value)]}
 
       :else
-      (let [converted (js->clj value :keywordize-keys true)
-            add-keyed-errors (fn [typography-map k errors]
-                               (update typography-map :errors concat (map #(assoc % :typography-key k) errors)))
-            ;; Separate line-height to process in an extra step
-            without-line-height (dissoc converted :line-height)
-            valid-typography (reduce
-                              (fn [acc [k v]]
-                                (let [{:keys [errors value]} (parse-atomic-typography-value k v)]
-                                  (if (seq errors)
-                                    (add-keyed-errors acc k errors)
-                                    (assoc-in acc [:value k] (or value v)))))
-                              {:value {}}
-                              without-line-height)
+      (let [converted (js->clj value :keywordize-keys true)]
+        (if-not (map? converted)
+          {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-typography value)]}
+          (let [add-keyed-errors (fn [typography-map k errors]
+                                   (update typography-map :errors concat (map #(assoc % :typography-key k) errors)))
+                ;; Separate line-height to process in an extra step
+                without-line-height (dissoc converted :line-height)
+                valid-typography (reduce
+                                  (fn [acc [k v]]
+                                    (let [{:keys [errors value]} (parse-atomic-typography-value k v)]
+                                      (if (seq errors)
+                                        (add-keyed-errors acc k errors)
+                                        (assoc-in acc [:value k] (or value v)))))
+                                  {:value {}}
+                                  without-line-height)
 
-            ;; Calculate line-height based on the resolved font-size and add it back to the map
-            line-height (when-let [line-height (:line-height converted)]
-                          (-> (parse-sd-token-typography-line-height
-                               line-height
-                               (get-in valid-typography [:value :font-size])
-                               (get-in valid-typography [:errors :font-size]))))
-            valid-typography (cond
-                               (:errors line-height)
-                               (add-keyed-errors valid-typography :line-height (:errors line-height))
+                ;; Calculate line-height based on the resolved font-size and add it back to the map
+                line-height (when-let [line-height (:line-height converted)]
+                              (-> (parse-sd-token-typography-line-height
+                                   line-height
+                                   (get-in valid-typography [:value :font-size])
+                                   (get-in valid-typography [:errors :font-size]))))
+                valid-typography (cond
+                                   (:errors line-height)
+                                   (add-keyed-errors valid-typography :line-height (:errors line-height))
 
-                               line-height
-                               (assoc-in valid-typography [:value :line-height] line-height)
+                                   line-height
+                                   (assoc-in valid-typography [:value :line-height] line-height)
 
-                               :else
-                               valid-typography)]
-        valid-typography))))
+                                   :else
+                                   valid-typography)]
+            valid-typography))))))
 
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))

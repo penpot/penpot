@@ -6,6 +6,7 @@ pub mod gpu_state;
 pub mod grid_layout;
 mod images;
 mod options;
+pub mod rulers;
 mod shadows;
 mod strokes;
 mod surfaces;
@@ -26,7 +27,7 @@ use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
 };
-use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
+use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -369,6 +370,7 @@ pub(crate) struct RenderState {
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
+    pub rulers: RulerState,
     pub focus_mode: FocusMode,
     pub touched_ids: HashSet<Uuid>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
@@ -564,6 +566,7 @@ impl RenderState {
             nested_blurs: vec![],
             nested_shadows: vec![],
             show_grid: None,
+            rulers: RulerState::default(),
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
@@ -853,6 +856,36 @@ impl RenderState {
         }
         ui::render(self, tree);
         debug::render_wasm_label(self);
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
+    /// Renders only the canvas background and UI surface (rulers/frame), without
+    /// rebuilding or drawing any shape tiles. Used to show the viewport frame
+    /// immediately before shape tiles are built (e.g., right after a DPR change).
+    pub fn render_ui_only(&mut self, tree: ShapesPoolRef) {
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+        ui::render(self, tree);
+        self.flush_and_submit();
+    }
+
+    /// Blurs the Backbuffer into Target and draws the rulers sharp on top, for
+    /// capturing an already-blurred page-transition snapshot. `blur_radius` is in
+    /// CSS pixels, scaled by DPR to match the device-resolution capture.
+    pub fn render_blurred_snapshot(&mut self, tree: ShapesPoolRef, blur_radius: f32) {
+        let sigma = (blur_radius * self.options.dpr).max(0.0);
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+
+        let mut paint = skia::Paint::default();
+        if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+            paint.set_image_filter(filter);
+        }
+        self.surfaces
+            .draw_into(SurfaceId::Backbuffer, SurfaceId::Target, Some(&paint));
+        ui::render(self, tree);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 
@@ -2359,7 +2392,52 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_enter(&mut self, element: &Shape, mask: bool, target_surface: SurfaceId) {
+    fn clip_target_surface_to_stack(
+        &mut self,
+        clips: &ClipStack,
+        target_surface: SurfaceId,
+        scale: f32,
+        antialias: bool,
+    ) {
+        let translation = self
+            .surfaces
+            .get_render_context_translation(self.render_area, scale);
+
+        for (bounds, corners, transform) in clips.iter() {
+            let mut total_matrix = Matrix::new_identity();
+            if target_surface == SurfaceId::Export {
+                let Some((export_rect, export_scale)) = self.export_context else {
+                    continue;
+                };
+                total_matrix.pre_scale((export_scale, export_scale), None);
+                total_matrix.pre_translate((-export_rect.x(), -export_rect.y()));
+            } else {
+                total_matrix.pre_scale((scale, scale), None);
+                total_matrix.pre_translate((translation.0, translation.1));
+            }
+            total_matrix.pre_concat(transform);
+
+            let canvas = self.surfaces.canvas(target_surface);
+            canvas.concat(&total_matrix);
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(*bounds, corners);
+                canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+            } else {
+                canvas.clip_rect(*bounds, skia::ClipOp::Intersect, antialias);
+            }
+            self.surfaces
+                .canvas(target_surface)
+                .concat(&total_matrix.invert().unwrap_or_default());
+        }
+    }
+
+    pub fn render_shape_enter(
+        &mut self,
+        element: &Shape,
+        mask: bool,
+        clip_bounds: Option<&ClipStack>,
+        target_surface: SurfaceId,
+    ) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
@@ -2371,7 +2449,33 @@ impl RenderState {
             self.nested_shadows.push(shadows.to_vec());
 
             if group.masked {
-                let paint = skia::Paint::default();
+                // A masked group's blur is applied as a single layer blur over
+                // the whole masked result.
+                let mask_group_blur = element.masked_group_layer_blur().is_some();
+                if mask_group_blur {
+                    self.surfaces.canvas(target_surface).save();
+                    if let Some(clips) = clip_bounds {
+                        let scale = self.get_scale();
+                        let antialias = !self.options.is_fast_mode()
+                            && element
+                                .should_use_antialias(scale, self.options.antialias_threshold);
+                        self.clip_target_surface_to_stack(clips, target_surface, scale, antialias);
+                    }
+                }
+
+                let mut paint = skia::Paint::default();
+                if !self.options.is_fast_mode() {
+                    if let Some(blur) = element.masked_group_layer_blur() {
+                        let scale = self.get_scale();
+                        let sigma = radius_to_sigma(blur.value * scale);
+                        if let Some(filter) =
+                            skia::image_filters::blur((sigma, sigma), None, None, None)
+                        {
+                            paint.set_image_filter(filter);
+                        }
+                    }
+                }
+
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
                 self.surfaces.canvas(target_surface).save_layer(&layer_rec);
             }
@@ -2522,6 +2626,10 @@ impl RenderState {
         let needs_layer = element.needs_layer();
 
         if needs_layer {
+            self.surfaces.canvas(target_surface).restore();
+        }
+
+        if visited_mask && element.masked_group_layer_blur().is_some() {
             self.surfaces.canvas(target_surface).restore();
         }
 
@@ -2824,7 +2932,6 @@ impl RenderState {
         extrect: &mut Option<Rect>,
         clip_bounds: Option<ClipStack>,
         scale: f32,
-        translation: (f32, f32),
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
     ) -> Result<()> {
@@ -2930,60 +3037,7 @@ impl RenderState {
             let antialias = !self.options.is_fast_mode()
                 && element.should_use_antialias(scale, self.options.antialias_threshold);
             self.surfaces.canvas(target_surface).save();
-            for (bounds, corners, transform) in clips.iter() {
-                if target_surface == SurfaceId::Export {
-                    let Some((export_rect, export_scale)) = self.export_context else {
-                        continue;
-                    };
-
-                    let mut total_matrix = Matrix::new_identity();
-
-                    total_matrix.pre_scale((export_scale, export_scale), None);
-                    total_matrix.pre_translate((-export_rect.x(), -export_rect.y()));
-
-                    total_matrix.pre_concat(transform);
-
-                    let canvas = self.surfaces.canvas(target_surface);
-                    canvas.concat(&total_matrix);
-
-                    let bounds = *bounds;
-                    if let Some(corners) = corners {
-                        let rrect = RRect::new_rect_radii(bounds, corners);
-                        canvas.clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
-                    } else {
-                        canvas.clip_rect(bounds, skia::ClipOp::Intersect, antialias);
-                    }
-                    self.surfaces
-                        .canvas(target_surface)
-                        .concat(&total_matrix.invert().unwrap_or_default());
-                } else {
-                    let mut total_matrix = Matrix::new_identity();
-                    total_matrix.pre_scale((scale, scale), None);
-                    total_matrix.pre_translate((translation.0, translation.1));
-                    total_matrix.pre_concat(transform);
-
-                    self.surfaces.canvas(target_surface).concat(&total_matrix);
-
-                    if let Some(corners) = corners {
-                        let rrect = RRect::new_rect_radii(*bounds, corners);
-                        self.surfaces.canvas(target_surface).clip_rrect(
-                            rrect,
-                            skia::ClipOp::Intersect,
-                            antialias,
-                        );
-                    } else {
-                        self.surfaces.canvas(target_surface).clip_rect(
-                            *bounds,
-                            skia::ClipOp::Intersect,
-                            antialias,
-                        );
-                    }
-
-                    self.surfaces
-                        .canvas(target_surface)
-                        .concat(&total_matrix.invert().unwrap_or_default());
-                }
-            }
+            self.clip_target_surface_to_stack(clips, target_surface, scale, antialias);
             self.surfaces
                 .draw_into(SurfaceId::DropShadows, target_surface, None);
             self.surfaces.canvas(target_surface).restore();
@@ -3209,17 +3263,12 @@ impl RenderState {
                     && element.drop_shadows_visible().next().is_some();
 
                 if shadow_before_layer {
-                    let translation = self
-                        .surfaces
-                        .get_render_context_translation(self.render_area, scale);
-
                     self.render_element_drop_shadows_and_composite(
                         element,
                         tree,
                         &mut extrect,
                         clip_bounds.clone(),
                         scale,
-                        translation,
                         &node_render_state,
                         target_surface,
                     )?;
@@ -3231,14 +3280,10 @@ impl RenderState {
                     self.render_background_blur(element, target_surface);
                 }
 
-                self.render_shape_enter(element, mask, target_surface);
+                self.render_shape_enter(element, mask, clip_bounds.as_ref(), target_surface);
             }
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                let translation = self
-                    .surfaces
-                    .get_render_context_translation(self.render_area, scale);
-
                 // Skip expensive drop shadow rendering in fast mode (during pan/zoom).
                 let skip_shadows = self.options.is_fast_mode();
 
@@ -3256,7 +3301,6 @@ impl RenderState {
                         &mut extrect,
                         clip_bounds.clone(),
                         scale,
-                        translation,
                         &node_render_state,
                         target_surface,
                     )?;
@@ -3308,6 +3352,9 @@ impl RenderState {
             if !can_flatten {
                 match element.shape_type {
                     Type::Frame(_) if Self::frame_clip_layer_blur(element).is_some() => {
+                        self.nested_blurs.push(None);
+                    }
+                    Type::Group(_) if element.masked_group_layer_blur().is_some() => {
                         self.nested_blurs.push(None);
                     }
                     Type::Frame(_) | Type::Group(_) => {

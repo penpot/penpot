@@ -135,6 +135,24 @@ pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn render_ui_only() -> Result<()> {
+    with_state!(state, {
+        state.render_ui_only();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_blurred_snapshot(blur_radius: f32) -> Result<()> {
+    with_state!(state, {
+        state.render_blurred_snapshot(blur_radius);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn render_sync() -> Result<()> {
     with_state!(state, {
         state.rebuild_tiles();

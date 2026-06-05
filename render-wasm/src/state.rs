@@ -1,8 +1,10 @@
 use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
 use std::collections::HashMap;
 
+mod rulers;
 mod shapes_pool;
 mod text_editor;
+pub use rulers::RulerState;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
@@ -63,6 +65,14 @@ impl State {
 
     pub fn render_from_cache(&mut self) {
         get_render_state().render_from_cache(&self.shapes);
+    }
+
+    pub fn render_ui_only(&mut self) {
+        get_render_state().render_ui_only(&self.shapes);
+    }
+
+    pub fn render_blurred_snapshot(&mut self, blur_radius: f32) {
+        get_render_state().render_blurred_snapshot(&self.shapes, blur_radius);
     }
 
     pub fn render_sync(&mut self, timestamp: i32) -> Result<FrameType> {
