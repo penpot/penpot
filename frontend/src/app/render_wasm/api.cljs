@@ -2254,6 +2254,20 @@
     (h/call wasm/internal-module "_set_guides")
     (request-render "set-guides")))
 
+;; Screen-space hit tolerance for ruler guides. Must match
+;; `guide-active-area` in `app.main.ui.workspace.viewport.guides`.
+(def ^:private guide-active-area 16)
+
+(defn find-guide-at
+  "Returns the serialized guide index at `position` (viewport coordinates),
+  or -1 when no guide is within the hit tolerance."
+  [position zoom]
+  (h/call wasm/internal-module "_find_guide_at"
+          (:x position)
+          (:y position)
+          zoom
+          guide-active-area))
+
 (defn get-grid-coords
   [position]
   (let [offset  (h/call wasm/internal-module

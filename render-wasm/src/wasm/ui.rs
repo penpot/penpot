@@ -1,9 +1,10 @@
 use crate::mem;
 use crate::{
     error::{Error, Result},
-    globals::get_ui_state,
+    globals::{get_render_state, get_ui_state},
     ui::{Guide, GuideKind},
 };
+use crate::with_state;
 use macros::{wasm_error, ToJs};
 
 const RAW_GUIDE_SIZE: usize = std::mem::size_of::<RawGuide>();
@@ -93,5 +94,21 @@ pub extern "C" fn set_guides() -> Result<()> {
     get_ui_state().set_guides(guides);
 
     mem::free_bytes()?;
+
+    // Guides are drawn on the UI overlay composited onto `Target`. Refresh the
+    // presented frame immediately so removed guides do not linger as stale pixels.
+    with_state!(state, {
+        get_render_state().present_frame(&state.shapes);
+    });
+
     Ok(())
+}
+
+#[wasm_error]
+#[no_mangle]
+pub extern "C" fn find_guide_at(x: f32, y: f32, zoom: f32, tolerance: f32) -> Result<i32> {
+    Ok(get_ui_state()
+        .find_guide_at(x, y, zoom, tolerance)
+        .map(|guide| guide.index as i32)
+        .unwrap_or(-1))
 }

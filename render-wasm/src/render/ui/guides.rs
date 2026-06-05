@@ -24,8 +24,10 @@ pub fn render_guide(canvas: &skia::Canvas, zoom: f32, area: Rect, guide: Guide) 
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
     paint.set_color(Into::<skia::Color>::into(guide.color));
-    paint.set_anti_alias(true);
-    paint.set_stroke_width(1.0 / zoom);
+    // we disable antialias and increase the stroke thickness so the guides
+    // do not appear faint or blurry.
+    paint.set_anti_alias(false);
+    paint.set_stroke_width(2.0 / zoom);
 
     let (x1, y1, x2, y2) = match guide.kind {
         GuideKind::Vertical(x) => (x, area.top, x, area.bottom),

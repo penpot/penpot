@@ -23,6 +23,8 @@
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
+   [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
@@ -581,10 +583,17 @@
                    :is-hover true
                    :hover-frame frame}])]))
 
+(defn- guide-by-serialized-index
+  "Maps a WASM guide index back to the guide map entry. The index matches the
+  serialization order used by `set-guides` / `write-guides`."
+  [guides index]
+  (when (>= index 0)
+    (nth (vec (vals guides)) index nil)))
+
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides]}]
-  (let [guides
+  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides?]}]
+  (let [visible-guides
         (mf/with-memo [guides vbox]
           (->> (vals guides)
                (filter (partial guide-inside-vbox? zoom vbox))))
@@ -616,12 +625,35 @@
              (st/emit! (dw/show-guide-context-menu {:position position
                                                     :guide guide})))))
 
+        ;; When guides are WASM-rendered, right-click hit testing is delegated to
+        ;; the render engine instead of per-guide SVG areas.
+        on-wasm-context-menu
+        (mf/use-fn
+         (mf/deps guides zoom disabled-guides)
+         (fn [event]
+           (when-not disabled-guides
+             (let [position (dom/get-client-position event)
+                   pt       (uwvv/point->viewport position)
+                   index    (when pt (wasm.api/find-guide-at pt zoom))
+                   guide    (guide-by-serialized-index guides index)]
+               (when guide
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (st/emit! (dw/show-guide-context-menu {:position position
+                                                        :guide guide})))))))
+
         frame-modifiers
         (-> (group-by :id modifiers)
             (update-vals (comp :transform first)))]
 
     (mf/with-effect [hover-frame]
       (mf/set-ref-val! hover-frame-ref hover-frame))
+
+    (mf/with-effect [wasm-guides? disabled-guides on-wasm-context-menu]
+      (when (and wasm-guides? (not disabled-guides))
+        (when-let [viewport @uwvv/viewport-ref]
+          (.addEventListener viewport "contextmenu" on-wasm-context-menu true)
+          #(.removeEventListener viewport "contextmenu" on-wasm-context-menu true))))
 
     [:g.guides {:pointer-events "none"}
      [:> new-guide-area* {:vbox vbox
@@ -636,16 +668,17 @@
                           :get-hover-frame get-hover-frame
                           :disabled-guides disabled-guides}]
 
-     (for [{:keys [id frame-id] :as guide} guides]
-       (when (or (nil? frame-id)
-                 (empty? focus)
-                 (contains? focus frame-id))
-         [:> guide* {:key (dm/str "guide-" id)
-                     :guide guide
-                     :vbox vbox
-                     :zoom zoom
-                     :frame-transform (get frame-modifiers frame-id)
-                     :get-hover-frame get-hover-frame
-                     :on-guide-change on-guide-change
-                     :on-guide-context-menu on-guide-context-menu
-                     :disabled-guides disabled-guides}]))]))
+     (when-not wasm-guides?
+       (for [{:keys [id frame-id] :as guide} visible-guides]
+         (when (or (nil? frame-id)
+                   (empty? focus)
+                   (contains? focus frame-id))
+           [:> guide* {:key (dm/str "guide-" id)
+                       :guide guide
+                       :vbox vbox
+                       :zoom zoom
+                       :frame-transform (get frame-modifiers frame-id)
+                       :get-hover-frame get-hover-frame
+                       :on-guide-change on-guide-change
+                       :on-guide-context-menu on-guide-context-menu
+                       :disabled-guides disabled-guides}])))]))

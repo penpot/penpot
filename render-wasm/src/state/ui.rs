@@ -15,6 +15,9 @@ impl GuidePool {
     }
 
     pub fn set(&mut self, guides: Vec<Guide>) {
+        self.horizontal.clear();
+        self.vertical.clear();
+
         for guide in guides {
             match guide.kind {
                 GuideKind::Vertical(_) => self.vertical.push(guide),
@@ -56,6 +59,7 @@ impl GuidePool {
             return None;
         }
 
+        // FIXME: do binary search instead
         let idx = guides.partition_point(|guide| guide.position() < coord);
         let mut closest: Option<&Guide> = None;
         let mut closest_dist = world_tolerance;
@@ -96,8 +100,7 @@ impl UIState {
         self.guides.set(guides);
     }
 
-    #[allow(dead_code)]
-    fn find_guide_at(&self, x: f32, y: f32, zoom: f32, tolerance: f32) -> Option<&Guide> {
+    pub fn find_guide_at(&self, x: f32, y: f32, zoom: f32, tolerance: f32) -> Option<&Guide> {
         self.guides.find_at(x, y, zoom, tolerance)
     }
 }
@@ -119,6 +122,31 @@ mod tests {
         let mut pool = GuidePool::new();
         pool.set(guides);
         pool
+    }
+
+    #[test]
+    fn set_replaces_existing_guides() {
+        let mut pool = pool_with(vec![vertical_guide(100.0, 0)]);
+        pool.set(vec![vertical_guide(200.0, 0)]);
+
+        assert_eq!(pool.vertical.len(), 1);
+        assert_eq!(pool.vertical[0].kind, GuideKind::Vertical(200.0));
+        assert!(pool.horizontal.is_empty());
+    }
+
+    #[test]
+    fn set_drops_removed_guides() {
+        let mut pool = pool_with(vec![
+            vertical_guide(100.0, 0),
+            vertical_guide(200.0, 1),
+            horizontal_guide(300.0, 2),
+        ]);
+        pool.set(vec![vertical_guide(100.0, 0), horizontal_guide(300.0, 1)]);
+
+        assert_eq!(pool.vertical.len(), 1);
+        assert_eq!(pool.horizontal.len(), 1);
+        assert_eq!(pool.vertical[0].kind, GuideKind::Vertical(100.0));
+        assert_eq!(pool.horizontal[0].kind, GuideKind::Horizontal(300.0));
     }
 
     #[test]

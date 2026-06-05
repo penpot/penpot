@@ -309,14 +309,14 @@
   "Total heap size (in bytes) needed to serialize `guides` (a map id -> guide),
   including the 4-byte header that holds the guide count."
   [guides]
-  (+ 4 (* (count guides) guide-entry-size)))
+  (+ 4 (* (count (or guides {})) guide-entry-size)))
 
 (defn write-guides
   "Writes `guides` (a map id -> guide) into the heap views starting at the
   32-bit `offset`. Layout: count header (u32) followed by
   `kind | color | position` per guide."
   [guides heapu32 heapf32 offset]
-  (let [guides (vec (vals guides))
+  (let [guides (vec (vals (or guides {})))
         total  (count guides)]
     (aset heapu32 offset total)
     (loop [i 0]

@@ -542,7 +542,7 @@
     ;; change or their visibility toggles. When hidden we send an empty set.
     (mf/with-effect [@canvas-init? guides show-rulers? show-grids?]
       (when @canvas-init?
-        (wasm.api/set-guides (if (and show-rulers? show-grids?) guides {}))))
+        (wasm.api/set-guides (if (and show-rulers? show-grids?) (or guides {}) {}))))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -837,8 +837,8 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
-           ;;             :guides guides
-           :guides #{}
+           :guides guides
+           :wasm-guides? true
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers wasm-modifiers}])
