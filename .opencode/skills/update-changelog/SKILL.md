@@ -49,6 +49,7 @@ python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 - `no changelog` label — Chore/refactor work that doesn't need a changelog entry
 - `release blocker` label — Blocked issues not yet ready for changelog
 - `Task` issue type — Internal chores are not user-facing; filter these out after fetching
+- **Rejected project status** — Issues with a "Rejected" status in the "Main" project board are automatically excluded by `gh.py`. This project-level status (independent of the GitHub issue `state`) indicates the issue was rejected from the release. Use `--include-rejected` to override.
 
 **Exclusion rules (PR-level):**
 In addition to issue-level exclusions, PRs with these labels should be
@@ -57,7 +58,9 @@ excluded regardless of their linked issue's labels:
 - `no issue required` — Trivial fix not tracked as an issue
 
 The script outputs JSON with each entry containing `number`, `title`, `state`,
-`issue_type`, `labels`, and `closing_prs` (the PRs that fix each issue).
+`issue_type`, `labels`, `closing_prs` (the PRs that fix each issue), and
+`project_status` (the "Main" project board status, e.g. "Done", "Rejected",
+or `null` if not tracked in a project).
 
 ### 3. Identify missing entries (optional)
 
@@ -426,7 +429,11 @@ if closed:
   between the description and the issue link. Use the **PR author** (not the
   issue author) for the attribution.
 - **Only closed issues.** An issue must have `state: "closed"` to appear in
-  the changelog. Open unresolved issues are omitted.
+  the changelog. Open/unresolved issues are omitted.
+- **Rejected project status.** Issues marked as "Rejected" in the "Main"
+  project board are automatically excluded by `gh.py`, even if they are
+  closed. The project status is distinct from the GitHub issue state.
+  Use `--include-rejected` to override this behavior.
 - **Excluded issues.** Issues with `no changelog` label must be excluded.
   Issues with `issue_type: "Task"` must also be excluded — they are internal
   chores, not user-facing changes.
