@@ -6,6 +6,7 @@ pub mod gpu_state;
 pub mod grid_layout;
 mod images;
 mod options;
+pub mod rulers;
 mod shadows;
 mod strokes;
 mod surfaces;
@@ -26,7 +27,7 @@ use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
 };
-use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
+use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -369,6 +370,7 @@ pub(crate) struct RenderState {
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
+    pub rulers: RulerState,
     pub focus_mode: FocusMode,
     pub touched_ids: HashSet<Uuid>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
@@ -564,6 +566,7 @@ impl RenderState {
             nested_blurs: vec![],
             nested_shadows: vec![],
             show_grid: None,
+            rulers: RulerState::default(),
             focus_mode: FocusMode::new(),
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
@@ -853,6 +856,36 @@ impl RenderState {
         }
         ui::render(self, tree);
         debug::render_wasm_label(self);
+        self.surfaces.flush_and_submit(SurfaceId::Target);
+    }
+
+    /// Renders only the canvas background and UI surface (rulers/frame), without
+    /// rebuilding or drawing any shape tiles. Used to show the viewport frame
+    /// immediately before shape tiles are built (e.g., right after a DPR change).
+    pub fn render_ui_only(&mut self, tree: ShapesPoolRef) {
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+        ui::render(self, tree);
+        self.flush_and_submit();
+    }
+
+    /// Blurs the Backbuffer into Target and draws the rulers sharp on top, for
+    /// capturing an already-blurred page-transition snapshot. `blur_radius` is in
+    /// CSS pixels, scaled by DPR to match the device-resolution capture.
+    pub fn render_blurred_snapshot(&mut self, tree: ShapesPoolRef, blur_radius: f32) {
+        let sigma = (blur_radius * self.options.dpr).max(0.0);
+        self.surfaces
+            .canvas(SurfaceId::Target)
+            .clear(self.background_color);
+
+        let mut paint = skia::Paint::default();
+        if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+            paint.set_image_filter(filter);
+        }
+        self.surfaces
+            .draw_into(SurfaceId::Backbuffer, SurfaceId::Target, Some(&paint));
+        ui::render(self, tree);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
 

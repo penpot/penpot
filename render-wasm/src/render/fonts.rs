@@ -8,6 +8,7 @@ use crate::uuid::Uuid;
 pub static DEFAULT_EMOJI_FONT: &str = "noto-color-emoji";
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
+const UI_FONT_BYTES: &[u8] = include_bytes!("../fonts/WorkSans-Numeric.ttf");
 
 pub fn default_font() -> String {
     let family = FontFamily::new(default_font_uuid(), 400, FontStyle::Normal);
@@ -23,6 +24,7 @@ pub struct FontStore {
     font_provider: textlayout::TypefaceFontProvider,
     font_collection: textlayout::FontCollection,
     debug_font: Font,
+    ui_font: Font,
     fallback_fonts: HashSet<String>,
 }
 
@@ -41,11 +43,17 @@ impl FontStore {
 
         let debug_font = skia::Font::new(debug_typeface, 12.0);
 
+        let ui_typeface = font_mgr
+            .new_from_data(UI_FONT_BYTES, None)
+            .ok_or(Error::CriticalError("Failed to load UI font".to_string()))?;
+        let ui_font = skia::Font::new(ui_typeface, 12.0);
+
         Ok(Self {
             font_mgr,
             font_provider,
             font_collection,
             debug_font,
+            ui_font,
             fallback_fonts: HashSet::new(),
         })
     }
@@ -65,6 +73,10 @@ impl FontStore {
 
     pub fn debug_font(&self) -> &Font {
         &self.debug_font
+    }
+
+    pub fn ui_font(&self) -> &Font {
+        &self.ui_font
     }
 
     pub fn add(

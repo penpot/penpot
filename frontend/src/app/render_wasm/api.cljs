@@ -42,6 +42,7 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
+   [app.render-wasm.rulers-state :as rulers-state]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
@@ -78,6 +79,10 @@
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
 (defonce context-loss-overlay? (atom false))
+;; When true (initial load) the overlay clips out the ruler strips so the live
+;; rulers show through. False (page switch / context loss) keeps the snapshot's
+;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
+(defonce transition-reveal-rulers? (atom false))
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
@@ -138,6 +143,7 @@
    - Installs a tiles-complete handler to end the transition
    - Uses a solid background-color placeholder as the transition image"
   [background]
+  (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
   ;; ensure we still have a deterministic placeholder on initial load.
   (when (or (not @page-transition?) (nil? @transition-image-url*))
@@ -255,6 +261,12 @@
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
+(defn get-dpr
+  "Returns the current device pixel ratio. Use instead of `dpr` wherever
+   the value must reflect browser-zoom changes that happen after load."
+  []
+  (if use-dpr? (.-devicePixelRatio ^js ug/window) 1.0))
+
 (def noop-fn
   (constantly nil))
 
@@ -341,6 +353,28 @@
      :vbox vbox
      :background background}))
 
+(declare set-rulers-colors!
+         set-rulers-visible!
+         set-rulers-frame-visible!
+         set-rulers-offsets!
+         set-rulers-selection!)
+
+(defn push-ruler-theme-colors!
+  []
+  (if-let [{:keys [bg border label accent]} (rulers-state/theme-colors)]
+    (set-rulers-colors! bg border label accent)
+    (js/console.error "Failed to resolve ruler CSS colors")))
+
+(defn- sync-rulers-to-wasm!
+  [{:keys [show-rulers? frame-visible? offset-x offset-y ruler-selection push-colors?]
+    :or {push-colors? true frame-visible? true}}]
+  (when push-colors? (push-ruler-theme-colors!))
+  (set-rulers-frame-visible! frame-visible?)
+  (set-rulers-visible! show-rulers?)
+  (when show-rulers?
+    (set-rulers-offsets! offset-x offset-y)
+    (set-rulers-selection! ruler-selection)))
+
 (defn free-gpu-resources
   []
   ;; check if the context has not been lost already or we will get warnings about
@@ -379,6 +413,24 @@
 
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
+
+(defn render-ui-only
+  "Renders only the canvas background and UI surface (rulers/frame) without
+   rebuilding shape tiles. Fast synchronous call used to show the viewport
+   frame immediately before a potentially slow tile rebuild."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_ui_only")))
+
+;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
+(def ^:private TRANSITION_BLUR_RADIUS 4.0)
+
+(defn render-blurred-snapshot!
+  "Blurs the current page into the canvas so a following
+   `capture-canvas-snapshot-url` grabs an already-blurred transition frame."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_blurred_snapshot" TRANSITION_BLUR_RADIUS)))
 
 (defn render-sync
   []
@@ -1832,17 +1884,33 @@
     (let [setter-name (str/concat "_set_" (name param-name))]
       (h/call wasm/internal-module setter-name value))))
 
-(defn set-canvas-size
-  [canvas]
-  (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
-        height (or (.-clientHeight ^js canvas) (.-height ^js canvas))]
-    (set! (.-width canvas) (* dpr width))
-    (set! (.-height canvas) (* dpr height))))
+(defn set-render-options!
+  "Updates WASM render options with a new DPR value."
+  [new-dpr]
+  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
+
+(defn resize-canvas!
+  "Sizes the canvas drawing buffer, the WASM render surface and the DPR from a
+   single source of truth (the canvas CSS client size) so the GL framebuffer
+   and the Skia target surface stay the same size. A size mismatch leaves an
+   unpainted strip on the top/right edges because the GL framebuffer origin is
+   bottom-left, so a smaller Skia surface is anchored to the bottom-left of the
+   larger drawing buffer."
+  ([canvas]
+   (resize-canvas! canvas (get-dpr)))
+  ([canvas new-dpr]
+   (let [css-w (.-clientWidth ^js canvas)
+         css-h (.-clientHeight ^js canvas)]
+     (set! (.-width ^js canvas) (* new-dpr css-w))
+     (set! (.-height ^js canvas) (* new-dpr css-h))
+     (set-render-options! new-dpr)
+     (resize-viewbox css-w css-h))))
 
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
   (when-let [url wasm/canvas-snapshot-url]
     (when (string? url)
@@ -1895,8 +1963,8 @@
           (.getExtension context "WEBGL_debug_renderer_info")
 
           ;; Initialize Wasm Render Engine
-          (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-          (h/call wasm/internal-module "_set_render_options" flags dpr)
+          (h/call wasm/internal-module "_init" (.-clientWidth ^js canvas) (.-clientHeight ^js canvas))
+          (h/call wasm/internal-module "_set_render_options" flags (get-dpr))
 
           ;; Configurable parameters.
           (wasm-set-param-from-route-params-if-present :antialias_threshold)
@@ -1907,7 +1975,7 @@
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
-          (set-canvas-size canvas)
+          (resize-canvas! canvas)
 
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
@@ -2025,6 +2093,7 @@
                                 :on-render on-render
                                 :on-shapes-ready on-shapes-ready
                                 :force-sync force-sync)
+           (sync-rulers-to-wasm! (rulers-state/from-store @st/state))
            (request-render "reload-renderer")
            (ug/dispatch! (ug/event "penpot:wasm:reload-complete"))
            payload))
@@ -2043,6 +2112,37 @@
             (aget buffer 2)
             (aget buffer 3)))
   (request-render "show-grid"))
+
+(defn set-rulers-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_visible" (if visible? 1 0)))
+
+(defn set-rulers-frame-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_frame_visible" (if visible? 1 0)))
+
+(defn set-rulers-offsets!
+  [offset-x offset-y]
+  (h/call wasm/internal-module "_set_rulers_offsets"
+          (or offset-x 0) (or offset-y 0)))
+
+(defn set-rulers-selection!
+  [rect]
+  (if (some? rect)
+    (h/call wasm/internal-module "_set_rulers_selection" 1
+            (or (:x rect) 0) (or (:y rect) 0)
+            (or (:width rect) 0) (or (:height rect) 0))
+    (h/call wasm/internal-module "_set_rulers_selection" 0 0 0 0 0)))
+
+(defn set-rulers-colors!
+  "Push ruler chrome / accent colors as ARGB u32. Inputs are hex strings
+   (e.g. \"#181818\"); call once on theme change."
+  [bg-hex border-hex label-hex accent-hex]
+  (h/call wasm/internal-module "_set_rulers_colors"
+          (sr-clr/hex->u32argb bg-hex 1)
+          (sr-clr/hex->u32argb border-hex 1)
+          (sr-clr/hex->u32argb label-hex 1)
+          (sr-clr/hex->u32argb accent-hex 1)))
 
 (defn clear-grid
   []
@@ -2217,6 +2317,7 @@
 
 (defn apply-canvas-blur
   []
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (let [already? @page-transition?
         epoch    (begin-page-transition!)]
     (set-transition-tiles-complete-handler! epoch end-page-transition!)
