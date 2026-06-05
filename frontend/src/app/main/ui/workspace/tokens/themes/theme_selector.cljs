@@ -8,13 +8,16 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as hooks]
@@ -24,17 +27,16 @@
    [rumext.v2 :as mf]))
 
 (mf/defc themes-list*
-  [{:keys [themes active-theme-paths on-close is-grouped]}]
+  [{:keys [themes tokens-status on-close is-grouped]}]
   (when (seq themes)
     [:ul {:class (stl/css :theme-options)}
      (for [[_ {:keys [id name] :as theme}] themes
-           :let [theme-id (ctob/get-theme-path theme)
-                 selected? (get active-theme-paths theme-id)
+           :let [selected? (ctos/theme-active? tokens-status id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)
                                 (st/emit! (dwtl/toggle-token-theme-active id))
                                 (on-close))]]
-       [:li {:key theme-id
+       [:li {:key (str "theme-" id)
              :role "option"
              :aria-selected selected?
              :class (stl/css-case
@@ -53,42 +55,52 @@
   (modal/show! :tokens/themes {}))
 
 (mf/defc theme-options*
-  [{:keys [active-theme-paths themes on-close]}]
-  [:ul {:class (stl/css :theme-options :custom-select-dropdown)
-        :role "listbox"}
-   (for [[group themes] themes]
-     [:li {:key group
-           :aria-labelledby (dm/str group "-label")
-           :role "group"}
-      (when (seq group)
-        [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
-      [:> themes-list* {:themes themes
-                        :active-theme-paths active-theme-paths
-                        :on-close on-close
-                        :is-grouped true}]])
-   [:li {:class (stl/css :separator)
-         :aria-hidden true}]
-   [:li {:class (stl/css-case :checked-element true
-                              :checked-element-button true)
-         :role "option"
-         :on-click open-tokens-theme-modal}
-    [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
-    [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])
+  [{:keys [tokens-lib tokens-status on-close]}]
+  (let [themes
+        (mf/with-memo [tokens-lib]
+          (ctob/get-theme-tree-no-hidden tokens-lib))]
+    [:ul {:class (stl/css :theme-options :custom-select-dropdown)
+          :role "listbox"}
+     (for [[group themes] themes]
+       [:li {:key group
+             :aria-labelledby (dm/str group "-label")
+             :role "group"}
+        (when (seq group)
+          [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
+        [:> themes-list* {:themes themes
+                          :tokens-status tokens-status
+                          :on-close on-close
+                          :is-grouped true}]])
+     [:li {:class (stl/css :separator)
+           :aria-hidden true}]
+     [:li {:class (stl/css-case :checked-element true
+                                :checked-element-button true)
+           :role "option"
+           :on-click open-tokens-theme-modal}
+      [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
+      [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]]))
 
 (mf/defc theme-selector*
   [{:keys []}]
   (let [;; Store
-        active-theme-paths (mf/deref refs/workspace-active-theme-paths-no-hidden)
-        active-themes-count (count active-theme-paths)
-        themes (mf/deref refs/workspace-token-theme-tree-no-hidden)
+        tokens-lib          (mf/use-ctx ctx/tokens-lib)
+        tokens-status       (mf/use-ctx ctx/tokens-status)
+
+        active-themes
+        (mf/with-memo [tokens-lib tokens-status]
+          (cfo/get-active-themes tokens-status tokens-lib))
+
+        active-themes-count
+        (mf/with-memo [active-themes]
+          (count active-themes))
+
         can-edit?  (:can-edit (deref refs/permissions))
+
         ;; Data
         current-label (cond
                         (> active-themes-count 1) (tr "workspace.tokens.active-themes" active-themes-count)
-                        (= active-themes-count 1) (some->> (first active-theme-paths)
-                                                           (ctob/split-theme-path)
-                                                           (remove empty?)
-                                                           (str/join " / "))
+                        (= active-themes-count 1) (-> (first active-themes)
+                                                      (ctob/get-theme-path true))
                         :else (tr "workspace.tokens.no-active-theme"))
 
         ;; State
@@ -140,7 +152,7 @@
 
           [:& dropdown {:show is-open?
                         :on-close on-close-dropdown}
-           [:> theme-options* {:active-theme-paths active-theme-paths
-                               :themes themes
+           [:> theme-options* {:tokens-lib tokens-lib
+                               :tokens-status tokens-status
                                :on-close on-close-dropdown}]]])
         container))]))
