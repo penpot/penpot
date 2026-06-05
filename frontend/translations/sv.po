@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-04 23:01+0000\n"
+"PO-Revision-Date: 2026-06-06 01:01+0000\n"
 "Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -4848,7 +4848,6 @@ msgid "subscription.settings.success.dialog.title"
 msgstr "Du är %!"
 
 #: src/app/main/ui/settings/subscription.cljs:656
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Du har stöttat oss med detta abonnemang sedan: %s"
 
@@ -9397,3 +9396,287 @@ msgstr "Kontakta oss för att uppgradera till Enterprise:"
 #: src/app/main/ui/nitrate/nitrate_form.cljs:82, src/app/main/ui/nitrate/nitrate_form.cljs:102
 msgid "nitrate.form.enter-code"
 msgstr "Ange aktiveringskod"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:57
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Globala till finjusterade behörigheter över team och projekt"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:59
+msgid "nitrate.form.enterprise-feature-2"
+msgstr ""
+"Centraliserad kontroll över vem som gör vad och var, från en dedikerad "
+"administratörskonsol"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:61
+msgid "nitrate.form.enterprise-feature-3"
+msgstr ""
+"Full frihet med öppen källkod, med den styrning din organisation behöver"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:54
+msgid "nitrate.form.enterprise-intro"
+msgstr "Allt dina team behöver för att arbeta säkert i stor skala:"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:768
+msgid "nitrate.form.enterprise.price"
+msgstr "per medlem per månad"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
+msgid "nitrate.form.have-code"
+msgstr "Har du en aktiveringskod?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:86
+msgid "nitrate.form.see-plan"
+msgstr "Se mitt nuvarande abonnemang"
+
+#, unused
+msgid "nitrate.form.start-enterprise"
+msgstr "Kom igång med Enterprise"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:51
+msgid "nitrate.form.title"
+msgstr "Lås upp Enterprise-funktioner"
+
+#: src/app/main/ui/dashboard/subscription.cljs:164, src/app/main/ui/nitrate/nitrate_form.cljs:75
+msgid "nitrate.form.try-free"
+msgstr "Prova det gratis i 14 dagar"
+
+#: src/app/main/ui/settings/subscription.cljs:576
+msgid "nitrate.subscription.active-until"
+msgstr "Aktiv till %s"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+msgid "nitrate.subscription.renew-success"
+msgstr "Din Nitrate-prenumeration har förnyats."
+
+#: src/app/main/ui/settings/subscription.cljs:585
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Avsluta prenumeration"
+
+#: src/app/main/ui/settings/subscription.cljs:105
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Förnya med aktiveringskod"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+msgid "not-active-token.no-name"
+msgstr ""
+"Denna token finns inte i någon aktiv uppsättning eller har ett ogiltigt "
+"värde."
+
+#: src/app/main/data/workspace/mcp.cljs:185
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP är aktivt i en annan flik. Växla över hit?"
+
+#, unused
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP är nu aktivt i den här fliken."
+
+#: src/app/plugins/utils.cljs:311
+msgid "plugins.validation.message"
+msgstr "Fält %s är ogiltigt: %s"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.find"
+msgstr "Hitta"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.find-and-replace"
+msgstr "Hitta och ersätt"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.paste-replace"
+msgstr "Klistra in och ersätt"
+
+#: src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.activate-by-code"
+msgstr "Ange aktiveringskod"
+
+#: src/app/main/ui/settings/subscription.cljs:725
+msgid "subscription.settings.organization-member-month"
+msgstr "org-medlem per månad"
+
+#: src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "Alla design- och prototypfunktioner har Community-support."
+
+#: src/app/main/ui/settings/subscription.cljs:595, src/app/main/ui/settings/subscription.cljs:673
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Fullständig kontroll över data och infrastruktur."
+
+#: src/app/main/ui/settings/subscription.cljs:598, src/app/main/ui/settings/subscription.cljs:676
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Obegränsat antal användare, team och filer."
+
+#: src/app/main/ui/settings/integrations.cljs:619
+msgid "title.settings.integrations"
+msgstr "Integrationer - Penpot"
+
+#: src/app/main/ui/viewer/header.cljs:187
+#, unused
+msgid "viewer.header.edit-in-workspace"
+msgstr "Redigera i arbetsytan"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Gå till översiktsvyn"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:78
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Felsökningsguide"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr ""
+"WebGL är inte tillgängligt i din webbläsare, vilket krävs för att Penpot ska "
+"fungera. Kontrollera dina webbläsarinställningar och/eller stäng grafiktunga "
+"flikar."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Hoppsan! WebGL är inte tillgängligt"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr ""
+" för att kontrollera webbläsarinställningar, GPU-acceleration, drivrutiner "
+"och vanliga systemproblem."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Följ vår "
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:70
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "WebGL-felsökningsguide"
+
+#, unused
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "WebGL-rendering aktiverad"
+
+#: src/app/render_wasm/api.cljs:1869
+msgid "webgl.webgl-context-lost.toast"
+msgstr "WebGL-kontexten tappades"
+
+#: src/app/render_wasm/api.cljs:1885
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "WebGL-kontexten återställdes"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
+msgid "workspace.assets.delete-group"
+msgstr "Ta bort grupp"
+
+#: src/app/main/data/workspace/clipboard.cljs:1175
+msgid "workspace.clipboard.copying"
+msgstr "Kopierar bild…"
+
+#: src/app/main/data/workspace/clipboard.cljs:1198
+msgid "workspace.clipboard.image-copied"
+msgstr "Bild kopierad till urklipp"
+
+#: src/app/main/data/workspace/clipboard.cljs:1204
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Fel vid kopiering av bild"
+
+#: src/app/main/ui/workspace/context_menu.cljs:873
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Kopiera kolumner"
+
+#: src/app/main/ui/workspace/context_menu.cljs:869
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Kopiera rader"
+
+#: src/app/main/ui/workspace/context_menu.cljs:877
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Klistra in"
+
+#: src/app/main/ui/workspace/context_menu.cljs:911
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Guidefärg"
+
+#: src/app/main/ui/workspace/context_menu.cljs:923
+msgid "workspace.context-menu.guides.remove"
+msgstr "Ta bort guide"
+
+#: src/app/main/ui/workspace/sidebar/debug.cljs:38
+msgid "workspace.debug.title"
+msgstr "Felsökningsverktyg"
+
+#: src/app/main/ui/workspace/main_menu.cljs:335
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Inaktivera WebGL-rendering (beta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Aktivera WebGL-rendering (beta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:508
+msgid "workspace.header.menu.find"
+msgstr "Hitta"
+
+#: src/app/main/ui/workspace/main_menu.cljs:515
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Hitta och ersätt"
+
+#: src/app/main/ui/workspace/main_menu.cljs:401
+msgid "workspace.header.menu.lock-guides"
+msgstr "Lås guider"
+
+#: src/app/main/ui/workspace/main_menu.cljs:853
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Anslut"
+
+#: src/app/main/ui/workspace/main_menu.cljs:852
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Koppla från"
+
+#: src/app/main/ui/workspace/main_menu.cljs:861
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Hantera (Status: aktiverad)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:1074
+msgid "workspace.header.menu.option.mcp"
+msgstr "MCP-server"
+
+#: src/app/main/ui/workspace/main_menu.cljs:400
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Lås upp guider"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:496
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Blandade tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:491
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Blandade objekt och tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Blandade objekt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:513
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Koppla bort alla objekt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+#, unused
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Lossa alla tokens och koppla bort alla typografier"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:498
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Lossa alla tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:103
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Bakgrundsoskärpa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:101
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Lageroskärpa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:480
+msgid "workspace.options.convert-to-typography"
+msgstr "Skapa typografistil"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:198
+msgid "workspace.options.fill.section"
+msgstr "Fyll sektion"
