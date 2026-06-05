@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-03 19:01+0000\n"
+"PO-Revision-Date: 2026-06-06 01:01+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -8048,7 +8048,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s etkin küme"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Orijinal değer: %s"
 
@@ -8095,7 +8094,6 @@ msgid "workspace.tokens.remapping-in-progress"
 msgstr "Token referansları yeniden eşleniyor..."
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:293, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:486, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:293, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:185, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:321, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:257, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:375, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:500, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Çözülen değer: %s"
 
@@ -8226,7 +8224,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Tema listesi"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:338, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:339
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Açıklama"
 
@@ -9801,3 +9798,209 @@ msgstr "Karışık tokenler ve varlıklar"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511
 msgid "workspace.libraries.text.mixed-typography"
 msgstr "Karışık varlıklar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:513
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Tüm varlıkları ayır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+#, unused
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Tüm tokenleri ve tipografileri ayır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:498
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Tüm tokenleri ayır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:103
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Arka plan bulanıklığı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:101
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Katman bulanıklığı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:480
+msgid "workspace.options.convert-to-typography"
+msgstr "Tipografi biçimi oluştur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:198
+msgid "workspace.options.fill.section"
+msgstr "Bölümü doldur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:285
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Menü bölümü katmanı"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:448
+msgid "workspace.options.no-size-preset-results"
+msgstr "Eşleşen boyut ön ayarı yok"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+#, unused
+msgid "workspace.options.pixel grid-color"
+msgstr "Piksel ızgara rengi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:287
+msgid "workspace.options.radius.radius-section"
+msgstr "Kenar yuvarlaklığı bölümü"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
+msgid "workspace.options.search-size-preset"
+msgstr "Boyut ön ayarı ara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
+msgid "workspace.options.selection-color.section"
+msgstr "Renk seçimi bölümü"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:327
+msgid "workspace.options.stroke-dash"
+msgstr "Çizgi"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
+msgid "workspace.options.stroke-gap"
+msgstr "Boşluk"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:248
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Çizgiyi aç/kapat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:464
+msgid "workspace.options.text-options.text-section"
+msgstr "Metin bölümü"
+
+#: src/app/main/ui/workspace/plugins.cljs:317
+msgid "workspace.plugins.permissions.clipboard-read"
+msgstr "Panonun içeriğini oku."
+
+#: src/app/main/ui/workspace/plugins.cljs:311
+msgid "workspace.plugins.permissions.clipboard-write"
+msgstr "Pano içeriğini oku ve yaz."
+
+#: src/app/main/ui/workspace/context_menu.cljs:651
+msgid "workspace.shape.menu.clear-guides"
+msgstr "Çalışma yüzeyi kılavuzlarını temizle"
+
+#: src/app/main/ui/workspace/context_menu.cljs:229
+msgid "workspace.shape.menu.copy-as-image"
+msgstr "Görsel olarak kopyala"
+
+#: src/app/main/ui/workspace/context_menu.cljs:453
+msgid "workspace.shape.menu.stroke-to-path"
+msgstr "Yola çerçeve"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+#, unused
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s / %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:601
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "Eşleşme yok"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:620
+msgid "workspace.sidebar.layers.replace"
+msgstr "Değiştir"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:626
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Tümünü değiştir"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:587
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Şununla değiştir..."
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:575
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Bul ve değiştir"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:606
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Metin içeriği"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:610
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Katman adları"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:357
+msgid "workspace.tokens.copy-name"
+msgstr "Token yolunu kopyala"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:60
+msgid "workspace.tokens.duplicate-group"
+msgstr "Token Gruplarının Kopyasını Oluştur"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "İçe Aktarma Hatası: JSON'da yinelenen token adı."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr ""
+"'%s' yolunda veya bu yolun bir ön ekinde, başka bir kümede zaten bir token "
+"var."
+
+#: src/app/main/data/workspace/tokens/application.cljs:730, src/app/main/ui/workspace/tokens/management/group.cljs:162
+msgid "workspace.tokens.error-text-edition"
+msgstr ""
+"Metni düzenlerken tokenler uygulanamaz. Bunun yerine metin katmanını seçin."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:102
+msgid "workspace.tokens.remap-node-references-title"
+msgstr ""
+"`%s`, `%s` olarak yeniden adlandırıp bu gruptaki tüm tokenler yeniden "
+"eşleştirilsin mi?"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
+msgid "workspace.tokens.remap-node-warning-effects"
+msgstr ""
+"Bu, eski token adını kullanan tüm tokenleri ve referansları güncelleyecek."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap-token-warning-effects"
+msgstr ""
+"Bu, eski token adını kullanan tüm katmanları ve referansları değiştirecek."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:59
+msgid "workspace.tokens.rename-group"
+msgstr "Token Grubunu Yeniden Adlandır"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:68
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr ""
+"Tokenleriniz otomatik olarak %s.(sonEk).(tokeAdı) olarak yeniden "
+"adlandırılacak"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:551
+msgid "workspace.tokens.search-by-token"
+msgstr "Token adına göre ara"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:273, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:222
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "%s yolunda veya bu yolun bir ön ekinde zaten bir token var."
+
+#, unused
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr ""
+"Görselleştirme kullanılabilir değil. Düzenlemeyi geri yüklemek için "
+"yenileyin."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:43
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Yenile"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:358
+msgid "workspace.undo.entry.by"
+msgstr "%s ile"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.button.preview"
+msgstr "Sürümü ön izle"
+
+#: src/app/main/data/workspace/versions.cljs:301
+msgid "workspace.versions.preview-banner-title"
+msgstr "Ön izlenen sürüm: %s"
+
+#: src/app/main/data/workspace/versions.cljs:295
+msgid "workspace.versions.preview.unnamed"
+msgstr "Adsız sürüm"
