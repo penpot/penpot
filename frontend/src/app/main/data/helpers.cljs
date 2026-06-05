@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -37,12 +38,21 @@
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
 
-(defn lookup-tokens-lib
+(defn lookup-tokens-file-data
   [state]
   (let [current-file-data (lookup-file-data state)
-        tokens-file-id (or (:tokens-file current-file-data) (:id current-file-data))
-        tokens-file-data (lookup-file-data state tokens-file-id)]
-    (:tokens-lib tokens-file-data)))
+        tokens-file-id (or (cfo/get-tokens-file current-file-data) (:id current-file-data))]
+    (lookup-file-data state tokens-file-id)))
+
+(defn lookup-tokens-lib
+  [state]
+  (let [tokens-file-data (lookup-tokens-file-data state)]
+    (cfo/get-tokens-lib tokens-file-data)))
+
+(defn lookup-tokens-status
+  [state]
+  (let [current-file-data (lookup-file-data state)] ;; Tokens status is always in the current file
+    (cfo/get-tokens-status current-file-data)))
 
 (defn get-page
   [fdata page-id]
