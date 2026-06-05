@@ -26,20 +26,16 @@
   (st/emit! (dwtl/toggle-token-set-group path)))
 
 (mf/defc sets-list*
-  [{:keys [tokens-lib selected new-path edition-id]}]
+  [{:keys [selected new-path edition-id]}]
 
-  (let [token-sets
+  (let [tokens-lib
+        (mf/use-ctx ctx/tokens-lib)
+
+        token-sets
         (some-> tokens-lib (ctob/get-set-tree))
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
-
-        token-set-active?
-        (mf/use-fn
-         (mf/deps tokens-lib)
-         (fn [name]
-           (when tokens-lib
-             (ctob/token-set-active? tokens-lib name))))
 
         token-set-group-active?
         (mf/use-fn
@@ -66,7 +62,6 @@
      {:tokens-lib tokens-lib
       :token-sets token-sets
 
-      :is-token-set-active token-set-active?
       :is-token-set-group-active token-set-group-active?
       :on-select on-select-token-set-click
 
