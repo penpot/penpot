@@ -29,6 +29,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.token-status :as ctos]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -86,7 +87,8 @@
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} schema:plugin-data]
-   [:tokens-lib {:optional true} ctob/schema:tokens-lib]])
+   [:tokens-lib {:optional true} ctob/schema:tokens-lib]
+   [:token-status {:optional true} ctos/schema:token-status]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
@@ -199,7 +201,12 @@
 (defn ensure-tokens-lib
   "Ensure file-data has a :tokens-lib key, creating one if necessary."
   [file-data]
-  (update file-data :tokens-lib #(or % (ctob/make-tokens-lib))))
+  (if (and (some? (:tokens-lib file-data)) (nil? (:token-status file-data)))
+    ;; TODO: remove this when we deprecate old-style files without token-status
+    (assoc file-data :token-status (ctos/make-token-status-from-lib (:tokens-lib file-data)))
+    (-> file-data
+        (update :tokens-lib #(or % (ctob/make-tokens-lib)))
+        (update :token-status #(or % (ctos/make-token-status))))))
 
 ;; Helpers
 
