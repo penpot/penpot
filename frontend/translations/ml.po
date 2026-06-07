@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-08 12:01+0000\n"
 "Last-Translator: Joseph V M <shibinjose991@gmail.com>\n"
-"Language-Team: Malayalam "
-"<https://hosted.weblate.org/projects/penpot/frontend/ml/>\n"
+"Language-Team: Malayalam <https://hosted.weblate.org/projects/penpot/"
+"frontend/ml/>\n"
 "Language: ml\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.6\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -51,7 +51,7 @@ msgstr "മുഴുവൻ പേര്"
 
 #: src/app/main/ui/auth/register.cljs:218, src/app/main/ui/static.cljs:176, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
-msgstr "ഇവിടെ ലോഗിൻ ചെയ്യുക"
+msgstr "ഇവിടെ ലോഗിൻ ചെയ്യുക."
 
 #: src/app/main/ui/auth/login.cljs:195
 #, unused
@@ -232,3 +232,73 @@ msgstr "റിക്കവറി ടോക്കൺ അസാധുവാണ്.
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-mail"
+msgstr "നിങ്ങളുടെ ഇമെയിൽ പരിശോധിക്കുക"
+
+#: src/app/main/ui/auth/login.cljs:270
+msgid "auth.login-account-title"
+msgstr "എന്റെ അക്കൗണ്ടിലേക്ക് പ്രവേശിക്കുക"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "നിങ്ങളിപ്പോൾ %s-ന്റെ ഭാഗമാണ്"
+
+#: src/app/main/ui/auth/register.cljs:352
+msgid "auth.register-account-tagline"
+msgstr ""
+"നിങ്ങളെ ഞങ്ങൾ എന്താണ് ഡാഷ്ബോർഡിലും ഇമെയിലിലും വിളിക്കേണ്ടതെന്ന് അറിയിക്കുക."
+
+#: src/app/main/ui/auth/register.cljs:351
+msgid "auth.register-account-title"
+msgstr "നിങ്ങളുടെ പേര്"
+
+#: src/app/main/ui/auth/login.cljs:178, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:168
+msgid "auth.work-email"
+msgstr "ജോലിക്കുള്ള ഇമെയിൽ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, unused
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...ബ്രാൻഡിങ്, ചിത്രരചനകൾ, മാർക്കറ്റിങ് ശകലങ്ങൾ, തുടങ്ങിയവ."
+
+#: src/app/main/ui/auth/login.cljs:273
+msgid "auth.login-tagline"
+msgstr ""
+"ഡിസൈനിങിലും കോഡിങിലും സഹകരിച്ച് പ്രവർത്തിക്കാനുള്ള ഒരു ഓപ്പൺസോഴ്സ് ഡിസൈൻ ഉപകരണമാണ് പെൻപോട്ട്"
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"ഒരു അക്കൗണ്ട് സൃഷ്ടിക്കുമ്പോൾ, നിങ്ങൾ ഞങ്ങളുടെ ഉപയോഗനിബന്ധനകളും സ്വകാര്യതാനയവും അംഗീകരിക്കുന്നു."
+
+#: src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/viewer/share_link.cljs:215
+msgid "common.share-link.destroy-link"
+msgstr "കണ്ണി നശിപ്പിക്കുക"
+
+#: src/app/main/ui/viewer/share_link.cljs:232
+msgid "common.share-link.manage-ops"
+msgstr "അനുമതികൾ കൈകാര്യം ചെയ്യുക"
+
+#: src/app/main/ui/viewer/share_link.cljs:278
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 താൾ പങ്കുവെച്ചു"
+msgstr[1] "%s താളുകൾ പങ്കുവെച്ചു"
+
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
+msgid "common.share-link.team-members"
+msgstr "സംഘാംഗങ്ങൾ മാത്രം"
+
+#: src/app/main/ui/viewer/share_link.cljs:270
+msgid "common.share-link.view-all"
+msgstr "എല്ലാം തിരഞ്ഞെടുക്കുക"
+
+#: src/app/main/ui/viewer/share_link.cljs:242
+msgid "common.share-link.permissions-pages"
+msgstr "പങ്കുവെച്ച താളുകൾ"
+
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
+msgid "common.share-link.all-users"
+msgstr "എല്ലാ പെൻപോട്ട് ഉപയോക്താക്കളും"
