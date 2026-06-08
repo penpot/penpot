@@ -19,6 +19,7 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
@@ -450,12 +451,14 @@
    ::mf/register modal/components
    ::mf/register-as :tokens/themes}
   []
-  [:div {:class (stl/css :modal-overlay)}
-   [:div {:class (stl/css :modal-dialog)
-          :data-testid "token-theme-update-create-modal"}
-    [:> icon-button* {:class (stl/css :close-btn)
-                      :on-click modal/hide!
-                      :aria-label (tr "labels.close")
-                      :variant "action"
-                      :icon i/close}]
-    [:> themes-modal-body*]]])
+  (let [token-status (mf/deref refs/token-status)]
+    [:> (mf/provider ctx/token-status) {:value token-status}
+     [:div {:class (stl/css :modal-overlay)}
+      [:div {:class (stl/css :modal-dialog)
+             :data-testid "token-theme-update-create-modal"}
+       [:> icon-button* {:class (stl/css :close-btn)
+                         :on-click modal/hide!
+                         :aria-label (tr "labels.close")
+                         :variant "action"
+                         :icon i/close}]
+       [:> themes-modal-body*]]]]))

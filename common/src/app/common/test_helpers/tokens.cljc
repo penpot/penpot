@@ -20,12 +20,17 @@
   (:tokens-lib (ctf/file-data file)))
 
 (defn add-tokens-lib
+  "Ensure the file has a tokens-lib and a token-statusin its data, creating empty ones if not"
   [file]
   (ctf/update-file-data file ctf/ensure-tokens-lib))
 
 (defn update-tokens-lib
   [file f]
   (ctf/update-file-data file #(update % :tokens-lib f)))
+
+(defn update-token-status
+  [file f]
+  (ctf/update-file-data file #(update % :token-status f)))
 
 (defn get-token
   [file set-id token-id]

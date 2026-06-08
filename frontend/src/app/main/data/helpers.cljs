@@ -44,6 +44,11 @@
         tokens-file-data (lookup-file-data state tokens-file-id)]
     (:tokens-lib tokens-file-data)))
 
+(defn lookup-token-status
+  [state]
+  (let [current-file-data (lookup-file-data state)]
+    (:token-status current-file-data)))
+
 (defn get-page
   [fdata page-id]
   (dm/get-in fdata [:pages-index page-id]))
