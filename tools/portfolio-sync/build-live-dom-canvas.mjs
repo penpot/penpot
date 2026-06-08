@@ -202,19 +202,65 @@ const DOM_HARVEST_FN = () => {
     return !!(m && m[1] !== undefined && parseFloat(m[1]) === 0);
   };
 
+  // Detect a multi-column ancestor (CSS `column-count: N` or `column-width: ...`).
+  // Element.getBoundingClientRect() bundles every column-fragment into one box,
+  // which is geometrically wrong for placement on a Penpot canvas that doesn't
+  // model columns. getClientRects() returns the fragments individually.
+  const multiColumnAncestor = (el) => {
+    let p = el.parentElement;
+    while (p) {
+      const s = window.getComputedStyle(p);
+      if ((s.columnCount && s.columnCount !== 'auto') ||
+          (s.columnWidth && s.columnWidth !== 'auto')) return true;
+      p = p.parentElement;
+    }
+    return false;
+  };
+
+  // Returns: array of {x,y,w,h} rects representing where the element actually
+  // renders on the page. For most elements this is a single rect equal to
+  // getBoundingClientRect. For multi-column-flowed elements it's one per
+  // column fragment (cluster getClientRects() by x).
+  const fragmentRects = (el) => {
+    if (!multiColumnAncestor(el)) {
+      const r = el.getBoundingClientRect();
+      return [{ x: r.left, y: r.top, w: r.width, h: r.height }];
+    }
+    const lines = Array.from(el.getClientRects()).filter(r => r.width > 0 && r.height > 0);
+    if (lines.length <= 1) {
+      const r = el.getBoundingClientRect();
+      return [{ x: r.left, y: r.top, w: r.width, h: r.height }];
+    }
+    // Cluster lines by left-edge within 30px tolerance (one cluster per column).
+    const clusters = [];
+    for (const r of lines) {
+      let c = clusters.find(c => Math.abs(c.x - r.left) < 30);
+      if (!c) { c = { x: r.left, minY: r.top, maxY: r.bottom, maxX: r.right }; clusters.push(c); }
+      else {
+        c.minY = Math.min(c.minY, r.top);
+        c.maxY = Math.max(c.maxY, r.bottom);
+        c.maxX = Math.max(c.maxX, r.right);
+      }
+    }
+    return clusters.map(c => ({ x: c.x, y: c.minY, w: c.maxX - c.x, h: c.maxY - c.minY }));
+  };
+
+  // Always returns an array (may be empty). One entry per visual fragment —
+  // for non-multi-column elements that's a single entry, matching the prior
+  // single-shape behaviour. Multi-column flowed elements emit one entry per
+  // column fragment.
   const captureText = (el, kind, extra = {}) => {
-    const r = el.getBoundingClientRect();
     const s = window.getComputedStyle(el);
-    // textContent is cheap; reserve innerText for capture, not the visibility precheck
     const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
-    if (!text && kind !== 'control' && kind !== 'image') return null;
-    return {
+    if (!text && kind !== 'control' && kind !== 'image') return [];
+    const frags = fragmentRects(el);
+    return frags.map(r => ({
       kind,
       text: text.slice(0, 500),
       tag: el.tagName.toLowerCase(),
-      x: r.left + window.scrollX,
-      y: r.top + window.scrollY,
-      w: r.width, h: r.height,
+      x: r.x + window.scrollX,
+      y: r.y + window.scrollY,
+      w: r.w, h: r.h,
       fontSize:   parseFloat(s.fontSize) || 16,
       fontWeight: s.fontWeight || '400',
       fontFamily: s.fontFamily || 'system-ui',
@@ -222,7 +268,7 @@ const DOM_HARVEST_FN = () => {
       color:      s.color || '',
       textAlign:  s.textAlign || 'left',
       ...extra,
-    };
+    }));
   };
 
   const out = [];
@@ -231,22 +277,30 @@ const DOM_HARVEST_FN = () => {
   // blocks, but inline <code> inside <li>/<p>/<h*> would double-capture and
   // visually mash on top of its parent. Skip nested instances.
   const NESTED_BLOCK_ANCESTORS = 'p,li,h1,h2,h3,h4,h5,h6,blockquote,dd,dt,td,th,figcaption';
+  // Stable per-source-element id so downstream rules can tell "two fragments
+  // of the same <p>" apart from "two distinct paragraphs that happen to share
+  // text". Used by the containing-block collapse rule below.
+  let __srcId = 0;
   for (const el of root.querySelectorAll(SELECTOR_BLOCK)) {
     if (!isVisible(el)) continue;
     if (!(el.textContent || '').trim()) continue;
     const tag = el.tagName.toLowerCase();
     if ((tag === 'code' || tag === 'pre') && el.parentElement?.closest(NESTED_BLOCK_ANCESTORS)) continue;
-    const cap = captureText(el, /^h[1-6]$/.test(tag) ? 'heading' : 'paragraph');
-    if (!cap) continue;
-    // (e) List markers: <ul>/<ol> children don't render their bullet/number into
-    // the DOM as a text node — Penpot would render a list item with no bullet.
-    // Prefix a glyph so the canvas hints at "this is a list line".
-    if (tag === 'li' && el.parentElement) {
-      const p = el.parentElement.tagName.toLowerCase();
-      if (p === 'ul') cap.text = '• ' + cap.text;
-      else if (p === 'ol') cap.text = '– ' + cap.text;
+    const caps = captureText(el, /^h[1-6]$/.test(tag) ? 'heading' : 'paragraph');
+    const src = __srcId++;
+    for (let i = 0; i < caps.length; i++) {
+      const cap = caps[i];
+      cap._src = src;
+      // (e) List markers: <ul>/<ol> children don't render their bullet/number
+      // into the DOM as a text node. Prefix ONLY the first fragment — the
+      // rendered page only shows one bullet, at the start of the first column.
+      if (i === 0 && tag === 'li' && el.parentElement) {
+        const p = el.parentElement.tagName.toLowerCase();
+        if (p === 'ul') cap.text = '• ' + cap.text;
+        else if (p === 'ol') cap.text = '– ' + cap.text;
+      }
+      out.push(cap);
     }
-    out.push(cap);
   }
 
   // Hyperlinks. Track each link's host paragraph so we can de-overlap below.
@@ -254,20 +308,19 @@ const DOM_HARVEST_FN = () => {
   for (const el of root.querySelectorAll('a[href]')) {
     if (!isVisible(el)) continue;
     const href = el.getAttribute('href') || '';
-    const c = captureText(el, 'link', {
+    const caps = captureText(el, 'link', {
       href,
       external: /^https?:\/\//.test(href),
       target: el.getAttribute('target') || '',
     });
-    if (!c) continue;
-    linkItems.push(c);
-    out.push(c);
+    const src = __srcId++;
+    for (const c of caps) { c._src = src; linkItems.push(c); out.push(c); }
   }
 
   for (const el of root.querySelectorAll('button')) {
     if (!isVisible(el)) continue;
-    const c = captureText(el, 'button');
-    if (c) out.push(c);
+    const src = __srcId++;
+    for (const c of captureText(el, 'button')) { c._src = src; out.push(c); }
   }
 
   for (const el of root.querySelectorAll(SELECTOR_CONTROL)) {
@@ -400,6 +453,11 @@ const DOM_HARVEST_FN = () => {
   for (const a of paragraphs) {
     for (const b of paragraphs) {
       if (a === b || droppedOuter.has(a) || droppedOuter.has(b)) continue;
+      // Reason: two fragments of the same multi-column element share _src.
+      // Without this guard the rule could collapse one fragment into another
+      // and undo the whole getClientRects path. The text-length check below
+      // already covers the same-text case, but be explicit.
+      if (a._src !== undefined && a._src === b._src) continue;
       if (a.text.length <= b.text.length) continue;
       const bCore = stripMarker(b.text);
       if (a.text.includes(bCore) && overlapRatio(a, b) > 0.5) {
