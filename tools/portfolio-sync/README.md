@@ -15,12 +15,15 @@ plain GitHub page.
 | File | What it does |
 |---|---|
 | `screenshot-pipeline.mjs` | Headless Playwright captures page screenshots and imports each one into the currently-open Penpot file via the MCP `import_image` tool. |
+| `build-live-dom-canvas.mjs` | Walks the live DOM (Playwright, parallel page harvest) and recreates each page on its Penpot board as editable `createText` / `createRectangle` shapes — hyperlinks get a link colour + underline + href in the shape name. Flips `diagnose-live-render` from SCREENSHOT to LIVE-ISH. |
+| `diagnose-live-render.mjs` | Reports whether each board is showing a live render or just a screenshot. Diffs canvas-shapes (via MCP) against live-DOM (via Playwright) and probes the iframe plugin. `--json` for machine output, `--page <name>` for a single page. |
 | `portfolio-watcher.mjs` | Watches the portfolio's `src/` directory and re-runs the pipeline on save (debounced). |
 | `webhook-server.mjs` | Listens for Vercel deploy-succeeded and GitHub push webhooks on port 9090, then enqueues a pipeline run for the new URL. Verifies HMAC if secrets are set. |
-| `penpot-bridge.mjs` | Persistent headless Chromium that keeps the Penpot MCP plugin connected 24/7. Exposes status on `localhost:9002`. |
+| `penpot-bridge.mjs` | Persistent headless Chromium that *tries* to keep the Penpot MCP plugin connected. **Caveat:** headless Chromium drops the plugin link frequently (60+ reloads/hour seen); for stable work, keep a real browser tab open at `auto-login.html`. Status JSON on `localhost:9002`. |
 | `live-embed-check.mjs` | Health check for portfolio + MCP REPL. Falls back to running the pipeline if the live embed isn't reachable. |
-| `live-preview-plugin/` | A tiny Penpot plugin (single `index.html`) that iframes the live portfolio with Home / Consulting / Blog tabs. Register it in Penpot at `http://localhost:9005`. |
-| `launch-all.sh` | One launcher with targets for `penpot`, `portfolio`, `bridge`, `watcher`, `webhook`, `sync`, `stop-sync`, `screenshots`. |
+| `live-preview-plugin/` | A tiny Penpot plugin (single `index.html`) that iframes the live portfolio with Home / Consulting / Blog tabs. Cross-origin iframe contents are opaque to Penpot — it's for the human, not for plugin-side DOM inspection. |
+| `live-preview-server.mjs` | Serves the plugin above at `:9005`. Detached on `nohup` + `disown` so it survives the shell exiting. |
+| `launch-all.sh` | One launcher with targets for `penpot`, `portfolio`, `bridge`, `watcher`, `webhook`, `live-preview`, `sync`, `stop-sync`, `screenshots`. |
 | `penpot-launch.sh` | Brings up Penpot Docker, copies `auto-login.html` into the frontend container, opens the auto-login page. |
 | `import-to-penpot.sh` | One-shot CLI: screenshot any URL/local-port/GitHub repo and push the frames into Penpot. |
 | `portfolio-sync.config.json` | Single config: portfolio path + URL, webhook port + secrets, page list. Re-read on every webhook request. |
@@ -38,13 +41,8 @@ $EDITOR ./tools/portfolio-sync/portfolio-sync.config.json
 # Set portfolio_dir + portfolio_local
 
 # 3. (Optional) serve the live-preview plugin so you can register it in Penpot:
-#    In Penpot: Plugin Manager → Add custom plugin → http://localhost:9005
-node -e "
-const http=require('http'),fs=require('fs');
-http.createServer((_,res)=>{
-  res.writeHead(200,{'Content-Type':'text/html'});
-  fs.createReadStream('./tools/portfolio-sync/live-preview-plugin/index.html').pipe(res);
-}).listen(9005);"
+./tools/portfolio-sync/launch-all.sh live-preview
+# In Penpot: Plugin Manager → Add custom plugin → http://localhost:9005
 ```
 
 ---
@@ -58,34 +56,59 @@ http.createServer((_,res)=>{
 # One-shot screenshot pass against a Vercel deploy:
 ./tools/portfolio-sync/import-to-penpot.sh --url https://my-site.vercel.app
 
+# Rebuild the canvas from the LIVE DOM (editable text + hyperlinks, not screenshots):
+node ./tools/portfolio-sync/build-live-dom-canvas.mjs
+# flags: --page home   (one page only), --reset-board   (drop backdrop too)
+
+# Check whether each board is showing a live render or a screenshot:
+node ./tools/portfolio-sync/diagnose-live-render.mjs
+# flags: --json   (machine-readable), --page home   (one page only)
+
 # Stop background services:
 ./tools/portfolio-sync/launch-all.sh stop-sync
 ```
+
+**Important:** `build-live-dom-canvas` and `diagnose-live-render` both call the
+Penpot MCP plugin, which requires a connected workspace tab. Keep a browser open
+on `http://localhost:9001/auto-login.html` — that page logs you in and
+auto-starts the MCP plugin. The headless `penpot-bridge` *tries* to do this
+without a real tab, but reliably drops the connection (60+ reloads/hour); treat
+it as a fallback, not a primary.
 
 ---
 
 ## Architecture sketch
 
 ```
-  portfolio src/        Vercel/GitHub          You (manual)
-       │                     │                        │
-       ▼                     ▼                        ▼
-  portfolio-watcher    webhook-server         import-to-penpot.sh
-       └──────┬──────────────┴────────────────────────┘
+  portfolio src/         Vercel/GitHub          You (manual)
+       │                      │                        │
+       ▼                      ▼                        ▼
+  portfolio-watcher     webhook-server         import-to-penpot.sh
+       └──────┬───────────────┴────────────────────────┘
               ▼
-       screenshot-pipeline.mjs
-              │
-              │ headless Chromium → PNG → docker cp →
-              ▼
-       Penpot MCP HTTP API (:4401)
-              │
-              ▼
-       Penpot workspace (image rectangles on canvas)
+   ┌─────────────────────────────────────────────────┐
+   │ screenshot-pipeline.mjs        (image fills)    │
+   │ build-live-dom-canvas.mjs      (createText)     │  ← two flavours
+   └─────────────────────┬───────────────────────────┘
+                         │
+                         │ headless Chromium reads portfolio
+                         ▼
+              Penpot MCP HTTP API (:4401)
+                         │
+                         │ requires a connected workspace tab
+                         ▼
+              Penpot workspace canvas
+
+  diagnose-live-render.mjs walks both ends of that arrow and reports the gap.
 ```
 
-The `penpot-bridge` keeps a headless Penpot tab open so the MCP plugin's REPL on
-`:4403` never goes cold. Without it, you'd have to manually open the workspace
-each time you want a sync run.
+Two flavours of canvas sync:
+- **screenshot-pipeline** drops flat PNGs onto the canvas. Fast, low fidelity,
+  not selectable. Good for showing the rendered output as a reference.
+- **build-live-dom-canvas** walks the live DOM and recreates each visible
+  heading / paragraph / link / button / control as a Penpot shape with the
+  right position, font, and (for links) the href in the shape name. Editable
+  on the canvas. Use this when you actually want to interact with the layout.
 
 ---
 
