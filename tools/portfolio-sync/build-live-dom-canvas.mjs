@@ -297,7 +297,10 @@ const DOM_HARVEST_FN = () => {
   const pushLine = (x, y, w, h, color) => {
     if (w < 4 && h < 4) return;
     if (isTransparent(color)) return;
-    const key = `line:${Math.round(x)}:${Math.round(y)}:${Math.round(w)}x${Math.round(h)}`;
+    // Reason: collapse coplanar lines that differ only in 1-2 px height (e.g. a
+    // background-as-line at 2px plus a border-top at 1px on the same row). Round
+    // major axis but drop minor — the rendered line looks the same either way.
+    const key = `line:${Math.round(x)}:${Math.round(y)}:${Math.round(Math.max(w, h))}`;
     if (seenLineKey.has(key)) return;
     seenLineKey.add(key);
     out.push({ kind: 'line', x, y, w, h, color, text: '' });
@@ -398,12 +401,22 @@ async function harvestPage(ctx, page) {
 
 // ─── Colour helpers ──────────────────────────────────────────────────────────
 
-function rgbToHex(rgb) {
+// Returns { color: '#rrggbb', alpha: 0..1 } or null on parse-fail / fully transparent.
+function parseRgb(rgb) {
   const m = (rgb || '').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?/);
   if (!m) return null;
-  // Treat fully transparent as "no colour" so the caller falls back to default.
-  if (m[4] !== undefined && parseFloat(m[4]) === 0) return null;
-  return '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join('');
+  const alpha = m[4] !== undefined ? parseFloat(m[4]) : 1;
+  if (alpha === 0) return null;
+  return {
+    color: '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join(''),
+    alpha,
+  };
+}
+
+// Legacy callers that only want the hex string.
+function rgbToHex(rgb) {
+  const p = parseRgb(rgb);
+  return p ? p.color : null;
 }
 
 function resolveColor(item, isLink) {
@@ -476,15 +489,21 @@ function shapeJs(item, boardX, boardY) {
   }
 
   if (item.kind === 'line') {
-    const lineColor = (item.color && /^rgb/.test(item.color) ? rgbToHex(item.color) : item.color) || '#cccccc';
-    // Keep the original (often subpixel) dimensions for fidelity — clamp lower bound at 1px each axis.
+    // Preserve alpha — rgba(217,212,203,0.3) rendered as opaque #d9d4cb was the
+    // 9/10 audit's only Important finding; lines were silently 100% opaque.
+    const parsed = item.color && /^rgb/.test(item.color) ? parseRgb(item.color) : null;
+    const lineColor = parsed?.color || (item.color && !/^rgb/.test(item.color) ? item.color : '#cccccc');
+    const lineAlpha = parsed?.alpha ?? 1;
     const lw = Math.max(1, Math.round(item.w));
     const lh = Math.max(1, Math.round(item.h));
+    const fillJs = lineAlpha < 1
+      ? `[{ fillColor: ${JSON.stringify(lineColor)}, fillOpacity: ${lineAlpha} }]`
+      : `[{ fillColor: ${JSON.stringify(lineColor)} }]`;
     return `
 {
   const r = penpot.createRectangle();
   r.name = 'line';
-  r.fills = [{ fillColor: ${JSON.stringify(lineColor)} }];
+  r.fills = ${fillJs};
   r.strokes = [];
   r.resize(${lw}, ${lh});
   board.appendChild(r);
