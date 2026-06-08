@@ -62,7 +62,11 @@ $EDITOR ./tools/portfolio-sync/portfolio-sync.config.json
 
 # Rebuild the canvas from the LIVE DOM (editable text + hyperlinks, not screenshots):
 node ./tools/portfolio-sync/build-live-dom-canvas.mjs
-# flags: --page home   (one page only), --reset-board   (drop backdrop too)
+# flags: --page home              one page only
+#        --reset-board            drop the screenshot backdrop too
+#        --preserve-prefix <str>  shapes whose name starts with this prefix
+#                                 survive the wipe (default "preserve-")
+#        --batch <n>              MCP batch size (default 24)
 
 # Check whether each board is showing a live render or a screenshot:
 node ./tools/portfolio-sync/diagnose-live-render.mjs

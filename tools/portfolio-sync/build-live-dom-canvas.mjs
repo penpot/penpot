@@ -9,23 +9,29 @@
  * Pipeline per page:
  *
  *   1. Playwright loads {portfolio_local}/<path> at 1440 width and walks
- *      visible semantic elements (headings, paragraphs, list items, anchors,
- *      buttons, controls, images) capturing text, bbox, computed font props
- *      and colour. Pages are harvested in parallel.
+ *      visible semantic elements: headings, paragraphs, list items (with a
+ *      bullet glyph prefixed for <ul> / <ol>), pre/code blocks, anchors,
+ *      buttons, controls, images, <hr> and CSS divider/border lines, and
+ *      <svg> placeholders. Pages are harvested in parallel.
  *
  *   2. The matching Penpot board is grown to the document height, the existing
  *      screenshot child is reparented + resized to the new board frame and
  *      faded so the layout still hints behind the text, and every other prior
- *      generated child is wiped. Idempotent across reruns.
+ *      generated child is wiped (shapes whose name starts with the preserve
+ *      prefix survive). Idempotent across reruns.
  *
  *   3. Each captured element becomes a penpot.createText (or createRectangle
- *      for non-text controls). Hyperlinks get a link colour, an underline,
- *      and the href stored in the shape name ("link: /consulting").
+ *      for lines, svg placeholders, controls, images). Hyperlinks get a link
+ *      colour, an underline, and the href stored in the shape name
+ *      ("link: /consulting"). If a paragraph is dominated by a single inline
+ *      link the paragraph is dropped — the link reads on its own, no overlap.
  *
  * Flags:
- *   --page <name>    only build one of {home,consulting,blog}
- *   --reset-board    drop the screenshot backdrop too (true clean slate)
- *   --batch <n>      override batch size (default 24)
+ *   --page <name>                only build one of {home,consulting,blog}
+ *   --reset-board                drop the screenshot backdrop too (clean slate)
+ *   --batch <n>                  override batch size (default 24)
+ *   --preserve-prefix <str>      shapes whose name starts with this prefix
+ *                                survive the wipe (default "preserve-")
  */
 
 import { chromium } from 'playwright';
@@ -176,7 +182,8 @@ async function waitForCurrentPage(sid, wantNames, maxMs = 2000) {
 
 const DOM_HARVEST_FN = () => {
   const root = document.body;
-  const SELECTOR_BLOCK   = 'h1,h2,h3,h4,h5,h6,p,li,blockquote,dd,dt,td,th,figcaption';
+  // pre/code added so monospace blocks land on the canvas.
+  const SELECTOR_BLOCK   = 'h1,h2,h3,h4,h5,h6,p,li,blockquote,dd,dt,td,th,figcaption,pre,code';
   const SELECTOR_CONTROL = 'input,textarea,select';
 
   const isVisible = (el) => {
@@ -186,6 +193,13 @@ const DOM_HARVEST_FN = () => {
     if (s.visibility === 'hidden' || s.display === 'none') return false;
     if (parseFloat(s.opacity) === 0) return false;
     return true;
+  };
+
+  const isTransparent = (col) => {
+    if (!col) return true;
+    if (col === 'transparent') return true;
+    const m = col.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*([\d.]+))?/);
+    return !!(m && m[1] !== undefined && parseFloat(m[1]) === 0);
   };
 
   const captureText = (el, kind, extra = {}) => {
@@ -216,17 +230,33 @@ const DOM_HARVEST_FN = () => {
   for (const el of root.querySelectorAll(SELECTOR_BLOCK)) {
     if (!isVisible(el)) continue;
     if (!(el.textContent || '').trim()) continue;
-    out.push(captureText(el, /^h[1-6]$/.test(el.tagName.toLowerCase()) ? 'heading' : 'paragraph'));
+    const tag = el.tagName.toLowerCase();
+    const cap = captureText(el, /^h[1-6]$/.test(tag) ? 'heading' : 'paragraph');
+    if (!cap) continue;
+    // (e) List markers: <ul>/<ol> children don't render their bullet/number into
+    // the DOM as a text node — Penpot would render a list item with no bullet.
+    // Prefix a glyph so the canvas hints at "this is a list line".
+    if (tag === 'li' && el.parentElement) {
+      const p = el.parentElement.tagName.toLowerCase();
+      if (p === 'ul') cap.text = '• ' + cap.text;
+      else if (p === 'ol') cap.text = '– ' + cap.text;
+    }
+    out.push(cap);
   }
 
+  // Hyperlinks. Track each link's host paragraph so we can de-overlap below.
+  const linkItems = [];
   for (const el of root.querySelectorAll('a[href]')) {
     if (!isVisible(el)) continue;
     const href = el.getAttribute('href') || '';
-    out.push(captureText(el, 'link', {
+    const c = captureText(el, 'link', {
       href,
       external: /^https?:\/\//.test(href),
       target: el.getAttribute('target') || '',
-    }));
+    });
+    if (!c) continue;
+    linkItems.push(c);
+    out.push(c);
   }
 
   for (const el of root.querySelectorAll('button')) {
@@ -260,11 +290,88 @@ const DOM_HARVEST_FN = () => {
     });
   }
 
+  // (a) Lines — three sources: <hr>, line-shaped divs (1-4px in one axis,
+  // ≥20px in the other) with a non-transparent background, and elements whose
+  // computed style has a top/bottom border that visibly draws a line.
+  const seenLineKey = new Set();
+  const pushLine = (x, y, w, h, color) => {
+    if (w < 4 && h < 4) return;
+    if (isTransparent(color)) return;
+    const key = `line:${Math.round(x)}:${Math.round(y)}:${Math.round(w)}x${Math.round(h)}`;
+    if (seenLineKey.has(key)) return;
+    seenLineKey.add(key);
+    out.push({ kind: 'line', x, y, w, h, color, text: '' });
+  };
+  for (const el of root.querySelectorAll('hr')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    const s = window.getComputedStyle(el);
+    const c = s.borderTopColor && !isTransparent(s.borderTopColor)
+      ? s.borderTopColor
+      : (s.backgroundColor && !isTransparent(s.backgroundColor) ? s.backgroundColor : '#cccccc');
+    pushLine(r.left + window.scrollX, r.top + window.scrollY,
+             Math.max(1, r.width), Math.max(1, r.height), c);
+  }
+  for (const el of root.querySelectorAll('div,span,section,article,aside,header,footer,nav,main')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    const s = window.getComputedStyle(el);
+    // Background-as-line (the .hero-rule pattern)
+    const lineW = r.width, lineH = r.height;
+    const isLineShape = (lineW >= 20 && lineH <= 4) || (lineH >= 20 && lineW <= 4);
+    if (isLineShape && !isTransparent(s.backgroundColor)) {
+      pushLine(r.left + window.scrollX, r.top + window.scrollY, lineW, lineH, s.backgroundColor);
+    }
+    // Border-as-line (decorative section dividers)
+    const btw = parseFloat(s.borderTopWidth) || 0;
+    if (btw >= 1 && s.borderTopStyle !== 'none' && !isTransparent(s.borderTopColor) && r.width >= 40) {
+      pushLine(r.left + window.scrollX, r.top + window.scrollY, r.width, btw, s.borderTopColor);
+    }
+    const bbw = parseFloat(s.borderBottomWidth) || 0;
+    if (bbw >= 1 && s.borderBottomStyle !== 'none' && !isTransparent(s.borderBottomColor) && r.width >= 40) {
+      pushLine(r.left + window.scrollX, r.top + window.scrollY + r.height - bbw, r.width, bbw, s.borderBottomColor);
+    }
+  }
+
+  // (b) SVGs — placeholder rectangles. Skip SVGs nested inside elements we
+  // already captured (typical icon-in-link case) so we don't double-draw.
+  for (const el of root.querySelectorAll('svg')) {
+    if (!isVisible(el)) continue;
+    if (el.closest('a,button,li')) continue;
+    const r = el.getBoundingClientRect();
+    out.push({
+      kind: 'svg',
+      text: '',
+      viewBox: el.getAttribute('viewBox') || '',
+      x: r.left + window.scrollX, y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+    });
+  }
+
+  // (c) Paragraph/link de-overlap. If a captured paragraph's text is largely
+  // (>70% by length) supplied by a single link inside it, drop the paragraph
+  // — the link will read on its own. Eliminates the "double text at the same
+  // spot" mess where a link and its containing <p> both render the same words.
+  const linkTexts = new Set(linkItems.map(l => l.text));
+  const filtered = [];
+  for (const item of out) {
+    if (item && item.kind === 'paragraph' && linkTexts.has(item.text)) continue;
+    if (item && item.kind === 'paragraph') {
+      const containingLinks = linkItems.filter(l =>
+        item.text.includes(l.text) && l.text.length >= 4);
+      if (containingLinks.length === 1
+          && containingLinks[0].text.length / Math.max(1, item.text.length) > 0.7) {
+        continue;
+      }
+    }
+    filtered.push(item);
+  }
+
   const seen = new Set();
   const deduped = [];
-  for (const item of out) {
+  for (const item of filtered) {
     if (!item) continue;
-    const key = `${item.kind}:${Math.round(item.x)}:${Math.round(item.y)}:${item.text.slice(0, 40)}`;
+    const key = `${item.kind}:${Math.round(item.x)}:${Math.round(item.y)}:${(item.text || '').slice(0, 40)}`;
     if (seen.has(key)) continue;
     seen.add(key);
     deduped.push(item);
@@ -365,6 +472,39 @@ function shapeJs(item, boardX, boardY) {
   board.appendChild(r);
   r.x = ${x}; r.y = ${y};
   return { kind: 'image', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'line') {
+    const lineColor = (item.color && /^rgb/.test(item.color) ? rgbToHex(item.color) : item.color) || '#cccccc';
+    // Keep the original (often subpixel) dimensions for fidelity — clamp lower bound at 1px each axis.
+    const lw = Math.max(1, Math.round(item.w));
+    const lh = Math.max(1, Math.round(item.h));
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = 'line';
+  r.fills = [{ fillColor: ${JSON.stringify(lineColor)} }];
+  r.strokes = [];
+  r.resize(${lw}, ${lh});
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  return { kind: 'line', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'svg') {
+    const label = 'svg: ' + (item.viewBox || '');
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(label.slice(0, 80))};
+  r.fills = [{ fillColor: '#f5f5f5' }];
+  r.strokes = [{ strokeColor: '#888888', strokeStyle: 'dashed', strokeAlignment: 'inner', strokeWidth: 1 }];
+  r.resize(${w}, ${h});
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  return { kind: 'svg', id: r.id };
 }`;
   }
 

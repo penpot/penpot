@@ -358,11 +358,10 @@ function renderReport({ services, canvas, dom, iframe }) {
   lines.push('Per-page diff (canvas vs live DOM):');
   lines.push('');
 
+  // Reason: boards may live under any Penpot page name (default "Page 1", but
+  // the user can rename). Match on the board's CONTAINING page by walking
+  // every page in the canvas result and picking whichever holds the target board.
   for (const page of PAGES) {
-    const c = canvas?.result?.[page.name === 'home' ? 'Page 1' : null]
-           || canvas?.result?.[page.name]
-           || null;
-    // The portfolio "home" page lives on Penpot's "Page 1" — match on board name too
     const boardCanvas = canvas?.result;
     let pageData = null;
     if (boardCanvas) {
@@ -370,7 +369,12 @@ function renderReport({ services, canvas, dom, iframe }) {
         const bc = boardCanvas[pname].boardChildren?.[page.name];
         if (bc) { pageData = { pageName: pname, ...boardCanvas[pname] }; break; }
       }
-      if (!pageData) pageData = c;
+      // Last-ditch fallbacks: page-name keyed (legacy), then first page.
+      if (!pageData) {
+        pageData = boardCanvas[page.name]
+                || boardCanvas[Object.keys(boardCanvas)[0]]
+                || null;
+      }
     }
 
     const d = dom[page.name];
