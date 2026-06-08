@@ -65,8 +65,9 @@ const BATCH_SIZE  = BATCH_IDX !== -1 ? Math.max(1, parseInt(args[BATCH_IDX + 1],
 const PRESERVE_IDX     = args.indexOf('--preserve-prefix');
 const PRESERVE_PREFIX  = PRESERVE_IDX !== -1 ? args[PRESERVE_IDX + 1] : 'preserve-';
 
-const LINK_COLOR = '#1057d6';
-const TEXT_COLOR = '#0a0a0a';
+const LINK_COLOR = '#b33a1a';
+const TEXT_COLOR = '#1a1a1a';
+const BOARD_BG   = '#faf8f3'; // Reason: portfolio uses var(--bg) = #FAF8F3 (warm cream), not pure white
 
 // ─── MCP plumbing ────────────────────────────────────────────────────────────
 
@@ -717,7 +718,7 @@ let screenshot = childrenBefore.find(fillImgFinder);
 
 board.resize(newW, newH);
 board.clipContent = true;
-board.fills = [{ fillColor: '#ffffff' }];
+board.fills = [{ fillColor: ${JSON.stringify(BOARD_BG)} }];
 
 // Resize the screenshot child to cover the new board (preserves backdrop intent).
 if (screenshot) {
