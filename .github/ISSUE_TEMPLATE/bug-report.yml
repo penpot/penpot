@@ -1,7 +1,10 @@
 description: Create a report to help us improve
-labels: ["bug"]
 name: Bug report
 title: "bug: "
+type: Bug
+labels: ["triage"]
+projects: ["penpot/8"]
+
 body:
   - type: markdown
     attributes:

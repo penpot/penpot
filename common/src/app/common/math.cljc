@@ -183,7 +183,7 @@
      :clj (Math/log10 x)))
 
 (defn clamp [num from to]
-  (if (< num from)
+  (if (or (nan? num) (< num from))
     from
     (if (> num to) to num)))
 

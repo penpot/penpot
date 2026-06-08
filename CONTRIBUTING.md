@@ -237,9 +237,8 @@ setting this up.
 
 ## Changelog
 
-When your change is user-facing or otherwise notable, add an entry to
-[CHANGES.md](CHANGES.md) following the same commit-type conventions. Reference
-the relevant GitHub issue or Taiga user story.
+The changelog is updated automatically as part of the release process. Contributors
+should **not** modify `CHANGES.md` manually in their pull requests.
 
 ## Code of Conduct
 
