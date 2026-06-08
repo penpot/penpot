@@ -5,12 +5,15 @@
  * Watches the portfolio's src/ directory and re-runs the screenshot pipeline
  * whenever files change.
  *
- * - Reads portfolio_dir + portfolio_local from portfolio-sync.config.json
- *   (next to this script) so the toolkit is portable across machines.
+ * - Reads portfolio_dir + portfolio_local + pipeline_mode from
+ *   portfolio-sync.config.json so the toolkit is portable across machines.
+ * - pipeline_mode = "live-dom" (default) → spawns build-live-dom-canvas.mjs;
+ *   editable text + hyperlinks land on the canvas.
+ * - pipeline_mode = "screenshot" → spawns screenshot-pipeline.mjs --base ...;
+ *   the prior behaviour, drops PNG rects on the canvas.
  * - Debounces 2s after the last change event.
  * - Health-checks the REPL (port 4403) and the dev server before triggering.
  * - Prevents parallel pipeline runs (queues one retry if busy).
- * - Spawns the pipeline as: node ./screenshot-pipeline.mjs --base <portfolio_local>
  *
  * Usage:
  *   node ./portfolio-watcher.mjs
@@ -25,7 +28,11 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = path.join(__dirname, 'portfolio-sync.config.json');
-const PIPELINE_SCRIPT = path.join(__dirname, 'screenshot-pipeline.mjs');
+
+const PIPELINE_CHOICES = {
+  'live-dom':   { path: path.join(__dirname, 'build-live-dom-canvas.mjs'), label: 'live-DOM canvas build' },
+  'screenshot': { path: path.join(__dirname, 'screenshot-pipeline.mjs'),    label: 'screenshot pipeline' },
+};
 
 function readConfig() {
   try {
@@ -40,6 +47,12 @@ const cfg = readConfig();
 const PORTFOLIO_DIR = cfg.portfolio_dir;
 const WATCH_DIR     = path.join(PORTFOLIO_DIR, 'src');
 const PORTFOLIO_URL = cfg.portfolio_local || 'http://localhost:4321';
+// Pipeline mode is overridable via config — defaults to live-dom so saves don't
+// replace editable shapes with flat screenshots. Set "pipeline_mode": "screenshot"
+// in the config to restore the prior PNG-import behaviour.
+const PIPELINE_MODE = cfg.pipeline_mode || 'live-dom';
+const PIPELINE = PIPELINE_CHOICES[PIPELINE_MODE] || PIPELINE_CHOICES['live-dom'];
+const PIPELINE_SCRIPT = PIPELINE.path;
 const REPL_URL      = 'http://localhost:4403/execute';
 const DEBOUNCE_MS   = 2_000;
 
@@ -127,14 +140,16 @@ async function runPipeline() {
     return;
   }
 
-  log('Spawning screenshot pipeline...');
+  log(`Spawning ${PIPELINE.label}...`);
   pipelineRunning = true;
 
-  const child = spawn(
-    process.execPath,
-    [PIPELINE_SCRIPT, '--base', PORTFOLIO_URL],
-    { stdio: 'inherit' }
-  );
+  // build-live-dom-canvas reads the portfolio URL from its own config and
+  // doesn't accept --base; screenshot-pipeline expects --base.
+  const args = PIPELINE_MODE === 'screenshot'
+    ? [PIPELINE_SCRIPT, '--base', PORTFOLIO_URL]
+    : [PIPELINE_SCRIPT];
+
+  const child = spawn(process.execPath, args, { stdio: 'inherit' });
 
   child.on('error', (err) => {
     log(`Pipeline spawn error: ${err.message}`);
@@ -194,7 +209,7 @@ function startWatcher() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 function main() {
-  log('Starting portfolio-watcher...');
+  log(`Starting portfolio-watcher (mode: ${PIPELINE_MODE})...`);
   startWatcher();
   log('Watcher active. Waiting for file changes...');
 }

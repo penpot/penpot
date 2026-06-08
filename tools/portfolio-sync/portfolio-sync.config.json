@@ -1,6 +1,7 @@
 {
   "portfolio_dir": "/Users/svaddadi/Documents/GitHub/websites/portfolio",
   "portfolio_local": "http://localhost:4321",
+  "pipeline_mode": "live-dom",
   "vercel_url": "",
   "vercel_webhook_secret": "",
   "github_webhook_secret": "",
