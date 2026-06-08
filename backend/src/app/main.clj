@@ -261,7 +261,8 @@
     ::oidc/providers     (ig/ref ::oidc/providers)
     ::session/manager    (ig/ref ::session/manager)
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+    :app.nitrate/client (ig/ref :app.nitrate/client)}
 
    ::mgmt/routes
    {::db/pool            (ig/ref ::db/pool)
