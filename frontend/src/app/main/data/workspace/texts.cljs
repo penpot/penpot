@@ -411,7 +411,7 @@
         (rx/concat
          (rx/of (dwsh/update-shapes shape-ids update-fn))
          (if (features/active-feature? state "render-wasm/v1")
-           (dwwt/resize-wasm-text-debounce id)
+           (rx/of (dwwt/resize-wasm-text-debounce id))
            (rx/empty)))))))
 
 (defn update-root-attrs
