@@ -97,6 +97,31 @@
                             (-> errors first :error/code)))))
                (done))))))))
 
+;; Regression: a composite typography token whose value is a plain
+;; array (e.g. ["Roboto"]) instead of a map must not crash with
+;; "No protocol method IMap.-dissoc defined for type object".
+;; It should return an invalid-token-value-typography error instead.
+(t/deftest resolve-tokens-typography-array-value-test
+  (t/async
+    done
+    (t/testing "typography token with array value produces error instead of crashing"
+      (let [tokens (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
+                                                          :name "core"))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "typography.bad"
+                                                         :value ["Roboto"]
+                                                         :type :typography}))
+                       (ctob/get-all-tokens-map))]
+        (-> (sd/resolve-tokens tokens)
+            (rx/sub!
+             (fn [resolved-tokens]
+               (t/is (contains? resolved-tokens "typography.bad"))
+               (t/is (nil? (get-in resolved-tokens ["typography.bad" :resolved-value])))
+               (t/is (= :error.style-dictionary/invalid-token-value-typography
+                        (get-in resolved-tokens ["typography.bad" :errors 0 :error/code])))
+               (done))))))))
+
 (t/deftest resolve-tokens-interactive-test
   (t/async
     done
