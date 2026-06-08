@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penpot Auto Login</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #1a1a2e;
+      color: #e0e0e0;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #7efff5;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      margin: 0 0 0.5rem;
+    }
+    p {
+      font-size: 0.9rem;
+      color: #999;
+      margin: 0;
+    }
+    .error {
+      color: #ff6b6b;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner" id="spinner"></div>
+    <h1 id="status">Logging in...</h1>
+    <p id="sub">Authenticating with Penpot</p>
+    <p class="error" id="error"></p>
+  </div>
+
+  <script>
+    const BASE = "http://localhost:9001";
+    const API  = BASE + "/api/rpc/command/";
+
+    // Plugin to auto-install
+    const LIVE_EMBED = {
+      "plugin-id":   "live-embed-portfolio-local",
+      "url":         BASE + "/plugins/live-embed/manifest.json",
+      "version":     1,
+      "name":        "Live Embed",
+      "description": "Overlays a live iframe of localhost:4321 on the design canvas",
+      "host":        BASE,
+      "code":        "plugin.js",
+      "icon":        "icon.svg",
+      "permissions": []
+    };
+
+    function sub(msg) { document.getElementById("sub").textContent = msg; }
+
+    async function rpc(cmd, body) {
+      const r = await fetch(API + cmd, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.message || "HTTP " + r.status); }
+      return r.json();
+    }
+
+    (async function autoLogin() {
+      try {
+        // 1. Login
+        sub("Authenticating…");
+        await rpc("login-with-password", { email: "vsaimahit@gmail.com", password: "penpot-local-2026" });
+
+        // 2. Fetch profile to get existing plugin registry
+        sub("Loading profile…");
+        const profile = await rpc("get-profile", {});
+        const existing = profile?.props?.plugins ?? { ids: [], data: {} };
+
+        // 3. Merge Live Embed plugin (idempotent — skip if already present)
+        const id = LIVE_EMBED["plugin-id"];
+        if (!existing.ids.includes(id)) {
+          sub("Installing Live Embed plugin…");
+          const merged = {
+            ids:  [...(existing.ids || []), id],
+            data: { ...(existing.data || {}), [id]: LIVE_EMBED }
+          };
+          await rpc("update-profile-props", { props: { plugins: merged } });
+        }
+
+        // 4. Done — redirect directly to Portfolio Design workspace with Live Embed open.
+        // Workspace URL format: BASE/?plugin=<url>#/workspace/<project-id>/<file-id>
+        // The ?plugin= query param is read on page load; the hash fragment routes to the workspace.
+        document.getElementById("status").textContent = "Ready";
+        sub("Opening workspace…");
+        const PLUGIN_URL  = encodeURIComponent(BASE + "/plugins/live-embed/manifest.json");
+        const PROJECT_ID  = "f5ffef08-67a8-8164-8008-1f71a25f3da4";
+        const FILE_ID     = "f5ffef08-67a8-8164-8008-1f720087cf79";
+        const WORKSPACE   = BASE + "/?plugin=" + PLUGIN_URL + "#/workspace/" + PROJECT_ID + "/" + FILE_ID;
+        setTimeout(() => { window.location.href = WORKSPACE; }, 600);
+
+      } catch (err) {
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("status").textContent = "Login failed";
+        sub("Could not authenticate automatically.");
+        document.getElementById("error").textContent =
+          "Error: " + err.message + ". Please log in manually at " + BASE;
+        console.error("Auto-login error:", err);
+      }
+    })();
+  </script>
+</body>
+</html>

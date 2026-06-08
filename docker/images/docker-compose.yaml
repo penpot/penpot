@@ -24,7 +24,7 @@
 # WARNING: if you're exposing Penpot to the internet, you should remove the flags
 # 'disable-secure-session-cookies' and 'disable-email-verification'
 x-flags: &penpot-flags
-  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp
+  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-demo-users
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
@@ -181,6 +181,17 @@ services:
   penpot-mcp:
     image: "penpotapp/mcp:${PENPOT_VERSION:-2.15}"
     restart: always
+    # Override the image CMD (which defaults to --multi-user).
+    # Single-user mode is correct for local dev: the REPL at :4403 works
+    # without tokens, and the screenshot pipeline can call it directly.
+    # Tokens from the browser plugin are still accepted when present.
+    command: ["node", "index.js"]
+    ports:
+      - "4401:4401"
+      - "4402:4402"
+      - "4403:4403"
+    environment:
+      PENPOT_MCP_SERVER_HOST: "0.0.0.0"
     networks:
       - penpot
 
