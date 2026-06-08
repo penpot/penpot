@@ -99,7 +99,63 @@ async function mcpExec(sid, code) {
     if (parsed?.result?.isError) throw new Error('MCP tool error: ' + JSON.stringify(parsed.result));
     throw new Error('MCP empty content: ' + JSON.stringify(parsed));
   }
+  // Penpot's MCP returns plugin errors as a "Tool execution failed: ..." string,
+  // not as isError true — surface it explicitly instead of silently parsing to {raw}.
+  if (/^Tool execution failed/.test(payload)) {
+    throw new Error(payload);
+  }
   try { return JSON.parse(payload); } catch { return { raw: payload }; }
+}
+
+// ─── Font registry (fetched once from Penpot at startup) ─────────────────────
+
+let FONT_INDEX = null;  // Map<lowercased-name, canonical-name>
+
+async function loadFontIndex(sid) {
+  const r = await mcpExec(sid, `return penpot.fonts.all.map(f => f.name);`);
+  const names = r?.result || [];
+  const map = new Map();
+  for (const n of names) map.set(n.toLowerCase(), n);
+  FONT_INDEX = map;
+  return names.length;
+}
+
+const FONT_MISSES = new Map();  // requested → { count, fallback }
+
+// Strip CSS variant suffixes that don't exist in Penpot's font names.
+function normalizeFontFamily(family) {
+  if (!family) return 'Work Sans';
+  let base = family.replace(/['"]/g, '').split(',')[0].trim();
+  // Common CSS-side suffixes that aren't part of the family name in Penpot.
+  base = base.replace(/\s+(Variable|VF|GX|Italic|Caps|Sub|Roman|Display|Text)$/i, '').trim();
+  // Drop CSS fallbacks that slip past split-on-comma when quoted (e.g. "Fraunces Variable, serif")
+  base = base.replace(/\s+(serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i, '').trim();
+  if (!base) return 'Work Sans';
+  if (!FONT_INDEX) return base;
+  const exact = FONT_INDEX.get(base.toLowerCase());
+  if (exact) return exact;
+  // Try progressively-shorter prefixes: "Fraunces Pro Variable" → "Fraunces Pro" → "Fraunces"
+  const tokens = base.split(/\s+/);
+  for (let i = tokens.length - 1; i >= 1; i--) {
+    const candidate = tokens.slice(0, i).join(' ');
+    const hit = FONT_INDEX.get(candidate.toLowerCase());
+    if (hit) return hit;
+  }
+  const miss = FONT_MISSES.get(base) || { count: 0, fallback: 'Work Sans' };
+  miss.count++;
+  FONT_MISSES.set(base, miss);
+  return 'Work Sans';
+}
+
+// Probe Google Fonts for a family — used after a build to tell the user which
+// missing families *could* be installed if they wanted higher fidelity.
+async function googleFontsHas(name) {
+  try {
+    const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}&display=swap`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5_000),
+                                  headers: { 'user-agent': 'Mozilla/5.0' } });
+    return r.ok;
+  } catch { return false; }
 }
 
 // Poll the active page name until it matches `want`, up to `maxMs`.
@@ -260,7 +316,7 @@ function chunk(arr, n) {
 function shapeJs(item, boardX, boardY) {
   const safeText  = (item.text || '').slice(0, 500);
   const textJson  = JSON.stringify(safeText);
-  const family    = (item.fontFamily || 'Work Sans').replace(/['"]/g, '').split(',')[0].trim();
+  const family    = normalizeFontFamily(item.fontFamily);
   const familyJs  = JSON.stringify(family || 'Work Sans');
   const weightMap = { normal: '400', bold: '700', bolder: '700', lighter: '300' };
   const weight    = String(weightMap[item.fontWeight] || item.fontWeight || '400').match(/\d+/)?.[0] || '400';
@@ -439,6 +495,10 @@ async function main() {
 
   const sid = await mcpInit();
 
+  // Load Penpot's font registry so we can match what the portfolio CSS declares.
+  const fontCount = await loadFontIndex(sid);
+  console.log(`Loaded ${fontCount} Penpot fonts`);
+
   // Ensure Page 1 is active (boards live there).
   await mcpExec(sid, `
 const p1 = penpot.currentFile.pages.find(p => p.name === 'Page 1');
@@ -479,6 +539,20 @@ return { switched: penpot.currentPage.name };
   }
 
   await browser.close();
+
+  if (FONT_MISSES.size > 0) {
+    console.log('');
+    console.log('Font misses (not in Penpot, fell back to Work Sans):');
+    for (const [name, info] of FONT_MISSES) {
+      const onGoogle = await googleFontsHas(name);
+      const hint = onGoogle
+        ? `  → on Google Fonts: install with the Penpot UI (Profile → Fonts → Upload) or download from https://fonts.google.com/specimen/${encodeURIComponent(name.replace(/\s+/g, '+'))}`
+        : `  → not on Google Fonts either`;
+      console.log(`  ${name.padEnd(28)} ${String(info.count).padStart(3)} uses`);
+      console.log(hint);
+    }
+  }
+
   console.log('');
   console.log(`Done in ${Date.now() - t0}ms.`);
 }
