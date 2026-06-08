@@ -97,6 +97,31 @@
       (swap! storage/session assoc
              :plugin-url plugin))))
 
+(defn- check-sso-and-navigate
+  "Authorization filter for dashboard and workspace routes.
+  Checks if the team being navigated to has an organization with SSO
+  active. If so, calls :auth-sso and either proceeds with navigation
+  or redirects to the SSO provider URL."
+  [match send-event-info? url]
+  (let [route-name     (name (get-in match [:data :name]))
+        relevant?      (and (contains? cf/flags :nitrate)
+                            (or (str/starts-with? route-name "dashboard")
+                                (str/starts-with? route-name "workspace")))
+        team-id-str    (when relevant?
+                         (or (get-in match [:query-params :team-id])
+                             (get-in match [:params :path :team-id])))
+        team-id        (some-> team-id-str uuid/parse*)]
+    (if (some? team-id)
+      (->> (rp/cmd! :auth-sso {:team-id team-id :url url})
+           (rx/subs!
+            (fn [{:keys [authorized auth-url]}]
+              (if authorized
+                (st/emit! (rt/navigated match send-event-info?))
+                (when auth-url (st/emit! (rt/nav-raw :uri (str auth-url))))))
+            (fn [cause]
+              (errors/on-error cause))))
+      (st/emit! (rt/navigated match send-event-info?)))))
+
 (defn on-navigate
   [router path send-event-info?]
   (let [location        (.-location js/document)
@@ -112,7 +137,7 @@
       (st/emit! (rt/assign-exception {:type :not-found}))
 
       (some? match)
-      (st/emit! (rt/navigated match send-event-info?))
+      (check-sso-and-navigate match send-event-info? (rt/get-current-href))
 
       :else
       ;; We just recheck with an additional profile request; this

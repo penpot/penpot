@@ -8,6 +8,7 @@
   "Nitrate API for Penpot. Provides nitrate-related endpoints to be called
    from Penpot frontend."
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -19,7 +20,9 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.notifications :as notifications]
+   [app.tokens :as tokens]
    [app.util.services :as sv]))
 
 
@@ -617,3 +620,36 @@
      :allows-anybody false}))
 
 
+(def ^:private schema:auth-sso
+  [:map {:title "AuthSsoParams"}
+   [:team-id ::sm/uuid]
+   [:url ::sm/uri]])
+
+(sv/defmethod ::auth-sso
+  "Check if a user needs to login into the organization SSO.
+  Returns {:authorized true} when SSO is not active for the team.
+  Returns {:authorized false :auth-url <url>} when SSO is active;
+  the client must redirect there. The OIDC provider itself handles
+  re-authentication transparently if the user already has an active SSO session."
+  {::rpc/auth true
+   ::doc/added "2.19"
+   ::sm/params schema:auth-sso}
+  [cfg {:keys [team-id url] :as params}]
+  (let [request                   (rph/get-request params)
+        {:keys [authorized sso]}  (nitrate/sso-session-authorized? cfg team-id request)]
+    (if authorized
+      {:authorized true}
+      (if-let [issuer (or (:issuer sso) (:base-url sso))]
+        (let [oidc-provider   (oidc/prepare-org-sso-provider cfg sso)
+              organization-id (:organization-id sso)
+              state-token     (tokens/generate cfg {:iss             "oidc"
+                                                    :dest-url        url
+                                                    :team-id         team-id
+                                                    :organization-id organization-id
+                                                    :issuer          issuer
+                                                    :exp             (ct/in-future "4h")})
+              auth-url        (oidc/build-auth-redirect-uri oidc-provider state-token)]
+          {:authorized false
+           :auth-url   auth-url})
+        {:authorized false
+         :auth-url   nil}))))
