@@ -71,7 +71,7 @@
                (de/export-shapes-event exports "viewer")))))
 
         shapes-key
-        (vec (sort (map :id shapes)))
+        (mf/use-memo (mf/deps shapes) #(vec (sort (map :id shapes))))
 
         add-export
         (mf/use-callback
@@ -151,10 +151,10 @@
              cached     (get @exports-cache-ref shapes-key)]
          (if (some? cached)
            (reset! exports cached)
-           (reset! exports (-> (mapv #(:exports % []) shapes)
-                               flatten
-                               distinct
-                               vec))))))
+           (reset! exports (->> shapes
+                                (mapcat #(:exports % []))
+                                (distinct)
+                                vec))))))
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable false
