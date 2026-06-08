@@ -36,6 +36,10 @@ plain GitHub page.
 # 1. From the repo root, bring up Penpot:
 ./tools/portfolio-sync/launch-all.sh penpot
 
+# 1.5. One-time: install Chromium for the Playwright in this repo's node_modules
+# (build-live-dom-canvas.mjs and diagnose-live-render.mjs need it):
+(cd ./tools/portfolio-sync && npx playwright install chromium)
+
 # 2. Point portfolio-sync at your site:
 $EDITOR ./tools/portfolio-sync/portfolio-sync.config.json
 # Set portfolio_dir + portfolio_local

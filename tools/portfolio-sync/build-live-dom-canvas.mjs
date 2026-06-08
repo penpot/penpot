@@ -56,6 +56,8 @@ const PAGE_PICK   = PAGE_IDX !== -1 ? args[PAGE_IDX + 1] : null;
 const PAGES       = PAGE_PICK ? ALL_PAGES.filter(p => p.name === PAGE_PICK) : ALL_PAGES;
 const BATCH_IDX   = args.indexOf('--batch');
 const BATCH_SIZE  = BATCH_IDX !== -1 ? Math.max(1, parseInt(args[BATCH_IDX + 1], 10)) : 24;
+const PRESERVE_IDX     = args.indexOf('--preserve-prefix');
+const PRESERVE_PREFIX  = PRESERVE_IDX !== -1 ? args[PRESERVE_IDX + 1] : 'preserve-';
 
 const LINK_COLOR = '#1057d6';
 const TEXT_COLOR = '#0a0a0a';
@@ -158,15 +160,16 @@ async function googleFontsHas(name) {
   } catch { return false; }
 }
 
-// Poll the active page name until it matches `want`, up to `maxMs`.
-async function waitForCurrentPage(sid, want, maxMs = 2000) {
+// Poll the active page name until it matches one of `wantNames`, up to `maxMs`.
+async function waitForCurrentPage(sid, wantNames, maxMs = 2000) {
+  const names = Array.isArray(wantNames) ? wantNames : [wantNames];
   const deadline = Date.now() + maxMs;
   while (Date.now() < deadline) {
     const r = await mcpExec(sid, `return penpot.currentPage.name;`);
-    if (r?.result === want) return;
+    if (names.includes(r?.result)) return r.result;
     await new Promise(res => setTimeout(res, 150));
   }
-  throw new Error(`currentPage did not become "${want}" within ${maxMs}ms`);
+  throw new Error(`currentPage did not become one of [${names.join(', ')}] within ${maxMs}ms`);
 }
 
 // ─── DOM extraction (browser context) ────────────────────────────────────────
@@ -391,14 +394,19 @@ function shapeJs(item, boardX, boardY) {
 
 // ─── Board preparation + shape creation ──────────────────────────────────────
 
-async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard) {
+async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard, preservePrefix) {
+  const preserveJs = JSON.stringify(preservePrefix || '');
   const code = `
 const cur = penpot.currentPage;
 let board = cur.findShapes({ name: ${JSON.stringify(boardName)} }).find(s => s.type === 'board');
 if (!board) {
+  // Reason: stack new boards side-by-side instead of piling them at (0,0).
+  const ROOT_ID = '00000000-0000-0000-0000-000000000000';
+  const topBoards = cur.findShapes().filter(s => s.type === 'board' && s.id !== ROOT_ID && s.parent && s.parent.id === ROOT_ID);
+  const nextX = topBoards.reduce((m, s) => Math.max(m, (s.x || 0) + (s.width || 0) + 120), 0);
   board = penpot.createBoard();
   board.name = ${JSON.stringify(boardName)};
-  board.x = 0; board.y = 0;
+  board.x = nextX; board.y = 0;
 }
 const boardX = board.x;
 const boardY = board.y;
@@ -439,8 +447,13 @@ for (const o of orphans) {
 
 // Wipe every other previously-generated child. Keep the screenshot (or remove it
 // entirely when --reset-board is set).
-const toRemove = (cur.findShapes().filter(s => s.parent && s.parent.id === board.id))
-  .filter(s => !screenshot || s.id !== screenshot.id);
+const preservePrefix = ${preserveJs};
+const boardChildren = cur.findShapes().filter(s => s.parent && s.parent.id === board.id);
+// Reason: --preserve-prefix lets users keep hand-added shapes across rebuilds.
+const preserved = boardChildren.filter(s => preservePrefix && s.name && s.name.startsWith(preservePrefix));
+const toRemove = boardChildren
+  .filter(s => !screenshot || s.id !== screenshot.id)
+  .filter(s => !(preservePrefix && s.name && s.name.startsWith(preservePrefix)));
 let removed = 0;
 for (const c of toRemove) { c.remove(); removed++; }
 if (${resetBoard ? 'true' : 'false'} && screenshot) { screenshot.remove(); screenshot = null; removed++; }
@@ -457,6 +470,7 @@ return {
   w: board.width, h: board.height,
   screenshot: screenshot ? { id: screenshot.id, name: screenshot.name } : null,
   removed,
+  preserved: preserved.length,
 };
 `;
   return mcpExec(sid, code);
@@ -499,13 +513,18 @@ async function main() {
   const fontCount = await loadFontIndex(sid);
   console.log(`Loaded ${fontCount} Penpot fonts`);
 
-  // Ensure Page 1 is active (boards live there).
-  await mcpExec(sid, `
-const p1 = penpot.currentFile.pages.find(p => p.name === 'Page 1');
-if (p1 && penpot.currentPage.id !== p1.id) penpot.openPage(p1);
-return { switched: penpot.currentPage.name };
+  // Ensure Page 1 (or the first page if no page is literally named "Page 1") is active.
+  const pageSwitch = await mcpExec(sid, `
+const named = penpot.currentFile.pages.find(p => p.name === 'Page 1');
+const target = named || penpot.currentFile.pages[0];
+if (target && penpot.currentPage.id !== target.id) penpot.openPage(target);
+return { switched: penpot.currentPage.name, fallback: !named && target ? target.name : null };
 `);
-  await waitForCurrentPage(sid, 'Page 1');
+  const targetPageName = pageSwitch?.result?.switched;
+  if (pageSwitch?.result?.fallback) {
+    console.log(`WARN: no page named "Page 1" — using "${pageSwitch.result.fallback}" instead`);
+  }
+  await waitForCurrentPage(sid, [targetPageName, 'Page 1']);
 
   console.log('Launching headless Chromium...');
   const browser = await chromium.launch({ headless: true });
@@ -526,10 +545,10 @@ return { switched: penpot.currentPage.name };
     const breakdown = h.items.reduce((a, it) => (a[it.kind] = (a[it.kind] || 0) + 1, a), {});
     console.log(`  kinds: ${Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 
-    const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD);
+    const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD, PRESERVE_PREFIX);
     if (!prep?.result) { console.log(`  prepareBoard failed: ${JSON.stringify(prep)}`); continue; }
-    const { boardId, boardX, boardY, removed, screenshot } = prep.result;
-    console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; backdrop=${screenshot ? screenshot.name : 'none'})`);
+    const { boardId, boardX, boardY, removed, preserved, screenshot } = prep.result;
+    console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0}; backdrop=${screenshot ? screenshot.name : 'none'})`);
 
     const batches = await createShapesInBatches(sid, boardId, boardX, boardY, h.items, BATCH_SIZE);
     const totalCreated = batches.reduce((a, b) => a + (b?.result?.created || 0), 0);

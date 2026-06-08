@@ -80,10 +80,10 @@ function run(cmd, args) {
 }
 
 async function countBoardChildren(sid) {
-  // Count children under each board on Page 1
+  // Count children under each board on Page 1 (or the first page if none is literally named "Page 1").
   const r = await mcpExec(sid, `
-const cur = penpot.currentFile.pages.find(p => p.name === 'Page 1');
-if (!cur) return { error: 'no Page 1' };
+const cur = penpot.currentFile.pages.find(p => p.name === 'Page 1') || penpot.currentFile.pages[0];
+if (!cur) return { error: 'no pages in file' };
 const shapes = cur.findShapes();
 const boards = shapes.filter(s => s.type === 'board' && s.id !== '00000000-0000-0000-0000-000000000000');
 const out = {};
