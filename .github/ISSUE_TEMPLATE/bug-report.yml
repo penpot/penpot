@@ -3,7 +3,6 @@ name: Bug report
 title: "bug: "
 type: Bug
 labels: ["needs triage"]
-projects: ["penpot/8"]
 
 body:
   - type: markdown
