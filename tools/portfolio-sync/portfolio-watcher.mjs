@@ -55,6 +55,10 @@ const PIPELINE = PIPELINE_CHOICES[PIPELINE_MODE] || PIPELINE_CHOICES['live-dom']
 const PIPELINE_SCRIPT = PIPELINE.path;
 const REPL_URL      = 'http://localhost:4403/execute';
 const DEBOUNCE_MS   = 2_000;
+// Re-render the static HTML preview after each successful build so the canvas
+// view at http://localhost:<html_render_port> stays current. Gated by config.
+const HTML_RENDER_AUTO   = cfg.html_render_auto !== false; // default true
+const HTML_RENDER_SCRIPT = path.join(__dirname, 'canvas-to-html.mjs');
 
 // Files / names to ignore
 const SKIP_NAMES  = new Set(['.DS_Store']);
@@ -158,6 +162,18 @@ async function runPipeline() {
   child.on('close', (code) => {
     pipelineRunning = false;
     log(`Pipeline exited with code ${code}.`);
+
+    // Refresh the static HTML render so http://localhost:<html_render_port>
+    // matches the canvas after a successful build. The render server itself
+    // re-reads on every request, so this is best-effort: a fresh /tmp/...html
+    // is useful for anyone hitting the file directly.
+    if (code === 0 && HTML_RENDER_AUTO) {
+      const htmlChild = spawn(process.execPath, [HTML_RENDER_SCRIPT], { stdio: 'ignore' });
+      htmlChild.on('error', (err) => log(`HTML render spawn error: ${err.message}`));
+      htmlChild.on('close', (hc) => {
+        if (hc !== 0) log(`HTML render exited with code ${hc}.`);
+      });
+    }
 
     if (retryQueued) {
       retryQueued = false;

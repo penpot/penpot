@@ -8,8 +8,9 @@
 #   watcher       — start portfolio-watcher (re-runs pipeline on file changes)
 #   webhook       — start webhook-server (Vercel + GitHub push triggers)
 #   live-preview  — serve the live-preview Penpot plugin iframe on :9005
+#   html-render   — serve the canvas-as-HTML preview on :9006
 #   screenshots   — one-shot run of the screenshot pipeline
-#   sync          — bridge + watcher + webhook + live-preview (all background services)
+#   sync          — bridge + watcher + webhook + live-preview + html-render (all background services)
 #   stop-sync     — kill the background services started by 'sync'
 #   all           — penpot
 #
@@ -90,16 +91,28 @@ case "$TARGET" in
       echo "  Started PID $(cat /tmp/live-preview.pid) — log: /tmp/live-preview.log"
     fi
     ;;
+  html-render)
+    echo ""
+    echo "━━━ Canvas-to-HTML Render Server (port 9006, background) ━━"
+    if lsof -nP -iTCP:9006 -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "  Already listening on :9006 — leaving it alone."
+    else
+      nohup node "$SCRIPTS_DIR/canvas-to-html.mjs" --serve >> /tmp/canvas-to-html.log 2>&1 </dev/null & disown
+      echo $! > /tmp/canvas-to-html.pid
+      echo "  Started PID $(cat /tmp/canvas-to-html.pid) — log: /tmp/canvas-to-html.log"
+    fi
+    ;;
   sync)
     "$0" bridge
     "$0" watcher
     "$0" webhook
     "$0" live-preview
+    "$0" html-render
     ;;
   stop-sync)
     echo ""
     echo "━━━ Stopping sync services ━━━━━━━━━━━━━━━━━━━━━━━━━"
-    for pidfile in /tmp/penpot-bridge.pid /tmp/portfolio-watcher.pid /tmp/webhook-server.pid /tmp/live-preview.pid; do
+    for pidfile in /tmp/penpot-bridge.pid /tmp/portfolio-watcher.pid /tmp/webhook-server.pid /tmp/live-preview.pid /tmp/canvas-to-html.pid; do
       if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
         if [[ -z "$pid" || ! "$pid" =~ ^[0-9]+$ ]]; then
@@ -119,7 +132,7 @@ case "$TARGET" in
   all)          start_penpot ;;
   *)
     echo "Unknown target: $TARGET"
-    echo "Usage: $0 [penpot|portfolio|bridge|watcher|webhook|sync|stop-sync|screenshots|all]"
+    echo "Usage: $0 [penpot|portfolio|bridge|watcher|webhook|live-preview|html-render|sync|stop-sync|screenshots|all]"
     exit 1
     ;;
 esac
@@ -129,6 +142,7 @@ echo "━━━ Status ━━━━━━━━━━━━━━━━━━━
 echo "  Penpot         → http://localhost:9001"
 echo "  Portfolio      → http://localhost:4321"
 echo "  Bridge status  → http://localhost:9002/"
+echo "  HTML render    → http://localhost:9006/"
 echo "  Webhook        → http://localhost:9090/status"
 echo "  Tunnel (opt)   → cloudflared tunnel --url http://localhost:9090"
 echo ""

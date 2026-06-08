@@ -6,6 +6,8 @@
   "vercel_webhook_secret": "",
   "github_webhook_secret": "",
   "webhook_port": 9090,
+  "html_render_port": 9006,
+  "html_render_auto": true,
   "pages": [
     {"name": "home", "path": "/"},
     {"name": "consulting", "path": "/consulting"},
