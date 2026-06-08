@@ -2,15 +2,16 @@
 # launch-all.sh — Start the portfolio↔Penpot sync stack.
 #
 # Targets:
-#   penpot       — bring up Penpot Docker (delegates to penpot-launch.sh)
-#   portfolio    — start the portfolio dev server (Astro)
-#   bridge       — start penpot-bridge (headless Playwright keeps MCP REPL alive)
-#   watcher      — start portfolio-watcher (re-runs pipeline on file changes)
-#   webhook      — start webhook-server (Vercel + GitHub push triggers)
-#   screenshots  — one-shot run of the screenshot pipeline
-#   sync         — bridge + watcher + webhook (all background services)
-#   stop-sync    — kill the three background services started by 'sync'
-#   all          — penpot
+#   penpot        — bring up Penpot Docker (delegates to penpot-launch.sh)
+#   portfolio     — start the portfolio dev server (Astro)
+#   bridge        — start penpot-bridge (headless Playwright keeps MCP REPL alive)
+#   watcher       — start portfolio-watcher (re-runs pipeline on file changes)
+#   webhook       — start webhook-server (Vercel + GitHub push triggers)
+#   live-preview  — serve the live-preview Penpot plugin iframe on :9005
+#   screenshots   — one-shot run of the screenshot pipeline
+#   sync          — bridge + watcher + webhook + live-preview (all background services)
+#   stop-sync     — kill the background services started by 'sync'
+#   all           — penpot
 #
 # Usage:
 #   ./launch-all.sh [target]
@@ -78,15 +79,27 @@ case "$TARGET" in
     echo $! > /tmp/webhook-server.pid
     echo "  Started PID $(cat /tmp/webhook-server.pid) — log: /tmp/webhook-server.log"
     ;;
+  live-preview)
+    echo ""
+    echo "━━━ Live Preview Plugin Server (port 9005, background) ━━"
+    if lsof -nP -iTCP:9005 -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "  Already listening on :9005 — leaving it alone."
+    else
+      nohup node "$SCRIPTS_DIR/live-preview-server.mjs" >> /tmp/live-preview.log 2>&1 </dev/null & disown
+      echo $! > /tmp/live-preview.pid
+      echo "  Started PID $(cat /tmp/live-preview.pid) — log: /tmp/live-preview.log"
+    fi
+    ;;
   sync)
     "$0" bridge
     "$0" watcher
     "$0" webhook
+    "$0" live-preview
     ;;
   stop-sync)
     echo ""
     echo "━━━ Stopping sync services ━━━━━━━━━━━━━━━━━━━━━━━━━"
-    for pidfile in /tmp/penpot-bridge.pid /tmp/portfolio-watcher.pid /tmp/webhook-server.pid; do
+    for pidfile in /tmp/penpot-bridge.pid /tmp/portfolio-watcher.pid /tmp/webhook-server.pid /tmp/live-preview.pid; do
       if [ -f "$pidfile" ]; then
         pid=$(cat "$pidfile")
         if kill "$pid" 2>/dev/null; then

@@ -1,0 +1,486 @@
+#!/usr/bin/env node
+/**
+ * build-live-dom-canvas.mjs
+ *
+ * Replace each board's flat screenshot with editable Penpot shapes derived from
+ * the live DOM of the portfolio. After running this, diagnose-live-render.mjs
+ * should report each board as LIVE-ISH rather than SCREENSHOT.
+ *
+ * Pipeline per page:
+ *
+ *   1. Playwright loads {portfolio_local}/<path> at 1440 width and walks
+ *      visible semantic elements (headings, paragraphs, list items, anchors,
+ *      buttons, controls, images) capturing text, bbox, computed font props
+ *      and colour. Pages are harvested in parallel.
+ *
+ *   2. The matching Penpot board is grown to the document height, the existing
+ *      screenshot child is reparented + resized to the new board frame and
+ *      faded so the layout still hints behind the text, and every other prior
+ *      generated child is wiped. Idempotent across reruns.
+ *
+ *   3. Each captured element becomes a penpot.createText (or createRectangle
+ *      for non-text controls). Hyperlinks get a link colour, an underline,
+ *      and the href stored in the shape name ("link: /consulting").
+ *
+ * Flags:
+ *   --page <name>    only build one of {home,consulting,blog}
+ *   --reset-board    drop the screenshot backdrop too (true clean slate)
+ *   --batch <n>      override batch size (default 24)
+ */
+
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname   = path.dirname(fileURLToPath(import.meta.url));
+const CONFIG_PATH = path.join(__dirname, 'portfolio-sync.config.json');
+
+function readConfig() {
+  try { return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch { return {}; }
+}
+
+const cfg            = readConfig();
+const PORTFOLIO_URL  = cfg.portfolio_local || 'http://localhost:4321';
+const MCP_URL        = 'http://localhost:4401/mcp';
+const ALL_PAGES      = cfg.pages || [
+  { name: 'home', path: '/' },
+  { name: 'consulting', path: '/consulting' },
+  { name: 'blog', path: '/blog' },
+];
+
+const args        = process.argv.slice(2);
+const RESET_BOARD = args.includes('--reset-board');
+const PAGE_IDX    = args.indexOf('--page');
+const PAGE_PICK   = PAGE_IDX !== -1 ? args[PAGE_IDX + 1] : null;
+const PAGES       = PAGE_PICK ? ALL_PAGES.filter(p => p.name === PAGE_PICK) : ALL_PAGES;
+const BATCH_IDX   = args.indexOf('--batch');
+const BATCH_SIZE  = BATCH_IDX !== -1 ? Math.max(1, parseInt(args[BATCH_IDX + 1], 10)) : 24;
+
+const LINK_COLOR = '#1057d6';
+const TEXT_COLOR = '#0a0a0a';
+
+// ─── MCP plumbing ────────────────────────────────────────────────────────────
+
+async function mcpInit() {
+  const res = await fetch(MCP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream' },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: 1, method: 'initialize',
+      params: { protocolVersion: '2024-11-05', capabilities: {},
+                clientInfo: { name: 'build-live-dom-canvas', version: '2.0' } },
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`MCP init failed: ${res.status}`);
+  const sid = res.headers.get('mcp-session-id') || res.headers.get('Mcp-Session-Id');
+  await res.text();
+  if (!sid) throw new Error('no MCP session id');
+  return sid;
+}
+
+async function mcpExec(sid, code) {
+  const res = await fetch(MCP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream', 'mcp-session-id': sid },
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: 2, method: 'tools/call',
+      params: { name: 'execute_code', arguments: { code } },
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  const text = await res.text();
+  const line = text.split('\n').find(l => l.startsWith('data: '));
+  if (!line) throw new Error('MCP empty data frame');
+  const parsed = JSON.parse(line.slice(6));
+  const payload = parsed?.result?.content?.[0]?.text;
+  if (!payload) {
+    if (parsed?.result?.isError) throw new Error('MCP tool error: ' + JSON.stringify(parsed.result));
+    throw new Error('MCP empty content: ' + JSON.stringify(parsed));
+  }
+  try { return JSON.parse(payload); } catch { return { raw: payload }; }
+}
+
+// Poll the active page name until it matches `want`, up to `maxMs`.
+async function waitForCurrentPage(sid, want, maxMs = 2000) {
+  const deadline = Date.now() + maxMs;
+  while (Date.now() < deadline) {
+    const r = await mcpExec(sid, `return penpot.currentPage.name;`);
+    if (r?.result === want) return;
+    await new Promise(res => setTimeout(res, 150));
+  }
+  throw new Error(`currentPage did not become "${want}" within ${maxMs}ms`);
+}
+
+// ─── DOM extraction (browser context) ────────────────────────────────────────
+
+const DOM_HARVEST_FN = () => {
+  const root = document.body;
+  const SELECTOR_BLOCK   = 'h1,h2,h3,h4,h5,h6,p,li,blockquote,dd,dt,td,th,figcaption';
+  const SELECTOR_CONTROL = 'input,textarea,select';
+
+  const isVisible = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return false;
+    const s = window.getComputedStyle(el);
+    if (s.visibility === 'hidden' || s.display === 'none') return false;
+    if (parseFloat(s.opacity) === 0) return false;
+    return true;
+  };
+
+  const captureText = (el, kind, extra = {}) => {
+    const r = el.getBoundingClientRect();
+    const s = window.getComputedStyle(el);
+    // textContent is cheap; reserve innerText for capture, not the visibility precheck
+    const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!text && kind !== 'control' && kind !== 'image') return null;
+    return {
+      kind,
+      text: text.slice(0, 500),
+      tag: el.tagName.toLowerCase(),
+      x: r.left + window.scrollX,
+      y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+      fontSize:   parseFloat(s.fontSize) || 16,
+      fontWeight: s.fontWeight || '400',
+      fontFamily: s.fontFamily || 'system-ui',
+      lineHeight: s.lineHeight,
+      color:      s.color || '',
+      textAlign:  s.textAlign || 'left',
+      ...extra,
+    };
+  };
+
+  const out = [];
+
+  for (const el of root.querySelectorAll(SELECTOR_BLOCK)) {
+    if (!isVisible(el)) continue;
+    if (!(el.textContent || '').trim()) continue;
+    out.push(captureText(el, /^h[1-6]$/.test(el.tagName.toLowerCase()) ? 'heading' : 'paragraph'));
+  }
+
+  for (const el of root.querySelectorAll('a[href]')) {
+    if (!isVisible(el)) continue;
+    const href = el.getAttribute('href') || '';
+    out.push(captureText(el, 'link', {
+      href,
+      external: /^https?:\/\//.test(href),
+      target: el.getAttribute('target') || '',
+    }));
+  }
+
+  for (const el of root.querySelectorAll('button')) {
+    if (!isVisible(el)) continue;
+    const c = captureText(el, 'button');
+    if (c) out.push(c);
+  }
+
+  for (const el of root.querySelectorAll(SELECTOR_CONTROL)) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    const s = window.getComputedStyle(el);
+    out.push({
+      kind: 'control',
+      text: el.getAttribute('placeholder') || el.getAttribute('aria-label') || el.tagName.toLowerCase(),
+      tag: el.tagName.toLowerCase(),
+      x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height,
+      fontSize: parseFloat(s.fontSize) || 14, fontWeight: '400', fontFamily: 'system-ui',
+      color: s.color || '#1a1a1a',
+    });
+  }
+
+  for (const el of root.querySelectorAll('img')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    out.push({
+      kind: 'image', text: '', tag: 'img',
+      src: el.getAttribute('src') || '',
+      alt: el.getAttribute('alt') || '',
+      x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height,
+    });
+  }
+
+  const seen = new Set();
+  const deduped = [];
+  for (const item of out) {
+    if (!item) continue;
+    const key = `${item.kind}:${Math.round(item.x)}:${Math.round(item.y)}:${item.text.slice(0, 40)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+
+  return {
+    docWidth:  document.documentElement.scrollWidth,
+    docHeight: document.documentElement.scrollHeight,
+    items: deduped,
+  };
+};
+
+// ─── Page harvest (Node side) ────────────────────────────────────────────────
+
+async function harvestPage(ctx, page) {
+  const tab = await ctx.newPage();
+  const url = `${PORTFOLIO_URL}${page.path}`;
+  await tab.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+  await tab.waitForTimeout(800);
+  const harvest = await tab.evaluate(DOM_HARVEST_FN);
+  await tab.close();
+  return { ...harvest, page };
+}
+
+// ─── Colour helpers ──────────────────────────────────────────────────────────
+
+function rgbToHex(rgb) {
+  const m = (rgb || '').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?/);
+  if (!m) return null;
+  // Treat fully transparent as "no colour" so the caller falls back to default.
+  if (m[4] !== undefined && parseFloat(m[4]) === 0) return null;
+  return '#' + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, '0')).join('');
+}
+
+function resolveColor(item, isLink) {
+  if (isLink) return LINK_COLOR;
+  const raw = item.color || '';
+  const fromRgb = /^rgb/.test(raw) ? rgbToHex(raw) : (raw || null);
+  return fromRgb || TEXT_COLOR;
+}
+
+// ─── shape JS generation ─────────────────────────────────────────────────────
+// Coordinates are pre-translated into board-local space at template-build time
+// — no runtime `boardX/boardY` needed by the emitted snippet.
+
+function chunk(arr, n) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
+
+function shapeJs(item, boardX, boardY) {
+  const safeText  = (item.text || '').slice(0, 500);
+  const textJson  = JSON.stringify(safeText);
+  const family    = (item.fontFamily || 'Work Sans').replace(/['"]/g, '').split(',')[0].trim();
+  const familyJs  = JSON.stringify(family || 'Work Sans');
+  const weightMap = { normal: '400', bold: '700', bolder: '700', lighter: '300' };
+  const weight    = String(weightMap[item.fontWeight] || item.fontWeight || '400').match(/\d+/)?.[0] || '400';
+  const fontSize  = Math.max(8, Math.round(item.fontSize || 16));
+  const w         = Math.max(8, Math.round(item.w));
+  const h         = Math.max(8, Math.round(item.h));
+  const x         = Math.round(item.x) - boardX;
+  const y         = Math.round(item.y) - boardY;
+
+  if (item.kind === 'control') {
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify('control: ' + item.tag)};
+  r.resize(${w}, ${h});
+  r.fills = [{ fillColor: '#ffffff' }];
+  r.strokes = [{ strokeColor: '#cccccc', strokeStyle: 'solid', strokeAlignment: 'inner', strokeWidth: 1 }];
+  r.borderRadius = 4;
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  const t = penpot.createText(${textJson});
+  t.fontFamily = ${familyJs};
+  t.fontSize = '${fontSize}';
+  t.fontWeight = '400';
+  t.fills = [{ fillColor: '#888888' }];
+  t.growType = 'auto-height';
+  t.resize(${Math.max(8, w - 16)}, ${Math.max(16, fontSize + 4)});
+  board.appendChild(t);
+  t.x = ${x + 8}; t.y = ${y + 4};
+  return { kind: 'control', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'image') {
+    const label = 'img: ' + ((item.alt || item.src || '').slice(0, 80));
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(label)};
+  r.fills = [{ fillColor: '#eeeeee' }];
+  r.strokes = [{ strokeColor: '#cccccc', strokeStyle: 'dashed', strokeAlignment: 'inner', strokeWidth: 1 }];
+  r.resize(${w}, ${h});
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  return { kind: 'image', id: r.id };
+}`;
+  }
+
+  // Text-like
+  const isLink     = item.kind === 'link';
+  const color      = resolveColor(item, isLink);
+  const namePrefix = isLink ? `link: ${item.href || ''}` : item.kind;
+  const initialH   = Math.max(h, fontSize + 4);
+
+  return `
+{
+  const t = penpot.createText(${textJson});
+  t.fontFamily = ${familyJs};
+  t.fontSize = '${fontSize}';
+  t.fontWeight = '${weight}';
+  t.fills = [{ fillColor: ${JSON.stringify(color)} }];
+  t.growType = 'auto-height';
+  t.resize(${w}, ${initialH});
+  ${isLink ? `t.textDecoration = 'underline';` : ''}
+  t.name = ${JSON.stringify(namePrefix.slice(0, 120))};
+  board.appendChild(t);
+  t.x = ${x};
+  t.y = ${y};
+  return { kind: ${JSON.stringify(item.kind)}, id: t.id };
+}`;
+}
+
+// ─── Board preparation + shape creation ──────────────────────────────────────
+
+async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard) {
+  const code = `
+const cur = penpot.currentPage;
+let board = cur.findShapes({ name: ${JSON.stringify(boardName)} }).find(s => s.type === 'board');
+if (!board) {
+  board = penpot.createBoard();
+  board.name = ${JSON.stringify(boardName)};
+  board.x = 0; board.y = 0;
+}
+const boardX = board.x;
+const boardY = board.y;
+const newW = Math.max(800, Math.round(${docWidth}));
+const newH = Math.max(600, Math.round(${docHeight}));
+
+// Capture children BEFORE resize — geometry needs to be remembered relative to
+// the pre-resize board so we can reposition the screenshot correctly.
+const childrenBefore = cur.findShapes().filter(s => s.parent && s.parent.id === board.id);
+const fillImgFinder = s => s.type === 'rectangle' && s.fills && s.fills.some(f => f && (f.fillImage || f.fillImageUrl || f.fillImageData));
+let screenshot = childrenBefore.find(fillImgFinder);
+
+board.resize(newW, newH);
+board.clipContent = true;
+board.fills = [{ fillColor: '#ffffff' }];
+
+// Resize the screenshot child to cover the new board (preserves backdrop intent).
+if (screenshot) {
+  screenshot.resize(newW, newH);
+  screenshot.x = 0; screenshot.y = 0;
+}
+
+// Adopt any top-level orphaned fill-image rect that looks like our screenshot.
+// Match by fillImage presence + parent==root, not by literal "<name>.png" name.
+const orphans = cur.findShapes()
+  .filter(s => s.parent && s.parent.id === '00000000-0000-0000-0000-000000000000')
+  .filter(s => fillImgFinder(s));
+for (const o of orphans) {
+  if (!screenshot) {
+    board.appendChild(o);
+    o.resize(newW, newH);
+    o.x = 0; o.y = 0;
+    screenshot = o;
+  } else {
+    o.remove();
+  }
+}
+
+// Wipe every other previously-generated child. Keep the screenshot (or remove it
+// entirely when --reset-board is set).
+const toRemove = (cur.findShapes().filter(s => s.parent && s.parent.id === board.id))
+  .filter(s => !screenshot || s.id !== screenshot.id);
+let removed = 0;
+for (const c of toRemove) { c.remove(); removed++; }
+if (${resetBoard ? 'true' : 'false'} && screenshot) { screenshot.remove(); screenshot = null; removed++; }
+
+// Fade the screenshot so the live shapes read on top.
+if (screenshot) {
+  screenshot.opacity = 0.08;
+  screenshot.name = 'screenshot-backdrop';
+}
+
+return {
+  boardId: board.id,
+  boardX, boardY,
+  w: board.width, h: board.height,
+  screenshot: screenshot ? { id: screenshot.id, name: screenshot.name } : null,
+  removed,
+};
+`;
+  return mcpExec(sid, code);
+}
+
+async function createShapesInBatches(sid, boardId, boardX, boardY, items, batchSize) {
+  const batches = chunk(items, batchSize);
+  const results = [];
+  for (const batch of batches) {
+    const body = batch.map(item => `out.push((() => ${shapeJs(item, boardX, boardY)})());`).join('\n');
+    const code = `
+const cur = penpot.currentPage;
+const board = cur.findShapes().find(s => s.id === ${JSON.stringify(boardId)});
+if (!board) return { error: 'board not found' };
+const out = [];
+${body}
+return { created: out.length, kinds: out.map(o => o && o.kind) };
+`;
+    try {
+      results.push(await mcpExec(sid, code));
+    } catch (e) {
+      results.push({ error: e.message, batchSize: batch.length });
+    }
+  }
+  return results;
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+async function main() {
+  const t0 = Date.now();
+  console.log(`portfolio_local = ${PORTFOLIO_URL}`);
+  console.log(`pages           = ${PAGES.map(p => p.name).join(', ')}`);
+  console.log(`batch size      = ${BATCH_SIZE}${RESET_BOARD ? '   (reset-board)' : ''}`);
+  console.log('');
+
+  const sid = await mcpInit();
+
+  // Ensure Page 1 is active (boards live there).
+  await mcpExec(sid, `
+const p1 = penpot.currentFile.pages.find(p => p.name === 'Page 1');
+if (p1 && penpot.currentPage.id !== p1.id) penpot.openPage(p1);
+return { switched: penpot.currentPage.name };
+`);
+  await waitForCurrentPage(sid, 'Page 1');
+
+  console.log('Launching headless Chromium...');
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+
+  // Parallel DOM harvest — pages are read-only against the dev server.
+  const tH0 = Date.now();
+  const harvests = await Promise.all(PAGES.map(p => harvestPage(ctx, p)));
+  console.log(`Harvested ${harvests.length} pages in ${Date.now() - tH0}ms`);
+  console.log('');
+
+  // Sequential Penpot writes — MCP plugin is single-threaded.
+  for (const h of harvests) {
+    const page = h.page;
+    const pT0 = Date.now();
+    console.log(`── ${page.name} ──────────────────────────────────────────`);
+    console.log(`  DOM: ${h.docWidth}x${h.docHeight}, ${h.items.length} items`);
+    const breakdown = h.items.reduce((a, it) => (a[it.kind] = (a[it.kind] || 0) + 1, a), {});
+    console.log(`  kinds: ${Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(' ')}`);
+
+    const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD);
+    if (!prep?.result) { console.log(`  prepareBoard failed: ${JSON.stringify(prep)}`); continue; }
+    const { boardId, boardX, boardY, removed, screenshot } = prep.result;
+    console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; backdrop=${screenshot ? screenshot.name : 'none'})`);
+
+    const batches = await createShapesInBatches(sid, boardId, boardX, boardY, h.items, BATCH_SIZE);
+    const totalCreated = batches.reduce((a, b) => a + (b?.result?.created || 0), 0);
+    const errors = batches.filter(b => b?.error || b?.result?.error);
+    console.log(`  created: ${totalCreated} shapes in ${batches.length} batches (${errors.length} errors)  [${Date.now() - pT0}ms]`);
+    for (const e of errors.slice(0, 2)) console.log(`    err: ${JSON.stringify(e).slice(0, 240)}`);
+  }
+
+  await browser.close();
+  console.log('');
+  console.log(`Done in ${Date.now() - t0}ms.`);
+}
+
+main().catch(err => { console.error('build-live-dom-canvas error:', err.message); process.exit(1); });
