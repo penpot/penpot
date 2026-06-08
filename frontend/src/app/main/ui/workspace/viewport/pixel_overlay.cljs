@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.config :as cfg]
@@ -89,10 +90,10 @@
         (when (and (>= x 0) (< x img-width) (>= y 0) (< y img-height))
           (let [offset (* (+ (* y img-width) x) 4)
                 rgba   (unchecked-get image-data "data")
-                r      (obj/get rgba (+ 0 offset))
-                g      (obj/get rgba (+ 1 offset))
-                b      (obj/get rgba (+ 2 offset))
-                a      (obj/get rgba (+ 3 offset))
+                r      (d/check-num (obj/get rgba (+ 0 offset)) 255)
+                g      (d/check-num (obj/get rgba (+ 1 offset)) 255)
+                b      (d/check-num (obj/get rgba (+ 2 offset)) 255)
+                a      (d/check-num (obj/get rgba (+ 3 offset)) 255)
                 color  [r g b a]]
             ;; Store latest color synchronously so the click handler always reads
             ;; the correct pixel even before the rAF fires (fixes race condition)
@@ -289,13 +290,13 @@
         ;; Only pick color when cursor is within canvas bounds to avoid garbage pixels
         (when (and (>= canvas-x 0) (< canvas-x img-width) (>= canvas-y 0) (< canvas-y img-height))
           (let [;; image-data pixels start from the bottom-left corner; invert y accordingly
-                inverted-y (- img-height canvas-y)
+                inverted-y (- img-height canvas-y 1)
                 offset     (* (+ (* inverted-y img-width) canvas-x) 4)
                 rgba       (.-data image-data)
-                r          (obj/get rgba (+ 0 offset))
-                g          (obj/get rgba (+ 1 offset))
-                b          (obj/get rgba (+ 2 offset))
-                a          (obj/get rgba (+ 3 offset))
+                r          (d/check-num (obj/get rgba (+ 0 offset)) 255)
+                g          (d/check-num (obj/get rgba (+ 1 offset)) 255)
+                b          (d/check-num (obj/get rgba (+ 2 offset)) 255)
+                a          (d/check-num (obj/get rgba (+ 3 offset)) 255)
                 color      [r g b a]]
             ;; Store latest color synchronously so the click handler always reads
             ;; the correct pixel even before the rAF fires (fixes race condition)

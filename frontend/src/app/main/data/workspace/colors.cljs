@@ -738,7 +738,7 @@
         [h s v] (clr/hex->hsv value)]
     (merge data
            {:hex (or value "000000")
-            :alpha (or opacity 1)
+            :alpha (if (d/nan? opacity) 1 (or opacity 1))
             :r r :g g :b b
             :h h :s s :v v})))
 
@@ -815,7 +815,6 @@
               (rx/filter (ptk/type? ::update-colorpicker-add-stop) stream)
               (rx/filter (ptk/type? ::update-colorpicker-add-auto) stream)
               (rx/filter (ptk/type? ::remove-gradient-stop) stream))
-             (rx/debounce 40)
              (rx/map (constantly (colorpicker-onchange-runner on-change)))
              (rx/take-until stopper))))
 
