@@ -157,6 +157,7 @@
 
 (sv/defmethod ::get-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:get-project}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
   (dm/with-open [conn (db/open pool)]
@@ -223,6 +224,7 @@
 
 (sv/defmethod ::update-project-pin
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:update-project-pin
    ::webhooks/batch-timeout (ct/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -244,6 +246,7 @@
 
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:rename-project
    ::webhooks/event? true
    ::db/transaction true}
@@ -286,6 +289,7 @@
 
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:delete-project
    ::webhooks/event? true
    ::db/transaction true}

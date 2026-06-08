@@ -236,6 +236,7 @@
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:get-team}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id file-id]}]
   (get-team pool :profile-id profile-id :team-id id :file-id file-id))
@@ -691,6 +692,7 @@
 
 (sv/defmethod ::update-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:update-team
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
@@ -766,6 +768,7 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:leave-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -828,6 +831,7 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]
