@@ -323,6 +323,32 @@ const DOM_HARVEST_FN = () => {
     for (const c of captureText(el, 'button')) { c._src = src; out.push(c); }
   }
 
+  // (g) Leaf-text containers — <div>/<span>/<em>/<strong>/etc. with their own
+  // text content. The portfolio's SectionLabel renders as
+  // `<div class="section-label">§ 00 / Front Matter</div>`, which has no
+  // semantic block tag and was silently dropped. Capture only LEAF text
+  // containers: elements with a direct child text node that aren't already
+  // covered by an ancestor we walked. Avoids exploding the shape count from
+  // wrapper divs.
+  const hasDirectText = (el) => {
+    for (const n of el.childNodes) {
+      if (n.nodeType === 3 /* TEXT_NODE */ && (n.textContent || '').trim().length > 1) return true;
+    }
+    return false;
+  };
+  // Anything matched by these selectors already captured the text; skip nested
+  // descendants to avoid double-rendering.
+  const LEAF_SKIP_ANCESTORS = NESTED_BLOCK_ANCESTORS + ',a,button,pre,code';
+  const LEAF_TAGS = 'div,span,em,strong,small,mark,kbd,samp,abbr,cite,time,address,label';
+  for (const el of root.querySelectorAll(LEAF_TAGS)) {
+    if (!isVisible(el)) continue;
+    if (!hasDirectText(el)) continue;
+    if (el.parentElement?.closest(LEAF_SKIP_ANCESTORS)) continue;
+    const caps = captureText(el, 'paragraph');
+    const src = __srcId++;
+    for (const c of caps) { c._src = src; out.push(c); }
+  }
+
   for (const el of root.querySelectorAll(SELECTOR_CONTROL)) {
     if (!isVisible(el)) continue;
     const r = el.getBoundingClientRect();
