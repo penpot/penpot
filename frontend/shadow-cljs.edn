@@ -9,14 +9,12 @@
   {:target :esm
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   ;; :devtools is dev-only, so it lives under :dev -- shadow merges that map
-   ;; for `watch`/`compile` but not `release`, keeping :devtools-url out of
-   ;; release entirely (shadow spec-checks it as non-empty-string? whenever the
-   ;; key is present, even in release). In the devenv SHADOW_SERVER_URL is
-   ;; always set per workspace (see defaults.env / manage.sh).
-   :dev {:devtools {:watch-dir "resources/public"
-                    :reload-strategy :full
-                    :devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}}
+   :devtools {:watch-dir "resources/public"
+              :reload-strategy :full}
+
+   :dev {;; allows remote-relay per parallel environment
+         ;; inside :dev so the integration tests won't use it
+         :devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}}
    :build-options {:manifest-name "manifest.json"}
    :modules
    {:shared
@@ -92,11 +90,12 @@
   {:target :browser
    :output-dir "resources/public/js/worker/"
    :asset-path "/js/worker"
-   ;; Dev-only; see the :main build above for why :devtools lives under :dev.
-   :dev {:devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]
-                    :browser-inject :main
-                    :watch-dir "resources/public"
-                    :reload-strategy :full}}
+   :devtools {:watch-dir "resources/public"
+              :reload-strategy :full
+              :browser-inject :main}
+   :dev {;; allows remote-relay per parallel environment
+         ;; inside :dev so the integration tests won't use it
+         :devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}}
    :build-options {:manifest-name "manifest.json"}
    :modules
    {:main
