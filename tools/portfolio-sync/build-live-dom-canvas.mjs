@@ -381,6 +381,14 @@ const DOM_HARVEST_FN = () => {
   // keep B. Uses overlap-ratio (rather than strict bbox containment) because
   // margin-collapse, negative margins, and CSS-Grid spans make inner text
   // routinely escape the parent's geometric box by a few px.
+  //
+  // Known limitation: in CSS multi-column layouts (`columns: N`), every <p>'s
+  // getBoundingClientRect() spans the full column-box even when the rendered
+  // text only fills one column. This produces overlapping bboxes for sibling
+  // <p>s that DON'T visually overlap on the live page. The de-overlap rule
+  // doesn't fire (their text isn't a parent-child substring), so those shapes
+  // stack on the canvas. Affects the home page's about-practice and the
+  // publication-list sections.
   const stripMarker = (t) => (t || '').replace(/^[•–]\s*/, '');
   const overlapRatio = (a, b) => {
     const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
