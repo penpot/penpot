@@ -2,7 +2,7 @@ description: Create a report to help us improve
 name: Bug report
 title: "bug: "
 type: Bug
-labels: ["triage"]
+labels: ["needs triage"]
 projects: ["penpot/8"]
 
 body:
