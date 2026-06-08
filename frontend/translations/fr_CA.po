@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-06 01:01+0000\n"
+"PO-Revision-Date: 2026-06-08 12:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -8776,3 +8776,91 @@ msgstr ""
 "Cette invitation est destinée à un courriel différent. Se connecter avec le "
 "compte invité, ou demander une nouvelle invitation au propriétaire de "
 "l'équipe."
+
+#: src/app/main/ui/static.cljs:86
+msgid "errors.invite-expired"
+msgstr ""
+"Cette invitation est expirée. Demande au propriétaire de l'équipe d'en "
+"envoyer une nouvelle."
+
+#, unused
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Un problème est survenu en quittant l'organisation. Merci de réessayer."
+
+#, unused
+msgid "errors.org-leave.org-owner-cannot-leave"
+msgstr "Le propriétaire de l'organisation ne peut pas la quitter."
+
+#: src/app/main/ui/auth/verify_token.cljs:97
+msgid "errors.org-not-found"
+msgstr "Cette organisation n'existe pas"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:466
+msgid "errors.team-leave.only-owner-can-delete"
+msgstr "Seul le propriétaire de l'organisation peut la supprimer."
+
+#: common/src/app/common/types/team.cljc:26
+#, unused
+msgid "errors.team-name-invalid-chars"
+msgstr ""
+"Le nom d'équipe ne peut contenir les caractères suivants : « . », « : » ou "
+"« / »"
+
+#: src/app/common/files/tokens.cljc:298
+#, unused
+msgid "errors.token-theme-not-existing-sets"
+msgstr "Le thème fait référence à des ensembles non-existants : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:116, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:250
+msgid "errors.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"La hauteur de ligne dépend de la taille de police. Ajouter une taille de "
+"police pour obtenir la valeur calculée."
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:431
+msgid "errors.tokens.empty-field"
+msgstr "Ce champ ne peut être vide"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:46
+msgid "errors.tokens.empty-input"
+msgstr "La valeur du token ne peut être vide"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "errors.tokens.error-parse"
+msgstr "Erreur d'importation. Le JSON n'a pu être analysé."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:37, src/app/main/data/workspace/tokens/errors.cljs:42
+msgid "errors.tokens.import-error"
+msgstr "Erreur d'importation :"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:54
+msgid "errors.tokens.invalid-color"
+msgstr "Valeur de couleur invalide : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:108
+msgid "errors.tokens.invalid-font-family-token-value"
+msgstr ""
+"Valeur de token invalide : seuls les tokens de type famille de police "
+"peuvent être référés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:104
+msgid "errors.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valeur de graisse invalide : utiliser une valeur numérique (100-950) ou les "
+"noms (fin, léger, régulier, gras, etc.) facultativement suivis par « "
+"italique »"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "errors.tokens.invalid-json"
+msgstr "Erreur d'importation : données de token invalides dans le JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "errors.tokens.invalid-json-token-name"
+msgstr "Erreur d'importation : nom de token invalide dans le JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "errors.tokens.invalid-json-token-name-detail"
+msgstr ""
+"« %s » n'est pas un nom de token valide.\n"
+"Les noms de tokens doivent contenir seulement des lettres et des chiffres "
+"séparés par le caractère . et ne doivent pas commencer par le symbole $."
