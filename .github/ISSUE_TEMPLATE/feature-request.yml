@@ -3,6 +3,8 @@ labels: ["needs triage"]
 name: "Feature request"
 title: "feature: "
 type: Enhancement
+projects: ["penpot/8"]
+
 body:
   - type: markdown
     attributes:
