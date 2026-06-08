@@ -1,0 +1,13 @@
+{
+  "portfolio_dir": "/Users/svaddadi/Documents/GitHub/websites/portfolio",
+  "portfolio_local": "http://localhost:4321",
+  "vercel_url": "",
+  "vercel_webhook_secret": "",
+  "github_webhook_secret": "",
+  "webhook_port": 9090,
+  "pages": [
+    {"name": "home", "path": "/"},
+    {"name": "consulting", "path": "/consulting"},
+    {"name": "blog", "path": "/blog"}
+  ]
+}

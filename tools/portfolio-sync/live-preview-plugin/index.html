@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#1e1e1e;font-family:system-ui}
+.tb{display:flex;gap:6px;padding:8px;background:#2a2a2a;align-items:center}
+button{background:#3a3a3a;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+button:hover{background:#555}.lbl{color:#888;font-size:11px;margin-right:4px}
+iframe{width:100%;border:none;height:calc(100vh - 40px)}
+</style></head><body>
+<div class="tb">
+  <span class="lbl">Live Preview</span>
+  <button onclick="go('/')">Home</button>
+  <button onclick="go('/consulting')">Consulting</button>
+  <button onclick="go('/blog')">Blog</button>
+  <button onclick="reload()">↺ Refresh</button>
+</div>
+<iframe id="f" src="http://localhost:4321/"></iframe>
+<script>
+function go(p){document.getElementById('f').src='http://localhost:4321'+p}
+function reload(){const f=document.getElementById('f');f.src=f.src}
+</script></body></html>
