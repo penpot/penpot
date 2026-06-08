@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-06 01:01+0000\n"
+"PO-Revision-Date: 2026-06-09 16:01+0000\n"
 "Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -9680,3 +9680,46 @@ msgstr "Skapa typografistil"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:198
 msgid "workspace.options.fill.section"
 msgstr "Fyll sektion"
+
+#: src/app/main/ui/dashboard/subscription.cljs:146
+msgid "subscription.banner.create-org-info"
+msgstr ""
+"Skapa en organisation och se exakt hur Enterprise fungerar. Sätt regler, "
+"hantera dina team och upptäck en ny nivå av kontroll över ditt "
+"designarbetsflöde."
+
+#: src/app/main/ui/dashboard/subscription.cljs:144
+msgid "subscription.banner.see-enterprise"
+msgstr "Se hur Enterprise fungerar"
+
+#: src/app/main/ui/dashboard/subscription.cljs:188
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:187
+msgid "subscription.current-plan.nitrate"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:186
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Enterprise-testversion"
+
+#: src/app/main/ui/dashboard/subscription.cljs:181
+msgid "subscription.current-plan.professional"
+msgstr "Professional"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+msgid "subscription.current-plan.title"
+msgstr "Din prenumeration"
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.current-plan.unlimited"
+msgstr "Unlimited"
+
+#: src/app/main/ui/dashboard/subscription.cljs:183
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Unlimited-testversion"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Lås upp Enterprise-funktioner"
