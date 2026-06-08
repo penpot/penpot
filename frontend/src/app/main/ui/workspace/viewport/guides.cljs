@@ -45,6 +45,23 @@
 (def ^:const guide-creation-width 16)
 (def ^:const guide-creation-height 24)
 
+(defn compute-guide-drag-position
+  "Computes the guide axis position from pointer drag delta."
+  [{:keys [axis position start-pos start-pt current-pt zoom snap-pixel?]}]
+  (let [delta        (/ (- (get current-pt axis) (get start-pt axis)) zoom)
+        new-position (if (some? position)
+                       (+ position delta)
+                       (+ start-pos delta))]
+    (if snap-pixel?
+      (mth/round new-position)
+      new-position)))
+
+(defn- guide-draggable-in-focus?
+  [focus {:keys [frame-id]}]
+  (or (nil? frame-id)
+      (empty? focus)
+      (contains? focus frame-id)))
+
 (defn use-guide
   "Hooks to support drag/drop for existing guides and new guides"
   [on-guide-change get-hover-frame zoom {:keys [id position axis frame-id]}]
@@ -122,21 +139,21 @@
 
         on-pointer-move
         (mf/use-fn
-         (mf/deps position zoom snap-pixel? read-only? get-hover-frame)
+         (mf/deps position zoom snap-pixel? read-only? get-hover-frame axis)
          (fn [event]
            (when-not read-only?
              (when (mf/ref-val dragging-ref)
                (let [start-pt     (mf/ref-val start-ref)
                      start-pos    (mf/ref-val start-pos-ref)
                      current-pt   (dom/get-client-position event)
-                     delta        (/ (- (get current-pt axis) (get start-pt axis)) zoom)
-                     new-position (if (some? position)
-                                    (+ position delta)
-                                    (+ start-pos delta))
-                     new-position (if snap-pixel?
-                                    (mth/round new-position)
-                                    new-position)
-
+                     new-position (compute-guide-drag-position
+                                   {:axis axis
+                                    :position position
+                                    :start-pos start-pos
+                                    :start-pt start-pt
+                                    :current-pt current-pt
+                                    :zoom zoom
+                                    :snap-pixel? snap-pixel?})
                      new-frame-id (-> (get-hover-frame)
                                       (get :id))]
 
@@ -590,9 +607,176 @@
   (when (>= index 0)
     (nth (vec (vals guides)) index nil)))
 
+(mf/defc guide-drag-preview*
+  [{:keys [guide position vbox zoom]}]
+  (let [axis         (:axis guide)
+        guide-color  (or (:color guide) default-guide-color)
+        stroke-width (/ guide-width zoom)
+        {:keys [x1 y1 x2 y2]} (guide-line-axis position vbox axis)]
+    [:line {:x1 x1
+            :y1 y1
+            :x2 x2
+            :y2 y2
+            :style {:stroke guide-color
+                    :stroke-width stroke-width
+                    :stroke-opacity guide-opacity-hover}}]))
+
+(defn use-wasm-guide-drag
+  [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
+           on-guide-drag get-hover-frame focus]}]
+  (let [dragging-ref       (mf/use-ref false)
+        moved-ref          (mf/use-ref false)
+        start-ref          (mf/use-ref nil)
+        guide-ref          (mf/use-ref nil)
+        pending-ref        (mf/use-ref nil)
+        drag-listeners-ref (mf/use-ref nil)
+        drag-state         (mf/use-state nil)
+
+        snap-pixel?
+        (mf/deref refs/snap-pixel?)
+
+        read-only?
+        (mf/use-ctx ctx/workspace-read-only?)]
+
+    ;; The drag handlers are defined here so they close directly over the refs
+    ;; and the current render's props (guides, zoom, ...). The pointerdown
+    ;; listener is re-registered by the effect below whenever those props
+    ;; change, so it always sees fresh values without a mutable context ref.
+    (let [remove-drag-listeners!
+          (fn []
+            (when-let [{:keys [on-move on-up]} (mf/ref-val drag-listeners-ref)]
+              (when-let [viewport @uwvv/viewport-ref]
+                (.removeEventListener viewport "pointermove" on-move true)
+                (.removeEventListener viewport "pointerup" on-up true)
+                (.removeEventListener viewport "pointercancel" on-up true))
+              (mf/set-ref-val! drag-listeners-ref nil)))
+
+          reset-drag!
+          (fn []
+            (remove-drag-listeners!)
+            (when (mf/ref-val moved-ref)
+              (when (some? on-guide-drag)
+                (on-guide-drag nil)))
+            (mf/set-ref-val! dragging-ref false)
+            (mf/set-ref-val! moved-ref false)
+            (mf/set-ref-val! start-ref nil)
+            (mf/set-ref-val! guide-ref nil)
+            (mf/set-ref-val! pending-ref nil)
+            (reset! drag-state nil))
+
+          finish-drag!
+          (fn [event]
+            (when (mf/ref-val dragging-ref)
+              (when (and (mf/ref-val moved-ref) (some? on-guide-change))
+                (when-let [{:keys [guide new-position new-frame-id]}
+                           (mf/ref-val pending-ref)]
+                  (when (and (some? guide) (some? new-position))
+                    (on-guide-change (assoc guide
+                                            :position new-position
+                                            :frame-id new-frame-id)))))
+              (when-let [viewport @uwvv/viewport-ref]
+                (when (.-pointerId event)
+                  (.releasePointerCapture viewport (.-pointerId event))))
+              (reset-drag!)))
+
+          drag-move!
+          (fn [move-event]
+            (when (mf/ref-val dragging-ref)
+              (when-let [guide (mf/ref-val guide-ref)]
+                (let [axis         (:axis guide)
+                      start-pt     (mf/ref-val start-ref)
+                      current-pt   (dom/get-client-position move-event)
+                      new-position (compute-guide-drag-position
+                                    {:axis axis
+                                     :position (:position guide)
+                                     :start-pt start-pt
+                                     :current-pt current-pt
+                                     :zoom zoom
+                                     :snap-pixel? snap-pixel?})
+                      new-frame-id (-> (get-hover-frame) (get :id))
+                      pending      {:guide guide
+                                    :new-position new-position
+                                    :new-frame-id new-frame-id}]
+                  (when-not (mf/ref-val moved-ref)
+                    (mf/set-ref-val! moved-ref true)
+                    (when (some? on-guide-drag)
+                      (on-guide-drag (:id guide))))
+                  (mf/set-ref-val! pending-ref pending)
+                  (reset! drag-state pending)))))
+
+          pointer-down!
+          (fn [event]
+            (when-not read-only?
+              (when (= 0 (.-button event))
+                (let [position (dom/get-client-position event)
+                      pt       (uwvv/point->viewport position)
+                      index    (when pt (wasm.api/find-guide-at pt zoom))
+                      guide    (guide-by-serialized-index guides index)]
+                  (when (and guide (guide-draggable-in-focus? focus guide))
+                    (when-let [viewport @uwvv/viewport-ref]
+                      (.setPointerCapture viewport (.-pointerId event)))
+                    (dom/stop-propagation event)
+                    (mf/set-ref-val! dragging-ref true)
+                    (mf/set-ref-val! moved-ref false)
+                    (mf/set-ref-val! start-ref position)
+                    (mf/set-ref-val! guide-ref guide)
+                    (mf/set-ref-val! pending-ref
+                                     {:guide guide
+                                      :new-position (:position guide)
+                                      :new-frame-id (:frame-id guide)})
+                    ;; Pointer capture (above) routes all subsequent pointer
+                    ;; events to the viewport, so we listen on the viewport
+                    ;; itself rather than window. This keeps events flowing
+                    ;; even outside the browser window.
+                    (when-let [viewport @uwvv/viewport-ref]
+                      (let [on-move #(drag-move! %)
+                            on-up   #(finish-drag! %)]
+                        (mf/set-ref-val! drag-listeners-ref
+                                         {:on-move on-move :on-up on-up})
+                        (.addEventListener viewport "pointermove" on-move true)
+                        (.addEventListener viewport "pointerup" on-up true)
+                        (.addEventListener viewport "pointercancel" on-up true))))))))]
+
+      (mf/with-effect [wasm-guides? disabled-guides? read-only?
+                       guides zoom focus snap-pixel?
+                       on-guide-change on-guide-drag get-hover-frame]
+        (when (and wasm-guides? (not disabled-guides?) (not read-only?))
+          (when-let [viewport @uwvv/viewport-ref]
+            (.addEventListener viewport "pointerdown" pointer-down! true)
+            (fn []
+              (.removeEventListener viewport "pointerdown" pointer-down! true)
+              ;; Only tear down drag state on real teardown. If this cleanup is
+              ;; triggered by a dependency change mid-drag, leave the active
+              ;; drag (and its listeners) untouched so it can finish.
+              (when-not (mf/ref-val dragging-ref)
+                (reset-drag!)))))))
+
+    drag-state))
+
+(mf/defc wasm-guide-drag-layer*
+  "Owns WASM guide drag state and preview rendering so updates are not
+  blocked by memoization on `viewport-guides*`."
+  [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
+           on-guide-drag get-hover-frame focus vbox]}]
+  (let [drag-state
+        (use-wasm-guide-drag {:guides guides
+                              :zoom zoom
+                              :wasm-guides? wasm-guides?
+                              :disabled-guides? disabled-guides?
+                              :on-guide-change on-guide-change
+                              :on-guide-drag on-guide-drag
+                              :get-hover-frame get-hover-frame
+                              :focus focus})]
+    (when-let [{:keys [guide new-position]} @drag-state]
+      [:> guide-drag-preview* {:guide guide
+                               :position new-position
+                               :vbox vbox
+                               :zoom zoom}])))
+
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides?]}]
+  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides?
+           on-guide-drag]}]
   (let [visible-guides
         (mf/with-memo [guides vbox]
           (->> (vals guides)
@@ -668,11 +852,20 @@
                           :get-hover-frame get-hover-frame
                           :disabled-guides disabled-guides}]
 
+     (when wasm-guides?
+       [:> wasm-guide-drag-layer* {:guides guides
+                                   :zoom zoom
+                                   :wasm-guides? wasm-guides?
+                                   :disabled-guides? disabled-guides
+                                   :on-guide-change on-guide-change
+                                   :on-guide-drag on-guide-drag
+                                   :get-hover-frame get-hover-frame
+                                   :focus focus
+                                   :vbox vbox}])
+
      (when-not wasm-guides?
        (for [{:keys [id frame-id] :as guide} visible-guides]
-         (when (or (nil? frame-id)
-                   (empty? focus)
-                   (contains? focus frame-id))
+         (when (guide-draggable-in-focus? focus guide)
            [:> guide* {:key (dm/str "guide-" id)
                        :guide guide
                        :vbox vbox

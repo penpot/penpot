@@ -181,6 +181,11 @@
         active-frames        (mf/use-state #{})
         canvas-init?         (mf/use-state false)
         initialized?         (mf/use-state false)
+        dragging-guide-id*   (mf/use-state nil)
+
+        on-guide-drag
+        (mf/use-fn
+         #(reset! dragging-guide-id* %))
 
         ;; REFS
         [viewport-ref
@@ -540,9 +545,12 @@
 
     ;; Ruler guides: push the page guides to the render engine whenever they
     ;; change or their visibility toggles. When hidden we send an empty set.
-    (mf/with-effect [@canvas-init? guides show-rulers? show-grids?]
+    ;; While dragging, exclude the active guide so the SVG preview is the only line.
+    (mf/with-effect [@canvas-init? guides show-rulers? show-grids? @dragging-guide-id*]
       (when @canvas-init?
-        (wasm.api/set-guides (if (and show-rulers? show-grids?) (or guides {}) {}))))
+        (let [guides (if (and show-rulers? show-grids?) (or guides {}) {})
+              guides (if-let [id @dragging-guide-id*] (dissoc guides id) guides)]
+          (wasm.api/set-guides guides))))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -841,7 +849,8 @@
            :wasm-guides? true
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
-           :modifiers wasm-modifiers}])
+           :modifiers wasm-modifiers
+           :on-guide-drag on-guide-drag}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
