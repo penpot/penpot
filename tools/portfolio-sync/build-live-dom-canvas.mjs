@@ -227,10 +227,15 @@ const DOM_HARVEST_FN = () => {
 
   const out = [];
 
+  // Reason: <code> and <pre> are in SELECTOR_BLOCK to catch standalone code
+  // blocks, but inline <code> inside <li>/<p>/<h*> would double-capture and
+  // visually mash on top of its parent. Skip nested instances.
+  const NESTED_BLOCK_ANCESTORS = 'p,li,h1,h2,h3,h4,h5,h6,blockquote,dd,dt,td,th,figcaption';
   for (const el of root.querySelectorAll(SELECTOR_BLOCK)) {
     if (!isVisible(el)) continue;
     if (!(el.textContent || '').trim()) continue;
     const tag = el.tagName.toLowerCase();
+    if ((tag === 'code' || tag === 'pre') && el.parentElement?.closest(NESTED_BLOCK_ANCESTORS)) continue;
     const cap = captureText(el, /^h[1-6]$/.test(tag) ? 'heading' : 'paragraph');
     if (!cap) continue;
     // (e) List markers: <ul>/<ol> children don't render their bullet/number into
@@ -351,22 +356,57 @@ const DOM_HARVEST_FN = () => {
     });
   }
 
-  // (c) Paragraph/link de-overlap. If a captured paragraph's text is largely
-  // (>70% by length) supplied by a single link inside it, drop the paragraph
-  // — the link will read on its own. Eliminates the "double text at the same
-  // spot" mess where a link and its containing <p> both render the same words.
+  // (c) Paragraph/link de-overlap. Unified rule: any inline link whose text
+  // is part of a surviving paragraph gets suppressed — the paragraph already
+  // renders those words at the link's screen position, so two shapes at the
+  // same spot would mash. Exception: when a single link covers >70% of the
+  // paragraph, the link IS the content; drop the paragraph instead.
   const linkTexts = new Set(linkItems.map(l => l.text));
-  const filtered = [];
-  for (const item of out) {
-    if (item && item.kind === 'paragraph' && linkTexts.has(item.text)) continue;
-    if (item && item.kind === 'paragraph') {
-      const containingLinks = linkItems.filter(l =>
-        item.text.includes(l.text) && l.text.length >= 4);
-      if (containingLinks.length === 1
-          && containingLinks[0].text.length / Math.max(1, item.text.length) > 0.7) {
-        continue;
+  const linksToSuppress = new Set();
+  const droppedParagraphs = new Set();
+  const paragraphs = out.filter(i => i && i.kind === 'paragraph');
+  for (const p of paragraphs) {
+    if (linkTexts.has(p.text)) { droppedParagraphs.add(p); continue; }
+    const contained = linkItems.filter(l => p.text.includes(l.text) && l.text.length >= 4);
+    if (contained.length === 1
+        && contained[0].text.length / Math.max(1, p.text.length) > 0.7) {
+      droppedParagraphs.add(p);
+    } else if (contained.length >= 1) {
+      for (const l of contained) linksToSuppress.add(l);
+    }
+  }
+
+  // (f) Containing-block collapse. If paragraph A's text contains B's text AND
+  // they share most of their on-screen area, A is the wrapper block — drop A,
+  // keep B. Uses overlap-ratio (rather than strict bbox containment) because
+  // margin-collapse, negative margins, and CSS-Grid spans make inner text
+  // routinely escape the parent's geometric box by a few px.
+  const stripMarker = (t) => (t || '').replace(/^[•–]\s*/, '');
+  const overlapRatio = (a, b) => {
+    const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    if (dx <= 0 || dy <= 0) return 0;
+    return (dx * dy) / Math.min(a.w * a.h, b.w * b.h);
+  };
+  const droppedOuter = new Set();
+  for (const a of paragraphs) {
+    for (const b of paragraphs) {
+      if (a === b || droppedOuter.has(a) || droppedOuter.has(b)) continue;
+      if (a.text.length <= b.text.length) continue;
+      const bCore = stripMarker(b.text);
+      if (a.text.includes(bCore) && overlapRatio(a, b) > 0.5) {
+        droppedOuter.add(a);
+        break;
       }
     }
+  }
+
+  const filtered = [];
+  for (const item of out) {
+    if (!item) continue;
+    if (droppedParagraphs.has(item)) continue;
+    if (droppedOuter.has(item)) continue;
+    if (item.kind === 'link' && linksToSuppress.has(item)) continue;
     filtered.push(item);
   }
 
@@ -393,7 +433,12 @@ async function harvestPage(ctx, page) {
   const tab = await ctx.newPage();
   const url = `${PORTFOLIO_URL}${page.path}`;
   await tab.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
-  await tab.waitForTimeout(800);
+  // Wait for fonts so getBoundingClientRect() returns post-font-swap geometry.
+  // Variable fonts (Fraunces) change line metrics on load and produce mid-flight
+  // overlaps if measured too early.
+  await tab.waitForFunction(() => document.fonts && document.fonts.status === 'loaded',
+                            { timeout: 4_000 }).catch(() => {});
+  await tab.waitForTimeout(1500);
   const harvest = await tab.evaluate(DOM_HARVEST_FN);
   await tab.close();
   return { ...harvest, page };
