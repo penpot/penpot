@@ -42,9 +42,11 @@
           (when on-change
             (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
                   {:keys [x y]} (-> ev dom/get-client-position)
+                  h-size (- right left)
+                  v-size (- bottom top)
                   unit-value (if is-vertical
-                               (mth/clamp (/ (- bottom y) (- bottom top)) 0 1)
-                               (mth/clamp (/ (- x left) (- right left)) 0 1))
+                               (if (pos? v-size) (mth/clamp (/ (- bottom y) v-size) 0 1) 0)
+                               (if (pos? h-size) (mth/clamp (/ (- x left) h-size) 0 1) 0))
                   value (+ min-value (* unit-value (- max-value min-value)))]
               (on-change value))))]
 
