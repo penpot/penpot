@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.releases
   (:require
@@ -34,6 +34,7 @@
    [app.main.ui.releases.v2-13]
    [app.main.ui.releases.v2-14]
    [app.main.ui.releases.v2-15]
+   [app.main.ui.releases.v2-16]
    [app.main.ui.releases.v2-2]
    [app.main.ui.releases.v2-3]
    [app.main.ui.releases.v2-4]
@@ -48,8 +49,7 @@
 
 ;;; --- RELEASE NOTES MODAL
 
-(mf/defc release-notes
-  {::mf/props :obj}
+(mf/defc release-notes*
   [{:keys [version]}]
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
@@ -102,8 +102,8 @@
         version  (obj/get props "version")]
     (when (contains? versions version)
       [:div.relnotes
-       [:> release-notes props]])))
+       [:> release-notes* props]])))
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "2.15")))
+  (rc/render-release-notes (assoc params :version "2.16")))

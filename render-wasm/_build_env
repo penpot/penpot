@@ -32,6 +32,7 @@ export EM_MALLOC="dlmalloc"
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
     -sMALLOC=$EM_MALLOC \
+    -sINVOKE_RUN=0 \
     -sALLOW_TABLE_GROWTH=0 \
     -sALLOW_MEMORY_GROWTH=1 \
     -sINITIAL_HEAP=$EM_INITIAL_HEAP \

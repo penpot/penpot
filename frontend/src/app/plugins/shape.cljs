@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.shape
   (:require
@@ -48,12 +48,14 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.fills :as fills]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
    [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
@@ -760,17 +762,17 @@
            :fills
            {:this true
             :get (fn [^js self]
-                   (let [fills (if (cfh/text-shape? data)
-                                 (-> self u/proxy->shape text-props :fills)
-                                 (-> self u/proxy->shape :fills))]
-                     (format/format-fills fills #(commit-fills! plugin-id self %))))
+                   (let [fill-data (if (cfh/text-shape? data)
+                                     (-> self u/proxy->shape text-props :fills)
+                                     (-> self u/proxy->shape :fills))]
+                     (fills/format-fills fill-data #(commit-fills! plugin-id self %))))
             :set (fn [self value] (commit-fills! plugin-id self value))}
 
            :strokes
            {:this true
             :get (fn [^js self]
-                   (format/format-strokes (-> self u/proxy->shape :strokes)
-                                          #(commit-strokes! plugin-id self %)))
+                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
+                                           #(commit-strokes! plugin-id self %)))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild

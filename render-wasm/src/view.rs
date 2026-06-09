@@ -1,62 +1,86 @@
-use skia_safe::Rect;
-
-use crate::math::{Matrix, Point};
+use crate::math::{Matrix, Point, Rect, Size};
+use std::ops::Mul;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {
-    pub pan_x: f32,
-    pub pan_y: f32,
-    pub width: f32,
-    pub height: f32,
+    pub pan: Point,
+    pub size: Size,
     pub zoom: f32,
+    pub dpr: f32,
     pub area: Rect,
 }
 
 impl Default for Viewbox {
     fn default() -> Self {
         Self {
-            pan_x: 0.,
-            pan_y: 0.,
-            width: 0.0,
-            height: 0.0,
+            pan: Point::new(0.0, 0.0),
+            size: Size::new(0.0, 0.0),
             zoom: 1.0,
+            dpr: 1.0,
             area: Rect::new_empty(),
         }
     }
 }
 
+#[allow(dead_code)]
 impl Viewbox {
     pub fn new(width: f32, height: f32) -> Self {
-        let area = Rect::from_xywh(0., 0., width, height);
+        let size = Size::new(width, height);
+        let area = Rect::from_size(size);
         Self {
-            width,
-            height,
+            size,
             area,
             ..Self::default()
         }
     }
 
+    pub fn dpr_width(&self) -> f32 {
+        self.size.width * self.dpr
+    }
+
+    pub fn dpr_height(&self) -> f32 {
+        self.size.height * self.dpr
+    }
+
+    pub fn width(&self) -> f32 {
+        self.size.width
+    }
+
+    pub fn height(&self) -> f32 {
+        self.size.height
+    }
+
     pub fn set_all(&mut self, zoom: f32, pan_x: f32, pan_y: f32) {
-        self.pan_x = pan_x;
-        self.pan_y = pan_y;
+        self.pan.set(pan_x, pan_y);
         self.zoom = zoom;
         self.area.set_xywh(
-            -self.pan_x,
-            -self.pan_y,
-            self.width / self.zoom,
-            self.height / self.zoom,
+            -self.pan.x,
+            -self.pan.y,
+            self.size.width / self.zoom,
+            self.size.height / self.zoom,
         );
     }
 
     pub fn set_wh(&mut self, width: f32, height: f32) {
-        self.width = width;
-        self.height = height;
+        self.size.set(width, height);
         self.area
-            .set_wh(self.width / self.zoom, self.height / self.zoom);
+            .set_wh(self.size.width / self.zoom, self.size.height / self.zoom);
+    }
+
+    pub fn set_dpr(&mut self, dpr: f32) {
+        self.dpr = dpr;
+    }
+
+    pub fn get_scale(&self) -> f32 {
+        self.zoom * self.dpr
+    }
+
+    pub fn get_offset(&self) -> Point {
+        self.area.tl().mul(self.get_scale())
     }
 
     pub fn pan(&self) -> Point {
-        Point::new(self.pan_x, self.pan_y)
+        self.pan
     }
 
     pub fn zoom(&self) -> f32 {

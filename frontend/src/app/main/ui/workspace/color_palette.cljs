@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.color-palette
   (:require-macros [app.main.style :as stl])
@@ -56,7 +56,7 @@
               :type "button"
               :on-click select-color}
      [:> swatch* {:background color :size "medium"}]
-     [:& cb/color-name {:color color :size size :origin :palette}]]))
+     [:> cb/color-name* {:color color :size size :origin :palette}]]))
 
 (mf/defc palette*
   {::mf/wrap [mf/memo]}

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui
   (:require
@@ -189,7 +189,7 @@
        [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:? [:& verify-token-page* {:route route}]]
+       [:? [:> verify-token-page* {:route route}]]
 
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]

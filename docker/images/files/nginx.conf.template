@@ -3,7 +3,7 @@ pid /tmp/nginx.pid;
 include /etc/nginx/overrides/main.d/*.conf;
 
 events {
-    worker_connections 2048;
+    worker_connections 65535;
     multi_accept on;
 }
 
@@ -72,8 +72,8 @@ http {
     include /etc/nginx/overrides/http.d/*.conf;
 
     server {
-        listen 8080 default_server;
-        listen [::]:8080 default_server;
+        listen 8080 default_server reuseport backlog=16384;
+        ${PENPOT_IPV6_LISTEN_DIRECTIVE}
         server_name _;
 
         client_max_body_size $PENPOT_HTTP_SERVER_MAX_BODY_SIZE;
@@ -136,23 +136,6 @@ http {
 
         location /plugins {
             alias /var/www/app/plugins;
-            proxy_http_version 1.1;
-        }
-
-        location /mcp/ws {
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_pass $PENPOT_MCP_URI_WS;
-            proxy_http_version 1.1;
-        }
-
-        location /mcp/stream {
-            proxy_pass $PENPOT_MCP_URI/mcp;
-            proxy_http_version 1.1;
-        }
-
-        location /mcp/sse {
-            proxy_pass $PENPOT_MCP_URI/sse;
             proxy_http_version 1.1;
         }
 

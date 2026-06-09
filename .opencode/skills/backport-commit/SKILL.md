@@ -70,12 +70,7 @@ module's `AGENTS.md` for the exact commands). If the formatter auto-fixes
 indentation, verify the logic is still semantically correct. All checks must
 pass before moving on.
 
-### 6. Port the changelog entry (if any)
-
-If the original commit added or modified a `CHANGES.md` entry, port that entry
-too — adapting wording and version references for the target branch.
-
-### 7. Commit
+### 6. Commit
 
 Ask the `commiter` sub-agent to create a commit. Stage all relevant files
 (exclude unrelated untracked files) and provide the original commit message as

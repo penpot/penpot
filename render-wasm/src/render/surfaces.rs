@@ -3,31 +3,43 @@ use crate::shapes::Shape;
 use crate::view::Viewbox;
 use crate::{get_gpu_state, performance};
 
-use skia_safe::{self as skia, IRect, Paint, RRect};
+use skia_safe::{self as skia, IRect, Paint, RRect, Rect};
 
-use super::{
-    gpu_state::GpuState,
-    tiles::{self, Tile, TileViewbox, TILE_SIZE},
-};
+use super::{gpu_state::GpuState, tiles, tiles::Tile, tiles::TileRect, tiles::TileViewbox};
+use crate::math::Point;
 
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
 
 const TEXTURES_CACHE_CAPACITY: usize = 1024;
 const TEXTURES_BATCH_DELETE: usize = 256;
+
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
 // If it's too big it could affect performance.
+const TILE_SIZE: i32 = tiles::TILE_SIZE as i32;
 const TILE_SIZE_MULTIPLIER: i32 = 2;
+const TILE_MARGIN_SIZE: i32 = TILE_SIZE * TILE_SIZE_MULTIPLIER / 4;
+const TILE_DRAWABLE_RECT: IRect = IRect {
+    left: TILE_MARGIN_SIZE,
+    top: TILE_MARGIN_SIZE,
+    right: TILE_MARGIN_SIZE + TILE_SIZE,
+    bottom: TILE_MARGIN_SIZE + TILE_SIZE,
+};
 
-/// Atlas texture size limits (px per side).
-///
-/// - `DEFAULT_MAX_ATLAS_TEXTURE_SIZE` is the startup fallback used until the
-///   frontend reads the real `gl.MAX_TEXTURE_SIZE` and sends it via
-///   [`Surfaces::set_max_atlas_texture_size`].
-/// - `MAX_ATLAS_TEXTURE_SIZE` is a hard upper bound to clamp the runtime value
-///   (defensive cap to avoid accidentally creating oversized GPU textures).
-const MAX_ATLAS_TEXTURE_SIZE: i32 = 4096;
-const DEFAULT_MAX_ATLAS_TEXTURE_SIZE: i32 = 1024;
+pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
+    // First we retrieve the extended area of the viewport that we could render.
+    let TileRect(isx, isy, iex, iey) =
+        tiles::get_tiles_for_viewbox_with_interest(viewbox, interest);
+
+    let dx = if isx.signum() != iex.signum() { 1 } else { 0 };
+    let dy = if isy.signum() != iey.signum() { 1 } else { 0 };
+
+    (
+        ((iex - isx).abs() + dx) * TILE_SIZE,
+        ((iey - isy).abs() + dy) * TILE_SIZE,
+    )
+        .into()
+}
 
 #[derive(Debug, PartialEq)]
 pub enum DrawOnCache {
@@ -37,6 +49,7 @@ pub enum DrawOnCache {
 
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
+#[allow(unused)]
 pub enum SurfaceId {
     Target = 0b000_0000_0001,
     Filter = 0b000_0000_0010,
@@ -52,6 +65,332 @@ pub enum SurfaceId {
     Debug = 0b100_0000_0001,
     Atlas = 0b100_0000_0010,
     Backbuffer = 0b100_0000_0100,
+    TileAtlas = 0b100_0000_1000,
+}
+
+pub struct DocAtlas {
+    // Persistent 1:1 document-space atlas that gets incrementally updated as tiles render.
+    // It grows dynamically to include any rendered document rect.
+    pub surface: skia::Surface,
+    pub origin: skia::Point,
+    pub size: skia::ISize,
+    /// Atlas pixel density relative to document pixels (1.0 == 1:1 doc px).
+    /// When the atlas would exceed `max_texture_size`, this value is
+    /// reduced so the atlas stays within the fixed texture cap.
+    pub scale: f32,
+    /// Optional document-space bounds (1 unit == 1 doc px @ 100% zoom) used to
+    /// clamp atlas writes/clears so the atlas doesn't grow due to outlier tile rects.
+    pub doc_bounds: Option<skia::Rect>,
+    /// Tracks the last document-space rect written to the atlas per tile.
+    /// Used to clear old content without clearing the whole (potentially huge) tile rect.
+    pub tile_doc_rects: HashMap<Tile, skia::Rect>,
+}
+
+impl DocAtlas {
+    pub fn try_new() -> Result<Self> {
+        // Keep atlas as a regular surface like the rest. Start with a tiny
+        // transparent surface and grow it on demand.
+        let mut surface =
+            get_gpu_state().create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
+
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+
+        Ok(Self {
+            surface,
+            origin: skia::Point::new(0.0, 0.0),
+            size: skia::ISize::new(0, 0),
+            scale: 1.0,
+            doc_bounds: None,
+            tile_doc_rects: HashMap::default(),
+        })
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.size.width <= 0 || self.size.height <= 0
+    }
+
+    /// Sets the document-space bounds used to clamp atlas updates.
+    /// Pass `None` to disable clamping.
+    pub fn set_doc_bounds(&mut self, bounds: Option<skia::Rect>) {
+        self.doc_bounds = bounds.filter(|b| !b.is_empty());
+    }
+
+    fn clamp_doc_rect_to_bounds(&self, doc_rect: skia::Rect) -> skia::Rect {
+        if doc_rect.is_empty() {
+            return doc_rect;
+        }
+        if let Some(bounds) = self.doc_bounds {
+            let mut r = doc_rect;
+            if r.intersect(bounds) {
+                r
+            } else {
+                skia::Rect::new_empty()
+            }
+        } else {
+            doc_rect
+        }
+    }
+
+    fn ensure_atlas_contains(
+        &mut self,
+        gpu_state: &mut GpuState,
+        doc_rect: skia::Rect,
+    ) -> Result<()> {
+        if doc_rect.is_empty() {
+            return Ok(());
+        }
+
+        // Current atlas bounds in document space (1 unit == 1 px).
+        let current_left = self.origin.x;
+        let current_top = self.origin.y;
+        let scale = self.scale.max(0.01);
+        let current_right = current_left + (self.size.width as f32) / scale;
+        let current_bottom = current_top + (self.size.height as f32) / scale;
+
+        let mut new_left = current_left;
+        let mut new_top = current_top;
+        let mut new_right = current_right;
+        let mut new_bottom = current_bottom;
+
+        // If atlas is empty/uninitialized, seed to rect (expanded to tile boundaries for fewer reallocs).
+        let needs_init = self.size.width <= 0 || self.size.height <= 0;
+        if needs_init {
+            new_left = doc_rect.left.floor();
+            new_top = doc_rect.top.floor();
+            new_right = doc_rect.right.ceil();
+            new_bottom = doc_rect.bottom.ceil();
+        } else {
+            new_left = new_left.min(doc_rect.left.floor());
+            new_top = new_top.min(doc_rect.top.floor());
+            new_right = new_right.max(doc_rect.right.ceil());
+            new_bottom = new_bottom.max(doc_rect.bottom.ceil());
+        }
+
+        // Add padding to reduce realloc frequency.
+        let pad = tiles::TILE_SIZE;
+        new_left -= pad;
+        new_top -= pad;
+        new_right += pad;
+        new_bottom += pad;
+
+        let doc_w = (new_right - new_left).max(1.0);
+        let doc_h = (new_bottom - new_top).max(1.0);
+
+        // Compute atlas scale needed to fit within the fixed texture cap.
+        // Keep the highest possible scale (closest to 1.0) that still fits.
+        let cap = gpu_state.max_texture_size().max(TILE_SIZE) as f32;
+        let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
+
+        // Never upscale the atlas (it would add blur and churn).
+        let new_scale = self.scale.min(required_scale).max(0.01);
+
+        let new_w = (doc_w * new_scale).ceil().clamp(1.0, cap) as i32;
+        let new_h = (doc_h * new_scale).ceil().clamp(1.0, cap) as i32;
+
+        // Fast path: existing atlas already contains the rect.
+        if !needs_init
+            && doc_rect.left >= current_left
+            && doc_rect.top >= current_top
+            && doc_rect.right <= current_right
+            && doc_rect.bottom <= current_bottom
+        {
+            return Ok(());
+        }
+
+        let mut new_surface =
+            gpu_state.create_surface_with_dimensions("atlas".to_string(), new_w, new_h)?;
+        new_surface.canvas().clear(skia::Color::TRANSPARENT);
+
+        // Copy old atlas into the new one with offset.
+        if !needs_init {
+            let old_scale = self.scale.max(0.01);
+            let scale_ratio = new_scale / old_scale;
+            let dx = (current_left - new_left) * new_scale;
+            let dy = (current_top - new_top) * new_scale;
+
+            let image = self.surface.image_snapshot();
+            let src =
+                skia::Rect::from_xywh(0.0, 0.0, self.size.width as f32, self.size.height as f32);
+            let dst = skia::Rect::from_xywh(
+                dx,
+                dy,
+                (self.size.width as f32) * scale_ratio,
+                (self.size.height as f32) * scale_ratio,
+            );
+            new_surface.canvas().draw_image_rect(
+                &image,
+                Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+                dst,
+                &skia::Paint::default(),
+            );
+        }
+
+        self.origin = skia::Point::new(new_left, new_top);
+        self.size = skia::ISize::new(new_w, new_h);
+        self.scale = new_scale;
+        gpu_state.delete_surface(&mut self.surface);
+        self.surface = new_surface;
+        Ok(())
+    }
+
+    fn blit_tile_image_into_atlas(
+        &mut self,
+        gpu_state: &mut GpuState,
+        tile_image: &skia::Image,
+        tile_doc_rect: skia::Rect,
+    ) -> Result<()> {
+        if tile_doc_rect.is_empty() {
+            return Ok(());
+        }
+
+        // Clamp to document bounds (if any) and compute a matching source-rect in tile pixels.
+        let mut clipped_doc_rect = tile_doc_rect;
+        if let Some(bounds) = self.doc_bounds {
+            if !clipped_doc_rect.intersect(bounds) {
+                return Ok(());
+            }
+        }
+        if clipped_doc_rect.is_empty() {
+            return Ok(());
+        }
+
+        self.ensure_atlas_contains(gpu_state, clipped_doc_rect)?;
+
+        // Destination is document-space rect mapped into atlas pixel coords.
+        let dst = skia::Rect::from_xywh(
+            (clipped_doc_rect.left - self.origin.x) * self.scale,
+            (clipped_doc_rect.top - self.origin.y) * self.scale,
+            clipped_doc_rect.width() * self.scale,
+            clipped_doc_rect.height() * self.scale,
+        );
+
+        // Compute source rect in tile_image pixel coordinates.
+        let img_w = tile_image.width() as f32;
+        let img_h = tile_image.height() as f32;
+        let tw = tile_doc_rect.width().max(1.0);
+        let th = tile_doc_rect.height().max(1.0);
+
+        let sx = ((clipped_doc_rect.left - tile_doc_rect.left) / tw) * img_w;
+        let sy = ((clipped_doc_rect.top - tile_doc_rect.top) / th) * img_h;
+        let sw = (clipped_doc_rect.width() / tw) * img_w;
+        let sh = (clipped_doc_rect.height() / th) * img_h;
+        let src = skia::Rect::from_xywh(sx, sy, sw, sh);
+
+        self.surface.canvas().draw_image_rect(
+            tile_image,
+            Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+            dst,
+            &skia::Paint::default(),
+        );
+        Ok(())
+    }
+
+    /// Clears a doc-space rect from the atlas **without** growing it.
+    ///
+    /// Unlike [`clear_doc_rect_in_atlas`], this method clips `doc_rect` to the
+    /// current atlas bounds and skips silently if there is no overlap. Use this
+    /// when evicting stale shape content (e.g. before a drag re-render) where
+    /// growing the atlas to accommodate an out-of-range rect would be wasteful.
+    pub fn clear_doc_rect_in_atlas_clipped(&mut self, doc_rect: skia::Rect) {
+        if self.is_empty() || doc_rect.is_empty() {
+            return;
+        }
+
+        let scale = self.scale.max(0.01);
+        let atlas_doc_right = self.origin.x + (self.size.width as f32) / scale;
+        let atlas_doc_bottom = self.origin.y + (self.size.height as f32) / scale;
+
+        // Intersect with current atlas bounds in doc space.
+        let mut clipped = doc_rect;
+        let atlas_bounds = skia::Rect::from_ltrb(
+            self.origin.x,
+            self.origin.y,
+            atlas_doc_right,
+            atlas_doc_bottom,
+        );
+        if !clipped.intersect(atlas_bounds) {
+            return;
+        }
+
+        // Apply doc_bounds clamping.
+        if let Some(bounds) = self.doc_bounds {
+            if !clipped.intersect(bounds) {
+                return;
+            }
+        }
+
+        if clipped.is_empty() {
+            return;
+        }
+
+        let dst = skia::Rect::from_xywh(
+            (clipped.left - self.origin.x) * scale,
+            (clipped.top - self.origin.y) * scale,
+            clipped.width() * scale,
+            clipped.height() * scale,
+        );
+
+        let canvas = self.surface.canvas();
+        canvas.save();
+        canvas.clip_rect(dst, None, true);
+        canvas.clear(skia::Color::TRANSPARENT);
+        canvas.restore();
+    }
+
+    pub fn clear_doc_rect_in_atlas(
+        &mut self,
+        gpu_state: &mut GpuState,
+        doc_rect: skia::Rect,
+    ) -> Result<()> {
+        let doc_rect = self.clamp_doc_rect_to_bounds(doc_rect);
+        if doc_rect.is_empty() {
+            return Ok(());
+        }
+
+        self.ensure_atlas_contains(gpu_state, doc_rect)?;
+
+        // Destination is document-space rect mapped into atlas pixel coords.
+        let dst = skia::Rect::from_xywh(
+            (doc_rect.left - self.origin.x) * self.scale,
+            (doc_rect.top - self.origin.y) * self.scale,
+            doc_rect.width() * self.scale,
+            doc_rect.height() * self.scale,
+        );
+
+        let canvas = self.surface.canvas();
+        canvas.save();
+        canvas.clip_rect(dst, None, true);
+        canvas.clear(skia::Color::TRANSPARENT);
+        canvas.restore();
+        Ok(())
+    }
+
+    /// Clears the last atlas region written by `tile` (if any).
+    ///
+    /// This avoids clearing the entire logical tile rect which, at very low
+    /// zoom levels, can be enormous in document space and would unnecessarily
+    /// grow / rescale the atlas.
+    pub fn clear_tile_in_atlas(&mut self, gpu_state: &mut GpuState, tile: Tile) -> Result<()> {
+        if let Some(doc_rect) = self.tile_doc_rects.remove(&tile) {
+            self.clear_doc_rect_in_atlas(gpu_state, doc_rect)?;
+        }
+        Ok(())
+    }
+
+    /// Returns a snapshot of the atlas together with its scale and origin, so the
+    /// caller can take it **once** per `rebuild_backbuffer_crop_cachef` and share it
+    /// across all shapes that need the tile/atlas fallback path — avoiding an
+    /// `image_snapshot` (and potential GPU flush) per shape.
+    pub fn snapshot_for_drag_crop(&mut self) -> Option<(skia::Image, f32, skia::Point)> {
+        if self.is_empty() {
+            return None;
+        }
+        Some((
+            self.surface.image_snapshot(),
+            self.scale.max(0.01),
+            self.origin,
+        ))
+    }
 }
 
 pub struct Surfaces {
@@ -79,32 +418,18 @@ pub struct Surfaces {
     export: skia::Surface,
     // Persistent viewport-sized surface used to keep the last presented frame.
     backbuffer: skia::Surface,
+    // Atlas used to keep tiles.
+    tile_atlas: skia::Surface,
 
     tiles: TileTextureCache,
-    // Persistent 1:1 document-space atlas that gets incrementally updated as tiles render.
-    // It grows dynamically to include any rendered document rect.
-    atlas: skia::Surface,
-    atlas_origin: skia::Point,
-    atlas_size: skia::ISize,
-    /// Atlas pixel density relative to document pixels (1.0 == 1:1 doc px).
-    /// When the atlas would exceed `max_atlas_texture_size`, this value is
-    /// reduced so the atlas stays within the fixed texture cap.
-    atlas_scale: f32,
-    /// Optional document-space bounds (1 unit == 1 doc px @ 100% zoom) used to
-    /// clamp atlas writes/clears so the atlas doesn't grow due to outlier tile rects.
-    atlas_doc_bounds: Option<skia::Rect>,
-    /// Max width/height in pixels for the atlas surface (typically browser
-    /// `MAX_TEXTURE_SIZE`). Set from ClojureScript after WebGL context creation.
-    max_atlas_texture_size: i32,
+    pub atlas: DocAtlas,
     sampling_options: skia::SamplingOptions,
-    /// Tracks the last document-space rect written to the atlas per tile.
-    /// Used to clear old content without clearing the whole (potentially huge) tile rect.
-    atlas_tile_doc_rects: HashMap<Tile, skia::Rect>,
+    atlas_sampling_options: skia::SamplingOptions,
     pub margins: skia::ISize,
     // Tracks which surfaces have content (dirty flag bitmask)
     dirty_surfaces: u32,
-
     extra_tile_dims: skia::ISize,
+    dpr: f32,
 }
 
 #[allow(dead_code)]
@@ -127,6 +452,14 @@ impl Surfaces {
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height)?;
         let backbuffer =
             gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
+
+        let max_texture_size = gpu_state.max_texture_size();
+        let tile_atlas = gpu_state.create_surface_with_dimensions(
+            "tile_atlas".to_string(),
+            max_texture_size,
+            max_texture_size,
+        )?;
+
         let current =
             gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
 
@@ -144,12 +477,10 @@ impl Surfaces {
 
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
-        // Keep atlas as a regular surface like the rest. Start with a tiny
-        // transparent surface and grow it on demand.
-        let mut atlas = gpu_state.create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
-        atlas.canvas().clear(skia::Color::TRANSPARENT);
 
-        let tiles = TileTextureCache::new();
+        // 512, why not?
+        let tiles = TileTextureCache::new(tile_atlas.width(), 512);
+        let atlas = DocAtlas::try_new()?;
         Ok(Self {
             target,
             filter,
@@ -164,324 +495,57 @@ impl Surfaces {
             debug,
             export,
             backbuffer,
+            tile_atlas,
             tiles,
             atlas,
-            atlas_origin: skia::Point::new(0.0, 0.0),
-            atlas_size: skia::ISize::new(0, 0),
-            atlas_scale: 1.0,
-            atlas_doc_bounds: None,
-            max_atlas_texture_size: DEFAULT_MAX_ATLAS_TEXTURE_SIZE,
             sampling_options,
-            atlas_tile_doc_rects: HashMap::default(),
+            atlas_sampling_options: skia::SamplingOptions::new(
+                skia::FilterMode::Nearest,
+                skia::MipmapMode::None,
+            ),
             margins,
             dirty_surfaces: 0,
             extra_tile_dims,
+            dpr: 1.0,
         })
     }
 
-    /// Sets the maximum atlas texture dimension (one side). Should match the
-    /// WebGL `MAX_TEXTURE_SIZE` reported by the browser. Values are clamped to
-    /// a small minimum so the atlas logic stays well-defined.
-    pub fn set_max_atlas_texture_size(&mut self, max_px: i32) {
-        self.max_atlas_texture_size = max_px.clamp(TILE_SIZE as i32, MAX_ATLAS_TEXTURE_SIZE);
-    }
-
-    #[inline]
-    pub fn max_texture_dimension_px(&self) -> i32 {
-        self.max_atlas_texture_size
-    }
-
-    /// Sets the document-space bounds used to clamp atlas updates.
-    /// Pass `None` to disable clamping.
-    pub fn set_atlas_doc_bounds(&mut self, bounds: Option<skia::Rect>) {
-        self.atlas_doc_bounds = bounds.filter(|b| !b.is_empty());
-    }
-
-    fn clamp_doc_rect_to_bounds(&self, doc_rect: skia::Rect) -> skia::Rect {
-        if doc_rect.is_empty() {
-            return doc_rect;
-        }
-        if let Some(bounds) = self.atlas_doc_bounds {
-            let mut r = doc_rect;
-            if r.intersect(bounds) {
-                r
-            } else {
-                skia::Rect::new_empty()
-            }
-        } else {
-            doc_rect
-        }
-    }
-
-    fn ensure_atlas_contains(
-        &mut self,
-        gpu_state: &mut GpuState,
-        doc_rect: skia::Rect,
-    ) -> Result<()> {
-        if doc_rect.is_empty() {
-            return Ok(());
-        }
-
-        // Current atlas bounds in document space (1 unit == 1 px).
-        let current_left = self.atlas_origin.x;
-        let current_top = self.atlas_origin.y;
-        let atlas_scale = self.atlas_scale.max(0.01);
-        let current_right = current_left + (self.atlas_size.width as f32) / atlas_scale;
-        let current_bottom = current_top + (self.atlas_size.height as f32) / atlas_scale;
-
-        let mut new_left = current_left;
-        let mut new_top = current_top;
-        let mut new_right = current_right;
-        let mut new_bottom = current_bottom;
-
-        // If atlas is empty/uninitialized, seed to rect (expanded to tile boundaries for fewer reallocs).
-        let needs_init = self.atlas_size.width <= 0 || self.atlas_size.height <= 0;
-        if needs_init {
-            new_left = doc_rect.left.floor();
-            new_top = doc_rect.top.floor();
-            new_right = doc_rect.right.ceil();
-            new_bottom = doc_rect.bottom.ceil();
-        } else {
-            new_left = new_left.min(doc_rect.left.floor());
-            new_top = new_top.min(doc_rect.top.floor());
-            new_right = new_right.max(doc_rect.right.ceil());
-            new_bottom = new_bottom.max(doc_rect.bottom.ceil());
-        }
-
-        // Add padding to reduce realloc frequency.
-        let pad = TILE_SIZE;
-        new_left -= pad;
-        new_top -= pad;
-        new_right += pad;
-        new_bottom += pad;
-
-        let doc_w = (new_right - new_left).max(1.0);
-        let doc_h = (new_bottom - new_top).max(1.0);
-
-        // Compute atlas scale needed to fit within the fixed texture cap.
-        // Keep the highest possible scale (closest to 1.0) that still fits.
-        let cap = self.max_atlas_texture_size.max(TILE_SIZE as i32) as f32;
-        let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
-
-        // Never upscale the atlas (it would add blur and churn).
-        let new_scale = self.atlas_scale.min(required_scale).max(0.01);
-
-        let new_w = (doc_w * new_scale).ceil().clamp(1.0, cap) as i32;
-        let new_h = (doc_h * new_scale).ceil().clamp(1.0, cap) as i32;
-
-        // Fast path: existing atlas already contains the rect.
-        if !needs_init
-            && doc_rect.left >= current_left
-            && doc_rect.top >= current_top
-            && doc_rect.right <= current_right
-            && doc_rect.bottom <= current_bottom
-        {
-            return Ok(());
-        }
-
-        let mut new_atlas =
-            gpu_state.create_surface_with_dimensions("atlas".to_string(), new_w, new_h)?;
-        new_atlas.canvas().clear(skia::Color::TRANSPARENT);
-
-        // Copy old atlas into the new one with offset.
-        if !needs_init {
-            let old_scale = self.atlas_scale.max(0.01);
-            let scale_ratio = new_scale / old_scale;
-            let dx = (current_left - new_left) * new_scale;
-            let dy = (current_top - new_top) * new_scale;
-
-            let image = self.atlas.image_snapshot();
-            let src = skia::Rect::from_xywh(
-                0.0,
-                0.0,
-                self.atlas_size.width as f32,
-                self.atlas_size.height as f32,
-            );
-            let dst = skia::Rect::from_xywh(
-                dx,
-                dy,
-                (self.atlas_size.width as f32) * scale_ratio,
-                (self.atlas_size.height as f32) * scale_ratio,
-            );
-            new_atlas.canvas().draw_image_rect(
-                &image,
-                Some((&src, skia::canvas::SrcRectConstraint::Fast)),
-                dst,
-                &skia::Paint::default(),
-            );
-        }
-
-        self.atlas_origin = skia::Point::new(new_left, new_top);
-        self.atlas_size = skia::ISize::new(new_w, new_h);
-        self.atlas_scale = new_scale;
-        gpu_state.delete_surface(&mut self.atlas);
-        self.atlas = new_atlas;
-        Ok(())
-    }
-
-    fn blit_tile_image_into_atlas(
-        &mut self,
-        gpu_state: &mut GpuState,
-        tile_image: &skia::Image,
-        tile_doc_rect: skia::Rect,
-    ) -> Result<()> {
-        if tile_doc_rect.is_empty() {
-            return Ok(());
-        }
-
-        // Clamp to document bounds (if any) and compute a matching source-rect in tile pixels.
-        let mut clipped_doc_rect = tile_doc_rect;
-        if let Some(bounds) = self.atlas_doc_bounds {
-            if !clipped_doc_rect.intersect(bounds) {
-                return Ok(());
-            }
-        }
-        if clipped_doc_rect.is_empty() {
-            return Ok(());
-        }
-
-        self.ensure_atlas_contains(gpu_state, clipped_doc_rect)?;
-
-        // Destination is document-space rect mapped into atlas pixel coords.
-        let dst = skia::Rect::from_xywh(
-            (clipped_doc_rect.left - self.atlas_origin.x) * self.atlas_scale,
-            (clipped_doc_rect.top - self.atlas_origin.y) * self.atlas_scale,
-            clipped_doc_rect.width() * self.atlas_scale,
-            clipped_doc_rect.height() * self.atlas_scale,
-        );
-
-        // Compute source rect in tile_image pixel coordinates.
-        let img_w = tile_image.width() as f32;
-        let img_h = tile_image.height() as f32;
-        let tw = tile_doc_rect.width().max(1.0);
-        let th = tile_doc_rect.height().max(1.0);
-
-        let sx = ((clipped_doc_rect.left - tile_doc_rect.left) / tw) * img_w;
-        let sy = ((clipped_doc_rect.top - tile_doc_rect.top) / th) * img_h;
-        let sw = (clipped_doc_rect.width() / tw) * img_w;
-        let sh = (clipped_doc_rect.height() / th) * img_h;
-        let src = skia::Rect::from_xywh(sx, sy, sw, sh);
-
-        self.atlas.canvas().draw_image_rect(
-            tile_image,
-            Some((&src, skia::canvas::SrcRectConstraint::Fast)),
-            dst,
-            &skia::Paint::default(),
-        );
-        Ok(())
-    }
-
-    pub fn clear_doc_rect_in_atlas(
-        &mut self,
-        gpu_state: &mut GpuState,
-        doc_rect: skia::Rect,
-    ) -> Result<()> {
-        let doc_rect = self.clamp_doc_rect_to_bounds(doc_rect);
-        if doc_rect.is_empty() {
-            return Ok(());
-        }
-
-        self.ensure_atlas_contains(gpu_state, doc_rect)?;
-
-        // Destination is document-space rect mapped into atlas pixel coords.
-        let dst = skia::Rect::from_xywh(
-            (doc_rect.left - self.atlas_origin.x) * self.atlas_scale,
-            (doc_rect.top - self.atlas_origin.y) * self.atlas_scale,
-            doc_rect.width() * self.atlas_scale,
-            doc_rect.height() * self.atlas_scale,
-        );
-
-        let canvas = self.atlas.canvas();
-        canvas.save();
-        canvas.clip_rect(dst, None, true);
-        canvas.clear(skia::Color::TRANSPARENT);
-        canvas.restore();
-        Ok(())
-    }
-
-    /// Clears the last atlas region written by `tile` (if any).
-    ///
-    /// This avoids clearing the entire logical tile rect which, at very low
-    /// zoom levels, can be enormous in document space and would unnecessarily
-    /// grow / rescale the atlas.
-    pub fn clear_tile_in_atlas(&mut self, gpu_state: &mut GpuState, tile: Tile) -> Result<()> {
-        if let Some(doc_rect) = self.atlas_tile_doc_rects.remove(&tile) {
-            self.clear_doc_rect_in_atlas(gpu_state, doc_rect)?;
-        }
-        Ok(())
-    }
-
-    /// Clears a doc-space rect from the atlas **without** growing it.
-    ///
-    /// Unlike [`clear_doc_rect_in_atlas`], this method clips `doc_rect` to the
-    /// current atlas bounds and skips silently if there is no overlap. Use this
-    /// when evicting stale shape content (e.g. before a drag re-render) where
-    /// growing the atlas to accommodate an out-of-range rect would be wasteful.
-    pub fn clear_doc_rect_in_atlas_clipped(&mut self, doc_rect: skia::Rect) {
-        if !self.has_atlas() || doc_rect.is_empty() {
-            return;
-        }
-
-        let atlas_scale = self.atlas_scale.max(0.01);
-        let atlas_doc_right = self.atlas_origin.x + (self.atlas_size.width as f32) / atlas_scale;
-        let atlas_doc_bottom = self.atlas_origin.y + (self.atlas_size.height as f32) / atlas_scale;
-
-        // Intersect with current atlas bounds in doc space.
-        let mut clipped = doc_rect;
-        let atlas_bounds = skia::Rect::from_ltrb(
-            self.atlas_origin.x,
-            self.atlas_origin.y,
-            atlas_doc_right,
-            atlas_doc_bottom,
-        );
-        if !clipped.intersect(atlas_bounds) {
-            return;
-        }
-
-        // Apply atlas_doc_bounds clamping.
-        if let Some(bounds) = self.atlas_doc_bounds {
-            if !clipped.intersect(bounds) {
-                return;
-            }
-        }
-
-        if clipped.is_empty() {
-            return;
-        }
-
-        let dst = skia::Rect::from_xywh(
-            (clipped.left - self.atlas_origin.x) * atlas_scale,
-            (clipped.top - self.atlas_origin.y) * atlas_scale,
-            clipped.width() * atlas_scale,
-            clipped.height() * atlas_scale,
-        );
-
-        let canvas = self.atlas.canvas();
-        canvas.save();
-        canvas.clip_rect(dst, None, true);
-        canvas.clear(skia::Color::TRANSPARENT);
-        canvas.restore();
+    pub fn set_dpr(&mut self, dpr: f32) {
+        self.dpr = dpr;
     }
 
     pub fn clear_tiles(&mut self) {
         self.tiles.clear();
     }
 
-    pub fn has_atlas(&self) -> bool {
-        self.atlas_size.width > 0 && self.atlas_size.height > 0
+    pub fn draw_tile_atlas_to_backbuffer(
+        &mut self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+        background: skia::Color,
+    ) {
+        self.tiles.update(viewbox, tile_viewbox);
+        let atlas_image = self.tile_atlas.image_snapshot();
+        let canvas = self.backbuffer.canvas();
+        canvas.clear(background);
+        canvas.draw_atlas(
+            &atlas_image,
+            &self.tiles.transforms,
+            &self.tiles.textures,
+            None,
+            skia::BlendMode::SrcOver,
+            self.atlas_sampling_options,
+            None,
+            None,
+        );
     }
 
     /// Draw the persistent atlas onto the backbuffer using the current viewbox transform.
     /// Intended for fast pan/zoom-out previews (avoids per-tile composition).
     /// Clears Backbuffer to `background` first so atlas-uncovered regions don't
     /// show stale content when the atlas only partially covers the viewport.
-    pub fn draw_atlas_to_backbuffer(
-        &mut self,
-        viewbox: Viewbox,
-        dpr: f32,
-        background: skia::Color,
-    ) {
-        if !self.has_atlas() {
+    pub fn draw_atlas_to_backbuffer(&mut self, viewbox: Viewbox, background: skia::Color) {
+        if self.atlas.is_empty() {
             return;
         }
 
@@ -496,15 +560,15 @@ impl Surfaces {
         );
         canvas.clear(background);
 
-        let s = viewbox.zoom * dpr;
-        let atlas_scale = self.atlas_scale.max(0.01);
+        let s = viewbox.get_scale();
+        let scale = self.atlas.scale.max(0.01);
         canvas.translate((
-            (self.atlas_origin.x + viewbox.pan_x) * s,
-            (self.atlas_origin.y + viewbox.pan_y) * s,
+            (self.atlas.origin.x + viewbox.pan.x) * s,
+            (self.atlas.origin.y + viewbox.pan.y) * s,
         ));
-        canvas.scale((s / atlas_scale, s / atlas_scale));
+        canvas.scale((s / scale, s / scale));
 
-        self.atlas.draw(
+        self.atlas.surface.draw(
             canvas,
             (0.0, 0.0),
             self.sampling_options,
@@ -757,7 +821,8 @@ impl Surfaces {
             SurfaceId::Debug => &mut self.debug,
             SurfaceId::UI => &mut self.ui,
             SurfaceId::Export => &mut self.export,
-            SurfaceId::Atlas => &mut self.atlas,
+            SurfaceId::Atlas => &mut self.atlas.surface,
+            SurfaceId::TileAtlas => &mut self.tile_atlas,
         }
     }
 
@@ -777,7 +842,8 @@ impl Surfaces {
             SurfaceId::Debug => &self.debug,
             SurfaceId::UI => &self.ui,
             SurfaceId::Export => &self.export,
-            SurfaceId::Atlas => &self.atlas,
+            SurfaceId::Atlas => &self.atlas.surface,
+            SurfaceId::TileAtlas => &self.tile_atlas,
         }
     }
 
@@ -796,6 +862,30 @@ impl Surfaces {
             sampling_options,
             Some(&skia::Paint::default()),
         );
+    }
+
+    /// Replace `Target` pixels with `Backbuffer` (Src blend).
+    ///
+    /// Used for viewer masked passes: transparent backbuffer regions must not
+    /// preserve prior `Target` content from an earlier pass.
+    pub fn copy_backbuffer_to_target_replace(&mut self) {
+        let sampling_options = self.sampling_options;
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(skia::BlendMode::Src);
+        self.backbuffer.draw(
+            self.target.canvas(),
+            (0.0, 0.0),
+            sampling_options,
+            Some(&paint),
+        );
+    }
+
+    pub fn clear_target(&mut self, color: skia::Color) {
+        self.target.canvas().clear(color);
+    }
+
+    pub fn clear_tile_atlas(&mut self) {
+        self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
     }
 
     /// Seed `Backbuffer` from `Target` (last presented frame).
@@ -843,9 +933,27 @@ impl Surfaces {
             .ok_or(Error::CriticalError("Failed to create surface".to_string()))?;
         self.cache.canvas().reset_matrix();
         self.cache.canvas().translate((
-            (interest_area_threshold as f32 * TILE_SIZE),
-            (interest_area_threshold as f32 * TILE_SIZE),
+            (interest_area_threshold * TILE_SIZE) as f32,
+            (interest_area_threshold * TILE_SIZE) as f32,
         ));
+        Ok(())
+    }
+
+    pub fn resize_cache_from_viewbox(
+        &mut self,
+        viewbox: &Viewbox,
+        cached_viewbox: &Viewbox,
+        interest_area_threshold: i32,
+    ) -> Result<()> {
+        let viewbox_cache_size = get_cache_size(viewbox, interest_area_threshold);
+        let cached_viewbox_cache_size = get_cache_size(cached_viewbox, interest_area_threshold);
+        // Only resize cache if the new size is larger than the cached size
+        // This avoids unnecessary surface recreations when the cache size decreases
+        if viewbox_cache_size.width > cached_viewbox_cache_size.width
+            || viewbox_cache_size.height > cached_viewbox_cache_size.height
+        {
+            return self.resize_cache(viewbox_cache_size, interest_area_threshold);
+        }
         Ok(())
     }
 
@@ -942,6 +1050,17 @@ impl Surfaces {
         }
     }
 
+    /// Full backbuffer clear (viewer layer passes must not reuse prior pass pixels).
+    pub fn clear_backbuffer(&mut self, color: skia::Color) {
+        self.backbuffer.canvas().clear(color);
+    }
+
+    pub fn clear_backbuffer_rect(&mut self, rect: skia::Rect, color: skia::Color) {
+        let mut paint = Paint::default();
+        paint.set_color(color);
+        self.backbuffer.canvas().draw_rect(rect, &paint);
+    }
+
     pub fn reset(&mut self, color: skia::Color) {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
@@ -1005,6 +1124,7 @@ impl Surfaces {
         self.canvas(SurfaceId::Debug)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
+
         self.canvas(SurfaceId::UI)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
@@ -1021,7 +1141,7 @@ impl Surfaces {
         canvas.restore();
     }
 
-    pub fn cache_current_tile_texture(
+    pub fn draw_current_tile_into_tile_atlas(
         &mut self,
         tile_viewbox: &TileViewbox,
         tile: &Tile,
@@ -1030,15 +1150,9 @@ impl Surfaces {
         tile_doc_rect: skia::Rect,
     ) {
         let gpu_state = get_gpu_state();
-        let rect = IRect::from_xywh(
-            self.margins.width,
-            self.margins.height,
-            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
-        );
+        let rect = TILE_DRAWABLE_RECT;
 
         let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
-
         if let Some(tile_image) = tile_image_opt {
             if !skip_cache_surface {
                 // Draw to cache surface for render_from_cache
@@ -1052,29 +1166,24 @@ impl Surfaces {
 
             // Incrementally update persistent 1:1 atlas in document space.
             // `tile_doc_rect` is in world/document coordinates (1 unit == 1 px at 100%).
-            let _ = self.blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
-            self.atlas_tile_doc_rects.insert(*tile, tile_doc_rect);
-            self.tiles.add(tile_viewbox, tile, tile_image);
+            let _ = self
+                .atlas
+                .blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
+            self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
+
+            // Draws current tile into tile atlas
+            let tile_ref = self.tiles.add(tile_viewbox, tile);
+            self.tile_atlas.canvas().draw_image_rect(
+                &tile_image,
+                None,
+                tile_ref.rect,
+                &skia::Paint::default(),
+            );
         }
     }
 
     pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
         self.tiles.has(tile)
-    }
-
-    /// Returns a snapshot of the atlas together with its scale and origin, so the
-    /// caller can take it **once** per `rebuild_backbuffer_crop_cache` and share it
-    /// across all shapes that need the tile/atlas fallback path — avoiding an
-    /// `image_snapshot` (and potential GPU flush) per shape.
-    pub fn atlas_snapshot_for_drag_crop(&mut self) -> Option<(skia::Image, f32, skia::Point)> {
-        if !self.has_atlas() {
-            return None;
-        }
-        Some((
-            self.atlas.image_snapshot(),
-            self.atlas_scale.max(0.01),
-            self.atlas_origin,
-        ))
     }
 
     /// Builds a 1:1 workspace-pixel snapshot for `src_doc_bounds` / `src_irect` into
@@ -1085,7 +1194,7 @@ impl Surfaces {
     /// the largest window needed in one `rebuild_backbuffer_crop_cache` pass.
     ///
     /// `atlas_snap` is a pre-snapshotted view of the persistent atlas produced by
-    /// [`Surfaces::atlas_snapshot_for_drag_crop`]; pass `None` when no atlas exists.
+    /// [`Surfaces::atlas.snapshot_for_drag_crop`]; pass `None` when no atlas exists.
     ///
     /// For each tile cell intersecting `src_doc_bounds`: draws from
     /// [`TileTextureCache`] when present; otherwise samples the atlas.
@@ -1131,7 +1240,17 @@ impl Surfaces {
                     (clip_doc.bottom - vb_top) * scale - iy0,
                 );
 
-                if let Some(tile_image) = self.tiles.get(tile) {
+                if let Some(tile_ref) = self.tiles.get(tile) {
+                    let bounds = skia::IRect::from_ltrb(
+                        tile_ref.rect.left as i32,
+                        tile_ref.rect.top as i32,
+                        tile_ref.rect.right as i32,
+                        tile_ref.rect.bottom as i32,
+                    );
+                    let Some(tile_image) = self.tile_atlas.image_snapshot_with_bounds(bounds)
+                    else {
+                        panic!("Cannot retrieve tile image");
+                    };
                     let iw = tile_image.width() as f32;
                     let ih = tile_image.height() as f32;
                     let td_w = tile_doc.width().max(1e-6);
@@ -1152,9 +1271,9 @@ impl Surfaces {
                     );
                 } else {
                     let snap = atlas_snap?;
-                    let (atlas, a_scale, atlas_origin) = (&snap.0, snap.1, snap.2);
-                    let sx = (clip_doc.left - atlas_origin.x) * a_scale;
-                    let sy = (clip_doc.top - atlas_origin.y) * a_scale;
+                    let (atlas, a_scale, origin) = (&snap.0, snap.1, snap.2);
+                    let sx = (clip_doc.left - origin.x) * a_scale;
+                    let sy = (clip_doc.top - origin.y) * a_scale;
                     let sw = clip_doc.width() * a_scale;
                     let sh = clip_doc.height() * a_scale;
                     if sw <= 0.0 || sh <= 0.0 {
@@ -1182,52 +1301,38 @@ impl Surfaces {
         self.tiles.remove(tile);
         // Also clear the corresponding region in the persistent atlas to avoid
         // leaving stale pixels when shapes move/delete.
-        let _ = self.clear_tile_in_atlas(gpu_state, tile);
+        let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
     }
 
-    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
-        if let Some(image) = self.tiles.get(tile) {
-            let mut paint = skia::Paint::default();
-            paint.set_color(color);
+    pub fn get_tile_image_from_tile_atlas(&mut self, tile: Tile) -> Option<skia::Image> {
+        let Some(tile_ref) = self.tiles.get(tile) else {
+            panic!("Tile not found {}:{}", tile.0, tile.1);
+        };
 
-            self.backbuffer.canvas().draw_rect(rect, &paint);
-
-            self.backbuffer
-                .canvas()
-                .draw_image_rect(&image, None, rect, &skia::Paint::default());
-        }
+        let rect = IRect::from_ltrb(
+            tile_ref.rect.left as i32,
+            tile_ref.rect.top as i32,
+            tile_ref.rect.right as i32,
+            tile_ref.rect.bottom as i32,
+        );
+        self.tile_atlas.image_snapshot_with_bounds(rect)
     }
 
-    /// Draws a cached tile texture to the Cache self.backbuffer at the given
-    /// cache-aligned rect.  This keeps the Cache surface in sync with
-    /// Backbuffer so that `render_from_cache` (used during pan) has the
-    /// full scene including tiles served from the texture cache.
-    pub fn draw_cached_tile_to_cache(
-        &mut self,
-        tile: Tile,
-        aligned_rect: &skia::Rect,
-        color: skia::Color,
-    ) {
-        if let Some(image) = self.tiles.get(tile) {
-            let mut bg = skia::Paint::default();
-            bg.set_color(color);
-            self.cache.canvas().draw_rect(aligned_rect, &bg);
-            self.cache.canvas().draw_image_rect(
-                &image,
-                None,
-                aligned_rect,
-                &skia::Paint::default(),
-            );
+    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
+        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
+            // let rect = tile.get_rect_with_offset(&offset);
+            let backbuffer_canvas = self.backbuffer.canvas();
+            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
         }
     }
 
     /// Draws the current tile directly to the backbuffer and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
-    pub fn draw_current_tile_direct(
+    pub fn draw_current_tile_into_backbuffer(
         &mut self,
         tile_rect: &skia::Rect,
-        color: skia::Color,
+        _color: skia::Color,
         draw_on_cache: DrawOnCache,
     ) {
         let sampling_options = self.sampling_options;
@@ -1240,10 +1345,11 @@ impl Surfaces {
         let src_rect_f = skia::Rect::from(src_rect);
 
         let backbuffer_canvas = self.backbuffer.canvas();
+
         // Draw background
-        let mut paint = skia::Paint::default();
-        paint.set_color(color);
-        backbuffer_canvas.draw_rect(tile_rect, &paint);
+        // let mut paint = skia::Paint::default();
+        // paint.set_color(color);
+        // backbuffer_canvas.draw_rect(tile_rect, &paint);
 
         // Draw current surface directly to target (no snapshot)
         self.current.draw(
@@ -1275,7 +1381,7 @@ impl Surfaces {
     /// the cache canvas for scaled previews, use `invalidate_tile_cache` instead.
     pub fn remove_cached_tiles(&mut self, color: skia::Color) {
         self.tiles.clear();
-        self.atlas_tile_doc_rects.clear();
+        self.atlas.tile_doc_rects.clear();
         self.cache.canvas().clear(color);
     }
 
@@ -1285,7 +1391,7 @@ impl Surfaces {
     /// content while new tiles are being rendered.
     pub fn invalidate_tile_cache(&mut self) {
         self.tiles.clear();
-        self.atlas_tile_doc_rects.clear();
+        self.atlas.tile_doc_rects.clear();
     }
 
     pub fn gc(&mut self) {
@@ -1347,31 +1453,103 @@ impl Surfaces {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct TileAtlasTextureRef {
+    pub index: usize,
+    pub rect: skia::Rect,
+}
+
+impl TileAtlasTextureRef {
+    pub fn new(index: usize, rect: skia::Rect) -> Self {
+        Self { index, rect }
+    }
+}
+
+pub struct TileAtlasTextureProvider {
+    pub index: usize,
+    pub length: usize,
+    pub in_use: Vec<bool>,
+    pub rects: Vec<Rect>,
+}
+
+impl TileAtlasTextureProvider {
+    pub fn new(texture_size: i32, tile_size: i32) -> Self {
+        let side = texture_size / tile_size;
+        let length = side * side;
+        let mut rects = Vec::with_capacity(length as usize);
+        for i in 0..length {
+            let left = (i % side) as f32 * tile_size as f32;
+            let top = (i / side) as f32 * tile_size as f32;
+            let right = left + tile_size as f32;
+            let bottom = top + tile_size as f32;
+            rects.push(Rect::new(left, top, right, bottom));
+        }
+        Self {
+            index: 0,
+            length: length as usize,
+            in_use: vec![false; length as usize],
+            rects,
+        }
+    }
+
+    pub fn allocate(&mut self) -> Option<TileAtlasTextureRef> {
+        let start = self.index;
+        loop {
+            if !self.in_use[self.index] {
+                self.in_use[self.index] = true;
+                return Some(TileAtlasTextureRef::new(self.index, self.rects[self.index]));
+            }
+
+            self.index = (self.index + 1) % self.length;
+            if self.index == start {
+                return None;
+            }
+        }
+    }
+
+    pub fn deallocate(&mut self, reference: TileAtlasTextureRef) -> bool {
+        // In this case the user of the provider it's trying to release
+        // a reference already freed.
+        if !self.in_use[reference.index] {
+            return false;
+        }
+        self.in_use[reference.index] = false;
+        self.index = reference.index;
+        true
+    }
+}
+
 pub struct TileTextureCache {
-    grid: HashMap<Tile, skia::Image>,
+    tile_size: f32,
+    provider: TileAtlasTextureProvider,
+    transforms: Vec<skia::RSXform>,
+    textures: Vec<skia::Rect>,
+    grid: HashMap<Tile, TileAtlasTextureRef>,
     removed: HashSet<Tile>,
 }
 
 impl TileTextureCache {
-    pub fn new() -> Self {
+    pub fn new(texture_size: i32, capacity: usize) -> Self {
         Self {
-            grid: HashMap::default(),
-            removed: HashSet::default(),
+            tile_size: tiles::TILE_SIZE,
+            provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE),
+            transforms: Vec::with_capacity(capacity),
+            textures: Vec::with_capacity(capacity),
+            grid: HashMap::with_capacity(capacity),
+            removed: HashSet::with_capacity(capacity),
         }
-    }
-
-    pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
     }
 
     fn gc(&mut self) {
         // Make a real remove
         for tile in self.removed.iter() {
-            self.grid.remove(tile);
+            if let Some(tile_ref) = self.grid.remove(tile) {
+                self.provider.deallocate(tile_ref);
+            }
         }
     }
 
-    fn free_tiles(&mut self, tile_viewbox: &TileViewbox) {
+    fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {
         let marked: Vec<_> = self
             .grid
             .iter_mut()
@@ -1386,35 +1564,99 @@ impl TileTextureCache {
             .collect();
 
         for tile in marked.iter() {
-            self.grid.remove(tile);
+            if let Some(tile_ref) = self.grid.remove(tile) {
+                self.provider.deallocate(tile_ref);
+            }
         }
     }
 
-    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile, image: skia::Image) {
+    pub fn update(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
+        if self.transforms.len() != tile_viewbox.visible_rect.len() as usize {
+            self.transforms.resize(
+                tile_viewbox.visible_rect.len() as usize,
+                skia::RSXform::new(1.0, 0.0, Point::default()),
+            );
+        }
+
+        if self.textures.len() != tile_viewbox.visible_rect.len() as usize {
+            self.textures.resize(
+                tile_viewbox.visible_rect.len() as usize,
+                skia::Rect::new_empty(),
+            );
+        }
+
+        for texture in self.textures.iter_mut() {
+            texture.set_empty();
+        }
+
+        let offset = viewbox.get_offset();
+        let mut index = 0;
+        for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
+            for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
+                let tile = Tile(x, y);
+
+                let Some(tile_ref) = self.grid.get(&tile) else {
+                    continue;
+                };
+
+                self.transforms[index].tx = x as f32 * self.tile_size - offset.x;
+                self.transforms[index].ty = y as f32 * self.tile_size - offset.y;
+
+                self.textures[index].set_ltrb(
+                    tile_ref.rect.left,
+                    tile_ref.rect.top,
+                    tile_ref.rect.right,
+                    tile_ref.rect.bottom,
+                );
+
+                index += 1;
+            }
+        }
+    }
+
+    pub fn has(&self, tile: Tile) -> bool {
+        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
+    }
+
+    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            // First we try to remove the obsolete tiles
+            // First we try to remove the obsolete tiles.
             self.gc();
         }
 
+        // If we still have a texture capacity problem, then
+        // we try to remove all of those tiles that aren't
+        // visible.
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            self.free_tiles(tile_viewbox);
+            self.gc_non_visible(tile_viewbox);
         }
 
-        self.grid.insert(*tile, image);
+        let Some(tile_ref) = self.provider.allocate() else {
+            panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
+        };
+
+        self.grid.insert(*tile, tile_ref.clone());
 
         if self.removed.contains(tile) {
             self.removed.remove(tile);
         }
+
+        tile_ref.clone()
     }
 
-    pub fn get(&mut self, tile: Tile) -> Option<&mut skia::Image> {
+    pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {
         if self.removed.contains(&tile) {
             return None;
         }
-        self.grid.get_mut(&tile)
+        self.grid.get(&tile)
     }
 
     pub fn remove(&mut self, tile: Tile) {
+        if let Some(tile_ref) = self.grid.get(&tile) {
+            if tile_ref.index < self.textures.len() {
+                self.textures[tile_ref.index].set_empty();
+            }
+        }
         self.removed.insert(tile);
     }
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.shape-icon
   (:require
@@ -57,7 +57,7 @@
               "rectangle")
       :circle (if (cts/has-images? shape)
                 "img"
-                "elipse")
+                "ellipse")
       :path (if (cts/has-images? shape)
               "img"
               "path")
@@ -85,4 +85,3 @@
       :mask "mask"
       :group "group"
       nil)))
-

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::{tiles, RenderState, SurfaceId};
 
 #[cfg(target_arch = "wasm32")]
@@ -22,7 +23,6 @@ fn get_debug_rect(rect: Rect) -> Rect {
     )
 }
 
-#[allow(dead_code)]
 fn render_debug_view(render_state: &mut RenderState) {
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
@@ -36,7 +36,6 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(rect, &paint);
 }
 
-#[allow(dead_code)]
 pub fn render_debug_cache_surface(render_state: &mut RenderState) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     canvas.save();
@@ -48,37 +47,37 @@ pub fn render_debug_cache_surface(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    if !render_state.options.show_wasm_info() {
+    if render_state.preview_mode || !render_state.options.show_wasm_info() {
         return;
     }
 
     let canvas = render_state.surfaces.canvas(SurfaceId::Target);
-    let skia::ISize { width, height } = canvas.base_layer_size();
+    let canvas_width = canvas.base_layer_size().width as f32;
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::GRAY);
 
     let mut str = if render_state.options.is_debug_visible() {
-        "WASM RENDERER (DEBUG)"
+        "WebGL rendering (debug)"
     } else {
-        "WASM RENDERER"
+        "WebGL rendering"
     };
+    let dpr = render_state.options.dpr;
     let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-    let mut p = skia::Point::new(width as f32 - 25.0 - scalar, height as f32 - 25.0);
+    let mut p = skia::Point::new(canvas_width - (20.0 * dpr) - scalar, 50.0 * dpr);
 
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str, p, debug_font, &paint);
 
     if render_state.options.is_text_editor_v3() {
-        str = "TEXT EDITOR / V3";
+        str = "Text Editor v3";
 
         let (scalar, _) = render_state.fonts.debug_font().measure_str(str, None);
-        p.x = width as f32 - 25.0 - scalar;
-        p.y -= 20.0;
+        p.x = canvas_width - (20.0 * dpr) - scalar;
+        p.y += 15.0 * dpr;
         canvas.draw_str(str, p, debug_font, &paint);
     }
 }
 
-#[allow(dead_code)]
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
     let tiles::TileRect(sx, sy, ex, ey) = render_state.tile_viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
@@ -91,7 +90,6 @@ pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
 }
 
 // Renders the tiles in the viewbox
-#[allow(dead_code)]
 pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     let scale = render_state.get_scale();
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
@@ -101,30 +99,25 @@ pub fn render_debug_viewbox_tiles(render_state: &mut RenderState) {
     paint.set_stroke_width(1.);
 
     let tile_size = tiles::get_tile_size(scale);
-    let tiles::TileRect(sx, sy, ex, ey) =
-        tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
+    let tile_rect = tiles::get_tiles_for_rect(render_state.viewbox.area, tile_size);
+    let tiles::TileRect(sx, sy, ex, ey) = tile_rect;
+
     let str_rect = format!("{} {} {} {}", sx, sy, ex, ey);
 
     let debug_font = render_state.fonts.debug_font();
     canvas.draw_str(str_rect, skia::Point::new(100.0, 100.0), debug_font, &paint);
 
     let tile_size = tiles::get_tile_size(scale);
-    for y in sy..=ey {
-        for x in sx..=ex {
-            let rect = Rect::from_xywh(
-                x as f32 * tile_size,
-                y as f32 * tile_size,
-                tile_size,
-                tile_size,
-            );
-            let debug_rect = get_debug_rect(rect);
-            let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
-            let str = format!("{}:{}", x, y);
-            let debug_font = render_state.fonts.debug_font();
-            paint.set_style(skia::PaintStyle::Fill);
-            canvas.draw_str(str, p, debug_font, &paint);
-            canvas.draw_rect(debug_rect, &paint);
-        }
+    for tile in tile_rect.iter(true) {
+        let tiles::Tile(x, y) = tile;
+        let rect = tile.get_rect_with_size(tile_size);
+        let debug_rect = get_debug_rect(rect);
+        let p = skia::Point::new(debug_rect.x(), debug_rect.y() - 1.);
+        let str = format!("{}:{}", x, y);
+        let debug_font = render_state.fonts.debug_font();
+        paint.set_style(skia::PaintStyle::Fill);
+        canvas.draw_str(str, p, debug_font, &paint);
+        canvas.draw_rect(debug_rect, &paint);
     }
 }
 
@@ -187,13 +180,11 @@ pub fn render_debug_shape(
     }
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn trap() {
     run_script!("debugger");
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 #[derive(Debug, PartialEq)]
 pub enum SurfaceBackendKind {
@@ -203,7 +194,6 @@ pub enum SurfaceBackendKind {
     Unknown,
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn classify_surface_backend(surface: &mut skia::Surface) -> SurfaceBackendKind {
     if skia::gpu::surfaces::get_backend_texture(
@@ -231,7 +221,6 @@ pub fn classify_surface_backend(surface: &mut skia::Surface) -> SurfaceBackendKi
     SurfaceBackendKind::Unknown
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state
@@ -242,7 +231,6 @@ pub fn console_debug_surface(render_state: &mut RenderState, id: SurfaceId) {
     run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"));
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_base64(render_state: &mut RenderState, id: SurfaceId) {
     let base64_image = render_state
@@ -253,7 +241,6 @@ pub fn console_debug_surface_base64(render_state: &mut RenderState, id: SurfaceI
     println!("{}", base64_image);
 }
 
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId, rect: skia::Rect) {
     let int_rect = skia::IRect::from_ltrb(
@@ -271,6 +258,16 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
+}
+
+#[no_mangle]
+#[wasm_error]
+#[cfg(target_arch = "wasm32")]
+pub extern "C" fn capture_frames(capture_frames: i32) -> Result<()> {
+    get_render_state()
+        .options
+        .set_capture_frames(capture_frames);
+    Ok(())
 }
 
 #[no_mangle]

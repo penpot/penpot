@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.libraries
   (:require-macros [app.main.style :as stl])
@@ -580,9 +580,9 @@
                      [:div {:class (stl/css :libraries-updates-item)
                             :key (dm/str (:id color))}
                       [:*
-                       [:& cb/color-bullet {:color {:color (:color color)
-                                                    :id (:id color)
-                                                    :opacity (:opacity color)}}]
+                       [:> cb/color-bullet* {:color {:color (:color color)
+                                                     :id (:id color)
+                                                     :opacity (:opacity color)}}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name color)}

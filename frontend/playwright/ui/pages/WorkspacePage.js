@@ -175,6 +175,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.textShapeButton = page.getByRole("button", { name: "Text (T)" });
     this.moveButton = page.getByRole("button", { name: "Move (V)" });
     this.boardButton = page.getByRole("button", { name: "Board (B)" });
+    this.pathButton = page.getByRole("button", { name: "Path (P)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });

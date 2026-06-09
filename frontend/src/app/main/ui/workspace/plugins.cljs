@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.plugins
   (:require-macros [app.main.style :as stl])
@@ -55,7 +55,7 @@
             "/" "")
           icon))
 
-(mf/defc plugin-entry
+(mf/defc plugin-entry*
   [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
 
   (let [{:keys [plugin-id host icon name description permissions]} manifest
@@ -232,12 +232,12 @@
 
           [:div {:class (stl/css :plugins-list)}
            (for [[idx manifest] (d/enumerate plugins-state)]
-             [:& plugin-entry {:key (dm/str "plugin-" idx)
-                               :index idx
-                               :manifest manifest
-                               :user-can-edit user-can-edit?
-                               :on-open-plugin on-open-plugin
-                               :on-remove-plugin on-remove-plugin}])]])]]]))
+             [:> plugin-entry* {:key (dm/str "plugin-" idx)
+                                :index idx
+                                :manifest manifest
+                                :user-can-edit user-can-edit?
+                                :on-open-plugin on-open-plugin
+                                :on-remove-plugin on-remove-plugin}])]])]]]))
 
 (mf/defc plugins-permission-list*
   {::mf/private true}

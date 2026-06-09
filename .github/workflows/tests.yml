@@ -27,8 +27,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -91,8 +91,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -110,8 +110,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - uses: actions/checkout@v6
@@ -165,8 +165,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -191,8 +191,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -220,8 +220,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     services:
       postgres:
@@ -255,6 +255,7 @@ jobs:
           PENPOT_TEST_REDIS_URI: "redis://redis/1"
 
         run: |
+          mkdir -p /tmp/penpot;
           clojure -M:dev:test --reporter kaocha.report/documentation
 
   test-library:
@@ -264,8 +265,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -283,8 +284,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     steps:
       - name: Checkout repository
@@ -308,8 +309,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     needs: build-integration
 
@@ -344,8 +345,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     needs: build-integration
 
@@ -380,8 +381,8 @@ jobs:
     container:
       image: penpotapp/devenv:latest
       volumes:
-        - /tmp/.m2:/root/.m2
-        - /tmp/.gitlibs:/root/.gitlibs
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
 
     needs: build-integration
 

@@ -1,5 +1,8 @@
 use macros::wasm_error;
 
+#[cfg(target_arch = "wasm32")]
+use crate::emscripten::init_gl;
+
 use crate::mem;
 use crate::render::{gpu_state::GpuState, RenderState};
 use crate::state::{State, TextEditorState};
@@ -94,7 +97,7 @@ fn gpu_init() {
 fn render_init(width: i32, height: i32) {
     unsafe {
         let render_state =
-            RenderState::try_new(width, height).expect("Cannot intialize RenderState");
+            RenderState::try_new(width, height).expect("Cannot initialize RenderState");
         RENDER_STATE = Box::into_raw(Box::new(render_state));
     }
 }
@@ -107,6 +110,7 @@ fn design_init() {
     }
 }
 
+/// Initializes TextEditorState.
 fn text_editor_init() {
     unsafe {
         let text_editor_state = TextEditorState::new();
@@ -117,6 +121,8 @@ fn text_editor_init() {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
+    #[cfg(target_arch = "wasm32")]
+    init_gl!();
     gpu_init();
     render_init(width, height);
     text_editor_init();
@@ -130,7 +136,6 @@ pub extern "C" fn clean_up() -> Result<()> {
     // Cancel the current animation frame if it exists so
     // it won't try to render without context
     let render_state = get_render_state();
-    render_state.cancel_animation_frame();
     render_state.prepare_context_loss_cleanup();
     unsafe { DESIGN_STATE = std::ptr::null_mut() }
     mem::free_bytes()?;

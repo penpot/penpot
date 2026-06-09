@@ -8,8 +8,18 @@ export PENPOT_SECRET_KEY=super-secret-devenv-key
 # DEPRECATED: only used for subscriptions
 export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 
-export PENPOT_HOST=devenv
-export PENPOT_PUBLIC_URI=https://localhost:3449
+# Runtime config that varies per devenv instance (PENPOT_HOST, PENPOT_PUBLIC_URI,
+# PENPOT_DATABASE_*, PENPOT_REDIS_URI, PENPOT_OBJECTS_STORAGE_*, AWS_*) is owned by
+# docker/devenv/defaults.env and injected via the main service's env block.
+
+# Background worker flag is per-instance. Defaults to enabled (ws0); ws1+
+# overlays set PENPOT_BACKEND_WORKER=false so scheduled and async tasks only
+# run on ws0, keeping notification Pub/Sub bound to a single Valkey. See
+# mem:devenv/core for the rationale.
+__worker_flag=""
+if [[ "${PENPOT_BACKEND_WORKER:-true}" == "true" ]]; then
+    __worker_flag="enable-backend-worker"
+fi
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
@@ -20,7 +30,7 @@ export PENPOT_FLAGS="\
        disable-login-with-github \
        disable-login-with-gitlab \
        disable-telemetry \
-       enable-backend-worker \
+       $__worker_flag \
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
@@ -60,12 +70,6 @@ export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
 
 export PENPOT_USER_FEEDBACK_DESTINATION="support@example.com"
 
-export AWS_ACCESS_KEY_ID=penpot-devenv
-export AWS_SECRET_ACCESS_KEY=penpot-devenv
-export PENPOT_OBJECTS_STORAGE_BACKEND=s3
-export PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=http://minio:9000
-export PENPOT_OBJECTS_STORAGE_S3_BUCKET=penpot
-
 export PENPOT_NITRATE_BACKEND_URI=http://localhost:3000/admin-console
 
 export JAVA_OPTS="\
@@ -84,14 +88,14 @@ export JAVA_OPTS="\
        --enable-native-access=ALL-UNNAMED";
 
 function setup_minio() {
-    # Initialize MINIO config
-    mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
-    mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
-    mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
-    if [ "$?" = "1" ]; then
-        mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
+    if [ "${PENPOT_OBJECTS_STORAGE_BACKEND}" != "s3" ]; then
+        return 0
     fi
-    mc mb penpot-s3/penpot -p -q
+
+    # Shared MinIO user/policy provisioning is handled by docker-compose.infra.yml.
+    # Per process startup only ensures that the configured bucket exists.
+    mc alias set penpot-s3/ "${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}" minioadmin minioadmin -q
+    mc mb "penpot-s3/${PENPOT_OBJECTS_STORAGE_S3_BUCKET}" -p -q
 }
 
 

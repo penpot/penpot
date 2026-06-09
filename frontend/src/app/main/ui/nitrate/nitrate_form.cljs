@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.nitrate.nitrate-form
   (:require-macros [app.main.style :as stl])
@@ -29,7 +29,7 @@
         on-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-subscription-url)))
+           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-ac-url)))
 
         on-activate-click
         (mf/use-fn
@@ -61,7 +61,8 @@
           "- " (tr "nitrate.form.enterprise-feature-3")]]
 
         (if online?
-          [[:p {:class (stl/css :modal-text-large)}
+          [[:div {:class (stl/css :modal-text-large :price-text)}
+            [:span {:class (stl/css :price-value)} "25$"]
             (tr "nitrate.form.enterprise.price")]
 
            [:div {:class (stl/css :modal-text-large :modal-buttons-section)}

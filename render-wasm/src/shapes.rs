@@ -1445,6 +1445,7 @@ impl Shape {
                 path_transform.as_ref(),
                 &self.selrect,
                 self.svg_attrs.as_ref(),
+                true,
             ) else {
                 continue;
             };
@@ -1704,6 +1705,16 @@ impl Shape {
         use crate::shapes::BlurType;
         match self.shape_type {
             Type::Frame(_) if self.clip_content => self.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn masked_group_layer_blur(&self) -> Option<Blur> {
+        use crate::shapes::BlurType;
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => self.blur.filter(|blur| {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             }),
             _ => None,

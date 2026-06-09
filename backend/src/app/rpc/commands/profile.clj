@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.profile
   (:require
@@ -487,9 +487,10 @@
 
     ;; Delete owned organizations on the fly (no grace period).
     ;; Nitrate iterates the user's owned orgs and, per org, calls
-    ;; Penpot back via ::notify-organization-deletion which renames
-    ;; the org's teams (prefixed with "[OrgName] ", including the
-    ;; user's "Your Penpot" team) and soft-deletes empty ones.
+    ;; Penpot back through two paths: ::notify-user-organizations-deletion
+    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
+    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; imported "Your Penpot" teams according to whether they still have files.
     (when (contains? cf/flags :nitrate)
       (nitrate/call cfg :delete-owned-orgs {:profile-id profile-id})
       ;; Remove the user from any remaining org memberships.
@@ -536,7 +537,10 @@
    [:name ::sm/text]
    [:slug ::sm/text]
    [:team-count ::sm/int]
-   [:member-count ::sm/int]])
+   [:member-count ::sm/int]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:custom-photo {:optional true} [:maybe ::sm/text]]])
 
 (def ^:private schema:get-owned-organizations-summary-result
   [:vector schema:owned-organization-summary])

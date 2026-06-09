@@ -7,6 +7,7 @@ list.
 
 ## Security
 
+* Alisher (@7megaumka7)
 * Husnain Iqbal (CEO OF ALPHA INFERNO PVT LTD)
 * [Shiraz Ali Khan](https://www.linkedin.com/in/shiraz-ali-khan-1ba508180/)
 * Vaibhav Shukla

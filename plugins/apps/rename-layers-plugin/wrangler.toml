@@ -1,7 +1,7 @@
 name = "rename-layers-plugin"
 compatibility_date = "2025-01-01"
 
-assets = { directory = "../../dist/apps/rename-layers-plugin/browser" }
+assets = { directory = "../../dist/apps/rename-layers-plugin" }
 
 [[routes]]
 pattern = "WORKER_URI"

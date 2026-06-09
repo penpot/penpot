@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape-tree
   (:require
@@ -313,6 +313,9 @@
    (top-nested-frame objects position nil))
 
   ([objects position excluded]
+   (top-nested-frame objects position excluded false))
+
+  ([objects position excluded read-only?]
    (assert (or (nil? excluded) (set? excluded)))
 
    (let [frames (cond->> (get-frames-by-position objects position)
@@ -323,7 +326,8 @@
 
                   :always
                   (remove #(or ^boolean (true? (:hidden %))
-                               ^boolean (true? (:blocked %)))))
+                               ^boolean (and (true? (:blocked %))
+                                             (not read-only?)))))
 
          frame-set (into #{} (map #(dm/get-prop % :id)) frames)]
 

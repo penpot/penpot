@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.api
   "A WASM based render API"
@@ -15,6 +15,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
@@ -41,6 +42,7 @@
    [app.render-wasm.mem :as mem]
    [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
+   [app.render-wasm.rulers-state :as rulers-state]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.svg-filters :as svg-filters]
@@ -77,12 +79,25 @@
 ;;   `penpot:wasm:tiles-complete`, so we can remove/replace it safely.
 (defonce page-transition? (atom false))
 (defonce context-loss-overlay? (atom false))
+;; When true (initial load) the overlay clips out the ruler strips so the live
+;; rulers show through. False (page switch / context loss) keeps the snapshot's
+;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
+(defonce transition-reveal-rulers? (atom false))
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
 
 (def ^:private snapshot-capture-debounce-ms 250)
+
+
+(defn initialized?
+  "True when the WASM render context is ready to receive design-state
+  operations. Use it to skip WASM work during transient states (e.g. while
+  switching renderer with a text shape being edited)."
+  []
+  (and wasm/context-initialized? (not @wasm/context-lost?)))
+
 
 (defn set-transition-image-from-background!
   "Sets `transition-image-url*` to a data URL representing a solid background color."
@@ -128,6 +143,7 @@
    - Installs a tiles-complete handler to end the transition
    - Uses a solid background-color placeholder as the transition image"
   [background]
+  (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
   ;; ensure we still have a deterministic placeholder on initial load.
   (when (or (not @page-transition?) (nil? @transition-image-url*))
@@ -160,8 +176,7 @@
 (defonce ^:private schedule-canvas-snapshot-capture!
   (fns/debounce
    (fn []
-     (when (and wasm/context-initialized?
-                (not @wasm/context-lost?)
+     (when (and (initialized?)
                 (some? wasm/canvas))
        (-> (webgl/capture-canvas-snapshot-url)
            (p/catch (fn [_] nil)))))
@@ -246,6 +261,17 @@
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
 
+(defn get-dpr
+  "Returns the current device pixel ratio. Use instead of `dpr` wherever
+   the value must reflect browser-zoom changes that happen after load."
+  []
+  (if use-dpr?
+    (let [d (.-devicePixelRatio ^js ug/window)]
+      ;; In workers `ug/window` is a mock without `devicePixelRatio`,
+      ;; so guard against nil/NaN/non-positive values.
+      (if (and (number? d) (pos? d)) d 1.0))
+    1.0))
+
 (def noop-fn
   (constantly nil))
 
@@ -297,6 +323,20 @@
 (declare set-shape-vertical-align fonts-from-text-content)
 (declare reload-renderer!)
 
+;; These are the type of frames we have in our
+;; render pipeline.
+(def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
+(def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
+(def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+
+(defn- internal-render
+  ([]
+   (internal-render 0))
+  ([timestamp]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
+     (request-render "frame-type-partial"))))
+
 (defn- build-reload-payload
   "Builds renderer reload payload from current application state.
    Avoids keeping heavyweight object snapshots in memory."
@@ -311,26 +351,47 @@
         zoom       (:zoom local)
         vbox       (:vbox local)
         canvas     wasm/canvas
-        background (get page :background)]
+        background (get page :background clr/canvas)]
     {:canvas canvas
      :base-objects (cpf/focus-objects objects focus)
      :zoom zoom
      :vbox vbox
      :background background}))
 
+(declare set-rulers-colors!
+         set-rulers-visible!
+         set-rulers-frame-visible!
+         set-rulers-offsets!
+         set-rulers-selection!)
+
+(defn push-ruler-theme-colors!
+  []
+  (if-let [{:keys [bg border label accent]} (rulers-state/theme-colors)]
+    (set-rulers-colors! bg border label accent)
+    (js/console.error "Failed to resolve ruler CSS colors")))
+
+(defn- sync-rulers-to-wasm!
+  [{:keys [show-rulers? frame-visible? offset-x offset-y ruler-selection push-colors?]
+    :or {push-colors? true frame-visible? true}}]
+  (when push-colors? (push-ruler-theme-colors!))
+  (set-rulers-frame-visible! frame-visible?)
+  (set-rulers-visible! show-rulers?)
+  (when show-rulers?
+    (set-rulers-offsets! offset-x offset-y)
+    (set-rulers-selection! ruler-selection)))
+
 (defn free-gpu-resources
   []
   ;; check if the context has not been lost already or we will get warnings about
   ;; removing objects from a non-current context
-  (when (and wasm/context-initialized?
-             (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_free_gpu_resources")))
 
 ;; This should never be called from the outside.
 (defn- render
   [timestamp]
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
-    (h/call wasm/internal-module "_render" timestamp)
+    (internal-render timestamp)
 
     ;; Update text editor blink (so cursor toggles) using the same timestamp
     (try
@@ -358,15 +419,33 @@
     (set! wasm/internal-frame-id nil)
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
-(defn render-sync
+(defn render-ui-only
+  "Renders only the canvas background and UI surface (rulers/frame) without
+   rebuilding shape tiles. Fast synchronous call used to show the viewport
+   frame immediately before a potentially slow tile rebuild."
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_ui_only")))
+
+;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
+(def ^:private TRANSITION_BLUR_RADIUS 4.0)
+
+(defn render-blurred-snapshot!
+  "Blurs the current page into the canvas so a following
+   `capture-canvas-snapshot-url` grabs an already-blurred transition frame."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_blurred_snapshot" TRANSITION_BLUR_RADIUS)))
+
+(defn render-sync
+  []
+  (when (initialized?)
     (h/call wasm/internal-module "_render_sync")
     (set! wasm/internal-frame-id nil)))
 
 (defn render-sync-shape
   [id]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_render_sync_shape"
               (aget buffer 0)
@@ -379,7 +458,7 @@
   "Render a lightweight preview without tile caching.
    Used during progressive loading for fast feedback."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_render_preview")))
 
 
@@ -393,7 +472,7 @@
 
 (defn request-render
   [_requester]
-  (when (and wasm/context-initialized? (not @wasm/context-lost?) (not @wasm/disable-request-render?))
+  (when (and (initialized?) (not @wasm/disable-request-render?))
     (if @shapes-loading?
       (register-deferred-render!)
       (when-not @pending-render
@@ -430,13 +509,26 @@
 
 (defn use-shape
   [id]
-  (when wasm/context-initialized?
+  (when (initialized?)
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_use_shape"
               (aget buffer 0)
               (aget buffer 1)
               (aget buffer 2)
               (aget buffer 3)))))
+
+(defn has-shape
+  [id]
+  (when (initialized?)
+    (let [buffer (uuid/get-u32 id)
+
+          result
+          (h/call wasm/internal-module "_has_shape"
+                  (aget buffer 0)
+                  (aget buffer 1)
+                  (aget buffer 2)
+                  (aget buffer 3))]
+      (= result 1))))
 
 (defn set-shape-text-content
   "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
@@ -445,17 +537,20 @@
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
 
-  (h/call wasm/internal-module "_clear_shape_text")
+  ;; The WASM design state may not be ready (e.g. while switching renderer
+  ;; with a text shape being edited). Skip the WASM layout calls in that case.
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_shape_text")
 
-  (set-shape-vertical-align (get content :vertical-align))
+    (set-shape-vertical-align (get content :vertical-align))
 
-  (let [fonts         (f/get-content-fonts content)
-        fallback-fonts (fonts-from-text-content content true)
-        all-fonts (concat fonts fallback-fonts)
-        result (f/store-fonts all-fonts)]
-    (f/load-fallback-fonts-for-editor! fallback-fonts)
-    (h/call wasm/internal-module "_update_shape_text_layout")
-    result))
+    (let [fonts         (f/get-content-fonts content)
+          fallback-fonts (fonts-from-text-content content true)
+          all-fonts (concat fonts fallback-fonts)
+          result (f/store-fonts all-fonts)]
+      (f/load-fallback-fonts-for-editor! fallback-fonts)
+      (h/call wasm/internal-module "_update_shape_text_layout")
+      result)))
 
 (defn apply-styles-to-selection
   "Apply style attrs to the currently selected text spans.
@@ -724,13 +819,18 @@
                   style     (-> stroke :stroke-style sr/translate-stroke-style)
                   cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                   cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
+                  ;; Sentinel -1 means "unset" on the Rust side — keeps the
+                  ;; FFI signature flat while letting the renderer fall back
+                  ;; to its default dash pattern when no override is stored.
+                  dash      (or (:stroke-dash stroke) -1)
+                  gap       (or (:stroke-gap stroke) -1)
                   offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
                   heap      (mem/get-heap-u8)
                   dview     (js/DataView. (.-buffer heap))]
               (case align
-                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
-                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
-                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+                :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
+                :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
+                (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
 
               (cond
                 (some? gradient)
@@ -762,16 +862,10 @@
 (defn set-shape-svg-attrs
   [attrs]
   (let [style (:style attrs)
-        ;; Filter to only supported attributes
-        allowed-keys #{:fill :fillRule :fill-rule :strokeLinecap :stroke-linecap :strokeLinejoin :stroke-linejoin}
-        attrs (-> attrs
-                  (dissoc :style)
-                  (merge style)
-                  (select-keys allowed-keys))
-        fill-rule       (-> (or (:fill-rule attrs) (:fillRule attrs)) sr/translate-fill-rule)
-        stroke-linecap  (-> (or (:stroke-linecap attrs) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
-        stroke-linejoin (-> (or (:stroke-linejoin attrs) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
-        fill-none       (= "none" (-> attrs :fill))]
+        fill-rule       (-> (or (:fillRule style) (:fillRule attrs)) sr/translate-fill-rule)
+        stroke-linecap  (-> (or (:strokeLinecap style) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
+        stroke-linejoin (-> (or (:strokeLinejoin style) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
+        fill-none       (= "none" (or (:fill style) (:fill attrs)))]
     (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
 
 (defn set-shape-path-content
@@ -836,6 +930,13 @@
 (defn set-shape-hidden
   [hidden]
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
+
+(defn clear-shape-fills!
+  "Clear the fills of the currently-selected shape (call `use-shape` first).
+  Equivalent to `set-shape-fills` with an empty collection."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_shape_fills")))
 
 (defn set-shape-bool-type
   [bool-type]
@@ -1122,21 +1223,23 @@
    (use-shape id)
    (get-text-dimensions))
   ([]
-   (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
-                       (mem/->offset-32))
-         heapf32   (mem/get-heap-f32)
-         width     (aget heapf32 (+ offset 0))
-         height    (aget heapf32 (+ offset 1))
-         max-width (aget heapf32 (+ offset 2))
+   (if-not (initialized?)
+     {:x 0 :y 0 :width 0 :height 0 :max-width 0}
+     (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
+                         (mem/->offset-32))
+           heapf32   (mem/get-heap-f32)
+           width     (aget heapf32 (+ offset 0))
+           height    (aget heapf32 (+ offset 1))
+           max-width (aget heapf32 (+ offset 2))
 
-         x (aget heapf32 (+ offset 3))
-         y (aget heapf32 (+ offset 4))]
-     (mem/free)
-     {:x x :y y :width width :height height :max-width max-width})))
+           x (aget heapf32 (+ offset 3))
+           y (aget heapf32 (+ offset 4))]
+       (mem/free)
+       {:x x :y y :width width :height height :max-width max-width}))))
 
 (defn intersect-position-in-shape
   [id position]
-  (if (and wasm/context-initialized? (not @wasm/context-lost?))
+  (if (initialized?)
     (let [buffer (uuid/get-u32 id)
           result
           (h/call wasm/internal-module "_intersect_position_in_shape"
@@ -1167,7 +1270,7 @@
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
-            (when (and wasm/context-initialized? (not @wasm/context-lost?))
+            (when (initialized?)
               (view-interaction-end!)
               ;; Use async _render: visible tiles render synchronously
               ;; (no yield), interest-area tiles render progressively
@@ -1176,7 +1279,7 @@
               ;; completes in the first frame.  For zoom, interest-
               ;; area tiles (~3 tile margin) don't block the main
               ;; thread.
-              (h/call wasm/internal-module "_render" 0)))]
+              (internal-render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1194,8 +1297,7 @@
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
   [state]
-  (when (and wasm/context-initialized?
-             (not @wasm/context-lost?))
+  (when (initialized?)
     (let [zoom (get-in state [:workspace-local :zoom])
           vbox (get-in state [:workspace-local :vbox])]
       (when (and zoom vbox)
@@ -1410,6 +1512,53 @@
                                noop-fn)))))))]
          (process-next-chunk 0 [] []))))))
 
+
+;; This is a version of process-pending that doesn't have sideffects
+;; with like request render or update layout.
+(defn- process-pending-no-sideffects
+  [thumbnails full on-complete]
+  (let [pending-thumbnails
+        (d/index-by :key :callback thumbnails)
+
+        pending-full
+        (d/index-by :key :callback full)]
+
+    (if (or (seq pending-thumbnails) (seq pending-full))
+      (->> (rx/concat
+            (->> (rx/from (vals pending-thumbnails))
+                 (rx/merge-map (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty)))
+            (->> (rx/from (vals pending-full))
+                 (rx/mapcat (fn [callback] (if (fn? callback) (callback) (rx/empty))))
+                 (rx/reduce conj [])
+                 (rx/catch #(rx/empty))))
+           (rx/subs!
+            noop-fn
+            noop-fn
+            (fn []
+              (when (fn? on-complete) (on-complete)))))
+      ;; No pending images — complete immediately.
+      (when on-complete (on-complete)))))
+
+(defn set-objects-callback
+  "Sets the shapes and when the async operations are done calls the callback. Won't
+  interact with the rendering pipeline, this call is only to set the model (used currently
+  in the viewer)."
+  [shapes set-objects-cb]
+  (let [total-shapes (count shapes)
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+          (if (< index total-shapes)
+            (let [shape (nth shapes index)
+                  {:keys [thumbnails full]} (set-object shape)]
+              (recur (inc index)
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
+
+    (process-pending-no-sideffects thumbnails full set-objects-cb)))
+
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
@@ -1524,6 +1673,27 @@
       (h/call wasm/internal-module "_set_focus_mode")
       (request-render "set-focus-mode"))))
 
+(defn clear-render-include-filter!
+  "Clear the viewer include filter (render all shapes in the subtree again)."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_render_include_filter")))
+
+(defn set-render-include-filter!
+  "Restrict the next render to `shape-ids` and descendants of whitelisted nodes.
+  Used for viewer fixed-scroll layers; does not change shape hidden flags."
+  [shape-ids]
+  (when (and (initialized?) (seq shape-ids))
+    (let [ids    (vec shape-ids)
+          size   (mem/get-alloc-size ids UUID-U8-SIZE)
+          heap   (mem/get-heap-u32)
+          offset (mem/alloc->offset-32 size)]
+      (reduce (fn [offset id]
+                (mem.h32/write-uuid offset heap id))
+              offset
+              ids)
+      (h/call wasm/internal-module "_set_render_include_filter"))))
+
 (defn set-structure-modifiers
   [entries]
   (when-not ^boolean (empty? entries)
@@ -1606,7 +1776,8 @@
 
 (defn clean-modifiers
   []
-  (h/call wasm/internal-module "_clean_modifiers"))
+  (when (initialized?)
+    (h/call wasm/internal-module "_clean_modifiers")))
 
 (defn set-modifiers-start
   "Enter interactive transform mode (drag / resize / rotate). Enables
@@ -1614,7 +1785,7 @@
    backdrop so tiles do not appear sequentially or flicker while the
    gesture is in progress."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_set_modifiers_start")))
 
 (defn set-modifiers-end
@@ -1622,7 +1793,7 @@
    scheduled under it; the caller is expected to trigger a full-quality
    render (via `request-render`) once the gesture is committed."
   []
-  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+  (when (initialized?)
     (h/call wasm/internal-module "_set_modifiers_end")))
 
 (defn set-modifiers
@@ -1722,6 +1893,24 @@
   [width height]
   (h/call wasm/internal-module "_resize_viewbox" width height))
 
+(defn set-viewer-viewport!
+  "Update viewer zoom/pan and rebuild the tile index (frame hops in the viewer).
+  `vbox` must have at least `:x` and `:y` keys (design-space top-left corner)."
+  [zoom vbox]
+  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (when (initialized?)
+    (h/call wasm/internal-module "_set_view_end")
+    (reset! view-interaction-active? false)))
+
+(defn resize-offscreen-canvas!
+  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
+  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
+  design state (shape pool) is preserved so `set-objects` is not needed again."
+  [canvas new-physical-w new-physical-h]
+  (set! (.-width canvas) new-physical-w)
+  (set! (.-height canvas) new-physical-h)
+  (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))
+
 (defn- debug-flags
   []
   (cond-> 0
@@ -1732,62 +1921,60 @@
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
 
-(defn- wasm-aa-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
+(defn- wasm-get-numeric-value
+  [name]
   (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:aa_threshold p))]
+                   (get p name))]
     (let [n (if (string? raw) (js/parseFloat raw) raw)]
       (when (and (number? n) (not (js/isNaN n)) (pos? n))
         n))))
 
-(defn- wasm-blur-downscale-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:blur_downscale_threshold p))]
-    (let [n (if (string? raw) (js/parseFloat raw) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+(defn- wasm-set-param-from-route-params-if-present
+  [param-name]
+  (when-let [value (wasm-get-numeric-value param-name)]
+    (let [setter-name (str/concat "_set_" (name param-name))]
+      (h/call wasm/internal-module setter-name value))))
 
-(defn- wasm-max-blocking-time-ms-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:max_blocking_time_ms p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+(defn set-render-options!
+  "Updates WASM render options with a new DPR value."
+  [new-dpr]
+  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
 
-(defn- wasm-node-batch-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:node_batch_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+(defn- canvas-css-size
+  "Return canvas size in CSS pixels.
 
-(defn- wasm-viewport-interest-area-threshold-from-route-params
-  "Reads optional `aa_threshold` query param from the router"
-  []
-  (when-let [raw (let [p (rt/get-params @st/state)]
-                   (:viewport_interest_area_threshold p))]
-    (let [n (if (string? raw) (js/parseInt raw 10) raw)]
-      (when (and (number? n) (not (js/isNaN n)) (pos? n))
-        n))))
+  - For DOM canvases: use `clientWidth/clientHeight`.
+  - For OffscreenCanvas: fall back to `width/height` (physical px) converted by DPR."
+  [canvas dpr]
+  (let [cw (.-clientWidth ^js canvas)
+        ch (.-clientHeight ^js canvas)]
+    (if (and (number? cw) (pos? cw)
+             (number? ch) (pos? ch))
+      [cw ch]
+      [(/ (.-width ^js canvas) dpr)
+       (/ (.-height ^js canvas) dpr)])))
 
-(defn set-canvas-size
-  [canvas]
-  (let [width (or (.-clientWidth ^js canvas) (.-width ^js canvas))
-        height (or (.-clientHeight ^js canvas) (.-height ^js canvas))]
-    (set! (.-width canvas) (* dpr width))
-    (set! (.-height canvas) (* dpr height))))
+(defn resize-canvas!
+  "Sizes the canvas drawing buffer, the WASM render surface and the DPR from a
+   single source of truth (the canvas CSS client size) so the GL framebuffer
+   and the Skia target surface stay the same size. A size mismatch leaves an
+   unpainted strip on the top/right edges because the GL framebuffer origin is
+   bottom-left, so a smaller Skia surface is anchored to the bottom-left of the
+   larger drawing buffer."
+  ([canvas]
+   (resize-canvas! canvas (get-dpr)))
+  ([canvas new-dpr]
+   (let [[css-w css-h] (canvas-css-size canvas new-dpr)]
+     (set! (.-width ^js canvas) (* new-dpr css-w))
+     (set! (.-height ^js canvas) (* new-dpr css-h))
+     (set-render-options! new-dpr)
+     (resize-viewbox css-w css-h))))
 
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
   (when-let [url wasm/canvas-snapshot-url]
     (when (string? url)
@@ -1829,7 +2016,10 @@
           context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
           context (.getContext ^js canvas context-id default-context-options)
           context-init? (not (nil? context))
-          browser (sr/translate-browser cf/browser)]
+          browser (sr/translate-browser cf/browser)
+          dpr     (get-dpr)
+          [css-w css-h] (canvas-css-size canvas dpr)
+          can-listen? (fn? (.-addEventListener ^js canvas))]
       (when-not (nil? context)
         (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
           (.makeContextCurrent ^js gl handle)
@@ -1840,29 +2030,30 @@
           (.getExtension context "WEBGL_debug_renderer_info")
 
           ;; Initialize Wasm Render Engine
-          (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+          (h/call wasm/internal-module "_init" css-w css-h)
           (h/call wasm/internal-module "_set_render_options" flags dpr)
-          (when-let [t (wasm-aa-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_antialias_threshold" t))
-          (when-let [t (wasm-viewport-interest-area-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_viewport_interest_area_threshold" t))
-          (when-let [t (wasm-max-blocking-time-ms-from-route-params)]
-            (h/call wasm/internal-module "_set_max_blocking_time_ms" t))
-          (when-let [t (wasm-node-batch-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_node_batch_threshold" t))
-          (when-let [t (wasm-blur-downscale-threshold-from-route-params)]
-            (h/call wasm/internal-module "_set_blur_downscale_threshold" t))
-          (when-let [max-tex (webgl/max-texture-size context)]
-            (h/call wasm/internal-module "_set_max_atlas_texture_size" max-tex))
+
+          ;; Configurable parameters.
+          (wasm-set-param-from-route-params-if-present :antialias_threshold)
+          (wasm-set-param-from-route-params-if-present :viewport_interest_area_threshold)
+          (wasm-set-param-from-route-params-if-present :max_blocking_time_ms)
+          (wasm-set-param-from-route-params-if-present :node_batch_threshold)
+          (wasm-set-param-from-route-params-if-present :blur_downscale_threshold)
 
           ;; Set browser and canvas size only after initialization
           (h/call wasm/internal-module "_set_browser" browser)
-          (set-canvas-size canvas)
+          ;; DOM canvas: keep drawing buffer synced to CSS size.
+          ;; OffscreenCanvas: no CSS size, so only sync WASM viewbox.
+          (if (and (number? (.-clientWidth ^js canvas))
+                   (pos? (.-clientWidth ^js canvas)))
+            (resize-canvas! canvas dpr)
+            (resize-viewbox css-w css-h))
 
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
-          (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-          (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
+          (when can-listen?
+            (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
+            (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored))
           (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
@@ -1975,6 +2166,7 @@
                                 :on-render on-render
                                 :on-shapes-ready on-shapes-ready
                                 :force-sync force-sync)
+           (sync-rulers-to-wasm! (rulers-state/from-store @st/state))
            (request-render "reload-renderer")
            (ug/dispatch! (ug/event "penpot:wasm:reload-complete"))
            payload))
@@ -1993,6 +2185,37 @@
             (aget buffer 2)
             (aget buffer 3)))
   (request-render "show-grid"))
+
+(defn set-rulers-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_visible" (if visible? 1 0)))
+
+(defn set-rulers-frame-visible!
+  [visible?]
+  (h/call wasm/internal-module "_set_rulers_frame_visible" (if visible? 1 0)))
+
+(defn set-rulers-offsets!
+  [offset-x offset-y]
+  (h/call wasm/internal-module "_set_rulers_offsets"
+          (or offset-x 0) (or offset-y 0)))
+
+(defn set-rulers-selection!
+  [rect]
+  (if (some? rect)
+    (h/call wasm/internal-module "_set_rulers_selection" 1
+            (or (:x rect) 0) (or (:y rect) 0)
+            (or (:width rect) 0) (or (:height rect) 0))
+    (h/call wasm/internal-module "_set_rulers_selection" 0 0 0 0 0)))
+
+(defn set-rulers-colors!
+  "Push ruler chrome / accent colors as ARGB u32. Inputs are hex strings
+   (e.g. \"#181818\"); call once on theme change."
+  [bg-hex border-hex label-hex accent-hex]
+  (h/call wasm/internal-module "_set_rulers_colors"
+          (sr-clr/hex->u32argb bg-hex 1)
+          (sr-clr/hex->u32argb border-hex 1)
+          (sr-clr/hex->u32argb label-hex 1)
+          (sr-clr/hex->u32argb accent-hex 1)))
 
 (defn clear-grid
   []
@@ -2109,7 +2332,7 @@
 
 (defn calculate-position-data
   [shape]
-  (when wasm/context-initialized?
+  (when (initialized?)
     (use-shape (:id shape))
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)
@@ -2167,6 +2390,7 @@
 
 (defn apply-canvas-blur
   []
+  (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (let [already? @page-transition?
         epoch    (begin-page-transition!)]
     (set-transition-tiles-complete-handler! epoch end-page-transition!)

@@ -81,6 +81,7 @@ export function createApi(
               msg +
                 ' Original error: ' +
                 (err instanceof Error ? err.message : String(err)),
+              { cause: err },
             );
           } else {
             console.error(msg, err);
