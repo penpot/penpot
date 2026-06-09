@@ -433,12 +433,31 @@ const DOM_HARVEST_FN = () => {
     } catch (_) { /* unreachable in practice — just defensive */ }
     let snapshot = null;
     try {
-      // Try toDataURL — for 2d canvases this always works; for WebGL it works
-      // only if the context was created with preserveDrawingBuffer:true, OR
-      // we caught it before the next composite. Either way: defensive.
-      const url = el.toDataURL('image/png');
-      if (url && url.length > 100 && url.startsWith('data:image/png')) snapshot = url;
-    } catch (_) { /* swallow — WebGL canvases routinely throw here */ }
+      // Re-draw the canvas into a downscaled 2D context and JPEG-encode.
+      // Why: a full-resolution PNG of a noisy WebGL scene (e.g. 1440x900)
+      // weighs ~1.4 MB encoded, which exceeds Penpot's MCP frame budget
+      // when batched with other shapes. At Penpot zoom levels we don't
+      // need full resolution; a long-edge of 960 px at JPEG q=0.7 is
+      // ~60-160 KB and visually indistinguishable as a design reference.
+      // The init script in harvestPage() forces preserveDrawingBuffer:true
+      // on every WebGL context, so this works for any animating canvas
+      // (Three.js, Pixi, p5, shader playgrounds — not just consulting).
+      const MAX_EDGE = 960;
+      const srcW = el.width || r.width || 0;
+      const srcH = el.height || r.height || 0;
+      if (srcW > 0 && srcH > 0) {
+        const scale = Math.min(1, MAX_EDGE / Math.max(srcW, srcH));
+        const off = document.createElement('canvas');
+        off.width  = Math.max(1, Math.round(srcW * scale));
+        off.height = Math.max(1, Math.round(srcH * scale));
+        const octx = off.getContext('2d');
+        if (octx) {
+          octx.drawImage(el, 0, 0, off.width, off.height);
+          const url = off.toDataURL('image/jpeg', 0.7);
+          if (url && url.length > 200 && url.startsWith('data:image/jpeg')) snapshot = url;
+        }
+      }
+    } catch (_) { /* swallow — cross-origin canvases routinely taint */ }
     const animC = readAnimation(el);
     out.push({
       kind: 'canvas',
@@ -775,8 +794,36 @@ const DOM_HARVEST_FN = () => {
 
 // ─── Page harvest (Node side) ────────────────────────────────────────────────
 
+// Decide whether a captured snapshot data-URL contains real painted pixels
+// (vs. an empty/transparent buffer). A uniform N×M PNG or JPEG compresses
+// to a tiny constant under ~600 B regardless of dimensions, so anything
+// above ~1.2 KB encoded plausibly carries content.
+function looksLikeRealPng(dataUrl) {
+  if (typeof dataUrl !== 'string') return false;
+  if (!dataUrl.startsWith('data:image/png') && !dataUrl.startsWith('data:image/jpeg')) return false;
+  return dataUrl.length > 1200;
+}
+
 async function harvestPage(ctx, page) {
   const tab = await ctx.newPage();
+  // Force every WebGL context on the page to be created with
+  // `preserveDrawingBuffer: true`. Without it, `canvas.toDataURL()` returns
+  // a transparent PNG (the drawing buffer is cleared on each composite),
+  // which means the in-page harvester can't snapshot animated canvases.
+  // This runs before any of the page's own JS, so it applies to every
+  // canvas regardless of which framework (Three.js, Pixi, p5, hand-rolled
+  // shader) created it. Cost is a single extra framebuffer copy per frame
+  // — negligible for design-reference capture, and we throw the tab away
+  // after harvest.
+  await tab.addInitScript(() => {
+    const orig = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function patched(type, attrs) {
+      if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+        attrs = Object.assign({}, attrs || {}, { preserveDrawingBuffer: true });
+      }
+      return orig.call(this, type, attrs);
+    };
+  });
   const url = `${PORTFOLIO_URL}${page.path}`;
   await tab.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
   // Wait for fonts so getBoundingClientRect() returns post-font-swap geometry.
@@ -786,6 +833,64 @@ async function harvestPage(ctx, page) {
                             { timeout: 4_000 }).catch(() => {});
   await tab.waitForTimeout(1500);
   const harvest = await tab.evaluate(DOM_HARVEST_FN);
+
+  // Canvas pixel-capture fallback. `toDataURL()` returns an empty buffer for
+  // WebGL contexts that weren't created with `preserveDrawingBuffer: true`
+  // (the common case). Playwright can screenshot the element through its
+  // own pixel pipeline regardless of the underlying GL context, so we walk
+  // every canvas the DOM harvester recorded as `kind: 'canvas'` without a
+  // snapshot, ask Playwright to capture pixels, and stuff the data URL back
+  // into the item so the Penpot upload step paints actual visuals instead
+  // of a flat dark placeholder. Works for any site, not just consulting —
+  // Three.js, Pixi, p5.js, hand-rolled shader playgrounds all benefit.
+  // Belt-and-braces: any canvas the in-page snapshot couldn't capture (e.g.
+  // service-worker-created OffscreenCanvas, or a canvas missed by the init
+  // script in a rare race) gets a Playwright `page.screenshot({ clip })`
+  // fallback. We use page.screenshot rather than elementHandle.screenshot
+  // because the latter waits for visual stability, which never settles for
+  // an animating WebGL canvas (rAF loops at 60fps).
+  if (Array.isArray(harvest?.items) && harvest.items.length > 0) {
+    const items = harvest.items;
+    const canvasIdxs = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i] && items[i].kind === 'canvas' && !looksLikeRealPng(items[i].snapshot)) {
+        canvasIdxs.push(i);
+      }
+    }
+    if (canvasIdxs.length > 0) {
+      const canvasHandles = await tab.$$('canvas');
+      let captured = 0;
+      for (let n = 0; n < canvasIdxs.length && n < canvasHandles.length; n++) {
+        const idx = canvasIdxs[n];
+        const item = items[idx];
+        try {
+          await canvasHandles[n].scrollIntoViewIfNeeded({ timeout: 2_000 }).catch(() => {});
+          const box = await canvasHandles[n].boundingBox();
+          if (!box) continue;
+          const buf = await tab.screenshot({
+            type: 'png',
+            clip: {
+              x: Math.max(0, Math.floor(box.x)),
+              y: Math.max(0, Math.floor(box.y)),
+              width: Math.max(1, Math.floor(box.width)),
+              height: Math.max(1, Math.floor(box.height)),
+            },
+            animations: 'disabled', omitBackground: false, timeout: 5_000,
+          });
+          if (buf && buf.length > 200) {
+            item.snapshot = `data:image/png;base64,${buf.toString('base64')}`;
+            captured++;
+          }
+        } catch (err) {
+          console.warn(`  ${page.name}: canvas[${n}] clip-capture failed: ${err.message}`);
+        }
+      }
+      if (captured > 0) {
+        console.log(`  ${page.name}: clip-captured ${captured}/${canvasIdxs.length} canvas snapshot${captured === 1 ? '' : 's'}`);
+      }
+    }
+  }
+
   await tab.close();
   return { ...harvest, page };
 }
@@ -979,8 +1084,10 @@ function shapeJs(item, boardX = 0, boardY = 0) {
   }
 
   if (item.kind === 'canvas') {
-    // Dark-fill rect with "canvas: WxH (webgl)" centred label. The shape name
-    // doubles as the source-of-truth for canvas-to-html.mjs's classifier.
+    // When a snapshot is available, paint it as the rectangle's fill image —
+    // that IS the visual, no label needed. When the snapshot can't be
+    // uploaded, fall back to a flat dark fill plus a centered "canvas: WxH
+    // (webgl)" label so the shape is still recognisable on the Penpot canvas.
     const labelText = `canvas: ${w}x${h}${item.hasWebGL ? ' (webgl)' : ''}`;
     const nameLabel = `canvas: ${item.hasWebGL ? 'webgl ' : ''}${w}x${h}`;
     const snapJs = item.snapshot ? JSON.stringify(item.snapshot) : 'null';
@@ -993,29 +1100,42 @@ function shapeJs(item, boardX = 0, boardY = 0) {
   const snap = ${snapJs};
   if (snap) {
     try {
-      const img = await penpot.uploadMediaUrl('canvas-snapshot', snap);
+      let img = null;
+      // 'data:image/...;base64,...' → decode → uploadMediaData(name, bytes, mime).
+      // 'http(s)://...' → uploadMediaUrl(name, url).
+      // uploadMediaUrl rejects data URLs ("http error"), so route them through
+      // uploadMediaData which takes raw bytes + mime. Both code paths return
+      // the same media object shape (id, name, width, height, mtype, ...).
+      const m = /^data:([^;,]+);base64,([\\s\\S]+)$/.exec(snap);
+      if (m) {
+        const mime = m[1] || 'image/png';
+        const bin = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+        img = await penpot.uploadMediaData('canvas-snapshot', bin, mime);
+      } else {
+        img = await penpot.uploadMediaUrl('canvas-snapshot', snap);
+      }
       if (img) { r.fills = [{ fillOpacity: 1, fillImage: img }]; fillSet = true; }
-    } catch (e) { /* swallow — WebGL snapshots often fail to round-trip */ }
+    } catch (e) { /* swallow — fall through to placeholder */ }
   }
   if (!fillSet) {
-    // Reason: the consulting starfield is near-black; a dark fill keeps the
-    // placeholder honest even when we can't replay the actual pixels.
     r.fills = [{ fillColor: '#0a0a0a' }];
   }
   board.appendChild(r);
   r.x = ${x}; r.y = ${y};
-  const t = penpot.createText(${JSON.stringify(labelText)});
-  t.fontFamily = 'Work Sans';
-  t.fontSize = '${Math.max(12, Math.min(20, Math.round(Math.min(w, h) / 12)))}';
-  t.fontWeight = '600';
-  t.fills = [{ fillColor: '#ffffff' }];
-  t.growType = 'auto-height';
-  t.resize(${Math.max(140, Math.round(w * 0.5))}, 24);
-  t.name = 'canvas-label';
-  board.appendChild(t);
-  t.x = ${x + Math.round(w / 2) - Math.max(70, Math.round(w / 4))};
-  t.y = ${y + Math.round(h / 2) - 12};
-  return { kind: 'canvas', id: r.id };
+  if (!fillSet) {
+    const t = penpot.createText(${JSON.stringify(labelText)});
+    t.fontFamily = 'Work Sans';
+    t.fontSize = '${Math.max(12, Math.min(20, Math.round(Math.min(w, h) / 12)))}';
+    t.fontWeight = '600';
+    t.fills = [{ fillColor: '#ffffff' }];
+    t.growType = 'auto-height';
+    t.resize(${Math.max(140, Math.round(w * 0.5))}, 24);
+    t.name = 'canvas-label';
+    board.appendChild(t);
+    t.x = ${x + Math.round(w / 2) - Math.max(70, Math.round(w / 4))};
+    t.y = ${y + Math.round(h / 2) - 12};
+  }
+  return { kind: 'canvas', id: r.id, hasSnap: fillSet };
 }`;
   }
 
