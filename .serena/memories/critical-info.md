@@ -9,7 +9,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 
 # Development workflow
 
-- Commit only when explicitly asked. Commit/PR format + changelog: `mem:workflow/creating-commits`, `mem:workflow/creating-prs`.
+- Commit only when explicitly asked. Commit/PR format + changelog: `mem:workflow/creating-commits`, `mem:workflow/creating-prs`. Issue creation (titles, labels, body templates, Issue Types): `mem:workflow/creating-issues`.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps.
