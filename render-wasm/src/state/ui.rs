@@ -59,7 +59,7 @@ impl GuidePool {
             return None;
         }
 
-        // FIXME: do binary search instead
+        // NOTE: `partition_point` is a binary search, so this is O(log n)
         let idx = guides.partition_point(|guide| guide.position() < coord);
         let mut closest: Option<&Guide> = None;
         let mut closest_dist = world_tolerance;

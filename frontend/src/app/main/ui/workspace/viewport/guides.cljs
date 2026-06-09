@@ -607,21 +607,99 @@
   (when (>= index 0)
     (nth (vec (vals guides)) index nil)))
 
-(mf/defc guide-drag-preview*
-  [{:keys [guide position vbox zoom]}]
+(mf/defc guide-overlay*
+  "Temporary SVG rendering of a guide that's being interacted with (drag or
+  inline edit). In :edit mode it also shows the pill with an editable number."
+  [{:keys [guide position vbox zoom mode frame-offset
+           on-input-commit on-input-cancel]}]
   (let [axis         (:axis guide)
         guide-color  (or (:color guide) default-guide-color)
         stroke-width (/ guide-width zoom)
-        {:keys [x1 y1 x2 y2]} (guide-line-axis position vbox axis)]
-    [:line {:x1 x1
-            :y1 y1
-            :x2 x2
-            :y2 y2
-            :style {:stroke guide-color
-                    :stroke-width stroke-width
-                    :stroke-opacity guide-opacity-hover}}]))
+        {:keys [x1 y1 x2 y2]} (guide-line-axis position vbox axis)
+        input-ref    (mf/use-ref nil)
 
-(defn use-wasm-guide-drag
+        on-key-down
+        (mf/use-fn
+         (mf/deps on-input-commit on-input-cancel)
+         (fn [event]
+           (cond
+             (kbd/enter? event)
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (on-input-commit (-> (mf/ref-val input-ref) dom/get-value)))
+
+             (kbd/esc? event)
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (on-input-cancel)))))
+
+        on-blur
+        (mf/use-fn
+         (mf/deps on-input-commit)
+         (fn []
+           (on-input-commit (-> (mf/ref-val input-ref) dom/get-value))))]
+
+    (mf/with-effect []
+      (some-> (mf/ref-val input-ref) dom/select-text!))
+
+    [:g.guide-overlay
+     [:line {:x1 x1
+             :y1 y1
+             :x2 x2
+             :y2 y2
+             :style {:stroke guide-color
+                     :stroke-width stroke-width
+                     :stroke-opacity guide-opacity-hover}}]
+
+     (when (= mode :edit)
+       (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
+             (guide-pill-axis position vbox zoom axis)
+             corner-radius (/ guide-pill-corner-radius zoom)
+             display-value (fmt/format-number (- position frame-offset))
+             input-w       (/ guide-pill-width zoom)
+             input-h       (/ guide-pill-height zoom)]
+         [:g.guide-pill
+          [:rect {:x rect-x
+                  :y rect-y
+                  :width rect-width
+                  :height rect-height
+                  :rx corner-radius
+                  :ry corner-radius
+                  :style {:fill guide-color}}]
+          [:foreignObject {:x (- text-x (/ input-w 2))
+                           :y (- text-y (/ input-h 2))
+                           :width input-w
+                           :height input-h
+                           :transform (when (= axis :y)
+                                        (str "rotate(-90 " text-x "," text-y ")"))}
+           [:input {:ref input-ref
+                    :type "number"
+                    :step "any"
+                    :default-value display-value
+                    :auto-focus true
+                    :on-key-down on-key-down
+                    :on-blur on-blur
+                    :on-pointer-down dom/stop-propagation
+                    :style {:width "100%"
+                            :height "100%"
+                            :border "none"
+                            :outline "none"
+                            :padding 0
+                            :margin 0
+                            :background "transparent"
+                            :color colors/white
+                            :font-family rulers/font-family
+                            :font-size (str (/ rulers/font-size zoom) "px")
+                            :text-align "center"
+                            :-moz-appearance "textfield"}}]]]))]))
+
+(defn use-wasm-guide-interaction
+  "Owns both drag and inline-edit lifecycles for WASM-rendered guides.
+
+  Returns a map with the live overlay `state` (`{:guide ... :new-position ...
+  :mode :drag|:edit ...}` or nil) plus callbacks the overlay needs in edit
+  mode: `commit-edit` (commits the parsed input value) and `cancel-edit`
+  (drops the edit without committing)."
   [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
            on-guide-drag get-hover-frame focus]}]
   (let [dragging-ref       (mf/use-ref false)
@@ -630,7 +708,7 @@
         guide-ref          (mf/use-ref nil)
         pending-ref        (mf/use-ref nil)
         drag-listeners-ref (mf/use-ref nil)
-        drag-state         (mf/use-state nil)
+        state              (mf/use-state nil)
 
         snap-pixel?
         (mf/deref refs/snap-pixel?)
@@ -638,11 +716,11 @@
         read-only?
         (mf/use-ctx ctx/workspace-read-only?)]
 
-    ;; The drag handlers are defined here so they close directly over the refs
-    ;; and the current render's props (guides, zoom, ...). The pointerdown
-    ;; listener is re-registered by the effect below whenever those props
-    ;; change, so it always sees fresh values without a mutable context ref.
-    (let [remove-drag-listeners!
+    ;; The handlers are defined here so they close directly over the refs and
+    ;; the current render's props (guides, zoom, ...). The pointerdown /
+    ;; dblclick listeners are re-registered by the effect below whenever those
+    ;; props change, so they always see fresh values.
+    (let [remove-drag-listeners
           (fn []
             (when-let [{:keys [on-move on-up]} (mf/ref-val drag-listeners-ref)]
               (when-let [viewport @uwvv/viewport-ref]
@@ -651,20 +729,19 @@
                 (.removeEventListener viewport "pointercancel" on-up true))
               (mf/set-ref-val! drag-listeners-ref nil)))
 
-          reset-drag!
+          reset-state
           (fn []
-            (remove-drag-listeners!)
-            (when (mf/ref-val moved-ref)
-              (when (some? on-guide-drag)
-                (on-guide-drag nil)))
+            (remove-drag-listeners)
+            (when (some? on-guide-drag)
+              (on-guide-drag nil))
             (mf/set-ref-val! dragging-ref false)
             (mf/set-ref-val! moved-ref false)
             (mf/set-ref-val! start-ref nil)
             (mf/set-ref-val! guide-ref nil)
             (mf/set-ref-val! pending-ref nil)
-            (reset! drag-state nil))
+            (reset! state nil))
 
-          finish-drag!
+          finish-drag
           (fn [event]
             (when (mf/ref-val dragging-ref)
               (when (and (mf/ref-val moved-ref) (some? on-guide-change))
@@ -677,9 +754,9 @@
               (when-let [viewport @uwvv/viewport-ref]
                 (when (.-pointerId event)
                   (.releasePointerCapture viewport (.-pointerId event))))
-              (reset-drag!)))
+              (reset-state)))
 
-          drag-move!
+          drag-move
           (fn [move-event]
             (when (mf/ref-val dragging-ref)
               (when-let [guide (mf/ref-val guide-ref)]
@@ -696,82 +773,141 @@
                       new-frame-id (-> (get-hover-frame) (get :id))
                       pending      {:guide guide
                                     :new-position new-position
-                                    :new-frame-id new-frame-id}]
+                                    :new-frame-id new-frame-id
+                                    :mode :drag}]
                   (when-not (mf/ref-val moved-ref)
                     (mf/set-ref-val! moved-ref true)
                     (when (some? on-guide-drag)
                       (on-guide-drag (:id guide))))
                   (mf/set-ref-val! pending-ref pending)
-                  (reset! drag-state pending)))))
+                  (reset! state pending)))))
 
-          pointer-down!
+          editing?
+          (fn [] (= :edit (:mode @state)))
+
+          guide-at-event
           (fn [event]
-            (when-not read-only?
+            (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
+              (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
+
+          pointer-down
+          (fn [event]
+            (when (and (not read-only?) (not (editing?)))
+              ;; While editing, any click outside the input commits the edit
+              ;; via the input's blur handler. Don't initiate a drag on the
+              ;; same pointerdown.
               (when (= 0 (.-button event))
-                (let [position (dom/get-client-position event)
-                      pt       (uwvv/point->viewport position)
-                      index    (when pt (wasm.api/find-guide-at pt zoom))
-                      guide    (guide-by-serialized-index guides index)]
-                  (when (and guide (guide-draggable-in-focus? focus guide))
-                    (when-let [viewport @uwvv/viewport-ref]
-                      (.setPointerCapture viewport (.-pointerId event)))
-                    (dom/stop-propagation event)
-                    (mf/set-ref-val! dragging-ref true)
-                    (mf/set-ref-val! moved-ref false)
-                    (mf/set-ref-val! start-ref position)
-                    (mf/set-ref-val! guide-ref guide)
-                    (mf/set-ref-val! pending-ref
-                                     {:guide guide
-                                      :new-position (:position guide)
-                                      :new-frame-id (:frame-id guide)})
-                    ;; Pointer capture (above) routes all subsequent pointer
-                    ;; events to the viewport, so we listen on the viewport
-                    ;; itself rather than window. This keeps events flowing
-                    ;; even outside the browser window.
-                    (when-let [viewport @uwvv/viewport-ref]
-                      (let [on-move #(drag-move! %)
-                            on-up   #(finish-drag! %)]
-                        (mf/set-ref-val! drag-listeners-ref
-                                         {:on-move on-move :on-up on-up})
-                        (.addEventListener viewport "pointermove" on-move true)
-                        (.addEventListener viewport "pointerup" on-up true)
-                        (.addEventListener viewport "pointercancel" on-up true))))))))]
+                  (let [position (dom/get-client-position event)
+                        guide    (guide-at-event event)]
+                    (when (and guide (guide-draggable-in-focus? focus guide))
+                      (when-let [viewport @uwvv/viewport-ref]
+                        (.setPointerCapture viewport (.-pointerId event)))
+                      (dom/stop-propagation event)
+                      (mf/set-ref-val! dragging-ref true)
+                      (mf/set-ref-val! moved-ref false)
+                      (mf/set-ref-val! start-ref position)
+                      (mf/set-ref-val! guide-ref guide)
+                      (mf/set-ref-val! pending-ref
+                                       {:guide guide
+                                        :new-position (:position guide)
+                                        :new-frame-id (:frame-id guide)
+                                        :mode :drag})
+                      ;; Pointer capture (above) routes all subsequent pointer
+                      ;; events to the viewport, so we listen on the viewport
+                      ;; itself rather than window. This keeps events flowing
+                      ;; even outside the browser window.
+                      (when-let [viewport @uwvv/viewport-ref]
+                        (let [on-move #(drag-move %)
+                              on-up   #(finish-drag %)]
+                          (mf/set-ref-val! drag-listeners-ref
+                                           {:on-move on-move :on-up on-up})
+                          (.addEventListener viewport "pointermove" on-move true)
+                          (.addEventListener viewport "pointerup" on-up true)
+                          (.addEventListener viewport "pointercancel" on-up true))))))))
+
+          double-click
+          (fn [event]
+            (when (and (not read-only?) (not (editing?)))
+              (let [guide (guide-at-event event)]
+                (when (and guide (guide-draggable-in-focus? focus guide))
+                  (dom/prevent-default event)
+                  (dom/stop-propagation event)
+                  (when (some? on-guide-drag)
+                    (on-guide-drag (:id guide)))
+                  (mf/set-ref-val! guide-ref guide)
+                  (let [frame  (some-> (:frame-id guide) refs/object-by-id deref)
+                        offset (if frame
+                                 (if (= :x (:axis guide)) (:x frame) (:y frame))
+                                 0)]
+                    (reset! state {:guide guide
+                                   :new-position (:position guide)
+                                   :new-frame-id (:frame-id guide)
+                                   :frame-offset offset
+                                   :mode :edit}))))))
+
+          commit-edit
+          (fn [raw-value]
+            (when (editing?)
+              (let [{:keys [guide new-frame-id frame-offset]} @state
+                    parsed (some-> raw-value str/trim d/parse-double)]
+                (when (and (some? parsed) (some? on-guide-change))
+                  (on-guide-change (assoc guide
+                                          :position (+ parsed frame-offset)
+                                          :frame-id new-frame-id)))
+                (reset-state))))
+
+          cancel-edit
+          (fn []
+            (when (editing?)
+              (reset-state)))]
 
       (mf/with-effect [wasm-guides? disabled-guides? read-only?
                        guides zoom focus snap-pixel?
                        on-guide-change on-guide-drag get-hover-frame]
         (when (and wasm-guides? (not disabled-guides?) (not read-only?))
           (when-let [viewport @uwvv/viewport-ref]
-            (.addEventListener viewport "pointerdown" pointer-down! true)
+            (.addEventListener viewport "pointerdown" pointer-down true)
+            (.addEventListener viewport "dblclick" double-click true)
             (fn []
-              (.removeEventListener viewport "pointerdown" pointer-down! true)
-              ;; Only tear down drag state on real teardown. If this cleanup is
-              ;; triggered by a dependency change mid-drag, leave the active
-              ;; drag (and its listeners) untouched so it can finish.
-              (when-not (mf/ref-val dragging-ref)
-                (reset-drag!)))))))
+              (.removeEventListener viewport "pointerdown" pointer-down true)
+              (.removeEventListener viewport "dblclick" double-click true)
+              ;; Only tear down state on real teardown. If this cleanup is
+              ;; triggered by a dependency change mid-interaction, leave the
+              ;; active drag/edit (and its listeners) untouched so it can
+              ;; finish.
+              (when-not (or (mf/ref-val dragging-ref) (editing?))
+                (reset-state))))))
 
-    drag-state))
+      {:state state
+       :commit-edit commit-edit
+       :cancel-edit cancel-edit})))
 
-(mf/defc wasm-guide-drag-layer*
-  "Owns WASM guide drag state and preview rendering so updates are not
+(mf/defc wasm-guide-overlay-layer*
+  "Owns WASM guide drag/edit state and overlay rendering so updates are not
   blocked by memoization on `viewport-guides*`."
   [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
            on-guide-drag get-hover-frame focus vbox]}]
-  (let [drag-state
-        (use-wasm-guide-drag {:guides guides
-                              :zoom zoom
-                              :wasm-guides? wasm-guides?
-                              :disabled-guides? disabled-guides?
-                              :on-guide-change on-guide-change
-                              :on-guide-drag on-guide-drag
-                              :get-hover-frame get-hover-frame
-                              :focus focus})]
-    (when-let [{:keys [guide new-position]} @drag-state]
-      [:> guide-drag-preview* {:guide guide
-                               :position new-position
-                               :vbox vbox
-                               :zoom zoom}])))
+  (let [{:keys [state commit-edit cancel-edit]}
+        (use-wasm-guide-interaction {:guides guides
+                                     :zoom zoom
+                                     :wasm-guides? wasm-guides?
+                                     :disabled-guides? disabled-guides?
+                                     :on-guide-change on-guide-change
+                                     :on-guide-drag on-guide-drag
+                                     :get-hover-frame get-hover-frame
+                                     :focus focus})
+
+        {:keys [guide new-position mode frame-offset]} @state]
+
+    (when (some? guide)
+      [:> guide-overlay* {:guide guide
+                          :position new-position
+                          :vbox vbox
+                          :zoom zoom
+                          :mode mode
+                          :frame-offset (or frame-offset 0)
+                          :on-input-commit commit-edit
+                          :on-input-cancel cancel-edit}])))
 
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]}
@@ -853,15 +989,15 @@
                           :disabled-guides disabled-guides}]
 
      (when wasm-guides?
-       [:> wasm-guide-drag-layer* {:guides guides
-                                   :zoom zoom
-                                   :wasm-guides? wasm-guides?
-                                   :disabled-guides? disabled-guides
-                                   :on-guide-change on-guide-change
-                                   :on-guide-drag on-guide-drag
-                                   :get-hover-frame get-hover-frame
-                                   :focus focus
-                                   :vbox vbox}])
+       [:> wasm-guide-overlay-layer* {:guides guides
+                                      :zoom zoom
+                                      :wasm-guides? wasm-guides?
+                                      :disabled-guides? disabled-guides
+                                      :on-guide-change on-guide-change
+                                      :on-guide-drag on-guide-drag
+                                      :get-hover-frame get-hover-frame
+                                      :focus focus
+                                      :vbox vbox}])
 
      (when-not wasm-guides?
        (for [{:keys [id frame-id] :as guide} visible-guides]

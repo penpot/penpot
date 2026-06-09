@@ -524,7 +524,6 @@ impl Surfaces {
         tile_viewbox: &TileViewbox,
         background: skia::Color,
     ) {
-        // self.backbuffer.canvas().clear(background);
         self.tiles.update(viewbox, tile_viewbox);
         let atlas_image = self.tile_atlas.image_snapshot();
         let canvas = self.backbuffer.canvas();
