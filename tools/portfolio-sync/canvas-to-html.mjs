@@ -304,22 +304,269 @@ function buildHtml(boards) {
     const bgColor = b.fillColor || '#ffffff';
     const shapes  = b.shapes.map(s => renderShape(s)).filter(Boolean).join('\n      ');
     return `    <section data-board="${escapeAttr(b.name)}" style="position:relative;width:${b.w}px;height:${b.h}px;background-color:${escapeAttr(bgColor)};flex:0 0 auto">
-      <div style="position:absolute;top:8px;left:8px;font:11px/1 ui-monospace,Menlo,monospace;color:rgba(0,0,0,0.35);z-index:9999;pointer-events:none">${escapeHtml(b.name)} · ${b.w}×${b.h}</div>
+      <div class="ppc-board-label">${escapeHtml(b.name)} · ${b.w}×${b.h}</div>
       ${shapes}
     </section>`;
   }).join('\n');
 
+  // Layers panel: one collapsible group per board, one row per shape. Pure
+  // visual mimicry — no editing wiring, no JS state, just <details>.
+  const SHAPE_GLYPH = {
+    heading:   'T',
+    paragraph: 'T',
+    link:      '↗',
+    button:    '▢',
+    image:     '▣',
+    svg:       '◆',
+    line:      '—',
+    control:   '▭',
+    backdrop:  '▢',
+  };
+  const layersHtml = boards.map(b => {
+    const rows = b.shapes.map(s => {
+      const k = classifyShape(s);
+      const glyph = SHAPE_GLYPH[k.kind] || '·';
+      const label = (s.text || s.name || k.kind).toString().replace(/^(link:|img:|control:|svg:)\s*/i, '').slice(0, 48) || k.kind;
+      return `        <li class="ppc-layer"><span class="ppc-layer-glyph">${escapeHtml(glyph)}</span><span class="ppc-layer-name" title="${escapeAttr(label)}">${escapeHtml(label)}</span></li>`;
+    }).join('\n');
+    return `      <details class="ppc-board-group" open>
+        <summary><span class="ppc-board-chevron">▾</span><span class="ppc-board-name">${escapeHtml(b.name)}</span><span class="ppc-board-count">${b.shapes.length}</span></summary>
+        <ul class="ppc-layer-list">
+${rows}
+        </ul>
+      </details>`;
+  }).join('\n');
+
+  const totalShapes = boards.reduce((n, b) => n + b.shapes.length, 0);
+  const now = new Date().toISOString().replace('T', ' ').replace(/\..+$/, '') + ' UTC';
+  const pageTitle = 'Page 1';
+  const pageSubtitle = `${boards.length} board${boards.length === 1 ? '' : 's'} · ${totalShapes} shape${totalShapes === 1 ? '' : 's'}`;
+
   const css = INLINE_CSS ? `
-    /* Reason: the build script measured every shape's position with these web
-       fonts loaded in headless Chrome. If we render with system fallbacks,
-       every text shape lands at wrong y/x for its width. Load the same
-       Google Fonts the live portfolio uses. */
-    body { margin: 0; padding: 0; background: #ececec; font-family: system-ui, sans-serif; }
-    .canvas-wrap { display: flex; gap: 32px; padding: 32px; align-items: flex-start; min-width: max-content; }
-    section[data-board] { box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden; }
-    /* Reset user-agent defaults that would otherwise override the per-shape
-       inline styles (link color, heading weight/size, button chrome,
-       paragraph margins). All real styling is inline per shape. */
+    /* ─── Penpot-editor-style chrome ─────────────────────────────────────────
+       Visual mimicry of the Penpot editor. Palette pulled from
+       frontend/resources/styles/common/refactor/color-defs.scss (#18181a
+       dark) and the prompt's #eeeef1 light panel. No editing wiring. */
+    :root {
+      --ppc-bg:        #f4f4f6;
+      --ppc-panel:     #eeeef1;
+      --ppc-rule:      #d9d9de;
+      --ppc-rule-soft: #e4e4e9;
+      --ppc-text:      #1f1f1f;
+      --ppc-text-dim:  #6c6c74;
+      --ppc-accent:    #6911d4;
+      --ppc-canvas-bg: #d9d9de;
+    }
+    [data-ppc-theme="dark"] {
+      --ppc-bg:        #1d1d20;
+      --ppc-panel:     #18181a;
+      --ppc-rule:      #2a2a2d;
+      --ppc-rule-soft: #232326;
+      --ppc-text:      #e8e8ea;
+      --ppc-text-dim:  #8a8a92;
+      --ppc-accent:    #b692f6;
+      --ppc-canvas-bg: #2a2a2d;
+    }
+
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      background: var(--ppc-bg);
+      color: var(--ppc-text);
+      font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .ppc-app {
+      display: grid;
+      grid-template-rows: 44px 1fr 24px;
+      grid-template-columns: 248px 1fr 280px;
+      grid-template-areas:
+        "topbar topbar  topbar"
+        "left   canvas  right"
+        "status status  status";
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Top toolbar ─────────────────────────────────────────────────────────── */
+    .ppc-topbar {
+      grid-area: topbar;
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px;
+      background: var(--ppc-panel);
+      border-bottom: 1px solid var(--ppc-rule);
+    }
+    .ppc-logo {
+      width: 24px; height: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--ppc-accent); color: #fff;
+      border-radius: 4px; font-weight: 700; font-size: 13px;
+    }
+    .ppc-file {
+      display: flex; flex-direction: column; line-height: 1.15;
+      padding: 0 6px; margin-right: 4px;
+    }
+    .ppc-file-name { font-weight: 600; font-size: 12px; }
+    .ppc-file-meta { font-size: 10px; color: var(--ppc-text-dim); font-family: ui-monospace, Menlo, monospace; }
+    .ppc-tool-group { display: inline-flex; gap: 2px; padding: 0 4px;
+      border-left: 1px solid var(--ppc-rule-soft); height: 24px; align-items: center; }
+    .ppc-tool {
+      width: 26px; height: 26px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 4px; color: var(--ppc-text-dim);
+      font-size: 13px; cursor: default; user-select: none;
+    }
+    .ppc-tool:hover { background: var(--ppc-rule-soft); color: var(--ppc-text); }
+    .ppc-spacer { flex: 1; }
+    .ppc-presence { display: inline-flex; gap: -4px; align-items: center; padding-right: 6px; }
+    .ppc-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, #ff9d6c, #bb4e75);
+      color: #fff; font-size: 10px; font-weight: 600;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 2px solid var(--ppc-panel); margin-left: -6px;
+    }
+    .ppc-avatar.b { background: linear-gradient(135deg, #6f9eff, #6911d4); }
+    .ppc-share {
+      background: var(--ppc-accent); color: #fff;
+      border: 0; border-radius: 6px; padding: 6px 12px;
+      font-size: 11px; font-weight: 600; cursor: default;
+    }
+    .ppc-mode-toggle {
+      background: transparent; border: 1px solid var(--ppc-rule);
+      color: var(--ppc-text-dim);
+      border-radius: 4px; padding: 4px 8px; font-size: 11px;
+      cursor: pointer; margin-left: 4px;
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    .ppc-mode-toggle:hover { color: var(--ppc-text); border-color: var(--ppc-text-dim); }
+
+    /* Left layers panel ─────────────────────────────────────────────────────── */
+    .ppc-left {
+      grid-area: left;
+      background: var(--ppc-panel);
+      border-right: 1px solid var(--ppc-rule);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .ppc-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--ppc-text-dim);
+      border-bottom: 1px solid var(--ppc-rule-soft);
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    .ppc-panel-tabs { display: flex; gap: 16px; }
+    .ppc-panel-tab { cursor: default; }
+    .ppc-panel-tab.active { color: var(--ppc-text); }
+    .ppc-layers-scroll { overflow-y: auto; padding: 6px 0 12px; flex: 1; }
+
+    .ppc-board-group { padding: 0; }
+    .ppc-board-group > summary {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; cursor: pointer; list-style: none;
+      font-size: 12px; font-weight: 600;
+    }
+    .ppc-board-group > summary::-webkit-details-marker { display: none; }
+    .ppc-board-group > summary:hover { background: var(--ppc-rule-soft); }
+    .ppc-board-chevron { color: var(--ppc-text-dim); width: 12px; text-align: center; }
+    .ppc-board-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ppc-board-count {
+      font-size: 10px; color: var(--ppc-text-dim);
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    .ppc-layer-list { list-style: none; margin: 0; padding: 0; }
+    .ppc-layer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 3px 10px 3px 28px;
+      font-size: 11.5px; color: var(--ppc-text);
+      cursor: default;
+    }
+    .ppc-layer:hover { background: var(--ppc-rule-soft); }
+    .ppc-layer-glyph {
+      width: 14px; text-align: center; color: var(--ppc-text-dim);
+      font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+    }
+    .ppc-layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+    /* Canvas area ───────────────────────────────────────────────────────────── */
+    .ppc-center {
+      grid-area: canvas;
+      background: var(--ppc-canvas-bg);
+      overflow: auto;
+      position: relative;
+    }
+    .ppc-rulers-bg {
+      position: sticky; top: 0; left: 0;
+      pointer-events: none;
+    }
+    .canvas-wrap {
+      display: flex; gap: 48px; padding: 48px;
+      align-items: flex-start; min-width: max-content;
+    }
+    section[data-board] {
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.12);
+      overflow: hidden; border-radius: 2px;
+    }
+    .ppc-board-label {
+      position: absolute; top: -22px; left: 0;
+      font: 11px/1 ui-monospace, Menlo, monospace;
+      color: var(--ppc-text-dim);
+      pointer-events: none; white-space: nowrap;
+    }
+
+    /* Right properties panel ────────────────────────────────────────────────── */
+    .ppc-right {
+      grid-area: right;
+      background: var(--ppc-panel);
+      border-left: 1px solid var(--ppc-rule);
+      overflow-y: auto;
+    }
+    .ppc-design-section {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--ppc-rule-soft);
+    }
+    .ppc-design-section h3 {
+      margin: 0 0 8px 0;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--ppc-text-dim);
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    .ppc-prop-row {
+      display: grid; grid-template-columns: 80px 1fr;
+      align-items: center; gap: 8px;
+      padding: 4px 0; font-size: 11.5px;
+    }
+    .ppc-prop-row .k { color: var(--ppc-text-dim); }
+    .ppc-prop-row .v {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 11px; color: var(--ppc-text);
+    }
+    .ppc-page-title { font-size: 14px; font-weight: 600; margin: 0 0 2px 0; }
+    .ppc-page-subtitle { font-size: 11px; color: var(--ppc-text-dim); margin: 0; }
+    .ppc-swatch {
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 2px; vertical-align: -2px;
+      border: 1px solid rgba(0,0,0,0.15); margin-right: 6px;
+    }
+
+    /* Status bar ────────────────────────────────────────────────────────────── */
+    .ppc-status {
+      grid-area: status;
+      background: var(--ppc-panel);
+      border-top: 1px solid var(--ppc-rule);
+      display: flex; align-items: center;
+      padding: 0 14px; gap: 16px;
+      font: 11px/1 ui-monospace, Menlo, monospace;
+      color: var(--ppc-text-dim);
+    }
+    .ppc-status .ppc-spacer { flex: 1; }
+
+    /* Per-shape resets (preserve inline styling on board content) ──────────── */
     section[data-board] h1, section[data-board] h2, section[data-board] h3,
     section[data-board] h4, section[data-board] h5, section[data-board] h6,
     section[data-board] p, section[data-board] a, section[data-board] button {
@@ -330,8 +577,23 @@ function buildHtml(boards) {
     section[data-board] a { color: inherit; text-decoration: none; }
   ` : '';
 
+  // Mode toggle is purely cosmetic — flips the [data-ppc-theme] attribute on
+  // <html>. Self-contained inline handler; no external JS, no persisted state.
+  const toggleJs = `
+    (function(){
+      var root = document.documentElement;
+      var btn  = document.getElementById('ppc-mode-toggle');
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-ppc-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-ppc-theme', next);
+        btn.textContent = next === 'dark' ? '☾ dark' : '☀ light';
+      });
+    })();
+  `;
+
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-ppc-theme="light">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -342,9 +604,87 @@ function buildHtml(boards) {
 ${INLINE_CSS ? `<style>${css}</style>` : ''}
 </head>
 <body>
-  <div class="canvas-wrap">
+  <div class="ppc-app">
+    <header class="ppc-topbar">
+      <span class="ppc-logo" aria-hidden="true">P</span>
+      <div class="ppc-file">
+        <span class="ppc-file-name">portfolio</span>
+        <span class="ppc-file-meta">${escapeHtml(pageTitle)}</span>
+      </div>
+      <div class="ppc-tool-group" aria-hidden="true">
+        <span class="ppc-tool" title="Undo">↶</span>
+        <span class="ppc-tool" title="Redo">↷</span>
+      </div>
+      <div class="ppc-tool-group" aria-hidden="true">
+        <span class="ppc-tool" title="Select">▭</span>
+        <span class="ppc-tool" title="Rectangle">▢</span>
+        <span class="ppc-tool" title="Ellipse">◯</span>
+        <span class="ppc-tool" title="Text">T</span>
+        <span class="ppc-tool" title="Image">▣</span>
+        <span class="ppc-tool" title="Comments">💬</span>
+      </div>
+      <span class="ppc-spacer"></span>
+      <div class="ppc-presence" aria-hidden="true">
+        <span class="ppc-avatar">SV</span>
+        <span class="ppc-avatar b">P</span>
+      </div>
+      <button class="ppc-mode-toggle" id="ppc-mode-toggle" type="button">☀ light</button>
+      <button class="ppc-share" type="button">Share</button>
+    </header>
+
+    <aside class="ppc-left">
+      <div class="ppc-panel-header">
+        <div class="ppc-panel-tabs">
+          <span class="ppc-panel-tab active">Layers</span>
+          <span class="ppc-panel-tab">Assets</span>
+        </div>
+        <span title="${escapeAttr(boards.length + ' boards')}">${boards.length}</span>
+      </div>
+      <div class="ppc-layers-scroll">
+${layersHtml}
+      </div>
+    </aside>
+
+    <main class="ppc-center">
+      <div class="canvas-wrap">
 ${sections}
+      </div>
+    </main>
+
+    <aside class="ppc-right">
+      <div class="ppc-design-section">
+        <h3>Page</h3>
+        <p class="ppc-page-title">${escapeHtml(pageTitle)}</p>
+        <p class="ppc-page-subtitle">${escapeHtml(pageSubtitle)}</p>
+      </div>
+      <div class="ppc-design-section">
+        <h3>Design</h3>
+        <div class="ppc-prop-row"><span class="k">Width</span><span class="v">${boards.reduce((m, b) => Math.max(m, b.w), 0)} px</span></div>
+        <div class="ppc-prop-row"><span class="k">Height</span><span class="v">${boards.reduce((m, b) => Math.max(m, b.h), 0)} px</span></div>
+        <div class="ppc-prop-row"><span class="k">Boards</span><span class="v">${boards.length}</span></div>
+        <div class="ppc-prop-row"><span class="k">Shapes</span><span class="v">${totalShapes}</span></div>
+      </div>
+      <div class="ppc-design-section">
+        <h3>Fills</h3>
+        ${boards.map(b => `<div class="ppc-prop-row"><span class="k">${escapeHtml(b.name)}</span><span class="v"><span class="ppc-swatch" style="background:${escapeAttr(b.fillColor || '#ffffff')}"></span>${escapeHtml(b.fillColor || '#ffffff')}</span></div>`).join('')}
+      </div>
+      <div class="ppc-design-section">
+        <h3>Export</h3>
+        <div class="ppc-prop-row"><span class="k">Format</span><span class="v">HTML (static)</span></div>
+        <div class="ppc-prop-row"><span class="k">Source</span><span class="v">MCP @ :4401</span></div>
+      </div>
+    </aside>
+
+    <footer class="ppc-status">
+      <span>100%</span>
+      <span>${escapeHtml(pageTitle)}</span>
+      <span>${boards.length} board${boards.length === 1 ? '' : 's'}</span>
+      <span class="ppc-spacer"></span>
+      <span>last render ${escapeHtml(now)}</span>
+      <span>canvas-to-html · :${PORT}</span>
+    </footer>
   </div>
+  <script>${toggleJs}</script>
 </body>
 </html>
 `;
