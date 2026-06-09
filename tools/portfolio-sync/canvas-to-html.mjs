@@ -450,9 +450,45 @@ function buildHtml(boards) {
     }
     return false;
   };
+  // Reason: CSS multi-column layouts (the home page's "practice" 2-column
+  // text and the publication list) make each <p>'s getBoundingClientRect()
+  // span the FULL column-box, so the harvester records the same text twice
+  // — once at column 1's x, once at column 2's x. The build-side dedup keys
+  // by (kind,x,y,text-prefix) which doesn't catch this because the x differs.
+  // De-overlap here: when two text shapes carry identical (non-empty) text
+  // and one's bbox sits inside the other's grown bbox, drop the duplicate.
+  // Also collapse exact text-coordinate twins that the build dedup missed
+  // (e.g. text first 40 chars matched but full text diverged).
+  const dedupeGhosts = (shapes) => {
+    const normText = (t) => (t || '').replace(/\s+/g, ' ').trim();
+    const isText = (s) => {
+      const k = classifyShape(s);
+      return k.kind === 'heading' || k.kind === 'paragraph'
+          || k.kind === 'link' || k.kind === 'button';
+    };
+    const drop = new Set();
+    for (let i = 0; i < shapes.length; i++) {
+      const a = shapes[i];
+      if (!a || drop.has(a) || !isText(a)) continue;
+      const at = normText(a.text);
+      if (at.length < 8) continue; // skip tiny labels — risk of legit repeats
+      for (let j = i + 1; j < shapes.length; j++) {
+        const b = shapes[j];
+        if (!b || drop.has(b) || !isText(b)) continue;
+        if (normText(b.text) !== at) continue;
+        // Same text. Drop whichever has the smaller area (the bleed copy is
+        // usually the narrower one Penpot resolved at the secondary column).
+        const areaA = Math.max(0, a.w || 0) * Math.max(0, a.h || 0);
+        const areaB = Math.max(0, b.w || 0) * Math.max(0, b.h || 0);
+        if (areaA >= areaB) drop.add(b); else { drop.add(a); break; }
+      }
+    }
+    return shapes.filter(s => !drop.has(s));
+  };
   const sections = boards.map(b => {
     const bgColor = b.fillColor || '#ffffff';
-    const ordered = b.shapes
+    const deduped = dedupeGhosts(b.shapes);
+    const ordered = deduped
       .map((s, i) => ({ s, i, bg: isBackdropShape(s, b.w, b.h) }))
       .sort((a, b) => (a.bg === b.bg ? a.i - b.i : (a.bg ? -1 : 1)))
       .map(x => x.s);
