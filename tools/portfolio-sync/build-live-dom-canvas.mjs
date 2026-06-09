@@ -751,23 +751,19 @@ const DOM_HARVEST_FN = () => {
   // can drop it straight into a Penpot fill (which expects hex). This is what
   // lets the consulting page (near-black starfield + light text) render with
   // legible contrast — a hardcoded cream board fill swallows the light text.
-  const rgbToHex = (rgb) => {
+  // Reason: reuse the in-scope `isTransparent` helper defined above; only
+  // define a local rgb→hex since there isn't one in the browser context.
+  const _rgbToHex = (rgb) => {
     const m = (rgb || '').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
     if (!m) return null;
     const h = (n) => Number(n).toString(16).padStart(2, '0');
     return '#' + h(m[1]) + h(m[2]) + h(m[3]);
   };
-  const isTransparent = (rgb) => {
-    if (!rgb) return true;
-    const m = rgb.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*([\d.]+))?/);
-    if (!m) return true;
-    return m[1] !== undefined && parseFloat(m[1]) === 0;
-  };
   const bodyBg = window.getComputedStyle(document.body).backgroundColor;
   const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
   let pageBg = '#ffffff';
-  if (!isTransparent(bodyBg))      pageBg = rgbToHex(bodyBg) || '#ffffff';
-  else if (!isTransparent(htmlBg)) pageBg = rgbToHex(htmlBg) || '#ffffff';
+  if (!isTransparent(bodyBg))      pageBg = _rgbToHex(bodyBg) || '#ffffff';
+  else if (!isTransparent(htmlBg)) pageBg = _rgbToHex(htmlBg) || '#ffffff';
 
   return {
     docWidth:  document.documentElement.scrollWidth,
@@ -1287,11 +1283,11 @@ return { switched: penpot.currentPage.name, fallback: !named && target ? target.
     const page = h.page;
     const pT0 = Date.now();
     console.log(`── ${page.name} ──────────────────────────────────────────`);
-    console.log(`  DOM: ${h.docWidth}x${h.docHeight}, ${h.items.length} items`);
+    console.log(`  DOM: ${h.docWidth}x${h.docHeight}, ${h.items.length} items, bg=${h.pageBg || '(none)'}`);
     const breakdown = h.items.reduce((a, it) => (a[it.kind] = (a[it.kind] || 0) + 1, a), {});
     console.log(`  kinds: ${Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(' ')}`);
 
-    const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD, PRESERVE_PREFIX);
+    const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD, PRESERVE_PREFIX, h.pageBg);
     if (!prep?.result) { console.log(`  prepareBoard failed: ${JSON.stringify(prep)}`); continue; }
     const { boardId, boardX, boardY, removed, preserved, screenshot } = prep.result;
     console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0}; backdrop=${screenshot ? screenshot.name : 'none'})`);
