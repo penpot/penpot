@@ -7026,6 +7026,10 @@ msgstr "Desenfoque de la selección"
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Mostrar/ocultar desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Selector de tipo de desenfoque"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"

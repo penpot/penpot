@@ -96,7 +96,30 @@
 
         type-options
         [{:value "layer-blur"  :disabled lb-disabled? :id "layer-blur" :label (tr "workspace.options.blur-options.layer-blur")}
-         {:value "background-blur" :disabled bb-disabled?  :id "background-blur" :label (tr "workspace.options.blur-options.background-blur")}]]
+         {:value "background-blur" :disabled bb-disabled?  :id "background-blur" :label (tr "workspace.options.blur-options.background-blur")}]
+
+
+        background-blur-disabled?
+        (and (= blur-key :background-blur)
+             (not bg-blur?))
+
+        label-text
+        (cond
+          (= blur-key :background-blur)
+          (tr "workspace.options.blur-options.background-blur")
+
+          bg-blur?
+          (tr "workspace.options.blur-options.layer-blur")
+
+          :else
+          (tr "labels.blur"))
+
+        label
+        (mf/html [:span {:aria-labelledby "background-blur-disabled-label"
+                         :ref label-ref
+                         :class (stl/css-case :label true
+                                              :disabled-label background-blur-disabled?)}
+                  label-text])]
 
     [:*
      [:div {:class (stl/css-case :first-row true
@@ -114,22 +137,23 @@
                                          (= false bg-blur?)))
                          :aria-label (tr "workspace.options.blur-options.toggle-more-options")
                          :icon i/menu}]
-       (if bg-blur?
-         [:> select* {:class (stl/css :blur-type-select)
-                      :default-selected (d/name (:type value))
-                      :options type-options
-                      :disabled is-hidden
-                      :on-change handle-type-change}]
-         [:> tooltip* {:trigger-ref label-ref
-                       :id "background-blur-disabled-label"
-                       :class (stl/css :disabled-label-tooltip)
-                       :content (tr "workspace.options.blur-options.disabled-blur-label")}
-          [:span {:aria-labelledby "background-blur-disabled-label"
-                  :ref label-ref
-                  :class (stl/css-case :label true
-                                       :disabled-label (and (= blur-key :background-blur)
-                                                            (= false bg-blur?)))}
-           (d/name (:type value))]])]
+       (cond bg-blur?
+             [:> select*
+              {:class (stl/css :blur-type-select)
+               :default-selected (d/name (:type value))
+               :aria-label (tr "workspace.options.blur-options.blur-type-select")
+               :options type-options
+               :disabled is-hidden
+               :on-change handle-type-change}]
+             background-blur-disabled?
+             [:> tooltip*
+              {:trigger-ref label-ref
+               :id "background-blur-disabled-label"
+               :class (stl/css :disabled-label-tooltip)
+               :content (tr "workspace.options.blur-options.disabled-blur-label")}
+              label]
+             :else
+             label)]
 
       [:div {:class (stl/css :actions)}
        [:> icon-button* {:variant "ghost"
@@ -191,6 +215,8 @@
   (let [render-wasm?        (features/use-feature "render-wasm/v1")
         bg-blur?            (and render-wasm?
                                  (contains? cf/flags :background-blur))
+
+
 
         blur-values          (get-blurs values)
 
@@ -258,10 +284,10 @@
                                         :else (tr "labels.blur")))
                       :class        (stl/css-case :title-spacing-blur (not (seq blur-values))
                                                   :long-title true)}
-       (when (and
-              (not mixed-state)
-              (< (count blur-values)
-                 (if bg-blur? 2 1)))
+       (when (and (not mixed-state)
+                  (if bg-blur?
+                    (< (count blur-values) 2)
+                    (nil? (:blur values))))
          [:> icon-button*
           {:variant "ghost"
            :aria-label (tr "workspace.options.blur-options.add-blur")
