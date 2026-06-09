@@ -5,6 +5,9 @@ use skia_safe::gpu::{
 };
 use skia_safe::{self as skia, ISize};
 
+const MIN_MAX_TEXTURE_SIZE: i32 = 512;
+const MAX_MAX_TEXTURE_SIZE: i32 = 8192 * 2;
+
 #[derive(Debug, Clone)]
 pub struct GpuState {
     pub context: DirectContext,
@@ -28,6 +31,7 @@ impl GpuState {
         let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
             Error::CriticalError("Failed to create GL context".to_string()),
         )?;
+
         let framebuffer_info = {
             let mut fboid: gl::types::GLint = 0;
             unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
@@ -45,6 +49,12 @@ impl GpuState {
             context,
             framebuffer_info,
         })
+    }
+
+    pub fn max_texture_size(&self) -> i32 {
+        self.context
+            .max_texture_size()
+            .clamp(MIN_MAX_TEXTURE_SIZE, MAX_MAX_TEXTURE_SIZE)
     }
 
     fn delete_gl_texture(&mut self, texture_id: gl::types::GLuint) -> bool {

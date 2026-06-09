@@ -93,6 +93,10 @@
 /.pnpm-store
 /.vscode
 /.idea
+*.iml
 /.claude
 /.playwright-mcp
+/.devenv/mcp/
+/opencode.json
+/.codex/
 /tools/__pycache__

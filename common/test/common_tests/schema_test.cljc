@@ -171,3 +171,20 @@
     (t/is (= candidate-2 (encode-j expected)))))
 
 
+(t/deftest test-boolean
+  (let [decode-s (sm/decoder ::sm/boolean sm/string-transformer)]
+    (t/is (= true  (decode-s "true")))
+    (t/is (= true  (decode-s "True")))
+    (t/is (= true  (decode-s "TrUe")))
+    (t/is (= true  (decode-s "TRUE")))
+    (t/is (= false (decode-s "false")))
+    (t/is (= false (decode-s "False")))
+    (t/is (= false (decode-s "fAlSe")))
+    (t/is (= false (decode-s "FALSE")))
+
+    (t/is (= true  (decode-s "T")))
+    (t/is (= false (decode-s "F")))
+    (t/is (= true  (decode-s "t")))
+    (t/is (= false (decode-s "f")))
+    (t/is (= true  (decode-s "1")))
+    (t/is (= false (decode-s "0")))))

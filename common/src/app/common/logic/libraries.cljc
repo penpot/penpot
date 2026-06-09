@@ -2101,6 +2101,39 @@
            (grc/rect->center selrect)
            (or (:transform current-shape) (gmt/matrix)))))))
 
+
+(defn- switch-geom-change-value
+  [prev-shape current-shape attr]
+  ;; Composite geometry stores absolute coordinates. When preserving a size
+  ;; override across variants, keep the target variant's position and only carry
+  ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
+  (let [prev-selrect (:selrect prev-shape)
+        current-selrect (:selrect current-shape)
+        final-width (:width prev-selrect)
+        final-height (:height prev-selrect)
+        x (:x current-selrect)
+        y (:y current-selrect)
+        selrect (assoc current-selrect
+                       :width final-width
+                       :height final-height
+                       :x x
+                       :y y
+                       :x1 x
+                       :y1 y
+                       :x2 (+ x final-width)
+                       :y2 (+ y final-height))]
+    (case attr
+      :selrect
+      selrect
+
+      :points
+      (-> selrect
+          (grc/rect->points)
+          (gsh/transform-points
+           (grc/rect->center selrect)
+           (or (:transform current-shape) (gmt/matrix)))))))
+
+
 (defn- equal-geometry?
   "Returns true when the value of `attr` in `shape` is considered equal
    to the corresponding value in `origin-shape`, ignoring positional
@@ -2269,6 +2302,10 @@
                            (= :fix (:layout-item-v-sizing previous-shape)))
                        (contains? #{:points :selrect :width :height} attr))
                   (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
+
+                  (and (contains? #{:points :selrect} attr)
+                       (not path-change?))
+                  (switch-geom-change-value previous-shape current-shape attr)
 
                   :else
                   (get previous-shape attr)))

@@ -255,6 +255,7 @@ jobs:
           PENPOT_TEST_REDIS_URI: "redis://redis/1"
 
         run: |
+          mkdir -p /tmp/penpot;
           clojure -M:dev:test --reporter kaocha.report/documentation
 
   test-library:

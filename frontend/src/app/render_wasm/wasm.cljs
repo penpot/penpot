@@ -8,6 +8,7 @@
   (:require ["./api/shared.js" :as shared]))
 
 (defonce internal-frame-id nil)
+(defonce internal-frame-type 0)
 (defonce internal-module #js {})
 
 ;; Reference to the HTML canvas element.

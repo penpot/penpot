@@ -198,14 +198,14 @@
                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="20" height="20" style="display:inline-block;vertical-align:middle;">
                           <tr>
                             <td width="20" height="20" align="center" valign="middle"
-                                background="{{organization-logo}}"
+                                background="{% if organization.logo %}{{organization.logo}}{% else %}{{organization.avatar-bg-url}}{% endif %}"
                                 style="width:20px;height:20px;text-align:center;font-weight:bold;font-size:9px;line-height:20px;color:#ffffff;background-size:cover;background-position:center;background-repeat:no-repeat;border-radius: 50%;color:black">
-                              {% if organization-initials %}{{organization-initials}}{% endif %}
+                              {% if organization.initials %}{{organization.initials}}{% endif %}
                             </td>
                           </tr>
                         </table>
                         <span style="display:inline-block; vertical-align: middle;padding-left:5px;height:20px;line-height: 20px;">
-                        {{ organization-name|abbreviate:25 }}
+                        {{ organization.name|abbreviate:50 }}
                         </span>
                       </div>
                     </td>

@@ -52,3 +52,12 @@
                      (or (:organization team) {})
                      organization->team-keys))
       (dissoc team :organization))))
+
+
+(def schema:organization-with-avatar
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:initials [:maybe :string]]
+   [:logo [:maybe ::sm/uri]]
+   [:avatar-bg-url [:maybe ::sm/uri]]])

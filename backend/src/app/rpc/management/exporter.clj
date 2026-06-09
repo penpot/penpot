@@ -37,7 +37,7 @@
         data    (-> (sto/content (:path content))
                     (sto/wrap-with-hash hash))
         content {::sto/content data
-                 ::sto/deduplicate? true
+                 ::sto/deduplicate? false
                  ::sto/touched-at (ct/in-future {:minutes 10})
                  :profile-id profile-id
                  :content-type (:mtype content)

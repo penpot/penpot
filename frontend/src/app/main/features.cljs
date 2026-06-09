@@ -63,7 +63,7 @@
     ;; Ensure it's always enabled whenever render-wasm/v1 is active.
     (if (contains? features "render-wasm/v1")
       (conj features "text-editor/v2")
-      (disj features "text-editor/v2"))))
+      (disj features "text-editor/v2" "text-editor-wasm/v1"))))
 
 (defn get-enabled-features
   "An explicit lookup of enabled features for the current team"

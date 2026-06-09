@@ -273,6 +273,7 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable. | `false`        |
 | `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools. Set to `true` to enable.      | `false`        |
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
+| `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
 
 ### Logging Configuration
 

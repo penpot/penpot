@@ -1,5 +1,5 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { Component, ElementRef, ViewChild } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import type {
@@ -7,7 +7,7 @@ import type {
   ReplaceText,
   ThemePluginEvent,
 } from '../app/model';
-import { filter, fromEvent, map, merge, take } from 'rxjs';
+import { filter, fromEvent, map, merge, of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Shape } from '@penpot/plugin-types';
 
@@ -24,7 +24,6 @@ export class AppComponent {
   @ViewChild('searchElement') public searchElement!: ElementRef;
   @ViewChild('addElement') public addElement!: ElementRef;
 
-  route = inject(ActivatedRoute);
   messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(window, 'message');
   public textToReplace: ReplaceText = {
     search: '',
@@ -38,11 +37,9 @@ export class AppComponent {
     this.sendMessage({ type: 'ready' });
   }
 
-  initialTheme$ = this.route.queryParamMap.pipe(
-    map((params) => params.get('theme')),
-    filter((theme) => !!theme),
-    take(1),
-  );
+  initialTheme$ = of(
+    new URLSearchParams(window.location.search).get('theme'),
+  ).pipe(filter((theme) => !!theme));
 
   theme = toSignal(
     merge(

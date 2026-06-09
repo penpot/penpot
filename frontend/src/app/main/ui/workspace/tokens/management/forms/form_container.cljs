@@ -27,12 +27,12 @@
         selected-token-set-id
         (mf/deref refs/selected-token-set-id)
 
+        tokens-in-selected-set
+        (mf/deref refs/workspace-all-tokens-in-selected-set)
+
         token-path
         (mf/with-memo [token]
           (ctob/get-token-path token))
-
-        tokens-in-selected-set
-        (mf/deref refs/workspace-all-tokens-in-selected-set)
 
         tokens-tree-in-selected-set
         (mf/with-memo [token-path tokens-in-selected-set]

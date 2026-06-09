@@ -1,10 +1,8 @@
-#[allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
 pub fn get_time() -> i32 {
     crate::get_now!() as i32
 }
 
-#[allow(dead_code)]
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_time() -> i32 {
     let now = std::time::Instant::now();

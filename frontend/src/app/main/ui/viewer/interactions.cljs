@@ -9,52 +9,25 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
-   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.shapes :as shapes]
+   [app.main.ui.viewer.viewport-common :as vpc]
+   [app.main.ui.viewer.viewport-wasm :as viewport.wasm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
    [rumext.v2 :as mf]))
-
-(defn prepare-objects
-  [frame size delta objects]
-  (let [frame-id  (:id frame)
-        vector  (-> (gpt/point (:x size) (:y size))
-                    (gpt/add delta)
-                    (gpt/negate))
-        update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
-    (->> (cfh/get-children-ids objects frame-id)
-         (into [frame-id])
-         (reduce update-fn objects))))
-
-(defn get-fixed-ids
-  [objects]
-  (let [fixed-ids (filter cfh/fixed-scroll? (vals objects))
-
-        ;; we have to consider the children if the fixed element is a group
-        fixed-children-ids
-        (into #{} (mapcat #(cfh/get-children-ids objects (:id %)) fixed-ids))
-
-        parent-children-ids
-        (->> fixed-ids
-             (mapcat #(cons (:id %) (cfh/get-parent-ids objects (:id %))))
-             (remove #(= % uuid/zero)))
-
-        fixed-ids
-        (concat fixed-children-ids parent-children-ids)]
-    fixed-ids))
 
 (mf/defc viewport-svg
   {::mf/wrap [mf/memo]
@@ -74,7 +47,7 @@
         objects   (:objects page)
         objects   (cond-> objects fixed? (assoc-in [(:id frame) :fixed-scroll] true))
 
-        fixed-ids (get-fixed-ids objects)
+        fixed-ids (vpc/get-fixed-ids objects)
 
         not-fixed-ids
         (->> (remove (set fixed-ids) (keys objects))
@@ -86,7 +59,7 @@
                (map (d/getf objects))
                (concat [frame])
                (d/index-by :id)
-               (prepare-objects frame size delta)))
+               (vpc/prepare-objects frame size delta)))
 
         objects-fixed
         (mf/with-memo [fixed-ids page frame size delta]
@@ -175,7 +148,10 @@
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
         base   (unchecked-get props "base-frame")
-        fixed? (unchecked-get props "fixed?")]
+        fixed? (unchecked-get props "fixed?")
+
+        render-wasm? (and (features/use-feature "render-wasm/v1")
+                          (contains? cf/flags :available-viewer-wasm))]
 
     (mf/with-effect [mode]
       (let [on-click
@@ -210,13 +186,21 @@
           (events/unlistenByKey key2)
           (events/unlistenByKey key3))))
 
-    [:& viewport-svg {:page page
-                      :frame frame
-                      :base base
-                      :offset offset
-                      :size size
-                      :delta delta
-                      :fixed? fixed?}]))
+    (if ^boolean render-wasm?
+      [:& viewport.wasm/viewport-wasm {:page page
+                                       :frame frame
+                                       :base base
+                                       :offset offset
+                                       :size size
+                                       :delta delta
+                                       :fixed? fixed?}]
+      [:& viewport-svg {:page page
+                        :frame frame
+                        :base base
+                        :offset offset
+                        :size size
+                        :delta delta
+                        :fixed? fixed?}])))
 
 (mf/defc flows-menu*
   {::mf/wrap [mf/memo]}

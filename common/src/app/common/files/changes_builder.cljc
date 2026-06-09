@@ -312,10 +312,12 @@
 
 (defn del-page
   [changes page]
-  (-> changes
-      (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
-      (apply-changes-local)))
+  (let [page-id (:id page)]
+    (assert (some? page-id) "page must have a valid :id")
+    (-> changes
+        (update :redo-changes conj {:type :del-page :id page-id})
+        (update :undo-changes conj {:type :add-page :id page-id :page page})
+        (apply-changes-local))))
 
 (defn move-page
   [changes page-id index prev-index]

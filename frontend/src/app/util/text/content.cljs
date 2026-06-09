@@ -14,7 +14,8 @@
 (defn dom->cljs
   "Gets the editor content from a DOM structure"
   [root]
-  (fd/create-root root))
+  (when (some? root)
+    (fd/create-root root)))
 
 (defn cljs->dom
   "Sets the editor content from a CLJS structure"

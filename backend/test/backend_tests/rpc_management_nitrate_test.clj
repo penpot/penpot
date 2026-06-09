@@ -684,14 +684,72 @@
       (t/is (nil? (:result out)))
       (t/is (empty? remaining)))))
 
-(t/deftest cleanup-org-team-invitations-removes-orphaned-invitations
+(t/deftest exists-org-team-invitations-for-non-members-reports-invitations-to-delete
+  (let [member1      (th/create-profile* 1 {:is-active true :email "member1@example.com"})
+        profile      (th/create-profile* 4 {:is-active true})
+        team-1       (th/create-team* 1 {:profile-id (:id profile)})
+        team-2       (th/create-team* 2 {:profile-id (:id profile)})
+        outside-team (th/create-team* 3 {:profile-id (:id profile)})
+        org-id       (uuid/random)
+        base-params  {::th/type :exists-org-team-invitations-for-non-members
+                      ::rpc/profile-id (:id profile)
+                      :organization-id org-id
+                      :team-ids [(:id team-1) (:id team-2)]
+                      :member-ids [(:id member1)]}
+        exist!       (fn [] (-> (management-command-with-nitrate! base-params)
+                                :result
+                                :exists))]
+
+    (t/is (false? (exist!)))
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-1)
+                    :org-id nil
+                    :email-to "member1@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+    (t/is (false? (exist!)))
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to "pending@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+    (t/is (false? (exist!)))
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id outside-team)
+                    :org-id nil
+                    :email-to "outsider@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+    (t/is (false? (exist!)))
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team-2)
+                    :org-id nil
+                    :email-to "orphan@example.com"
+                    :created-by (:id profile)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+    (t/is (true? (exist!)))))
+
+(t/deftest delete-org-team-invitations-for-non-members-removes-non-member-invitations
   (let [member1     (th/create-profile* 1 {:is-active true :email "member1@example.com"})
         profile     (th/create-profile* 4 {:is-active true})
         team-1      (th/create-team* 1 {:profile-id (:id profile)})
         team-2      (th/create-team* 2 {:profile-id (:id profile)})
         outside-team (th/create-team* 3 {:profile-id (:id profile)})
         org-id      (uuid/random)
-        params      {::th/type :cleanup-org-team-invitations
+        params      {::th/type :delete-org-team-invitations-for-non-members
                      ::rpc/profile-id (:id profile)
                      :organization-id org-id
                      :team-ids [(:id team-1) (:id team-2)]
