@@ -153,6 +153,31 @@ pub extern "C" fn render_blurred_snapshot(blur_radius: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn clear_render_include_filter() -> Result<()> {
+    with_state!(state, {
+        state.clear_include_filter();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_render_include_filter() -> Result<()> {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        state.set_include_filter(entries);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn render_sync() -> Result<()> {
     with_state!(state, {
         state.rebuild_tiles();

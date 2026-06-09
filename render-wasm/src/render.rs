@@ -372,6 +372,10 @@ pub(crate) struct RenderState {
     pub show_grid: Option<Uuid>,
     pub rulers: RulerState,
     pub focus_mode: FocusMode,
+    /// Viewer-only whitelist for fixed-scroll layer passes.
+    pub include_filter: Option<HashSet<Uuid>>,
+    /// Frame id passed as `base_object` for viewer renders; always traversed.
+    pub viewer_render_root: Option<Uuid>,
     pub touched_ids: HashSet<Uuid>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
     /// where we must render shapes without inheriting ancestor layer blurs. Toggle it through
@@ -568,6 +572,8 @@ impl RenderState {
             show_grid: None,
             rulers: RulerState::default(),
             focus_mode: FocusMode::new(),
+            include_filter: None,
+            viewer_render_root: None,
             touched_ids: HashSet::default(),
             ignore_nested_blurs: false,
             preview_mode: false,
@@ -850,7 +856,14 @@ impl RenderState {
     /// on top of Target, then present. Backbuffer is left clean so it can be reused
     /// as-is across interactive-transform frames without stale overlay pixels.
     pub fn present_frame(&mut self, tree: ShapesPoolRef) {
-        self.surfaces.copy_backbuffer_to_target();
+        // Viewer masked passes render a partial scene onto a transparent backbuffer.
+        // SrcOver would keep pass-1 pixels wherever the backbuffer stays transparent.
+        if self.viewer_masked_pass() {
+            self.surfaces.clear_target(skia::Color::TRANSPARENT);
+            self.surfaces.copy_backbuffer_to_target_replace();
+        } else {
+            self.surfaces.copy_backbuffer_to_target();
+        }
         if self.options.is_debug_visible() {
             debug::render(self);
         }
@@ -934,6 +947,20 @@ impl RenderState {
         // the interaction ends.
         if self.options.is_interactive_transform() {
             let tile_rect = self.get_current_aligned_tile_bounds()?;
+            self.surfaces.draw_current_tile_into_backbuffer(
+                &tile_rect,
+                self.background_color,
+                surfaces::DrawOnCache::No,
+            );
+            return Ok(());
+        }
+
+        // Viewer masked passes render a partial scene. Reusing the tile texture cache would
+        // SrcOver-blend onto textures from the previous pass and leak pixels into the blob.
+        if self.viewer_masked_pass() {
+            // Use viewbox-aligned bounds (not grid-snapped) to match interactive-transform
+            // compositing and avoid a visible offset vs the DOM canvas.
+            let tile_rect = self.get_current_tile_bounds()?;
             self.surfaces.draw_current_tile_into_backbuffer(
                 &tile_rect,
                 self.background_color,
@@ -1041,6 +1068,55 @@ impl RenderState {
 
     pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
         self.focus_mode.set_shapes(shapes);
+    }
+
+    pub fn clear_include_filter(&mut self) {
+        self.include_filter = None;
+    }
+
+    pub fn set_include_filter(&mut self, shapes: Vec<Uuid>) {
+        self.include_filter = Some(shapes.into_iter().collect());
+    }
+
+    fn viewer_masked_pass(&self) -> bool {
+        self.include_filter.is_some()
+    }
+
+    fn reset_viewer_masked_surfaces(&mut self) {
+        self.surfaces.clear_backbuffer(self.background_color);
+        self.surfaces.clear_tile_atlas();
+    }
+
+    /// True when the shape or any descendant is whitelisted.
+    pub fn shape_visible_in_include_filter(&self, shape_id: &Uuid, tree: ShapesPoolRef) -> bool {
+        let Some(ref include) = self.include_filter else {
+            return true;
+        };
+        if include.contains(shape_id) {
+            return true;
+        }
+        let Some(shape) = tree.get(shape_id) else {
+            return false;
+        };
+        shape
+            .children_ids_iter(false)
+            .any(|child_id| self.shape_visible_in_include_filter(child_id, tree))
+    }
+
+    /// When an include whitelist is active, only those ids are painted.
+    fn shape_should_paint_for_viewer_layer(&self, shape_id: &Uuid) -> bool {
+        match &self.include_filter {
+            Some(include) => include.contains(shape_id),
+            None => true,
+        }
+    }
+
+    /// Viewer layer mask: traverse whitelisted subtrees; paint only listed ids.
+    pub fn shape_visible_for_viewer_layer(&self, shape_id: &Uuid, tree: ShapesPoolRef) -> bool {
+        if self.viewer_render_root.as_ref() == Some(shape_id) {
+            return true;
+        }
+        self.shape_visible_in_include_filter(shape_id, tree)
     }
 
     fn get_inherited_drop_shadows(&self) -> Option<Vec<skia_safe::Paint>> {
@@ -2113,6 +2189,13 @@ impl RenderState {
             self.interactive_target_seeded = false;
         }
 
+        // Viewer fixed-scroll passes reuse the same WASM context; `reset` does not
+        // clear Backbuffer, so pass 2 would otherwise keep pass-1 pixels in regions
+        // that render no shapes for the current mask. Target is cleared in present_frame.
+        if self.viewer_masked_pass() {
+            self.reset_viewer_masked_surfaces();
+        }
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::InnerShadows as u32
@@ -3146,6 +3229,33 @@ impl RenderState {
                     continue;
                 }
 
+                if !self.shape_visible_for_viewer_layer(&node_id, tree) {
+                    continue;
+                }
+
+                // Ancestors needed to reach whitelisted descendants: traverse only.
+                if self.include_filter.is_some()
+                    && self.shape_visible_for_viewer_layer(&node_id, tree)
+                    && !self.shape_should_paint_for_viewer_layer(&node_id)
+                {
+                    if element.is_recursive() {
+                        let children_ids: Vec<_> =
+                            element.children_ids_iter(false).copied().collect();
+                        let children_ids = sort_z_index(tree, element, children_ids);
+                        for child_id in children_ids.iter() {
+                            self.pending_nodes.push(NodeRenderState {
+                                id: *child_id,
+                                visited_children: false,
+                                clip_bounds: clip_bounds.clone(),
+                                visited_mask: false,
+                                mask: false,
+                                flattened: false,
+                            });
+                        }
+                    }
+                    continue;
+                }
+
                 // For frames and groups, we must use extrect because they can have nested content
                 // that extends beyond their selrect. Using selrect for early exit would incorrectly
                 // skip frames/groups that have nested content in the current tile.
@@ -3428,6 +3538,7 @@ impl RenderState {
         allow_stop: bool,
     ) -> Result<FrameType> {
         let mut should_stop = false;
+        self.viewer_render_root = base_object.copied();
         let root_ids = {
             if let Some(shape_id) = base_object {
                 vec![*shape_id]
@@ -3443,7 +3554,10 @@ impl RenderState {
             if let Some(current_tile) = self.current_tile {
                 // NOTE: For now we don't need to cover the case where the tile
                 // is not cached because everything will be handled from draw_atlas.
-                if !self.surfaces.has_cached_tile_surface(current_tile) {
+                // Viewer masked passes (include_filter) must not reuse cached tiles from
+                // a previous pass; otherwise pass-1 pixels can leak into pass 2.
+                if self.viewer_masked_pass() || !self.surfaces.has_cached_tile_surface(current_tile)
+                {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self
                         .render_shape_tree_partial_uncached(tree, timestamp, allow_stop, false)?;
@@ -3454,6 +3568,7 @@ impl RenderState {
                     }
 
                     if early_return {
+                        self.viewer_render_root = None;
                         return Ok(FrameType::Partial);
                     }
                     performance::end_measure!("render_shape_tree::uncached");
@@ -3504,12 +3619,15 @@ impl RenderState {
                 // empty tile.
                 self.current_tile_had_shapes = false;
 
+                let viewer_masked_pass = self.viewer_masked_pass();
+
                 let Some(ids) = self.tiles.get_shapes_at(next_tile) else {
                     // If the tile is empty we do not need to render it.
                     continue;
                 };
 
-                if self.surfaces.has_cached_tile_surface(next_tile) {
+                // Never skip based on cached surfaces during viewer masked passes.
+                if !viewer_masked_pass && self.surfaces.has_cached_tile_surface(next_tile) {
                     // If the tile is cached, then we do not need to
                     // render it.
                     continue;
@@ -3562,6 +3680,8 @@ impl RenderState {
                 should_stop = true;
             }
         }
+
+        self.viewer_render_root = None;
 
         // Mark cache as valid for render_from_cache.
         // Only update for full-quality renders (non-fast mode).

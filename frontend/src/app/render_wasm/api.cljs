@@ -931,6 +931,13 @@
   [hidden]
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
+(defn clear-shape-fills!
+  "Clear the fills of the currently-selected shape (call `use-shape` first).
+  Equivalent to `set-shape-fills` with an empty collection."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_shape_fills")))
+
 (defn set-shape-bool-type
   [bool-type]
   (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
@@ -1666,6 +1673,27 @@
       (h/call wasm/internal-module "_set_focus_mode")
       (request-render "set-focus-mode"))))
 
+(defn clear-render-include-filter!
+  "Clear the viewer include filter (render all shapes in the subtree again)."
+  []
+  (when (initialized?)
+    (h/call wasm/internal-module "_clear_render_include_filter")))
+
+(defn set-render-include-filter!
+  "Restrict the next render to `shape-ids` and descendants of whitelisted nodes.
+  Used for viewer fixed-scroll layers; does not change shape hidden flags."
+  [shape-ids]
+  (when (and (initialized?) (seq shape-ids))
+    (let [ids    (vec shape-ids)
+          size   (mem/get-alloc-size ids UUID-U8-SIZE)
+          heap   (mem/get-heap-u32)
+          offset (mem/alloc->offset-32 size)]
+      (reduce (fn [offset id]
+                (mem.h32/write-uuid offset heap id))
+              offset
+              ids)
+      (h/call wasm/internal-module "_set_render_include_filter"))))
+
 (defn set-structure-modifiers
   [entries]
   (when-not ^boolean (empty? entries)
@@ -1864,6 +1892,24 @@
 (defn resize-viewbox
   [width height]
   (h/call wasm/internal-module "_resize_viewbox" width height))
+
+(defn set-viewer-viewport!
+  "Update viewer zoom/pan and rebuild the tile index (frame hops in the viewer).
+  `vbox` must have at least `:x` and `:y` keys (design-space top-left corner)."
+  [zoom vbox]
+  (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (when (initialized?)
+    (h/call wasm/internal-module "_set_view_end")
+    (reset! view-interaction-active? false)))
+
+(defn resize-offscreen-canvas!
+  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
+  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
+  design state (shape pool) is preserved so `set-objects` is not needed again."
+  [canvas new-physical-w new-physical-h]
+  (set! (.-width canvas) new-physical-w)
+  (set! (.-height canvas) new-physical-h)
+  (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))
 
 (defn- debug-flags
   []

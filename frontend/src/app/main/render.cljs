@@ -30,6 +30,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.config :as cfg]
    [app.main.fonts :as fonts]
+   [app.main.render-viewer-wasm :as rwv]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
@@ -524,32 +525,6 @@
        (for [shape shapes]
          [:& shape-wrapper {:key (dm/str (:id shape)) :shape shape}])]]]))
 
-(defn render-to-canvas
-  [objects canvas bounds scale object-id on-render]
-  (let [width (.-width canvas)
-        height (.-height canvas)
-        os-canvas (js/OffscreenCanvas. width height)]
-    (try
-      (when (wasm.api/init-canvas-context os-canvas)
-        (wasm.api/initialize-viewport
-         objects scale bounds
-         :background-opacity 0
-         :on-render
-         (fn []
-           (wasm.api/render-sync-shape object-id)
-           (ts/raf
-            (fn []
-              (let [bitmap (.transferToImageBitmap os-canvas)
-                    ctx2d (.getContext canvas "2d")]
-                (.clearRect ctx2d 0 0 width height)
-                (.drawImage ctx2d bitmap 0 0)
-                (dom/set-attribute! canvas "id" (dm/str "screenshot-" object-id))
-                (wasm.api/clear-canvas)
-                (on-render)))))))
-      (catch :default e
-        (js/console.error "Error initializing canvas context:" e)
-        false))))
-
 (mf/defc object-wasm
   {::mf/wrap [mf/memo]}
   [{:keys [objects object-id skip-children scale on-render] :as props}]
@@ -574,7 +549,7 @@
               (p/fmap
                (fn [ready?]
                  (when ready?
-                   (render-to-canvas objects canvas bounds scale object-id on-render))))))))
+                   (rwv/render-to-canvas objects canvas bounds scale object-id on-render))))))))
 
     [:canvas {:ref canvas-ref
               :width (* scale width)

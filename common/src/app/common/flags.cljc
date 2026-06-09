@@ -169,6 +169,7 @@
 
     :mcp
     :background-blur
+    :available-viewer-wasm
     :stroke-path})
 
 (def all-flags

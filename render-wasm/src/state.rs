@@ -118,6 +118,14 @@ impl State {
         get_render_state().set_focus_mode(shapes);
     }
 
+    pub fn clear_include_filter(&mut self) {
+        get_render_state().clear_include_filter();
+    }
+
+    pub fn set_include_filter(&mut self, shapes: Vec<Uuid>) {
+        get_render_state().set_include_filter(shapes);
+    }
+
     pub fn init_shapes_pool(&mut self, capacity: usize) {
         self.shapes.initialize(capacity);
     }
