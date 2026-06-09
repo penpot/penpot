@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
@@ -17,6 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
@@ -52,12 +53,15 @@
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
    [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
+   [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.rulers-state :as rs]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
+   [app.util.theme :as theme]
    [app.util.timers :as ts]
+   [app.util.webapi :as webapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -76,7 +80,7 @@
 
 (defn apply-modifiers-to-selected
   [selected objects modifiers]
-  (apply-modifiers-to-objects objects (select-keys (into {} modifiers) selected)))
+  (apply-modifiers-to-objects objects (select-keys modifiers selected)))
 
 (defn- apply-wasm-modifiers-to-ids
   "Like `apply-modifiers-to-objects`, but only updates ids in `id-set`. During WASM
@@ -86,13 +90,15 @@
   (if (or (empty? wasm-modifiers) (empty? id-set))
     objects
     (reduce
-     (fn [objs pair]
-       (let [[id t] pair]
-         (if (and (contains? id-set id) (contains? objs id))
+     (fn [objs id]
+       (if-let [t (get wasm-modifiers id)]
+         (if (contains? objs id)
            (update objs id gsh/apply-transform t)
-           objs)))
+           objs)
+         objs))
      objects
-     wasm-modifiers)))
+     id-set)))
+
 
 (defn- outline-wasm-source-ids
   "Superset of shape ids that `shape-outlines` may look up (all outline usages here)."
@@ -124,7 +130,6 @@
                 vbox
                 vport
                 zoom
-                zoom-inverse
                 edition]}
         (mf/deref refs/workspace-local)
 
@@ -141,7 +146,6 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
         wasm-modifiers    (mf/deref refs/workspace-wasm-modifiers)
-
         workspace-editor-state (mf/deref refs/workspace-editor-state)
 
         file-id           (get file :id)
@@ -161,7 +165,6 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
-
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -254,10 +257,12 @@
 
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
+        context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
+        transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -319,12 +324,20 @@
         show-selrect?            (and selrect (empty? drawing) (not text-editing?) (not page-transition?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
-                                      (or show-distances? mode-inspect?)
+                                      (or show-distances? mode-inspect? read-only?)
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
-        show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
+        rulers-ui                (rs/display-state
+                                  {:layout layout
+                                   :selected-shapes selected-shapes
+                                   :base-objects base-objects})
+        show-rulers?             (:show-rulers? rulers-ui)
+        frame-visible?           (:frame-visible? rulers-ui)
+        offset-x                 (:offset-x rulers-ui)
+        offset-y                 (:offset-y rulers-ui)
+        ruler-selection          (:ruler-selection rulers-ui)
 
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
@@ -358,16 +371,6 @@
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
 
-        selecting-first-level-frame?
-        (and single-select? (cfh/root-frame? first-shape))
-
-        offset-x (if selecting-first-level-frame?
-                   (:x first-shape)
-                   (:x selected-frame))
-
-        offset-y (if selecting-first-level-frame?
-                   (:y first-shape)
-                   (:y selected-frame))
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))
@@ -401,8 +404,7 @@
                                   false))]
                     (cond
                       init?
-                      (do
-                        (reset! canvas-init? true))
+                      (reset! canvas-init? true)
 
                       (pos? retries)
                       (vreset! timeout-id-ref
@@ -419,12 +421,11 @@
             (vreset! unmounted? true)
             (when-let [timeout-id @timeout-id-ref]
               (js/clearTimeout timeout-id))
-            (wasm.api/end-page-transition!)
             (wasm.api/clear-canvas)))))
 
-    (mf/with-effect [show-text-editor? workspace-editor-state edition]
+    (mf/with-effect [show-text-editor? workspace-editor-state edition @canvas-init? @initialized?]
       (let [active-editor-state (get workspace-editor-state edition)]
-        (when (and show-text-editor? active-editor-state)
+        (when (and show-text-editor? active-editor-state @canvas-init? @initialized?)
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]
@@ -434,9 +435,20 @@
               (st/emit! (dwt/resize-text-editor edition dimension))
               (wasm.api/request-render "content"))))))
 
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (let [canvas (mf/ref-val canvas-ref)
+              cancel (webapi/on-dpr-change
+                      (fn [new-dpr]
+                        (wasm.api/resize-canvas! canvas new-dpr)
+                        (wasm.api/render-ui-only)
+                        (ts/raf (fn [_] (wasm.api/render-sync)))))]
+          cancel)))
+
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))))
+        (wasm.api/resize-canvas! (mf/ref-val canvas-ref))
+        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
@@ -454,7 +466,11 @@
             ;; blank canvas (first load) visible while shapes load.
             ;; The loading overlay is suppressed because on-shapes-ready
             ;; is set.
-            (wasm.api/initialize-viewport base-objects zoom vbox :background background)
+            (wasm.api/initialize-viewport base-objects zoom vbox
+                                          :background background
+                                          :on-shapes-ready
+                                          (fn []
+                                            (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
@@ -466,10 +482,6 @@
         (ts/asap #(if (empty? focus)
                     (wasm.api/clear-focus-mode)
                     (wasm.api/set-focus-mode focus)))))
-
-    (mf/with-effect [vbox zoom]
-      (when (and @canvas-init? @initialized?)
-        (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [background]
       (when (and @canvas-init? @initialized?)
@@ -489,12 +501,49 @@
       (when (and @canvas-init? hover-grid?)
         (wasm.api/show-grid @hover-top-frame-id)))
 
+    ;; Rulers-wasm: push visibility / offsets / selection band into the
+    ;; render-wasm overlay (always active, no feature flag).
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/push-ruler-theme-colors!)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/push-ruler-theme-colors!)
+           (wasm.api/request-render "rulers-colors-theme")))))
+
+    (mf/with-effect [@canvas-init? frame-visible?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-frame-visible! frame-visible?)
+        (wasm.api/request-render "rulers-frame")))
+
+    (mf/with-effect [@canvas-init? show-rulers?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-visible! show-rulers?)
+        (wasm.api/request-render "rulers-visible")))
+
+    (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-offsets! offset-x offset-y)))
+
+    (mf/with-effect [@canvas-init? show-rulers?
+                     (some-> ruler-selection :x) (some-> ruler-selection :y)
+                     (some-> ruler-selection :width) (some-> ruler-selection :height)]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-selection! ruler-selection)
+        (wasm.api/request-render "rulers-selection")))
+
+    ;; Paint background + rulers instantly, before shapes finish loading. Runs
+    ;; after the ruler push effects so the WASM ruler state is already set.
+    (mf/with-effect [@canvas-init? page-id]
+      (when @canvas-init?
+        (wasm.api/render-ui-only)))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
-                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
@@ -539,24 +588,30 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (* wasm.api/dpr (:width vport 0))
-               :height (* wasm.api/dpr (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
-     ;; Show the transition image when we are opening a new file or switching to a new page
-     (when (and page-transition? (some? transition-image-url))
+     ;; Show the transition image when switching pages or recovering from WebGL context loss.
+     (when (and (or page-transition? context-loss-overlay?)
+                (some? transition-image-url))
        (let [src transition-image-url]
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
                 :draggable false
+                ;; Full-bleed so the snapshot overlays the canvas 1:1.
                 :style {:position "absolute"
                         :inset 0
                         :width "100%"
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        :filter "blur(4px)"}}]))
+                        ;; Initial load: clip to the live canvas frame (rounded
+                        ;; corner + ruler strips when present) so it shows
+                        ;; through. No frame in hide-UI mode -> no clip.
+                        :clip-path (when (and transition-reveal-rulers? frame-visible?)
+                                     (let [strip (if show-rulers? rulers/ruler-area-size 0)]
+                                       (dm/str "inset(" strip "px 0 0 " strip "px round "
+                                               rulers/canvas-border-radius "px)")))}}]))
 
 
      [:svg.viewport-controls
@@ -610,27 +665,26 @@
                                                 :ref text-editor-ref}]))
 
        (when show-frame-outline?
-         (let [outlined-frame-id
-               (->> @hover-ids
-                    (filter #(cfh/frame-shape? (get base-objects %)))
-                    (remove selected)
-                    (last))
+         (let [outlined-frame-id (->> @hover-ids
+                                      (filter #(cfh/frame-shape? (get base-objects %)))
+                                      (remove selected)
+                                      (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
-            [:& outline/shape-outlines
+            [:> outline/shape-outlines*
              {:objects objects-for-outlines
               :hover #{outlined-frame-id}
               :zoom zoom}]
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline.blurrable
-               [:& outline/shape-outlines
+               [:> outline/shape-outlines*
                 {:objects objects-for-outlines
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
-         [:& outline/shape-outlines
+         [:> outline/shape-outlines*
           {:objects objects-for-outlines
            :selected selected
            :hover #{(:id @hover) @frame-hover}
@@ -651,6 +705,15 @@
        (when show-text-editor?
          [:> text-edition-outline*
           {:shape (get base-objects edition)
+           :zoom zoom}])
+
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition)
+                  (not page-transition?))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
            :zoom zoom}])
 
        (when show-measures?
@@ -741,7 +804,7 @@
            :focus focus}])
 
        (when show-snap-distance?
-         [:& snap-distances/snap-distances
+         [:> snap-distances/snap-distances*
           {:layout layout
            :zoom zoom
            :transform transform
@@ -761,16 +824,6 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       (when-not hide-ui?
-         [:& rulers/rulers
-          {:zoom zoom
-           :zoom-inverse zoom-inverse
-           :vbox vbox
-           :selected-shapes selected-shapes
-           :offset-x offset-x
-           :offset-y offset-y
-           :show-rulers? show-rulers?}])
-
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
           {:zoom zoom
@@ -782,37 +835,37 @@
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)
-         [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
-                                   :objects base-objects
-                                   :hover-top-frame-id @hover-top-frame-id
-                                   :zoom zoom}])
-
-       (when (dbg/enabled? :layout-content-bounds)
-         [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
-                                       :objects base-objects
-                                       :hover-top-frame-id @hover-top-frame-id
-                                       :zoom zoom}])
-
-       (when (dbg/enabled? :layout-lines)
-         [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
-                                     :objects base-objects
-                                     :hover-top-frame-id @hover-top-frame-id
-                                     :zoom zoom}])
-
-       (when (dbg/enabled? :parent-bounds)
-         [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
-                                      :objects base-objects
-                                      :hover-top-frame-id @hover-top-frame-id
-                                      :zoom zoom}])
-
-       (when (dbg/enabled? :grid-layout)
-         [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
+         [:> wvd/debug-drop-zones* {:selected-shapes selected-shapes
                                     :objects base-objects
                                     :hover-top-frame-id @hover-top-frame-id
                                     :zoom zoom}])
 
+       (when (dbg/enabled? :layout-content-bounds)
+         [:> wvd/debug-content-bounds* {:selected-shapes selected-shapes
+                                        :objects base-objects
+                                        :hover-top-frame-id @hover-top-frame-id
+                                        :zoom zoom}])
+
+       (when (dbg/enabled? :layout-lines)
+         [:> wvd/debug-layout-lines* {:selected-shapes selected-shapes
+                                      :objects base-objects
+                                      :hover-top-frame-id @hover-top-frame-id
+                                      :zoom zoom}])
+
+       (when (dbg/enabled? :parent-bounds)
+         [:> wvd/debug-parent-bounds* {:selected-shapes selected-shapes
+                                       :objects base-objects
+                                       :hover-top-frame-id @hover-top-frame-id
+                                       :zoom zoom}])
+
+       (when (dbg/enabled? :grid-layout)
+         [:> wvd/debug-grid-layout* {:selected-shapes selected-shapes
+                                     :objects base-objects
+                                     :hover-top-frame-id @hover-top-frame-id
+                                     :zoom zoom}])
+
        (when (dbg/enabled? :text-outline)
-         [:& wvd/debug-text-wasm-position-data
+         [:> wvd/debug-text-wasm-position-data*
           {:selected-shapes selected-shapes
            :objects base-objects
            :zoom zoom}])

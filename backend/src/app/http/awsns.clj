@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.http.awsns
   "AWS SNS webhook handler for bounces."
@@ -53,7 +53,7 @@
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
           (l/info :action "subscription received" :topic stopic :url surl)
-          (http/req! cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
+          (http/req cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
 
         (= mtype "Notification")
         (when-let [message (parse-json (get body "Message"))]

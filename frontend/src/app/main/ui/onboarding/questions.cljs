@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.onboarding.questions
   "External form for onboarding questions."
@@ -11,14 +11,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.main.data.event :as-alias ev]
+   [app.main.data.event :as ev]
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc step-container
@@ -33,7 +32,7 @@
                             (assoc :label label)
                             (assoc :step step)
                             (assoc ::ev/name "onboarding-step"))]
-             (st/emit! (ptk/data-event ::ev/event params))
+             (st/emit! (ev/event params))
              (on-next form event))))]
 
     [:& fm/form {:form form

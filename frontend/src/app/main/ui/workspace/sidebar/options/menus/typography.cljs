@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require-macros [app.main.style :as stl])
@@ -315,7 +315,12 @@
             :on-click #(reset! open-selector? true)}
       (cond
         (or (= :multiple font-id) (= "mixed" font-id))
-        "--"
+        [:*
+         [:span {:class (stl/css :font-option-name :font-family-mixed)}
+          (tr "inspect.attributes.typography.mixed-font-family")]
+         [:> icon* {:icon-id i/arrow-down
+                    :class (stl/css :dropdown-icon)
+                    :size "s"}]]
 
         (some? font)
         [:*
@@ -681,13 +686,15 @@
                    :font-style (:font-style typography)}}
           (tr "workspace.assets.typography.sample")]
 
-         [:div {:class (stl/css :typography-name)
-                :title (:name typography)} (:name typography)]
-
-         (when-not name-only?
-           [:div {:class (stl/css :typography-font)
-                  :title (:name font-data)}
-            (:name font-data)])])
+         [:div {:class (stl/css :name-block)
+                :title (if name-only?
+                         (:name typography)
+                         (dm/str (:name typography) " (" (:name font-data) ")"))}
+          (if name-only?
+            [:span  {:class (stl/css :typography-name)} (:name typography)]
+            [:*
+             (:name typography)
+             [:span  {:class (stl/css :typography-name :typography-font)} (:name font-data)]])]])
       [:div {:class (stl/css :element-set-actions)}
        (when ^boolean on-detach
          [:> icon-button* {:variant "action"

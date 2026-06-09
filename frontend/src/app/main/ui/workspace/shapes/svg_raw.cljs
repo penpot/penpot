@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.svg-raw
   (:require
@@ -29,7 +29,7 @@
            [:& svg-raw-shape {:shape shape
                               :childs childs}]
            (when *assert*
-             [:& wsd/shape-debug {:shape shape}])]
+             [:> wsd/shape-debug* {:shape shape}])]
 
           [:& svg-raw-shape {:shape shape
                              :childs childs}])))))

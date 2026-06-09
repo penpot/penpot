@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.wasm
   (:require ["./api/shared.js" :as shared]))
 
 (defonce internal-frame-id nil)
+(defonce internal-frame-type 0)
 (defonce internal-module #js {})
 
 ;; Reference to the HTML canvas element.
@@ -28,6 +29,20 @@
 
 ;; When we're rendering in a sync way we want to stop the asynchrous `request-render`
 (defonce disable-request-render? (atom false))
+
+(defn module-ready?
+  []
+  (and internal-module (fn? (unchecked-get internal-module "_init"))))
+
+(defn reset-context-state!
+  []
+  (set! internal-frame-id nil)
+  (set! canvas nil)
+  (set! canvas-snapshot-url nil)
+  (set! gl-context-handle nil)
+  (set! gl-context nil)
+  (set! context-initialized? false)
+  (reset! context-lost? false))
 
 
 (defonce serializers

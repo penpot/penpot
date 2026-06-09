@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.text
   (:require
@@ -43,4 +43,4 @@
       ;; will give a tainted canvas error because the `foreignObject` cannot be
       ;; rendered.
       (and (nil? position-data) (or is-component? is-render?))
-      [:> fo/text-shape props])))
+      [:> fo/text-shape* props])))

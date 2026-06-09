@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.forms
   (:require
@@ -26,6 +26,7 @@
                         (get-in @form [:touched input-name]))
 
         error      (get-in @form [:errors input-name])
+        extra-error (get-in @form [:extra-errors input-name])
 
         value      (get-in @form [:data input-name] "")
 
@@ -41,9 +42,9 @@
                                 :value value})
 
         props
-        (if (and error touched?)
+        (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)]
 
     [:> input* props]))

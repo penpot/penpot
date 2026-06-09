@@ -1,15 +1,18 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
-import { PluginTask } from "./PluginTask";
-import { PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
+import { AbstractPluginTask, PluginTask } from "./PluginTask";
+import { RemotePluginTask } from "./RemotePluginTask";
+import { PluginTaskRequest, PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
+import type { RedisBridge } from "./RedisBridge";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
 
 interface ClientConnection {
     socket: WebSocket;
     userToken: string | null;
+    pingInterval: NodeJS.Timeout;
 }
 
 /**
@@ -21,12 +24,24 @@ export class PluginBridge {
     private readonly wsServer: WebSocketServer;
     private readonly connectedClients: Map<WebSocket, ClientConnection> = new Map();
     private readonly clientsByToken: Map<string, ClientConnection> = new Map();
-    private readonly pendingTasks: Map<string, PluginTask<any, any>> = new Map();
+    private readonly pendingTasks: Map<string, AbstractPluginTask<any, any>> = new Map();
     private readonly taskTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
+    /**
+     * Creates the plugin bridge and starts its WebSocket server.
+     *
+     * @param mcpServer - The owning MCP server
+     * @param port - The port on which to listen for plugin WebSocket connections
+     * @param redisBridge - Optional Redis bridge enabling multi-instance task routing.
+     *   When provided, tasks handled by this instance are routed to the instance
+     *   holding the relevant plugin's WebSocket connection (which may be this same
+     *   instance) via Redis, rather than dispatched directly over a local socket.
+     * @param taskTimeoutSecs - Timeout, in seconds, for plugin task execution
+     */
     constructor(
         public readonly mcpServer: PenpotMcpServer,
         private port: number,
+        private readonly redisBridge?: RedisBridge,
         private taskTimeoutSecs: number = 30
     ) {
         this.wsServer = new WebSocketServer({ port: port });
@@ -40,8 +55,6 @@ export class PluginBridge {
      * channel between the MCP mcpServer and Penpot plugin instances.
      */
     private setupWebSocketHandlers(): void {
-        let interval: NodeJS.Timeout | undefined;
-
         this.wsServer.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
@@ -60,18 +73,35 @@ export class PluginBridge {
                 this.logger.info("New WebSocket connection established");
             }
 
+            // start the per-connection keep-alive ping interval
+            const pingInterval = setInterval(() => {
+                ws.ping();
+            }, KEEP_ALIVE_TIME);
+
             // register the client connection with both indexes
-            const connection: ClientConnection = { socket: ws, userToken };
+            const connection: ClientConnection = { socket: ws, userToken, pingInterval };
             this.connectedClients.set(ws, connection);
             if (userToken) {
                 // ensure only one connection per userToken
                 if (this.clientsByToken.has(userToken)) {
                     this.logger.warn("Duplicate connection for given user token; rejecting new connection");
+                    this.removeConnection(ws);
                     ws.close(1008, "Duplicate connection for given user token; close previous connection first.");
                     return;
                 }
 
                 this.clientsByToken.set(userToken, connection);
+
+                // In multi-instance mode, subscribe to this token's Redis request channel so
+                // that task requests issued by other instances are dispatched to this plugin.
+                if (this.redisBridge) {
+                    const tokenForSubscription = userToken;
+                    this.redisBridge
+                        .subscribeToTasks(userToken, (request) =>
+                            this.dispatchForwardedTask(tokenForSubscription, request)
+                        )
+                        .catch((error) => this.logger.error(error, "Failed to subscribe to Redis task channel"));
+                }
             }
 
             ws.on("message", (data: Buffer) => {
@@ -86,34 +116,43 @@ export class PluginBridge {
 
             ws.on("close", () => {
                 this.logger.info("WebSocket connection closed");
-                const connection = this.connectedClients.get(ws);
-                this.connectedClients.delete(ws);
-                if (connection?.userToken) {
-                    this.clientsByToken.delete(connection.userToken);
-                }
-                if (interval) {
-                    clearInterval(interval);
-                }
+                this.removeConnection(ws);
             });
 
             ws.on("error", (error) => {
                 this.logger.error(error, "WebSocket connection error");
-                const connection = this.connectedClients.get(ws);
-                this.connectedClients.delete(ws);
-                if (connection?.userToken) {
-                    this.clientsByToken.delete(connection.userToken);
-                }
-                if (interval) {
-                    clearInterval(interval);
-                }
+                this.removeConnection(ws);
             });
-
-            interval = setInterval(() => {
-                ws?.ping();
-            }, KEEP_ALIVE_TIME);
         });
 
         this.logger.info("WebSocket mcpServer started on port %d", this.port);
+    }
+
+    /**
+     * Removes a client connection and releases all resources associated with it.
+     *
+     * Clears the per-connection keep-alive interval and removes the connection
+     * from both the socket-keyed and token-keyed indexes. Safe to call with a
+     * socket that is not (or no longer) registered.
+     *
+     * @param ws - The WebSocket whose connection state should be removed
+     */
+    private removeConnection(ws: WebSocket): void {
+        const connection = this.connectedClients.get(ws);
+        if (!connection) {
+            return;
+        }
+        clearInterval(connection.pingInterval);
+        this.connectedClients.delete(ws);
+        if (connection.userToken) {
+            this.clientsByToken.delete(connection.userToken);
+
+            if (this.redisBridge) {
+                this.redisBridge
+                    .unsubscribeFromTasks(connection.userToken)
+                    .catch((error) => this.logger.error(error, "Failed to unsubscribe from Redis task channel"));
+            }
+        }
     }
 
     /**
@@ -195,10 +234,9 @@ export class PluginBridge {
     }
 
     /**
-     * Executes a plugin task by sending it to connected clients.
-     *
-     * Registers the task for result correlation and returns a promise
-     * that resolves when the plugin responds with the execution result.
+     * Executes a plugin task by sending it to the connected Penpot plugin instance,
+     * either directly via WebSocket or indirectly via Redis (depending on the configuration),
+     * and awaiting the result.
      *
      * @param task - The plugin task to execute
      * @throws Error if no plugin instances are connected or available
@@ -206,21 +244,59 @@ export class PluginBridge {
     public async executePluginTask<TResult extends PluginTaskResult<any>>(
         task: PluginTask<any, TResult>
     ): Promise<TResult> {
-        // get the appropriate client connection based on mode
-        const connection = this.getClientConnection();
+        this.sendPluginTask(task, this.redisBridge !== undefined);
+        return await task.getResultPromise();
+    }
 
-        // register the task for result correlation
-        this.pendingTasks.set(task.id, task);
+    /**
+     * Registers a task for response correlation, sends its request over the appropriate
+     * transport, and arms a timeout that rejects the task if no response is received.
+     *
+     * The response (whether arriving over the local WebSocket or over Redis) is later
+     * matched by ID in {@link handlePluginTaskResponse}, which settles the task via its
+     * `resolveWithResult`/`rejectWithError` methods. The same correlation and timeout
+     * handling therefore applies regardless of the transport.
+     *
+     * @param task - The task to dispatch
+     * @param useRedis - Whether to route the request via Redis (multi-instance) rather
+     *   than directly over the local WebSocket connection
+     * @param connection - The connection to use for a local (non-remote) dispatch; when
+     *   omitted, the session's connection is resolved via {@link getClientConnection}.
+     *   Ignored when `useRedis` is true.
+     * @throws Error if a local dispatch is required but no suitable connection is available
+     */
+    private sendPluginTask(task: AbstractPluginTask<any, any>, useRedis: boolean, connection?: ClientConnection): void {
+        let onTimeout: (() => void) | undefined;
 
-        // send task to the selected client
-        const requestMessage = JSON.stringify(task.toRequest());
-        if (connection.socket.readyState !== 1) {
-            // WebSocket is not open
-            this.pendingTasks.delete(task.id);
-            throw new Error(`Plugin instance is disconnected. Task could not be sent.`);
+        if (useRedis) {
+            const sessionContext = this.mcpServer.getSessionContext();
+            if (!sessionContext?.userToken) {
+                throw new Error("No userToken found in session context. Multi-user mode requires authentication.");
+            }
+            const userToken = sessionContext.userToken;
+            const redisBridge = this.redisBridge!;
+            this.logger.debug("Dispatching task %s via Redis", task.id);
+
+            // register the task for result correlation, then publish the request via Redis
+            this.pendingTasks.set(task.id, task);
+            void redisBridge.sendTaskRequest(userToken, task.toRequest(), (response) =>
+                this.handlePluginTaskResponse(response)
+            );
+
+            // on timeout, release the response-channel subscription, since no response
+            // will arrive to trigger its self-unsubscribe.
+            onTimeout = () => void redisBridge.unsubscribeFromResponse(task.id);
+        } else {
+            const target = connection ?? this.getClientConnection();
+            if (target.socket.readyState !== 1) {
+                // WebSocket is not open
+                throw new Error(`Plugin instance is disconnected. Task could not be sent.`);
+            }
+
+            // register the task for result correlation, then send over the socket
+            this.pendingTasks.set(task.id, task);
+            target.socket.send(JSON.stringify(task.toRequest()));
         }
-
-        connection.socket.send(requestMessage);
 
         // Set up a timeout to reject the task if no response is received
         const timeoutHandle = setTimeout(() => {
@@ -228,6 +304,7 @@ export class PluginBridge {
             if (pendingTask) {
                 this.pendingTasks.delete(task.id);
                 this.taskTimeouts.delete(task.id);
+                onTimeout?.();
                 pendingTask.rejectWithError(
                     new Error(`Task ${task.id} timed out after ${this.taskTimeoutSecs} seconds`)
                 );
@@ -235,8 +312,43 @@ export class PluginBridge {
         }, this.taskTimeoutSecs * 1000);
 
         this.taskTimeouts.set(task.id, timeoutHandle);
-        this.logger.info(`Sent task ${task.id} to connected client`);
+        this.logger.info(`Sent task ${task.id}`);
+    }
 
-        return await task.getResultPromise();
+    /**
+     * Dispatches a task request received over Redis to the locally-connected plugin.
+     *
+     * Invoked on the instance subscribed to a user token's request channel when another
+     * instance (or this one) issues a task request. A {@link RemotePluginTask} is created
+     * so that, once the plugin responds, the outcome is published back to the issuing
+     * instance's Redis response channel via the standard response-handling path.
+     *
+     * On failure to dispatch (e.g. the plugin is not connected here), an error response
+     * is published immediately so the requester need not wait for its timeout.
+     *
+     * @param userToken - The user token on whose request channel the request arrived;
+     *   identifies the locally-connected plugin to dispatch to
+     * @param request - The serialized task request, passed through from Redis
+     */
+    private dispatchForwardedTask(userToken: string, request: PluginTaskRequest): void {
+        if (!this.redisBridge) {
+            return;
+        }
+
+        // The response is published on the channel keyed by the original request ID.
+        const task = new RemotePluginTask(request.task, request.params, this.redisBridge, request.id);
+        this.logger.debug("Dispatching remote task %s as %s to Penpot via WebSocket", request.id, task.id);
+
+        const connection = this.clientsByToken.get(userToken);
+        if (!connection) {
+            task.rejectWithError(new Error("Plugin not connected on the receiving instance"));
+            return;
+        }
+
+        try {
+            this.sendPluginTask(task, false, connection);
+        } catch (error) {
+            task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
+        }
     }
 }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.text.viewport-texts-html
   (:require
@@ -130,10 +130,10 @@
            (when (some? node)
              (on-update shape node))))]
 
-    [:& html/text-shape {:key (str "shape-" (:id shape))
-                         :ref handle-update
-                         :shape shape
-                         :grow-type (:grow-type shape)}]))
+    [:> html/text-shape* {:key (str "shape-" (:id shape))
+                          :ref handle-update
+                          :shape shape
+                          :grow-type (:grow-type shape)}]))
 
 (defn text-properties-equal?
   [shape other]

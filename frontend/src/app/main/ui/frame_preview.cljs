@@ -2,16 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.frame-preview
   (:require
    [app.common.data :as d]
    [rumext.v2 :as mf]))
 
-(mf/defc frame-preview
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+(mf/defc frame-preview*
+  {::mf/wrap [mf/memo]}
   []
 
   (let [iframe-ref (mf/use-ref nil)

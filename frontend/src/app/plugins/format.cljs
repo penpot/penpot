@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.format
   (:require
@@ -25,6 +25,7 @@
   [format-fn coll]
   (when (some? coll)
     (apply array (keep format-fn coll))))
+
 
 (defn format-mixed
   [value]
@@ -197,17 +198,6 @@
           :fillColorRefId (format-id fill-color-ref-id)
           :fillImage (format-image fill-image)})))
 
-(defn format-fills
-  [fills]
-  (cond
-    (= fills :multiple)
-    "mixed"
-
-    (= fills "mixed")
-    "mixed"
-
-    (some? fills)
-    (format-array format-fill fills)))
 
 ;; export interface Stroke {
 ;;   strokeColor?: string;
@@ -239,10 +229,6 @@
           :strokeCapEnd (format-key stroke-cap-end)
           :strokeColorGradient (format-gradient stroke-color-gradient)})))
 
-(defn format-strokes
-  [strokes]
-  (when (some? strokes)
-    (format-array format-stroke strokes)))
 
 ;; export interface Blur {
 ;;   id?: string;

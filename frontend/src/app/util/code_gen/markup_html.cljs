@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.code-gen.markup-html
   (:require
@@ -38,7 +38,7 @@
                        indent))
 
              (cfh/text-shape? shape)
-             (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape #js {:shape shape :code? true}))
+             (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape* #js {:shape shape :is-code true}))
                    text-shape-html (str/replace text-shape-html #"style\s*=\s*[\"'][^\"']*[\"']" "")]
                (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                        indent

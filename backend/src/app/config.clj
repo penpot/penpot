@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -72,6 +72,7 @@
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
@@ -85,7 +86,11 @@
    :email-verify-threshold "15m"
 
    :quotes-upload-sessions-per-profile 5
-   :quotes-upload-chunks-per-session 20})
+   :quotes-upload-chunks-per-session 20
+
+   ;; SSRF protection
+   :ssrf-allowed-hosts #{}
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -104,6 +109,11 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
+
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
@@ -116,6 +126,7 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:font-max-file-size  {:optional true} ::sm/int]
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
@@ -245,17 +256,26 @@
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
+
+    ;; SSRF protection
+    [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
+    [:ssrf-extra-blocked-cidrs {:optional true} [::sm/set :string]]]))
 
 (defn- parse-flags
   [config]
   (let [public-uri  (c/get config :public-uri)
         public-uri  (some-> public-uri (u/uri))
-        extra-flags (if (and public-uri
-                             (= (:scheme public-uri) "http")
-                             (not= (:host public-uri) "localhost"))
-                      #{:disable-secure-session-cookies}
-                      #{})]
+        extra-flags (cond-> #{}
+                      ;; When public-uri is http (non-localhost), disable secure cookies
+                      (and public-uri
+                           (= (:scheme public-uri) "http")
+                           (not= (:host public-uri) "localhost"))
+                      (conj :disable-secure-session-cookies)
+
+                      ;; When telemetry-enabled config is true, add :telemetry flag
+                      (true? (c/get config :telemetry-enabled))
+                      (conj :enable-telemetry))]
     (flags/parse flags/default extra-flags (:flags config))))
 
 (defn read-env

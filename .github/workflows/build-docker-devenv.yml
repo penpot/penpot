@@ -6,7 +6,6 @@ on:
 jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
-    environment: release-admins
     runs-on: penpot-runner-02
 
     steps:
@@ -39,3 +38,13 @@ jobs:
           tags: ${{ env.DOCKER_IMAGE }}:latest
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Notify Mattermost
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            🚀 *[PENPOT] New devenv available*
+            📄 You may want to update your devenv.
+            @alvaro

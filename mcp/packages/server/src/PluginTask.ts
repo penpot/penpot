@@ -1,24 +1,28 @@
 /**
- * Base class for plugin tasks that are sent over WebSocket.
+ * Base classes for plugin tasks that are dispatched to a Penpot plugin instance
+ * over a WebSocket connection.
  *
- * Each task defines a specific operation for the plugin to execute
- * along with strongly-typed parameters.
- *
- * @template TParams - The strongly-typed parameters for this task
+ * A task defines a specific operation for the plugin to execute along with
+ * strongly-typed parameters and provides request/response correlation.
  */
 import { PluginTaskRequest, PluginTaskResult } from "@penpot/mcp-common";
 import { randomUUID } from "crypto";
 
 /**
- * Base class for plugin tasks that are sent over WebSocket.
+ * Abstract base for plugin tasks, defining the parts that the plugin dispatch and
+ * response-correlation machinery (`PluginBridge.sendPluginTask` /
+ * `PluginBridge.handlePluginTaskResponse`) depend upon.
  *
- * Each task defines a specific operation for the plugin to execute
- * along with strongly-typed parameters and request/response correlation.
+ * The dispatch path only needs to serialize a task to a request and, upon receiving
+ * the plugin's response, settle the task via `resolveWithResult`/`rejectWithError`.
+ * What "settling" actually means is left to subclasses: a local task resolves an
+ * in-process promise (see {@link PluginTask}), whereas a remote task forwards the
+ * outcome elsewhere (see {@link RemotePluginTask}).
  *
  * @template TParams - The strongly-typed parameters for this task
  * @template TResult - The expected result type from task execution
  */
-export abstract class PluginTask<TParams = any, TResult extends PluginTaskResult<any> = PluginTaskResult<any>> {
+export abstract class AbstractPluginTask<TParams = any, TResult extends PluginTaskResult<any> = PluginTaskResult<any>> {
     /**
      * Unique identifier for request/response correlation.
      */
@@ -35,6 +39,66 @@ export abstract class PluginTask<TParams = any, TResult extends PluginTaskResult
     public readonly params: TParams;
 
     /**
+     * Creates a new plugin task instance.
+     *
+     * @param task - The name of the task to execute
+     * @param params - The parameters for task execution
+     */
+    protected constructor(task: string, params: TParams) {
+        this.id = randomUUID();
+        this.task = task;
+        this.params = params;
+    }
+
+    /**
+     * Serializes the task to a request message for transmission to the plugin.
+     *
+     * @returns The request message containing ID, task name, and parameters
+     */
+    toRequest(): PluginTaskRequest {
+        return {
+            id: this.id,
+            task: this.task,
+            params: this.params,
+        };
+    }
+
+    /**
+     * Settles the task successfully with the given result.
+     *
+     * Called by the response-correlation machinery when the plugin reports success
+     * for the task with the matching ID.
+     *
+     * @param result - The task execution result
+     */
+    abstract resolveWithResult(result: TResult): void;
+
+    /**
+     * Settles the task unsuccessfully with the given error.
+     *
+     * Called by the response-correlation machinery when task execution fails
+     * or times out.
+     *
+     * @param error - The error that occurred during task execution
+     */
+    abstract rejectWithError(error: Error): void;
+}
+
+/**
+ * A locally-awaited plugin task.
+ *
+ * The task's outcome is exposed as an in-process promise (see {@link getResultPromise}),
+ * which the caller awaits to obtain the result. This is the task type used by tools that
+ * execute operations on the plugin and consume the result directly.
+ *
+ * @template TParams - The strongly-typed parameters for this task
+ * @template TResult - The expected result type from task execution
+ */
+export class PluginTask<
+    TParams = any,
+    TResult extends PluginTaskResult<any> = PluginTaskResult<any>,
+> extends AbstractPluginTask<TParams, TResult> {
+    /**
      * Promise that resolves when the task execution completes.
      */
     private readonly result: Promise<TResult>;
@@ -50,15 +114,13 @@ export abstract class PluginTask<TParams = any, TResult extends PluginTaskResult
     private rejectResult?: (error: Error) => void;
 
     /**
-     * Creates a new plugin task instance.
+     * Creates a new locally-awaited plugin task.
      *
      * @param task - The name of the task to execute
      * @param params - The parameters for task execution
      */
     constructor(task: string, params: TParams) {
-        this.id = randomUUID();
-        this.task = task;
-        this.params = params;
+        super(task, params);
         this.result = new Promise<TResult>((resolve, reject) => {
             this.resolveResult = resolve;
             this.rejectResult = reject;
@@ -77,14 +139,6 @@ export abstract class PluginTask<TParams = any, TResult extends PluginTaskResult
         return this.result;
     }
 
-    /**
-     * Resolves the task with the given result.
-     *
-     * This method should be called when a task response is received
-     * from the plugin with matching ID.
-     *
-     * @param result - The task execution result
-     */
     resolveWithResult(result: TResult): void {
         if (!this.resolveResult) {
             throw new Error("Result promise not initialized");
@@ -92,31 +146,10 @@ export abstract class PluginTask<TParams = any, TResult extends PluginTaskResult
         this.resolveResult(result);
     }
 
-    /**
-     * Rejects the task with the given error.
-     *
-     * This method should be called when task execution fails
-     * or times out.
-     *
-     * @param error - The error that occurred during task execution
-     */
     rejectWithError(error: Error): void {
         if (!this.rejectResult) {
             throw new Error("Result promise not initialized");
         }
         this.rejectResult(error);
-    }
-
-    /**
-     * Serializes the task to a request message for WebSocket transmission.
-     *
-     * @returns The request message containing ID, task name, and parameters
-     */
-    toRequest(): PluginTaskRequest {
-        return {
-            id: this.id,
-            task: this.task,
-            params: this.params,
-        };
     }
 }

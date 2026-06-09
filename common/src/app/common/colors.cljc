@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.colors
   (:refer-clojure :exclude [test])
@@ -332,10 +332,7 @@
       (conj opacity)))
 
 (defn hex->hsl [hex]
-  (try
-    (-> hex hex->rgb rgb->hsl)
-    (catch #?(:clj Throwable :cljs :default) _e
-      [0 0 0])))
+  (-> hex hex->rgb rgb->hsl))
 
 (defn hex->hsla
   [data opacity]
@@ -486,4 +483,3 @@
         a (+ (* ah 100) (* av 10))
         b (+ (* bh 100) (* bv 10))]
     (compare a b)))
-

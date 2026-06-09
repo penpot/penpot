@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.clipboard
   (:require
@@ -21,7 +21,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.transit :as t]
-   [app.common.types.component :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
@@ -34,6 +34,7 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
@@ -136,7 +137,7 @@
               (some? images)
               (update :images into images)
 
-              (ctc/is-variant-container? item)
+              (ctk/is-variant-container? item)
               (update :variant-properties merge (collect-variants state item))))
 
           (maybe-translate [shape objects parent-frame-id]
@@ -159,8 +160,10 @@
                                heads))))
 
           (advance-copy [file libraries page objects shape]
-            (if (and (ctc/instance-head? shape) (not (ctc/main-instance? shape)))
-              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+              (let [level-delta (if (nil? (ctk/get-swap-slot shape))
+                                  (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)
+                                  0)]
                 (if (pos? level-delta)
                   (reduce (partial advance-shape file libraries page level-delta)
                           objects
@@ -303,13 +306,30 @@
   (and (instance? js/DOMException cause)
        (= (.-name cause) "NotAllowedError")))
 
+(defn- clipboard-unavailable-error?
+  "Check if the given error is a clipboard API unavailable error
+  (thrown when navigator.clipboard is undefined, e.g. on insecure
+   origins per the W3C Secure Contexts spec)."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
 (defn- on-clipboard-permission-error
   [cause]
-  (if (clipboard-permission-error? cause)
+  (cond
+    (clipboard-permission-error? cause)
     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
                       :type :toast
                       :level :warning
                       :timeout 5000}))
+
+    (clipboard-unavailable-error? cause)
+    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+
+    :else
     (rx/throw cause)))
 
 (defn paste-from-clipboard
@@ -507,6 +527,12 @@
                   (cond
                     (clipboard-permission-error? cause)
                     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 5000}))
+
+                    (clipboard-unavailable-error? cause)
+                    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
                                       :type :toast
                                       :level :warning
                                       :timeout 5000}))
@@ -947,10 +973,10 @@
 
               add-component-to-variant? (and
                                          ;; Any of the shapes is a head
-                                         (some ctc/instance-head? orig-shapes)
+                                         (some ctk/instance-head? orig-shapes)
                                          ;; Any ancestor of the destination parent is a variant
                                          (->> (cfh/get-parents-with-self page-objects parent-id)
-                                              (some ctc/is-variant?)))
+                                              (some ctk/is-variant?)))
               undo-id      (js/Symbol)]
 
           (rx/concat
@@ -964,13 +990,13 @@
                             ;; NOTE: we don't emit the create-shape event all the time for
                             ;; avoid send a lot of events (that are not necessary); this
                             ;; decision is made explicitly by the responsible team.
-                            (if (ctc/instance-head? shape)
+                            (if (ctk/instance-head? shape)
                               (ev/event {::ev/name "use-library-component"
                                          ::ev/origin origin
                                          :is-external-library external-lib?
                                          :type (get shape :type)
                                          :parent-type parent-type
-                                         :is-variant (ctc/is-variant? component)})
+                                         :is-variant (ctk/is-variant? component)})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin
@@ -987,7 +1013,7 @@
                   (ptk/data-event :layout/update {:ids [frame-id]})
                   (dwu/commit-undo-transaction undo-id)
                   (when add-component-to-variant?
-                    (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))))
+                    (ev/event {::ev/name "add-component-to-variant"})))))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)
@@ -1131,10 +1157,11 @@
                     :enabled true
                     :name ""}
 
-            params {:exports [export]
-                    :profile-id (:profile-id state)
-                    :cmd :export-shapes
-                    :wait true}]
+            ;; Create a deferred promise immediately, before any async operations.
+            ;; Registering the clipboard write NOW preserves the user-gesture security
+            ;; context; the actual blob is supplied asynchronously once the export finishes.
+            deferred      (p/deferred)
+            write-promise (clipboard/to-clipboard-promise "image/png" deferred)]
 
         (rx/concat
          ;; Ensure current state persisted before exporting.
@@ -1144,21 +1171,34 @@
               (rx/first)
               (rx/timeout 400 (rx/empty)))
 
-         ;; Exporting itself can time its time, better to notify that we are busy.
+         ;; Exporting itself can take its time, better to notify that we are busy.
          (rx/of (ntf/info (tr "workspace.clipboard.copying")))
 
-         ;; Call exporter to get image URI, then fetch and copy blob.
-         (->> (rp/cmd! :export params)
+         ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
+         (->> (if (and (features/active-feature? state "render-wasm/v1")
+                       (contains? cf/flags :wasm-export))
+                (rx/of {:uri (wasm.exports/export-image-uri export)})
+                (rp/cmd! :export
+                         {:exports [export]
+                          :profile-id (:profile-id state)
+                          :cmd :export-shapes
+                          :wait true}))
+
               (rx/mapcat (fn [{:keys [uri]}]
                            (http/send! {:method :get
                                         :uri uri
                                         :response-type :blob})))
               (rx/map :body)
-              (rx/tap (fn [blob]
-                        (clipboard/to-clipboard-promise "image/png" (p/resolved blob))))
+              (rx/mapcat (fn [blob]
+                           ;; Resolve the deferred with the fetched blob; the browser
+                           ;; will now complete the clipboard write it started earlier.
+                           (p/resolve! deferred blob)
+                           (rx/from write-promise)))
               (rx/map (fn [_]
                         (ntf/success (tr "workspace.clipboard.image-copied"))))
               (rx/catch (fn [e]
-                          (js/console.error "clipboard blocked:" e)
-                          (ntf/error (tr "workspace.clipboard.image-copy-failed"))
-                          (rx/empty)))))))))
+                          (js/console.error "clipboard error:" e)
+                          ;; Reject the deferred in case the error occurred before the
+                          ;; blob was fetched, so the pending clipboard write is cancelled.
+                          (p/reject! deferred e)
+                          (rx/of (ntf/error (tr "workspace.clipboard.image-copy-failed")))))))))))

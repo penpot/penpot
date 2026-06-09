@@ -5,6 +5,7 @@ pub mod fonts;
 pub mod layouts;
 pub mod mem;
 pub mod paths;
+pub mod rulers;
 pub mod shadows;
 pub mod shapes;
 pub mod strokes;

@@ -1,10 +1,8 @@
-#![allow(dead_code)]
-
 use crate::error::{Error, Result};
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
-    AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
-    Modifier, Shape,
+    AlignContent, AlignItems, AlignSelf, ConstraintH, ConstraintV, FlexData, JustifyContent,
+    LayoutData, LayoutItem, Modifier, Shape,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -54,6 +52,7 @@ struct LayoutAxis {
     gap_across: f32,
     is_auto_main: bool,
     is_auto_across: bool,
+    is_wrap: bool,
 }
 
 impl LayoutAxis {
@@ -78,6 +77,7 @@ impl LayoutAxis {
                 gap_across: layout_data.row_gap,
                 is_auto_main: num_child > 0 && shape.is_layout_horizontal_auto(),
                 is_auto_across: num_child > 0 && shape.is_layout_vertical_auto(),
+                is_wrap: flex_data.is_wrap(),
             }
         } else {
             Self {
@@ -93,6 +93,7 @@ impl LayoutAxis {
                 gap_across: layout_data.column_gap,
                 is_auto_main: num_child > 0 && shape.is_layout_vertical_auto(),
                 is_auto_across: num_child > 0 && shape.is_layout_horizontal_auto(),
+                is_wrap: flex_data.is_wrap(),
             }
         }
     }
@@ -120,7 +121,7 @@ struct ChildAxis {
     max_across_size: f32,
     is_fill_main: bool,
     is_fill_across: bool,
-    z_index: i32,
+    _z_index: i32, // unused
     bounds: Bounds,
 }
 
@@ -143,7 +144,7 @@ impl ChildAxis {
                 max_across_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
                 is_fill_main: child.is_layout_horizontal_fill(),
                 is_fill_across: child.is_layout_vertical_fill(),
-                z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
+                _z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
                 bounds: *child_bounds,
             }
         } else {
@@ -161,7 +162,7 @@ impl ChildAxis {
                 max_main_size: layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE),
                 is_fill_main: child.is_layout_vertical_fill(),
                 is_fill_across: child.is_layout_horizontal_fill(),
-                z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
+                _z_index: layout_item.and_then(|i| i.z_index).unwrap_or(0),
                 bounds: *child_bounds,
             }
         };
@@ -399,7 +400,7 @@ fn calculate_track_positions(
 ) {
     let mut align_content = &layout_data.align_content;
 
-    if layout_axis.is_auto_across {
+    if layout_axis.is_auto_across || !layout_axis.is_wrap {
         align_content = &AlignContent::Start;
     }
 
@@ -427,7 +428,10 @@ fn calculate_track_positions(
 
         AlignContent::SpaceAround => {
             let effective_gap = (layout_axis.across_space() - total_across_size) / tlen as f32;
-            (effective_gap / 2.0, effective_gap)
+            (
+                layout_axis.padding_across_start + effective_gap / 2.0,
+                effective_gap,
+            )
         }
 
         AlignContent::SpaceEvenly => {
@@ -473,7 +477,9 @@ fn calculate_track_data(
 
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>();
 
-    if !layout_axis.is_auto_across && layout_data.align_content == AlignContent::Stretch {
+    let stretch_tracks = !layout_axis.is_wrap || layout_data.align_content == AlignContent::Stretch;
+
+    if !layout_axis.is_auto_across && stretch_tracks {
         stretch_tracks_sizes(&layout_axis, &mut tracks, total_across_size);
     }
 
@@ -506,12 +512,12 @@ fn first_anchor(
         }
         JustifyContent::SpaceAround => {
             let effective_gap = (layout_axis.main_space() - total_shapes_size) / slen as f32;
-            layout_axis.padding_main_end + f32::max(layout_axis.gap_main, effective_gap / 2.0)
+            layout_axis.padding_main_start + f32::max(layout_axis.gap_main, effective_gap / 2.0)
         }
         JustifyContent::SpaceEvenly => {
             let effective_gap =
                 (layout_axis.main_space() - total_shapes_size) / (track.shapes.len() + 1) as f32;
-            layout_axis.padding_main_end + f32::max(layout_axis.gap_main, effective_gap)
+            layout_axis.padding_main_start + f32::max(layout_axis.gap_main, effective_gap)
         }
         _ => layout_axis.padding_main_start,
     };
@@ -538,8 +544,11 @@ fn next_anchor(
         + child_axis.margin_main_end
         + match layout_data.justify_content {
             JustifyContent::SpaceBetween => {
-                let effective_gap = (layout_axis.main_space() - total_shapes_size)
-                    / (track.shapes.len() - 1) as f32;
+                let effective_gap = if track.shapes.len() > 1 {
+                    (layout_axis.main_space() - total_shapes_size) / (track.shapes.len() - 1) as f32
+                } else {
+                    0.0
+                };
                 child_axis.main_size + f32::max(layout_axis.gap_main, effective_gap)
             }
             JustifyContent::SpaceAround => {
@@ -749,6 +758,34 @@ pub fn reflow_flex_layout(
         scale.pre_concat(parent_transform_inv);
 
         let layout_bounds_after = layout_bounds.transform(&scale);
+
+        // Propagate the parent auto-resize to absolute children using their constraints.
+        for child_id in shape.children_ids_iter(true) {
+            let Some(child) = shapes.get(child_id) else {
+                continue;
+            };
+
+            if !child.is_absolute() {
+                continue;
+            }
+
+            let child_bounds = bounds.find(child);
+            let constraint_h = child.constraint_h(ConstraintH::Left);
+            let constraint_v = child.constraint_v(ConstraintV::Top);
+
+            let child_transform = super::constraints::propagate_shape_constraints(
+                layout_bounds,
+                &layout_bounds_after,
+                &child_bounds,
+                constraint_h,
+                constraint_v,
+                scale,
+                child.ignore_constraints,
+            )?;
+
+            result.push_back(Modifier::transform_propagate(child.id, child_transform));
+        }
+
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.auth
   "Auth related data events"
@@ -61,25 +61,29 @@
                     (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))]
 
     (ptk/reify ::logged-in
-      ev/Event
-      (-data [_]
-        {::ev/name "signin"
-         ::ev/type "identify"
-         :email (:email profile)
-         :auth-backend (:auth-backend profile)
-         :fullname (:fullname profile)
-         :is-muted (:is-muted profile)
-         :default-team-id (:default-team-id profile)
-         :default-project-id (:default-project-id profile)})
-
       ptk/WatchEvent
       (watch [_ _ stream]
         (cf/initialize-external-context-info)
+
 
         (->> (rx/merge
               (rx/of (dp/set-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
+
+              ;; We schedule this event to be executed a bit later,
+              ;; when the profile is already set
+              (->> (rx/of (ev/event {::ev/name "signin"
+                                     ::ev/type "identify"
+                                     :id (:id profile)
+                                     :email (:email profile)
+                                     :auth-backend (:auth-backend profile)
+                                     :fullname (:fullname profile)
+                                     :is-muted (:is-muted profile)
+                                     :default-team-id (:default-team-id profile)
+                                     :default-project-id (:default-project-id profile)}))
+                   (rx/observe-on :async))
+
 
               (->> stream
                    (rx/filter (ptk/type? ::dtm/teams-fetched))
@@ -191,16 +195,19 @@
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile] :as tdata}]
+  [{:keys [profile invitation-token] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (dp/on-fetch-profile-success profile)
            (rx/map (fn [profile]
-                     (logged-in (with-meta profile {::ev/source "login-with-token"}))))
-           ;; NOTE: we need this to be asynchronous because the effect
-           ;; should be called before proceed with the login process
-           (rx/observe-on :async)))))
+                     (let [profile (cond-> profile
+                                     invitation-token
+                                     (assoc :invitation-token invitation-token)
+
+                                     :always
+                                     (with-meta {::ev/source "login-with-token"}))]
+                       (logged-in profile))))))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the

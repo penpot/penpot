@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.releases.v2-15
   (:require-macros [app.main.style :as stl])
@@ -77,7 +77,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 3}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
@@ -118,7 +118,7 @@
           [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
-            :total 4}]
+            :total 3}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
