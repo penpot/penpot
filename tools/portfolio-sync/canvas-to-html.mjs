@@ -264,12 +264,20 @@ function fontShorthand(s) {
   return `${weight} ${size}/1.35 ${stack}`;
 }
 
-// Tiny red dot tucked into the top-right corner of a placeholder, used to
+// Marker glyph tucked into the top-right corner of a placeholder, used to
 // flag shapes whose source DOM element carried `animation` or `transition`.
 // Returns the HTML fragment for the dot or '' when no marker is needed.
+//
+// Disabled by default — on any reasonably modern site (Tailwind, design
+// systems, frameworks that ship transitions by default) almost every shape
+// triggers the marker, which made the preview look like it was covered in
+// red dust. Opt back in with PORTFOLIO_SYNC_SHOW_ANIM_MARKERS=1; the opt-in
+// glyph is a subtle 2px dim-grey dot, not the old loud 6px red splat.
+const SHOW_ANIM_MARKERS = process.env.PORTFOLIO_SYNC_SHOW_ANIM_MARKERS === '1';
 function animDotHtml(s) {
+  if (!SHOW_ANIM_MARKERS) return '';
   if (!readAnimMarker(s)) return '';
-  return `<span title="css animation" style="position:absolute;right:2px;top:2px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`;
+  return `<span title="css animation" style="position:absolute;right:3px;top:3px;width:2px;height:2px;border-radius:50%;background:#9ca3af;opacity:0.6;pointer-events:none"></span>`;
 }
 
 function renderShape(s, board) {
@@ -390,8 +398,8 @@ function renderShape(s, board) {
   // section children), so the marker dot has to be emitted as a sibling at
   // the shape's top-right pixel coordinate. Use the same lx/ly as the
   // shape so the dot follows the absolute-vs-board-local normalization.
-  const textAnimDot = readAnimMarker(s)
-    ? `<span title="css animation" style="position:absolute;left:${lx + s.w - 8}px;top:${ly + 2}px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`
+  const textAnimDot = (SHOW_ANIM_MARKERS && readAnimMarker(s))
+    ? `<span title="css animation" style="position:absolute;left:${lx + s.w - 4}px;top:${ly + 2}px;width:2px;height:2px;border-radius:50%;background:#9ca3af;opacity:0.6;pointer-events:none"></span>`
     : '';
 
   let el;
