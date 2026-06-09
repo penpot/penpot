@@ -176,8 +176,26 @@ function escapeAttr(s) { return escapeHtml(s); }
  * field with the kind as a prefix; fall back on shape type/heuristics for
  * shapes that pre-date this convention or that the user added by hand.
  */
+// Detect the cssAnimation marker (" ¶anim:<json>" suffix written by
+// build-live-dom-canvas after each shape is created). Returns the parsed
+// payload or null. Side-effect-free — does not mutate the shape.
+function readAnimMarker(s) {
+  const name = s.name || '';
+  const idx = name.indexOf(' ¶anim');
+  if (idx === -1) return null;
+  return { raw: name.slice(idx + 1) };  // visible truthy payload — we only use it as a flag
+}
+
 function classifyShape(s) {
-  const name = (s.name || '').toLowerCase();
+  // Strip the cssAnimation marker before classification so the prefix tests
+  // still match. e.g. "link: /foo ¶anim:{...}" → "link: /foo".
+  const rawName = s.name || '';
+  const animIdx = rawName.indexOf(' ¶anim');
+  const cleanName = animIdx === -1 ? rawName : rawName.slice(0, animIdx);
+  // Reason: the rest of this fn reads from a virtual shape so the classifier's
+  // slice-by-prefix arithmetic stays correct (e.g. s.name.slice(7) for canvas:).
+  s = { ...s, name: cleanName };
+  const name = cleanName.toLowerCase();
   if (name.startsWith('link:'))    return { kind: 'link',    href: (s.name.slice(5) || '').trim() };
   if (name.startsWith('control:')) return { kind: 'control', tag: (s.name.slice(8) || '').trim() };
   if (name.startsWith('img:'))     return { kind: 'image',   alt: (s.name.slice(4) || '').trim() };
@@ -185,9 +203,12 @@ function classifyShape(s) {
   if (name.startsWith('video:'))    return { kind: 'video',    src: (s.name.slice(6) || '').trim() };
   if (name.startsWith('iframe:'))   return { kind: 'iframe',   src: (s.name.slice(7) || '').trim() };
   if (name.startsWith('bg-image:')) return { kind: 'bg-image', src: (s.name.slice(9) || '').trim() };
-  // video/iframe placeholders write a separate "video-label"/"iframe-label"
+  if (name.startsWith('canvas:'))   return { kind: 'canvas',   label: (s.name.slice(7) || '').trim() };
+  if (name.startsWith('lottie:'))   return { kind: 'lottie',   src: (s.name.slice(7) || '').trim() };
+  // video/iframe/canvas/lottie placeholders write a separate "<kind>-label"
   // text shape — skip rendering, the placeholder div already shows the label.
-  if (name === 'video-label' || name === 'iframe-label') return { kind: 'media-label' };
+  if (name === 'video-label' || name === 'iframe-label' ||
+      name === 'canvas-label' || name === 'lottie-label') return { kind: 'media-label' };
   if (name === 'line')             return { kind: 'line' };
   if (name === 'screenshot-backdrop') return { kind: 'backdrop' };
   if (name === 'heading' || /^h[1-6]$/.test(name)) return { kind: 'heading' };
@@ -243,6 +264,14 @@ function fontShorthand(s) {
   return `${weight} ${size}/1.35 ${stack}`;
 }
 
+// Tiny red dot tucked into the top-right corner of a placeholder, used to
+// flag shapes whose source DOM element carried `animation` or `transition`.
+// Returns the HTML fragment for the dot or '' when no marker is needed.
+function animDotHtml(s) {
+  if (!readAnimMarker(s)) return '';
+  return `<span title="css animation" style="position:absolute;right:2px;top:2px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`;
+}
+
 function renderShape(s) {
   const k = classifyShape(s);
   const color = s.fillColor || '#0a0a0a';
@@ -250,6 +279,7 @@ function renderShape(s) {
   // in board-local space), and the enclosing <section> is `position:relative`
   // so left/top resolve against the section origin directly.
   const baseStyle = `position:absolute;left:${s.x}px;top:${s.y}px;width:${s.w}px;`;
+  const animDot = animDotHtml(s);
 
   if (k.kind === 'backdrop') {
     // Screenshot backdrop is faded on the canvas — replicate as a faint label.
@@ -270,7 +300,7 @@ function renderShape(s) {
     // canvas appearance).
     const src = (k.src || '').slice(0, 120);
     const bg = s.hasFillImage ? '#1a1a1a' : (s.fillColor || '#2a2a2a');
-    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:${escapeAttr(bg)};display:flex;align-items:center;justify-content:center;color:#fff;font:600 16px system-ui,sans-serif;box-sizing:border-box">▶ video</div>`;
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:${escapeAttr(bg)};display:flex;align-items:center;justify-content:center;color:#fff;font:600 16px system-ui,sans-serif;box-sizing:border-box">▶ video${animDot}</div>`;
   }
 
   if (k.kind === 'iframe') {
@@ -281,7 +311,28 @@ function renderShape(s) {
     let host = '';
     try { host = new URL(src).host; } catch (_) { host = src.slice(0, 40); }
     const label = `iframe: ${host}`;
-    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:#f0f0f0;border:1px dashed #888;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#555;font:500 13px system-ui,sans-serif;text-align:center;padding:8px">${escapeHtml(label)}</div>`;
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:#f0f0f0;border:1px dashed #888;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#555;font:500 13px system-ui,sans-serif;text-align:center;padding:8px">${escapeHtml(label)}${animDot}</div>`;
+  }
+
+  if (k.kind === 'canvas') {
+    // Reason: the consulting page's starfield is a WebGL canvas; render as a
+    // near-black placeholder with the centered label that mirrors the Penpot
+    // shape ("canvas: webgl WxH" → "canvas: WxH (webgl)").
+    const lab = (k.label || '').toLowerCase();
+    const isWebGL = lab.includes('webgl');
+    const wh = lab.replace(/webgl\s*/i, '').trim() || `${s.w}x${s.h}`;
+    const display = `canvas: ${wh}${isWebGL ? ' (webgl)' : ''}`;
+    const bg = s.hasFillImage ? 'transparent' : '#0a0a0a';
+    const bgImg = s.hasFillImage ? '' : '';
+    return `<div title="${escapeAttr(display)}" style="${baseStyle}height:${s.h}px;background:${bg};${bgImg}display:flex;align-items:center;justify-content:center;color:#ffffff;font:600 14px system-ui,sans-serif;box-sizing:border-box">${escapeHtml(display)}${animDot}</div>`;
+  }
+
+  if (k.kind === 'lottie') {
+    const src = (k.src || '').slice(0, 200);
+    let fname = src;
+    try { fname = (new URL(src, 'http://x/').pathname.split('/').pop()) || src; } catch (_) {}
+    const label = `lottie: ${fname}`.slice(0, 80);
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:#f5f0fa;border:1px dashed #9b6dc7;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#6c3a9b;font:500 12px system-ui,sans-serif;text-align:center;padding:6px">${escapeHtml(label)}${animDot}</div>`;
   }
 
   if (k.kind === 'bg-image') {
@@ -290,12 +341,13 @@ function renderShape(s) {
     // dominant CSS pattern; pages that use `background-size: contain` lose
     // a tiny bit of fidelity but the bbox is correct.
     const src = (k.src || '').slice(0, 200);
-    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background-image:url('${escapeAttr(src)}');background-size:cover;background-position:center;background-repeat:no-repeat"></div>`;
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background-image:url('${escapeAttr(src)}');background-size:cover;background-position:center;background-repeat:no-repeat">${animDot}</div>`;
   }
 
   if (k.kind === 'line') {
     const fillColor = s.fillColor || '#cccccc';
     const opacity = s.fillOpacity != null ? `;opacity:${s.fillOpacity}` : '';
+    // Lines are tiny — skip the dot (the 6px marker would dominate a 2px line).
     return `<div style="${baseStyle}height:${Math.max(1, s.h)}px;background-color:${escapeAttr(fillColor)}${opacity}"></div>`;
   }
 
@@ -303,7 +355,7 @@ function renderShape(s) {
     const label = (k.alt || s.name || k.kind).slice(0, 80);
     const bg = s.fillColor || '#f5f5f5';
     const border = s.strokeColor || '#888888';
-    return `<div style="${baseStyle}height:${s.h}px;background:${escapeAttr(bg)};border:1px dashed ${escapeAttr(border)};box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#555;font:12px system-ui,sans-serif;text-align:center;padding:4px">${escapeHtml(label)}</div>`;
+    return `<div style="${baseStyle}height:${s.h}px;background:${escapeAttr(bg)};border:1px dashed ${escapeAttr(border)};box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#555;font:12px system-ui,sans-serif;text-align:center;padding:4px">${escapeHtml(label)}${animDot}</div>`;
   }
 
   if (k.kind === 'control') {
@@ -321,18 +373,26 @@ function renderShape(s) {
   const text = escapeHtml(s.text || '');
   const decoration = s.textDecoration === 'underline' ? ';text-decoration:underline' : '';
   const textStyle = `${baseStyle}font:${font};color:${escapeAttr(color)};margin:0${decoration}`;
+  // Reason: text shapes don't have a positioned ancestor (they're direct
+  // section children), so the marker dot has to be emitted as a sibling at
+  // the shape's top-right pixel coordinate. animDot is rebuilt with the dot
+  // absolutely placed on the document (offset from shape origin).
+  const textAnimDot = readAnimMarker(s)
+    ? `<span title="css animation" style="position:absolute;left:${s.x + s.w - 8}px;top:${s.y + 2}px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`
+    : '';
 
+  let el;
   if (k.kind === 'link') {
     const href = k.href || '#';
-    return `<a href="${escapeAttr(href)}" style="${textStyle}">${text}</a>`;
+    el = `<a href="${escapeAttr(href)}" style="${textStyle}">${text}</a>`;
+  } else if (k.kind === 'button') {
+    el = `<button style="${textStyle};background:transparent;border:0;cursor:pointer;text-align:left">${text}</button>`;
+  } else if (k.kind === 'heading') {
+    el = `<h2 style="${textStyle}">${text}</h2>`;
+  } else {
+    el = `<p style="${textStyle}">${text}</p>`;
   }
-  if (k.kind === 'button') {
-    return `<button style="${textStyle};background:transparent;border:0;cursor:pointer;text-align:left">${text}</button>`;
-  }
-  if (k.kind === 'heading') {
-    return `<h2 style="${textStyle}">${text}</h2>`;
-  }
-  return `<p style="${textStyle}">${text}</p>`;
+  return el + textAnimDot;
 }
 
 // ─── Document assembly ───────────────────────────────────────────────────────
@@ -547,7 +607,9 @@ ${rows}
       pointer-events: none;
     }
     .canvas-wrap {
-      display: flex; gap: 48px; padding: 48px;
+      /* Reason: stack boards vertically. Horizontal flex left consulting/blog
+         off-screen at 1440px each, unreachable without horizontal scroll. */
+      display: flex; flex-direction: column; gap: 64px; padding: 48px;
       align-items: flex-start; min-width: max-content;
     }
     section[data-board] {
