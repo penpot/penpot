@@ -6,8 +6,19 @@
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.store :as st]
+   [app.plugins.api :as api]
    [app.plugins.tokens :as ptok]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each {:before cthi/reset-idmap!})
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -54,6 +65,16 @@
   (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top-left)))
   (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom-right))))
 
+(t/deftest token-attr-plugin->token-attr-resolves-padding-margin-side-aliases
+  (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top)))
+  (t/is (= :p2 (ptok/token-attr-plugin->token-attr :padding-right)))
+  (t/is (= :p3 (ptok/token-attr-plugin->token-attr :padding-bottom)))
+  (t/is (= :p4 (ptok/token-attr-plugin->token-attr :padding-left)))
+  (t/is (= :m1 (ptok/token-attr-plugin->token-attr :margin-top)))
+  (t/is (= :m2 (ptok/token-attr-plugin->token-attr :margin-right)))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom)))
+  (t/is (= :m4 (ptok/token-attr-plugin->token-attr :margin-left))))
+
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr "fill")))
@@ -75,6 +96,53 @@
   (t/is (true? (boolean (ptok/token-attr? "stroke-color"))))
   (t/is (true? (boolean (ptok/token-attr? "r1"))))
   (t/is (true? (boolean (ptok/token-attr? "m3")))))
+
+(t/deftest shape-apply-token-accepts-padding-top
+  (t/async
+    done
+    (let [set-id    (cthi/new-id! :token-set)
+          token-id  (cthi/new-id! :spacing-token)
+          file      (-> (cthf/sample-file :file1 :page-label :page1)
+                        (ctho/add-frame :frame1 {:layout :flex})
+                        (ctht/add-tokens-lib)
+                        (ctht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set
+                               (ctob/make-token-set :id set-id
+                                                    :name "spacing"))
+                              (ctob/add-theme
+                               (ctob/make-token-theme :name "theme"
+                                                      :sets #{"spacing"}))
+                              (ctob/set-active-themes #{"/theme"})
+                              (ctob/add-token
+                               set-id
+                               (ctob/make-token :id token-id
+                                                :name "spacing.medium"
+                                                :type :spacing
+                                                :value 16)))))
+          store     (ths/setup-store file)
+          _         (set! st/state store)
+          _         (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :frame1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str token-id))]
+      (.applyToken shape token #js ["paddingTop"])
+      (js/setTimeout
+       (fn []
+         (let [shape-id (cthi/id :frame1)
+               page-id  (cthf/current-page-id file)]
+           (t/is (= "spacing.medium" (.. shape -tokens -paddingTopLeft)))
+           (t/is (= "spacing.medium"
+                    (get-in @store
+                            [:files (:id file) :data :pages-index page-id
+                             :objects shape-id :applied-tokens :p1])))
+           (done)))
+       0))))
 
 (t/deftest token-attr?-rejects-unknown-input
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))

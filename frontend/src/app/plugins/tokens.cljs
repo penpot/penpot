@@ -43,7 +43,16 @@
    :m4 :margin-bottom-left})
 
 (def ^:private map:token-attr-plugin->token-attr
-  (map-invert map:token-attr->token-attr-plugin))
+  (merge
+   (map-invert map:token-attr->token-attr-plugin)
+   {:padding-top    :p1
+    :padding-right  :p2
+    :padding-bottom :p3
+    :padding-left   :p4
+    :margin-top     :m1
+    :margin-right   :m2
+    :margin-bottom  :m3
+    :margin-left    :m4}))
 
 (defn token-attr->token-attr-plugin
   [k]
@@ -544,4 +553,3 @@
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
                (token-set-proxy plugin-id file-id set-id))))}))
-
