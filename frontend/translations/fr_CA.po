@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-08 12:01+0000\n"
+"PO-Revision-Date: 2026-06-09 16:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -8864,3 +8864,53 @@ msgstr ""
 "« %s » n'est pas un nom de token valide.\n"
 "Les noms de tokens doivent contenir seulement des lettres et des chiffres "
 "séparés par le caractère . et ne doivent pas commencer par le symbole $."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:120
+msgid "errors.tokens.invalid-shadow-type-token-value"
+msgstr ""
+"Type d'ombre invalide : seuls « innerShadow » ou « dropShadow » sont acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:96
+msgid "errors.tokens.invalid-text-case-token-value"
+msgstr ""
+"Valeur de token invalid : seuls none, uppercase, lowercase ou capitalize "
+"sont acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:100
+msgid "errors.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Valeur de token invalide : seuls none, underline ou strike-through sont "
+"acceptés"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:132
+msgid "errors.tokens.invalid-token-value-shadow"
+msgstr ""
+"Valeur de token invalide : doit faire référence à un token d'ombre composé."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:112
+msgid "errors.tokens.invalid-token-value-typography"
+msgstr ""
+"Valeur de token invalide : doit faire référence à un token typographique "
+"composé."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:76, src/app/main/data/workspace/tokens/errors.cljs:88, src/app/main/data/workspace/tokens/errors.cljs:92
+msgid "errors.tokens.invalid-value"
+msgstr "Valeur de token invalide : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:72
+msgid "errors.tokens.missing-references"
+msgstr "Références de token manquantes : "
+
+#: src/app/main/data/workspace/tokens/errors.cljs:68, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
+msgid "errors.tokens.name-collision"
+msgstr ""
+"Le nom de groupe %s entre en conflit avec un token du même nom dans un autre "
+"ensemble actif."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "errors.tokens.no-token-files-found"
+msgstr "Aucun token, ensemble ou thème n'a été trouvé dans ce fichier."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:58
+msgid "errors.tokens.number-too-large"
+msgstr "Valeur de token invalide. La valeur résultante est trop grande : %s"
