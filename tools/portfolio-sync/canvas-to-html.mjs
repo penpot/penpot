@@ -272,13 +272,26 @@ function animDotHtml(s) {
   return `<span title="css animation" style="position:absolute;right:2px;top:2px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`;
 }
 
-function renderShape(s) {
+function renderShape(s, board) {
   const k = classifyShape(s);
   const color = s.fillColor || '#0a0a0a';
-  // Reason: child x/y are already board-local (Penpot reports board children
-  // in board-local space), and the enclosing <section> is `position:relative`
-  // so left/top resolve against the section origin directly.
-  const baseStyle = `position:absolute;left:${s.x}px;top:${s.y}px;width:${s.w}px;`;
+  // Reason: Penpot's plugin API reports shape x/y in ABSOLUTE canvas-space,
+  // not board-local. The enclosing <section> is `position:relative` and
+  // we want children to resolve against its origin, so subtract the board's
+  // own x/y. For shapes already produced board-local by older builds we
+  // detect that case (|s.x - board.x| > board.w*4) and pass through.
+  const bx = board?.x || 0;
+  const by = board?.y || 0;
+  const bw = board?.w || 0;
+  const sxAbs = (typeof s.x === 'number') ? s.x : 0;
+  const syAbs = (typeof s.y === 'number') ? s.y : 0;
+  // Heuristic: if the shape sits within the board's bounds when treated as
+  // board-local (sxAbs < bw), assume it's already board-local. Otherwise
+  // subtract the board anchor.
+  const localish = sxAbs >= 0 && sxAbs <= bw && bw > 0;
+  const lx = localish ? sxAbs : (sxAbs - bx);
+  const ly = localish ? syAbs : (syAbs - by);
+  const baseStyle = `position:absolute;left:${lx}px;top:${ly}px;width:${s.w}px;`;
   const animDot = animDotHtml(s);
 
   if (k.kind === 'backdrop') {
@@ -375,10 +388,10 @@ function renderShape(s) {
   const textStyle = `${baseStyle}font:${font};color:${escapeAttr(color)};margin:0${decoration}`;
   // Reason: text shapes don't have a positioned ancestor (they're direct
   // section children), so the marker dot has to be emitted as a sibling at
-  // the shape's top-right pixel coordinate. animDot is rebuilt with the dot
-  // absolutely placed on the document (offset from shape origin).
+  // the shape's top-right pixel coordinate. Use the same lx/ly as the
+  // shape so the dot follows the absolute-vs-board-local normalization.
   const textAnimDot = readAnimMarker(s)
-    ? `<span title="css animation" style="position:absolute;left:${s.x + s.w - 8}px;top:${s.y + 2}px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`
+    ? `<span title="css animation" style="position:absolute;left:${lx + s.w - 8}px;top:${ly + 2}px;width:6px;height:6px;border-radius:50%;background:#b33a1a;pointer-events:none"></span>`
     : '';
 
   let el;
@@ -403,9 +416,39 @@ function buildHtml(boards) {
   // arrangement they see in Penpot. Each <section> is `position:relative` and
   // shape coords are already board-local, so they resolve directly against
   // the section origin.
+  // Reason: HTML stacking ignores Penpot z-order — later `position:absolute`
+  // elements paint on top. The shapes we emit cluster into two tiers: visual
+  // *backdrops* (canvas/iframe/video/bg-image/image/backdrop/svg/line, plus
+  // any rectangle that covers most of its board) and *foreground* content
+  // (text/links/buttons/controls). Without a sort, an opaque backdrop late
+  // in the list (e.g. the WebGL canvas placeholder on /consulting at the
+  // top of the board) buries every text shape that appeared earlier — which
+  // is why the consulting board read as a solid #060a14 wall. Stable-sort
+  // backdrops first so foreground text/links/buttons always paint on top
+  // regardless of how the build pipeline ordered them.
+  const BACKDROP_KINDS = new Set([
+    'backdrop', 'canvas', 'iframe', 'video', 'bg-image',
+    'image', 'svg', 'line',
+  ]);
+  const isBackdropShape = (s, boardW, boardH) => {
+    const k = classifyShape(s);
+    if (BACKDROP_KINDS.has(k.kind)) return true;
+    // Big opaque rectangles (>=60% of board width AND >=25% of board height)
+    // behave as backdrops too; render them first so text overlays them.
+    if (k.kind === 'line' || s.type === 'rectangle') {
+      const wRatio = boardW ? (s.w || 0) / boardW : 0;
+      const hRatio = boardH ? (s.h || 0) / boardH : 0;
+      if (wRatio >= 0.6 && hRatio >= 0.25) return true;
+    }
+    return false;
+  };
   const sections = boards.map(b => {
     const bgColor = b.fillColor || '#ffffff';
-    const shapes  = b.shapes.map(s => renderShape(s)).filter(Boolean).join('\n      ');
+    const ordered = b.shapes
+      .map((s, i) => ({ s, i, bg: isBackdropShape(s, b.w, b.h) }))
+      .sort((a, b) => (a.bg === b.bg ? a.i - b.i : (a.bg ? -1 : 1)))
+      .map(x => x.s);
+    const shapes  = ordered.map(s => renderShape(s, b)).filter(Boolean).join('\n      ');
     return `    <section data-board="${escapeAttr(b.name)}" style="position:relative;width:${b.w}px;height:${b.h}px;background-color:${escapeAttr(bgColor)};flex:0 0 auto">
       <div class="ppc-board-label">${escapeHtml(b.name)} · ${b.w}×${b.h}</div>
       ${shapes}

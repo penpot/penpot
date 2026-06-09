@@ -818,8 +818,13 @@ function resolveColor(item, isLink) {
 }
 
 // ─── shape JS generation ─────────────────────────────────────────────────────
-// Coordinates are pre-translated into board-local space at template-build time
-// — no runtime `boardX/boardY` needed by the emitted snippet.
+// Coordinates are translated into ABSOLUTE Penpot space at template-build time
+// (DOM_x + boardX, DOM_y + boardY). Empirically Penpot's shape.x/.y after
+// `board.appendChild(s)` is the global canvas coord, NOT board-local: setting
+// `s.x = 0` lands the shape at absolute x=0 regardless of board.x. Earlier
+// versions assumed the opposite, which left the home board ok (board.x=0) but
+// flung consulting and blog shapes onto the home board's space (their boards
+// stack at x=1560 and x=3080, but the children got placed at x≈0…1440).
 
 function chunk(arr, n) {
   const out = [];
@@ -827,7 +832,7 @@ function chunk(arr, n) {
   return out;
 }
 
-function shapeJs(item) {
+function shapeJs(item, boardX = 0, boardY = 0) {
   const safeText  = (item.text || '').slice(0, 500);
   const textJson  = JSON.stringify(safeText);
   const family    = normalizeFontFamily(item.fontFamily);
@@ -837,14 +842,10 @@ function shapeJs(item) {
   const fontSize  = Math.max(8, Math.round(item.fontSize || 16));
   const w         = Math.max(8, Math.round(item.w));
   const h         = Math.max(8, Math.round(item.h));
-  // Reason: Penpot's t.x/t.y after appendChild are BOARD-LOCAL — the board's
-  // canvas anchor (boardX/boardY) is irrelevant here. Subtracting it would put
-  // consulting/blog shapes at negative local x and render them on top of the
-  // home board's space. The DOM bbox is already in the per-page viewport's
-  // own (0,0)-origin coordinate space, which is exactly what we want for the
-  // board-local position.
-  const x         = Math.round(item.x);
-  const y         = Math.round(item.y);
+  // Translate DOM-local (0..docWidth, 0..docHeight) into absolute canvas space
+  // by offsetting with the destination board's anchor.
+  const x         = Math.round(item.x) + Math.round(boardX);
+  const y         = Math.round(item.y) + Math.round(boardY);
 
   if (item.kind === 'control') {
     return `
@@ -1147,9 +1148,11 @@ board.clipContent = true;
 board.fills = [{ fillColor: ${fillColorJs} }];
 
 // Resize the screenshot child to cover the new board (preserves backdrop intent).
+// Reason: shape.x/.y after appendChild is ABSOLUTE canvas space, so anchor
+// the backdrop to the board's actual top-left, not (0,0).
 if (screenshot) {
   screenshot.resize(newW, newH);
-  screenshot.x = 0; screenshot.y = 0;
+  screenshot.x = boardX; screenshot.y = boardY;
 }
 
 // Adopt any top-level orphaned fill-image rect that looks like our screenshot.
@@ -1161,7 +1164,7 @@ for (const o of orphans) {
   if (!screenshot) {
     board.appendChild(o);
     o.resize(newW, newH);
-    o.x = 0; o.y = 0;
+    o.x = boardX; o.y = boardY;
     screenshot = o;
   } else {
     o.remove();
@@ -1199,7 +1202,7 @@ return {
   return mcpExec(sid, code);
 }
 
-async function createShapesInBatches(sid, boardId, items, batchSize) {
+async function createShapesInBatches(sid, boardId, boardX, boardY, items, batchSize) {
   const batches = chunk(items, batchSize);
   const results = [];
   for (const batch of batches) {
@@ -1212,7 +1215,7 @@ async function createShapesInBatches(sid, boardId, items, batchSize) {
       const wantAnim = !!item.cssAnimation;
       const animTag = wantAnim ? JSON.stringify(JSON.stringify(item.cssAnimation).slice(0, 80)) : 'null';
       return `{
-  const res = await (async () => ${shapeJs(item)})();
+  const res = await (async () => ${shapeJs(item, boardX, boardY)})();
   if (res && res.id && ${wantAnim ? 'true' : 'false'}) {
     const cur = penpot.currentPage;
     const sh = cur.findShapes().find(s => s.id === res.id);
@@ -1292,7 +1295,7 @@ return { switched: penpot.currentPage.name, fallback: !named && target ? target.
     const { boardId, boardX, boardY, removed, preserved, screenshot } = prep.result;
     console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0}; backdrop=${screenshot ? screenshot.name : 'none'})`);
 
-    const batches = await createShapesInBatches(sid, boardId, h.items, BATCH_SIZE);
+    const batches = await createShapesInBatches(sid, boardId, boardX, boardY, h.items, BATCH_SIZE);
     const totalCreated = batches.reduce((a, b) => a + (b?.result?.created || 0), 0);
     const errors = batches.filter(b => b?.error || b?.result?.error);
     console.log(`  created: ${totalCreated} shapes in ${batches.length} batches (${errors.length} errors)  [${Date.now() - pT0}ms]`);
