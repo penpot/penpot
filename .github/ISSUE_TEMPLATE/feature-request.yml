@@ -1,7 +1,7 @@
 description: Suggest an idea for this project.
 labels: ["needs triage"]
 name: "Feature request"
-title: "feature: "
+title: ""
 type: Enhancement
 
 body:
