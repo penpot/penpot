@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/typography.scss" as t;
@@ -53,6 +53,20 @@
 
 .modal-text-small {
   @include t.use-typography("body-small");
+}
+
+.price-value {
+  @include t.use-typography("title-medium");
+
+  color: var(--color-foreground-primary);
+  font-weight: 500;
+}
+
+.price-text {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-s);
+  margin-block-end: var(--sp-xxxl);
 }
 
 .modal-info {

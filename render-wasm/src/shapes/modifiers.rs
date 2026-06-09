@@ -27,11 +27,16 @@ fn propagate_children(
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Result<VecDeque<Modifier>> {
-    if identitish(&transform) {
-        return Ok(VecDeque::new());
-    }
-
     let mut result = VecDeque::new();
+
+    // We use the identity transform as a mark that a reflow is needed.
+    // It's needed to be propagated to its children.
+    if identitish(&transform) {
+        for child_id in shape.children_ids_iter(true) {
+            result.push_back(Modifier::transform_propagate(*child_id, transform));
+        }
+        return Ok(result);
+    }
 
     for child_id in shape.children_ids_iter(true) {
         let Some(child) = shapes.get(child_id) else {
@@ -177,6 +182,7 @@ fn propagate_transform(
     modifiers: &mut HashMap<Uuid, Matrix>,
     reflown: &mut HashSet<Uuid>,
     reflowed_shapes: &mut HashSet<Uuid>,
+    pending_reflows: &mut HashSet<Uuid>,
 ) -> Result<()> {
     let Some(shape) = state.shapes.get(&entry.id) else {
         return Ok(());
@@ -234,13 +240,29 @@ fn propagate_transform(
                     transform.post_concat(&resize_transform);
                 }
                 GrowType::AutoWidth => {
+                    let width_before = text_content.width();
+                    let height_before = text_content.size.height;
                     let (new_width, new_height) = if height_changed {
                         let mut clone = text_content.clone();
                         clone.update_layout(resized_selrect);
                         (clone.width(), clone.size.height)
                     } else {
-                        (text_content.width(), text_content.size.height)
+                        (width_before, height_before)
                     };
+                    if (!is_close_to(width_before, new_width)
+                        || !is_close_to(height_before, new_height))
+                        && reflowed_shapes.insert(shape.id)
+                    {
+                        entries.push_back(Modifier::reflow(shape.id, false));
+
+                        if let Some(parent_id) = shape.parent_id {
+                            for pid in
+                                shapes::all_with_ancestors(&[parent_id], shapes, false).iter()
+                            {
+                                reflown.remove(pid);
+                            }
+                        }
+                    }
                     let resize_transform = math::resize_matrix(
                         &shape_bounds_after,
                         &shape_bounds_after,
@@ -281,7 +303,7 @@ fn propagate_transform(
     let is_propagate = entry.source == TransformEntrySource::Propagate;
 
     // If this is a layout and we're only moving don't need to reflow
-    if shape.has_layout() && is_resize {
+    if shape.has_layout() && is_resize && pending_reflows.insert(shape.id) {
         entries.push_back(Modifier::reflow(shape.id, false));
     }
 
@@ -289,13 +311,17 @@ fn propagate_transform(
         // When the parent is either a group or a layout we only mark for reflow
         // if the current transformation is not a move propagation.
         // If it's a move propagation we don't need to reflow, the parent is already changed.
-        if (parent.has_layout() || parent.is_group_like()) && (is_resize || !is_propagate) {
+        if (parent.has_layout() || parent.is_group_like())
+            && (is_resize || !is_propagate)
+            && pending_reflows.insert(parent.id)
+        {
             entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn propagate_reflow(
     id: &Uuid,
     state: &State,
@@ -304,6 +330,7 @@ fn propagate_reflow(
     layout_reflows: &mut HashSet<Uuid>,
     reflown: &mut HashSet<Uuid>,
     modifiers: &HashMap<Uuid, Matrix>,
+    pending_reflows: &mut HashSet<Uuid>,
 ) {
     let Some(shape) = state.shapes.get(id) else {
         return;
@@ -323,7 +350,7 @@ fn propagate_reflow(
         }
         Type::Group(Group { masked: true }) => {
             let children_ids = shape.children_ids(true);
-            if let Some(child) = shapes.get(&children_ids[0]) {
+            if let Some(child) = children_ids.first().and_then(|id| shapes.get(id)) {
                 let child_bounds = bounds.find(child);
                 bounds.insert(shape.id, child_bounds);
             }
@@ -345,7 +372,7 @@ fn propagate_reflow(
     }
 
     if let Some(parent) = shape.parent_id.and_then(|id| shapes.get(&id)) {
-        if parent.has_layout() || parent.is_group_like() {
+        if (parent.has_layout() || parent.is_group_like()) && pending_reflows.insert(parent.id) {
             entries.push_back(Modifier::reflow(parent.id, false));
         }
     }
@@ -403,6 +430,14 @@ pub fn propagate_modifiers(
     let mut bounds = HashMap::<Uuid, Bounds>::new();
     let mut reflown = HashSet::<Uuid>::new();
     let mut layout_reflows = HashSet::<Uuid>::new();
+    // Tracks text shapes that have already triggered a reflow across all outer
+    // iterations, preventing oscillation when a parent layout re-emits a
+    // transform for the same text shape in a later pass.
+    let mut reflowed_shapes = HashSet::<Uuid>::new();
+    // Tracks reflow ids already queued to avoid flooding entries with
+    // duplicate Reflow entries when many children of the same parent
+    // are transformed in the same pass.
+    let mut pending_reflows = HashSet::<Uuid>::new();
 
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
@@ -410,7 +445,6 @@ pub fn propagate_modifiers(
     // In order for loop to eventualy finish, we limit the flex reflow to just
     // one (the reflown set).
     while !entries.is_empty() {
-        let mut reflowed_shapes = HashSet::<Uuid>::new();
         while let Some(modifier) = entries.pop_front() {
             match modifier {
                 Modifier::Transform(entry, pixel) => propagate_transform(
@@ -422,8 +456,10 @@ pub fn propagate_modifiers(
                     &mut modifiers,
                     &mut reflown,
                     &mut reflowed_shapes,
+                    &mut pending_reflows,
                 )?,
                 Modifier::Reflow(id, force_reflow) => {
+                    pending_reflows.remove(&id);
                     if force_reflow {
                         reflown.remove(&id);
                     }
@@ -436,6 +472,7 @@ pub fn propagate_modifiers(
                         &mut layout_reflows,
                         &mut reflown,
                         &modifiers,
+                        &mut pending_reflows,
                     )
                 }
             }
@@ -462,10 +499,8 @@ pub fn propagate_modifiers(
             }
             reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
         }
-        layout_reflows = HashSet::new();
     }
 
-    // #[allow(dead_code)]
     Ok(modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))

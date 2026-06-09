@@ -255,6 +255,7 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
                 path_transform.as_ref(),
                 &shape.selrect,
                 shape.svg_attrs.as_ref(),
+                false,
             ) {
                 result = path
                     .segments()

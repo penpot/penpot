@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.intersect
   (:require
@@ -369,7 +369,7 @@
 
 
 (defn line-line-intersect
-  "Calculates the interesection point for two lines given by the points a-b and b-c"
+  "Calculates the intersection point for two lines given by the points a-b and b-c"
   [a b c d]
 
   (let [;; Line equation representation: ax + by + c = 0

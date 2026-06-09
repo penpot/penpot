@@ -20,7 +20,9 @@
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
-             [:delete-teams {:optional true} [:maybe [:enum "onlyMe" "onlyOwners"]]]]]]])
+             [:delete-teams {:optional true} [:maybe [:enum "onlyMe" "onlyOwners"]]]
+             [:move-teams {:optional true} [:maybe [:enum "always" "myOrganizations" "never"]]]
+             [:new-team-members {:optional true} [:maybe [:enum "anyone" "members"]]]]]]])
 
 
 (def schema:team-with-organization
@@ -50,3 +52,12 @@
                      (or (:organization team) {})
                      organization->team-keys))
       (dissoc team :organization))))
+
+
+(def schema:organization-with-avatar
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:initials [:maybe :string]]
+   [:logo [:maybe ::sm/uri]]
+   [:avatar-bg-url [:maybe ::sm/uri]]])

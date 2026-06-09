@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.data-test
   (:require
@@ -888,7 +888,7 @@
   (t/is (not (d/editable-collection? "hello")))
   (t/is (not (d/editable-collection? 42))))
 
-(t/deftest num-predicate
+(t/deftest num-predicate-2
   (t/is (d/num? 1))
   (t/is (d/num? 0))
   (t/is (d/num? -3.14))

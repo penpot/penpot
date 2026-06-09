@@ -39,19 +39,26 @@
            (not-empty)))))
 
 (defn- extract-partial-brace-text
+  "Returns the substring after the last '{' in s. If the resulting
+  substring ends with '}', that trailing brace is removed.
+  Returns nil if no '{' is found or s is nil."
   [s]
   (when-let [start (str/last-index-of s "{")]
-    (subs s (inc start))))
+    (let [partial (subs s (inc start))]
+      (if (and (seq partial)
+               (> (count partial) 0)
+               (= "}" (subs partial (dec (count partial)))))
+        (subs partial 0 (dec (count partial)))
+        partial))))
 
 (defn- filter-token-groups-by-name
   [tokens filter-text]
-  (let [lc-filter (str/lower filter-text)]
-    (into {}
-          (keep (fn [[group tokens]]
-                  (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
-                    (when (seq filtered)
-                      [group filtered]))))
-          tokens)))
+  (into {}
+        (keep (fn [[group tokens]]
+                (let [filtered (filter #(str/includes? (:name %) filter-text) tokens)]
+                  (when (seq filtered)
+                    [group filtered]))))
+        tokens))
 
 (defn- sort-groups-and-tokens
   "Sorts the tokens inside the groups alphabetically.
@@ -113,3 +120,8 @@
 
 (defn focusable-options [options]
   (filter #(= (:type %) :token) options))
+
+(defn group-name-conflict-error?
+  [error token-name]
+  (let [translated-string (tr "errors.tokens.name-collision" token-name)]
+    (= error translated-string)))

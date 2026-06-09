@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.auth
   "Auth related data events"
@@ -195,16 +195,19 @@
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile] :as tdata}]
+  [{:keys [profile invitation-token] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (dp/on-fetch-profile-success profile)
            (rx/map (fn [profile]
-                     (logged-in (with-meta profile {::ev/source "login-with-token"}))))
-           ;; NOTE: we need this to be asynchronous because the effect
-           ;; should be called before proceed with the login process
-           (rx/observe-on :async)))))
+                     (let [profile (cond-> profile
+                                     invitation-token
+                                     (assoc :invitation-token invitation-token)
+
+                                     :always
+                                     (with-meta {::ev/source "login-with-token"}))]
+                       (logged-in profile))))))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the

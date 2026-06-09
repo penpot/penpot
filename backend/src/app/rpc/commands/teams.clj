@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.teams
   (:require
@@ -791,16 +791,16 @@
                                   {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
                                                :permissions (dm/get-in team [:organization :permissions])}
                                    :profile-id profile-id
-                                   :team-perms perms
-                                   ;; `onlyMe` is for a future org-level flow.
-                                   :allow-org-owner-delete? false})
+                                   :team-perms perms})
           (boolean (:is-owner perms)))]
 
     (when-not can-delete?
       (ex/raise :type :validation
                 :code :only-owner-can-delete-team))
 
-    (when (:is-default team)
+    ;; Protect the user's personal default team from deletion.
+    ;; Org-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    (when (and (:is-default team) (not in-org?))
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))

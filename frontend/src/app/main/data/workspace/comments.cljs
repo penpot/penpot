@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.comments
   (:require
@@ -274,7 +274,8 @@
   (ptk/reify ::navigate-to-comment-id
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (if-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-comment-threads {:file-id file-id})
              (rx/map #(d/seek (fn [{:keys [id]}] (= thread-id id)) %))
-             (rx/map navigate-to-comment))))))
+             (rx/map navigate-to-comment))
+        (rx/empty)))))

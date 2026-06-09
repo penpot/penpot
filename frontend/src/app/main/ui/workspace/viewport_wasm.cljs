@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
@@ -53,12 +53,15 @@
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
    [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
+   [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.rulers-state :as rs]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
+   [app.util.theme :as theme]
    [app.util.timers :as ts]
+   [app.util.webapi :as webapi]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -127,7 +130,6 @@
                 vbox
                 vport
                 zoom
-                zoom-inverse
                 edition]}
         (mf/deref refs/workspace-local)
 
@@ -256,6 +258,7 @@
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
+        transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -325,8 +328,16 @@
                                       (not page-transition?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
-        show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
+        rulers-ui                (rs/display-state
+                                  {:layout layout
+                                   :selected-shapes selected-shapes
+                                   :base-objects base-objects})
+        show-rulers?             (:show-rulers? rulers-ui)
+        frame-visible?           (:frame-visible? rulers-ui)
+        offset-x                 (:offset-x rulers-ui)
+        offset-y                 (:offset-y rulers-ui)
+        ruler-selection          (:ruler-selection rulers-ui)
 
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
@@ -359,17 +370,6 @@
              single-select?
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
-
-        selecting-first-level-frame?
-        (and single-select? (cfh/root-frame? first-shape))
-
-        offset-x (if selecting-first-level-frame?
-                   (:x first-shape)
-                   (:x selected-frame))
-
-        offset-y (if selecting-first-level-frame?
-                   (:y first-shape)
-                   (:y selected-frame))
 
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
@@ -404,8 +404,7 @@
                                   false))]
                     (cond
                       init?
-                      (do
-                        (reset! canvas-init? true))
+                      (reset! canvas-init? true)
 
                       (pos? retries)
                       (vreset! timeout-id-ref
@@ -424,9 +423,9 @@
               (js/clearTimeout timeout-id))
             (wasm.api/clear-canvas)))))
 
-    (mf/with-effect [show-text-editor? workspace-editor-state edition]
+    (mf/with-effect [show-text-editor? workspace-editor-state edition @canvas-init? @initialized?]
       (let [active-editor-state (get workspace-editor-state edition)]
-        (when (and show-text-editor? active-editor-state)
+        (when (and show-text-editor? active-editor-state @canvas-init? @initialized?)
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]
@@ -436,9 +435,19 @@
               (st/emit! (dwt/resize-text-editor edition dimension))
               (wasm.api/request-render "content"))))))
 
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (let [canvas (mf/ref-val canvas-ref)
+              cancel (webapi/on-dpr-change
+                      (fn [new-dpr]
+                        (wasm.api/resize-canvas! canvas new-dpr)
+                        (wasm.api/render-ui-only)
+                        (ts/raf (fn [_] (wasm.api/render-sync)))))]
+          cancel)))
+
     (mf/with-effect [vport]
       (when (and @canvas-init? @initialized?)
-        (wasm.api/resize-viewbox (:width vport) (:height vport))
+        (wasm.api/resize-canvas! (mf/ref-val canvas-ref))
         (wasm.api/set-view-box zoom vbox)))
 
     (mf/with-effect [@canvas-init? preview-blend]
@@ -460,7 +469,8 @@
             (wasm.api/initialize-viewport base-objects zoom vbox
                                           :background background
                                           :on-shapes-ready
-                                          #(st/emit! (dw/check-file-position-data file-id)))
+                                          (fn []
+                                            (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
           (when (and (some? vern) (not= vern (mf/ref-val last-vern-ref)))
@@ -490,6 +500,43 @@
                      (if (and has-grid? hover-grid?) @hover-top-frame-id ::no-grid-hover-id)]
       (when (and @canvas-init? hover-grid?)
         (wasm.api/show-grid @hover-top-frame-id)))
+
+    ;; Rulers-wasm: push visibility / offsets / selection band into the
+    ;; render-wasm overlay (always active, no feature flag).
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/push-ruler-theme-colors!)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/push-ruler-theme-colors!)
+           (wasm.api/request-render "rulers-colors-theme")))))
+
+    (mf/with-effect [@canvas-init? frame-visible?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-frame-visible! frame-visible?)
+        (wasm.api/request-render "rulers-frame")))
+
+    (mf/with-effect [@canvas-init? show-rulers?]
+      (when @canvas-init?
+        (wasm.api/set-rulers-visible! show-rulers?)
+        (wasm.api/request-render "rulers-visible")))
+
+    (mf/with-effect [@canvas-init? show-rulers? offset-x offset-y]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-offsets! offset-x offset-y)))
+
+    (mf/with-effect [@canvas-init? show-rulers?
+                     (some-> ruler-selection :x) (some-> ruler-selection :y)
+                     (some-> ruler-selection :width) (some-> ruler-selection :height)]
+      (when (and @canvas-init? show-rulers?)
+        (wasm.api/set-rulers-selection! ruler-selection)
+        (wasm.api/request-render "rulers-selection")))
+
+    ;; Paint background + rulers instantly, before shapes finish loading. Runs
+    ;; after the ruler push effects so the WASM ruler state is already set.
+    (mf/with-effect [@canvas-init? page-id]
+      (when @canvas-init?
+        (wasm.api/render-ui-only)))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -541,8 +588,6 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (* wasm.api/dpr (:width vport 0))
-               :height (* wasm.api/dpr (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
@@ -553,14 +598,20 @@
          [:img {:data-testid "canvas-wasm-transition"
                 :src src
                 :draggable false
+                ;; Full-bleed so the snapshot overlays the canvas 1:1.
                 :style {:position "absolute"
                         :inset 0
                         :width "100%"
                         :height "100%"
                         :object-fit "cover"
                         :pointer-events "none"
-                        ;; use (when page-transition? "blur(4px)") if we don't want the blur on context loss
-                        :filter "blur(4px)"}}]))
+                        ;; Initial load: clip to the live canvas frame (rounded
+                        ;; corner + ruler strips when present) so it shows
+                        ;; through. No frame in hide-UI mode -> no clip.
+                        :clip-path (when (and transition-reveal-rulers? frame-visible?)
+                                     (let [strip (if show-rulers? rulers/ruler-area-size 0)]
+                                       (dm/str "inset(" strip "px 0 0 " strip "px round "
+                                               rulers/canvas-border-radius "px)")))}}]))
 
 
      [:svg.viewport-controls
@@ -772,16 +823,6 @@
        (when show-presence?
          [:& presence/active-cursors
           {:page-id page-id}])
-
-       (when-not hide-ui?
-         [:& rulers/rulers
-          {:zoom zoom
-           :zoom-inverse zoom-inverse
-           :vbox vbox
-           :selected-shapes selected-shapes
-           :offset-x offset-x
-           :offset-y offset-y
-           :show-rulers? show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/typography.scss" as t;
@@ -61,7 +61,7 @@
   flex: 1;
   block-size: 100%;
   inline-size: 100%;
-  padding: 0 var(--sp-m);
+  padding-inline-start: var(--sp-m);
 
   &.is-selectable {
     cursor: pointer;
@@ -77,22 +77,8 @@
   color: var(--color-foreground-secondary);
 }
 
-.typography-name,
-.typography-font {
-  @include t.use-typography("body-small");
-  @include text-ellipsis;
-
-  display: block;
-  align-self: center;
-  margin-inline-start: px2rem(6);
-}
-
 .typography-name {
   color: var(--color-foreground-primary);
-}
-
-.typography-font {
-  color: var(--color-foreground-secondary);
 }
 
 .font-name-wrapper {
@@ -186,17 +172,28 @@
   color: var(--color-foreground-primary);
 }
 
-.typography-name,
-.typography-font {
+.name-block {
   @include t.use-typography("body-small");
   @include text-ellipsis;
 
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-inline-start: px2rem(6);
+  margin: 0;
+  min-inline-size: px2rem(6);
+  padding: 8px 0 8px 6px;
+  max-width: 100%;
+  color: var(--color-foreground-primary);
+}
+
+.typography-name,
+.typography-font {
+  @include t.use-typography("body-small");
+
   min-inline-size: 0;
   color: var(--color-foreground-primary);
+}
+
+.typography-font {
+  margin-inline-start: px2rem(6);
+  color: var(--color-foreground-secondary);
 }
 
 .info-row {

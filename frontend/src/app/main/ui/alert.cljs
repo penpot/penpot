@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.alert
   (:require-macros [app.main.style :as stl])
@@ -27,6 +27,7 @@
            title
            on-accept
            hint
+           hide-actions?
            accept-label
            accept-style] :as props}]
 
@@ -77,11 +78,12 @@
                                     :appearance :ghost}
           hint])]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:div {:class (stl/css :action-buttons)}
-        [:input {:class (stl/css-case :accept-btn true
-                                      :danger (= accept-style :danger)
-                                      :primary (= accept-style :primary))
-                 :type "button"
-                 :value accept-label
-                 :on-click accept-fn}]]]]]))
+      (when-not hide-actions?
+        [:div {:class (stl/css :modal-footer)}
+         [:div {:class (stl/css :action-buttons)}
+          [:input {:class (stl/css-case :accept-btn true
+                                        :danger (= accept-style :danger)
+                                        :primary (= accept-style :primary))
+                   :type "button"
+                   :value accept-label
+                   :on-click accept-fn}]]])]]))

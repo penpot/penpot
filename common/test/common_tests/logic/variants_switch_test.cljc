@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.variants-switch-test
   (:require
@@ -2866,18 +2866,14 @@
     (t/is (= (get-in rect02' [:selrect :width]) 150))))
 
 
-(t/deftest test-switch-when-source-master-child-has-touched-geometry
-  ;; Regression: when the previous-shape's geometry has sub-pixel drift
+(t/deftest test-switch-skips-composite-geometry-with-subpixel-drift
+  ;; Regression: when the previous-shape's geometry only has sub-pixel drift
   ;; relative to its source master (a state produced by interactive transform
   ;; modifiers, e.g. alt-drag duplicate of a variant whose children are
-  ;; component copies), the equal-geometry? guard in update-attrs-on-switch
-  ;; uses exact equality and fails. The :else branch then copies
-  ;; previous-shape's :selrect verbatim onto the freshly-instantiated target,
-  ;; leaving :y correct (the per-attr y skip catches that) but :selrect.y
-  ;; stale. The shape ends up internally inconsistent (:y disagrees with
-  ;; :selrect.y); the renderer reads :selrect, so the child appears at the
-  ;; source variant's position inside a parent that has resized to the
-  ;; target's dimensions — the visible "cut off" symptom.
+  ;; component copies), equal-geometry? must classify it as unchanged and skip
+  ;; copying composite geometry. Otherwise, :selrect/:points can carry stale
+  ;; absolute positions from the source variant onto the freshly-instantiated
+  ;; target, producing the visible "cut off" symptom.
   (let [;; ==== Setup
         ;; A self-contained Input/Button-like component, plus a variant
         ;; container whose two variants each instance that component
@@ -2911,8 +2907,8 @@
         ;; The copy carries an Input/Button instance (Frame1). Introduce
         ;; sub-pixel drift in its :width and :selrect.width — the kind of
         ;; floating-point error produced by the alt-drag modifier path in
-        ;; production. This drift is what defeats equal-geometry?'s
-        ;; exact-equality comparison and lets the bug surface.
+        ;; production. The drift is small enough to be treated as unchanged
+        ;; geometry by equal-geometry?.
         page          (thf/current-page file)
         copy01        (ths/get-shape file :copy01)
         copy-btn-id   (->> (cfh/get-children-ids-with-self (:objects page) (:id copy01))
@@ -2970,3 +2966,138 @@
     ;; its :selrect.y is internally inconsistent and renders incorrectly.
     (t/is (= post-btn-rel-y post-btn-selrect-rel-y)
           ":y and :selrect.y must agree after switch")))
+
+(t/deftest test-switch-does-not-override-path-content-when-only-repositioned
+  ;; Regression: when a path shape inside a variant has :geometry-group touched
+  ;; (e.g. because auto-layout repositioned it after the copy's parent was
+  ;; resized), switching variants must NOT copy the old variant's path position
+  ;; to the new variant. The path should stay at the new variant's default position.
+  ;;
+  ;; Root cause: equal-geometry? did not handle the :content attr for path shapes,
+  ;; so switch-path-change-value was always invoked and placed the new path at the
+  ;; pre-switch absolute position instead of the target master's default position.
+  (let [;; A small closed triangle path whose bounding box is 24x14 px,
+        ;; anchored at absolute position (x0, y0).
+        triangle (fn [x0 y0]
+                   [{:command :move-to :params {:x x0 :y y0}}
+                    {:command :line-to :params {:x (+ x0 24) :y y0}}
+                    {:command :line-to :params {:x (+ x0 12) :y (+ y0 14)}}
+                    {:command :close-path}])
+
+        ;; V1 has the path at y=10; V2 has the same-shape path at y=30.
+        file     (-> (thf/sample-file :file1)
+                     (thv/add-variant :v01 :c01 :m01 :c02 :m02
+                                      {:variant1-params {:width 100 :height 100}
+                                       :variant2-params {:width 100 :height 100}})
+                     (ths/add-sample-shape :path1 :type :path
+                                           :parent-label :m01
+                                           :content (triangle 0 10))
+                     (ths/add-sample-shape :path2 :type :path
+                                           :parent-label :m02
+                                           :content (triangle 0 30))
+                     (thc/instantiate-component :c01 :copy01))
+
+        ;; Simulate auto-layout repositioning the path inside the copy by
+        ;; moving it to y=50. This touches :geometry-group on the copy's path.
+        page     (thf/current-page file)
+        copy01   (ths/get-shape file :copy01)
+        copy-path (->> (cfh/get-children-with-self (:objects page) (:id copy01))
+                       (filter #(= :path (:type %)))
+                       first)
+        changes  (cls/generate-update-shapes
+                  (pcb/empty-changes nil (:id page))
+                  #{(:id copy-path)}
+                  #(gsh/absolute-move % (gpt/point (:x %) 50))
+                  (:objects page) {})
+        file     (thf/apply-changes file changes)
+
+        ;; Switch copy01 from V1 (c01) to V2 (c02).
+        file'    (tho/swap-component-in-shape file :copy01 :c02 {:keep-touched? true})
+
+        page'      (thf/current-page file')
+        copy01'    (ths/get-shape file' :copy01)
+        copy-path' (->> (cfh/get-children-with-self (:objects page') (:id copy01'))
+                        (filter #(= :path (:type %)))
+                        first)
+
+        ;; Expected: V2's path sits at y=30 (its master default), not y=50
+        ;; (the pre-switch repositioned position).
+        m02      (ths/get-shape file :m02)
+        path2    (ths/get-shape file :path2)
+        target-rel-y (- (-> path2 :selrect :y) (-> m02 :selrect :y))
+        actual-rel-y (- (-> copy-path' :selrect :y) (-> copy01' :selrect :y))]
+
+    (t/is (some? copy-path') "path should exist in switched copy")
+    (t/is (= target-rel-y actual-rel-y)
+          (str "path :selrect.y should match target master layout (expected "
+               target-rel-y " got " actual-rel-y ")"))))
+
+
+(t/deftest test-switch-preserves-size-override-at-target-position
+  (let [move-to   (fn [shape x y]
+                    (gsh/move shape (gpt/point (- x (:x shape))
+                                               (- y (:y shape)))))
+
+        ;; ==== Setup: each variant contains the same nested component instance.
+        ;; The nested instance has identical size in both variants, but a different
+        ;; position relative to the variant root.
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component
+                       :nested-component :nested-main :nested-label
+                       :root-params {:width 100 :height 50}
+                       :child-params {:width 30 :height 10})
+                      (thv/add-variant-with-copy
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02 :nested-component))
+
+        page      (thf/current-page file)
+        r01       (ths/get-shape file :r01)
+        r02       (ths/get-shape file :r02)
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(:id r01) (:id r02)}
+                                              (fn [shape]
+                                                (cond
+                                                  (= (:id shape) (:id r01)) (move-to shape 20 100)
+                                                  (= (:id shape) (:id r02)) (move-to shape 20 70)
+                                                  :else shape))
+                                              (:objects page)
+                                              {})
+        file      (thf/apply-changes file changes)
+
+        file      (thc/instantiate-component file :c01
+                                             :copy01
+                                             :children-labels [:copy-r01])
+        page      (thf/current-page file)
+        copy01    (ths/get-shape file :copy01)
+        copy-r01  (get-in page [:objects (-> copy01 :shapes first)])
+
+        ;; This is a real geometry override, not float drift. The switch should
+        ;; preserve the overridden size while anchoring composite geometry to
+        ;; the target variant's position.
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(:id copy-r01)}
+                                              (fn [shape]
+                                                (let [new-width 150
+                                                      sr        (:selrect shape)
+                                                      new-sr    (-> sr
+                                                                    (assoc :width new-width)
+                                                                    (assoc :x2 (+ (:x1 sr) new-width)))]
+                                                  (-> shape
+                                                      (assoc :width new-width)
+                                                      (assoc :selrect new-sr)
+                                                      (assoc :touched #{:geometry-group}))))
+                                              (:objects page)
+                                              {})
+        file      (thf/apply-changes file changes)
+
+        ;; ==== Action
+        file'     (tho/swap-component-in-shape file :copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        page'     (thf/current-page file')
+        copy02'   (ths/get-shape file' :copy02)
+        rect02'   (get-in page' [:objects (-> copy02' :shapes first)])]
+
+    ;; The width override is preserved, but the target variant position remains
+    ;; authoritative for absolute composite geometry.
+    (t/is (= 150 (:width rect02')))
+    (t/is (= (+ (:y copy02') 70) (:y rect02')))
+    (t/is (= (:y rect02') (get-in rect02' [:selrect :y])))))

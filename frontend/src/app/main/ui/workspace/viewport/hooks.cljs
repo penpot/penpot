@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.hooks
   (:require
@@ -185,6 +185,7 @@
         hover-disabled-ref (mf/use-ref hover-disabled?)
         focus-ref (mf/use-ref focus)
         transform-ref (mf/use-ref transform)
+        read-only-ref (mf/use-ref read-only?)
 
         last-point-ref (mf/use-var nil)
         mod-str (mf/use-memo #(rx/subject))
@@ -256,11 +257,15 @@
      (mf/deps transform)
      #(mf/set-ref-val! transform-ref transform))
 
+    (mf/use-effect
+     (mf/deps read-only?)
+     #(mf/set-ref-val! read-only-ref read-only?))
+
     (hooks/use-stream
      over-shapes-stream-debounced
      (mf/deps objects)
      (fn [_]
-       (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref)))))
+       (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref) nil (mf/ref-val read-only-ref)))))
 
     ;; This ref is a cache of sorted ids. Sorting is expensive so we save the list
     (let [sorted-ids-cache (mf/use-ref {})]
