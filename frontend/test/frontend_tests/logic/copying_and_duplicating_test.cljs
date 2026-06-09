@@ -562,3 +562,74 @@
              ;;  Total = 1 + 2 + 3 + 4 + 2 + 3 + 4 + 4 + 3 + 2 + 1 = 29
              (t/is (= (count (:objects page')) 29)))))))))
 
+;; ---------------------------------------------------------------------------
+;; Tests for issue-14302
+;; Pasting a board with text shapes must clear stale position-data so the
+;; workspace can remeasure the text and avoid incorrect line breaks.
+;; ---------------------------------------------------------------------------
+
+(defn- setup-board-with-texts
+  "Two-page file. Page 1 has a board with two text shapes that carry stale
+   position-data (simulating a shape that was already laid out on a
+   different page). Page 2 is empty. Current page is page-1."
+  []
+  (let [stale-pd [{:x 999 :y 999 :width 999 :height 20 :fills [] :text "stale"}]]
+    (-> (cthf/sample-file :file1 :page-label :page-1)
+        (ctho/add-frame :frame-1 :name "board-with-texts")
+        (cths/add-sample-shape :text-a :type :text :parent-label :frame-1 :name "text-a")
+        (cths/update-shape :text-a :position-data stale-pd)
+        (cths/add-sample-shape :text-b :type :text :parent-label :frame-1 :name "text-b")
+        (cths/update-shape :text-b :position-data stale-pd)
+        (cthf/add-sample-page :page-2)
+        (cthf/switch-to-page :page-1))))
+
+(t/deftest paste-to-empty-page-clears-text-position-data
+  "Regression for issue-14302: copying a board with text shapes and pasting
+   onto an empty page produced incorrect line breaks because stale
+   position-data from the source page was preserved."
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file   (setup-board-with-texts)
+            store  (ths/setup-store file)
+            ;; copy-paste-shape handles initialize-page + select-shape (needed
+            ;; for calculate-paste-position) + paste-shapes + return to page-1
+            events (copy-paste-shape :frame-1 file
+                                     :target-page-label :page-2
+                                     :target-container-id uuid/zero)]
+
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file'        (ths/get-file-from-state new-state)
+                 page-2       (cthf/get-page file' :page-2)
+                 pasted-texts (->> (vals (:objects page-2))
+                                   (filter #(= :text (:type %))))]
+             (t/is (= 2 (count pasted-texts))
+                   "Both text shapes are pasted onto the empty page")
+             (t/is (every? #(nil? (:position-data %)) pasted-texts)
+                   "Pasted text shapes have nil position-data so they get remeasured"))))))))
+
+(t/deftest paste-to-same-page-clears-text-position-data
+  "Position-data is stripped on paste regardless of destination page."
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file   (setup-board-with-texts)
+            store  (ths/setup-store file)
+            events (copy-paste-shape :frame-1 file
+                                     :target-container-id uuid/zero)]
+
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file'        (ths/get-file-from-state new-state)
+                 page-1'      (cthf/get-page file' :page-1)
+                 ;; Pasted copies have IDs not registered in idmap — they show
+                 ;; up as "<no-label …>" strings from cthi/label.
+                 pasted-texts (->> (vals (:objects page-1'))
+                                   (filter #(= :text (:type %)))
+                                   (remove #(keyword? (cthi/label (:id %)))))]
+             (t/is (= 2 (count pasted-texts))
+                   "Two new text shapes are pasted onto the same page")
+             (t/is (every? #(nil? (:position-data %)) pasted-texts)
+                   "Pasted text shapes have nil position-data"))))))))
+
