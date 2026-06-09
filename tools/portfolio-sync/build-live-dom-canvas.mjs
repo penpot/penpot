@@ -14,11 +14,11 @@
  *      buttons, controls, images, <hr> and CSS divider/border lines, and
  *      <svg> placeholders. Pages are harvested in parallel.
  *
- *   2. The matching Penpot board is grown to the document height, the existing
- *      screenshot child is reparented + resized to the new board frame and
- *      faded so the layout still hints behind the text, and every other prior
- *      generated child is wiped (shapes whose name starts with the preserve
- *      prefix survive). Idempotent across reruns.
+ *   2. The matching Penpot board is grown to the document height, every prior
+ *      generated child is wiped, and every fill-image rect underneath (a
+ *      legacy "screenshot-backdrop" from older builds, or any orphan) is
+ *      removed too. Shapes whose name starts with the preserve prefix
+ *      survive. Idempotent across reruns.
  *
  *   3. Each captured element becomes a penpot.createText (or createRectangle
  *      for lines, svg placeholders, controls, images). Hyperlinks get a link
@@ -28,7 +28,6 @@
  *
  * Flags:
  *   --page <name>                only build one of {home,consulting,blog}
- *   --reset-board                drop the screenshot backdrop too (clean slate)
  *   --batch <n>                  override batch size (default 24)
  *   --preserve-prefix <str>      shapes whose name starts with this prefix
  *                                survive the wipe (default "preserve-")
@@ -56,6 +55,9 @@ const ALL_PAGES      = cfg.pages || [
 ];
 
 const args        = process.argv.slice(2);
+// `--reset-board` used to drop the screenshot backdrop; backdrops are now
+// always removed, so the flag is accepted for backwards-compatibility but
+// has no effect. Kept so old wrappers / docs don't break.
 const RESET_BOARD = args.includes('--reset-board');
 const PAGE_IDX    = args.indexOf('--page');
 const PAGE_PICK   = PAGE_IDX !== -1 ? args[PAGE_IDX + 1] : null;
@@ -1233,7 +1235,7 @@ function shapeJs(item, boardX = 0, boardY = 0) {
 
 // ─── Board preparation + shape creation ──────────────────────────────────────
 
-async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard, preservePrefix, bgColor) {
+async function prepareBoard(sid, boardName, docWidth, docHeight, _resetBoardDeprecated, preservePrefix, bgColor) {
   const preserveJs = JSON.stringify(preservePrefix || '');
   // Reason: BOARD_BG is the fallback when DOM harvest failed to capture a
   // page-specific bg (transparent body+html, or undefined). Pages with a real
@@ -1257,64 +1259,40 @@ const boardY = board.y;
 const newW = Math.max(800, Math.round(${docWidth}));
 const newH = Math.max(600, Math.round(${docHeight}));
 
-// Capture children BEFORE resize — geometry needs to be remembered relative to
-// the pre-resize board so we can reposition the screenshot correctly.
+// Wipe ALL screenshot-backdrop rectangles. Earlier versions kept a faded
+// full-page screenshot underneath each board as a "design reference," but
+// that imprint reads as a ghost overlay in Penpot proper (the :9006
+// preview already skips it, but Penpot itself does not). Any site
+// rebuilt now starts and stays backdrop-free; nothing here depends on
+// the existence of the screenshot.
 const childrenBefore = cur.findShapes().filter(s => s.parent && s.parent.id === board.id);
 const fillImgFinder = s => s.type === 'rectangle' && s.fills && s.fills.some(f => f && (f.fillImage || f.fillImageUrl || f.fillImageData));
-let screenshot = childrenBefore.find(fillImgFinder);
 
 board.resize(newW, newH);
 board.clipContent = true;
 board.fills = [{ fillColor: ${fillColorJs} }];
 
-// Resize the screenshot child to cover the new board (preserves backdrop intent).
-// Reason: shape.x/.y after appendChild is ABSOLUTE canvas space, so anchor
-// the backdrop to the board's actual top-left, not (0,0).
-if (screenshot) {
-  screenshot.resize(newW, newH);
-  screenshot.x = boardX; screenshot.y = boardY;
-}
-
-// Adopt any top-level orphaned fill-image rect that looks like our screenshot.
-// Match by fillImage presence + parent==root, not by literal "<name>.png" name.
+// Sweep any top-level orphaned fill-image rect left over from older builds.
+// Match by fillImage presence + parent==root, not by literal "<name>.png".
 const orphans = cur.findShapes()
   .filter(s => s.parent && s.parent.id === '00000000-0000-0000-0000-000000000000')
   .filter(s => fillImgFinder(s));
-for (const o of orphans) {
-  if (!screenshot) {
-    board.appendChild(o);
-    o.resize(newW, newH);
-    o.x = boardX; o.y = boardY;
-    screenshot = o;
-  } else {
-    o.remove();
-  }
-}
+for (const o of orphans) o.remove();
 
-// Wipe every other previously-generated child. Keep the screenshot (or remove it
-// entirely when --reset-board is set).
+// Wipe every previously-generated child, including any existing backdrop.
+// Preserved-prefix shapes survive, as do shapes the caller added by hand.
 const preservePrefix = ${preserveJs};
 const boardChildren = cur.findShapes().filter(s => s.parent && s.parent.id === board.id);
-// Reason: --preserve-prefix lets users keep hand-added shapes across rebuilds.
 const preserved = boardChildren.filter(s => preservePrefix && s.name && s.name.startsWith(preservePrefix));
 const toRemove = boardChildren
-  .filter(s => !screenshot || s.id !== screenshot.id)
   .filter(s => !(preservePrefix && s.name && s.name.startsWith(preservePrefix)));
 let removed = 0;
 for (const c of toRemove) { c.remove(); removed++; }
-if (${resetBoard ? 'true' : 'false'} && screenshot) { screenshot.remove(); screenshot = null; removed++; }
-
-// Fade the screenshot so the live shapes read on top.
-if (screenshot) {
-  screenshot.opacity = 0.08;
-  screenshot.name = 'screenshot-backdrop';
-}
 
 return {
   boardId: board.id,
   boardX, boardY,
   w: board.width, h: board.height,
-  screenshot: screenshot ? { id: screenshot.id, name: screenshot.name } : null,
   removed,
   preserved: preserved.length,
 };
@@ -1412,8 +1390,8 @@ return { switched: penpot.currentPage.name, fallback: !named && target ? target.
 
     const prep = await prepareBoard(sid, page.name, h.docWidth, h.docHeight, RESET_BOARD, PRESERVE_PREFIX, h.pageBg);
     if (!prep?.result) { console.log(`  prepareBoard failed: ${JSON.stringify(prep)}`); continue; }
-    const { boardId, boardX, boardY, removed, preserved, screenshot } = prep.result;
-    console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0}; backdrop=${screenshot ? screenshot.name : 'none'})`);
+    const { boardId, boardX, boardY, removed, preserved } = prep.result;
+    console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0})`);
 
     const batches = await createShapesInBatches(sid, boardId, boardX, boardY, h.items, BATCH_SIZE);
     const totalCreated = batches.reduce((a, b) => a + (b?.result?.created || 0), 0);
