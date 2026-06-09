@@ -274,6 +274,118 @@ const DOM_HARVEST_FN = () => {
 
   const out = [];
 
+  // ── New media passes (videos, iframes, CSS background-images, pictures) ──
+  // Reason: these run BEFORE the text walk so bg-image rectangles emit FIRST
+  // in `out`; Penpot's render order is creation order, so text shapes that
+  // come from later passes correctly stack on top.
+
+  // CSS background-image — every visible element whose computed style has a
+  // background-image URL (not a gradient). Skip if the URL is a gradient
+  // (linear-gradient, radial-gradient, conic-gradient) since those aren't
+  // real images and would emit useless empty bg-image placeholders.
+  const seenBgKey = new Set();
+  for (const el of root.querySelectorAll('*')) {
+    if (!isVisible(el)) continue;
+    const s = window.getComputedStyle(el);
+    const bg = s.backgroundImage;
+    if (!bg || bg === 'none') continue;
+    // Reject anything that's purely gradient(s) — linear-gradient(...),
+    // radial-gradient(...), conic-gradient(...), or layered combos thereof.
+    if (/gradient\s*\(/i.test(bg) && !/url\s*\(/i.test(bg)) continue;
+    // Extract the first url(...) — if there's no real url, skip.
+    const urlMatch = bg.match(/url\(\s*(['"]?)([^'")]+)\1\s*\)/);
+    if (!urlMatch) continue;
+    const bgUrl = urlMatch[2];
+    if (!bgUrl || bgUrl.startsWith('data:')) {
+      // data: URIs are usually decorative SVG sprites — skip; treating them
+      // as bg-image placeholders adds noise without information.
+      continue;
+    }
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) continue;
+    const x = r.left + window.scrollX;
+    const y = r.top + window.scrollY;
+    // Dedupe coplanar bg-images that share the same URL + bbox (rare, but
+    // a parent/child can both carry the same background-image via inheritance
+    // in edge CSS cases).
+    const key = `bg:${Math.round(x)}:${Math.round(y)}:${Math.round(r.width)}:${Math.round(r.height)}:${bgUrl}`;
+    if (seenBgKey.has(key)) continue;
+    seenBgKey.add(key);
+    out.push({
+      kind: 'bg-image',
+      text: '',
+      tag: el.tagName.toLowerCase(),
+      src: bgUrl,
+      backgroundSize: s.backgroundSize || 'auto',
+      backgroundPosition: s.backgroundPosition || 'center',
+      x, y, w: r.width, h: r.height,
+    });
+  }
+
+  // <video> — capture src/poster + playback attrs.
+  for (const el of root.querySelectorAll('video')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    // <video> src may be on the element OR on an inner <source>.
+    const src = el.getAttribute('src') ||
+                el.querySelector('source')?.getAttribute('src') || '';
+    out.push({
+      kind: 'video',
+      text: '', tag: 'video',
+      src,
+      poster: el.getAttribute('poster') || '',
+      autoplay: el.hasAttribute('autoplay'),
+      loop: el.hasAttribute('loop'),
+      muted: el.hasAttribute('muted'),
+      controls: el.hasAttribute('controls'),
+      x: r.left + window.scrollX, y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+    });
+  }
+
+  // <iframe> — capture as placeholder. Detect host and emit a richer label
+  // for YouTube embeds (youtube.com/embed/<id>).
+  for (const el of root.querySelectorAll('iframe')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    const src = el.getAttribute('src') || '';
+    let host = '';
+    let label = '';
+    try {
+      const u = new URL(src, document.baseURI);
+      host = u.host;
+      if (/youtube\.com$/.test(host) || host === 'www.youtube.com' || host === 'youtube.com') {
+        const m = u.pathname.match(/\/embed\/([\w-]+)/);
+        if (m) label = `youtube embed: ${m[1]}`;
+        else label = `youtube: ${u.pathname}`;
+      } else if (/player\.vimeo\.com$/.test(host) || host === 'player.vimeo.com') {
+        const m = u.pathname.match(/\/video\/(\d+)/);
+        label = m ? `vimeo embed: ${m[1]}` : `vimeo: ${u.pathname}`;
+      } else if (/codepen\.io$/.test(host)) {
+        label = `codepen: ${u.pathname}`;
+      } else if (/codesandbox\.io$/.test(host)) {
+        label = `codesandbox: ${u.pathname}`;
+      } else {
+        label = `iframe: ${host}`;
+      }
+    } catch (_) {
+      host = '';
+      label = `iframe: ${src.slice(0, 60)}`;
+    }
+    out.push({
+      kind: 'iframe',
+      text: '', tag: 'iframe',
+      src, host, label,
+      allow: el.getAttribute('allow') || '',
+      x: r.left + window.scrollX, y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+    });
+  }
+
+  // <picture> is intentionally NOT captured directly — its inner <img> already
+  // gets the bbox and renders correctly. The <picture> element itself has no
+  // rendering box. Verified by getBoundingClientRect returning 0×0 on Chromium.
+
   // Reason: <code> and <pre> are in SELECTOR_BLOCK to catch standalone code
   // blocks, but inline <code> inside <li>/<p>/<h*> would double-capture and
   // visually mash on top of its parent. Skip nested instances.
@@ -656,6 +768,99 @@ function shapeJs(item) {
 }`;
   }
 
+  if (item.kind === 'video') {
+    // Reason: Penpot's plugin API exposes `penpot.uploadMediaUrl(name, url)`
+    // which returns a fillImage descriptor. Try to use the poster as the
+    // rectangle's fill; if upload fails (CORS / 404 / unreachable), fall
+    // back to a dark grey rect with a centered "▶ video" label.
+    const label = 'video: ' + ((item.src || '').slice(0, 80));
+    const posterJs = item.poster ? JSON.stringify(item.poster) : 'null';
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(label)};
+  r.resize(${w}, ${h});
+  let fillSet = false;
+  const poster = ${posterJs};
+  if (poster) {
+    try {
+      const img = await penpot.uploadMediaUrl('video-poster', poster);
+      if (img) { r.fills = [{ fillOpacity: 1, fillImage: img }]; fillSet = true; }
+    } catch (e) { /* swallow — fall back to grey */ }
+  }
+  if (!fillSet) {
+    r.fills = [{ fillColor: '#2a2a2a' }];
+  }
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  // Centered "▶ video" overlay so the placeholder is recognisable on canvas.
+  const t = penpot.createText('▶ video');
+  t.fontFamily = 'Work Sans';
+  t.fontSize = '${Math.max(12, Math.min(24, Math.round(Math.min(w, h) / 8)))}';
+  t.fontWeight = '600';
+  t.fills = [{ fillColor: '#ffffff' }];
+  t.growType = 'auto-height';
+  t.resize(${Math.max(80, Math.round(w / 2))}, 32);
+  t.name = 'video-label';
+  board.appendChild(t);
+  t.x = ${x + Math.round(w / 2) - Math.max(40, Math.round(w / 4))};
+  t.y = ${y + Math.round(h / 2) - 16};
+  return { kind: 'video', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'iframe') {
+    const labelText = (item.label || ('iframe: ' + (item.host || ''))).slice(0, 80);
+    const nameLabel = 'iframe: ' + ((item.src || '').slice(0, 80));
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(nameLabel)};
+  r.fills = [{ fillColor: '#f0f0f0' }];
+  r.strokes = [{ strokeColor: '#888888', strokeStyle: 'dashed', strokeAlignment: 'inner', strokeWidth: 1 }];
+  r.resize(${w}, ${h});
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  const t = penpot.createText(${JSON.stringify(labelText)});
+  t.fontFamily = 'Work Sans';
+  t.fontSize = '${Math.max(11, Math.min(18, Math.round(Math.min(w, h) / 10)))}';
+  t.fontWeight = '500';
+  t.fills = [{ fillColor: '#555555' }];
+  t.growType = 'auto-height';
+  t.resize(${Math.max(120, Math.round(w * 0.7))}, 24);
+  t.name = 'iframe-label';
+  board.appendChild(t);
+  t.x = ${x + 12};
+  t.y = ${y + Math.round(h / 2) - 12};
+  return { kind: 'iframe', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'bg-image') {
+    const label = 'bg-image: ' + ((item.src || '').slice(0, 80));
+    const srcJs = JSON.stringify(item.src || '');
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(label)};
+  r.resize(${w}, ${h});
+  let fillSet = false;
+  try {
+    const img = await penpot.uploadMediaUrl('bg-image', ${srcJs});
+    if (img) { r.fills = [{ fillOpacity: 1, fillImage: img }]; fillSet = true; }
+  } catch (e) { /* swallow */ }
+  if (!fillSet) {
+    r.fills = [{ fillColor: '#eeeeee' }];
+    r.strokes = [{ strokeColor: '#cccccc', strokeStyle: 'dashed', strokeAlignment: 'inner', strokeWidth: 1 }];
+  } else {
+    r.strokes = [];
+  }
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  return { kind: 'bg-image', id: r.id };
+}`;
+  }
+
   if (item.kind === 'svg') {
     const label = 'svg: ' + (item.viewBox || '');
     return `
@@ -783,7 +988,10 @@ async function createShapesInBatches(sid, boardId, items, batchSize) {
   const batches = chunk(items, batchSize);
   const results = [];
   for (const batch of batches) {
-    const body = batch.map(item => `out.push((() => ${shapeJs(item)})());`).join('\n');
+    // Reason: video / bg-image branches await `penpot.uploadMediaUrl(...)`,
+    // so each IIFE is async and we await its resolved value before pushing.
+    // For sync branches the await is a no-op.
+    const body = batch.map(item => `out.push(await (async () => ${shapeJs(item)})());`).join('\n');
     const code = `
 const cur = penpot.currentPage;
 const board = cur.findShapes().find(s => s.id === ${JSON.stringify(boardId)});

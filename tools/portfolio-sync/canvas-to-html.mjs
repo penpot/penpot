@@ -182,6 +182,12 @@ function classifyShape(s) {
   if (name.startsWith('control:')) return { kind: 'control', tag: (s.name.slice(8) || '').trim() };
   if (name.startsWith('img:'))     return { kind: 'image',   alt: (s.name.slice(4) || '').trim() };
   if (name.startsWith('svg:'))     return { kind: 'svg' };
+  if (name.startsWith('video:'))    return { kind: 'video',    src: (s.name.slice(6) || '').trim() };
+  if (name.startsWith('iframe:'))   return { kind: 'iframe',   src: (s.name.slice(7) || '').trim() };
+  if (name.startsWith('bg-image:')) return { kind: 'bg-image', src: (s.name.slice(9) || '').trim() };
+  // video/iframe placeholders write a separate "video-label"/"iframe-label"
+  // text shape — skip rendering, the placeholder div already shows the label.
+  if (name === 'video-label' || name === 'iframe-label') return { kind: 'media-label' };
   if (name === 'line')             return { kind: 'line' };
   if (name === 'screenshot-backdrop') return { kind: 'backdrop' };
   if (name === 'heading' || /^h[1-6]$/.test(name)) return { kind: 'heading' };
@@ -248,6 +254,43 @@ function renderShape(s) {
   if (k.kind === 'backdrop') {
     // Screenshot backdrop is faded on the canvas — replicate as a faint label.
     return ''; // skip entirely; the section background carries enough context
+  }
+
+  if (k.kind === 'media-label') {
+    // Label is baked into the video/iframe placeholder div below — skip
+    // duplicate rendering of the standalone Penpot text shape.
+    return '';
+  }
+
+  if (k.kind === 'video') {
+    // Reason: src lives in the shape name ("video: <src>"). Use the poster
+    // via background-image if Penpot stored one in the fill (best-effort —
+    // we can't read the image bytes back through MCP cheaply, so we render
+    // a dark placeholder with a centered "▶ video" label that matches the
+    // canvas appearance).
+    const src = (k.src || '').slice(0, 120);
+    const bg = s.hasFillImage ? '#1a1a1a' : (s.fillColor || '#2a2a2a');
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:${escapeAttr(bg)};display:flex;align-items:center;justify-content:center;color:#fff;font:600 16px system-ui,sans-serif;box-sizing:border-box">▶ video</div>`;
+  }
+
+  if (k.kind === 'iframe') {
+    // Reason: render the host as a label inside a dashed-border placeholder.
+    // Don't embed the actual iframe — embedding arbitrary URLs is a load /
+    // security concern (mixed content, third-party cookies, CSP).
+    const src = (k.src || '').slice(0, 120);
+    let host = '';
+    try { host = new URL(src).host; } catch (_) { host = src.slice(0, 40); }
+    const label = `iframe: ${host}`;
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background:#f0f0f0;border:1px dashed #888;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#555;font:500 13px system-ui,sans-serif;text-align:center;padding:8px">${escapeHtml(label)}</div>`;
+  }
+
+  if (k.kind === 'bg-image') {
+    // Reason: render as a div whose background-image is the original URL.
+    // background-size: cover + background-position: center mirrors the
+    // dominant CSS pattern; pages that use `background-size: contain` lose
+    // a tiny bit of fidelity but the bbox is correct.
+    const src = (k.src || '').slice(0, 200);
+    return `<div title="${escapeAttr(src)}" style="${baseStyle}height:${s.h}px;background-image:url('${escapeAttr(src)}');background-size:cover;background-position:center;background-repeat:no-repeat"></div>`;
   }
 
   if (k.kind === 'line') {
