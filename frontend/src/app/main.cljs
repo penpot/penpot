@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main
   (:require
@@ -76,11 +76,8 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (if (contains? cf/flags :audit-log)
-         (rx/of (ev/initialize))
-         (rx/empty))
-
-       (rx/of (dp/refresh-profile))
+       (rx/of (ev/initialize)
+              (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream

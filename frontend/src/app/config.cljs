@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:require
@@ -156,6 +156,7 @@
         (ts/asap #(.reload ^js location true))
         true))))
 
+(def saas?                (obj/get global "penpotIsSaas" false))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
 (def oidc-name            (obj/get global "penpotOIDCName"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))

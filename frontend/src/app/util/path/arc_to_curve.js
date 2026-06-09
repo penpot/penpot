@@ -4,7 +4,7 @@
  * Is a modified and google closure compatible version of the a2c
  * functions by https://github.com/fontello/svgpath
  *
- * @author KALEIDOS INC
+ * @author KALEIDOS INC Sucursal en España SL
  * @license MIT License <https://opensource.org/licenses/MIT>
  */
 

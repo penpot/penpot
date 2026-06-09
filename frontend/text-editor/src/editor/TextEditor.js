@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC
+ * Copyright (c) KALEIDOS INC Sucursal en España SL
  */
 
 import clipboard from "./clipboard/index.js";
@@ -447,15 +447,20 @@ export class TextEditor extends EventTarget {
     if ((e.ctrlKey || e.metaKey) && e.key === "a") {
       e.preventDefault();
       this.selectAll();
-      return;
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
+    } else if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
       e.preventDefault();
       if (this.#selectionController.isCollapsed) {
         this.#selectionController.removeWordBackward();
       } else {
         this.#selectionController.removeSelected();
+      }
+      this.#notifyLayout(LayoutType.FULL);
+    } else if (e.shiftKey && e.key === "Enter") {
+      e.preventDefault();
+      if (this.#selectionController.isCollapsed) {
+        this.#selectionController.insertParagraph();
+      } else {
+        this.#selectionController.replaceWithParagraph();
       }
       this.#notifyLayout(LayoutType.FULL);
     }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.constraints
   (:require
@@ -264,7 +264,7 @@
       :scale)))
 
 (defn normalize-modifiers
-  "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
+  "Before applying constraints we need to remove the deformation caused by the resizing of the parent"
   [constraints-h constraints-v modifiers
    child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds]
 

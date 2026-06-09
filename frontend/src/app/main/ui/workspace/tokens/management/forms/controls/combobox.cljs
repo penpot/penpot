@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :as ds]
@@ -60,7 +61,9 @@
                                    resolved-value)]
               (if resolved-value
                 (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+                (rx/of {:error (if errors
+                                 (first errors)
+                                 (wte/error-with-value :error/unknown value))}))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
@@ -74,6 +77,9 @@
 
         error
         (get-in @form [:errors name])
+
+        extra-error
+        (get-in @form [:extra-errors name])
 
         value
         (get-in @form [:data name] "")
@@ -260,11 +266,10 @@
                                      :on-mouse-down dom/prevent-default
                                      :on-click toggle-dropdown}]))})
         props
-        (if (and error touched?)
+        (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)
-
 
         {:keys [style ready?]} (use-floating-dropdown is-open input-wrapper-ref wrapper-ref dropdown-ref)]
 
@@ -280,9 +285,11 @@
                                   (let [touched? (get-in @form [:touched name])]
                                     (when touched?
                                       (if error
-                                        (do
-                                          (swap! form assoc-in [:extra-errors name] {:message error})
-                                          (reset! hint* {:message error :type "error"}))
+                                        (if (csu/group-name-conflict-error? error token-name)
+                                          (swap! form assoc-in [:extra-errors ""] {:message error})
+                                          (do
+                                            (swap! form assoc-in [:extra-errors name] {:message error})
+                                            (reset! hint* {:message error :type "error"})))
                                         (let [message (tr "workspace.tokens.resolved-value" value)]
                                           (swap! form update :extra-errors dissoc name)
                                           (reset! hint* {:message message :type "hint"}))))))))]

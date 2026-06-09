@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.notifications.actionable
   (:require-macros
@@ -34,12 +34,14 @@
 
         on-accept
         (mf/use-fn
+         (mf/deps on-accept)
          (fn [e]
            (when (fn? on-accept)
              (on-accept e))))
 
         on-cancel
         (mf/use-fn
+         (mf/deps on-cancel)
          (fn [e]
            (when on-cancel (on-cancel e))))]
 

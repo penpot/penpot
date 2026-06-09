@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.color
   (:refer-clojure :exclude [test])
@@ -192,6 +192,9 @@
 (def ^:const background-quaternary "#2e3434")
 (def ^:const background-quaternary-light "#eef0f2")
 (def ^:const canvas "#E8E9EA")
+(def ^:const default-pixel-grid-color "#0070E4")
+
+(def ^:const default-pixel-grid-opacity 0.2)
 
 (def names
   {"aliceblue" "#f0f8ff"

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
@@ -68,31 +68,34 @@
             (dom/stop-propagation event)
             (dom/prevent-default event)
 
+            ;; When clicking on a hover point that lies on a segment (has metadata with
+            ;; split params), only insert the node — don't also run draw-mode actions which
+            ;; would add the same position as an extra endpoint, corrupting the path order
+            ;; and misplacing stroke caps.
             ;; FIXME: revisit this, using meta here breaks equality checks
-            (when (and is-new (some? (meta position)))
-              (st/emit! (drp/create-node-at-position (meta position))))
+            (if (and is-new (some? (meta position)))
+              (st/emit! (drp/create-node-at-position (meta position)))
+              (let [is-shift (kbd/shift? event)
+                    is-mod   (kbd/mod? event)]
+                (cond
+                  is-last
+                  (st/emit! (drp/reset-last-handler))
 
-            (let [is-shift (kbd/shift? event)
-                  is-mod   (kbd/mod? event)]
-              (cond
-                is-last
-                (st/emit! (drp/reset-last-handler))
+                  (and is-move is-mod (not is-curve))
+                  (st/emit! (drp/make-curve position))
 
-                (and is-move is-mod (not is-curve))
-                (st/emit! (drp/make-curve position))
+                  (and is-move is-mod is-curve)
+                  (st/emit! (drp/make-corner position))
 
-                (and is-move is-mod is-curve)
-                (st/emit! (drp/make-corner position))
+                  is-move
+                  ;; If we're dragging a selected item we don't change the selection
+                  (st/emit! (drp/start-move-path-point position is-shift))
 
-                is-move
-                ;; If we're dragging a selected item we don't change the selection
-                (st/emit! (drp/start-move-path-point position is-shift))
+                  (and is-draw is-start-path)
+                  (st/emit! (drp/start-path-from-point position))
 
-                (and is-draw is-start-path)
-                (st/emit! (drp/start-path-from-point position))
-
-                (and is-draw (not is-start-path))
-                (st/emit! (drp/close-path-drag-start position))))))]
+                  (and is-draw (not is-start-path))
+                  (st/emit! (drp/close-path-drag-start position)))))))]
 
     [:g.path-point
      [:circle.path-point

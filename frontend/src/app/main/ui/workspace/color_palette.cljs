@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.color-palette
   (:require-macros [app.main.style :as stl])
@@ -28,7 +28,6 @@
    [app.util.object :as obj]
    [app.util.strings :refer [matches-search]]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc palette-item*
@@ -41,10 +40,10 @@
            (st/emit! (mdc/add-recent-color color)
                      (mdc/apply-color-from-palette color (kbd/alt? event))
                      (when (not= selected :recent)
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-color"
-                                        ::ev/origin "color-palette"
-                                        :external-library (not= selected :file)})))))
+                       (ev/event
+                        {::ev/name "use-library-color"
+                         ::ev/origin "color-palette"
+                         :external-library (not= selected :file)})))))
         title
         (uc/get-color-name color)]
 
@@ -57,7 +56,7 @@
               :type "button"
               :on-click select-color}
      [:> swatch* {:background color :size "medium"}]
-     [:& cb/color-name {:color color :size size :origin :palette}]]))
+     [:> cb/color-name* {:color color :size size :origin :palette}]]))
 
 (mf/defc palette*
   {::mf/wrap [mf/memo]}
