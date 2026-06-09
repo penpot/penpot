@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.flex
   (:require
@@ -13,6 +13,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.plugins.register :as r]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -186,7 +187,6 @@
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
 
-
     :topPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p1 (d/nilv 0))
@@ -260,11 +260,16 @@
         :else
         (let [child-id (obj/get child "$id")
               shape (u/locate-shape file-id page-id id)
+              child-shape (u/locate-shape file-id page-id child-id)
               index
               (if (and (u/natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
                 0
                 (count (:shapes shape)))]
-          (st/emit! (dwsh/relocate-shapes #{child-id} id index)))))
+          (st/emit!
+           (dwsh/relocate-shapes #{child-id} id index)
+           (se/event plugin-id "add-layout-element"
+                     :type (:type child-shape)
+                     :parent-type (:type shape))))))
 
     :horizontalSizing
     {:this true

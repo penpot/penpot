@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.handlers.resources
   "Temporal resources management."
@@ -68,7 +68,6 @@
   [auth-token resource]
   (->> (fsp/readFile (:path resource))
        (p/fmap (fn [buffer]
-                 (js/console.log buffer)
                  (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
        (p/mcat (fn [blob]
                  (let [fdata  (new http/FormData)

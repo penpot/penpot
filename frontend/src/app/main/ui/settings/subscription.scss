@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/typography.scss" as t;
@@ -98,22 +98,20 @@
 .plan-title-icon {
   @extend %button-icon;
 
-  stroke: var(--color-foreground-primary);
   block-size: var(--sp-xl);
   inline-size: var(--sp-xl);
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
-  stroke-width: 2.25px;
-  padding: px2rem(3);
 }
 
 .plan-title-icon svg {
-  block-size: var(--sp-m);
-  inline-size: var(--sp-m);
+  stroke: var(--color-foreground-primary);
+  stroke-width: 2.25px;
 }
 
 .plan-card-title,
-.plan-price-value {
+.plan-price-value,
+.price-value {
   @include t.use-typography("title-medium");
 
   color: var(--color-foreground-primary);
@@ -422,4 +420,20 @@
 .button-full-width {
   justify-content: center;
   inline-size: 100%;
+}
+
+.price-text,
+.nitrate-subscription {
+  margin-block-end: px2rem(30);
+}
+
+.price-text {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-s);
+  margin-block-end: px2rem(34);
+}
+
+.price-value {
+  font-weight: 500;
 }

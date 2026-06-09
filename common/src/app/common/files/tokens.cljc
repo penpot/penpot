@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.tokens
   (:require
@@ -148,11 +148,9 @@
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
 (defn make-node-token-name-schema
-  "Dynamically generates a schema to check a token node name, adding translated error messages
-   and two additional validations:
-    - Min and max length.
-    - Checks if other token with a path derived from the name already exists at `tokens-tree`.
-      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
+  "Dynamically generates a schema to check the name of a token node, that may be a final token or a group.
+   This runs same checks as make-token-name-schema, but for all tokens that will be renamed by this change,
+   if the group already contains tokens."
   [active-tokens tokens-tree node]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
@@ -287,12 +285,18 @@
 
 (defn make-token-theme-schema
   [tokens-lib group name theme-id]
-  (sm/merge
-   ctob/schema:token-theme-attrs
-   [:map
-    [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
-    [:name (make-token-theme-name-schema tokens-lib group theme-id)]
-    [:description {:optional true} schema:token-theme-description]]))
+  [:and
+   (sm/merge
+    ctob/schema:token-theme-attrs
+    [:map
+     [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
+     [:name (make-token-theme-name-schema tokens-lib group theme-id)]
+     [:description {:optional true} schema:token-theme-description]])
+   [:fn {:error/field :sets
+         :error/fn #(tr "errors.token-theme-not-existing-sets" (str/join ", " (:sets (:value %))))}
+    (fn [{:keys [sets]}]
+      (or (nil? tokens-lib)
+          (every? #(ctob/get-set-by-name tokens-lib %) sets)))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

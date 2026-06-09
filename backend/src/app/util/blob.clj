@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.blob
   "A generic blob storage encoding. Mainly used for page data, page
@@ -19,6 +19,7 @@
    java.io.DataOutputStream
    java.io.InputStream
    java.io.OutputStream
+   java.util.Base64
    net.jpountz.lz4.LZ4Compressor
    net.jpountz.lz4.LZ4Factory
    net.jpountz.lz4.LZ4FastDecompressor
@@ -49,6 +50,13 @@
        5 (encode-v5 data)
        (throw (ex-info "unsupported version" {:version version}))))))
 
+(defn encode-str
+  "Encode data to a blob and return it as a URL-safe base64 string
+  (no padding). Accepts the same options as `encode`."
+  (^String [data] (encode-str data nil))
+  (^String [data opts]
+   (.encodeToString (.withoutPadding (Base64/getUrlEncoder)) ^bytes (encode data opts))))
+
 (defn decode
   "A function used for decode persisted blobs in the database."
   [^bytes data]
@@ -62,6 +70,11 @@
         4 (decode-v4 data ulen)
         5 (decode-v5 data)
         (throw (ex-info "unsupported version" {:version version}))))))
+
+(defn decode-str
+  "Decode a URL-safe base64 string produced by `encode-str` back to data."
+  [^String s]
+  (decode (.decode (Base64/getUrlDecoder) s)))
 
 ;; --- IMPL
 

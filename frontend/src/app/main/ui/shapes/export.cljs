@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.export
   "Components that generates penpot specific svg nodes with
@@ -333,6 +333,8 @@
                   :penpot:stroke-opacity        (d/name (:stroke-opacity stroke))
                   :penpot:stroke-style          (d/name (:stroke-style stroke))
                   :penpot:stroke-width          (d/name (:stroke-width stroke))
+                  :penpot:stroke-dash           ((d/nilf str) (:stroke-dash stroke))
+                  :penpot:stroke-gap            ((d/nilf str) (:stroke-gap stroke))
                   :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
                   :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
                   :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))

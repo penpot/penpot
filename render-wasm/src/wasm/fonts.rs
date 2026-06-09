@@ -1,10 +1,9 @@
 use macros::{wasm_error, ToJs};
 
+use crate::get_render_state;
 use crate::mem;
 use crate::shapes::{FontFamily, FontStyle};
 use crate::utils::uuid_from_u32_quartet;
-use crate::with_state_mut;
-use crate::STATE;
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
@@ -41,20 +40,16 @@ pub extern "C" fn store_font(
     is_emoji: bool,
     is_fallback: bool,
 ) -> Result<()> {
-    with_state_mut!(state, {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        let font_bytes = mem::bytes();
-        let font_style = RawFontStyle::from(style);
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let font_bytes = mem::bytes();
+    let font_style = RawFontStyle::from(style);
 
-        let family = FontFamily::new(id, weight, font_style.into());
-        let _ =
-            state
-                .render_state_mut()
-                .fonts_mut()
-                .add(family, &font_bytes, is_emoji, is_fallback);
+    let family = FontFamily::new(id, weight, font_style.into());
+    let _ = get_render_state()
+        .fonts_mut()
+        .add(family, &font_bytes, is_emoji, is_fallback);
 
-        mem::free_bytes()?;
-    });
+    mem::free_bytes()?;
     Ok(())
 }
 
@@ -68,12 +63,10 @@ pub extern "C" fn is_font_uploaded(
     style: u8,
     is_emoji: bool,
 ) -> bool {
-    with_state_mut!(state, {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        let font_style = RawFontStyle::from(style);
-        let family = FontFamily::new(id, weight, font_style.into());
-        let res = state.render_state().fonts().has_family(&family, is_emoji);
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let font_style = RawFontStyle::from(style);
+    let family = FontFamily::new(id, weight, font_style.into());
+    let res = get_render_state().fonts().has_family(&family, is_emoji);
 
-        res
-    })
+    res
 }

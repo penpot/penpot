@@ -255,6 +255,12 @@ impl TextEditorStyles {
     }
 }
 
+impl Default for TextEditorStyles {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct TextEditorTheme {
     pub selection_color: Color,
     pub cursor_color: Color,
@@ -316,6 +322,12 @@ impl TextComposition {
         );
 
         TextSelection { anchor, focus }
+    }
+}
+
+impl Default for TextComposition {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -414,8 +426,6 @@ impl TextEditorState {
         let Some(last_paragraph) = text_content.paragraphs().last() else {
             return false;
         };
-        #[allow(dead_code)]
-        let _num_spans = last_paragraph.children().len() - 1;
         let Some(_last_text_span) = last_paragraph.children().last() else {
             return false;
         };
@@ -877,6 +887,12 @@ impl TextEditorState {
         self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
         true
+    }
+}
+
+impl Default for TextEditorState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

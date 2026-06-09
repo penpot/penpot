@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.annotation
   (:require-macros [app.main.style :as stl])
@@ -12,8 +12,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc annotation
-  [{:keys [content] :as props}]
+(mf/defc annotation*
+  [{:keys [content]}]
   [:div {:class (stl/css :attributes-block)}
    [:> title-bar* {:collapsable false
                    :title       (tr "workspace.options.component.annotation")

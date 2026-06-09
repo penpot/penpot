@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.interactions
   (:require-macros [app.main.style :as stl])
@@ -450,7 +450,9 @@
            [:div {:class (stl/css :interaction-row-select)}
             [:& select {:default-value (str (:destination interaction))
                         :options destination-options
-                        :on-change change-destination}]]])
+                        :on-change change-destination
+                        :searchable? true
+                        :search-placeholder (tr "workspace.options.interaction-destination")}]]])
 
         ;; Preserve scroll
         (when (ctsi/has-preserve-scroll interaction)

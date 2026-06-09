@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.i18n
   "A i18n foundation."
@@ -31,7 +31,7 @@
    {:label "Dutch (community)" :value "nl"}
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
-   {:label "Français - Canada (community)" :value "fr_CA"}
+   {:label "Français - Canada (community)" :value "fr_ca"}
    {:label "Gallego (Community)" :value "gl"}
    {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}

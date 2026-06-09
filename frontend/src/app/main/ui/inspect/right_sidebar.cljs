@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.right-sidebar
   (:require-macros [app.main.style :as stl])
@@ -24,7 +24,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.shape-icon :as usi]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-libraries
@@ -75,7 +74,7 @@
            (when on-change-section
              (on-change-section (keyword new-section))
              (st/emit!
-              (ptk/event ::ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
+              (ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
 
         handle-expand
         (mf/use-fn
@@ -122,7 +121,7 @@
      (mf/deps shapes handle-change-tab)
      (fn []
        (if (seq shapes)
-         (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
+         (st/emit! (ev/event {::ev/name "inspect-mode-click-element"}))
          (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
 
     [:aside {:class (stl/css-case :settings-bar-right true

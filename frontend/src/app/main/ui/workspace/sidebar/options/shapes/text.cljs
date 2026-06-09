@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
@@ -85,28 +85,34 @@
         parents
         (mf/deref parents-by-ids-ref)
 
+        ;; Deref every editor-state ref unconditionally so the hook order
+        ;; stays stable when feature flags change at runtime (e.g. switching
+        ;; renderer while editing a text). The selection happens afterwards.
+        wasm-editor-styles-map (mf/deref refs/workspace-wasm-editor-styles)
+        v2-editor-state-map    (mf/deref refs/workspace-v2-editor-state)
+        v1-editor-state-map    (mf/deref refs/workspace-editor-state)
+        editor                 (mf/deref refs/workspace-editor)
+
+        text-editor-wasm? (features/active-feature? @st/state "text-editor-wasm/v1")
+        text-editor-v2?   (features/active-feature? @st/state "text-editor/v2")
+
         state-map
         (cond
-          (features/active-feature? @st/state "text-editor-wasm/v1")
-          (mf/deref refs/workspace-wasm-editor-styles)
-
-          (features/active-feature? @st/state "text-editor/v2")
-          (mf/deref refs/workspace-v2-editor-state)
-
-          :else
-          (mf/deref refs/workspace-editor-state))
+          text-editor-wasm? wasm-editor-styles-map
+          text-editor-v2?   v2-editor-state-map
+          :else             v1-editor-state-map)
 
         editor-styles
-        (when (features/active-feature? @st/state "text-editor-wasm/v1")
+        (when text-editor-wasm?
           (get state-map id))
 
         editor-state
-        (when (not (features/active-feature? @st/state "text-editor/v2"))
+        (when (not text-editor-v2?)
           (get state-map id))
 
         editor-instance
-        (when (features/active-feature? @st/state "text-editor/v2")
-          (mf/deref refs/workspace-editor))
+        (when text-editor-v2?
+          editor)
 
         fill-values
         (dwt/current-text-values

@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_position_data, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
-        Stroke, StrokeKind, TextContent,
+        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, Stroke, StrokeKind,
+        TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -12,7 +12,7 @@ use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
     textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration, TextStyle},
-    Canvas, ImageFilter, Paint, Path,
+    Canvas, ImageFilter, Paint,
 };
 
 pub fn stroke_paragraph_builder_group_from_text(
@@ -550,78 +550,6 @@ pub fn calculate_decoration_metrics(
         max_strike_thickness,
         strike_y,
     )
-}
-
-#[allow(dead_code)]
-fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
-    paragraphs
-        .iter_mut()
-        .map(|p| {
-            let mut paragraph = p.build();
-            paragraph.layout(width);
-            paragraph.height()
-        })
-        .sum()
-}
-
-#[allow(dead_code)]
-fn calculate_all_paragraphs_height(
-    paragraph_groups: &mut [Vec<ParagraphBuilder>],
-    width: f32,
-) -> f32 {
-    paragraph_groups
-        .iter_mut()
-        .map(|group| {
-            // For stroke groups, only count the first paragraph to avoid double-counting
-            if group.len() > 1 {
-                let mut paragraph = group[0].build();
-                paragraph.layout(width);
-                paragraph.height()
-            } else {
-                calculate_total_paragraphs_height(group, width)
-            }
-        })
-        .sum()
-}
-
-// Render text paths (unused)
-#[allow(dead_code)]
-pub fn render_as_path(
-    render_state: &mut RenderState,
-    paths: &Vec<(Path, Paint)>,
-    surface_id: Option<SurfaceId>,
-) {
-    let canvas = render_state
-        .surfaces
-        .canvas_and_mark_dirty(surface_id.unwrap_or(SurfaceId::Fills));
-
-    for (path, paint) in paths {
-        // Note: path can be empty
-        canvas.draw_path(path, paint);
-    }
-}
-
-#[allow(dead_code)]
-pub fn render_position_data(
-    render_state: &mut RenderState,
-    surface_id: SurfaceId,
-    shape: &Shape,
-    text_content: &TextContent,
-) {
-    let position_data = calculate_position_data(shape, text_content, false);
-
-    let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Stroke);
-    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-    paint.set_stroke_width(2.);
-
-    for pd in position_data {
-        let rect = Rect::from_xywh(pd.x, pd.y, pd.width, pd.height);
-        render_state
-            .surfaces
-            .canvas_and_mark_dirty(surface_id)
-            .draw_rect(rect, &paint);
-    }
 }
 
 // How to use it?

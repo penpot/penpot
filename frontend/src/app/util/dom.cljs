@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.dom
   (:require
@@ -330,6 +330,18 @@
    (create-text globals/document text))
   ([document ^js text]
    (.createTextNode document text)))
+
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
 
 (defn set-html!
   [^js el html]

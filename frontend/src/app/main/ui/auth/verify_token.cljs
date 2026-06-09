@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.verify-token
   (:require
@@ -25,19 +25,11 @@
 (defmulti handle-token (fn [token] (:iss token)))
 
 (defmethod handle-token :verify-email
-  [{:keys [invitation-token] :as data}]
+  [data]
   (cf/external-notify-register-success (:profile-id data))
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 1000 #(st/emit! (ntf/success msg)))
-    ;; If the verify-email JWE carries an :invitation-token, it means
-    ;; the user registered via a team-invitation flow but had to verify
-    ;; their email first. Log them in and then redirect to
-    ;; :auth-verify-token with the invitation token, which will accept
-    ;; the invitation as a logged-in user.
-    (if invitation-token
-      (st/emit! (da/login-from-token data)
-                (rt/nav :auth-verify-token {:token invitation-token}))
-      (st/emit! (da/login-from-token data)))))
+    (st/emit! (da/login-from-token data))))
 
 (defmethod handle-token :change-email
   [_data]
@@ -86,7 +78,7 @@
         ;;   :invalid-token   -> corrupted / unknown / fallback
         bad-token-reason (mf/use-state nil)]
 
-    (mf/with-effect []
+    (mf/with-effect [token]
       (dom/set-html-title (tr "title.default"))
       (->> (rp/cmd! :verify-token {:token token})
            (rx/subs!
