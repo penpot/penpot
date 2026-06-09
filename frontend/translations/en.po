@@ -7217,6 +7217,10 @@ msgstr "Selection blur"
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Toggle blur"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Blur type select"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
