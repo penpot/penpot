@@ -215,10 +215,26 @@ function shapeStyle(s, extra = '') {
 }
 
 function fontShorthand(s) {
-  const fam = s.fontFamily ? `"${s.fontFamily.replace(/"/g, '')}"` : 'system-ui';
-  const size = s.fontSize ? `${parseInt(s.fontSize, 10) || 16}px` : '16px';
+  // Reason: this shorthand is interpolated into `style="..."`. Double quotes
+  // around the family name would terminate the attribute mid-string and the
+  // browser would drop every declaration after it (color, margin, etc.) —
+  // which is exactly what was wrecking the render. Use single quotes inside
+  // the attribute instead, and pick a sensible generic fallback per family
+  // so the system-font fallback at least has the right *shape* if the web
+  // font hasn't loaded.
+  const rawFam  = (s.fontFamily || '').replace(/['"]/g, '').trim();
+  const fam     = rawFam ? `'${rawFam}'` : '';
+  const generic = (() => {
+    const f = rawFam.toLowerCase();
+    if (!f) return 'system-ui, sans-serif';
+    if (f.includes('mono') || f.includes('jetbrains')) return 'ui-monospace, SFMono-Regular, Menlo, monospace';
+    if (f.includes('fraunces') || f.includes('garamond') || f.includes('serif')) return 'Georgia, serif';
+    return 'system-ui, sans-serif';
+  })();
+  const stack  = fam ? `${fam}, ${generic}` : generic;
+  const size   = s.fontSize ? `${parseInt(s.fontSize, 10) || 16}px` : '16px';
   const weight = s.fontWeight || '400';
-  return `${weight} ${size}/1.35 ${fam}, system-ui, sans-serif`;
+  return `${weight} ${size}/1.35 ${stack}`;
 }
 
 function renderShape(s) {
@@ -294,9 +310,24 @@ function buildHtml(boards) {
   }).join('\n');
 
   const css = INLINE_CSS ? `
+    /* Reason: the build script measured every shape's position with these web
+       fonts loaded in headless Chrome. If we render with system fallbacks,
+       every text shape lands at wrong y/x for its width. Load the same
+       Google Fonts the live portfolio uses. */
     body { margin: 0; padding: 0; background: #ececec; font-family: system-ui, sans-serif; }
     .canvas-wrap { display: flex; gap: 32px; padding: 32px; align-items: flex-start; min-width: max-content; }
     section[data-board] { box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden; }
+    /* Reset user-agent defaults that would otherwise override the per-shape
+       inline styles (link color, heading weight/size, button chrome,
+       paragraph margins). All real styling is inline per shape. */
+    section[data-board] h1, section[data-board] h2, section[data-board] h3,
+    section[data-board] h4, section[data-board] h5, section[data-board] h6,
+    section[data-board] p, section[data-board] a, section[data-board] button {
+      margin: 0; padding: 0; border: 0; background: transparent;
+      font-weight: inherit; font-size: inherit; font-family: inherit;
+      color: inherit; text-decoration: inherit;
+    }
+    section[data-board] a { color: inherit; text-decoration: none; }
   ` : '';
 
   return `<!doctype html>
@@ -305,6 +336,9 @@ function buildHtml(boards) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Penpot canvas render</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;500;600;700&family=EB+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" />
 ${INLINE_CSS ? `<style>${css}</style>` : ''}
 </head>
 <body>
@@ -349,6 +383,21 @@ async function generate({ boardFilter = null } = {}) {
   if (res?.result?.error) throw new Error(res.result.error);
   let boards = res?.result?.boards || [];
   if (boardFilter) boards = boards.filter(b => b.name === boardFilter);
+  // Reason: MCP findShapes() returns boards in id-creation order, which
+  // doesn't match the intended page sequence. The config's `pages` array is
+  // the source of truth — sort to match it, then append anything else.
+  const pageOrder = Array.isArray(cfg.pages) ? cfg.pages.map(p => p.name) : [];
+  if (pageOrder.length) {
+    const rank = new Map(pageOrder.map((n, i) => [n, i]));
+    boards.sort((a, b) => {
+      const ra = rank.has(a.name) ? rank.get(a.name) : 999;
+      const rb = rank.has(b.name) ? rank.get(b.name) : 999;
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    boards.sort((a, b) => a.name.localeCompare(b.name));
+  }
   return buildHtml(boards);
 }
 
