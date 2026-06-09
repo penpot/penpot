@@ -144,3 +144,49 @@ Two flavours of canvas sync:
 - Screenshots are kept full-resolution (1440 wide). An earlier version downscaled
   via `sips -Z 1200` which destroyed aspect ratio on tall pages; the current
   pipeline only caps at `>12000px` tall via height-leading resample.
+
+---
+
+## Run from scratch (no Claude required)
+
+Goal: an outsider with a fresh clone ends up with `http://localhost:9006/`
+rendering the live canvas (Penpot-editor chrome around it) by running a few
+documented commands. No hand-fixing between steps.
+
+1. Clone the Penpot fork and `cd` into it.
+2. Install Playwright + Chromium for the toolkit:
+   ```bash
+   cd ~/penpot/tools/portfolio-sync && npm i playwright && npx playwright install chromium
+   ```
+3. Copy the config and set `portfolio_dir` to the absolute path of your
+   portfolio repo:
+   ```bash
+   $EDITOR ./portfolio-sync.config.json
+   ```
+4. Bring up Penpot. This auto-opens `auto-login.html` in your default browser —
+   keep that tab open for the rest of the session (it hosts the MCP plugin):
+   ```bash
+   ./launch-all.sh penpot
+   ```
+5. Start the portfolio dev server:
+   ```bash
+   ./launch-all.sh portfolio
+   ```
+6. Start the sync stack (bridge + watcher + webhook + live-preview + html-render):
+   ```bash
+   ./launch-all.sh sync
+   ```
+7. Run the standalone-fidelity test. Exit 0 means the canvas at `:9006`
+   renders faithfully with Penpot chrome, configured pages in order, and
+   regenerates on each request — no Claude required:
+   ```bash
+   node test-render.mjs
+   ```
+8. Open the live render:
+   ```bash
+   open http://localhost:9006/
+   ```
+
+If `test-render.mjs` exits non-zero, the test output names which check failed
+— that's a real signal, not a test bug. See exit codes in the file header
+(0 pass, 1 render gap, 2 chrome gap, 3 plumbing).
