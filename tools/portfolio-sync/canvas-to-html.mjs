@@ -224,6 +224,9 @@ function fontShorthand(s) {
 function renderShape(s) {
   const k = classifyShape(s);
   const color = s.fillColor || '#0a0a0a';
+  // Reason: child x/y are already board-local (Penpot reports board children
+  // in board-local space), and the enclosing <section> is `position:relative`
+  // so left/top resolve against the section origin directly.
   const baseStyle = `position:absolute;left:${s.x}px;top:${s.y}px;width:${s.w}px;`;
 
   if (k.kind === 'backdrop') {
@@ -278,8 +281,9 @@ function renderShape(s) {
 function buildHtml(boards) {
   // Reason: boards are laid out side-by-side on the canvas with an x-offset.
   // Mirror that horizontal flow in the static page so the user sees the same
-  // arrangement they see in Penpot, but normalize by translating each section
-  // to start at (0, 0) in section-local space.
+  // arrangement they see in Penpot. Each <section> is `position:relative` and
+  // shape coords are already board-local, so they resolve directly against
+  // the section origin.
   const sections = boards.map(b => {
     const bgColor = b.fillColor || '#ffffff';
     const shapes  = b.shapes.map(s => renderShape(s)).filter(Boolean).join('\n      ');

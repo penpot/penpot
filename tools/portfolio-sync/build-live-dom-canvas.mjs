@@ -574,7 +574,7 @@ function chunk(arr, n) {
   return out;
 }
 
-function shapeJs(item, boardX, boardY) {
+function shapeJs(item) {
   const safeText  = (item.text || '').slice(0, 500);
   const textJson  = JSON.stringify(safeText);
   const family    = normalizeFontFamily(item.fontFamily);
@@ -584,8 +584,14 @@ function shapeJs(item, boardX, boardY) {
   const fontSize  = Math.max(8, Math.round(item.fontSize || 16));
   const w         = Math.max(8, Math.round(item.w));
   const h         = Math.max(8, Math.round(item.h));
-  const x         = Math.round(item.x) - boardX;
-  const y         = Math.round(item.y) - boardY;
+  // Reason: Penpot's t.x/t.y after appendChild are BOARD-LOCAL — the board's
+  // canvas anchor (boardX/boardY) is irrelevant here. Subtracting it would put
+  // consulting/blog shapes at negative local x and render them on top of the
+  // home board's space. The DOM bbox is already in the per-page viewport's
+  // own (0,0)-origin coordinate space, which is exactly what we want for the
+  // board-local position.
+  const x         = Math.round(item.x);
+  const y         = Math.round(item.y);
 
   if (item.kind === 'control') {
     return `
@@ -773,11 +779,11 @@ return {
   return mcpExec(sid, code);
 }
 
-async function createShapesInBatches(sid, boardId, boardX, boardY, items, batchSize) {
+async function createShapesInBatches(sid, boardId, items, batchSize) {
   const batches = chunk(items, batchSize);
   const results = [];
   for (const batch of batches) {
-    const body = batch.map(item => `out.push((() => ${shapeJs(item, boardX, boardY)})());`).join('\n');
+    const body = batch.map(item => `out.push((() => ${shapeJs(item)})());`).join('\n');
     const code = `
 const cur = penpot.currentPage;
 const board = cur.findShapes().find(s => s.id === ${JSON.stringify(boardId)});
@@ -847,7 +853,7 @@ return { switched: penpot.currentPage.name, fallback: !named && target ? target.
     const { boardId, boardX, boardY, removed, preserved, screenshot } = prep.result;
     console.log(`  board ${boardId.slice(-12)}  (anchor ${boardX},${boardY}; removed ${removed} stale children; preserved ${preserved || 0}; backdrop=${screenshot ? screenshot.name : 'none'})`);
 
-    const batches = await createShapesInBatches(sid, boardId, boardX, boardY, h.items, BATCH_SIZE);
+    const batches = await createShapesInBatches(sid, boardId, h.items, BATCH_SIZE);
     const totalCreated = batches.reduce((a, b) => a + (b?.result?.created || 0), 0);
     const errors = batches.filter(b => b?.error || b?.result?.error);
     console.log(`  created: ${totalCreated} shapes in ${batches.length} batches (${errors.length} errors)  [${Date.now() - pT0}ms]`);
