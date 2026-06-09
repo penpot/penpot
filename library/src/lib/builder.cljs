@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.util.object :as obj]))
 
+
 (def BuilderError
   (obj/class
    :name "BuilderError"

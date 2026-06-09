@@ -4,6 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
+
 (ns app.common.attrs
   (:require
    [app.common.geom.shapes :as gsh]
