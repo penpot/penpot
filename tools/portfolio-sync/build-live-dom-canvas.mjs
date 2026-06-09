@@ -250,11 +250,30 @@ const DOM_HARVEST_FN = () => {
   // for non-multi-column elements that's a single entry, matching the prior
   // single-shape behaviour. Multi-column flowed elements emit one entry per
   // column fragment.
+  // Read CSS animation/transition off `el` and return a `cssAnimation` payload
+  // or null. The Penpot canvas can't show motion; downstream renderers
+  // (canvas-to-html.mjs) use this to draw a small marker dot in the shape's
+  // top-right corner. The user's spec: animationName !== 'none' OR transition
+  // !== 'all 0s ease 0s' (the browser default). We honor both.
+  const DEFAULT_TRANSITION = 'all 0s ease 0s';
+  const readAnimation = (el) => {
+    const s = window.getComputedStyle(el);
+    const hasAnim = s.animationName && s.animationName !== 'none';
+    const hasTrans = s.transition && s.transition !== DEFAULT_TRANSITION;
+    if (!hasAnim && !hasTrans) return null;
+    return {
+      name:     hasAnim ? s.animationName : 'transition',
+      duration: hasAnim ? (s.animationDuration || '0s') : (s.transitionDuration || '0s'),
+      delay:    hasAnim ? (s.animationDelay    || '0s') : (s.transitionDelay    || '0s'),
+    };
+  };
+
   const captureText = (el, kind, extra = {}) => {
     const s = window.getComputedStyle(el);
     const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
     if (!text && kind !== 'control' && kind !== 'image') return [];
     const frags = fragmentRects(el);
+    const anim = readAnimation(el);
     return frags.map(r => ({
       kind,
       text: text.slice(0, 500),
@@ -268,6 +287,7 @@ const DOM_HARVEST_FN = () => {
       lineHeight: s.lineHeight,
       color:      s.color || '',
       textAlign:  s.textAlign || 'left',
+      ...(anim ? { cssAnimation: anim } : {}),
       ...extra,
     }));
   };
@@ -311,6 +331,7 @@ const DOM_HARVEST_FN = () => {
     const key = `bg:${Math.round(x)}:${Math.round(y)}:${Math.round(r.width)}:${Math.round(r.height)}:${bgUrl}`;
     if (seenBgKey.has(key)) continue;
     seenBgKey.add(key);
+    const animBg = readAnimation(el);
     out.push({
       kind: 'bg-image',
       text: '',
@@ -319,6 +340,7 @@ const DOM_HARVEST_FN = () => {
       backgroundSize: s.backgroundSize || 'auto',
       backgroundPosition: s.backgroundPosition || 'center',
       x, y, w: r.width, h: r.height,
+      ...(animBg ? { cssAnimation: animBg } : {}),
     });
   }
 
@@ -329,6 +351,7 @@ const DOM_HARVEST_FN = () => {
     // <video> src may be on the element OR on an inner <source>.
     const src = el.getAttribute('src') ||
                 el.querySelector('source')?.getAttribute('src') || '';
+    const animV = readAnimation(el);
     out.push({
       kind: 'video',
       text: '', tag: 'video',
@@ -340,6 +363,7 @@ const DOM_HARVEST_FN = () => {
       controls: el.hasAttribute('controls'),
       x: r.left + window.scrollX, y: r.top + window.scrollY,
       w: r.width, h: r.height,
+      ...(animV ? { cssAnimation: animV } : {}),
     });
   }
 
@@ -372,6 +396,7 @@ const DOM_HARVEST_FN = () => {
       host = '';
       label = `iframe: ${src.slice(0, 60)}`;
     }
+    const animI = readAnimation(el);
     out.push({
       kind: 'iframe',
       text: '', tag: 'iframe',
@@ -379,7 +404,96 @@ const DOM_HARVEST_FN = () => {
       allow: el.getAttribute('allow') || '',
       x: r.left + window.scrollX, y: r.top + window.scrollY,
       w: r.width, h: r.height,
+      ...(animI ? { cssAnimation: animI } : {}),
     });
+  }
+
+  // <canvas> — capture as `kind: 'canvas'`. Probe getContext() for a WebGL
+  // context to mark `hasWebGL`. Best-effort snapshot via toDataURL — WebGL
+  // canvases without `preserveDrawingBuffer:true` typically throw or return
+  // an empty buffer, so we wrap in try/catch and only pass a snapshot through
+  // when it's clearly a real PNG. The consulting page's neural-starfield
+  // surprisingly DOES allow toDataURL because the context was created with
+  // preserveDrawingBuffer set; we still don't assume that's true elsewhere.
+  for (const el of root.querySelectorAll('canvas')) {
+    if (!isVisible(el)) continue;
+    const r = el.getBoundingClientRect();
+    let hasWebGL = false;
+    try {
+      const gl = el.getContext('webgl2') || el.getContext('webgl') || el.getContext('experimental-webgl');
+      if (gl) {
+        // Reason: getContext('webgl') returns null AFTER a 2d context has been
+        // established on the same canvas, but on a fresh probe it gives the
+        // real GL context. instanceof check confirms it's not a 2d ctx.
+        if ((typeof WebGLRenderingContext !== 'undefined' && gl instanceof WebGLRenderingContext) ||
+            (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext)) {
+          hasWebGL = true;
+        }
+      }
+    } catch (_) { /* unreachable in practice — just defensive */ }
+    let snapshot = null;
+    try {
+      // Try toDataURL — for 2d canvases this always works; for WebGL it works
+      // only if the context was created with preserveDrawingBuffer:true, OR
+      // we caught it before the next composite. Either way: defensive.
+      const url = el.toDataURL('image/png');
+      if (url && url.length > 100 && url.startsWith('data:image/png')) snapshot = url;
+    } catch (_) { /* swallow — WebGL canvases routinely throw here */ }
+    const animC = readAnimation(el);
+    out.push({
+      kind: 'canvas',
+      text: '',
+      tag: 'canvas',
+      x: r.left + window.scrollX, y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+      hasWebGL,
+      snapshot,  // data:image/png;base64,... or null
+      label: el.id || el.getAttribute('aria-label') || '',
+      ...(animC ? { cssAnimation: animC } : {}),
+    });
+  }
+
+  // <lottie-player> + .lottie containers. Capture as `kind: 'lottie'` with the
+  // src URL extracted from src/data-src. The Lottie JSON itself isn't loaded
+  // by Penpot — render as a placeholder rectangle with the filename label.
+  const seenLottieKey = new Set();
+  const pushLottie = (el, srcAttr) => {
+    if (!isVisible(el)) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) return;
+    const src = (srcAttr || '').trim();
+    const key = `lottie:${Math.round(r.left)}:${Math.round(r.top)}:${src}`;
+    if (seenLottieKey.has(key)) return;
+    seenLottieKey.add(key);
+    const animL = readAnimation(el);
+    out.push({
+      kind: 'lottie',
+      text: '',
+      tag: el.tagName.toLowerCase(),
+      src,
+      // Filename for the label — last path segment of src, sans query.
+      filename: (() => {
+        try {
+          if (!src) return '';
+          const u = new URL(src, document.baseURI);
+          const parts = u.pathname.split('/').filter(Boolean);
+          return parts[parts.length - 1] || u.host;
+        } catch (_) { return src.split('/').pop() || src; }
+      })(),
+      x: r.left + window.scrollX, y: r.top + window.scrollY,
+      w: r.width, h: r.height,
+      ...(animL ? { cssAnimation: animL } : {}),
+    });
+  };
+  for (const el of root.querySelectorAll('lottie-player')) {
+    pushLottie(el, el.getAttribute('src') || el.getAttribute('data-src'));
+  }
+  for (const el of root.querySelectorAll('.lottie, [data-lottie]')) {
+    // Skip <lottie-player> elements that ALSO happen to carry `.lottie` —
+    // they were already captured above.
+    if (el.tagName.toLowerCase() === 'lottie-player') continue;
+    const src = el.getAttribute('data-src') || el.getAttribute('src') || el.getAttribute('data-lottie') || '';
+    pushLottie(el, src);
   }
 
   // <picture> is intentionally NOT captured directly — its inner <img> already
@@ -466,6 +580,7 @@ const DOM_HARVEST_FN = () => {
     if (!isVisible(el)) continue;
     const r = el.getBoundingClientRect();
     const s = window.getComputedStyle(el);
+    const animCt = readAnimation(el);
     out.push({
       kind: 'control',
       text: el.getAttribute('placeholder') || el.getAttribute('aria-label') || el.tagName.toLowerCase(),
@@ -473,17 +588,20 @@ const DOM_HARVEST_FN = () => {
       x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height,
       fontSize: parseFloat(s.fontSize) || 14, fontWeight: '400', fontFamily: 'system-ui',
       color: s.color || '#1a1a1a',
+      ...(animCt ? { cssAnimation: animCt } : {}),
     });
   }
 
   for (const el of root.querySelectorAll('img')) {
     if (!isVisible(el)) continue;
     const r = el.getBoundingClientRect();
+    const animIm = readAnimation(el);
     out.push({
       kind: 'image', text: '', tag: 'img',
       src: el.getAttribute('src') || '',
       alt: el.getAttribute('alt') || '',
       x: r.left + window.scrollX, y: r.top + window.scrollY, w: r.width, h: r.height,
+      ...(animIm ? { cssAnimation: animIm } : {}),
     });
   }
 
@@ -539,12 +657,14 @@ const DOM_HARVEST_FN = () => {
     if (!isVisible(el)) continue;
     if (el.closest('a,button,li')) continue;
     const r = el.getBoundingClientRect();
+    const animS = readAnimation(el);
     out.push({
       kind: 'svg',
       text: '',
       viewBox: el.getAttribute('viewBox') || '',
       x: r.left + window.scrollX, y: r.top + window.scrollY,
       w: r.width, h: r.height,
+      ...(animS ? { cssAnimation: animS } : {}),
     });
   }
 
@@ -625,9 +745,34 @@ const DOM_HARVEST_FN = () => {
     deduped.push(item);
   }
 
+  // Capture the page's background colour at harvest time. Prefer <body>'s
+  // computed background-color, fall back to <html>, and finally white when
+  // both are transparent. Convert rgb()/rgba() to #rrggbb so downstream code
+  // can drop it straight into a Penpot fill (which expects hex). This is what
+  // lets the consulting page (near-black starfield + light text) render with
+  // legible contrast — a hardcoded cream board fill swallows the light text.
+  const rgbToHex = (rgb) => {
+    const m = (rgb || '').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (!m) return null;
+    const h = (n) => Number(n).toString(16).padStart(2, '0');
+    return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+  };
+  const isTransparent = (rgb) => {
+    if (!rgb) return true;
+    const m = rgb.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*([\d.]+))?/);
+    if (!m) return true;
+    return m[1] !== undefined && parseFloat(m[1]) === 0;
+  };
+  const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+  const htmlBg = window.getComputedStyle(document.documentElement).backgroundColor;
+  let pageBg = '#ffffff';
+  if (!isTransparent(bodyBg))      pageBg = rgbToHex(bodyBg) || '#ffffff';
+  else if (!isTransparent(htmlBg)) pageBg = rgbToHex(htmlBg) || '#ffffff';
+
   return {
     docWidth:  document.documentElement.scrollWidth,
     docHeight: document.documentElement.scrollHeight,
+    pageBg,
     items: deduped,
   };
 };
@@ -836,6 +981,75 @@ function shapeJs(item) {
 }`;
   }
 
+  if (item.kind === 'canvas') {
+    // Dark-fill rect with "canvas: WxH (webgl)" centred label. The shape name
+    // doubles as the source-of-truth for canvas-to-html.mjs's classifier.
+    const labelText = `canvas: ${w}x${h}${item.hasWebGL ? ' (webgl)' : ''}`;
+    const nameLabel = `canvas: ${item.hasWebGL ? 'webgl ' : ''}${w}x${h}`;
+    const snapJs = item.snapshot ? JSON.stringify(item.snapshot) : 'null';
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(nameLabel.slice(0, 120))};
+  r.resize(${w}, ${h});
+  let fillSet = false;
+  const snap = ${snapJs};
+  if (snap) {
+    try {
+      const img = await penpot.uploadMediaUrl('canvas-snapshot', snap);
+      if (img) { r.fills = [{ fillOpacity: 1, fillImage: img }]; fillSet = true; }
+    } catch (e) { /* swallow — WebGL snapshots often fail to round-trip */ }
+  }
+  if (!fillSet) {
+    // Reason: the consulting starfield is near-black; a dark fill keeps the
+    // placeholder honest even when we can't replay the actual pixels.
+    r.fills = [{ fillColor: '#0a0a0a' }];
+  }
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  const t = penpot.createText(${JSON.stringify(labelText)});
+  t.fontFamily = 'Work Sans';
+  t.fontSize = '${Math.max(12, Math.min(20, Math.round(Math.min(w, h) / 12)))}';
+  t.fontWeight = '600';
+  t.fills = [{ fillColor: '#ffffff' }];
+  t.growType = 'auto-height';
+  t.resize(${Math.max(140, Math.round(w * 0.5))}, 24);
+  t.name = 'canvas-label';
+  board.appendChild(t);
+  t.x = ${x + Math.round(w / 2) - Math.max(70, Math.round(w / 4))};
+  t.y = ${y + Math.round(h / 2) - 12};
+  return { kind: 'canvas', id: r.id };
+}`;
+  }
+
+  if (item.kind === 'lottie') {
+    const fname = (item.filename || item.src || 'lottie').slice(0, 80);
+    const labelText = `lottie: ${fname}`;
+    const nameLabel = `lottie: ${(item.src || fname).slice(0, 100)}`;
+    return `
+{
+  const r = penpot.createRectangle();
+  r.name = ${JSON.stringify(nameLabel)};
+  r.fills = [{ fillColor: '#f5f0fa' }];
+  r.strokes = [{ strokeColor: '#9b6dc7', strokeStyle: 'dashed', strokeAlignment: 'inner', strokeWidth: 1 }];
+  r.resize(${w}, ${h});
+  board.appendChild(r);
+  r.x = ${x}; r.y = ${y};
+  const t = penpot.createText(${JSON.stringify(labelText)});
+  t.fontFamily = 'Work Sans';
+  t.fontSize = '${Math.max(11, Math.min(16, Math.round(Math.min(w, h) / 10)))}';
+  t.fontWeight = '500';
+  t.fills = [{ fillColor: '#6c3a9b' }];
+  t.growType = 'auto-height';
+  t.resize(${Math.max(120, Math.round(w * 0.7))}, 24);
+  t.name = 'lottie-label';
+  board.appendChild(t);
+  t.x = ${x + 12};
+  t.y = ${y + Math.round(h / 2) - 12};
+  return { kind: 'lottie', id: r.id };
+}`;
+  }
+
   if (item.kind === 'bg-image') {
     const label = 'bg-image: ' + ((item.src || '').slice(0, 80));
     const srcJs = JSON.stringify(item.src || '');
@@ -902,8 +1116,13 @@ function shapeJs(item) {
 
 // ─── Board preparation + shape creation ──────────────────────────────────────
 
-async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard, preservePrefix) {
+async function prepareBoard(sid, boardName, docWidth, docHeight, resetBoard, preservePrefix, bgColor) {
   const preserveJs = JSON.stringify(preservePrefix || '');
+  // Reason: BOARD_BG is the fallback when DOM harvest failed to capture a
+  // page-specific bg (transparent body+html, or undefined). Pages with a real
+  // captured colour (consulting's near-black starfield) get their own fill so
+  // light text reads correctly on the canvas.
+  const fillColorJs = JSON.stringify(bgColor || BOARD_BG);
   const code = `
 const cur = penpot.currentPage;
 let board = cur.findShapes({ name: ${JSON.stringify(boardName)} }).find(s => s.type === 'board');
@@ -929,7 +1148,7 @@ let screenshot = childrenBefore.find(fillImgFinder);
 
 board.resize(newW, newH);
 board.clipContent = true;
-board.fills = [{ fillColor: ${JSON.stringify(BOARD_BG)} }];
+board.fills = [{ fillColor: ${fillColorJs} }];
 
 // Resize the screenshot child to cover the new board (preserves backdrop intent).
 if (screenshot) {
@@ -988,10 +1207,26 @@ async function createShapesInBatches(sid, boardId, items, batchSize) {
   const batches = chunk(items, batchSize);
   const results = [];
   for (const batch of batches) {
-    // Reason: video / bg-image branches await `penpot.uploadMediaUrl(...)`,
+    // Reason: video / bg-image / canvas branches await `penpot.uploadMediaUrl`,
     // so each IIFE is async and we await its resolved value before pushing.
-    // For sync branches the await is a no-op.
-    const body = batch.map(item => `out.push(await (async () => ${shapeJs(item)})());`).join('\n');
+    // For sync branches the await is a no-op. The cssAnimation suffix " ¶anim"
+    // is appended post-creation so canvas-to-html can detect motion-bearing
+    // shapes by sniffing the name without needing extra storage.
+    const body = batch.map(item => {
+      const wantAnim = !!item.cssAnimation;
+      const animTag = wantAnim ? JSON.stringify(JSON.stringify(item.cssAnimation).slice(0, 80)) : 'null';
+      return `{
+  const res = await (async () => ${shapeJs(item)})();
+  if (res && res.id && ${wantAnim ? 'true' : 'false'}) {
+    const cur = penpot.currentPage;
+    const sh = cur.findShapes().find(s => s.id === res.id);
+    if (sh && typeof sh.name === 'string' && !sh.name.includes(' ¶anim')) {
+      sh.name = (sh.name + ' ¶anim:' + ${animTag}).slice(0, 160);
+    }
+  }
+  out.push(res);
+}`;
+    }).join('\n');
     const code = `
 const cur = penpot.currentPage;
 const board = cur.findShapes().find(s => s.id === ${JSON.stringify(boardId)});
