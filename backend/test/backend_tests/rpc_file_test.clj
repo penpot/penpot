@@ -830,6 +830,49 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
+(t/deftest set-file-shared-idempotent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})]
+
+    ;; Share the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=true again should be a
+    ;; no-op success (idempotent), not an error.
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Unshare the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=false again should also
+    ;; be a no-op success (idempotent).
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))))
+
 (t/deftest permissions-checks-link-to-library-1
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)
