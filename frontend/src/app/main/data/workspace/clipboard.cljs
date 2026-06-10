@@ -743,7 +743,8 @@
                   (update :fills translate-fills)
                   (update :strokes translate-strokes)
                   (d/update-when :content #(txt/transform-nodes process-text-node %))
-                  (d/update-when :position-data #(mapv process-text-node %)))))
+                  ;; Removes the position-data so it's regenerated
+                  (dissoc :position-data))))
 
           ;; Analyze the rchange and replace staled media and
           ;; references to the new uploaded media-objects.

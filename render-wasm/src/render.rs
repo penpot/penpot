@@ -2667,8 +2667,11 @@ impl RenderState {
 
         // Strokes are drawn over children for clipped frames (all strokes), and for non-clipped
         // frames with inner strokes (inner strokes only — non-inner were rendered before children).
-        let needs_exit_strokes = element.clip()
-            || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke());
+        // Skip when focus mode excludes this subtree (focus_mode.exit runs after this, so
+        // is_active() still reflects this element's focus state here).
+        let needs_exit_strokes = self.focus_mode.is_active()
+            && (element.clip()
+                || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke()));
 
         if needs_exit_strokes {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);

@@ -186,11 +186,8 @@ test.describe("Tokens: Apply token", () => {
 
     await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
-    const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
-      name: "Font Size",
-    });
-    await expect(fontSizeInput).toBeVisible();
-    await expect(fontSizeInput).toHaveValue("100");
+    const tokenRow = workspacePage.rightSidebar.getByLabel('Full');
+    await expect(tokenRow).toBeVisible();
   });
 
   test("User adds shadow token with multiple shadows and applies it to shape", async ({

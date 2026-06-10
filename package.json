@@ -20,6 +20,6 @@
     "esbuild": "^0.28.0",
     "mdts": "^0.20.3",
     "nrepl-client": "^0.3.0",
-    "opencode-ai": "^1.16.2"
+    "opencode-ai": "^1.17.0"
   }
 }
