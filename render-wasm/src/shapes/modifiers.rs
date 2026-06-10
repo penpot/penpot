@@ -482,11 +482,8 @@ pub fn propagate_modifiers(
         // are already reflowed before their parents.
         let mut layout_reflows_vec: Vec<Uuid> =
             std::mem::take(&mut layout_reflows).into_iter().collect();
-        layout_reflows_vec.sort_unstable_by(|id_a, id_b| {
-            let da = shapes.get_depth(id_a);
-            let db = shapes.get_depth(id_b);
-            db.cmp(&da)
-        });
+        // Deepest-first; cache get_depth (O(depth) parent walk) per id.
+        layout_reflows_vec.sort_by_cached_key(|id| std::cmp::Reverse(shapes.get_depth(id)));
 
         // This temporary bounds is necesary so the layouts can be calculated
         // correctly but will be discarded before the next iteration for the
