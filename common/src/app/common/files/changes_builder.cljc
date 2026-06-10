@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.changes-builder
   (:require
@@ -19,6 +19,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.path :as path]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -46,8 +47,8 @@
      (with-meta changes
        {::page-id page-id})))
   ([]
-   {:redo-changes []
-    :undo-changes '()})
+   {:redo-changes []     ;; redo-changes is a vector so that conj adds things at the end, in order of execution
+    :undo-changes '()})  ;; undo-changes is a list to conj things at the beginning, so they execute in the reverse order when undoing several changes
   ([origin]
    {:redo-changes []
     :undo-changes '()
@@ -311,10 +312,12 @@
 
 (defn del-page
   [changes page]
-  (-> changes
-      (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
-      (apply-changes-local)))
+  (let [page-id (:id page)]
+    (assert (some? page-id) "page must have a valid :id")
+    (-> changes
+        (update :redo-changes conj {:type :del-page :id page-id})
+        (update :undo-changes conj {:type :add-page :id page-id :page page})
+        (apply-changes-local))))
 
 (defn move-page
   [changes page-id index prev-index]
@@ -410,12 +413,9 @@
    (add-object changes obj nil))
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
-
-   ;; FIXME: add shape validation
-
    (assert-page-id! changes)
    (assert-objects! changes)
-   (let [obj (cond-> obj
+   (let [obj (cond-> (cts/check-shape obj)
                (not= index ::undefined)
                (assoc ::index index))
 

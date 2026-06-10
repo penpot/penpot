@@ -114,6 +114,84 @@
 
       (t/is (= expected-diff diff)))))
 
+(t/deftest test-normalize-component-root
+
+  (t/testing "nil file should return nil"
+    (let [file  nil
+          file' (ctf/update-file-data file cfcp/normalize-component-root)]
+      (t/is (nil? file'))))
+
+  (t/testing "empty file should not need any action"
+    (let [file  (thf/sample-file :file1)
+          file' (ctf/update-file-data file cfcp/normalize-component-root)]
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "shape with :component-root true should not be modified"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-simple-component :component1 :main1-root :main1-child)
+              (thc/instantiate-component :component1 :copy1-root))
+
+          file' (ctf/update-file-data file cfcp/normalize-component-root)]
+
+      (t/is (empty? (d/map-diff file file')))))
+
+  (t/testing "shape with :component-root false should have it removed"
+    (let [file
+          (-> (thf/sample-file :file1)
+              (tho/add-nested-component-with-copy :component1 :main1-root :main1-child
+                                                  :component2 :main2-root :nested-head
+                                                  :copy2-root)
+              (ths/update-shape :nested-head :component-root false))
+
+          file' (ctf/update-file-data file cfcp/normalize-component-root)
+
+          shape' (ths/get-shape file' :nested-head)]
+
+      (t/is (not (contains? shape' :component-root))))))
+
+(t/deftest test-migration-0022-fixes-component-root-false-mismatch
+
+  (t/testing "a nested copy with :component-root false and a stale :component-id is fixed by the full migration sequence"
+    (let [file
+          ;; Reproduce the legacy corruption: a nested copy head has
+          ;; :component-root false (instead of absent) AND a stale
+          ;; component-id. Migrations 0019/0020 alone don't catch it
+          ;; because subcopy-head? expects nil. After normalize-component-root,
+          ;; sync-component-id-with-ref-shape can repair it.
+          (-> (thf/sample-file :file1)
+              (tho/add-nested-component :component1 :main1-root :main1-child
+                                        :component2 :main2-root :nested-head)
+              (thc/instantiate-component :component2 :copy2-root :children-labels [:copy2-nested-head])
+              (ths/update-shape :copy2-nested-head :component-root false)
+              (ths/update-shape :copy2-nested-head :component-id (thi/new-id! :wrong-id)))
+
+          ;; Run the old sequence (0019/0020 without normalization): the bad shape is skipped.
+          old-sequence
+          (-> file
+              (ctf/update-file-data #(cfcp/fix-missing-swap-slots % {}))
+              (ctf/update-file-data #(cfcp/sync-component-id-with-ref-shape % {})))
+
+          old-shape (ths/get-shape old-sequence :copy2-nested-head)
+
+          ;; Run the new sequence (0022): normalize first, then 0019/0020 logic.
+          new-sequence
+          (-> file
+              (ctf/update-file-data cfcp/normalize-component-root)
+              (ctf/update-file-data #(cfcp/fix-missing-swap-slots % {}))
+              (ctf/update-file-data #(cfcp/sync-component-id-with-ref-shape % {})))
+
+          new-shape (ths/get-shape new-sequence :copy2-nested-head)]
+
+      ;; Confirm the old sequence fails to repair (this guards against a future
+      ;; subcopy-head? change accidentally fixing it and masking the regression).
+      (t/is (= false (:component-root old-shape)))
+      (t/is (= (thi/id :wrong-id) (:component-id old-shape)))
+
+      ;; Confirm the new sequence repairs both the explicit false and the bad ref.
+      (t/is (not (contains? new-shape :component-root)))
+      (t/is (= (thi/id :component1) (:component-id new-shape))))))
+
 (t/deftest test-fix-missing-swap-slots
 
   (t/testing "nil file should return nil"

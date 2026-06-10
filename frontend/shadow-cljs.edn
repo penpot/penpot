@@ -11,6 +11,10 @@
    :asset-path "/js"
    :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
+
+   :dev {;; allows remote-relay per parallel environment
+         ;; inside :dev so the integration tests won't use it
+         :devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}}
    :build-options {:manifest-name "manifest.json"}
    :modules
    {:shared
@@ -86,9 +90,12 @@
   {:target :browser
    :output-dir "resources/public/js/worker/"
    :asset-path "/js/worker"
-   :devtools {:browser-inject :main
-              :watch-dir "resources/public"
-              :reload-strategy :full}
+   :devtools {:watch-dir "resources/public"
+              :reload-strategy :full
+              :browser-inject :main}
+   :dev {;; allows remote-relay per parallel environment
+         ;; inside :dev so the integration tests won't use it
+         :devtools {:devtools-url #shadow/env ["SHADOW_SERVER_URL" :default ""]}}
    :build-options {:manifest-name "manifest.json"}
    :modules
    {:main

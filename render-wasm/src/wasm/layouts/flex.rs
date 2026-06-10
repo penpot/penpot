@@ -1,5 +1,5 @@
 use crate::shapes::{FlexDirection, WrapType};
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 use macros::ToJs;
 
 use super::align;

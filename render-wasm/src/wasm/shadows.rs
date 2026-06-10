@@ -2,7 +2,7 @@ use macros::ToJs;
 use skia_safe as skia;
 
 use crate::shapes::{Shadow, ShadowStyle};
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 
 #[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 #[repr(u8)]

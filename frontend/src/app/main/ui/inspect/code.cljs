@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.code
   (:require-macros [app.main.style :as stl])
@@ -31,7 +31,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def embed-images? true)
@@ -158,10 +157,10 @@
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-code"
-                                   ::ev/origin origin
-                                   :type markup-type})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-code"
+                         ::ev/origin origin
+                         :type markup-type})))))
 
         on-style-copied
         (mf/use-fn
@@ -170,10 +169,10 @@
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-style"
-                                   ::ev/origin origin
-                                   :type style-type})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-style"
+                         ::ev/origin origin
+                         :type style-type})))))
 
         {on-markup-pointer-down :on-pointer-down
          on-markup-lost-pointer-capture :on-lost-pointer-capture
@@ -206,10 +205,10 @@
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-code"
-                                   ::ev/origin origin
-                                   :type "all"})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-code"
+                         ::ev/origin origin
+                         :type "all"})))))
 
         ;;handle-open-review
         ;;(mf/use-fn

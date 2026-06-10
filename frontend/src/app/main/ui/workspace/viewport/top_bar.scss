@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -16,6 +16,7 @@
 
   top: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
   left: 50%;
+  transform: translateX(-50%);
   z-index: deprecated.$z-index-20;
 }
 
@@ -31,11 +32,10 @@
   box-shadow: 0 0 deprecated.$s-12 0 var(--menu-shadow-color);
   gap: deprecated.$s-8;
   height: deprecated.$s-48;
-  margin-left: -50%;
   padding: deprecated.$s-8;
   cursor: initial;
   pointer-events: initial;
-  width: deprecated.$s-400;
+  min-width: deprecated.$s-400;
   border: deprecated.$s-2 solid var(--panel-border-color);
 }
 
@@ -44,6 +44,7 @@
   font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
   padding-left: deprecated.$s-8;
+  width: max-content;
 }
 
 .done-btn {

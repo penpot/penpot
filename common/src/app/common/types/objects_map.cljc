@@ -2,16 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.objects-map
   "Implements a specialized map-like data structure for store an UUID =>
   OBJECT mappings. The main purpose of this data structure is be able
   to serialize it on fressian as byte-array and have the ability to
-  decode each field separatelly without the need to decode the whole
+  decode each field separately without the need to decode the whole
   map from the byte-array.
 
-  It works transparently, so no aditional dynamic vars are needed.  It
+  It works transparently, so no additional dynamic vars are needed.  It
   only works by reference equality and the hash-code is calculated
   properly from each value."
 

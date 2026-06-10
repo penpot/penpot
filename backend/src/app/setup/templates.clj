@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.setup.templates
   "A service/module that is responsible for download, load & internally
@@ -57,9 +57,9 @@
 
       (if (fs/exists? path)
         (io/input-stream path)
-        (let [resp (http/req! cfg
-                              {:method :get :uri (:file-uri template)}
-                              {:response-type :input-stream :sync? true})]
+        (let [resp (http/req cfg
+                             {:method :get :uri (:file-uri template)}
+                             {:response-type :input-stream :sync? true})]
           (when-not (= 200 (:status resp))
             (ex/raise :type :internal
                       :code :unexpected-status-code

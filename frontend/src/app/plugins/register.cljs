@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.register
   (:require
@@ -138,3 +138,7 @@
       (= plugin-id mcp-plugin-id)
       (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
         (contains? permissions permission))))
+
+(defn get-plugin-data
+  [state plugin-id]
+  (get-in state [:profile :props :plugins :data plugin-id]))

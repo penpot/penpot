@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.profile
   (:require-macros [app.main.style :as stl])
@@ -37,7 +37,7 @@
 
 ;; --- Profile Form
 
-(mf/defc profile-form
+(mf/defc profile-form*
   {::mf/private true}
   []
   (let [profile (mf/deref refs/profile)
@@ -87,7 +87,7 @@
 
 ;; --- Profile Photo Form
 
-(mf/defc profile-photo-form
+(mf/defc profile-photo-form*
   {::mf/private true}
   []
   (let [input-ref  (mf/use-ref nil)
@@ -138,7 +138,7 @@
 
 ;; --- Profile Page
 
-(mf/defc profile-page
+(mf/defc profile-page*
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
@@ -146,6 +146,5 @@
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "labels.profile")]
-    [:& profile-photo-form]
-    [:& profile-form]]])
-
+    [:> profile-photo-form*]
+    [:> profile-form*]]])
