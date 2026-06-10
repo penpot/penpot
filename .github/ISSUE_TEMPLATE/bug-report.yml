@@ -1,6 +1,5 @@
 description: Create a report to help us improve
 name: Bug report
-title: ""
 type: Bug
 labels: ["needs triage"]
 
