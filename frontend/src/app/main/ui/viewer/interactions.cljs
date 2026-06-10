@@ -34,6 +34,7 @@
   [{:keys [page frame base offset size is-fixed delta]}]
   (let [delta     (or delta (gpt/point 0 0))
         vbox      (:vbox size)
+        is-fixed  (true? is-fixed)
 
         frame     (cond-> frame is-fixed (assoc :fixed-scroll true))
 
@@ -135,12 +136,7 @@
         mode   (h/use-equal-memo interactions-mode)
         offset (h/use-equal-memo frame-offset)
         size   (h/use-equal-memo size)
-        delta  (h/use-equal-memo delta)
-
-        page   (h/use-equal-memo page)
-        frame  (h/use-equal-memo frame)
-        base   (h/use-equal-memo base-frame)
-        is-fixed (h/use-equal-memo is-fixed)
+        base   base-frame
 
         render-wasm? (and (features/use-feature "render-wasm/v1")
                           (contains? cf/flags :available-viewer-wasm))]
@@ -179,13 +175,13 @@
           (events/unlistenByKey key3))))
 
     (if ^boolean render-wasm?
-      [:& viewport.wasm/viewport-wasm {:page page
-                                       :frame frame
-                                       :base base
-                                       :offset offset
-                                       :size size
-                                       :delta delta
-                                       :fixed? is-fixed}]
+      [:> viewport.wasm/viewport-wasm* {:page page
+                                        :frame frame
+                                        :base base
+                                        :offset offset
+                                        :size size
+                                        :delta delta
+                                        :is-fixed is-fixed}]
       [:> viewport-svg* {:page page
                          :frame frame
                          :base base
