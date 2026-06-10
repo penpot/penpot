@@ -80,7 +80,7 @@ impl RenderOptions {
         // TODO: this will likely need to change once we have the tile atlas in place
         self.dpr_viewport_interest_area_threshold =
             ((self.dpr * self.viewport_interest_area_threshold as f32).ceil() as i32)
-                .min(MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD);
+                .max(MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD);
     }
 
     /// Sets the devicePixelRatio.

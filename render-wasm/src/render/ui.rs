@@ -2,7 +2,6 @@ use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::render::{grid_layout, rulers};
-use crate::shapes::{Layout, Type};
 
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
@@ -28,28 +27,13 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     }
 
     // Render overlays for empty grid frames
-    for shape in shapes.iter() {
-        if shape.id.is_nil() || !shape.children.is_empty() {
+    let empty_grid_ids: std::collections::HashSet<crate::uuid::Uuid> =
+        std::mem::take(&mut render_state.empty_grid_frame_ids);
+    for id in &empty_grid_ids {
+        if show_grid_id == Some(*id) {
             continue;
         }
-
-        if show_grid_id == Some(shape.id) {
-            continue;
-        }
-
-        let Type::Frame(frame) = &shape.shape_type else {
-            continue;
-        };
-
-        if !matches!(frame.layout, Some(Layout::GridLayout(_, _))) {
-            continue;
-        }
-
-        if shape.deleted() {
-            continue;
-        }
-
-        if let Some(shape) = shapes.get(&shape.id) {
+        if let Some(shape) = shapes.get(id) {
             grid_layout::render_overlay(
                 zoom,
                 render_state.options.antialias_threshold,
@@ -59,6 +43,7 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
             );
         }
     }
+    render_state.empty_grid_frame_ids = empty_grid_ids;
 
     let viewbox = render_state.viewbox;
     let ruler_state = render_state.rulers;

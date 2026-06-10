@@ -28,24 +28,26 @@ pub fn stroke_paragraph_builder_group_from_text(
     let mut group_layer_opacity: Option<f32> = None;
 
     for paragraph in text_content.paragraphs() {
-        let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
-            std::collections::HashMap::new();
+        let mut stroke_paragraphs: Vec<ParagraphBuilder> = Vec::new();
+        let (stroke_paints, stroke_layer_opacity) =
+            get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
+
+        if group_layer_opacity.is_none() {
+            group_layer_opacity = stroke_layer_opacity;
+        }
 
         for span in paragraph.children().iter() {
-            let (stroke_paints, stroke_layer_opacity) =
-                get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
-
-            if group_layer_opacity.is_none() {
-                group_layer_opacity = stroke_layer_opacity;
-            }
-
             let text: String = span.apply_text_transform();
 
-            for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
-                let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
+            if stroke_paragraphs.len() < stroke_paints.len() {
+                for _stroke_paint in stroke_paints.iter() {
                     let paragraph_style = paragraph.paragraph_to_style();
-                    ParagraphBuilder::new(&paragraph_style, fonts)
-                });
+                    stroke_paragraphs.push(ParagraphBuilder::new(&paragraph_style, fonts));
+                }
+            }
+
+            for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
+                let builder = &mut stroke_paragraphs[paint_idx];
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
                 let stroke_style = span.to_stroke_style(
@@ -58,10 +60,6 @@ pub fn stroke_paragraph_builder_group_from_text(
                 builder.add_text(&text);
             }
         }
-
-        let stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
-            .filter_map(|i| stroke_paragraphs_map.remove(&i))
-            .collect();
 
         paragraph_group.push(stroke_paragraphs);
     }
@@ -321,7 +319,7 @@ fn draw_text(
         let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
     } else {
-        canvas.save_layer(&SaveLayerRec::default());
+        canvas.save();
     }
 
     paint_text(canvas, shape, paragraph_builder_groups);

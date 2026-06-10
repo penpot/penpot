@@ -119,11 +119,18 @@ where
 
     {
         let canvas = render_state.surfaces.canvas(filter_id);
-        canvas.clear(skia::Color::TRANSPARENT);
         canvas.save();
-        // Apply scale first, then translate
         canvas.scale((scale, scale));
         canvas.translate((-bounds.left, -bounds.top));
+
+        let scaled_bounds = Rect::new(
+            bounds.left,
+            bounds.top,
+            bounds.right,
+            bounds.bottom,
+        );
+        canvas.clip_rect(scaled_bounds, skia::ClipOp::Intersect, false);
+        canvas.clear(skia::Color::TRANSPARENT);
     }
 
     draw_fn(render_state, filter_id)?;
