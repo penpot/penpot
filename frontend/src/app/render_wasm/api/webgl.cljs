@@ -142,11 +142,16 @@ void main() {
 (def ^:private SNAPSHOT_MIME "image/webp")
 (def ^:private SNAPSHOT_QUALITY 0.6)
 
-(defn capture-canvas-snapshot-url
-  "Captures the current viewport canvas as a WebP `blob:` URL and stores it in
-  `wasm/canvas-snapshot-url`.
+;; The snapshot is only shown heavily blurred, so it is downscaled to this max
+;; side before encoding to keep the WebP encode cheap on big/high-DPI canvases.
+(def ^:private SNAPSHOT_MAX_DIM 1024)
 
-  Returns a promise resolving to the URL string (or nil)."
+(defonce ^:private snapshot-scratch-canvas
+  (delay (js/document.createElement "canvas")))
+
+(defn capture-canvas-snapshot-url
+  "Captures the current viewport canvas as a downscaled WebP `blob:` URL and
+  stores it in `wasm/canvas-snapshot-url`. Returns a promise of the URL or nil."
   []
   (if-let [^js canvas wasm/canvas]
     (p/create
@@ -156,15 +161,26 @@ void main() {
          (when (and (string? prev) (.startsWith ^js prev "blob:"))
            (js/URL.revokeObjectURL prev)))
        (set! wasm/canvas-snapshot-url nil)
-       (.toBlob canvas
-                (fn [^js blob]
-                  (if blob
-                    (let [url (js/URL.createObjectURL blob)]
-                      (set! wasm/canvas-snapshot-url url)
-                      (resolve url))
-                    (resolve nil)))
-                SNAPSHOT_MIME
-                SNAPSHOT_QUALITY)))
+       (let [cw      (.-width canvas)
+             ch      (.-height canvas)
+             ;; Cap the longest side to SNAPSHOT_MAX_DIM (never upscale).
+             scale   (min 1.0 (/ SNAPSHOT_MAX_DIM (max 1 cw ch)))
+             tw      (max 1 (js/Math.round (* cw scale)))
+             th      (max 1 (js/Math.round (* ch scale)))
+             ^js sc  @snapshot-scratch-canvas
+             ^js ctx (.getContext sc "2d")]
+         (set! (.-width sc) tw)
+         (set! (.-height sc) th)
+         (.drawImage ctx canvas 0 0 tw th)
+         (.toBlob sc
+                  (fn [^js blob]
+                    (if blob
+                      (let [url (js/URL.createObjectURL blob)]
+                        (set! wasm/canvas-snapshot-url url)
+                        (resolve url))
+                      (resolve nil)))
+                  SNAPSHOT_MIME
+                  SNAPSHOT_QUALITY))))
     (p/resolved nil)))
 
 (defn draw-thumbnail-to-canvas
