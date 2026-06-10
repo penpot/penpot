@@ -39,8 +39,8 @@ Identify:
 
 | Field | Source | Rule |
 |-------|--------|------|
-| **Title** | PR title | Rewrite from user perspective. Strip leading emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`). Focus on observable behavior. Use imperative mood. |
-| **Labels** | PR labels | Copy user-facing labels (`bug`, `enhancement`, `community contribution`). Skip workflow labels (`backport candidate`, `team-qa`). |
+| **Title** | PR title | Rewrite from user perspective. Strip leading emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`). Focus on observable behavior. Use imperative mood. Use the `issue-title` skill to generate this. |
+| **Labels** | PR labels | Copy `community contribution` if present. Skip `bug` and `enhancement` (redundant with Issue Type). Skip workflow labels (`backport candidate`, `team-qa`). |
 | **Milestone** | PR milestone | **Always copy what's on the PR.** Fetch with: `gh pr view <PR_NUMBER> --json milestone --jq '.milestone.title'` If the PR has no milestone, create the issue without one. |
 | **Project** | Always `Main` | Penpot uses the `Main` project (number 8) for all issues. |
 | **Body** | PR's user-facing section | Extract steps to reproduce or feature description. Omit internal details. Use templates below. |
@@ -101,8 +101,7 @@ Create:
 gh issue create \
   --repo penpot/penpot \
   --title "<Title>" \
-  --label "<label1>" \
-  --label "<label2>" \
+  --label "community contribution" \  # only if PR has this label
   --milestone "<milestone>" \
   --project "Main" \
   --body-file /tmp/issue-body.md
@@ -198,12 +197,10 @@ rm -f /tmp/issue-body.md /tmp/pr-body.md
 
 | PR has | Issue gets |
 |--------|-----------|
-| `bug` | `bug` |
-| `enhancement` | `enhancement` |
 | `community contribution` | `community contribution` |
+| `bug`, `enhancement` | *(skip — redundant with Issue Type)* |
 | `backport candidate` | *(skip — workflow label)* |
 | `team-qa` | *(skip — workflow label)* |
-| No user-facing label | Infer from title: `:bug:` → `bug`, `:sparkles:` → `enhancement` |
 
 ## Issue Type mapping
 

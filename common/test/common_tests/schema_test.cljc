@@ -188,3 +188,60 @@
     (t/is (= false (decode-s "f")))
     (t/is (= true  (decode-s "1")))
     (t/is (= false (decode-s "0")))))
+
+(t/deftest test-email-validation
+  (t/testing "accepts well-formed email addresses"
+    (doseq [email ["user@domain.com"
+                   "user.name@domain.com"
+                   "user+tag@domain.com"
+                   "user-name@domain.com"
+                   "user_name@domain.com"
+                   "user123@domain.com"
+                   "USER@DOMAIN.COM"
+                   "u@domain.io"
+                   "user@sub.domain.com"
+                   "user@domain.co.uk"
+                   "user@domain.dev"
+                   "a@bc.co"]]
+      (t/is (sm/validate ::sm/email email) (str "should accept: " email))
+      (t/is (= email (sm/decode ::sm/email email sm/json-transformer)))))
+
+  (t/testing "rejects domain with consecutive dots (dot-dot)"
+    (t/is (false? (sm/validate ::sm/email "user@gmail.com..")))
+    (t/is (false? (sm/validate ::sm/email "user@sub..domain.com")))
+    (t/is (false? (sm/validate ::sm/email "eissaalbothigi@gmail.com..")))
+    (t/is (nil? (sm/parse-email "user@gmail.com..")))
+    (t/is (nil? (sm/parse-email "eissaalbothigi@gmail.com.."))))
+
+  (t/testing "rejects domain ending with a dot"
+    (t/is (false? (sm/validate ::sm/email "user@domain.")))
+    (t/is (nil? (sm/parse-email "user@domain."))))
+
+  (t/testing "rejects domain starting with a dot"
+    (t/is (false? (sm/validate ::sm/email "user@.domain.com")))
+    (t/is (nil? (sm/parse-email "user@.domain.com"))))
+
+  (t/testing "rejects local part with consecutive dots"
+    (t/is (false? (sm/validate ::sm/email "user..name@domain.com")))
+    (t/is (nil? (sm/parse-email "user..name@domain.com"))))
+
+  (t/testing "rejects local part starting with a dot"
+    (t/is (false? (sm/validate ::sm/email ".user@domain.com")))
+    (t/is (nil? (sm/parse-email ".user@domain.com"))))
+
+  (t/testing "rejects label starting or ending with hyphen"
+    (t/is (false? (sm/validate ::sm/email "user@-domain.com")))
+    (t/is (false? (sm/validate ::sm/email "user@domain-.com"))))
+
+  (t/testing "rejects TLD shorter than 2 chars"
+    (t/is (false? (sm/validate ::sm/email "user@domain.c"))))
+
+  (t/testing "rejects domain without a dot"
+    (t/is (false? (sm/validate ::sm/email "user@domain"))))
+
+  (t/testing "rejects empty or malformed emails"
+    (t/is (false? (sm/validate ::sm/email "")))
+    (t/is (false? (sm/validate ::sm/email "@domain.com")))
+    (t/is (false? (sm/validate ::sm/email "user@")))
+    (t/is (false? (sm/validate ::sm/email "userdomain.com")))
+    (t/is (false? (sm/validate ::sm/email "user@@domain.com")))))
