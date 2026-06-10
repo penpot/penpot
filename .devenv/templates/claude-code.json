@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "penpot": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:${PENPOT_MCP_PORT}/mcp", "--allow-http"]
+    },
+    "serena-devenv": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:${SERENA_MCP_PORT}/mcp", "--allow-http"]
+    }
+  }
+}

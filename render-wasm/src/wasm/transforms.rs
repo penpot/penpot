@@ -7,7 +7,7 @@ use skia_safe as skia;
 use crate::mem;
 use crate::shapes::{self, TransformEntry, TransformEntrySource};
 use crate::utils::uuid_from_u32_quartet;
-use crate::{with_state, STATE};
+use crate::with_state;
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]

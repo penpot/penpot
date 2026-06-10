@@ -1,7 +1,6 @@
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub enum Layout {
     FlexLayout(LayoutData, FlexData),
     GridLayout(LayoutData, GridData),

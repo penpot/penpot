@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
-import { setupEmptyTokensFileRender, setupTokensFileRender } from "./helpers";
+import { setupEmptyTokensFileRender, setupTokensFileRender, createSet, changeSetInput } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await WasmWorkspacePage.init(page);  
@@ -9,20 +9,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Tokens: Sets Tab", () => {
-  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
-    const setInput = sidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill(setName);
-    await setInput.press(finalKey);
-  };
-
-  const createSet = async (sidebar, setName, finalKey = "Enter") => {
-    const tokensTabButton = sidebar
-      .getByRole("button", { name: "Add set" })
-      .click();
-
-    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
-  };
 
   const assertEmptySetsList = async (el) => {
     const buttons = await el.getByRole("button").allTextContents();

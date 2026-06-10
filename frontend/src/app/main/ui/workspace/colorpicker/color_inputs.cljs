@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker.color-inputs
   (:require-macros [app.main.style :as stl])
@@ -10,6 +10,8 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.types.color :as cc]
+   [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
@@ -194,123 +196,139 @@
       (cond
         (= type :rgb)
         [:*
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "red-value" :class (stl/css :input-label)} "R"]
-          [:input {:id "red-value"
-                   :ref (:r refs)
-                   :type "number"
-                   :min 0
-                   :max 255
-                   :default-value red
-                   :on-change (on-change-property :r 255)
-                   :on-key-down (on-key-down-property :r 255)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "green-value" :class (stl/css :input-label)} "G"]
-          [:input {:id "green-value"
-                   :ref (:g refs)
-                   :type "number"
-                   :min 0
-                   :max 255
-                   :default-value green
-                   :on-change (on-change-property :g 255)
-                   :on-key-down (on-key-down-property :g 255)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "blue-value" :class (stl/css :input-label)} "B"]
-          [:input {:id "blue-value"
-                   :ref (:b refs)
-                   :type "number"
-                   :min 0
-                   :max 255
-                   :default-value blue
-                   :on-change (on-change-property :b 255)
-                   :on-key-down (on-key-down-property :b 255)}]]]
+         [:> input* {:id "red-value"
+                     :ref (:r refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-r
+                     :property "Red"
+                     :aria-label "Red"
+                     :max 255
+                     :default-value red
+                     :on-change (on-change-property :r 255)
+                     :on-key-down (on-key-down-property :r 255)}]
+         [:> input* {:id "green-value"
+                     :ref (:g refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-g
+                     :property "Green"
+                     :aria-label "Green"
+                     :max 255
+                     :default-value green
+                     :on-change (on-change-property :g 255)
+                     :on-key-down (on-key-down-property :g 255)}]
+         [:> input* {:id "blue-value"
+                     :ref (:b refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-b
+                     :property "Blue"
+                     :aria-label "Blue"
+                     :max 255
+                     :default-value blue
+                     :on-change (on-change-property :b 255)
+                     :on-key-down (on-key-down-property :b 255)}]]
 
         (= hsb-mode :hsl)
         [:*
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
-          [:input {:id "hue-value"
-                   :ref (:h refs)
-                   :type "number"
-                   :min 0
-                   :max 360
-                   :default-value hue
-                   :on-change (on-change-property :h 360)
-                   :on-key-down (on-key-down-property :h 360)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "hsl-saturation-value" :class (stl/css :input-label)} "S"]
-          [:input {:id "hsl-saturation-value"
-                   :ref (:hsl-s refs)
-                   :type "number"
-                   :min 0
-                   :max 100
-                   :step 1
-                   :default-value (mth/precision (* hsl-s 100) 2)
-                   :on-change (on-change-property :hsl-s 100)
-                   :on-key-down (on-key-down-property :hsl-s 100)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "lightness-value" :class (stl/css :input-label)} "L"]
-          [:input {:id "lightness-value"
-                   :ref (:hsl-l refs)
-                   :type "number"
-                   :min 0
-                   :max 100
-                   :step 1
-                   :default-value (mth/precision (* hsl-l 100) 2)
-                   :on-change (on-change-property :hsl-l 100)
-                   :on-key-down (on-key-down-property :hsl-l 100)}]]]
-
+         [:> input* {:id "hue-value"
+                     :ref (:h refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-h
+                     :property "Hue"
+                     :aria-label "Hue"
+                     :max 360
+                     :default-value hue
+                     :on-change (on-change-property :h 360)
+                     :on-key-down (on-key-down-property :h 360)}]
+         [:> input* {:id "saturation-value"
+                     :ref (:s refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-s
+                     :property "Saturation"
+                     :aria-label "Saturation"
+                     :max 100
+                     :step 1
+                     :default-value saturation
+                     :on-change (on-change-property :s 100)
+                     :on-key-down (on-key-down-property :s 100)}]
+         [:> input* {:id "lightness-value"
+                     :ref (:hsl-l refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-l
+                     :property "Lightness"
+                     :aria-label "Lightness"
+                     :max 100
+                     :step 1
+                     :default-value (mth/precision (* hsl-l 100) 2)
+                     :on-change (on-change-property :hsl-l 100)
+                     :on-key-down (on-key-down-property :hsl-l 100)}]]
         :else
         [:*
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
-          [:input {:id "hue-value"
-                   :ref (:h refs)
-                   :type "number"
-                   :min 0
-                   :max 360
-                   :default-value hue
-                   :on-change (on-change-property :h 360)
-                   :on-key-down (on-key-down-property :h 360)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "saturation-value" :class (stl/css :input-label)} "S"]
-          [:input {:id "saturation-value"
-                   :ref (:s refs)
-                   :type "number"
-                   :min 0
-                   :max 100
-                   :step 1
-                   :default-value saturation
-                   :on-change (on-change-property :s 100)
-                   :on-key-down (on-key-down-property :s 100)}]]
-         [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "brightness-value" :class (stl/css :input-label)} "B(V)"]
-          [:input {:id "brightness-value"
-                   :ref (:v refs)
-                   :type "number"
-                   :min 0
-                   :max 100
-                   :default-value value
-                   :on-change (on-change-property :v 100)
-                   :on-key-down (on-key-down-property :v 100)}]]])]
+         [:> input* {:id "hue-value"
+                     :ref (:h refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-h
+                     :property "Hue"
+                     :aria-label "Hue"
+                     :max 360
+                     :default-value hue
+                     :on-change (on-change-property :h 360)
+                     :on-key-down (on-key-down-property :h 360)}]
+         [:> input* {:id "saturation-value"
+                     :ref (:s refs)
+                     :type "number"
+                     :min 0
+                     :icon i/character-s
+                     :property "Saturation"
+                     :max 100
+                     :step 1
+                     :aria-label "Saturation"
+                     :default-value saturation
+                     :on-change (on-change-property :s 100)
+                     :on-key-down (on-key-down-property :s 100)}]
+
+         [:> input* {:id "brightness-value"
+                     :ref (:v refs)
+                     :type "number"
+                     :min 0
+                     :text-icon "B(V)"
+                     :property "Brightness"
+                     :aria-label "Brightness (Value)"
+                     :max 100
+                     :step 1
+                     :default-value value
+                     :on-change (on-change-property :v 100)
+                     :on-key-down (on-key-down-property :v 100)}]])]
      [:div {:class (stl/css :hex-alpha-wrapper)}
-      [:div {:class (stl/css-case :input-wrapper true
-                                  :hex true)}
-       [:label {:for "hex-value" :class (stl/css :input-label)} "HEX"]
-       [:input {:id "hex-value"
-                :ref (:hex refs)
-                :default-value hex
-                :on-change on-change-hex
-                :on-blur on-blur-hex}]]
+      [:> input* {:id "hex-value"
+                  :class (stl/css :hex-input)
+                  :ref (:hex refs)
+                  :type "text"
+                  :text-icon "HEX"
+                  :property "Hex"
+                  :aria-label "Hexadecimal color value"
+                  :max 7
+                  :default-value hex
+                  :on-change on-change-hex
+                  :on-blur on-blur-hex}]
+
       (when (not disable-opacity)
-        [:div {:class (stl/css-case :input-wrapper true)}
-         [:label {:for "alpha-value" :class (stl/css :input-label)} "A"]
-         [:input {:id "alpha-value"
-                  :ref (:alpha refs)
-                  :type "number"
-                  :min 0
-                  :step 1
-                  :max 100
-                  :default-value (if (= alpha :multiple) "" alpha)
-                  :on-change (on-change-property :alpha 100)
-                  :on-key-down (on-key-down-property :alpha 100)}]])]]))
+        [:> input* {:id "alpha-value"
+                    :ref (:alpha refs)
+                    :type "number"
+                    :class (stl/css :alpha-input)
+                    :min 0
+                    :icon i/character-a
+                    :property "Alpha"
+                    :max 100
+                    :step 1
+                    :aria-label "Alpha"
+                    :default-value (if (= alpha :multiple) "" (mth/precision (* alpha 100) 2))
+                    :on-change (on-change-property :alpha 100)
+                    :on-key-down (on-key-down-property :alpha 100)}])]]))

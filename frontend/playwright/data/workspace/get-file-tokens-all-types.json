@@ -1,0 +1,439 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "variants/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/objects-map",
+            "tokens/numeric-input",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~uc6b102e2-5aaa-809c-8007-dcd1eab2135d",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 11",
+    "~:revn": 3,
+    "~:modified-at": "~m1779204621124",
+    "~:vern": 0,
+    "~:id": "~u9fb430ed-e1e9-81bc-8008-0b7ae978d9c4",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes",
+            "0011-fix-invalid-text-touched-flags",
+            "0012-fix-position-data",
+            "0013-fix-component-path",
+            "0013-clear-invalid-strokes-and-fills",
+            "0014-fix-tokens-lib-duplicate-ids",
+            "0014-clear-components-nil-objects",
+            "0015-fix-text-attrs-blank-strings",
+            "0015-clean-shadow-color",
+            "0016-copy-fills-from-position-data-to-text-node",
+            "0017-fix-layout-flex-dir",
+            "0018-remove-unneeded-objects-from-components",
+            "0019-fix-missing-swap-slots",
+            "0020-sync-component-id-with-near-main"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u4cdd76d8-0e6d-8168-8008-0118118e1a1a",
+    "~:created-at": "~m1779204571619",
+    "~:backend": "legacy-db",
+    "~:data": {
+        "~:pages": [
+            "~u9fb430ed-e1e9-81bc-8008-0b7ae978d9c5"
+        ],
+        "~:pages-index": {
+            "~u9fb430ed-e1e9-81bc-8008-0b7ae978d9c5": {
+                "~:objects": {
+                    "~#penpot/objects-map/v2": {
+                        "~u00000000-0000-0000-0000-000000000000": "[\"~#shape\",[\"^ \",\"~:y\",0,\"~:hide-fill-on-export\",false,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"Root Frame\",\"~:width\",0.01,\"~:type\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",0.0,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.01]],[\"^:\",[\"^ \",\"~:x\",0.0,\"~:y\",0.01]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^3\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",0,\"~:proportion\",1.0,\"~:r4\",0,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^6\",0.01,\"~:height\",0.01,\"~:x1\",0,\"~:y1\",0,\"~:x2\",0.01,\"~:y2\",0.01]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:flip-x\",null,\"^H\",0.01,\"~:flip-y\",null,\"~:shapes\",[]]]"
+                    }
+                },
+                "~:id": "~u9fb430ed-e1e9-81bc-8008-0b7ae978d9c5",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u9fb430ed-e1e9-81bc-8008-0b7ae978d9c4",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        },
+        "~:tokens-lib": {
+            "~#penpot/tokens-lib": {
+                "~:sets": {
+                    "~#ordered-map": [
+                        [
+                            "S-Global",
+                            {
+                                "~#penpot/token-set": {
+                                    "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cbd",
+                                    "~:name": "Global",
+                                    "~:description": "",
+                                    "~:modified-at": "~m1779204621126",
+                                    "~:tokens": {
+                                        "~#ordered-map": [
+                                            [
+                                                "str1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cad",
+                                                        "~:name": "str1",
+                                                        "~:type": "~:stroke-width",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "typ1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cae",
+                                                        "~:name": "typ1",
+                                                        "~:type": "~:typography",
+                                                        "~:value": {
+                                                            "~:font-family": [
+                                                                "ABeeZee"
+                                                            ],
+                                                            "~:font-size": "{fsiz1}",
+                                                            "~:font-weight": "{wei1}",
+                                                            "~:letter-spacing": "{lspa1}",
+                                                            "~:line-height": "1",
+                                                            "~:text-case": "{cas1}",
+                                                            "~:text-decoration": "{dec1}"
+                                                        },
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "siz1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180caf",
+                                                        "~:name": "siz1",
+                                                        "~:type": "~:sizing",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "num1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb0",
+                                                        "~:name": "num1",
+                                                        "~:type": "~:number",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "lspa1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb1",
+                                                        "~:name": "lspa1",
+                                                        "~:type": "~:letter-spacing",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "opa1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb2",
+                                                        "~:name": "opa1",
+                                                        "~:type": "~:opacity",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "dec1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb3",
+                                                        "~:name": "dec1",
+                                                        "~:type": "~:text-decoration",
+                                                        "~:value": "none",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "fsiz1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb4",
+                                                        "~:name": "fsiz1",
+                                                        "~:type": "~:font-size",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "sha1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb5",
+                                                        "~:name": "sha1",
+                                                        "~:type": "~:shadow",
+                                                        "~:value": [
+                                                            {
+                                                                "~:offset-x": "4",
+                                                                "~:offset-y": "4",
+                                                                "~:blur": "4",
+                                                                "~:spread": "0",
+                                                                "~:color": "grey",
+                                                                "~:inset": false
+                                                            }
+                                                        ],
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "rad1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb6",
+                                                        "~:name": "rad1",
+                                                        "~:type": "~:border-radius",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "cas1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb7",
+                                                        "~:name": "cas1",
+                                                        "~:type": "~:text-case",
+                                                        "~:value": "none",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "spa1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb8",
+                                                        "~:name": "spa1",
+                                                        "~:type": "~:spacing",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "rot1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cb9",
+                                                        "~:name": "rot1",
+                                                        "~:type": "~:rotation",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "wei1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cba",
+                                                        "~:name": "wei1",
+                                                        "~:type": "~:font-weight",
+                                                        "~:value": "regular",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "col1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cbb",
+                                                        "~:name": "col1",
+                                                        "~:type": "~:color",
+                                                        "~:value": "red",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "dim1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7af8180cbc",
+                                                        "~:name": "dim1",
+                                                        "~:type": "~:dimensions",
+                                                        "~:value": "1",
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204586592"
+                                                    }
+                                                }
+                                            ],
+                                            [
+                                                "fam1",
+                                                {
+                                                    "~#penpot/token": {
+                                                        "~:id": "~u1dc5cafc-6d57-808d-8008-0b7b16dca3ad",
+                                                        "~:name": "fam1",
+                                                        "~:type": "~:font-family",
+                                                        "~:value": [
+                                                            "Aboreto"
+                                                        ],
+                                                        "~:description": "",
+                                                        "~:modified-at": "~m1779204618098"
+                                                    }
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    ]
+                },
+                "~:themes": {
+                    "~#ordered-map": [
+                        [
+                            "",
+                            {
+                                "~#ordered-map": [
+                                    [
+                                        "__PENPOT__HIDDEN__TOKEN__THEME__",
+                                        {
+                                            "~#penpot/token-theme": {
+                                                "~:id": "~u00000000-0000-0000-0000-000000000000",
+                                                "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
+                                                "~:group": "",
+                                                "~:description": "",
+                                                "~:is-source": false,
+                                                "~:external-id": "",
+                                                "~:modified-at": "~m1779204586593",
+                                                "~:sets": {
+                                                    "~#set": [
+                                                        "Global"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
+                                ]
+                            }
+                        ]
+                    ]
+                },
+                "~:active-themes": {
+                    "~#set": [
+                        "/__PENPOT__HIDDEN__TOKEN__THEME__"
+                    ]
+                }
+            }
+        }
+    }
+}

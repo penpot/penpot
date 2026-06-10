@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.plugins
   (:require-macros [app.main.style :as stl])
@@ -29,7 +29,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
@@ -56,7 +55,7 @@
             "/" "")
           icon))
 
-(mf/defc plugin-entry
+(mf/defc plugin-entry*
   [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
 
   (let [{:keys [plugin-id host icon name description permissions]} manifest
@@ -144,7 +143,7 @@
                    (reset! fetching-manifest? false)
                    (if plugin
                      (do
-                       (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                       (st/emit! (ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                        (modal/show! :plugin-permissions
                                     {:plugin plugin
                                      :on-accept
@@ -163,10 +162,10 @@
         on-open-plugin
         (mf/use-fn
          (fn [manifest]
-           (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                            ::ev/origin "workspace:plugins"
-                                            :name (:name manifest)
-                                            :host (:host manifest)}))
+           (st/emit! (ev/event {::ev/name "start-plugin"
+                                ::ev/origin "workspace:plugins"
+                                :name (:name manifest)
+                                :host (:host manifest)}))
            (dp/open-plugin! manifest user-can-edit?)
            (modal/hide!)))
 
@@ -176,9 +175,9 @@
          (fn [plugin-index]
            (let [plugins-list (preg/plugins-list)
                  plugin (nth plugins-list plugin-index)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
-                                              :name (:name plugin)
-                                              :host (:host plugin)}))
+             (st/emit! (ev/event {::ev/name "remove-plugin"
+                                  :name (:name plugin)
+                                  :host (:host plugin)}))
              (dp/close-plugin! plugin)
              (preg/remove-plugin! plugin)
              (reset! plugins-state* (preg/plugins-list)))))]
@@ -212,7 +211,7 @@
        (when-not (empty? plugins-state)
          [:> i18n/tr-html*
           {:class (stl/css :discover)
-           :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
+           :on-click #(st/emit! (ev/event {::ev/name "open-plugins-list"}))
            :content (tr "workspace.plugins.discover" cfg/plugins-list-uri)}])
 
        [:hr]
@@ -224,7 +223,7 @@
           [:a {:class (stl/css :plugins-link)
                :href cfg/plugins-list-uri
                :target "_blank"
-               :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))}
+               :on-click #(st/emit! (ev/event {::ev/name "open-plugins-list"}))}
            (tr "workspace.plugins.plugin-list-link") deprecated-icon/external-link]]
 
          [:*
@@ -233,12 +232,12 @@
 
           [:div {:class (stl/css :plugins-list)}
            (for [[idx manifest] (d/enumerate plugins-state)]
-             [:& plugin-entry {:key (dm/str "plugin-" idx)
-                               :index idx
-                               :manifest manifest
-                               :user-can-edit user-can-edit?
-                               :on-open-plugin on-open-plugin
-                               :on-remove-plugin on-remove-plugin}])]])]]]))
+             [:> plugin-entry* {:key (dm/str "plugin-" idx)
+                                :index idx
+                                :manifest manifest
+                                :user-can-edit user-can-edit?
+                                :on-open-plugin on-open-plugin
+                                :on-remove-plugin on-remove-plugin}])]])]]]))
 
 (mf/defc plugins-permission-list*
   {::mf/private true}
@@ -397,9 +396,9 @@
          (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
-                                            :host host
-                                            :permissions (->> permissions (str/join ", "))})
+           (st/emit! (ev/event {::ev/name "allow-plugin-permissions"
+                                :host host
+                                :permissions (->> permissions (str/join ", "))})
                      (modal/hide))
            (when on-accept (on-accept))))
 
@@ -408,9 +407,9 @@
          (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
-                                            :host host
-                                            :permissions (->> permissions (str/join ", "))})
+           (st/emit! (ev/event {::ev/name "reject-plugin-permissions"
+                                :host host
+                                :permissions (->> permissions (str/join ", "))})
                      (modal/hide))
            (when on-close (on-close))))]
 
@@ -456,7 +455,7 @@
          (mf/deps on-accept)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "try-out-accept"})
+           (st/emit! (ev/event {::ev/name "try-out-accept"})
                      (modal/hide))
            (when on-accept (on-accept))))
 
@@ -465,7 +464,7 @@
          (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (ptk/event ::ev/event {::ev/name "try-out-cancel"})
+           (st/emit! (ev/event {::ev/name "try-out-cancel"})
                      (modal/hide))
            (when on-close (on-close))))]
 

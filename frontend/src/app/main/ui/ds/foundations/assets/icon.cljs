@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.foundations.assets.icon
   (:refer-clojure :exclude [mask drop filter remove])
@@ -133,7 +133,7 @@
 (def ^:icon-id easing-ease-out "easing-ease-out")
 (def ^:icon-id easing-linear "easing-linear")
 (def ^:icon-id effects "effects")
-(def ^:icon-id elipse "elipse")
+(def ^:icon-id ellipse "ellipse")
 (def ^:icon-id exit "exit")
 (def ^:icon-id expand "expand")
 (def ^:icon-id external-link "external-link")
@@ -325,13 +325,16 @@
   (let [size-px (cond (= size "l") icon-size-l
                       (= size "s") icon-size-s
                       :else        icon-size-m)
-
+        offset  (if (or (= size "s") (= size "m"))
+                  (/ (- icon-size-m size-px) 2)
+                  0)
         props   (mf/spread-props props
                                  {:class [class (stl/css :icon)]
-                                  :width size-px
-                                  :height size-px})]
-
+                                  :width (max icon-size-m size-px)
+                                  :height (max icon-size-m size-px)})]
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)
+            :x offset
+            :y offset
             :width size-px
             :height size-px}]]))

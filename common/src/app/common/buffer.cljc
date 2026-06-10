@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.buffer
   "A collection of helpers and macros for work with byte
@@ -279,3 +279,10 @@
   [o]
   #?(:cljs (.-byteLength ^js o)
      :clj  (.capacity ^ByteBuffer o)))
+
+#?(:clj
+   (defn set-order
+     "Set the byte order on a ByteBuffer. Returns the buffer."
+     [^ByteBuffer buffer ^ByteOrder order]
+     (.order buffer order)
+     buffer))

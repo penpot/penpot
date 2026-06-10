@@ -181,7 +181,7 @@ describe("Paragraph", () => {
     expect(isParagraphEnd(paragraph.firstElementChild.firstChild, 13)).toBeTruthy();
   });
 
-  test("isParagraphEnd should return false on a paragrah where the focus offset is inside", () => {
+  test("isParagraphEnd should return false on a paragraph where the focus offset is inside", () => {
     const paragraph = createParagraph([
       createTextSpan(new Text("Lorem ipsum sit")),
       createTextSpan(new Text("amet")),
