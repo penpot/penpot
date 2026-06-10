@@ -7,6 +7,7 @@
 (ns frontend-tests.plugins.page-test
   (:require
    [app.common.test-helpers.files :as cthf]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.util.object :as obj]
@@ -28,10 +29,10 @@
 
 (defn- mock-page-initialized
   "Simulates the two effects of initialize-page* without routing:
-  updates current-page-id in state, then emits the public :page-initialized event."
+  updates current-page-id in state, then emits the public ::dwpg/initialized event."
   [store page-id]
   (ptk/emit! store #(assoc % :current-page-id page-id))
-  (ptk/emit! store (ptk/data-event :page-initialized page-id)))
+  (ptk/emit! store (ptk/data-event ::dwpg/initialized page-id)))
 
 (t/deftest test-open-page-returns-promise
   (let [{:keys [context]} (setup)
