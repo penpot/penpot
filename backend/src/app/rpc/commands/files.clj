@@ -974,6 +974,12 @@
                              {:id id})
                  file)
 
+               (= (:is-shared file) (:is-shared params))
+               ;; File is already in the desired state (idempotent);
+               ;; this can happen when the frontend sends a duplicate
+               ;; request due to optimistic updates or race conditions.
+               file
+
                :else
                (ex/raise :type :validation
                          :code :invalid-shared-state
