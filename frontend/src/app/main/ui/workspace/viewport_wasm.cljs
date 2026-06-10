@@ -257,6 +257,10 @@
 
         ;; True when we are opening a new file or switching to a new page
         page-transition?  (mf/deref wasm.api/page-transition?)
+        ;; True during pan/zoom (set by `set-view-box`). Used to suppress heavy
+        ;; overlays that would otherwise re-render + recompute geometry on every
+        ;; viewbox change of the gesture.
+        view-interaction? (mf/deref wasm.api/view-interaction-active?)
         context-loss-overlay? (mf/deref wasm.api/context-loss-overlay?)
         transition-reveal-rulers? (mf/deref wasm.api/transition-reveal-rulers?)
 
@@ -289,7 +293,7 @@
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
-        show-grids?              (and (contains? layout :display-guides) (not page-transition?))
+        show-grids?              (and (contains? layout :display-guides) (not page-transition?) (not view-interaction?))
 
         show-frame-outline?      (and (= transform :move) (not panning) (not page-transition?))
         show-outlines?           (and (nil? transform)
@@ -325,7 +329,8 @@
         show-measures?           (and (not transform)
                                       (not path-editing?)
                                       (or show-distances? mode-inspect? read-only?)
-                                      (not page-transition?))
+                                      (not page-transition?)
+                                      (not view-interaction?))
         show-artboard-names?     (and (contains? layout :display-artboard-names) (not page-transition?))
         hide-ui?                 (contains? layout :hide-ui)
 
@@ -360,6 +365,7 @@
 
         show-padding?
         (and (nil? transform)
+             (not view-interaction?)
              single-select?
              (= (:type first-shape) :frame)
              (= (:layout first-shape) :flex)
@@ -367,6 +373,7 @@
 
         show-margin?
         (and (nil? transform)
+             (not view-interaction?)
              single-select?
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
