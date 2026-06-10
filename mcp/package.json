@@ -2,6 +2,7 @@
   "name": "@penpot/mcp",
   "version": "2.16.0-rc.9.11",
   "description": "MCP server for Penpot integration",
+  "license": "MPL-2.0",
   "bin": {
     "penpot-mcp": "./bin/mcp-local.js"
   },
