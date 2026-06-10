@@ -1,0 +1,71 @@
+name: "CI: Frontend"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'frotend/**/*'
+      - 'common/**/*'
+      - 'render-wasm/**/*'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'frotend/**'
+      - 'common/**'
+      - 'render-wasm/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-frontend:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Frontend Tests"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Lint
+        working-directory: ./frontend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt:js
+          pnpm run check-fmt:clj
+          pnpm run check-fmt:scss
+          pnpm run lint:clj
+          pnpm run lint:js
+          pnpm run lint:scss
+
+      - name: Unit Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test
+
+      - name: Component Tests
+        working-directory: ./frontend
+        env:
+          VITEST_BROWSER_TIMEOUT: 120000
+        run: |
+          ./scripts/test-components
