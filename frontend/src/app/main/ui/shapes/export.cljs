@@ -10,7 +10,7 @@
   importation."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
+   [app.common.data.macros :as dm]  
    [app.common.geom.shapes :as gsh]
    [app.common.json :as json]
    [app.common.svg :as csvg]
@@ -184,7 +184,6 @@
                              :axis (d/name axis)}])])
 
 (mf/defc export-page*
-  {::mf/props :obj}
   [{:keys [page]}]
   (let [id     (get page :id)
         grids  (get page :grids)
