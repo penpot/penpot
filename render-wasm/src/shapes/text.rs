@@ -18,7 +18,7 @@ use skia_safe::{
     Contains,
 };
 
-use std::cell::Cell;
+use std::cell::{Cell, Ref, RefCell};
 use std::collections::HashSet;
 
 use super::FontFamily;
@@ -190,11 +190,23 @@ struct CachedExtrect {
     bottom: f32,
 }
 
+/// (content_version, x, y, width, height, valign, grow_type) as raw bits.
+pub type RenderTextCacheKey = (u64, u32, u32, u32, u32, u8, u8);
+
+/// Cached laid-out paragraphs for the plain fill paint path, reused while the
+/// key is unchanged so re-renders skip Skia paragraph layout.
+#[derive(Debug)]
+struct RenderTextCache {
+    key: RenderTextCacheKey,
+    paragraphs: Vec<ParagraphLayout>,
+}
+
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
     pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
     cached_extrect: Cell<Option<CachedExtrect>>,
+    render_cache: RefCell<Option<RenderTextCache>>,
 }
 
 impl Default for TextContentLayout {
@@ -209,6 +221,7 @@ impl Clone for TextContentLayout {
             paragraph_builders: vec![],
             paragraphs: vec![],
             cached_extrect: Cell::new(None),
+            render_cache: RefCell::new(None),
         }
     }
 }
@@ -225,6 +238,7 @@ impl TextContentLayout {
             paragraph_builders: vec![],
             paragraphs: vec![],
             cached_extrect: Cell::new(None),
+            render_cache: RefCell::new(None),
         }
     }
 
@@ -236,10 +250,34 @@ impl TextContentLayout {
         self.paragraph_builders = paragraph_builders;
         self.paragraphs = paragraphs;
         self.cached_extrect.set(None);
+        self.render_cache.replace(None);
     }
 
     pub fn needs_update(&self) -> bool {
         self.paragraph_builders.is_empty() || self.paragraphs.is_empty()
+    }
+
+    pub fn cached_render_paragraphs(
+        &self,
+        key: RenderTextCacheKey,
+    ) -> Option<Ref<'_, Vec<ParagraphLayout>>> {
+        let cache = self.render_cache.borrow();
+        if cache.as_ref().map(|c| c.key) == Some(key) {
+            Some(Ref::map(cache, |c| {
+                &c.as_ref().expect("checked above").paragraphs
+            }))
+        } else {
+            None
+        }
+    }
+
+    pub fn store_render_paragraphs(
+        &self,
+        key: RenderTextCacheKey,
+        paragraphs: Vec<ParagraphLayout>,
+    ) {
+        self.render_cache
+            .replace(Some(RenderTextCache { key, paragraphs }));
     }
 }
 
@@ -871,6 +909,10 @@ impl TextContent {
                 auto_height + paragraph.height()
             });
         paragraph_height
+    }
+
+    pub fn content_version(&self) -> u64 {
+        self.content_version
     }
 
     pub fn needs_update_layout(&self) -> bool {

@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, Stroke, StrokeKind,
-        TextContent,
+        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout,
+        Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -250,6 +250,8 @@ fn render_text_on_canvas(
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
 ) {
+    let use_cache = shadow.is_none() && blur.is_none();
+
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
@@ -260,7 +262,7 @@ fn render_text_on_canvas(
     if let Some(shadow_paint) = shadow {
         let layer_rec = SaveLayerRec::default().paint(shadow_paint);
         canvas.save_layer(&layer_rec);
-        draw_text(canvas, shape, paragraph_builders, layer_opacity);
+        draw_text(canvas, shape, paragraph_builders, layer_opacity, use_cache);
         canvas.restore();
     } else if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
         if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
@@ -268,13 +270,13 @@ fn render_text_on_canvas(
             layer_paint.set_image_filter(erode);
             let layer_rec = SaveLayerRec::default().paint(&layer_paint);
             canvas.save_layer(&layer_rec);
-            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+            draw_text(canvas, shape, paragraph_builders, layer_opacity, use_cache);
             canvas.restore();
         } else {
-            draw_text(canvas, shape, paragraph_builders, layer_opacity);
+            draw_text(canvas, shape, paragraph_builders, layer_opacity, use_cache);
         }
     } else {
-        draw_text(canvas, shape, paragraph_builders, layer_opacity);
+        draw_text(canvas, shape, paragraph_builders, layer_opacity, use_cache);
     }
 
     if blur.is_some() {
@@ -284,17 +286,8 @@ fn render_text_on_canvas(
     canvas.restore();
 }
 
-/// Lays out and paints paragraph builders without any layer management.
-fn paint_text(
-    canvas: &Canvas,
-    shape: &Shape,
-    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
-) {
-    let text_content = shape.get_text_content();
-    let layout_info =
-        calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
-
-    for para in &layout_info.paragraphs {
+fn paint_paragraph_layouts(canvas: &Canvas, paragraphs: &[ParagraphLayout]) {
+    for para in paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
         for deco in &para.decorations {
             draw_text_decorations(
@@ -309,11 +302,53 @@ fn paint_text(
     }
 }
 
+/// `use_cache` is set only by the plain fill path; stroke/mask/shadow pass
+/// `false` since they build differently painted builders.
+fn paint_text(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    use_cache: bool,
+) {
+    let text_content = shape.get_text_content();
+
+    if use_cache {
+        let selrect = shape.selrect();
+        let key = (
+            text_content.content_version(),
+            selrect.x().to_bits(),
+            selrect.y().to_bits(),
+            selrect.width().to_bits(),
+            selrect.height().to_bits(),
+            shape.vertical_align() as u8,
+            text_content.grow_type() as u8,
+        );
+
+        if let Some(paragraphs) = text_content.layout.cached_render_paragraphs(key) {
+            paint_paragraph_layouts(canvas, &paragraphs);
+            return;
+        }
+
+        let layout_info =
+            calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+        paint_paragraph_layouts(canvas, &layout_info.paragraphs);
+        text_content
+            .layout
+            .store_render_paragraphs(key, layout_info.paragraphs);
+        return;
+    }
+
+    let layout_info =
+        calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+    paint_paragraph_layouts(canvas, &layout_info.paragraphs);
+}
+
 fn draw_text(
     canvas: &Canvas,
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
     layer_opacity: Option<f32>,
+    use_cache: bool,
 ) {
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
@@ -324,7 +359,7 @@ fn draw_text(
         canvas.save_layer(&SaveLayerRec::default());
     }
 
-    paint_text(canvas, shape, paragraph_builder_groups);
+    paint_text(canvas, shape, paragraph_builder_groups, use_cache);
 }
 
 /// Renders an inner stroke using mask + SrcIn + DstOver layer structure.
@@ -371,7 +406,7 @@ fn render_inner_stroke_on_canvas(
     canvas.save_layer(&SaveLayerRec::default());
 
     // Draw opaque mask (full alpha text shape)
-    paint_text(canvas, shape, mask_builders);
+    paint_text(canvas, shape, mask_builders, false);
 
     // SrcIn layer — only keeps stroke pixels where mask has alpha
     let mut src_in_paint = Paint::default();
@@ -379,7 +414,7 @@ fn render_inner_stroke_on_canvas(
     canvas.save_layer(&SaveLayerRec::default().paint(&src_in_paint));
 
     // Draw stroke
-    paint_text(canvas, shape, stroke_builders);
+    paint_text(canvas, shape, stroke_builders, false);
 
     canvas.restore(); // SrcIn layer
     canvas.restore(); // mask group layer
@@ -389,7 +424,7 @@ fn render_inner_stroke_on_canvas(
     dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
     canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
 
-    paint_text(canvas, shape, fill_builders);
+    paint_text(canvas, shape, fill_builders, false);
 
     canvas.restore(); // DstOver layer
     canvas.restore(); // outer layer
