@@ -4,6 +4,7 @@ import { PenpotMcpServer } from "./PenpotMcpServer";
 import { createLogger, logActiveTransports } from "./logger";
 import { parseInstallerArgs, runInstall, runUninstall, printResults, printHelp } from "./installer";
 import { runDoctor, printDoctorReport } from "./installer/doctor";
+import { parseConfigArgs, runConfig } from "./installer/configCommand";
 
 /**
  * Entry point for Penpot MCP Server
@@ -25,12 +26,18 @@ async function main(): Promise<void> {
         subcommand === "uninstall" ||
         subcommand === "doctor" ||
         subcommand === "help" ||
-        FLAG_HELP
+        FLAG_HELP ||
+        subcommand === "config"
     ) {
         try {
             if (FLAG_HELP) {
                 printHelp();
                 process.exit(0);
+            }
+            if (subcommand === "config") {
+                const configArgs = parseConfigArgs(rawArgs.slice(1));
+                const code = await runConfig(configArgs);
+                process.exit(code);
             }
             const parsed = parseInstallerArgs(rawArgs)!;
             if (parsed.command === "help") {
