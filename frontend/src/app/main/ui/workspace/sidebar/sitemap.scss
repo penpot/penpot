@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_borders.scss" as *;
@@ -55,6 +55,14 @@
   margin-bottom: deprecated.$s-12;
 }
 
+.page-delete-button {
+  --delete-button-display: none;
+}
+
+.page-delete-button-icon {
+  display: var(--delete-button-display);
+}
+
 .page-element {
   @include deprecated.body-small-typography;
 
@@ -93,40 +101,13 @@
     .page-icon {
       @include deprecated.flex-center;
 
-      height: deprecated.$s-32;
-      width: deprecated.$s-24;
       padding: 0 deprecated.$s-4 0 deprecated.$s-8;
-
-      svg {
-        @extend %button-icon-small;
-
-        color: transparent;
-        fill: none;
-        stroke: var(--icon-foreground);
-      }
     }
 
     .page-actions {
       height: deprecated.$s-32;
       display: flex;
       align-items: center;
-
-      button {
-        @include deprecated.button-style;
-        @include deprecated.flex-center;
-
-        width: deprecated.$s-24;
-        height: 100%;
-        opacity: deprecated.$op-0;
-
-        svg {
-          @extend %button-icon-small;
-
-          color: transparent;
-          fill: none;
-          stroke: var(--icon-foreground);
-        }
-      }
     }
 
     .element-name {
@@ -157,12 +138,6 @@
       color: var(--layer-row-foreground-color-drag);
       background-color: var(--layer-row-background-color-drag);
 
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-drag);
-        }
-      }
-
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-drag);
       }
@@ -176,12 +151,6 @@
       background-color: var(--layer-row-background-color-selected);
       box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
         var(--layer-row-background-color-selected);
-
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-selected);
-        }
-      }
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-selected);
@@ -200,9 +169,7 @@
       .page-actions button {
         opacity: deprecated.$op-10;
 
-        svg {
-          stroke: var(--layer-row-foreground-color-hover);
-        }
+        --delete-button-display: initial;
       }
 
       .page-icon svg {
@@ -238,12 +205,6 @@
       color: var(--layer-row-foreground-color-hidden);
       background-color: var(--layer-row-background-color-hidden);
       opacity: deprecated.$op-7;
-
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-hidden);
-        }
-      }
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hidden);

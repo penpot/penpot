@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.changes
   (:require
@@ -1194,7 +1194,7 @@
 ;; frames. Return the ids of the frames affected
 
 (defn- parents-frames
-  "Go trough the parents and get all of them that are a frame."
+  "Go through the parents and get all of them that are a frame."
   [id objects]
   (->> (cfh/get-parents-with-self objects id)
        (filter cfh/frame-shape?)))

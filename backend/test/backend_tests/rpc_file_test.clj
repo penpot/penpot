@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-file-test
   (:require
@@ -830,6 +830,49 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
+(t/deftest set-file-shared-idempotent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})]
+
+    ;; Share the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=true again should be a
+    ;; no-op success (idempotent), not an error.
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Unshare the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=false again should also
+    ;; be a no-op success (idempotent).
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))))
+
 (t/deftest permissions-checks-link-to-library-1
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)
@@ -917,6 +960,72 @@
       ;; (th/print-result! out)
       (t/is (th/ex-info? error))
       (t/is (th/ex-of-type? error :not-found)))))
+
+(t/deftest link-file-to-library-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :link-file-to-library
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        rel     (th/db-get :file-library-rel {:file-id (:id file2)
+                                              :library-file-id (:id file1)})
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? rel))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
+
+(t/deftest update-file-library-sync-status-updates-sync-row
+  (let [profile  (th/create-profile* 1)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)})
+        _        (th/link-file-to-library* {:file-id (:id file2)
+                                            :library-id (:id file1)})
+        before   (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})
+        _        (th/sleep 10)
+        data     {::th/type :update-file-library-sync-status
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file2)
+                  :library-id (:id file1)}
+        out      (th/command! data)
+        after    (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? before))
+    (t/is (some? after))
+    (t/is (pos? (compare (:synced-at after) (:synced-at before))))))
+
+(t/deftest update-file-library-sync-status-without-link-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :update-file-library-sync-status
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
 
 
 (t/deftest deletion

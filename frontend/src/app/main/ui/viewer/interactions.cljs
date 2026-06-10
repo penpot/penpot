@@ -2,59 +2,32 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer.interactions
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
-   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.shapes :as shapes]
+   [app.main.ui.viewer.viewport-common :as vpc]
+   [app.main.ui.viewer.viewport-wasm :as viewport.wasm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
    [rumext.v2 :as mf]))
-
-(defn prepare-objects
-  [frame size delta objects]
-  (let [frame-id  (:id frame)
-        vector  (-> (gpt/point (:x size) (:y size))
-                    (gpt/add delta)
-                    (gpt/negate))
-        update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
-    (->> (cfh/get-children-ids objects frame-id)
-         (into [frame-id])
-         (reduce update-fn objects))))
-
-(defn get-fixed-ids
-  [objects]
-  (let [fixed-ids (filter cfh/fixed-scroll? (vals objects))
-
-        ;; we have to consider the children if the fixed element is a group
-        fixed-children-ids
-        (into #{} (mapcat #(cfh/get-children-ids objects (:id %)) fixed-ids))
-
-        parent-children-ids
-        (->> fixed-ids
-             (mapcat #(cons (:id %) (cfh/get-parent-ids objects (:id %))))
-             (remove #(= % uuid/zero)))
-
-        fixed-ids
-        (concat fixed-children-ids parent-children-ids)]
-    fixed-ids))
 
 (mf/defc viewport-svg*
   {::mf/wrap [mf/memo]}
@@ -67,7 +40,7 @@
         objects   (:objects page)
         objects   (cond-> objects is-fixed (assoc-in [(:id frame) :fixed-scroll] true))
 
-        fixed-ids (get-fixed-ids objects)
+        fixed-ids (vpc/get-fixed-ids objects)
 
         not-fixed-ids
         (->> (remove (set fixed-ids) (keys objects))
@@ -79,7 +52,7 @@
                (map (d/getf objects))
                (concat [frame])
                (d/index-by :id)
-               (prepare-objects frame size delta)))
+               (vpc/prepare-objects frame size delta)))
 
         objects-fixed
         (mf/with-memo [fixed-ids page frame size delta]
@@ -161,7 +134,16 @@
 
         mode   (h/use-equal-memo interactions-mode)
         offset (h/use-equal-memo frame-offset)
-        size   (h/use-equal-memo size)]
+        size   (h/use-equal-memo size)
+        delta  (h/use-equal-memo delta)
+
+        page   (h/use-equal-memo page)
+        frame  (h/use-equal-memo frame)
+        base   (h/use-equal-memo base-frame)
+        is-fixed (h/use-equal-memo is-fixed)
+
+        render-wasm? (and (features/use-feature "render-wasm/v1")
+                          (contains? cf/flags :available-viewer-wasm))]
 
     (mf/with-effect [mode]
       (let [on-click
@@ -196,13 +178,21 @@
           (events/unlistenByKey key2)
           (events/unlistenByKey key3))))
 
-    [:> viewport-svg* {:page page
-                       :frame frame
-                       :base base-frame
-                       :offset offset
-                       :size size
-                       :delta delta
-                       :is-fixed is-fixed}]))
+    (if ^boolean render-wasm?
+      [:& viewport.wasm/viewport-wasm {:page page
+                                       :frame frame
+                                       :base base
+                                       :offset offset
+                                       :size size
+                                       :delta delta
+                                       :fixed? is-fixed}]
+      [:> viewport-svg* {:page page
+                         :frame frame
+                         :base base
+                         :offset offset
+                         :size size
+                         :delta delta
+                         :is-fixed is-fixed}])))
 
 (mf/defc flows-menu*
   {::mf/wrap [mf/memo]}

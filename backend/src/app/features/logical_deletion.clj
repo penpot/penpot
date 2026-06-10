@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.features.logical-deletion
   "A code related to handle logical deletion mechanism"
@@ -22,7 +22,8 @@
       (and (= "unlimited" type) (not (contains? canceled-status status)))
       (ct/duration {:days 30})
 
-      (and (= "enterprise" type) (not (contains? canceled-status status)))
+      (and (contains? #{"enterprise" "nitrate"} type)
+           (not (contains? canceled-status status)))
       (ct/duration {:days 90})
 
       :else

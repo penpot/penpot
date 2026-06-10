@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.shapes-builder
   "A SVG to Shapes builder."
@@ -609,17 +609,13 @@
       (and (some? color) (some? width))
       (assoc-in [:strokes 0 :stroke-width] width)
 
-      (and (some? linecap) (cfh/path-shape? shape)
+      (and (some? color) (some? linecap) (cfh/path-shape? shape)
            (or (= linecap :round) (= linecap :square)))
+      (assoc-in [:strokes 0 :stroke-cap-start] linecap)
 
-      (assoc :stroke-cap-start linecap
-             :stroke-cap-end linecap
-             :stroke-linecap linecap)
-
-      (d/any-key? (dm/get-in shape [:strokes 0])
-                  :strokeColor :strokeOpacity :strokeWidth
-                  :strokeLinecap :strokeCapStart :strokeCapEnd)
-      (assoc-in [:strokes 0 :stroke-style] :svg))))
+      (and (some? color) (some? linecap) (cfh/path-shape? shape)
+           (or (= linecap :round) (= linecap :square)))
+      (assoc-in [:strokes 0 :stroke-cap-end] linecap))))
 
 (defn setup-opacity [shape]
   (cond-> shape

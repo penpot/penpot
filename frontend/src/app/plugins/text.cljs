@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.text
   (:require
@@ -19,6 +19,7 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.plugins.fills :as fills]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
@@ -367,7 +368,7 @@
      (fn [self]
        (let [range-data
              (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (->> range-data (map :fills) u/mixed-value format/format-fills)))
+         (->> range-data (map :fills) u/mixed-value fills/format-fills)))
      :set
      (fn [_ value]
        (let [value (parser/parse-fills value)]

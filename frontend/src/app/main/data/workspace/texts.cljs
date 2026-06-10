@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.texts
   (:require
@@ -35,7 +35,9 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -82,17 +84,23 @@
   []
   (ptk/reify ::focus-editor
     ptk/EffectEvent
-    (effect [_ state _]
-      (let [editor (:workspace-editor state)
-            element (when editor (.-element editor))]
-        (cond
-          ;; V1 (DraftEditor)
-          (.-focus editor)
-          (ts/schedule #(.focus ^js editor))
+    (effect [_ _ _]
+      ;; The focus is deferred, so we re-read the current editor at fire
+      ;; time: the editor present now can be unmounted before the timeout
+      ;; runs (e.g. switching renderer while editing a text), and focusing a
+      ;; stale instance throws.
+      (ts/schedule
+       (fn []
+         (let [editor  (:workspace-editor @st/state)
+               element (when editor (.-element editor))]
+           (cond
+             ;; V1 (DraftEditor)
+             (and (some? editor) (.-focus editor))
+             (.focus ^js editor)
 
-          ;; V2
-          (and element (.-focus element))
-          (ts/schedule #(.focus ^js element)))))))
+             ;; V2
+             (and element (.-focus element))
+             (.focus ^js element))))))))
 
 (defn gen-name
   [editor]
@@ -403,7 +411,7 @@
         (rx/concat
          (rx/of (dwsh/update-shapes shape-ids update-fn))
          (if (features/active-feature? state "render-wasm/v1")
-           (dwwt/resize-wasm-text-debounce id)
+           (rx/of (dwwt/resize-wasm-text-debounce id))
            (rx/empty)))))))
 
 (defn update-root-attrs
@@ -465,13 +473,23 @@
       (when-not (some? (get-in state [:workspace-editor-state id]))
         (let [objects   (dsh/lookup-page-objects state)
               shape     (get objects id)
+              wasm?     (features/active-feature? state "render-wasm/v1")
               update-node? (fn [node]
                              (or (txt/is-text-node? node)
                                  (txt/is-paragraph-node? node)))
               shape-ids (cond
                           (cfh/text-shape? shape)  [id]
-                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
-          (rx/of (dwsh/update-shapes shape-ids #(txt/update-text-content % update-node? d/txt-merge attrs))))))))
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+              ;; Keep WASM editor cache in sync with merged :content so a following
+              ;; `apply-styles-to-selection` in `update-attrs` does not read stale
+              ;; `shape-text-contents` and overwrite per-run fills (e.g. line-height).
+              merge-shape
+              (fn [sh]
+                (let [updated-shape (txt/update-text-content sh update-node? d/txt-merge attrs)]
+                  (when wasm?
+                    (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
+                  updated-shape))]
+          (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
 
 (defn migrate-node
   [node]
@@ -851,11 +869,13 @@
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
         (when-let [instance (:workspace-editor state)]
-          (let [attrs-to-override (some-> (editor.v2/getCurrentStyle instance)
-                                          (styles/get-styles-from-style-declaration))
-                overriden-attrs (merge attrs-to-override attrs)
-                styles  (styles/attrs->styles overriden-attrs)]
-            (editor.v2/applyStylesToSelection instance styles)))))))
+          (when (seq attrs)
+            ;; DOM `getCurrentStyle` reflects one resolved style (e.g. caret color). Merging
+            ;; it with sidebar `attrs` and applying to the whole selection collapses mixed
+            ;; fills/fonts when the user only changes one property (e.g. line-height).
+            ;; Apply only the explicit attributes from this action.
+            (let [styles (styles/attrs->styles attrs)]
+              (editor.v2/applyStylesToSelection instance styles))))))))
 
 (defn update-all-attrs
   [ids attrs]
@@ -953,8 +973,8 @@
 
          (rx/concat
           (rx/of (dwl/add-typography typ)
-                 (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                        :asset-type "typography"}))
+                 (ev/event {::ev/name "add-asset-to-library"
+                            :asset-type "typography"}))
 
           (when (not multiple?)
             (rx/of (update-attrs (:id shape)
@@ -1193,18 +1213,24 @@
   [ids search replacement]
   (ptk/reify ::replace-text-in-shapes
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-group (uuid/next)]
-        (rx/of
-         (dwsh/update-shapes
-          ids
-          (fn [shape]
-            (if (and (= :text (:type shape)) (some? (:content shape)))
-              (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
-                    new-name   (txt/generate-shape-name (txt/content->text new-content))]
-                (-> shape (assoc :content new-content) (assoc :name new-name)))
-              shape))
-          {:attrs #{:content :name} :undo-group undo-group}))))))
+    (watch [_ state _]
+      (let [undo-group (uuid/next)
+            update-event
+            (dwsh/update-shapes
+             ids
+             (fn [shape]
+               (if (and (= :text (:type shape)) (some? (:content shape)))
+                 (let [new-content (txt/replace-text-in-content (:content shape) search replacement)
+                       new-name    (txt/generate-shape-name (txt/content->text new-content))]
+                   (-> shape (assoc :content new-content) (assoc :name new-name)))
+                 shape))
+             {:attrs #{:content :name} :undo-group undo-group})]
+        (rx/concat
+         (rx/of update-event)
+         (if (features/active-feature? state "render-wasm/v1")
+           (->> (rx/from ids)
+                (rx/map #(dwwt/resize-wasm-text-debounce % {:undo-group undo-group})))
+           (rx/empty)))))))
 
 ;; -- Text Editor v3
 

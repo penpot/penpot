@@ -3,7 +3,7 @@ use macros::ToJs;
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, JustifyContent, JustifyItems, JustifySelf, VerticalAlign,
 };
-use crate::{with_current_shape_mut, STATE};
+use crate::with_current_shape_mut;
 
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files-create
   (:require
@@ -112,22 +112,30 @@
                         ::quotes/profile-id profile-id
                         ::quotes/project-id project-id})
 
-    ;; FIXME: IMPORTANT: this code can have race conditions, because
-    ;; we have no locks for updating team so, creating two files
-    ;; concurrently can lead to lost team features updating
-    (when-let [features (-> features
-                            (set/difference (:features team))
-                            (set/difference cfeat/no-team-inheritable-features)
-                            (not-empty))]
-      (let [features (-> features
-                         (set/union (:features team))
-                         (set/difference cfeat/no-team-inheritable-features)
-                         (into-array))]
+    ;; Acquire a row-level lock on the team and re-read its features
+    ;; inside the same transaction before the read-modify-write below.
+    ;; Without the lock, two concurrent create-file calls on the same
+    ;; team can both observe the same team.features value, each
+    ;; compute a different union, and the second UPDATE silently
+    ;; overwrites the first (lost update under READ COMMITTED).
+    (let [team-features (-> (db/exec-one! conn
+                                          ["SELECT features FROM team WHERE id = ? FOR UPDATE"
+                                           team-id])
+                            :features
+                            (db/decode-pgarray #{}))]
+      (when-let [new-features (-> features
+                                  (set/difference team-features)
+                                  (set/difference cfeat/no-team-inheritable-features)
+                                  (not-empty))]
+        (let [features (-> new-features
+                           (set/union team-features)
+                           (set/difference cfeat/no-team-inheritable-features)
+                           (into-array))]
 
-        (db/update! conn :team
-                    {:features features}
-                    {:id (:id team)}
-                    {::db/return-keys false})))
+          (db/update! conn :team
+                      {:features features}
+                      {:id team-id}
+                      {::db/return-keys false}))))
 
     (-> (create-file cfg params)
         (vary-meta assoc ::audit/props {:team-id team-id}))))

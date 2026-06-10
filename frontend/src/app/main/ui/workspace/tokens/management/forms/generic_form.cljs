@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.generic-form
   (:require-macros [app.main.style :as stl])
@@ -27,6 +27,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [default-validate-token]]
@@ -37,6 +38,15 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+(defn- scroll-token-type-section-on-create
+  [token-id]
+  (when token-id
+    (js/requestAnimationFrame
+     (fn []
+       (when-let [section-node (dom/get-element (str "token-pill-" token-id))]
+         (dom/scroll-into-view! section-node #js {:block "center"
+                                                  :behavior "smooth"}))))))
 
 (defn get-value-for-validator
   [active-tab value value-subfield value-type]
@@ -51,7 +61,6 @@
     (if (= active-tab :reference)
       (get value :reference)
       value)
-
     value))
 
 (mf/defc form*
@@ -65,6 +74,7 @@
            make-schema
            input-component
            initial
+           initial-errors
            value-type
            value-subfield
            input-value-placeholder] :as props}]
@@ -134,9 +144,20 @@
                :value (:value token "")
                :description (:description token "")}))
 
+        initial-general-errors (mf/with-memo [token initial initial-errors]
+                                 (when initial-errors
+                                   (if (= :error.style-dictionary/missing-reference (:error/code (first initial-errors)))
+                                     (if (or (= value-type :composite)
+                                             (= value-type :indexed))
+                                       {:value {:reference {:message (wte/resolve-error-message (first initial-errors))}}}
+                                       {:value {:message (wte/resolve-error-message (first initial-errors))}})
+                                     {"" {:message (wte/resolve-error-message (first initial-errors))}})))
         form
         (fm/use-form :schema schema
+                     :initial-errors initial-general-errors
                      :initial initial)
+
+        general-errors (get-in @form [:extra-errors ""])
 
         on-toggle-tab
         (mf/use-fn
@@ -179,9 +200,10 @@
 
         on-remap-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token new-name old-name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type new-name)
             (dwtl/update-token (:id token)
                                {:name new-name
                                 :value (:value valid-token)
@@ -192,9 +214,10 @@
 
         on-rename-token
         (mf/use-fn
-         (mf/deps token)
+         (mf/deps token token-type)
          (fn [valid-token name description]
            (st/emit!
+            (dwtl/toggle-nested-token-path token-type name)
             (dwtl/update-token (:id token)
                                {:name name
                                 :value (:value valid-token)
@@ -204,11 +227,12 @@
         on-submit
         (mf/use-fn
          (mf/deps validate-token token tokens token-type value-subfield value-type active-tab on-remap-token on-rename-token is-create)
-         (fn [form _event]
+         (fn [form event]
            (let [name (get-in @form [:clean-data :name])
                  description (get-in @form [:clean-data :description])
                  value (get-in @form [:clean-data :value])
                  value-for-validation (get-value-for-validator active-tab value value-subfield value-type)]
+             (dom/stop-propagation event)
              (->> (validate-token {:token-value value-for-validation
                                    :token-name name
                                    :token-description description
@@ -230,19 +254,26 @@
                          (st/emit! (modal/show :tokens/remapping-confirmation {:remap-data remap-data
                                                                                :on-remap on-remap
                                                                                :on-rename on-rename}))
-                         (st/emit!
-                          (if is-create
-                            (dwtl/create-token (ctob/make-token {:name name
-                                                                 :type token-type
-                                                                 :value (:value valid-token)
-                                                                 :description description}))
-                            (dwtl/update-token (:id token)
-                                               {:name name
-                                                :value (:value valid-token)
-                                                :description description}))
-                          (dwtl/open-token-type (:type token))
-                          (dwtp/propagate-workspace-tokens)
-                          (modal/hide!)))))
+                         (do
+                           (when is-rename
+                             (st/emit! (dwtl/toggle-nested-token-path token-type name)))
+                           (let [new-token (when is-create
+                                             (ctob/make-token {:name name
+                                                               :type token-type
+                                                               :value (:value valid-token)
+                                                               :description description}))]
+                             (st/emit!
+                              (if is-create
+                                (dwtl/create-token new-token)
+                                (dwtl/update-token (:id token)
+                                                   {:name name
+                                                    :value (:value valid-token)
+                                                    :description description}))
+                              (dwtl/open-token-type (:type token))
+                              (dwtp/propagate-workspace-tokens)
+                              (when is-create
+                                (scroll-token-type-section-on-create (:id new-token)))
+                              (modal/hide!)))))))
                    ;; WORKAROUND:  display validation errors in the form instead of crashing
                    (fn [{:keys [errors]}]
                      (let [error-messages (wte/humanize-errors errors)
@@ -304,6 +335,10 @@
                             :max-length max-input-length
                             :variant "comfortable"
                             :is-optional true}]]
+       (when (some? general-errors)
+         [:> context-notification* {:level :warning
+                                    :appearance :ghost}
+          (:message general-errors)])
 
        [:div {:class (stl/css-case :button-row true
                                    :with-delete (= action "edit"))}

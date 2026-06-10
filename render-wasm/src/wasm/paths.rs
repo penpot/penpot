@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock};
 
 use crate::error::{Error, Result};
 use crate::shapes::{stroke_to_path, Path, Segment, ToPath};
-use crate::{mem, with_current_shape, with_current_shape_mut, STATE};
+use crate::{mem, with_current_shape, with_current_shape_mut};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
@@ -255,6 +255,7 @@ pub extern "C" fn convert_stroke_to_path(stroke_index: i32) -> *mut u8 {
                 path_transform.as_ref(),
                 &shape.selrect,
                 shape.svg_attrs.as_ref(),
+                false,
             ) {
                 result = path
                     .segments()

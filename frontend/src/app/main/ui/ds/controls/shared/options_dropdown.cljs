@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.controls.shared.options-dropdown
   (:require-macros
@@ -37,11 +37,14 @@
    [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
+   [:title {:optional true} :string]
    [:avatar {:optional true}
     [:map
      [:size {:optional true} :string]
      [:organization {:optional true} :any]
      [:render-fn {:optional true} fn?]]]
+   [:disabled {:optional true} :boolean]
+   [:dimmed {:optional true} :boolean]
    [:aria-label {:optional true} :string]])
 
 (def ^:private schema:options-dropdown

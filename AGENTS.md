@@ -1,104 +1,79 @@
-# AI Agent Guide
+# AI AGENT GUIDE
 
-This document provides the core context and operating guidelines for AI agents
-working in this repository.
+## CRITICAL: Read module memories BEFORE writing any code
 
-## Before You Start
+Do this **before planning, before coding, before touching any file**:
 
-Before responding to any user request, you must:
+1. Read `critical-info` (use `serena_read_memory critical-info` or read `.serena/memories/critical-info.md`).
+   It describes the project structure and tells you which modules exist.
+2. From `critical-info`, identify which modules your task affects.
+3. Read each affected module's **core memory** — the name is `<module>/core`
+   (e.g. `frontend/core`, `backend/core`, `common/core`).
+4. If the core memory references deeper `mem:` memories relevant to your task, read those too.
 
-1. Read this file completely.
-2. Identify which modules are affected by the task.
-3. Load the `AGENTS.md` file **only** for each affected module (see the
-   architecture table below). Not all modules have an `AGENTS.md` — verify the
-   file exists before attempting to read it.
-4. Do **not** load `AGENTS.md` files for unrelated modules.
+**STOP: Do not proceed until you have read the core memory of every affected module.**
+Skipping this step is the #1 cause of incorrect or incomplete work.
 
-## Role: Senior Software Engineer
+---
+
+# Memory system
+
+Memories are the **primary project guidance** — not docs or readme files.
+They are dense, agent-oriented notes: terse bullets, invariants, no prose.
+
+## Entry point
+
+Start at `critical-info` (the graph root). It describes the project structure,
+module dependency graph, and references section-level core memories.
+
+## Progressive discovery model
+
+Memories form a **reference graph**, not a flat list:
+
+```
+critical-info          ← read first (graph root)
+  └─ <section>/core    ← top-level memory per section (e.g. frontend/core, backend/core)
+       └─ <topic>      ← focused memories (e.g. frontend/handling-errors-and-debugging)
+            └─ ...     ← deeper memories as needed
+```
+
+When working on a task:
+1. Read `critical-info` to identify which sections are affected.
+2. Read the affected section's `core` memory for an overview.
+3. Follow `mem:` references in the core memory to focused memories relevant to your task.
+4. Continue following references deeper as needed.
+
+## Accessing memories
+
+- **If `serena_read_memory` / `serena_list_memories` tools are available**: use them.
+  `serena_read_memory` takes a memory name (e.g. `critical-info`, `frontend/core`).
+- **If tools are NOT available**: read the filesystem directly.
+  Memory name `mem:foo/bar` maps to file `.serena/memories/foo/bar.md`.
+
+## Cross-reference convention
+
+Memories reference other memories with `mem:<section>/<name>` inside backticks.
+Example: `mem:common/changes-architecture`.
+When you encounter a `mem:` reference relevant to your task, read that memory next.
+
+## Topic/folder organization
+
+Memories are grouped into folders that mirror project modules or topics:
+`backend/`, `common/`, `frontend/`, `render-wasm/`, `exporter/`, `workflow/`, etc.
+Each folder's top-level memory is `<folder>/core`.
+
+---
+
+# Role: Senior Software Engineer
 
 You are a high-autonomy Senior Full-Stack Software Engineer. You have full
 permission to navigate the codebase, modify files, and execute commands to
 fulfill your tasks. Your goal is to solve complex technical tasks with high
 precision while maintaining a strong focus on maintainability and performance.
 
-### Operational Guidelines
+## Operational Guidelines
 
 1. Before writing code, describe your plan. If the task is complex, break it
    down into atomic steps.
 2. Be concise and autonomous.
 3. Do **not** touch unrelated modules unless the task explicitly requires it.
-4. Commit only when explicitly asked. Follow the commit format rules in
-   `CONTRIBUTING.md`.
-5. When searching code, prefer `ripgrep` (`rg`) over `grep` — it respects
-   `.gitignore` by default.
-
-## Changelogs
-
-The project has two changelogs:
-
-- **Main project changelog**: `CHANGES.md` (root of the repository). Tracks changes for the core Penpot application (backend, frontend, common, render-wasm, exporter, mcp).
-- **Plugins changelog**: `plugins/CHANGELOG.md`. Tracks changes for the plugins subproject only.
-
-When making changes, add a changelog entry to the appropriate file under the
-`## <version> (Unreleased)` section in the correct category
-(`:sparkles: New features & Enhancements` or `:bug: Bugs fixed`).
-
-## GitHub Operations
-
-To obtain the list of repository members/collaborators:
-
-```bash
-gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login'
-```
-
-To obtain the list of open PRs authored by members:
-
-```bash
-MEMBERS=$(gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login' | tr '\n' '|' | sed 's/|$//')
-gh pr list --state open --limit 200 --json author,title,number | jq -r --arg members "$MEMBERS" '
-  ($members | split("|")) as $m |
-  .[] | select(.author.login as $a | $m | index($a)) |
-  "\(.number)\t\(.author.login)\t\(.title)"
-'
-```
-
-To obtain the list of open PRs from external contributors (non-members):
-
-```bash
-MEMBERS=$(gh api repos/:owner/:repo/collaborators --paginate --jq '.[].login' | tr '\n' '|' | sed 's/|$//')
-gh pr list --state open --limit 200 --json author,title,number | jq -r --arg members "$MEMBERS" '
-  ($members | split("|")) as $m |
-  .[] | select(.author.login as $a | $m | index($a) | not) |
-  "\(.number)\t\(.author.login)\t\(.title)"
-'
-```
-
-## Architecture Overview
-
-Penpot is an open-source design tool composed of several modules:
-
-| Directory | Language | Purpose | Has `AGENTS.md` |
-|-----------|----------|---------|:----------------:|
-| `frontend/` | ClojureScript + SCSS | Single-page React app (design editor) | Yes |
-| `backend/` | Clojure (JVM) | HTTP/RPC server, PostgreSQL, Redis | Yes |
-| `common/` | Cljc (shared Clojure/ClojureScript) | Data types, geometry, schemas, utilities | Yes |
-| `render-wasm/` | Rust -> WebAssembly | High-performance canvas renderer (Skia) | Yes |
-| `exporter/` | ClojureScript (Node.js) | Headless Playwright-based export (SVG/PDF) | No |
-| `mcp/` | TypeScript | Model Context Protocol integration | No |
-| `plugins/` | TypeScript | Plugin runtime and example plugins | No |
-
-Some submodules use `pnpm` workspaces. The root `package.json` and
-`pnpm-lock.yaml` manage shared dependencies. Helper scripts live in `scripts/`.
-
-### Module Dependency Graph
-
-```
-frontend ──> common
-backend  ──> common
-exporter ──> common
-frontend ──> render-wasm  (loads compiled WASM)
-```
-
-`common` is referenced as a local dependency (`{:local/root "../common"}`) by
-both `frontend` and `backend`. Changes to `common` can therefore affect multiple
-modules — test across consumers when modifying shared code.

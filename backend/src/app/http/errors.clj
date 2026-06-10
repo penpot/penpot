@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.http.errors
   "A errors handling for the http server."
@@ -143,6 +143,15 @@
   [err _ _]
   {::yres/status 404
    ::yres/body (ex-data err)})
+
+(defmethod handle-error :nitrate-unavailable
+  [err request _]
+  (binding [l/*context* (request->context request)]
+    (l/warn :hint "nitrate is unreachable; blocking request" :cause err)
+    ;; Do not leak Nitrate's internal URL/status to the client; the
+    ;; full context is already logged above for operators.
+    {::yres/status 503
+     ::yres/body {:type :nitrate-unavailable}}))
 
 (defmethod handle-error :internal
   [error request parent-cause]
