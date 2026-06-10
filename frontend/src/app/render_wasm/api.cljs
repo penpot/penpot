@@ -1418,6 +1418,24 @@
   (let [{:keys [thumbnails full]} (set-object shape)]
     (process-pending [shape] thumbnails full noop-fn)))
 
+(defn process-objects
+  "Like process-object but for multiple shapes at once. Accumulates all
+   pending font/image callbacks before calling process-pending, so that
+   update-text-layouts fires for all text shapes after fonts load — not
+   just the first shape that triggered the fetch."
+  [shapes]
+  (let [total-shapes (count shapes)
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+          (if (< index total-shapes)
+            (let [shape (nth shapes index)
+                  {:keys [thumbnails full]} (set-object shape)]
+              (recur (inc index)
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
+    (process-pending shapes thumbnails full noop-fn)))
+
 (defn- process-shapes-chunk
   "Process shapes starting at `start-index` until the time budget is exhausted.
    Returns {:thumbnails [...] :full [...] :next-index n}"
