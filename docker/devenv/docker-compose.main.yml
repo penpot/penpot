@@ -1,0 +1,95 @@
+networks:
+  default:
+    name: penpot_shared
+    external: true
+
+volumes:
+  user_data:
+    name: ${PENPOT_USER_DATA_VOLUME}
+
+services:
+  main:
+    privileged: true
+    image: "penpotapp/devenv:latest"
+    build:
+      context: "."
+    container_name: "${PENPOT_MAIN_CONTAINER_NAME}"
+    stop_signal: SIGINT
+
+    volumes:
+      - "user_data:/home/penpot/"
+      - "${PENPOT_SOURCE_PATH}:/home/penpot/penpot:z"
+
+    ports:
+      # Host ports are instance-specific; container ports stay fixed.
+      - ${PENPOT_PUBLIC_HTTPS_PORT}:3449
+      - ${PENPOT_PUBLIC_HTTPS_PORT}:3449/udp
+      - ${PENPOT_PUBLIC_HTTP_PORT}:3450
+      - ${PENPOT_PUBLIC_HTTP_PORT}:3450/udp
+
+      # MCP
+      - ${PENPOT_MCP_SERVER_PORT}:4401
+      - ${PENPOT_MCP_REPL_PORT}:4403
+
+      # Serena MCP server (agentic mode only). Internal ports fixed by Serena.
+      - ${SERENA_EXTERNAL_PORT}:14281
+      - ${SERENA_DASHBOARD_EXTERNAL_PORT}:24282
+
+      # OpenCode Server
+      - ${OPENCODE_EXTERNAL_PORT}:14180
+
+      # MDTS (Markdown Visualizer)
+      - ${MDTS_EXTERNAL_PORT}:14179
+
+    environment:
+      - EXTERNAL_UID=${CURRENT_USER_ID}
+      - COLORTERM=truecolor
+      - TERM=xterm-256color
+
+      # SMTP setup (shared infra service; identical across instances)
+      - PENPOT_SMTP_ENABLED=true
+      - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
+      - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
+      - PENPOT_SMTP_HOST=mailer
+      - PENPOT_SMTP_PORT=1025
+      - PENPOT_SMTP_USERNAME=
+      - PENPOT_SMTP_PASSWORD=
+      - PENPOT_SMTP_SSL=false
+      - PENPOT_SMTP_TLS=false
+
+      # LDAP setup (shared infra service; identical across instances)
+      - PENPOT_LDAP_HOST=ldap
+      - PENPOT_LDAP_PORT=10389
+      - PENPOT_LDAP_SSL=false
+      - PENPOT_LDAP_STARTTLS=false
+      - PENPOT_LDAP_BASE_DN=ou=people,dc=planetexpress,dc=com
+      - PENPOT_LDAP_BIND_DN=cn=admin,dc=planetexpress,dc=com
+      - PENPOT_LDAP_BIND_PASSWORD=GoodNewsEveryone
+      - PENPOT_LDAP_ATTRS_USERNAME=uid
+      - PENPOT_LDAP_ATTRS_EMAIL=mail
+      - PENPOT_LDAP_ATTRS_FULLNAME=cn
+      - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
+
+      # Per-instance runtime config. Defaults live in defaults.env.
+      - PENPOT_HOST=${PENPOT_HOST}
+      - PENPOT_PUBLIC_URI=${PENPOT_PUBLIC_URI}
+      - PENPOT_DATABASE_URI=${PENPOT_DATABASE_URI}
+      - PENPOT_DATABASE_USERNAME=${PENPOT_DATABASE_USERNAME}
+      - PENPOT_DATABASE_PASSWORD=${PENPOT_DATABASE_PASSWORD}
+      - PENPOT_DATABASE_MAX_POOL_SIZE=${PENPOT_DATABASE_MAX_POOL_SIZE}
+      - PENPOT_REDIS_URI=${PENPOT_REDIS_URI}
+      - PENPOT_OBJECTS_STORAGE_BACKEND=${PENPOT_OBJECTS_STORAGE_BACKEND}
+      - PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}
+      - PENPOT_OBJECTS_STORAGE_S3_BUCKET=${PENPOT_OBJECTS_STORAGE_S3_BUCKET}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - PENPOT_TENANT=${PENPOT_TENANT}
+      - PENPOT_TMUX_ATTACH=${PENPOT_TMUX_ATTACH}
+
+      # Agentic devenv: set to a commit/tag to update Serena on startup,
+      # leave empty to skip update and use the version baked into the image.
+      - SERENA_UPDATE_VERSION=1.5.0
+      - SHADOW_SERVER_URL=${SHADOW_SERVER_URL}
+
+    networks:
+      - default

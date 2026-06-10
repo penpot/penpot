@@ -185,7 +185,12 @@ ENV CLJKONDO_VERSION=2026.04.15 \
     BABASHKA_VERSION=1.12.208 \
     CLJFMT_VERSION=0.16.4 \
     PIXI_VERSION=0.67.2 \
-    GITHUB_CLI_VERSION=2.91.0
+    GITHUB_CLI_VERSION=2.91.0 \
+    UV_VERSION=0.11.9 \
+    UV_TOOL_DIR=/opt/uv/tools \
+    UV_TOOL_BIN_DIR=/opt/utils/bin \
+    UV_PYTHON_INSTALL_DIR=/opt/uv/python \
+    SERENA_VERSION=1.5.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -287,7 +292,7 @@ RUN set -ex; \
     curl -LfsSo /tmp/gh.tar.gz ${BINARY_URL}; \
     mkdir /opt/gh; \
     cd /opt/gh; \
-    tar -xf /tmp/gh.tar.gz; \
+    tar -xv --strip-components=1 -f /tmp/gh.tar.gz; \
     rm -rf /tmp/gh.tar.gz;
 
 # Install minio client
@@ -309,6 +314,31 @@ RUN set -ex; \
     mv /tmp/mc /opt/utils/bin/; \
     chmod +x /opt/utils/bin/mc;
 
+# Install uv
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-aarch64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/uv.tar.gz ${BINARY_URL}; \
+    cd /opt/utils/bin; \
+    tar -xf /tmp/uv.tar.gz --strip-components=1; \
+    rm -rf /tmp/uv.tar.gz;
+
+# Install uv-managed tools
+RUN set -ex; \
+    /opt/utils/bin/uv tool install -p 3.13 \
+        "serena-agent@${SERENA_VERSION}" \
+        --prerelease=allow;
 
 ################################################################################
 ## DEVENV BASE
@@ -421,6 +451,11 @@ ENV LANG='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     CARGO_HOME="/opt/cargo" \
     RUSTUP_HOME="/opt/rustup" \
+    UV_TOOL_DIR="/opt/uv/tools" \
+    UV_TOOL_BIN_DIR="/opt/utils/bin" \
+    UV_PYTHON_INSTALL_DIR="/opt/uv/python" \
+    SERENA_HOME="/home/penpot/.serena" \
+    SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
 COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
@@ -429,6 +464,7 @@ COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
 COPY --from=setup-utils /opt/utils /opt/utils
 COPY --from=setup-utils /opt/gh /opt/gh
+COPY --from=setup-utils /opt/uv /opt/uv
 COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
@@ -444,6 +480,7 @@ COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
 COPY files/Caddyfile           /home/
+COPY files/serena_config.yml   /home/serena_config.yml
 COPY files/selfsigned.crt      /home/
 COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh

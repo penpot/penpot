@@ -31,7 +31,7 @@
 }
 
 .modal-title {
-  @include t.use-typography("title-large");
+  @include t.use-typography("headline-large");
 
   color: var(--modal-title-foreground-color);
   margin-block-end: var(--sp-xxxl);
@@ -40,8 +40,13 @@
 .modal-content {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-m);
   color: var(--color-foreground-secondary);
+}
+
+.content-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
 }
 
 .accept-btn {
@@ -59,7 +64,7 @@
 .code-label {
   @include t.use-typography("body-medium");
 
-  color: var(--color-foreground-secondary);
+  color: var(--color-foreground-primary);
 }
 
 .code-textarea {

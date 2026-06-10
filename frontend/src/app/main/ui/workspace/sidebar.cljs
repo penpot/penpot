@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar
   (:require-macros [app.main.style :as stl])
@@ -44,7 +44,6 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -147,7 +146,7 @@
          (fn [id]
            (st/emit! (dcm/go-to-workspace :layout (keyword id)))
            (when (= id "tokens")
-             (st/emit! (ptk/event ::ev/event {::ev/name "open-tokens-tab"})))))
+             (st/emit! (ev/event {::ev/name "open-tokens-tab"})))))
 
         tabs
         (mf/with-memo [mode-inspect? design-tokens?]

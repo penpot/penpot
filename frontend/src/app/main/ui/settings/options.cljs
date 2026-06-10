@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
+   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.refs :as refs]
@@ -40,8 +41,7 @@
     (st/emit! (du/update-profile data)
               (du/persist-profile {:on-success on-success}))))
 
-(mf/defc options-form
-  {::mf/wrap-props false}
+(mf/defc options-form*
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
@@ -95,7 +95,11 @@
         handle-render-change
         (mf/use-fn
          (fn [enabled?]
-           (st/emit! (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
+           (st/emit! (ev/event {::ev/name (if enabled?
+                                            "enable-webgl-rendering"
+                                            "disable-webgl-rendering")
+                                ::ev/origin "settings"})
+                     (du/update-profile-props {:renderer (if enabled? :wasm :svg)})
                      (ntf/success (tr (if enabled?
                                         "webgl.toast.webgl-render-enabled"
                                         "webgl.toast.webgl-render-disabled"))))))]
@@ -111,7 +115,7 @@
                    :on-change handle-render-change}]]
      [:> text* {:typography t/body-medium :class (stl/css :feedback)} [:a {:href "#" :on-click go-settings-feedback :class (stl/css :link)} (tr "dashboard.webgl-switch.feedback") [:> icon* {:icon-id "arrow-up-right" :size "s"}]]]]))
 
-(mf/defc options-page
+(mf/defc options-page*
   []
   (let [profile (mf/deref refs/profile)
         renderer (or (-> profile :props :renderer) :svg)]
@@ -122,7 +126,6 @@
      [:*
       [:div {:class (stl/css :form-container) :data-testid "settings-form"}
        [:h2 (tr "labels.settings")]
-       [:& options-form {}]]
+       [:> options-form*]]
       (when (contains? cf/flags :render-switch)
         [:> webgl-settings* {:renderer renderer}])]]))
-

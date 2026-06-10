@@ -2,9 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.measurements
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -42,6 +43,13 @@
 (def distance-pill-width 50)
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
+
+(def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-height 16)
+(def ^:private ^:const selection-badge-padding-x 6)
+(def ^:private ^:const selection-badge-vertical-gap 8)
+(def ^:private ^:const selection-badge-border-radius 2)
+(def ^:private ^:const selection-badge-char-width 6.5)
 
 
 ;; ------------------------------------------------
@@ -179,6 +187,35 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
+(mf/defc selection-size-badge*
+  [{:keys [selrect zoom]}]
+  (let [{:keys [x y width height]} selrect
+        size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
+        badge-height (/ selection-badge-height zoom)
+        padding-x    (/ selection-badge-padding-x zoom)
+        gap          (/ selection-badge-vertical-gap zoom)
+        radius       (/ selection-badge-border-radius zoom)
+        text-width   (* (count size-label) (/ selection-badge-char-width zoom))
+        badge-width  (+ text-width (* 2 padding-x))
+        center-x     (+ x (/ width 2))
+        badge-x      (- center-x (/ badge-width 2))
+        badge-y      (+ y height gap)
+        text-y       (+ badge-y (/ badge-height 2))]
+    [:g.selection-size-badge {:pointer-events "none"}
+     [:rect {:x badge-x
+             :y badge-y
+             :width badge-width
+             :height badge-height
+             :rx radius
+             :ry radius
+             :style {:fill selection-badge-bg-color}}]
+     [:text {:class (stl/css :badge-text)
+             :x center-x
+             :y text-y
+             :text-anchor "middle"
+             :dominant-baseline "middle"}
+      size-label]]))
+
 (mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
                   (+ (:x to) (/ (:width to) 2))
@@ -244,6 +281,7 @@
                               :bounds bounds
                               :zoom zoom}]
        [:> size-display* {:selrect selected-selrect :zoom zoom}]
+       [:> selection-size-badge* {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))

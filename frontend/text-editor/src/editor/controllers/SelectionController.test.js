@@ -953,7 +953,7 @@ describe("SelectionController", () => {
     );
   });
 
-  test("`replaceTextSpans` should replace the selected text in multiple text spans (2 completelly selected)", () => {
+  test("`replaceTextSpans` should replace the selected text in multiple text spans (2 completely selected)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWith([[
       "Hello, ",
       "World!",
@@ -1040,7 +1040,7 @@ describe("SelectionController", () => {
     );
   });
 
-  test("`replaceTextSpans` should replace the selected text in multiple text spans (1 partially selected, 1 completelly selected)", () => {
+  test("`replaceTextSpans` should replace the selected text in multiple text spans (1 partially selected, 1 completely selected)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWith([[
       "Hello, ",
       "World!",
@@ -1082,7 +1082,7 @@ describe("SelectionController", () => {
 
   // FIXME: I don't know why but this test blocks all the tests.
   /*
-  test.skip("`replaceTextSpans` should replace the selected text in multiple text spans (1 completelly selected, 1 partially selected)", () => {
+  test.skip("`replaceTextSpans` should replace the selected text in multiple text spans (1 completely selected, 1 partially selected)", () => {
     const textEditorMock = TextEditorMock.createTextEditorMockWithParagraph([
       createTextSpan(new Text("Hello, ")),
       createTextSpan(new Text("World!")),

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.zoom
   (:require
@@ -16,6 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
@@ -43,9 +44,15 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [center (if (= center ::auto) @ms/mouse-position center)]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))))
+       (if (dwvw/render-context-lost? state)
+         state
+         (let [center (if (= center ::auto) @ms/mouse-position center)]
+           (update state :workspace-local
+                   #(impl-update-zoom % center (fn [z] (min (* z 1.3) 200)))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (defn decrease-zoom
   ([]
@@ -56,9 +63,15 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [center (if (= center ::auto) @ms/mouse-position center)]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))))
+       (if (dwvw/render-context-lost? state)
+         state
+         (let [center (if (= center ::auto) @ms/mouse-position center)]
+           (update state :workspace-local
+                   #(impl-update-zoom % center (fn [z] (max (/ z 1.3) 0.01)))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (defn set-zoom
   ([scale]
@@ -69,68 +82,92 @@
 
      ptk/UpdateEvent
      (update [_ state]
-       (let [vp (dm/get-in state [:workspace-local :vbox])
-             x (+ (:x vp) (/ (:width vp) 2))
-             y (+ (:y vp) (/ (:height vp) 2))
-             center (d/nilv center (gpt/point x y))]
-         (update state :workspace-local
-                 #(impl-update-zoom % center (fn [z] (-> (* z scale)
-                                                         (max 0.01)
-                                                         (min 200))))))))))
+       (if (dwvw/render-context-lost? state)
+         state
+         (let [vp (dm/get-in state [:workspace-local :vbox])
+               x (+ (:x vp) (/ (:width vp) 2))
+               y (+ (:y vp) (/ (:height vp) 2))
+               center (d/nilv center (gpt/point x y))]
+           (update state :workspace-local
+                   #(impl-update-zoom % center (fn [z] (-> (* z scale)
+                                                           (max 0.01)
+                                                           (min 200))))))))
+
+     ptk/EffectEvent
+     (effect [_ state _]
+       (dwvw/maybe-sync-workspace-local-viewport! state)))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local
-              #(impl-update-zoom % nil 1)))))
+      (if (dwvw/render-context-lost? state)
+        state
+        (update state :workspace-local
+                #(impl-update-zoom % nil 1))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (def zoom-to-fit-all
   (ptk/reify ::zoom-to-fit-all
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (dsh/lookup-page-objects state page-id)
-            shapes  (cfh/get-immediate-children objects)
-            srect   (gsh/shapes->rect shapes)]
-        (if (empty? shapes)
-          state
-          (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
-                    (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
-                          zoom  (/ (:width vport) (:width srect))]
-                      (-> local
-                          (assoc :zoom zoom)
-                          (assoc :zoom-inverse (/ 1 zoom))
-                          (update :vbox merge srect))))))))))
+      (if (dwvw/render-context-lost? state)
+        state
+        (let [page-id (:current-page-id state)
+              objects (dsh/lookup-page-objects state page-id)
+              shapes  (cfh/get-immediate-children objects)
+              srect   (gsh/shapes->rect shapes)]
+          (if (empty? shapes)
+            state
+            (update state :workspace-local
+                    (fn [{:keys [vport] :as local}]
+                      (let [srect (gal/adjust-to-viewport vport srect {:padding 160 :min-zoom 0.01})
+                            zoom  (/ (:width vport) (:width srect))]
+                        (-> local
+                            (assoc :zoom zoom)
+                            (assoc :zoom-inverse (/ 1 zoom))
+                            (update :vbox merge srect)))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (def zoom-to-selected-shape
   (ptk/reify ::zoom-to-selected-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (dsh/lookup-selected state)]
-        (if (empty? selected)
-          state
-          (let [page-id (:current-page-id state)
-                objects (dsh/lookup-page-objects state page-id)
-                srect   (->> selected
-                             (map #(get objects %))
-                             (gsh/shapes->rect))]
-            (update state :workspace-local
-                    (fn [{:keys [vport] :as local}]
-                      (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
-                            zoom  (/ (:width vport) (:width srect))]
-                        (-> local
-                            (assoc :zoom zoom)
-                            (assoc :zoom-inverse (/ 1 zoom))
-                            (update :vbox merge srect)))))))))))
+      (if (dwvw/render-context-lost? state)
+        state
+        (let [selected (dsh/lookup-selected state)]
+          (if (empty? selected)
+            state
+            (let [page-id (:current-page-id state)
+                  objects (dsh/lookup-page-objects state page-id)
+                  srect   (->> selected
+                               (map #(get objects %))
+                               (gsh/shapes->rect))]
+              (update state :workspace-local
+                      (fn [{:keys [vport] :as local}]
+                        (let [srect (gal/adjust-to-viewport vport srect {:padding 40 :min-zoom 0.01})
+                              zoom  (/ (:width vport) (:width srect))]
+                          (-> local
+                              (assoc :zoom zoom)
+                              (assoc :zoom-inverse (/ 1 zoom))
+                              (update :vbox merge srect))))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn fit-to-shapes
   [ids]
   (ptk/reify ::fit-to-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (if (empty? ids)
+      (if (or (dwvw/render-context-lost? state) (empty? ids))
         state
         (let [page-id (:current-page-id state)
               objects (dsh/lookup-page-objects state page-id)
@@ -148,15 +185,21 @@
                       (-> local
                           (assoc :zoom zoom)
                           (assoc :zoom-inverse (/ 1 zoom))
-                          (update :vbox merge srect))))))))))
+                          (update :vbox merge srect))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn start-zooming [pt]
   (ptk/reify ::start-zooming
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-zooming)))]
-        (when-not (get-in state [:workspace-local :zooming])
+        (when (and (not (dwvw/render-context-lost? state))
+                   (not (get-in state [:workspace-local :zooming])))
           (rx/concat
+           (rx/of (fn [s] (dwvw/maybe-view-interaction-start! s) s))
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream
                 (rx/filter mse/pointer-event?)
@@ -172,4 +215,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :zooming)))))
+          (update :workspace-local dissoc :zooming)))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-view-interaction-end! state))))

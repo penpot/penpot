@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.layer-item
   (:require-macros [app.main.style :as stl])
@@ -48,7 +48,10 @@
        (let [{:keys [enter leave]} @sidebar-hover-queue
 
              enter (set/difference enter leave)
-             leave (set/difference leave enter)]
+             leave (set/difference leave enter)
+             search-match (get-in @st/state [:workspace-local :search-match-highlight])
+             leave (cond-> leave
+                     (some? search-match) (disj search-match))]
 
          (reset! sidebar-hover-queue {:enter #{} :leave #{}})
          (reset! sidebar-hover-pending? false)

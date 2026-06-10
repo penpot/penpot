@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layer
   (:require-macros [app.main.style :as stl])
@@ -125,9 +125,14 @@
 
         handle-blend-mode-leave
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids current-blend-mode wasm-renderer-enabled?)
          (fn [_value]
            (swap! state* assoc :preview-complete? true)
+           (when wasm-renderer-enabled?
+             (doseq [id ids]
+               (wasm.api/use-shape id)
+               (wasm.api/set-shape-blend-mode current-blend-mode)
+               (wasm.api/request-render "preview-blend-mode")))
            (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change

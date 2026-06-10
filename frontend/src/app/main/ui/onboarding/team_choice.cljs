@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.onboarding.team-choice
   (:require-macros [app.main.style :as stl])
@@ -18,12 +18,10 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc left-sidebar
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc left-sidebar*
+  {::mf/private true}
   []
   [:div {:class (stl/css :modal-left)}
    [:h2 {:class (stl/css :modal-subtitle)}
@@ -64,9 +62,8 @@
    [:role :keyword]
    [:emails {:optional true} [::sm/set ::sm/email]]])
 
-(mf/defc team-form
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc team-form*
+  {::mf/private true}
   [{:keys [go-to-team]}]
   (let [initial (mf/with-memo []
                   {:role "editor"})
@@ -83,10 +80,9 @@
          (fn [response]
            (let [team-id (:id response)]
              (st/emit! (du/update-profile-props {:onboarding-team-id team-id
-                                                 :onboarding-viewed true})
-                       (println go-to-team)
-                       (when go-to-team
-                         (dcm/go-to-dashboard-recent :team-id team-id))))))
+                                                 :onboarding-viewed true}))
+             (when go-to-team
+               (st/emit! (dcm/go-to-dashboard-recent :team-id team-id))))))
 
         on-error
         (mf/use-fn
@@ -121,13 +117,13 @@
                  params {:name name}]
              (st/emit! (-> (dtm/create-team (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-without-invitations}))
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-step"
-                                        :label "team:create-team-and-invite-later"
-                                        :team-name name
-                                        :step 8})
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-finish"})))))
+                       (ev/event
+                        {::ev/name "onboarding-step"
+                         :label "team:create-team-and-invite-later"
+                         :team-name name
+                         :step 8})
+                       (ev/event
+                        {::ev/name "onboarding-finish"})))))
 
         on-invite-now
         (mf/use-fn
@@ -137,15 +133,15 @@
 
              (st/emit! (-> (dtm/create-team-with-invitations (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-with-invitations}))
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-step"
-                                        :label "team:create-team-and-invite"
-                                        :invites (count emails)
-                                        :team-name name
-                                        :role (:role params)
-                                        :step 8})
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "onboarding-finish"})))))
+                       (ev/event
+                        {::ev/name "onboarding-step"
+                         :label "team:create-team-and-invite"
+                         :invites (count emails)
+                         :team-name name
+                         :role (:role params)
+                         :step 8})
+                       (ev/event
+                        {::ev/name "onboarding-finish"})))))
 
         on-submit*
         (mf/use-fn
@@ -160,12 +156,12 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:onboarding-viewed true})
-                     (ptk/data-event ::ev/event
-                                     {::ev/name "onboarding-step"
-                                      :label "team:skip-team-creation"
-                                      :step 7})
-                     (ptk/data-event ::ev/event
-                                     {::ev/name "onboarding-finish"}))))]
+                     (ev/event
+                      {::ev/name "onboarding-step"
+                       :label "team:skip-team-creation"
+                       :step 7})
+                     (ev/event
+                      {::ev/name "onboarding-finish"}))))]
     [:*
      [:div {:class (stl/css :modal-right)}
       [:div {:class (stl/css :first-block)}
@@ -230,8 +226,7 @@
                   :on-click on-skip}
          (tr "onboarding.choice.team-up.continue-without-a-team")]]]]]))
 
-(mf/defc onboarding-team-modal
-  {::mf/props :obj}
+(mf/defc onboarding-team-modal*
   [{:keys [go-to-team]}]
 
   [:div {:class (stl/css-case
@@ -241,7 +236,7 @@
     [:h1 {:class (stl/css :modal-title)}
      (tr "onboarding-v2.welcome.title")]
     [:div {:class (stl/css :modal-sections)}
-     [:& left-sidebar]
+     [:> left-sidebar*]
      [:div {:class (stl/css :separator)}]
-     [:& team-form {:go-to-team go-to-team}]]]])
+     [:> team-form* {:go-to-team go-to-team}]]]])
 

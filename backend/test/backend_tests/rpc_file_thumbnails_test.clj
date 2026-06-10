@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-file-thumbnails-test
   (:require
@@ -154,7 +154,7 @@
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
-      ;; check that storage object is still exists but is marked as deleted
+      ;; check that storage object is still exists but is marked as deleted.
       (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (nil? row))))))
 
@@ -253,6 +253,32 @@
           (t/is (= 1 (:deleted result)))))
 
       (t/is (some? (sto/get-object storage (:media-id row2)))))))
+
+(t/deftest create-file-thumbnail-requires-edit-permissions
+  (let [owner  (th/create-profile* 1)
+        viewer (th/create-profile* 2)
+        file   (th/create-file* 1 {:profile-id (:id owner)
+                                   :project-id (:default-project-id owner)
+                                   :is-shared false
+                                   :revn 1})
+        _      (th/create-file-role* {:file-id (:id file)
+                                      :profile-id (:id viewer)
+                                      :role :viewer})
+        data   {::th/type :create-file-thumbnail
+                ::rpc/profile-id (:id viewer)
+                :file-id (:id file)
+                :revn 1
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+        out    (th/command! data)
+        error  (:error out)]
+
+    (t/is (nil? (:result out)))
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))
+    (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
 
 (t/deftest error-on-direct-storage-obj-deletion
   (let [storage (::sto/storage th/*system*)

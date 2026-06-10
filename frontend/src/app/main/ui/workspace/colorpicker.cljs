@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker
   (:require-macros [app.main.style :as stl])
@@ -15,7 +15,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cfg]
-   [app.main.data.event :as-alias ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace.colors :as dc]
@@ -45,7 +45,6 @@
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
    [rumext.v2.util :as mfu]))
 
@@ -190,9 +189,9 @@
 
              (st/emit!
               (dc/update-colorpicker-color {:image image} true)
-              (ptk/data-event ::ev/event {::ev/name "toggle-image-aspect-ratio"
-                                          ::ev/origin "workspace:colorpicker"
-                                          :checked keep-aspect-ratio?})))))
+              (ev/event {::ev/name "toggle-image-aspect-ratio"
+                         ::ev/origin "workspace:colorpicker"
+                         :checked keep-aspect-ratio?})))))
 
         on-change-tab
         (mf/use-fn #(reset! active-color-tab* %))
@@ -377,7 +376,12 @@
     ;; Initialize colorpicker state
     (mf/with-effect []
       (st/emit! (dc/initialize-colorpicker on-change active-fill-tab))
-      (partial st/emit! (dc/finalize-colorpicker)))
+      ;; Always deactivate picking mode on unmount so that :picking-color? never
+      ;; stays true if the modal closes for any reason other than the normal
+      ;; pointer-up path (e.g. ESC, navigation, programmatic hide).
+      (fn []
+        (st/emit! (dc/stop-picker)
+                  (dc/finalize-colorpicker))))
 
     ;; Update colorpicker with external color changes
     (mf/with-effect [data]

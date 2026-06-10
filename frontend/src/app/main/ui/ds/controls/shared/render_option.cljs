@@ -59,9 +59,11 @@
                     :key (weak-key option)
                     :id id
                     :label (get option :label)
+                    :title (get option :title)
                     :aria-label (get option :aria-label)
                     :icon (get option :icon)
                     :avatar (get option :avatar)
+                    :disabled (true? (:disabled option))
                     :ref ref
                     :role "option"
                     :focused (= id focused)

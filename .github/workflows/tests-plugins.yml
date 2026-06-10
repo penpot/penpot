@@ -1,0 +1,83 @@
+name: "CI: Plugins"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'plugins/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-plugins:
+    if: ${{ !github.event.pull_request.draft }}
+    name: Plugins Runtime Linter & Tests
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node
+        id: setup-node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install deps
+        working-directory: ./plugins
+        shell: bash
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+
+      - name: Run Lint
+        working-directory: ./plugins
+        run: pnpm run lint
+
+      - name: Run Format Check
+        working-directory: ./plugins
+        run: pnpm run format:check
+
+      - name: Run Test
+        working-directory: ./plugins
+        run: pnpm run test
+
+      - name: Build runtime
+        working-directory: ./plugins
+        run: pnpm run build:runtime
+
+      - name: Build doc
+        working-directory: ./plugins
+        run: pnpm run build:doc
+
+      - name: Build plugins
+        working-directory: ./plugins
+        run: pnpm run build:plugins
+
+      - name: Build styles
+        working-directory: ./plugins
+        run: pnpm run build:styles-example

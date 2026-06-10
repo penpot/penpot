@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport
   (:require-macros [app.main.style :as stl])
@@ -200,7 +200,7 @@
 
         on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -310,7 +310,7 @@
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
-                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only?)
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
@@ -362,10 +362,8 @@
                                       :zoom zoom}])
 
       (when picking-color?
-        [:& pixel-overlay/pixel-overlay {:vport vport
-                                         :vbox vbox
-                                         :layout layout
-                                         :viewport-ref viewport-ref}])]
+        [:> pixel-overlay/pixel-overlay* {:vport vport
+                                          :viewport-ref viewport-ref}])]
 
      [:svg
       {:id "render"
@@ -410,7 +408,9 @@
         ;; Render root shape
         [:& shapes/root-shape {:key (str page-id)
                                :objects base-objects
-                               :active-frames @active-frames}]]]]
+                               :active-frames @active-frames
+                               ;; disable thumbnails when previewing a version
+                               :disable-thumbnails (some? preview-id)}]]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -461,7 +461,7 @@
                     (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
-            [:& outline/shape-outlines
+            [:> outline/shape-outlines*
              {:objects base-objects
               :hover #{outlined-frame-id}
               :zoom zoom
@@ -469,13 +469,13 @@
 
             (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
-               [:& outline/shape-outlines
+               [:> outline/shape-outlines*
                 {:objects base-objects
                  :selected selected
                  :zoom zoom}]])]))
 
        (when show-outlines?
-         [:& outline/shape-outlines
+         [:> outline/shape-outlines*
           {:objects base-objects
            :selected selected
            :hover #{(:id @hover) @frame-hover}
@@ -499,6 +499,14 @@
           {:shape (get base-objects edition)
            :zoom zoom
            :modifiers modifiers}])
+
+       (when (and (seq selected-shapes)
+                  (not transform)
+                  (not text-editing?)
+                  (not edition))
+         [:> msr/selection-size-badge*
+          {:selrect (gsh/shapes->rect selected-shapes)
+           :zoom zoom}])
 
        (when show-measures?
          [:> msr/measurement*
@@ -607,7 +615,7 @@
            :focus focus}])
 
        (when show-snap-distance?
-         [:& snap-distances/snap-distances
+         [:> snap-distances/snap-distances*
           {:layout layout
            :zoom zoom
            :transform transform
@@ -633,14 +641,14 @@
           {:page-id page-id}])
 
        (when-not hide-ui?
-         [:& rulers/rulers
+         [:> rulers/rulers*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
            :offset-y offset-y
-           :show-rulers? show-rulers?}])
+           :show-rulers show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*

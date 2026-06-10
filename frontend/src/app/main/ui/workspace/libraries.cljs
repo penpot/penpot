@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.libraries
   (:require-macros [app.main.style :as stl])
@@ -510,12 +510,13 @@
                         (mf/deps file-id)
                         (fn [event]
                           (when-not updating?
-                            (let [library-id (some-> (dom/get-target event)
+                            (let [library-id (some-> (dom/get-current-target event)
                                                      (dom/get-data "library-id")
                                                      (uuid/parse))]
-                              (st/emit!
-                               (dwl/set-updating-library true)
-                               (dwl/sync-file file-id library-id))))))]
+                              (when library-id
+                                (st/emit!
+                                 (dwl/set-updating-library true)
+                                 (dwl/sync-file file-id library-id)))))))]
 
     [:div {:class (stl/css :updates-content)}
      [:div {:class (stl/css :update-section)}
@@ -579,9 +580,9 @@
                      [:div {:class (stl/css :libraries-updates-item)
                             :key (dm/str (:id color))}
                       [:*
-                       [:& cb/color-bullet {:color {:color (:color color)
-                                                    :id (:id color)
-                                                    :opacity (:opacity color)}}]
+                       [:> cb/color-bullet* {:color {:color (:color color)
+                                                     :id (:id color)
+                                                     :opacity (:opacity color)}}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name color)}
@@ -617,7 +618,7 @@
              (when (or (pos? (:components exceeded))
                        (pos? (:colors exceeded))
                        (pos? (:typographies exceeded)))
-               [:& lb/link-button
+               [:> lb/link-button*
                 {:on-click see-all-assets
                  :class (stl/css :libraries-updates-see-all)
                  :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))

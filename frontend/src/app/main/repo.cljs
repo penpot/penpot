@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.repo
   (:require
@@ -85,6 +85,10 @@
 
     (= 502 status)
     (rx/throw (ex-info "http error" {:type :bad-gateway}))
+
+    (and (= 503 status)
+         (= :nitrate-unavailable (:type body)))
+    (rx/throw (ex-info "http error" {:type :nitrate-unavailable}))
 
     (= 503 status)
     (rx/throw (ex-info "http error" {:type :service-unavailable}))

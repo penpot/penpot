@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.profile
   (:require
@@ -153,10 +153,10 @@
 
            (when (not= (:theme profile)
                        (:theme profile'))
-             (rx/of (ptk/data-event ::ev/event
-                                    {::ev/name "activate-theme"
-                                     ::ev/origin "settings"
-                                     :theme (:theme profile)})))))))))
+             (rx/of (ev/event
+                     {::ev/name "activate-theme"
+                      ::ev/origin "settings"
+                      :theme (:theme profile)})))))))))
 
 ;; --- Toggle Theme
 
@@ -187,9 +187,9 @@
     (watch [it state _]
       (let [profile (get state :profile)
             origin  (::ev/origin (meta it))]
-        (rx/of (ptk/data-event ::ev/event {:theme (:theme profile)
-                                           ::ev/name "activate-theme"
-                                           ::ev/origin origin})
+        (rx/of (ev/event {:theme (:theme profile)
+                          ::ev/name "activate-theme"
+                          ::ev/origin origin})
                (persist-profile))))))
 
 ;; --- Request Email Change
