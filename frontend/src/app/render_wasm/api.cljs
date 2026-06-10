@@ -86,10 +86,6 @@
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
-(defonce snapshot-tiles-handler* (atom nil))
-
-(def ^:private snapshot-capture-debounce-ms 250)
-
 
 (defn initialized?
   "True when the WASM render context is ready to receive design-state
@@ -173,31 +169,6 @@
                        (f))
                      #js {:once true}))
 
-(defonce ^:private schedule-canvas-snapshot-capture!
-  (fns/debounce
-   (fn []
-     (when (and (initialized?)
-                (some? wasm/canvas))
-       (-> (webgl/capture-canvas-snapshot-url)
-           (p/catch (fn [_] nil)))))
-   snapshot-capture-debounce-ms))
-
-(defn- start-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
-    (reset! snapshot-tiles-handler* handler)
-    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
-
-(defn- stop-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (reset! snapshot-tiles-handler* nil)
-  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
-    (cancel)))
-
 (defn text-editor-wasm?
   []
   (or (contains? cf/flags :feature-text-editor-wasm)
@@ -224,7 +195,11 @@
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
 
-(defonce ^:private view-interaction-active? (atom false))
+;; Public so the viewport can gate heavy overlays (flex controls, frame grid,
+;; measurements) during pan/zoom — they otherwise re-render + recompute geometry
+;; on every viewbox change. Set by `set-view-box` (pan AND zoom), cleared on
+;; interaction end.
+(defonce view-interaction-active? (atom false))
 
 ;; Time budget (ms) per chunk of shape processing before yielding to browser
 (def ^:private ^:const CHUNK_TIME_BUDGET_MS 8)
@@ -270,7 +245,6 @@
 (def noop-fn
   (constantly nil))
 
-;;
 (def shape-wrapper-factory nil)
 
 (let [^js ch (js/MessageChannel.)]
@@ -1270,17 +1244,34 @@
               (internal-render)))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
+(defonce ^:private pending-cache-render? (atom false))
+
+(defn- flush-cache-render!
+  []
+  (reset! pending-cache-render? false)
+  (when (initialized?)
+    (perf/begin-measure "render-from-cache")
+    (h/call wasm/internal-module "_render_from_cache" 0)
+    (render-finish)
+    (perf/end-measure "render-from-cache")))
+
 (defn set-view-box
   [zoom vbox]
   (perf/begin-measure "set-view-box")
   (view-interaction-start!)
+  ;; `_set_view` is cheap and must run per event so the renderer always has the
+  ;; latest viewbox.
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (perf/end-measure "set-view-box")
 
-  (perf/begin-measure "render-from-cache")
-  (h/call wasm/internal-module "_render_from_cache" 0)
-  (render-finish)
-  (perf/end-measure "render-from-cache"))
+  ;; Coalesce the cache-preview render to one per animation frame. Wheel/trackpad
+  ;; momentum (and any batched viewport updates) fire many `set-view-box` calls
+  ;; per frame; calling `_render_from_cache` synchronously on each piled up to
+  ;; ~17 renders × tens-to-hundreds of ms in a single RAF (1.5s handlers that
+  ;; froze input). One coalesced render per frame uses the latest viewbox.
+  (when-not @pending-cache-render?
+    (reset! pending-cache-render? true)
+    (timers/raf (fn [_] (flush-cache-render!)))))
 
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
@@ -1981,7 +1972,6 @@
           (set! wasm/canvas canvas)
           (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
           (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored)
-          (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
 
@@ -2008,7 +1998,6 @@
      (when wasm/canvas
        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
        (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
-     (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)
        (free-gpu-resources)
@@ -2083,8 +2072,10 @@
                     (wasm-gesture/reset-after-wasm-reload!))))
         ;; Ensure render surfaces are blank before replay to avoid overpainting.
         (p/then (fn [_] (h/call wasm/internal-module "_reset_canvas")))
-        (p/then (fn [_] (replay-font-resources! fonts)))
-        (p/then (fn [_] (replay-image-resources! image-resources)))
+        (p/then (fn [_]
+                  (replay-font-resources! fonts)))
+        (p/then (fn [_]
+                  (replay-image-resources! image-resources)))
         (p/then
          (fn []
            (initialize-viewport base-objects zoom vbox
