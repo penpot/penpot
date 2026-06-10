@@ -195,6 +195,7 @@
    :enable-render-wasm-dpr
    :enable-token-color
    :enable-token-shadow
+   :enable-token-typography-row
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
