@@ -70,3 +70,8 @@ pub extern "C" fn is_font_uploaded(
 
     res
 }
+
+#[no_mangle]
+pub extern "C" fn flush_font_caches() {
+    get_render_state().fonts_mut().flush_caches();
+}

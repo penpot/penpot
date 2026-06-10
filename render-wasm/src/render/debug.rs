@@ -163,6 +163,10 @@ pub fn render_debug_shape(
     shape_selrect: Option<skia::Rect>,
     shape_extrect: Option<skia::Rect>,
 ) {
+    if shape_selrect.is_none() && shape_extrect.is_none() {
+        return;
+    }
+
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
 
     let mut paint = skia::Paint::default();

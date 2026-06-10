@@ -167,8 +167,10 @@ impl DocAtlas {
             new_bottom = new_bottom.max(doc_rect.bottom.ceil());
         }
 
-        // Add padding to reduce realloc frequency.
-        let pad = tiles::TILE_SIZE;
+        // Geometric over-allocation: pad by 25% of extent to reduce realloc frequency.
+        let doc_extent_w = new_right - new_left;
+        let doc_extent_h = new_bottom - new_top;
+        let pad = (doc_extent_w.min(doc_extent_h) * 0.25_f32).max(TILE_SIZE as f32);
         new_left -= pad;
         new_top -= pad;
         new_right += pad;
@@ -770,7 +772,11 @@ impl Surfaces {
         if ids & SurfaceId::Export as u32 != 0 {
             f(self.get_mut(SurfaceId::Export));
         }
-        performance::begin_measure!("apply_mut::flags");
+        performance::end_measure!("apply_mut::flags");
+    }
+
+    pub fn apply_one(&mut self, surface_id: SurfaceId, mut f: impl FnMut(&mut skia::Surface)) {
+        f(self.get_mut(surface_id));
     }
 
     pub fn get_render_context_translation(
@@ -800,13 +806,6 @@ impl Surfaces {
         self.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
         });
-
-        // Mark all render surfaces as dirty so they get redrawn
-        self.mark_dirty(SurfaceId::Fills);
-        self.mark_dirty(SurfaceId::Strokes);
-        self.mark_dirty(SurfaceId::InnerShadows);
-        self.mark_dirty(SurfaceId::TextDropShadows);
-        self.mark_dirty(SurfaceId::DropShadows);
 
         // Update transformations
         self.apply_mut(surface_ids, |s| {
@@ -1191,13 +1190,14 @@ impl Surfaces {
             self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
 
             // Draws current tile into tile atlas
-            let tile_ref = self.tiles.add(tile_viewbox, tile);
-            self.tile_atlas.canvas().draw_image_rect(
-                &tile_image,
-                None,
-                tile_ref.rect,
-                &skia::Paint::default(),
-            );
+            if let Some(tile_ref) = self.tiles.add(tile_viewbox, tile) {
+                self.tile_atlas.canvas().draw_image_rect(
+                    &tile_image,
+                    None,
+                    tile_ref.rect,
+                    &skia::Paint::default(),
+                );
+            }
         }
     }
 
@@ -1434,10 +1434,7 @@ impl Surfaces {
                 self.shape_strokes = surface;
             }
 
-            if let Some(surface) = self
-                .shape_strokes
-                .new_surface_with_dimensions((max_w, max_h))
-            {
+            if let Some(surface) = self.shape_fills.new_surface_with_dimensions((max_w, max_h)) {
                 self.shape_fills = surface;
             }
         }
@@ -1542,8 +1539,9 @@ impl TileTextureCache {
 
     fn gc(&mut self) {
         // Make a real remove
-        for tile in self.removed.iter() {
-            if let Some(tile_ref) = self.grid.remove(tile) {
+        let removed = std::mem::take(&mut self.removed);
+        for tile in removed {
+            if let Some(tile_ref) = self.grid.remove(&tile) {
                 self.provider.deallocate(tile_ref);
             }
         }
@@ -1630,7 +1628,7 @@ impl TileTextureCache {
         self.grid.contains_key(&tile) && !self.removed.contains(&tile)
     }
 
-    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
+    pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> Option<TileAtlasTextureRef> {
         if self.grid.len() > TEXTURES_CACHE_CAPACITY {
             // First we try to remove the obsolete tiles.
             self.gc();
@@ -1643,9 +1641,7 @@ impl TileTextureCache {
             self.gc_non_visible(tile_viewbox);
         }
 
-        let Some(tile_ref) = self.provider.allocate() else {
-            panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
-        };
+        let tile_ref = self.provider.allocate()?;
 
         self.grid.insert(*tile, tile_ref.clone());
 
@@ -1654,7 +1650,7 @@ impl TileTextureCache {
         }
 
         self.is_updated = true;
-        tile_ref.clone()
+        Some(tile_ref)
     }
 
     pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {

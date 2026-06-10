@@ -923,7 +923,7 @@ pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*m
         let Some(shape) = state.shapes.get(&id) else {
             return Err(Error::CriticalError("Shape not found".to_string()));
         };
-        let extrect = get_render_state().get_cached_extrect(shape, &state.shapes, 1.0);
+        let extrect = shape.extrect(&state.shapes, 1.0);
         let mut buf = Vec::with_capacity(16);
         buf.extend_from_slice(&extrect.x().to_le_bytes());
         buf.extend_from_slice(&extrect.y().to_le_bytes());

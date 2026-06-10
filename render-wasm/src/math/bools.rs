@@ -333,11 +333,7 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
         let mut last_end = (first_bezier.end.x as f32, first_bezier.end.y as f32);
         let mut cur_end = first_bezier.end;
 
-        loop {
-            let Some((next_src, next_bezier)) = find_next_in_pool(&mut pool, cur_end, cur_src)
-            else {
-                break;
-            };
+        while let Some((next_src, next_bezier)) = find_next_in_pool(&mut pool, cur_end, cur_src) {
             push_bezier(&mut result, &next_bezier);
             last_end = (next_bezier.end.x as f32, next_bezier.end.y as f32);
             cur_end = next_bezier.end;

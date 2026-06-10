@@ -297,13 +297,14 @@ pub(super) fn handle_stroke_caps(
     blur: Option<&ImageFilter>,
     _antialias: bool,
 ) {
-    // Closed shapes don't have caps
     if !is_open {
         return;
     }
 
-    // When both ends share the same simple line cap, Skia already drew it
-    // natively via `PaintCap` on the stroke paint, so skip the manual overlay.
+    if stroke.cap_start.is_none() && stroke.cap_end.is_none() {
+        return;
+    }
+
     if stroke.to_skia_linecap().is_some() {
         return;
     }
