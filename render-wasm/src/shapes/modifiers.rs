@@ -498,8 +498,11 @@ pub fn propagate_modifiers(
         }
     }
 
+    // Drop identity matrices: the reflow-mark inserts a no-op entry for every
+    // descendant of a reflowed subtree; emitting them floods the FFI output.
     Ok(modifiers
         .iter()
+        .filter(|(_, val)| !identitish(val))
         .map(|(key, val)| TransformEntry::from_input(*key, *val))
         .collect())
 }
