@@ -182,10 +182,15 @@
         canvas-init?         (mf/use-state false)
         initialized?         (mf/use-state false)
         dragging-guide-id*   (mf/use-state nil)
+        guide-hover-axis*    (mf/use-state nil)
 
         on-guide-drag
         (mf/use-fn
          #(reset! dragging-guide-id* %))
+
+        on-guide-hover
+        (mf/use-fn
+         #(reset! guide-hover-axis* %))
 
         ;; REFS
         [viewport-ref
@@ -636,7 +641,12 @@
        :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
-       :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
+       :class (dm/str @cursor " "
+                      (stl/css-case
+                       :global/drawing drawing-tool
+                       :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
+                       :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
+                       :viewport-controls true))
        :style {:touch-action "none"}
        :fill "none"
        :on-click         on-click
@@ -850,7 +860,8 @@
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers wasm-modifiers
-           :on-guide-drag on-guide-drag}])
+           :on-guide-drag on-guide-drag
+           :on-guide-hover on-guide-hover}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)

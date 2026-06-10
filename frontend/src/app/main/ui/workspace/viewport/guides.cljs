@@ -701,13 +701,14 @@
   mode: `commit-edit` (commits the parsed input value) and `cancel-edit`
   (drops the edit without committing)."
   [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
-           on-guide-drag get-hover-frame focus]}]
+           on-guide-drag on-guide-hover get-hover-frame focus]}]
   (let [dragging-ref       (mf/use-ref false)
         moved-ref          (mf/use-ref false)
         start-ref          (mf/use-ref nil)
         guide-ref          (mf/use-ref nil)
         pending-ref        (mf/use-ref nil)
         drag-listeners-ref (mf/use-ref nil)
+        hover-axis-ref     (mf/use-ref nil)
         state              (mf/use-state nil)
 
         snap-pixel?
@@ -729,6 +730,13 @@
                 (.removeEventListener viewport "pointercancel" on-up true))
               (mf/set-ref-val! drag-listeners-ref nil)))
 
+          emit-hover-axis
+          (fn [axis]
+            (when (not= axis (mf/ref-val hover-axis-ref))
+              (mf/set-ref-val! hover-axis-ref axis)
+              (when (some? on-guide-hover)
+                (on-guide-hover axis))))
+
           reset-state
           (fn []
             (remove-drag-listeners)
@@ -739,6 +747,7 @@
             (mf/set-ref-val! start-ref nil)
             (mf/set-ref-val! guide-ref nil)
             (mf/set-ref-val! pending-ref nil)
+            (emit-hover-axis nil)
             (reset! state nil))
 
           finish-drag
@@ -790,6 +799,19 @@
             (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
               (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
 
+          pointer-move-hover
+          (fn [event]
+            ;; Only update hover cursor when we are not in the middle of a
+            ;; drag or edit. During drag the cursor is already set to the
+            ;; dragged guide's axis; during edit the input owns the cursor.
+            (when (and (not read-only?)
+                       (not (editing?))
+                       (not (mf/ref-val dragging-ref)))
+              (let [guide (guide-at-event event)
+                    axis  (when (and guide (guide-draggable-in-focus? focus guide))
+                            (:axis guide))]
+                (emit-hover-axis axis))))
+
           pointer-down
           (fn [event]
             (when (and (not read-only?) (not (editing?)))
@@ -803,6 +825,7 @@
                       (when-let [viewport @uwvv/viewport-ref]
                         (.setPointerCapture viewport (.-pointerId event)))
                       (dom/stop-propagation event)
+                      (emit-hover-axis (:axis guide))
                       (mf/set-ref-val! dragging-ref true)
                       (mf/set-ref-val! moved-ref false)
                       (mf/set-ref-val! start-ref position)
@@ -863,13 +886,15 @@
 
       (mf/with-effect [wasm-guides? disabled-guides? read-only?
                        guides zoom focus snap-pixel?
-                       on-guide-change on-guide-drag get-hover-frame]
+                       on-guide-change on-guide-drag on-guide-hover get-hover-frame]
         (when (and wasm-guides? (not disabled-guides?) (not read-only?))
           (when-let [viewport @uwvv/viewport-ref]
             (.addEventListener viewport "pointerdown" pointer-down true)
+            (.addEventListener viewport "pointermove" pointer-move-hover true)
             (.addEventListener viewport "dblclick" double-click true)
             (fn []
               (.removeEventListener viewport "pointerdown" pointer-down true)
+              (.removeEventListener viewport "pointermove" pointer-move-hover true)
               (.removeEventListener viewport "dblclick" double-click true)
               ;; Only tear down state on real teardown. If this cleanup is
               ;; triggered by a dependency change mid-interaction, leave the
@@ -886,7 +911,7 @@
   "Owns WASM guide drag/edit state and overlay rendering so updates are not
   blocked by memoization on `viewport-guides*`."
   [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
-           on-guide-drag get-hover-frame focus vbox]}]
+           on-guide-drag on-guide-hover get-hover-frame focus vbox]}]
   (let [{:keys [state commit-edit cancel-edit]}
         (use-wasm-guide-interaction {:guides guides
                                      :zoom zoom
@@ -894,6 +919,7 @@
                                      :disabled-guides? disabled-guides?
                                      :on-guide-change on-guide-change
                                      :on-guide-drag on-guide-drag
+                                     :on-guide-hover on-guide-hover
                                      :get-hover-frame get-hover-frame
                                      :focus focus})
 
@@ -912,7 +938,7 @@
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]}
   [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides?
-           on-guide-drag]}]
+           on-guide-drag on-guide-hover]}]
   (let [visible-guides
         (mf/with-memo [guides vbox]
           (->> (vals guides)
@@ -995,6 +1021,7 @@
                                       :disabled-guides? disabled-guides
                                       :on-guide-change on-guide-change
                                       :on-guide-drag on-guide-drag
+                                      :on-guide-hover on-guide-hover
                                       :get-hover-frame get-hover-frame
                                       :focus focus
                                       :vbox vbox}])
