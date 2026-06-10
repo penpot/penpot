@@ -737,6 +737,7 @@
         pending-ref        (mf/use-ref nil)
         drag-listeners-ref (mf/use-ref nil)
         hover-axis-ref     (mf/use-ref nil)
+        hover-guide-id-ref (mf/use-ref nil)
         state              (mf/use-state nil)
 
         snap-pixel?
@@ -765,6 +766,19 @@
               (when (some? on-guide-hover)
                 (on-guide-hover axis))))
 
+          ;; Mirrors what the SVG renderer does on pointer-enter / -leave:
+          ;; populates `[:workspace-guides :hover]` so the Del / Backspace
+          ;; shortcut (`dw/delete-selected`) can remove the hovered guide.
+          emit-hover-guide-id
+          (fn [id]
+            (let [prev (mf/ref-val hover-guide-id-ref)]
+              (when (not= id prev)
+                (mf/set-ref-val! hover-guide-id-ref id)
+                (when prev
+                  (st/emit! (dw/set-hover-guide prev false)))
+                (when id
+                  (st/emit! (dw/set-hover-guide id true))))))
+
           clear-drag-refs
           (fn []
             (remove-drag-listeners)
@@ -780,6 +794,7 @@
             (when (some? on-guide-drag)
               (on-guide-drag nil))
             (emit-hover-axis nil)
+            (emit-hover-guide-id nil)
             (reset! state nil))
 
           finish-drag
@@ -865,6 +880,7 @@
                     current-hover-id (when (= :hover (:mode current-state))
                                        (-> current-state :guide :id))]
                 (emit-hover-axis (:axis guide))
+                (emit-hover-guide-id (:id guide))
                 (cond
                   (and (some? guide)
                        (not= (:id guide) current-hover-id))
@@ -890,6 +906,7 @@
                         (.setPointerCapture viewport (.-pointerId event)))
                       (dom/stop-propagation event)
                       (emit-hover-axis (:axis guide))
+                      (emit-hover-guide-id (:id guide))
                       (mf/set-ref-val! dragging-ref true)
                       (mf/set-ref-val! moved-ref false)
                       (mf/set-ref-val! start-ref position)
