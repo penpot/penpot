@@ -1,5 +1,4 @@
 use crate::ui::{Guide, GuideKind};
-use crate::uuid::Uuid;
 
 pub struct GuidePool {
     horizontal: Vec<Guide>,
@@ -81,14 +80,13 @@ impl GuidePool {
 
 pub struct UIState {
     guides: GuidePool,
-    pub _show_grid: Option<Uuid>,
+    // TODO: show grid, rulers, etc.
 }
 
 impl UIState {
     pub fn new() -> Self {
         Self {
             guides: GuidePool::new(),
-            _show_grid: None,
         }
     }
 

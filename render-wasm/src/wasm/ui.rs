@@ -1,10 +1,10 @@
 use crate::mem;
+use crate::with_state;
 use crate::{
     error::{Error, Result},
     globals::{get_render_state, get_ui_state},
     ui::{Guide, GuideKind},
 };
-use crate::with_state;
 use macros::{wasm_error, ToJs};
 
 const RAW_GUIDE_SIZE: usize = std::mem::size_of::<RawGuide>();

@@ -744,249 +744,249 @@
         (mf/deref refs/snap-pixel?)
 
         read-only?
-        (mf/use-ctx ctx/workspace-read-only?)]
+        (mf/use-ctx ctx/workspace-read-only?)
 
-    ;; The handlers are defined here so they close directly over the refs and
-    ;; the current render's props (guides, zoom, ...). The pointerdown /
-    ;; dblclick listeners are re-registered by the effect below whenever those
-    ;; props change, so they always see fresh values.
-    (let [remove-drag-listeners
-          (fn []
-            (when-let [{:keys [on-move on-up]} (mf/ref-val drag-listeners-ref)]
+        ;; The handlers are defined here so they close directly over the refs and
+        ;; the current render's props (guides, zoom, ...). The pointerdown /
+        ;; dblclick listeners are re-registered by the effect below whenever those
+        ;; props change, so they always see fresh values.
+        remove-drag-listeners
+        (fn []
+          (when-let [{:keys [on-move on-up]} (mf/ref-val drag-listeners-ref)]
+            (when-let [viewport @uwvv/viewport-ref]
+              (.removeEventListener viewport "pointermove" on-move true)
+              (.removeEventListener viewport "pointerup" on-up true)
+              (.removeEventListener viewport "pointercancel" on-up true))
+            (mf/set-ref-val! drag-listeners-ref nil)))
+
+        emit-hover-axis
+        (fn [axis]
+          (when (not= axis (mf/ref-val hover-axis-ref))
+            (mf/set-ref-val! hover-axis-ref axis)
+            (when (some? on-guide-hover)
+              (on-guide-hover axis))))
+
+        ;; Mirrors what the SVG renderer does on pointer-enter / -leave:
+        ;; populates `[:workspace-guides :hover]` so the Del / Backspace
+        ;; shortcut (`dw/delete-selected`) can remove the hovered guide.
+        emit-hover-guide-id
+        (fn [id]
+          (let [prev (mf/ref-val hover-guide-id-ref)]
+            (when (not= id prev)
+              (mf/set-ref-val! hover-guide-id-ref id)
+              (when prev
+                (st/emit! (dw/set-hover-guide prev false)))
+              (when id
+                (st/emit! (dw/set-hover-guide id true))))))
+
+        clear-drag-refs
+        (fn []
+          (remove-drag-listeners)
+          (mf/set-ref-val! dragging-ref false)
+          (mf/set-ref-val! moved-ref false)
+          (mf/set-ref-val! start-ref nil)
+          (mf/set-ref-val! guide-ref nil)
+          (mf/set-ref-val! pending-ref nil))
+
+        reset-state
+        (fn []
+          (clear-drag-refs)
+          (when (some? on-guide-drag)
+            (on-guide-drag nil))
+          (emit-hover-axis nil)
+          (emit-hover-guide-id nil)
+          (reset! state nil))
+
+        finish-drag
+        (fn [event]
+          (when (mf/ref-val dragging-ref)
+            (let [moved? (mf/ref-val moved-ref)]
+              (when (and moved? (some? on-guide-change))
+                (when-let [{:keys [guide new-position new-frame-id]}
+                           (mf/ref-val pending-ref)]
+                  (when (and (some? guide) (some? new-position))
+                    (on-guide-change (assoc guide
+                                            :position new-position
+                                            :frame-id new-frame-id)))))
               (when-let [viewport @uwvv/viewport-ref]
-                (.removeEventListener viewport "pointermove" on-move true)
-                (.removeEventListener viewport "pointerup" on-up true)
-                (.removeEventListener viewport "pointercancel" on-up true))
-              (mf/set-ref-val! drag-listeners-ref nil)))
+                (when (.-pointerId event)
+                  (.releasePointerCapture viewport (.-pointerId event))))
+              ;; A click without movement (no drag): leave the hover state
+              ;; alone so a follow-up double-click can transition straight
+              ;; from :hover to :edit without flickering through nil.
+              (if moved?
+                (reset-state)
+                (clear-drag-refs)))))
 
-          emit-hover-axis
-          (fn [axis]
-            (when (not= axis (mf/ref-val hover-axis-ref))
-              (mf/set-ref-val! hover-axis-ref axis)
-              (when (some? on-guide-hover)
-                (on-guide-hover axis))))
+        drag-move
+        (fn [move-event]
+          (when (mf/ref-val dragging-ref)
+            (when-let [guide (mf/ref-val guide-ref)]
+              (let [start-pt   (mf/ref-val start-ref)
+                    current-pt (dom/get-client-position move-event)
+                    already-moved? (mf/ref-val moved-ref)
+                    past-threshold?
+                    (or already-moved?
+                        (> (+ (mth/abs (- (:x current-pt) (:x start-pt)))
+                              (mth/abs (- (:y current-pt) (:y start-pt))))
+                           guide-drag-threshold))]
+                (when past-threshold?
+                  (let [axis         (:axis guide)
+                        new-position (compute-guide-drag-position
+                                      {:axis axis
+                                       :position (:position guide)
+                                       :start-pt start-pt
+                                       :current-pt current-pt
+                                       :zoom zoom
+                                       :snap-pixel? snap-pixel?})
+                        new-frame-id (-> (get-hover-frame) (get :id))
+                        pending      {:guide guide
+                                      :new-position new-position
+                                      :new-frame-id new-frame-id
+                                      :mode :drag}]
+                    (when-not already-moved?
+                      (mf/set-ref-val! moved-ref true)
+                      (when (some? on-guide-drag)
+                        (on-guide-drag (:id guide))))
+                    (mf/set-ref-val! pending-ref pending)
+                    (reset! state pending)))))))
 
-          ;; Mirrors what the SVG renderer does on pointer-enter / -leave:
-          ;; populates `[:workspace-guides :hover]` so the Del / Backspace
-          ;; shortcut (`dw/delete-selected`) can remove the hovered guide.
-          emit-hover-guide-id
-          (fn [id]
-            (let [prev (mf/ref-val hover-guide-id-ref)]
-              (when (not= id prev)
-                (mf/set-ref-val! hover-guide-id-ref id)
-                (when prev
-                  (st/emit! (dw/set-hover-guide prev false)))
-                (when id
-                  (st/emit! (dw/set-hover-guide id true))))))
+        editing?
+        (fn [] (= :edit (:mode @state)))
 
-          clear-drag-refs
-          (fn []
-            (remove-drag-listeners)
-            (mf/set-ref-val! dragging-ref false)
-            (mf/set-ref-val! moved-ref false)
-            (mf/set-ref-val! start-ref nil)
-            (mf/set-ref-val! guide-ref nil)
-            (mf/set-ref-val! pending-ref nil))
+        guide-at-event
+        (fn [event]
+          (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
+            (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
 
-          reset-state
-          (fn []
-            (clear-drag-refs)
-            (when (some? on-guide-drag)
-              (on-guide-drag nil))
-            (emit-hover-axis nil)
-            (emit-hover-guide-id nil)
-            (reset! state nil))
+        guide-frame-offset
+        (fn [guide]
+          (let [frame (some-> (:frame-id guide) refs/object-by-id deref)]
+            (if frame
+              (if (= :x (:axis guide)) (:x frame) (:y frame))
+              0)))
 
-          finish-drag
-          (fn [event]
-            (when (mf/ref-val dragging-ref)
-              (let [moved? (mf/ref-val moved-ref)]
-                (when (and moved? (some? on-guide-change))
-                  (when-let [{:keys [guide new-position new-frame-id]}
-                             (mf/ref-val pending-ref)]
-                    (when (and (some? guide) (some? new-position))
-                      (on-guide-change (assoc guide
-                                              :position new-position
-                                              :frame-id new-frame-id)))))
-                (when-let [viewport @uwvv/viewport-ref]
-                  (when (.-pointerId event)
-                    (.releasePointerCapture viewport (.-pointerId event))))
-                ;; A click without movement (no drag): leave the hover state
-                ;; alone so a follow-up double-click can transition straight
-                ;; from :hover to :edit without flickering through nil.
-                (if moved?
-                  (reset-state)
-                  (clear-drag-refs)))))
+        pointer-move-hover
+        (fn [event]
+          ;; Only update hover cursor / pill when we are not in the middle of
+          ;; a drag or edit. During drag the cursor is already set to the
+          ;; dragged guide's axis; during edit the input owns the cursor.
+          (when (and (not read-only?)
+                     (not (editing?))
+                     (not (mf/ref-val dragging-ref)))
+            (let [guide (when-let [g (guide-at-event event)]
+                          (when (guide-draggable-in-focus? focus g) g))
+                  current-state @state
+                  current-hover-id (when (= :hover (:mode current-state))
+                                     (-> current-state :guide :id))]
+              (emit-hover-axis (:axis guide))
+              (emit-hover-guide-id (:id guide))
+              (cond
+                (and (some? guide)
+                     (not= (:id guide) current-hover-id))
+                (reset! state {:guide guide
+                               :new-position (:position guide)
+                               :frame-offset (guide-frame-offset guide)
+                               :mode :hover})
 
-          drag-move
-          (fn [move-event]
-            (when (mf/ref-val dragging-ref)
-              (when-let [guide (mf/ref-val guide-ref)]
-                (let [start-pt   (mf/ref-val start-ref)
-                      current-pt (dom/get-client-position move-event)
-                      already-moved? (mf/ref-val moved-ref)
-                      past-threshold?
-                      (or already-moved?
-                          (> (+ (mth/abs (- (:x current-pt) (:x start-pt)))
-                                (mth/abs (- (:y current-pt) (:y start-pt))))
-                             guide-drag-threshold))]
-                  (when past-threshold?
-                    (let [axis         (:axis guide)
-                          new-position (compute-guide-drag-position
-                                        {:axis axis
-                                         :position (:position guide)
-                                         :start-pt start-pt
-                                         :current-pt current-pt
-                                         :zoom zoom
-                                         :snap-pixel? snap-pixel?})
-                          new-frame-id (-> (get-hover-frame) (get :id))
-                          pending      {:guide guide
-                                        :new-position new-position
-                                        :new-frame-id new-frame-id
-                                        :mode :drag}]
-                      (when-not already-moved?
-                        (mf/set-ref-val! moved-ref true)
-                        (when (some? on-guide-drag)
-                          (on-guide-drag (:id guide))))
-                      (mf/set-ref-val! pending-ref pending)
-                      (reset! state pending)))))))
+                (and (nil? guide) (some? current-hover-id))
+                (reset! state nil)))))
 
-          editing?
-          (fn [] (= :edit (:mode @state)))
+        pointer-down
+        (fn [event]
+          (when (and (not read-only?) (not (editing?)))
+            ;; While editing, any click outside the input commits the edit
+            ;; via the input's blur handler. Don't initiate a drag on the
+            ;; same pointerdown.
+            (when (= 0 (.-button event))
+              (let [position (dom/get-client-position event)
+                    guide    (guide-at-event event)]
+                (when (and guide (guide-draggable-in-focus? focus guide))
+                  (when-let [viewport @uwvv/viewport-ref]
+                    (.setPointerCapture viewport (.-pointerId event)))
+                  (dom/stop-propagation event)
+                  (emit-hover-axis (:axis guide))
+                  (emit-hover-guide-id (:id guide))
+                  (mf/set-ref-val! dragging-ref true)
+                  (mf/set-ref-val! moved-ref false)
+                  (mf/set-ref-val! start-ref position)
+                  (mf/set-ref-val! guide-ref guide)
+                  (mf/set-ref-val! pending-ref
+                                   {:guide guide
+                                    :new-position (:position guide)
+                                    :new-frame-id (:frame-id guide)
+                                    :mode :drag})
+                  ;; Pointer capture (above) routes all subsequent pointer
+                  ;; events to the viewport, so we listen on the viewport
+                  ;; itself rather than window. This keeps events flowing
+                  ;; even outside the browser window.
+                  (when-let [viewport @uwvv/viewport-ref]
+                    (let [on-move #(drag-move %)
+                          on-up   #(finish-drag %)]
+                      (mf/set-ref-val! drag-listeners-ref
+                                       {:on-move on-move :on-up on-up})
+                      (.addEventListener viewport "pointermove" on-move true)
+                      (.addEventListener viewport "pointerup" on-up true)
+                      (.addEventListener viewport "pointercancel" on-up true))))))))
 
-          guide-at-event
-          (fn [event]
-            (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
-              (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
-
-          guide-frame-offset
-          (fn [guide]
-            (let [frame (some-> (:frame-id guide) refs/object-by-id deref)]
-              (if frame
-                (if (= :x (:axis guide)) (:x frame) (:y frame))
-                0)))
-
-          pointer-move-hover
-          (fn [event]
-            ;; Only update hover cursor / pill when we are not in the middle of
-            ;; a drag or edit. During drag the cursor is already set to the
-            ;; dragged guide's axis; during edit the input owns the cursor.
-            (when (and (not read-only?)
-                       (not (editing?))
-                       (not (mf/ref-val dragging-ref)))
-              (let [guide (when-let [g (guide-at-event event)]
-                            (when (guide-draggable-in-focus? focus g) g))
-                    current-state @state
-                    current-hover-id (when (= :hover (:mode current-state))
-                                       (-> current-state :guide :id))]
-                (emit-hover-axis (:axis guide))
-                (emit-hover-guide-id (:id guide))
-                (cond
-                  (and (some? guide)
-                       (not= (:id guide) current-hover-id))
+        double-click
+        (fn [event]
+          (when (and (not read-only?) (not (editing?)))
+            (let [guide (guide-at-event event)]
+              (when (and guide (guide-draggable-in-focus? focus guide))
+                (dom/prevent-default event)
+                (dom/stop-propagation event)
+                (when (some? on-guide-drag)
+                  (on-guide-drag (:id guide)))
+                (mf/set-ref-val! guide-ref guide)
+                (let [frame  (some-> (:frame-id guide) refs/object-by-id deref)
+                      offset (if frame
+                               (if (= :x (:axis guide)) (:x frame) (:y frame))
+                               0)]
                   (reset! state {:guide guide
                                  :new-position (:position guide)
-                                 :frame-offset (guide-frame-offset guide)
-                                 :mode :hover})
+                                 :new-frame-id (:frame-id guide)
+                                 :frame-offset offset
+                                 :mode :edit}))))))
 
-                  (and (nil? guide) (some? current-hover-id))
-                  (reset! state nil)))))
+        commit-edit
+        (fn [raw-value]
+          (when (editing?)
+            (let [{:keys [guide new-frame-id frame-offset]} @state
+                  parsed (some-> raw-value str/trim d/parse-double)]
+              (when (and (some? parsed) (some? on-guide-change))
+                (on-guide-change (assoc guide
+                                        :position (+ parsed frame-offset)
+                                        :frame-id new-frame-id)))
+              (reset-state))))
 
-          pointer-down
-          (fn [event]
-            (when (and (not read-only?) (not (editing?)))
-              ;; While editing, any click outside the input commits the edit
-              ;; via the input's blur handler. Don't initiate a drag on the
-              ;; same pointerdown.
-              (when (= 0 (.-button event))
-                  (let [position (dom/get-client-position event)
-                        guide    (guide-at-event event)]
-                    (when (and guide (guide-draggable-in-focus? focus guide))
-                      (when-let [viewport @uwvv/viewport-ref]
-                        (.setPointerCapture viewport (.-pointerId event)))
-                      (dom/stop-propagation event)
-                      (emit-hover-axis (:axis guide))
-                      (emit-hover-guide-id (:id guide))
-                      (mf/set-ref-val! dragging-ref true)
-                      (mf/set-ref-val! moved-ref false)
-                      (mf/set-ref-val! start-ref position)
-                      (mf/set-ref-val! guide-ref guide)
-                      (mf/set-ref-val! pending-ref
-                                       {:guide guide
-                                        :new-position (:position guide)
-                                        :new-frame-id (:frame-id guide)
-                                        :mode :drag})
-                      ;; Pointer capture (above) routes all subsequent pointer
-                      ;; events to the viewport, so we listen on the viewport
-                      ;; itself rather than window. This keeps events flowing
-                      ;; even outside the browser window.
-                      (when-let [viewport @uwvv/viewport-ref]
-                        (let [on-move #(drag-move %)
-                              on-up   #(finish-drag %)]
-                          (mf/set-ref-val! drag-listeners-ref
-                                           {:on-move on-move :on-up on-up})
-                          (.addEventListener viewport "pointermove" on-move true)
-                          (.addEventListener viewport "pointerup" on-up true)
-                          (.addEventListener viewport "pointercancel" on-up true))))))))
+        cancel-edit
+        (fn []
+          (when (editing?)
+            (reset-state)))]
 
-          double-click
-          (fn [event]
-            (when (and (not read-only?) (not (editing?)))
-              (let [guide (guide-at-event event)]
-                (when (and guide (guide-draggable-in-focus? focus guide))
-                  (dom/prevent-default event)
-                  (dom/stop-propagation event)
-                  (when (some? on-guide-drag)
-                    (on-guide-drag (:id guide)))
-                  (mf/set-ref-val! guide-ref guide)
-                  (let [frame  (some-> (:frame-id guide) refs/object-by-id deref)
-                        offset (if frame
-                                 (if (= :x (:axis guide)) (:x frame) (:y frame))
-                                 0)]
-                    (reset! state {:guide guide
-                                   :new-position (:position guide)
-                                   :new-frame-id (:frame-id guide)
-                                   :frame-offset offset
-                                   :mode :edit}))))))
-
-          commit-edit
-          (fn [raw-value]
-            (when (editing?)
-              (let [{:keys [guide new-frame-id frame-offset]} @state
-                    parsed (some-> raw-value str/trim d/parse-double)]
-                (when (and (some? parsed) (some? on-guide-change))
-                  (on-guide-change (assoc guide
-                                          :position (+ parsed frame-offset)
-                                          :frame-id new-frame-id)))
-                (reset-state))))
-
-          cancel-edit
+    (mf/with-effect [wasm-guides? disabled-guides? read-only?
+                     guides zoom focus snap-pixel?
+                     on-guide-change on-guide-drag on-guide-hover get-hover-frame]
+      (when (and wasm-guides? (not disabled-guides?) (not read-only?))
+        (when-let [viewport @uwvv/viewport-ref]
+          (.addEventListener viewport "pointerdown" pointer-down true)
+          (.addEventListener viewport "pointermove" pointer-move-hover true)
+          (.addEventListener viewport "dblclick" double-click true)
           (fn []
-            (when (editing?)
-              (reset-state)))]
+            (.removeEventListener viewport "pointerdown" pointer-down true)
+            (.removeEventListener viewport "pointermove" pointer-move-hover true)
+            (.removeEventListener viewport "dblclick" double-click true)
+            ;; Only tear down state on real teardown. If this cleanup is
+            ;; triggered by a dependency change mid-interaction, leave the
+            ;; active drag/edit (and its listeners) untouched so it can
+            ;; finish.
+            (when-not (or (mf/ref-val dragging-ref) (editing?))
+              (reset-state))))))
 
-      (mf/with-effect [wasm-guides? disabled-guides? read-only?
-                       guides zoom focus snap-pixel?
-                       on-guide-change on-guide-drag on-guide-hover get-hover-frame]
-        (when (and wasm-guides? (not disabled-guides?) (not read-only?))
-          (when-let [viewport @uwvv/viewport-ref]
-            (.addEventListener viewport "pointerdown" pointer-down true)
-            (.addEventListener viewport "pointermove" pointer-move-hover true)
-            (.addEventListener viewport "dblclick" double-click true)
-            (fn []
-              (.removeEventListener viewport "pointerdown" pointer-down true)
-              (.removeEventListener viewport "pointermove" pointer-move-hover true)
-              (.removeEventListener viewport "dblclick" double-click true)
-              ;; Only tear down state on real teardown. If this cleanup is
-              ;; triggered by a dependency change mid-interaction, leave the
-              ;; active drag/edit (and its listeners) untouched so it can
-              ;; finish.
-              (when-not (or (mf/ref-val dragging-ref) (editing?))
-                (reset-state))))))
-
-      {:state state
-       :commit-edit commit-edit
-       :cancel-edit cancel-edit})))
+    {:state state
+     :commit-edit commit-edit
+     :cancel-edit cancel-edit}))
 
 (mf/defc wasm-guide-overlay-layer*
   "Owns WASM guide drag/edit state and overlay rendering so updates are not
