@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::math::{is_move_only_matrix, Bounds, Matrix};
+use crate::math::{is_close_to, is_move_only_matrix, Bounds, Matrix};
 use crate::shapes::{ConstraintH, ConstraintV};
 
 pub fn calculate_resize(
@@ -36,7 +36,9 @@ pub fn calculate_resize(
         _ => 1.0,
     };
 
-    if (scale_width - 1.0).abs() < f32::EPSILON && (scale_height - 1.0).abs() < f32::EPSILON {
+    // 0.001 threshold (not f32::EPSILON) so near-identity resizes short-circuit
+    // before building the per-child parent matrix.
+    if is_close_to(scale_width, 1.0) && is_close_to(scale_height, 1.0) {
         None
     } else {
         Some((scale_width, scale_height))
@@ -91,7 +93,7 @@ pub fn calculate_displacement(
         _ => 0.0,
     };
 
-    if delta_x.abs() < f32::EPSILON && delta_y.abs() < f32::EPSILON {
+    if is_close_to(delta_x, 0.0) && is_close_to(delta_y, 0.0) {
         None
     } else {
         Some((delta_x, delta_y))
