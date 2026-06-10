@@ -14,13 +14,10 @@
 (defn group-shape
   [shape-wrapper]
   (let [render-mask (mask-factory shape-wrapper)]
-    (mf/fnc group-shape
-      {::mf/wrap-props false}
-      [props]
+    (mf/fnc group-shape*
+      [{:keys [shape childs]}]
 
-      (let [shape         (unchecked-get props "shape")
-            childs        (unchecked-get props "childs")
-            render-id     (mf/use-ctx muc/render-id)
+      (let [render-id     (mf/use-ctx muc/render-id)
             masked-group? (:masked-group shape)
 
             mask          (if ^boolean masked-group?
@@ -62,6 +59,5 @@
              [:& shape-wrapper
               {:shape item
                :key (dm/str (dm/get-prop item :id))}])]]]))))
-
 
 

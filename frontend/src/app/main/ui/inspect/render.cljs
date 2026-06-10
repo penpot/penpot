@@ -20,7 +20,7 @@
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.viewer.viewport-common :refer [prepare-objects]]
@@ -64,7 +64,7 @@
                               (contains? svg-raw/graphic-element (get-in shape [:content :tag])))]
 
       (if render-wrapper?
-        [:> shape-container {:shape shape
+        [:> shape-container* {:shape shape
                              :on-pointer-enter (handle-hover-shape shape true)
                              :on-pointer-leave (handle-hover-shape shape false)
                              :on-click (select-shape shape)}

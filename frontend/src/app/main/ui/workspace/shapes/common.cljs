@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.common
   (:require
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
 
@@ -22,7 +22,7 @@
      ::mf/props :obj}
     [props]
     (let [shape (unchecked-get props "shape")]
-      [:> shape-container {:shape shape}
+      [:> shape-container* {:shape shape}
        [:& component {:shape shape}]
        (when *assert*
          [:> wsd/shape-debug* {:shape shape}])])))

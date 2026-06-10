@@ -8,16 +8,13 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes*]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(mf/defc circle-shape
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-
-        x     (dm/get-prop shape :x)
+(mf/defc circle-shape*
+  [{:keys [shape]}]
+  (let [x     (dm/get-prop shape :x)
         y     (dm/get-prop shape :y)
         w     (dm/get-prop shape :width)
         h     (dm/get-prop shape :height)
@@ -33,5 +30,5 @@
                 (-> #js {}
                     (obj/merge! #js {:cx cx :cy cy :rx rx :ry ry :transform t})))]
 
-    [:& shape-custom-strokes {:shape shape}
+    [:> shape-custom-strokes* {:shape shape}
      [:> :ellipse props]]))

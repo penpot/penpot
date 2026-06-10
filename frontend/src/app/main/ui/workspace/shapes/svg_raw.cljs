@@ -8,7 +8,7 @@
   (:require
    [app.common.svg :as csvg]
    [app.main.refs :as refs]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
@@ -25,7 +25,7 @@
             childs     (mf/deref childs-ref)
             svg-tag    (get-in shape [:content :tag])]
         (if (contains? csvg/svg-group-safe-tags svg-tag)
-          [:> shape-container {:shape shape}
+          [:> shape-container* {:shape shape}
            [:& svg-raw-shape {:shape shape
                               :childs childs}]
            (when *assert*

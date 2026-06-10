@@ -48,15 +48,11 @@
      (->> children (map #(propagate-wrapper-styles-child % wrapper-props)))
      (-> children (propagate-wrapper-styles-child wrapper-props)))))
 
-(mf/defc shape-container
-  {::mf/forward-ref true
-   ::mf/wrap-props false}
-  [props ref]
+(mf/defc shape-container*
+  {::mf/forward-ref true}
+  [{:keys [shape children pointer-events] :as props} ref]
 
-  (let [shape            (unchecked-get props "shape")
-        children         (unchecked-get props "children")
-        pointer-events   (unchecked-get props "pointer-events")
-        shape-id         (dm/get-prop shape :id)
+  (let [shape-id         (dm/get-prop shape :id)
 
         preview-blend-mode-ref
         (mf/with-memo [shape-id] (refs/workspace-preview-blend-by-id shape-id))
@@ -87,37 +83,46 @@
           (filters/filter-str filter-id shape))
 
         wrapper-props
-        (-> (obj/clone props)
-            (obj/unset! "shape")
-            (obj/unset! "children")
-            (obj/set! "ref" ref)
-            (obj/set! "id" (dm/fmt "shape-%" shape-id))
-            (obj/set! "style" styles))
+        (-> (dissoc props :shape :children)
+            (assoc :ref ref
+                   :id (dm/fmt "shape-%" shape-id)
+                   :style styles))
+
+        group-extra
+        (when (= :group type)
+          (-> #js {}
+              (attrs/add-fill-props! shape render-id)
+              (attrs/add-border-props! shape)))
 
         wrapper-props
         (cond-> wrapper-props
           ;; NOTE: This is added for backward compatibility
           (and (cfh/text-shape? shape)
                (empty? (:position-data shape)))
-          (-> (obj/set! "x" (:x shape))
-              (obj/set! "y" (:y shape))
-              (obj/set! "width" (:width shape))
-              (obj/set! "height" (:height shape)))
+          (assoc :x (:x shape)
+                 :y (:y shape)
+                 :width (:width shape)
+                 :height (:height shape))
 
-          (= :group type)
-          (-> (attrs/add-fill-props! shape render-id)
-              (attrs/add-border-props! shape))
+          (some? group-extra)
+          (mf/spread-props group-extra)
 
           (some? filter-str)
-          (obj/set! "filter" filter-str))
+          (assoc :filter filter-str))
 
         svg-group?
         (and (contains? shape :svg-attrs) (= :group type))
 
+        ;; Build a JS object version of wrapper-props for propagation helper
+        wrapper-props-js
+        (when ^boolean svg-group?
+          (-> #js {}
+              (obj/set! "style" styles)))
+
         children
         (cond-> children
           svg-group?
-          (propagate-wrapper-styles wrapper-props))]
+          (propagate-wrapper-styles wrapper-props-js))]
 
     [:& (mf/provider muc/render-id) {:value render-id}
      [:> :g wrapper-props
@@ -134,10 +139,10 @@
           [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
           [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]])
 
-       [:& frame/frame-clip-def   {:shape shape :render-id render-id}]
+       [:> frame/frame-clip-def*   {:shape shape :render-id render-id}]
 
        ;; Text fills need to be defined afterwards because they are specified per text-block
        (when-not (cfh/text-shape? shape)
-         [:& fills/fills            {:shape shape :render-id render-id}])]
+         [:> fills/fills*            {:shape shape :render-id render-id}])]
 
       children]]))

@@ -10,7 +10,7 @@
    [app.common.types.path :as types.path]
    [app.main.refs :as refs]
    [app.main.ui.shapes.path :as path]
-   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.shape :refer [shape-container*]]
    [app.main.ui.workspace.shapes.debug :as wsd]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -50,7 +50,7 @@
             (some? content-modifiers)
             (apply-content-modifiers content-modifiers)))]
 
-    [:> shape-container {:shape shape
+    [:> shape-container* {:shape shape
                          :pointer-events (when editing? "none")}
      [:& path/path-shape {:shape shape}]
      (when *assert*
