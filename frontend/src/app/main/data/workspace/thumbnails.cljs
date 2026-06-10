@@ -94,7 +94,7 @@
         (let [items (get state ::thumbnails-deletion-queue)]
           (when (seq items)
             (vreset! pending items))
-          (update state dissoc ::thumbnails-deletion-queue)))
+          (dissoc state ::thumbnails-deletion-queue)))
 
       ptk/WatchEvent
       (watch [_ _ _]

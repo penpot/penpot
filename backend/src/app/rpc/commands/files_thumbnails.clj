@@ -314,7 +314,7 @@
 (defn- delete-file-object-thumbnails!
   "Soft-deletes multiple object thumbnails in a single UPDATE statement
    with RETURNING, then touches all returned media objects."
-  [{:keys [::db/conn ::sto/storage] :as cfg} object-ids]
+  [{:keys [::db/conn ::sto/storage]} object-ids]
   (let [ids  (db/create-array conn "text" (seq object-ids))
         sql  (str/concat
               "UPDATE file_tagged_object_thumbnail"
@@ -351,6 +351,8 @@
 (sv/defmethod ::delete-file-object-thumbnails
   {::doc/added "1.19"
    ::doc/module :files
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
    ::sm/params schema:delete-file-object-thumbnails
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id object-ids]}]
