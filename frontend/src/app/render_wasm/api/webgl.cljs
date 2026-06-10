@@ -134,8 +134,16 @@ void main() {
       (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
       (.deleteTexture ^js gl texture))))
 
+;; Codec for the transition snapshot. The snapshot is only ever shown as a
+;; heavily-blurred overlay (see TRANSITION_BLUR_RADIUS), so a lossy, alpha-capable
+;; codec is fine and encodes much faster than lossless PNG -- on a full-viewport
+;; canvas, PNG `toBlob` of millions of pixels costs ~1s+ on the main thread.
+;; WebP keeps the alpha channel (unlike JPEG) and encodes in a fraction of that.
+(def ^:private SNAPSHOT_MIME "image/webp")
+(def ^:private SNAPSHOT_QUALITY 0.6)
+
 (defn capture-canvas-snapshot-url
-  "Captures the current viewport canvas as a PNG `blob:` URL and stores it in
+  "Captures the current viewport canvas as a WebP `blob:` URL and stores it in
   `wasm/canvas-snapshot-url`.
 
   Returns a promise resolving to the URL string (or nil)."
@@ -155,7 +163,8 @@ void main() {
                       (set! wasm/canvas-snapshot-url url)
                       (resolve url))
                     (resolve nil)))
-                "image/png")))
+                SNAPSHOT_MIME
+                SNAPSHOT_QUALITY)))
     (p/resolved nil)))
 
 (defn draw-thumbnail-to-canvas
