@@ -18,6 +18,16 @@ use crate::shapes::{
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
 
+/// Memoizes auto-grow text measurements within a single `propagate_modifiers`
+/// pass. The same text shape is re-visited many times because ancestor reflows
+/// clear the reflow guard and re-propagate the (often unchanged) layout
+/// transform; each visit would otherwise run a full Skia paragraph layout on a
+/// throwaway clone. The measured `(width, height)` is deterministic for a fixed
+/// content version and input selrect, and content does not change within one
+/// call, so it is safe to cache keyed by shape id + the selrect dimensions
+/// (as raw bits, for an exact match). The cache is per-call and discarded after.
+type TextMeasureCache = HashMap<(Uuid, u32, u32), (f32, f32)>;
+
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
@@ -183,6 +193,7 @@ fn propagate_transform(
     reflown: &mut HashSet<Uuid>,
     reflowed_shapes: &mut HashSet<Uuid>,
     pending_reflows: &mut HashSet<Uuid>,
+    text_measure_cache: &mut TextMeasureCache,
 ) -> Result<()> {
     let Some(shape) = state.shapes.get(&entry.id) else {
         return Ok(());
@@ -213,9 +224,20 @@ fn propagate_transform(
                 GrowType::AutoHeight => {
                     let height_before = text_content.size.height;
                     let new_height = if width_changed {
-                        let mut clone = text_content.clone();
-                        clone.update_layout(resized_selrect);
-                        clone.size.height
+                        let key = (
+                            shape.id,
+                            resized_selrect.width().to_bits(),
+                            resized_selrect.height().to_bits(),
+                        );
+                        if let Some(&(_, h)) = text_measure_cache.get(&key) {
+                            h
+                        } else {
+                            let mut clone = text_content.clone();
+                            clone.update_layout(resized_selrect);
+                            let measured = (clone.width(), clone.size.height);
+                            text_measure_cache.insert(key, measured);
+                            measured.1
+                        }
                     } else {
                         height_before
                     };
@@ -243,9 +265,20 @@ fn propagate_transform(
                     let width_before = text_content.width();
                     let height_before = text_content.size.height;
                     let (new_width, new_height) = if height_changed {
-                        let mut clone = text_content.clone();
-                        clone.update_layout(resized_selrect);
-                        (clone.width(), clone.size.height)
+                        let key = (
+                            shape.id,
+                            resized_selrect.width().to_bits(),
+                            resized_selrect.height().to_bits(),
+                        );
+                        if let Some(&measured) = text_measure_cache.get(&key) {
+                            measured
+                        } else {
+                            let mut clone = text_content.clone();
+                            clone.update_layout(resized_selrect);
+                            let measured = (clone.width(), clone.size.height);
+                            text_measure_cache.insert(key, measured);
+                            measured
+                        }
                     } else {
                         (width_before, height_before)
                     };
@@ -438,6 +471,10 @@ pub fn propagate_modifiers(
     // duplicate Reflow entries when many children of the same parent
     // are transformed in the same pass.
     let mut pending_reflows = HashSet::<Uuid>::new();
+    // Memoizes auto-grow text measurements so the repeated ancestor re-reflows
+    // (driven by `reflown` being cleared per text resize) don't re-run Skia
+    // paragraph layout for the same text + selrect over and over in one call.
+    let mut text_measure_cache = TextMeasureCache::new();
 
     // We first propagate the transforms to the children and then after
     // recalculate the layouts. The layout can create further transforms that
@@ -457,6 +494,7 @@ pub fn propagate_modifiers(
                     &mut reflown,
                     &mut reflowed_shapes,
                     &mut pending_reflows,
+                    &mut text_measure_cache,
                 )?,
                 Modifier::Reflow(id, force_reflow) => {
                     pending_reflows.remove(&id);
