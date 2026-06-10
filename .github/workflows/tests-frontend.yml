@@ -7,9 +7,9 @@ defaults:
 on:
   pull_request:
     paths:
-      - 'frotend/**/*'
-      - 'common/**/*'
-      - 'render-wasm/**/*'
+      - 'frotend/**'
+      - 'common/**'
+      - 'render-wasm/**'
 
     types:
       - opened
