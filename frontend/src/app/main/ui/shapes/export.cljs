@@ -10,7 +10,7 @@
   importation."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]  
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.json :as json]
    [app.common.svg :as csvg]
