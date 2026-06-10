@@ -7,9 +7,9 @@ defaults:
 on:
   pull_request:
     paths:
-      - 'frotend/**/*'
-      - 'common/**/*'
-      - 'render-wasm/**/*'
+      - 'frontend/**'
+      - 'common/**'
+      - 'render-wasm/**'
 
     types:
       - opened
@@ -22,7 +22,7 @@ on:
       - staging
 
     paths:
-      - 'frotend/**'
+      - 'frontend/**'
       - 'common/**'
       - 'render-wasm/**'
 
