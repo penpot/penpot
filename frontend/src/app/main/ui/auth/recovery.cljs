@@ -44,8 +44,8 @@
                 :password (get-in @form [:clean-data :password-2])}]
     (st/emit! (du/recover-profile (with-meta params mdata)))))
 
-(mf/defc recovery-form
-  [{:keys [params] :as props}]
+(mf/defc recovery-form*
+  [{:keys [params]}]
   (let [form (fm/use-form :schema schema:recovery-form
                           :initial params)]
 
@@ -73,13 +73,13 @@
 
 ;; --- Recovery Request Page
 
-(mf/defc recovery-page
-  [{:keys [params] :as props}]
+(mf/defc recovery-page*
+  [{:keys [params]}]
   [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :auth-title)} "Forgot your password?"]
    [:div {:class (stl/css :auth-subtitle)} "Please enter your new password"]
    [:hr {:class (stl/css :separator)}]
-   [:& recovery-form {:params params}]
+   [:> recovery-form* {:params params}]
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}
