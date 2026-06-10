@@ -155,6 +155,62 @@ This bootstrap command will:
 > [!IMPORTANT]
 > Do not close the plugin's UI while using the MCP server, as this will close the connection.
 
+### Optional: Auto-register with an MCP Client
+
+Instead of editing client config files by hand, use the bundled installer:
+
+```shell
+# Interactive picker (arrow keys, Enter to confirm)
+npx -y @penpot/mcp install
+
+# Register with a specific client non-interactively
+npx -y @penpot/mcp install --client claude-code
+npx -y @penpot/mcp install --client claude-desktop
+npx -y @penpot/mcp install --client cursor
+npx -y @penpot/mcp install --client windsurf
+npx -y @penpot/mcp install --client cline
+npx -y @penpot/mcp install --client opencode
+npx -y @penpot/mcp install --client gemini
+npx -y @penpot/mcp install --client codex
+npx -y @penpot/mcp install --client antigravity
+npx -y @penpot/mcp install --client antigravity-cli
+npx -y @penpot/mcp install --client generic-json
+
+# Or register with every supported client at once
+npx -y @penpot/mcp install --client all
+
+# Preview the snippet without touching any file
+npx -y @penpot/mcp install --client claude-desktop --dry-run
+
+# Use a non-default server URL or rename the entry
+npx -y @penpot/mcp install --client claude-code \
+  --url http://localhost:4401/mcp --name penpot-dev
+
+# Health-check the local setup
+npx -y @penpot/mcp doctor
+
+# Remove a previously installed entry
+npx -y @penpot/mcp uninstall --client claude-code
+```
+
+Supported targets and their config locations:
+
+| Client          | Config file                                                                                    | Transport            |
+|-----------------|-------------------------------------------------------------------------------------------------|----------------------|
+| `claude-code`   | `~/.claude.json` (or `claude mcp add` when the CLI is on PATH)                                  | HTTP                 |
+| `claude-desktop`| `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) / `%APPDATA%/Claude/claude_desktop_config.json` (Windows) / `~/.config/Claude/claude_desktop_config.json` (Linux) | stdio via `mcp-remote` |
+| `cursor`        | `~/.cursor/mcp.json`                                                                            | HTTP                 |
+| `windsurf`      | `~/.codeium/windsurf/mcp_config.json`                                                           | HTTP                 |
+| `cline`         | VSCode globalStorage `cline_mcp_settings.json`                                                  | HTTP                 |
+| `opencode`      | `~/.config/opencode/opencode.jsonc`                                                             | HTTP (`type: remote`)|
+| `gemini`        | Delegates to `gemini mcp add`                                                                   | HTTP                 |
+| `codex`         | Delegates to `codex mcp add`                                                                    | HTTP                 |
+| `antigravity`   | `~/.gemini/antigravity/mcp_config.json`                                                         | HTTP                 |
+| `antigravity-cli` | `~/.gemini/config/mcp_config.json`                                                            | HTTP                 |
+| `generic-json`  | Prints a `mcpServers` JSON snippet to stdout; copy into any MCP client manually                 | HTTP                 |
+
+The installer makes a timestamped backup (e.g. `claude_desktop_config.json.bak-<ts>`) of any file it modifies, and refuses to overwrite an existing entry of the same name unless `--force` is passed.
+
 ### 3. Connect an MCP Client
 
 > [!IMPORTANT]  
