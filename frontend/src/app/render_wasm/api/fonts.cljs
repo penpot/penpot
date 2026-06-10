@@ -100,6 +100,7 @@
           matching-font (some (fn [[_ font]]
                                 (and (= (:font-id font) font-uuid)
                                      (= (str (:font-weight font)) (str font-weight))
+                                     (= (:font-style font) font-style)
                                      font))
                               (seq @fonts))]
       (when matching-font
