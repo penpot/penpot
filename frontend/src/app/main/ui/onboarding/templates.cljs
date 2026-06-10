@@ -19,7 +19,7 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(mf/defc template-item
+(mf/defc template-item*
   [{:keys [name path image project-id]}]
   (let [downloading? (mf/use-state false)
         link         (dm/str (assoc cf/public-uri :path path))
@@ -78,12 +78,12 @@
        [:p (tr "onboarding.templates.subtitle")]
 
        [:div.templates
-        [:& template-item
+        [:> template-item*
          {:path "/github/penpot-files/Penpot-Design-system.penpot"
           :image "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
           :name "Penpot Design System"
           :project-id project-id}]
-        [:& template-item
+        [:> template-item*
          {:path "/github/penpot-files/Material-Design-Kit.penpot"
           :image "https://penpot.app/images/libraries/cover-material.jpg"
           :name "Material Design Kit"
