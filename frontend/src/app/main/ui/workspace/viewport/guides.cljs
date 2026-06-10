@@ -40,6 +40,12 @@
 (def ^:const guide-pill-corner-radius 4)
 (def ^:const guide-active-area 16)
 
+;; Manhattan distance (in screen pixels) the pointer must travel after
+;; pointerdown before we consider the interaction a drag. Below this we keep
+;; the hover state so a click — including the clicks that make up a
+;; double-click — doesn't flicker the overlay pill.
+(def ^:const guide-drag-threshold 3)
+
 (def ^:const guide-creation-margin-left 8)
 (def ^:const guide-creation-margin-top 28)
 (def ^:const guide-creation-width 16)
@@ -608,8 +614,9 @@
     (nth (vec (vals guides)) index nil)))
 
 (mf/defc guide-overlay*
-  "Temporary SVG rendering of a guide that's being interacted with (drag or
-  inline edit). In :edit mode it also shows the pill with an editable number."
+  "Temporary SVG rendering of a guide that's being interacted with (drag, hover
+  or inline edit). In :hover mode the line is omitted (WASM still draws it) and
+  only the position pill is shown. In :edit mode the pill is an editable input."
   [{:keys [guide position vbox zoom mode frame-offset
            on-input-commit on-input-cancel]}]
   (let [axis         (:axis guide)
@@ -617,6 +624,12 @@
         stroke-width (/ guide-width zoom)
         {:keys [x1 y1 x2 y2]} (guide-line-axis position vbox axis)
         input-ref    (mf/use-ref nil)
+        ;; In :hover mode the WASM engine still renders the guide line, so we
+        ;; only overlay the pill. Drag and edit hide the WASM line and require
+        ;; the SVG line.
+        show-line?   (not= mode :hover)
+        show-pill?   (or (= mode :edit) (= mode :hover))
+        editing?     (= mode :edit)
 
         on-key-down
         (mf/use-fn
@@ -639,19 +652,21 @@
          (fn []
            (on-input-commit (-> (mf/ref-val input-ref) dom/get-value))))]
 
-    (mf/with-effect []
-      (some-> (mf/ref-val input-ref) dom/select-text!))
+    (mf/with-effect [mode]
+      (when editing?
+        (some-> (mf/ref-val input-ref) dom/select-text!)))
 
     [:g.guide-overlay
-     [:line {:x1 x1
-             :y1 y1
-             :x2 x2
-             :y2 y2
-             :style {:stroke guide-color
-                     :stroke-width stroke-width
-                     :stroke-opacity guide-opacity-hover}}]
+     (when show-line?
+       [:line {:x1 x1
+               :y1 y1
+               :x2 x2
+               :y2 y2
+               :style {:stroke guide-color
+                       :stroke-width stroke-width
+                       :stroke-opacity guide-opacity-hover}}])
 
-     (when (= mode :edit)
+     (when show-pill?
        (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
              (guide-pill-axis position vbox zoom axis)
              corner-radius (/ guide-pill-corner-radius zoom)
@@ -666,32 +681,45 @@
                   :rx corner-radius
                   :ry corner-radius
                   :style {:fill guide-color}}]
-          [:foreignObject {:x (- text-x (/ input-w 2))
-                           :y (- text-y (/ input-h 2))
-                           :width input-w
-                           :height input-h
-                           :transform (when (= axis :y)
-                                        (str "rotate(-90 " text-x "," text-y ")"))}
-           [:input {:ref input-ref
-                    :type "number"
-                    :step "any"
-                    :default-value display-value
-                    :auto-focus true
-                    :on-key-down on-key-down
-                    :on-blur on-blur
-                    :on-pointer-down dom/stop-propagation
-                    :style {:width "100%"
-                            :height "100%"
-                            :border "none"
-                            :outline "none"
-                            :padding 0
-                            :margin 0
-                            :background "transparent"
-                            :color colors/white
+
+          (if editing?
+            [:foreignObject {:x (- text-x (/ input-w 2))
+                             :y (- text-y (/ input-h 2))
+                             :width input-w
+                             :height input-h
+                             :transform (when (= axis :y)
+                                          (str "rotate(-90 " text-x "," text-y ")"))}
+             [:input {:ref input-ref
+                      :type "number"
+                      :step "any"
+                      :default-value display-value
+                      :auto-focus true
+                      :on-key-down on-key-down
+                      :on-blur on-blur
+                      :on-pointer-down dom/stop-propagation
+                      :style {:width "100%"
+                              :height "100%"
+                              :border "none"
+                              :outline "none"
+                              :padding 0
+                              :margin 0
+                              :background "transparent"
+                              :color colors/white
+                              :font-family rulers/font-family
+                              :font-size (str (/ rulers/font-size zoom) "px")
+                              :text-align "center"
+                              :-moz-appearance "textfield"}}]]
+            [:text {:x text-x
+                    :y text-y
+                    :text-anchor "middle"
+                    :dominant-baseline "middle"
+                    :transform (when (= axis :y)
+                                 (str "rotate(-90 " text-x "," text-y ")"))
+                    :style {:font-size (/ rulers/font-size zoom)
                             :font-family rulers/font-family
-                            :font-size (str (/ rulers/font-size zoom) "px")
-                            :text-align "center"
-                            :-moz-appearance "textfield"}}]]]))]))
+                            :fill colors/white
+                            :pointer-events "none"}}
+             display-value])]))]))
 
 (defn use-wasm-guide-interaction
   "Owns both drag and inline-edit lifecycles for WASM-rendered guides.
@@ -737,59 +765,76 @@
               (when (some? on-guide-hover)
                 (on-guide-hover axis))))
 
-          reset-state
+          clear-drag-refs
           (fn []
             (remove-drag-listeners)
-            (when (some? on-guide-drag)
-              (on-guide-drag nil))
             (mf/set-ref-val! dragging-ref false)
             (mf/set-ref-val! moved-ref false)
             (mf/set-ref-val! start-ref nil)
             (mf/set-ref-val! guide-ref nil)
-            (mf/set-ref-val! pending-ref nil)
+            (mf/set-ref-val! pending-ref nil))
+
+          reset-state
+          (fn []
+            (clear-drag-refs)
+            (when (some? on-guide-drag)
+              (on-guide-drag nil))
             (emit-hover-axis nil)
             (reset! state nil))
 
           finish-drag
           (fn [event]
             (when (mf/ref-val dragging-ref)
-              (when (and (mf/ref-val moved-ref) (some? on-guide-change))
-                (when-let [{:keys [guide new-position new-frame-id]}
-                           (mf/ref-val pending-ref)]
-                  (when (and (some? guide) (some? new-position))
-                    (on-guide-change (assoc guide
-                                            :position new-position
-                                            :frame-id new-frame-id)))))
-              (when-let [viewport @uwvv/viewport-ref]
-                (when (.-pointerId event)
-                  (.releasePointerCapture viewport (.-pointerId event))))
-              (reset-state)))
+              (let [moved? (mf/ref-val moved-ref)]
+                (when (and moved? (some? on-guide-change))
+                  (when-let [{:keys [guide new-position new-frame-id]}
+                             (mf/ref-val pending-ref)]
+                    (when (and (some? guide) (some? new-position))
+                      (on-guide-change (assoc guide
+                                              :position new-position
+                                              :frame-id new-frame-id)))))
+                (when-let [viewport @uwvv/viewport-ref]
+                  (when (.-pointerId event)
+                    (.releasePointerCapture viewport (.-pointerId event))))
+                ;; A click without movement (no drag): leave the hover state
+                ;; alone so a follow-up double-click can transition straight
+                ;; from :hover to :edit without flickering through nil.
+                (if moved?
+                  (reset-state)
+                  (clear-drag-refs)))))
 
           drag-move
           (fn [move-event]
             (when (mf/ref-val dragging-ref)
               (when-let [guide (mf/ref-val guide-ref)]
-                (let [axis         (:axis guide)
-                      start-pt     (mf/ref-val start-ref)
-                      current-pt   (dom/get-client-position move-event)
-                      new-position (compute-guide-drag-position
-                                    {:axis axis
-                                     :position (:position guide)
-                                     :start-pt start-pt
-                                     :current-pt current-pt
-                                     :zoom zoom
-                                     :snap-pixel? snap-pixel?})
-                      new-frame-id (-> (get-hover-frame) (get :id))
-                      pending      {:guide guide
-                                    :new-position new-position
-                                    :new-frame-id new-frame-id
-                                    :mode :drag}]
-                  (when-not (mf/ref-val moved-ref)
-                    (mf/set-ref-val! moved-ref true)
-                    (when (some? on-guide-drag)
-                      (on-guide-drag (:id guide))))
-                  (mf/set-ref-val! pending-ref pending)
-                  (reset! state pending)))))
+                (let [start-pt   (mf/ref-val start-ref)
+                      current-pt (dom/get-client-position move-event)
+                      already-moved? (mf/ref-val moved-ref)
+                      past-threshold?
+                      (or already-moved?
+                          (> (+ (mth/abs (- (:x current-pt) (:x start-pt)))
+                                (mth/abs (- (:y current-pt) (:y start-pt))))
+                             guide-drag-threshold))]
+                  (when past-threshold?
+                    (let [axis         (:axis guide)
+                          new-position (compute-guide-drag-position
+                                        {:axis axis
+                                         :position (:position guide)
+                                         :start-pt start-pt
+                                         :current-pt current-pt
+                                         :zoom zoom
+                                         :snap-pixel? snap-pixel?})
+                          new-frame-id (-> (get-hover-frame) (get :id))
+                          pending      {:guide guide
+                                        :new-position new-position
+                                        :new-frame-id new-frame-id
+                                        :mode :drag}]
+                      (when-not already-moved?
+                        (mf/set-ref-val! moved-ref true)
+                        (when (some? on-guide-drag)
+                          (on-guide-drag (:id guide))))
+                      (mf/set-ref-val! pending-ref pending)
+                      (reset! state pending)))))))
 
           editing?
           (fn [] (= :edit (:mode @state)))
@@ -799,18 +844,37 @@
             (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
               (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
 
+          guide-frame-offset
+          (fn [guide]
+            (let [frame (some-> (:frame-id guide) refs/object-by-id deref)]
+              (if frame
+                (if (= :x (:axis guide)) (:x frame) (:y frame))
+                0)))
+
           pointer-move-hover
           (fn [event]
-            ;; Only update hover cursor when we are not in the middle of a
-            ;; drag or edit. During drag the cursor is already set to the
+            ;; Only update hover cursor / pill when we are not in the middle of
+            ;; a drag or edit. During drag the cursor is already set to the
             ;; dragged guide's axis; during edit the input owns the cursor.
             (when (and (not read-only?)
                        (not (editing?))
                        (not (mf/ref-val dragging-ref)))
-              (let [guide (guide-at-event event)
-                    axis  (when (and guide (guide-draggable-in-focus? focus guide))
-                            (:axis guide))]
-                (emit-hover-axis axis))))
+              (let [guide (when-let [g (guide-at-event event)]
+                            (when (guide-draggable-in-focus? focus g) g))
+                    current-state @state
+                    current-hover-id (when (= :hover (:mode current-state))
+                                       (-> current-state :guide :id))]
+                (emit-hover-axis (:axis guide))
+                (cond
+                  (and (some? guide)
+                       (not= (:id guide) current-hover-id))
+                  (reset! state {:guide guide
+                                 :new-position (:position guide)
+                                 :frame-offset (guide-frame-offset guide)
+                                 :mode :hover})
+
+                  (and (nil? guide) (some? current-hover-id))
+                  (reset! state nil)))))
 
           pointer-down
           (fn [event]
