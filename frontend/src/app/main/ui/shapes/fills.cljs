@@ -21,13 +21,9 @@
 
 (def no-repeat-padding 1.05)
 
-(mf/defc internal-fills
-  {::mf/wrap-props false}
-  [props]
-  (let [shape      (unchecked-get props "shape")
-        render-id  (unchecked-get props "render-id")
-
-        type       (dm/get-prop shape :type)
+(mf/defc internal-fills*
+  [{:keys [shape render-id]}]
+  (let [type       (dm/get-prop shape :type)
         image      (get shape :fill-image)
         fills      (get shape :fills [])
 
@@ -89,15 +85,16 @@
                     :start-x (/ (- (:x from-p) (:x bounds)) (:width bounds))
                     :start-y (/ (- (:y from-p) (:y bounds)) (:height bounds))
                     :end-x   (/ (- (:x to-p) (:x bounds)) (:width bounds))
-                    :end-y   (/ (- (:y to-p) (:y bounds)) (:height bounds))))
-
-                 props #js {:id (dm/str "fill-color-gradient-" render-id "-" fill-index)
-                            :key (dm/str fill-index)
-                            :gradient gradient
-                            :shape obj}]
+                    :end-y   (/ (- (:y to-p) (:y bounds)) (:height bounds))))]
              (case (d/name (:type gradient))
-               "linear" [:> grad/linear-gradient props]
-               "radial" [:> grad/radial-gradient props]))))
+               "linear" [:> grad/linear-gradient* {:id (dm/str "fill-color-gradient-" render-id "-" fill-index)
+                                                    :key (dm/str fill-index)
+                                                    :gradient gradient
+                                                    :shape obj}]
+               "radial" [:> grad/radial-gradient* {:id (dm/str "fill-color-gradient-" render-id "-" fill-index)
+                                                    :key (dm/str fill-index)
+                                                    :gradient gradient
+                                                    :shape obj}]))))
 
 
        (let [fill-id (dm/str "fill-" obj-index "-" render-id)]
@@ -145,11 +142,9 @@
                        :width width
                        :height height}]])]])])))
 
-(mf/defc fills
-  {::mf/wrap-props false}
-  [props]
-  (let [shape     (unchecked-get props "shape")
-        type      (dm/get-prop shape :type)
+(mf/defc fills*
+  [{:keys [shape render-id]}]
+  (let [type      (dm/get-prop shape :type)
         image     (:fill-image shape)
         fills     (:fills shape [])]
 
@@ -159,4 +154,4 @@
               (> (count fills) 1)
               (some :fill-color-gradient fills)
               (some :fill-image fills))
-      [:> internal-fills props])))
+      [:> internal-fills* {:shape shape :render-id render-id}])))

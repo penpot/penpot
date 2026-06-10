@@ -14,7 +14,7 @@
    [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
+   [app.main.ui.shapes.custom-stroke :refer [shape-fills* shape-strokes*]]
    [app.main.ui.shapes.filters :as filters]
    [app.util.debug :as dbg]
    [app.util.object :as obj]
@@ -110,13 +110,13 @@
             ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
             :fill "none"}
 
-        [:& shape-fills {:shape shape}
+        [:> shape-fills* {:shape shape}
          (if ^boolean path?
            [:> :path props]
            [:> :rect props])]
         children]]
 
-      [:& shape-strokes {:shape shape}
+      [:> shape-strokes* {:shape shape}
        (if ^boolean path?
          [:> :path props]
          [:> :rect props])]]]))
