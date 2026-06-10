@@ -4314,7 +4314,7 @@ msgstr "What's the size of your company?"
 
 #: src/app/main/ui/onboarding/questions.cljs:270
 msgid "onboarding.questions.step3.title"
-msgstr "Tell us about your job"
+msgstr "What is your company size?"
 
 #: src/app/main/ui/onboarding/questions.cljs:345
 msgid "onboarding.questions.step4.title"
@@ -4324,6 +4324,24 @@ msgstr "Where would you like to get started?"
 #, unused
 msgid "onboarding.questions.step5.title"
 msgstr "How did you hear about Penpot?"
+
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Just me"
+
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2-100"
+
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101-500"
+
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501-1,000"
+
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1,001-5,000"
+
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5,001+"
 
 #: src/app/main/ui/onboarding/questions.cljs:233
 msgid "onboarding.questions.team-size.11-30"

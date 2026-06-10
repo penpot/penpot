@@ -208,53 +208,28 @@
   [:and
    [:map {:title "QuestionsFormStep3"}
     [:team-size
-     [:enum "more-than-50" "31-50" "11-30" "2-10" "freelancer" "personal-project"]]
-
-    [:planning ::sm/text]
-
-    [:planning-other {:optional true}
-     [::sm/text {:max 512}]]]
-
-   [:fn {:error/field :planning-other}
-    (fn [{:keys [planning planning-other]}]
-      (or (not= planning "other")
-          (and (= planning "other")
-               (not (str/blank? planning-other)))))]])
+     [:enum "1" "2-100" "101-500" "501-1000" "1001-5000" "5001+"]]]])
 
 (mf/defc step-3
   {::mf/props :obj}
   [{:keys [on-next on-prev form show-step-3]}]
   (let [team-size-options
         (mf/with-memo []
-          [{:label (tr "labels.select-option") :value "" :key "team-size" :disabled true}
-           {:label (tr "onboarding.questions.team-size.more-than-50") :value "more-than-50" :key "more-than-50"}
-           {:label (tr "onboarding.questions.team-size.31-50") :value "31-50"  :key "31-50"}
-           {:label (tr "onboarding.questions.team-size.11-30") :value "11-30" :key "11-30"}
-           {:label (tr "onboarding.questions.team-size.2-10") :value "2-10" :key "2-10"}
-           {:label (tr "onboarding.questions.team-size.freelancer") :value "freelancer" :key "freelancer"}
-           {:label (tr "onboarding.questions.team-size.personal-project") :value "personal-project" :key "personal-project"}])
-
-        planning-options
-        (mf/with-memo []
-          (-> (shuffle [{:label (tr "labels.select-option")
-                         :value "" :key "questions:what-brings-you-here"
-                         :disabled true}
-                        {:label (tr "onboarding.questions.reasons.exploring")
-                         :value "discover-more-about-penpot"
-                         :key "discover-more-about-penpot"}
-                        {:label (tr "onboarding.questions.reasons.fit")
-                         :value "test-penpot-to-see-if-its-a-fit-for-team"
-                         :key "test-penpot-to-see-if-its-a-fit-for-team"}
-                        {:label (tr "onboarding.questions.reasons.alternative")
-                         :value "alternative-to-figma"
-                         :key "alternative-to-figma"}
-                        {:label (tr "onboarding.questions.reasons.testing")
-                         :value "try-out-before-using-penpot-on-premise"
-                         :key "try-out-before-using-penpot-on-premise"}])
-              (conj {:label (tr "labels.other-short") :value "other"})))
-
-        current-planning
-        (dm/get-in @form [:data :planning])]
+          [{:label (tr "labels.select-option")
+            :value "" :key "team-size"
+            :disabled true}
+           {:label (tr "onboarding.questions.team-size.just-me")
+            :value "1" :key "1"}
+           {:label (tr "onboarding.questions.team-size.2-100")
+            :value "2-100" :key "2-100"}
+           {:label (tr "onboarding.questions.team-size.101-500")
+            :value "101-500" :key "101-500"}
+           {:label (tr "onboarding.questions.team-size.501-1000")
+            :value "501-1000" :key "501-1000"}
+           {:label (tr "onboarding.questions.team-size.1001-5000")
+            :value "1001-5000" :key "1001-5000"}
+           {:label (tr "onboarding.questions.team-size.more-than-5001")
+            :value "5001+" :key "5001+"}])]
 
     [:& step-container {:form form
                         :step 3
@@ -267,26 +242,8 @@
 
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step3.title")]
-     [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)}
-       (tr "onboarding.questions.step1.question2")]
-
-      [:& fm/select
-       {:options planning-options
-        :select-class (stl/css :select-class)
-        :default ""
-        :name :planning
-        :dropdown-class (stl/css :question-dropdown)}]]
-
-     (when (= current-planning "other")
-       [:& fm/input {:name :planning-other
-                     :class (stl/css :input-spacing)
-                     :placeholder (tr "labels.other")
-                     :show-error false
-                     :label ""}])
 
      [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question3")]
       [:& fm/select {:options team-size-options
                      :default ""
                      :select-class (stl/css :select-class)
