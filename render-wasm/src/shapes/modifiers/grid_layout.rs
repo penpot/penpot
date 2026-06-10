@@ -684,15 +684,13 @@ fn child_frame_aabb(child_bounds: &Bounds, hv: Vector, vv: Vector) -> (f32, f32,
 
 fn child_position(
     child: &Shape,
-    layout_bounds: &Bounds,
+    hv: Vector,
+    vv: Vector,
     layout_data: &LayoutData,
     child_bounds: &Bounds,
     layout_item: Option<LayoutItem>,
     cell: &CellData,
 ) -> Point {
-    let hv = layout_bounds.hv(1.0);
-    let vv = layout_bounds.vv(1.0);
-
     let margin_left = layout_item.map(|i| i.margin_left).unwrap_or(0.0);
     let margin_top = layout_item.map(|i| i.margin_top).unwrap_or(0.0);
     let margin_right = layout_item.map(|i| i.margin_right).unwrap_or(0.0);
@@ -779,13 +777,14 @@ pub fn reflow_grid_layout(
         false,
     );
 
+    // hv/vv are loop-invariant; compute once instead of per cell and per child.
+    let hv = layout_bounds.hv(1.0);
+    let vv = layout_bounds.vv(1.0);
+
     for cell in cells.iter() {
         let Some(child) = cell.shape else { continue };
         let child_bounds = bounds.find(child);
 
-        // Compute frame-axis projections once; used for both sizing and positioning.
-        let hv = layout_bounds.hv(1.0);
-        let vv = layout_bounds.vv(1.0);
         let (h_min, v_min, child_frame_w, child_frame_h) = child_frame_aabb(&child_bounds, hv, vv);
 
         // resize_matrix scales the child in the parent's local frame coordinate system
@@ -842,7 +841,8 @@ pub fn reflow_grid_layout(
 
         let position = child_position(
             child,
-            &layout_bounds,
+            hv,
+            vv,
             layout_data,
             &child_bounds,
             child.layout_item,
