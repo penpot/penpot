@@ -1395,6 +1395,13 @@ pub struct ParagraphLayout {
     pub decorations: Vec<TextDecorationSegment>,
 }
 
+pub struct ParagraphLayoutRef<'a> {
+    pub paragraph: &'a skia::textlayout::Paragraph,
+    pub x: f32,
+    pub y: f32,
+    pub decorations: Vec<TextDecorationSegment>,
+}
+
 #[derive(Debug)]
 pub struct TextLayoutData {
     pub position_data: Vec<PositionData>,
@@ -1406,6 +1413,110 @@ fn direction_to_int(direction: TextDirection) -> u32 {
         TextDirection::RTL => 0,
         TextDirection::LTR => 1,
     }
+}
+
+fn paragraph_decorations(
+    skia_paragraph: &skia::textlayout::Paragraph,
+    x: f32,
+    y_top: f32,
+) -> Vec<TextDecorationSegment> {
+    let mut decorations = Vec::new();
+    let line_metrics = skia_paragraph.get_line_metrics();
+    for line in &line_metrics {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_top + line.baseline as f32;
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&style_metrics, line_baseline);
+        for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+            let text_style = &style_metric.text_style;
+            let style_end = style_metrics
+                .get(i + 1)
+                .map(|(next_i, _)| *next_i)
+                .unwrap_or(line.end_index);
+            let seg_start = (*style_start).max(line.start_index);
+            let seg_end = style_end.min(line.end_index);
+            if seg_start >= seg_end {
+                continue;
+            }
+            let rects = skia_paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                RectHeightStyle::Tight,
+                RectWidthStyle::Tight,
+            );
+            let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                let skia_x_offset = rects
+                    .first()
+                    .map(|r| r.rect.left - line.left as f32)
+                    .unwrap_or(0.0);
+                (total_width, skia_x_offset)
+            } else {
+                (0.0, 0.0)
+            };
+            let text_left = x + line.left as f32 + actual_x_offset;
+            let text_width = segment_width;
+            use skia::textlayout::TextDecoration;
+            if text_style.decoration().ty == TextDecoration::UNDERLINE {
+                decorations.push(TextDecorationSegment {
+                    kind: TextDecoration::UNDERLINE,
+                    text_style: (*text_style).clone(),
+                    y: underline_y.unwrap_or(line_baseline),
+                    thickness: max_underline_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+            if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
+                decorations.push(TextDecorationSegment {
+                    kind: TextDecoration::LINE_THROUGH,
+                    text_style: (*text_style).clone(),
+                    y: strike_y.unwrap_or(line_baseline),
+                    thickness: max_strike_thickness,
+                    left: text_left,
+                    width: text_width,
+                });
+            }
+        }
+    }
+    decorations
+}
+
+pub fn position_cached_paragraphs<'a>(
+    shape: &Shape,
+    built_groups: &'a [Vec<skia::textlayout::Paragraph>],
+) -> Vec<ParagraphLayoutRef<'a>> {
+    let selrect_height = shape.selrect().height();
+    let x = shape.selrect.x();
+    let base_y = shape.selrect.y();
+    let paragraph_heights: Vec<f32> = built_groups
+        .iter()
+        .map(|group| group.first().map(|p| p.height()).unwrap_or(0.0))
+        .collect();
+    let total_text_height: f32 = paragraph_heights.iter().sum();
+    let vertical_offset = match shape.vertical_align() {
+        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
+        VerticalAlign::Bottom => selrect_height - total_text_height,
+        _ => 0.0,
+    };
+
+    let mut layouts: Vec<ParagraphLayoutRef<'a>> = Vec::new();
+    let mut y_accum = base_y + vertical_offset;
+    for (i, group) in built_groups.iter().enumerate() {
+        for paragraph in group.iter() {
+            let decorations = paragraph_decorations(paragraph, x, y_accum);
+            layouts.push(ParagraphLayoutRef {
+                paragraph,
+                x,
+                y: y_accum,
+                decorations,
+            });
+        }
+        y_accum += paragraph_heights[i];
+    }
+    layouts
 }
 
 pub fn calculate_text_layout_data(
@@ -1463,67 +1574,7 @@ pub fn calculate_text_layout_data(
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
             // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = paragraph_decorations(&skia_paragraph, x, y_accum);
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
