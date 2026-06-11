@@ -448,18 +448,22 @@
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
-(def email-re #"[a-zA-Z0-9_.+-\\\\]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+;; Strict email regex aligned with app.common.spec/email-re.
+;; Local part: valid RFC chars, no leading/trailing dot, no consecutive dots.
+;; Domain: labels can't start/end with hyphen, no empty labels.
+;; TLD: at least 2 alphabetic chars.
+(def email-re
+  #"[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}")
 
 (defn parse-email
   [s]
-  (if (string? s)
-    (first (re-seq email-re s))
-    nil))
+  (when (and (string? s) (re-matches email-re s))
+    s))
 
 (defn email-string?
   [s]
   (and (string? s)
-       (re-seq email-re s)))
+       (some? (re-matches email-re s))))
 
 (register!
  {:type ::email

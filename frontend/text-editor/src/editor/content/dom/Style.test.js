@@ -17,14 +17,22 @@ describe("Style", () => {
 
   test("setStyles should apply multiple styles to an element using an Object", () => {
     const element = document.createElement("div");
-    setStyles(element, [["display"]], {
-      "text-decoration": "none",
-      "font-size": "32px",
-      display: "none",
-    });
-    expect(element.style.display).toBe("");
-    expect(element.style.fontSize).toBe("");
-    expect(element.style.textDecoration).toBe("");
+    setStyles(
+      element,
+      [
+        ["display"],
+        ["font-size", "px"],
+        ["text-decoration"],
+      ],
+      {
+        "text-decoration": "none",
+        "font-size": "32",
+        display: "none",
+      },
+    );
+    expect(element.style.display).toBe("none");
+    expect(element.style.fontSize).toBe("32px");
+    expect(element.style.textDecoration).toBe("none");
   });
 
   test("setStyles should apply multiple styles to an element using a CSSStyleDeclaration", () => {
@@ -32,13 +40,13 @@ describe("Style", () => {
     setStyles(a, [["display"]], {
       display: "none",
     });
-    expect(a.style.display).toBe("");
+    expect(a.style.display).toBe("none");
     expect(a.style.fontSize).toBe("");
     expect(a.style.textDecoration).toBe("");
 
     const b = document.createElement("div");
     setStyles(b, [["display"]], a.style);
-    expect(b.style.display).toBe("");
+    expect(b.style.display).toBe("none");
     expect(b.style.fontSize).toBe("");
     expect(b.style.textDecoration).toBe("");
   });
