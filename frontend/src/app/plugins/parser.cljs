@@ -237,7 +237,6 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }
@@ -246,7 +245,6 @@
   (when (some? blur)
     (d/without-nils
      {:id (-> (obj/get blur "id") parse-id)
-      :type (-> (obj/get blur "type") parse-keyword)
       :value (obj/get blur "value")
       :hidden (obj/get blur "hidden")})))
 

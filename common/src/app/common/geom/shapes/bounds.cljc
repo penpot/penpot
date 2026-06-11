@@ -42,9 +42,6 @@
    [{:id "shape" :type :blend-filters}]
    (->> shape :shadow (apply-filters :style :inner-shadow))
 
-   ;; Background blur won't work in current SVG specification
-   ;; We can revisit this in the future
-   #_(->> shape :background-blur list (apply-filters :type :background-blur))
    (->> shape :blur list (apply-filters :type :layer-blur))))
 
 (defn- calculate-filter-bounds

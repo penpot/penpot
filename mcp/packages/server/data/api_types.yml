@@ -960,12 +960,11 @@ Blur:
     ==============
 
     Represents blur properties in Penpot.
-    This interface includes properties for defining the type and intensity of a blur effect, along with its visibility.
+    This interface includes properties for defining the intensity of a blur effect, along with its visibility.
 
     ```
     interface Blur {
         id?: string;
-        type?: "layer-blur";
         value?: number;
         hidden?: boolean;
     }
@@ -980,13 +979,44 @@ Blur:
         ```
 
         The optional unique identifier for the blur effect.
-      type: |-
+      value: |-
         ```
-        type?: "layer-blur"
+        value?: number
         ```
 
-        The optional type of the blur effect.
-        Currently, only 'layer-blur' is supported.
+        The optional intensity value of the blur effect.
+      hidden: |-
+        ```
+        hidden?: boolean
+        ```
+
+        Specifies whether the blur effect is hidden.
+        Defaults to false if omitted.
+BackgroundBlur:
+  overview: |-
+    Interface BackgroundBlur
+    ==============
+
+    Represents background blur properties in Penpot.
+    This interface includes properties for defining the intensity of a blur effect, along with its visibility.
+
+    ```
+    interface Blur {
+        id?: string;
+        value?: number;
+        hidden?: boolean;
+    }
+    ```
+
+    Referenced by: Board, Boolean, Ellipse, Group, Image, Path, Rectangle, ShapeBase, SvgRaw, Text, VariantContainer
+  members:
+    Properties:
+      id: |-
+        ```
+        id?: string
+        ```
+
+        The optional unique identifier for the blur effect.
       value: |-
         ```
         value?: number
@@ -15436,6 +15466,7 @@ ShapeBase:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
