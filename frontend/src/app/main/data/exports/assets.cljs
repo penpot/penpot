@@ -163,31 +163,46 @@
       (when (= status "ended")
         (dom/trigger-download-uri filename mtype resource-uri)))))
 
+;; TODO: Remove once we support WASM SVG export
+(def ^:private wasm-export-types #{:jpeg :webp :png :pdf})
+
+(defn- wasm-export-enabled?
+  "WASM export is available: the flag is set AND render-wasm is active for the
+  current file. When render-wasm is inactive its shape tree isn't loaded, so a
+  client-side WASM render would crash."
+  [state]
+  (and (contains? cf/flags :wasm-export)
+       (features/active-feature? state "render-wasm/v1")))
+
+(defn- use-wasm-export?
+  "Whether to take the client-side WASM export path for `export`."
+  [state export]
+  (and (wasm-export-enabled? state)
+       (contains? wasm-export-types (:type export))))
+
 (defn request-simple-export
   [{:keys [export]}]
-  (if (and (contains? cf/flags :wasm-export)
-           (contains? #{:jpeg :webp :png} (:type export)))
-    (ptk/reify ::request-simple-export-wasm
-      ptk/EffectEvent
-      (effect [_ _ _]
-        (wasm.exports/export-image export)))
+  (ptk/reify ::request-simple-export
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond-> state
+        (not (use-wasm-export? state export))
+        (update :export assoc :in-progress true :id uuid/zero)))
 
-    (ptk/reify ::request-simple-export
-      ptk/UpdateEvent
-      (update [_ state]
-        (update state :export assoc :in-progress true :id uuid/zero))
-
-      ptk/WatchEvent
-      (watch [_ state _]
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if (use-wasm-export? state export)
+        (do
+          (case (:type export)
+            :pdf (wasm.exports/export-pdf export)
+            (wasm.exports/export-image export))
+          (rx/empty))
         (let [profile-id (:profile-id state)
               params     {:exports [export]
                           :profile-id profile-id
                           :cmd :export-shapes
                           :wait true
-                          :is-wasm
-                          (and
-                           (features/active-feature? state "render-wasm/v1")
-                           (contains? cf/flags :wasm-export))}]
+                          :is-wasm (wasm-export-enabled? state)}]
           (rx/concat
            (rx/of ::dwp/force-persist)
 
@@ -221,10 +236,7 @@
                           :cmd cmd
                           :profile-id profile-id
                           :force-multiple true
-                          :is-wasm
-                          (and
-                           (features/active-feature? state "render-wasm/v1")
-                           (contains? cf/flags :wasm-export))}
+                          :is-wasm (wasm-export-enabled? state)}
                           (some? name)
                           (assoc :name name))
 

@@ -4742,7 +4742,7 @@ msgstr "¿Cuál es el tamaño de tu empresa?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
 msgid "onboarding.questions.step3.title"
-msgstr "Háblanos de tu trabajo"
+msgstr "¿Cuál es el tamaño de tu empresa?"
 
 #: src/app/main/ui/onboarding/questions.cljs:344
 msgid "onboarding.questions.step4.title"
@@ -4753,7 +4753,25 @@ msgstr "¿Por dónde te apetecería empezar?"
 msgid "onboarding.questions.step5.title"
 msgstr "¿Cómo nos has descubierto?"
 
-#: src/app/main/ui/onboarding/questions.cljs:232
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Sólo yo"
+
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2-100"
+
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101-500"
+
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501-1000"
+
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1001-5000"
+
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5001+"
+
+#: src/app/main/ui/onboarding/questions.cljs:233
 msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 

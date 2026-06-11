@@ -545,6 +545,12 @@
                    ::audit/context {:action "email-verification"}
                    ::audit/profile-id (:id profile)})))))
 
+      ;; When email verification is disabled and an inactive profile already
+      ;; exists, reject the registration — the email is already taken.
+      (not (contains? cf/flags :email-verification))
+      (ex/raise :type :validation
+                :code :email-already-exists)
+
       :else
       (let [elapsed? (elapsed-verify-threshold? profile)
             reports? (eml/has-reports? conn (:email profile))

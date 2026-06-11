@@ -343,6 +343,13 @@ def cmd_issues(args: argparse.Namespace) -> None:
         print(f"After excluding labels: {len(filtered)} issues", file=sys.stderr)
         issues = filtered
 
+    # Exclude issues with type "Task" (internal chores) — opt out with --include-tasks
+    if not args.include_tasks:
+        tasks = [iss for iss in issues if iss.get("issue_type") == "Task"]
+        if tasks:
+            issues = [iss for iss in issues if iss.get("issue_type") != "Task"]
+            print(f"After excluding Task issues: {len(issues)} issues (removed {len(tasks)}: {[t['number'] for t in tasks]})", file=sys.stderr)
+
     # Filter by included labels (--label) — issue must have ALL specified labels
     if args.label:
         inclusions = set(label.strip() for label in args.label.split(","))
@@ -607,6 +614,10 @@ def main() -> None:
     p_issues.add_argument(
         "--include-rejected", action="store_true",
         help="Include issues with 'Rejected' project status (excluded by default)"
+    )
+    p_issues.add_argument(
+        "--include-tasks", action="store_true",
+        help="Include issues with type 'Task' (excluded by default, they are internal chores)"
     )
     p_issues.set_defaults(func=cmd_issues)
 
