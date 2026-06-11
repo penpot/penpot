@@ -130,7 +130,47 @@
                        acc))))
           acc)))))
 
+(defn- check-measures-menu-props
+  [old-props new-props]
+  (let [old-applied-tokens (unchecked-get old-props "appliedTokens")
+        new-applied-tokens (unchecked-get new-props "appliedTokens")
+        o-values (unchecked-get old-props "values")
+        n-values (unchecked-get new-props "values")]
+    (and (identical? (get o-values :x)
+                     (get n-values :x))
+         (identical? (get o-values :y)
+                     (get n-values :y))
+         (identical? (get o-values :rotation)
+                     (get n-values :rotation))
+         (identical? (get o-values :hide-in-viewer)
+                     (get n-values :hide-in-viewer))
+         (identical? (get o-values :width)
+                     (get n-values :width))
+         (identical? (get o-values :width)
+                     (get n-values :width))
+         (identical? (get o-values :height)
+                     (get n-values :height))
+         (identical? (get o-values :points)
+                     (get n-values :points))
+         (identical? (get o-values :selrect)
+                     (get n-values :selrect))
+         (identical? (get o-values :r1)
+                     (get n-values :r1))
+         (identical? (get o-values :r2)
+                     (get n-values :r2))
+         (identical? (get o-values :r3)
+                     (get n-values :r3))
+         (identical? (get o-values :r4)
+                     (get n-values :r4))
+         (identical? (get o-values :proportion-lock)
+                     (get n-values :proportion-lock))
+         (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? old-applied-tokens
+                     new-applied-tokens))))
+
 (mf/defc measures-menu*
+  {::mf/wrap [#(mf/memo' % check-measures-menu-props)]}
   [{:keys [ids values applied-tokens type shapes]}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
