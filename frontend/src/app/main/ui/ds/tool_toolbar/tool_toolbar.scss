@@ -1,0 +1,174 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/spacing.scss" as *;
+@use "ds/sizes.scss" as *;
+@use "ds/borders.scss" as *;
+@use "ds/z-index.scss" as *;
+
+.main-toolbar {
+  --toolbar-position-y: #{$sz-28};
+  --toolbar-offset-y: 0px;
+  --menu-border-color: var(--color-background-quaternary);
+  --menu-background-color: var(--color-background-primary);
+  --stroke-color: var(--color-foreground-secondary);
+  --toolbar-hider-background-color: var(--color-accent-default);
+
+  cursor: initial;
+  box-sizing: border-box;
+  position: absolute;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: var(--sp-m);
+  border-radius: $br-8;
+  border: #{$b-2} solid var(--menu-border-color);
+  z-index: var(--z-index-panels);
+  background-color: var(--menu-background-color);
+  transition:
+    inset-block-start 0.3s,
+    block-size 0.3s,
+    opacity 0.3s;
+  inset-block-start: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+  will-change: auto;
+}
+
+.main-toolbar-no-rulers {
+  --toolbar-position-y: 0px;
+  --toolbar-offset-y: 8px;
+}
+
+.main-toolbar-hidden {
+  --toolbar-offset-y: -4px;
+
+  block-size: $sz-16;
+  z-index: 1;
+  border-radius: 0 0 $br-8 $br-8;
+  border-block-start: 0;
+
+  .main-toolbar-options {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.main-toolbar-options {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  margin: 0;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.main-toolbar-option {
+  position: relative;
+
+  &.main-toolbar-option-plugins {
+    --separator-color: var(--color-background-quaternary);
+
+    margin-inline-start: var(--sp-l);
+    padding-inline-start: var(--sp-l);
+    border-inline-start: #{$b-1} solid var(--separator-color);
+  }
+}
+
+.main-toolbar-options-button {
+  --toolbar-option-button-background: transparent;
+
+  appearance: none;
+  border: none;
+  block-size: $sz-32;
+  inline-size: $sz-32;
+  flex-shrink: 0;
+  border-radius: $br-8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--toolbar-option-button-background);
+  color: var(--stroke-color);
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &[aria-pressed="true"],
+  &:focus-visible,
+  &:hover {
+    --toolbar-option-button-background: var(--color-background-quaternary);
+    --stroke-color: var(--color-accent-primary);
+
+    & .main-toolbar-flyout-indicator {
+      --stroke-color: var(--color-accent-primary);
+    }
+  }
+}
+
+.main-toolbar-icon {
+  stroke: var(--stroke-color);
+  inline-size: $sz-16;
+  block-size: $sz-16;
+}
+
+.main-toolbar-group {
+  position: relative;
+}
+
+.main-toolbar-flyout {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  inset-block-start: 140%;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  margin-block-start: var(--sp-xxs);
+  padding: var(--sp-xxs) 0;
+  border-radius: $br-8;
+  border: #{$b-1} solid var(--menu-border-color);
+  background-color: var(--menu-background-color);
+  z-index: var(--z-index-panels);
+  display: flex;
+  transition:
+    opacity 80ms ease-out,
+    visibility 80ms linear;
+
+  &.flyout-open {
+    opacity: 1;
+    transition-delay: 0s;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.toolbar-handler {
+  block-size: $sz-12;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+}
+
+.toolbar-handler-indicator {
+  block-size: 4px;
+  inline-size: $sz-64;
+  padding: 0;
+  border-radius: $br-4;
+  background-color: var(--toolbar-hider-background-color);
+}
