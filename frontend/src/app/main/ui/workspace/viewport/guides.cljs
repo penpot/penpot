@@ -62,11 +62,28 @@
       (mth/round new-position)
       new-position)))
 
-(defn- guide-draggable-in-focus?
-  [focus {:keys [frame-id]}]
+(defn guide-visible-in-focus?
+  "When focus mode is active, only free guides and guides bound to a focused
+  board are visible and interactive."
+  [focus frame-id]
   (or (nil? frame-id)
       (empty? focus)
       (contains? focus frame-id)))
+
+(defn wasm-visible-guides
+  "Guide map sent to the WASM renderer. Must be the same map used to resolve
+  `find-guide-at` indices (`guide-by-serialized-index`). Filters by
+  rulers/grids visibility, focus mode, and excludes the guide currently being
+  dragged (the SVG overlay draws it instead)."
+  [{:keys [guides visible? focused dragging-id]}]
+  (let [guides (if visible? (or guides {}) {})
+        guides (if (seq focused)
+                 (into {} (filter (fn [[_ guide]]
+                                    (guide-visible-in-focus? focused (:frame-id guide)))
+                                  guides))
+                 guides)]
+    (cond-> guides
+      dragging-id (dissoc dragging-id))))
 
 (defn use-guide
   "Hooks to support drag/drop for existing guides and new guides"
@@ -642,8 +659,9 @@
                    :hover-frame frame}])]))
 
 (defn- guide-by-serialized-index
-  "Maps a WASM guide index back to the guide map entry. The index matches the
-  serialization order used by `set-guides` / `write-guides`."
+  "Maps a WASM guide index back to the guide map entry. `guides` must be the
+  same map passed to `set-guides` (typically `wasm-visible-guides`); index
+  order matches `write-guides` / `(vec (vals guides))`."
   [guides index]
   (when (>= index 0)
     (nth (vec (vals guides)) index nil)))
@@ -732,7 +750,7 @@
   :mode :drag|:edit ...}` or nil) plus callbacks the overlay needs in edit
   mode: `commit-edit` (commits the parsed input value) and `cancel-edit`
   (drops the edit without committing)."
-  [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
+  [{:keys [wasm-guides zoom wasm-guides? disabled-guides? on-guide-change
            on-guide-drag on-guide-hover get-hover-frame focus]}]
   (let [dragging-ref       (mf/use-ref false)
         moved-ref          (mf/use-ref false)
@@ -861,7 +879,13 @@
         guide-at-event
         (fn [event]
           (when-let [pt (uwvv/point->viewport (dom/get-client-position event))]
-            (guide-by-serialized-index guides (wasm.api/find-guide-at pt zoom))))
+            (guide-by-serialized-index wasm-guides (wasm.api/find-guide-at pt zoom))))
+
+        visible-guide-at-event
+        (fn [event]
+          (when-let [guide (guide-at-event event)]
+            (when (guide-visible-in-focus? focus (:frame-id guide))
+              guide)))
 
         guide-frame-offset
         (fn [guide]
@@ -878,8 +902,7 @@
           (when (and (not read-only?)
                      (not (editing?))
                      (not (mf/ref-val dragging-ref)))
-            (let [guide (when-let [g (guide-at-event event)]
-                          (when (guide-draggable-in-focus? focus g) g))
+            (let [guide (visible-guide-at-event event)
                   current-state @state
                   current-hover-id (when (= :hover (:mode current-state))
                                      (-> current-state :guide :id))]
@@ -911,22 +934,23 @@
             ;; via the input's blur handler. Don't initiate a drag on the
             ;; same pointerdown.
             (when (= 0 (.-button event))
-              (let [position (dom/get-client-position event)
-                    guide    (guide-at-event event)]
-                (when (and guide (guide-draggable-in-focus? focus guide))
+              (let [client-pos (dom/get-client-position event)
+                    guide (visible-guide-at-event event)
+                    {:keys [id axis position frame-id]} guide]
+                (when guide
                   (when-let [viewport @uwvv/viewport-ref]
                     (.setPointerCapture viewport (.-pointerId event)))
                   (dom/stop-propagation event)
-                  (emit-hover-axis (:axis guide))
-                  (emit-hover-guide-id (:id guide))
+                  (emit-hover-axis axis)
+                  (emit-hover-guide-id id)
                   (mf/set-ref-val! dragging-ref true)
                   (mf/set-ref-val! moved-ref false)
-                  (mf/set-ref-val! start-ref position)
+                  (mf/set-ref-val! start-ref client-pos)
                   (mf/set-ref-val! guide-ref guide)
                   (mf/set-ref-val! pending-ref
                                    {:guide guide
-                                    :new-position (:position guide)
-                                    :new-frame-id (:frame-id guide)
+                                    :new-position position
+                                    :new-frame-id frame-id
                                     :mode :drag})
                   ;; Pointer capture (above) routes all subsequent pointer
                   ;; events to the viewport, so we listen on the viewport
@@ -944,20 +968,21 @@
         double-click
         (fn [event]
           (when (and (not read-only?) (not (editing?)))
-            (let [guide (guide-at-event event)]
-              (when (and guide (guide-draggable-in-focus? focus guide))
+            (let [guide (visible-guide-at-event event)
+                  {:keys [id axis position frame-id]} guide]
+              (when guide
                 (dom/prevent-default event)
                 (dom/stop-propagation event)
                 (when (some? on-guide-drag)
-                  (on-guide-drag (:id guide)))
+                  (on-guide-drag id))
                 (mf/set-ref-val! guide-ref guide)
-                (let [frame  (some-> (:frame-id guide) refs/object-by-id deref)
+                (let [frame  (some-> frame-id refs/object-by-id deref)
                       offset (if frame
-                               (if (= :x (:axis guide)) (:x frame) (:y frame))
+                               (if (= :x axis) (:x frame) (:y frame))
                                0)]
                   (reset! state {:guide guide
-                                 :new-position (:position guide)
-                                 :new-frame-id (:frame-id guide)
+                                 :new-position position
+                                 :new-frame-id frame-id
                                  :frame-offset offset
                                  :mode :edit}))))))
 
@@ -978,7 +1003,7 @@
             (reset-state)))]
 
     (mf/with-effect [wasm-guides? disabled-guides? read-only?
-                     guides zoom focus snap-pixel?
+                     wasm-guides zoom focus snap-pixel?
                      on-guide-change on-guide-drag on-guide-hover get-hover-frame]
       (when (and wasm-guides? (not disabled-guides?) (not read-only?))
         (when-let [viewport @uwvv/viewport-ref]
@@ -1003,10 +1028,10 @@
 (mf/defc wasm-guide-overlay-layer*
   "Owns WASM guide drag/edit state and overlay rendering so updates are not
   blocked by memoization on `viewport-guides*`."
-  [{:keys [guides zoom wasm-guides? disabled-guides? on-guide-change
+  [{:keys [wasm-guides zoom wasm-guides? disabled-guides? on-guide-change
            on-guide-drag on-guide-hover get-hover-frame focus vbox]}]
   (let [{:keys [state commit-edit cancel-edit]}
-        (use-wasm-guide-interaction {:guides guides
+        (use-wasm-guide-interaction {:wasm-guides wasm-guides
                                      :zoom zoom
                                      :wasm-guides? wasm-guides?
                                      :disabled-guides? disabled-guides?
@@ -1031,8 +1056,8 @@
 
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides?
-           on-guide-drag on-guide-hover]}]
+  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides wasm-guides
+           wasm-guides? on-guide-drag on-guide-hover]}]
   (let [visible-guides
         (mf/with-memo [guides vbox]
           (->> (vals guides)
@@ -1069,13 +1094,13 @@
         ;; the render engine instead of per-guide SVG areas.
         on-wasm-context-menu
         (mf/use-fn
-         (mf/deps guides zoom disabled-guides)
+         (mf/deps wasm-guides zoom disabled-guides)
          (fn [event]
            (when-not disabled-guides
              (let [position (dom/get-client-position event)
                    pt       (uwvv/point->viewport position)
                    index    (when pt (wasm.api/find-guide-at pt zoom))
-                   guide    (guide-by-serialized-index guides index)]
+                   guide    (guide-by-serialized-index wasm-guides index)]
                (when guide
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
@@ -1109,7 +1134,7 @@
                           :disabled-guides disabled-guides}]
 
      (when wasm-guides?
-       [:> wasm-guide-overlay-layer* {:guides guides
+       [:> wasm-guide-overlay-layer* {:wasm-guides wasm-guides
                                       :zoom zoom
                                       :wasm-guides? wasm-guides?
                                       :disabled-guides? disabled-guides
@@ -1122,7 +1147,7 @@
 
      (when-not wasm-guides?
        (for [{:keys [id frame-id] :as guide} visible-guides]
-         (when (guide-draggable-in-focus? focus guide)
+         (when (guide-visible-in-focus? focus frame-id)
            [:> guide* {:key (dm/str "guide-" id)
                        :guide guide
                        :vbox vbox

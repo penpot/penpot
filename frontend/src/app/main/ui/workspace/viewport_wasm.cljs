@@ -352,6 +352,14 @@
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
 
+        wasm-guides
+        (mf/with-memo [guides focus show-rulers? show-grids? @dragging-guide-id*]
+          (guides/wasm-visible-guides
+           {:guides guides
+            :visible? (and show-rulers? show-grids?)
+            :focused focus
+            :dragging-id @dragging-guide-id*}))
+
         single-select?           (= (count selected-shapes) 1)
 
         first-shape (first selected-shapes)
@@ -548,14 +556,12 @@
       (when @canvas-init?
         (wasm.api/render-ui-only)))
 
-    ;; Ruler guides: push the page guides to the render engine whenever they
-    ;; change or their visibility toggles. When hidden we send an empty set.
-    ;; While dragging, exclude the active guide so the SVG preview is the only line.
-    (mf/with-effect [@canvas-init? guides objects show-rulers? show-grids? @dragging-guide-id*]
+    ;; Ruler guides: push the WASM-visible guide set to the render engine.
+    ;; `wasm-guides` is also passed to the SVG overlay for index-based hit
+    ;; testing — it must stay in sync with what we serialize here.
+    (mf/with-effect [@canvas-init? wasm-guides objects]
       (when @canvas-init?
-        (let [guides (if (and show-rulers? show-grids?) (or guides {}) {})
-              guides (if-let [id @dragging-guide-id*] (dissoc guides id) guides)]
-          (wasm.api/set-guides guides objects))))
+        (wasm.api/set-guides wasm-guides objects)))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -856,6 +862,7 @@
           {:zoom zoom
            :vbox vbox
            :guides guides
+           :wasm-guides wasm-guides
            :wasm-guides? true
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
