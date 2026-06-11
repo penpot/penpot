@@ -11,7 +11,6 @@ use crate::math::Point;
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
 
-const TEXTURES_CACHE_CAPACITY: usize = 1024;
 const TEXTURES_BATCH_DELETE: usize = 256;
 
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
@@ -166,12 +165,48 @@ impl DocAtlas {
             new_bottom = new_bottom.max(doc_rect.bottom.ceil());
         }
 
-        // Add padding to reduce realloc frequency.
+        // Pad to reduce realloc frequency. A realloc copies the whole atlas
+        // (up to max_texture_size², hundreds of MB), so sides that actually
+        // grow get a geometric margin — half the current atlas span, at least
+        // a few tiles — making sustained pans cost O(log) reallocs instead of
+        // one per tile.
         let pad = tiles::TILE_SIZE;
-        new_left -= pad;
-        new_top -= pad;
-        new_right += pad;
-        new_bottom += pad;
+        if needs_init {
+            new_left -= pad;
+            new_top -= pad;
+            new_right += pad;
+            new_bottom += pad;
+        } else {
+            let grow_x = ((current_right - current_left) * 0.5).max(4.0 * tiles::TILE_SIZE);
+            let grow_y = ((current_bottom - current_top) * 0.5).max(4.0 * tiles::TILE_SIZE);
+            if new_left < current_left {
+                new_left -= grow_x;
+            }
+            if new_right > current_right {
+                new_right += grow_x;
+            }
+            if new_top < current_top {
+                new_top -= grow_y;
+            }
+            if new_bottom > current_bottom {
+                new_bottom += grow_y;
+            }
+            // Writes are clamped to doc_bounds, so texture past it is wasted;
+            // clip the margin to the document (but never below the rect that
+            // triggered this grow).
+            if let Some(bounds) = self.doc_bounds {
+                new_left = new_left.max((bounds.left - pad).min(doc_rect.left.floor()));
+                new_top = new_top.max((bounds.top - pad).min(doc_rect.top.floor()));
+                new_right = new_right.min((bounds.right + pad).max(doc_rect.right.ceil()));
+                new_bottom = new_bottom.min((bounds.bottom + pad).max(doc_rect.bottom.ceil()));
+            }
+            // Never shrink below current coverage: the old-atlas copy must fit,
+            // and shrinking would invite grow/shrink oscillation.
+            new_left = new_left.min(current_left);
+            new_top = new_top.min(current_top);
+            new_right = new_right.max(current_right);
+            new_bottom = new_bottom.max(current_bottom);
+        }
 
         let doc_w = (new_right - new_left).max(1.0);
         let doc_h = (new_bottom - new_top).max(1.0);
@@ -525,19 +560,32 @@ impl Surfaces {
         background: skia::Color,
     ) {
         self.tiles.update(viewbox, tile_viewbox);
-        let atlas_image = self.tile_atlas.image_snapshot();
         let canvas = self.backbuffer.canvas();
         canvas.clear(background);
-        canvas.draw_atlas(
-            &atlas_image,
-            &self.tiles.transforms,
-            &self.tiles.textures,
-            None,
-            skia::BlendMode::SrcOver,
-            self.atlas_sampling_options,
-            None,
-            None,
-        );
+        // Draw each tile via Surface::draw (clip + offset) instead of
+        // draw_atlas over a full image_snapshot(): the snapshot shares the
+        // atlas texture, so the first tile write after every present forced
+        // a copy-on-write of the whole (max_texture_size²) atlas.
+        for (transform, texture) in self.tiles.transforms.iter().zip(self.tiles.textures.iter()) {
+            if texture.is_empty() {
+                continue;
+            }
+            let dst = skia::Rect::from_xywh(
+                transform.tx,
+                transform.ty,
+                texture.width(),
+                texture.height(),
+            );
+            canvas.save();
+            canvas.clip_rect(dst, None, false);
+            self.tile_atlas.draw(
+                canvas,
+                (transform.tx - texture.left, transform.ty - texture.top),
+                self.atlas_sampling_options,
+                Some(&skia::Paint::default()),
+            );
+            canvas.restore();
+        }
     }
 
     /// Draw the persistent atlas onto the backbuffer using the current viewbox transform.
@@ -679,12 +727,6 @@ impl Surfaces {
     /// Clears all dirty flags
     pub fn clear_all_dirty(&mut self) {
         self.dirty_surfaces = 0;
-    }
-
-    pub fn flush(&mut self, id: SurfaceId) {
-        let gpu_state = get_gpu_state();
-        let surface = self.get_mut(id);
-        gpu_state.context.flush_surface(surface);
     }
 
     pub fn flush_and_submit(&mut self, id: SurfaceId) {
@@ -1186,6 +1228,10 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
+    pub fn cached_tiles_in_rect(&self, rect: &TileRect) -> Vec<Tile> {
+        self.tiles.cached_tiles_in_rect(rect)
+    }
+
     /// Builds a 1:1 workspace-pixel snapshot for `src_doc_bounds` / `src_irect` into
     /// `scratch`, then returns the sub-region `[0, out_w) × [0, out_h)` as an image.
     ///
@@ -1295,13 +1341,14 @@ impl Surfaces {
 
     pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
         let gpu_state = get_gpu_state();
-        // Mark tile as invalid
-        // Old content stays visible until new tile overwrites it atomically,
-        // preventing flickering during tile re-renders.
         self.tiles.remove(tile);
         // Also clear the corresponding region in the persistent atlas to avoid
         // leaving stale pixels when shapes move/delete.
         let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
+    }
+
+    pub fn invalidate_cached_tile_surface(&mut self, tile: Tile) {
+        self.tiles.mark_stale(tile);
     }
 
     pub fn get_tile_image_from_tile_atlas(&mut self, tile: Tile) -> Option<skia::Image> {
@@ -1319,11 +1366,30 @@ impl Surfaces {
     }
 
     pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
-        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            // let rect = tile.get_rect_with_offset(&offset);
-            let backbuffer_canvas = self.backbuffer.canvas();
-            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
+        // Draw the atlas region via Surface::draw (clip + transform) instead of
+        // image_snapshot_with_bounds + draw_image_rect: a subset snapshot is an
+        // eager GPU copy, paid per tile per frame on pan previews.
+        let Some(tile_ref) = self.tiles.get(tile) else {
+            panic!("Tile not found {}:{}", tile.0, tile.1);
+        };
+        let src = tile_ref.rect;
+        if src.width() <= 0.0 || src.height() <= 0.0 {
+            return;
         }
+        let sampling_options = self.atlas_sampling_options;
+        let backbuffer_canvas = self.backbuffer.canvas();
+        backbuffer_canvas.save();
+        backbuffer_canvas.clip_rect(*rect, None, false);
+        backbuffer_canvas.translate((rect.left, rect.top));
+        backbuffer_canvas.scale((rect.width() / src.width(), rect.height() / src.height()));
+        backbuffer_canvas.translate((-src.left, -src.top));
+        self.tile_atlas.draw(
+            backbuffer_canvas,
+            (0.0, 0.0),
+            sampling_options,
+            Some(&skia::Paint::default()),
+        );
+        backbuffer_canvas.restore();
     }
 
     /// Draws the current tile directly to the backbuffer and cache surfaces without
@@ -1526,6 +1592,7 @@ pub struct TileTextureCache {
     textures: Vec<skia::Rect>,
     grid: HashMap<Tile, TileAtlasTextureRef>,
     removed: HashSet<Tile>,
+    stale: HashSet<Tile>,
 }
 
 impl TileTextureCache {
@@ -1537,6 +1604,7 @@ impl TileTextureCache {
             textures: Vec::with_capacity(capacity),
             grid: HashMap::with_capacity(capacity),
             removed: HashSet::with_capacity(capacity),
+            stale: HashSet::with_capacity(capacity),
         }
     }
 
@@ -1546,7 +1614,9 @@ impl TileTextureCache {
             if let Some(tile_ref) = self.grid.remove(tile) {
                 self.provider.deallocate(tile_ref);
             }
+            self.stale.remove(tile);
         }
+        self.removed.clear();
     }
 
     fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {
@@ -1554,7 +1624,7 @@ impl TileTextureCache {
             .grid
             .iter_mut()
             .filter_map(|(tile, _)| {
-                if !tile_viewbox.is_visible(tile) {
+                if !tile_viewbox.is_in_interest_area(tile) {
                     Some(*tile)
                 } else {
                     None
@@ -1567,6 +1637,7 @@ impl TileTextureCache {
             if let Some(tile_ref) = self.grid.remove(tile) {
                 self.provider.deallocate(tile_ref);
             }
+            self.stale.remove(tile);
         }
     }
 
@@ -1595,6 +1666,10 @@ impl TileTextureCache {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
                 let tile = Tile(x, y);
 
+                if self.removed.contains(&tile) {
+                    continue;
+                }
+
                 let Some(tile_ref) = self.grid.get(&tile) else {
                     continue;
                 };
@@ -1615,19 +1690,30 @@ impl TileTextureCache {
     }
 
     pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
+        self.grid.contains_key(&tile)
+            && !self.removed.contains(&tile)
+            && !self.stale.contains(&tile)
+    }
+
+    pub fn cached_tiles_in_rect(&self, rect: &TileRect) -> Vec<Tile> {
+        self.grid
+            .keys()
+            .filter(|tile| !self.removed.contains(tile) && rect.contains(tile))
+            .copied()
+            .collect()
     }
 
     pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
+        let capacity = self.provider.length;
+        if self.grid.len() >= capacity {
             // First we try to remove the obsolete tiles.
             self.gc();
         }
 
         // If we still have a texture capacity problem, then
         // we try to remove all of those tiles that aren't
-        // visible.
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
+        // in the interest area.
+        if self.grid.len() >= capacity {
             self.gc_non_visible(tile_viewbox);
         }
 
@@ -1635,13 +1721,14 @@ impl TileTextureCache {
             panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
         };
 
-        self.grid.insert(*tile, tile_ref.clone());
-
-        if self.removed.contains(tile) {
-            self.removed.remove(tile);
+        if let Some(old) = self.grid.insert(*tile, tile_ref.clone()) {
+            self.provider.deallocate(old);
         }
 
-        tile_ref.clone()
+        self.removed.remove(tile);
+        self.stale.remove(tile);
+
+        tile_ref
     }
 
     pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {
@@ -1652,17 +1739,20 @@ impl TileTextureCache {
     }
 
     pub fn remove(&mut self, tile: Tile) {
-        if let Some(tile_ref) = self.grid.get(&tile) {
-            if tile_ref.index < self.textures.len() {
-                self.textures[tile_ref.index].set_empty();
-            }
-        }
         self.removed.insert(tile);
+    }
+
+    pub fn mark_stale(&mut self, tile: Tile) {
+        if self.grid.contains_key(&tile) && !self.removed.contains(&tile) {
+            self.stale.insert(tile);
+        }
     }
 
     pub fn clear(&mut self) {
         for k in self.grid.keys() {
             self.removed.insert(*k);
         }
+        // `removed` supersedes `stale` everywhere; drop the now-moot marks.
+        self.stale.clear();
     }
 }

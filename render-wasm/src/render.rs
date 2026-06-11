@@ -42,6 +42,8 @@ pub use images::*;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+const MIN_TILES_PER_FRAME: i32 = 8;
+
 #[repr(u8)]
 pub enum FrameType {
     None = 0,
@@ -397,6 +399,12 @@ pub(crate) struct RenderState {
     /// (must composite to present the work). Reset when current_tile
     /// changes.
     pub current_tile_had_shapes: bool,
+    /// Count of uncached tiles composited in the current rAF. Reset at the top
+    /// of `render_shape_tree_partial`; checked against the adaptive per-frame
+    /// budget (`max(MIN_TILES_PER_FRAME, visible_tile_count)`) to yield (flush +
+    /// return Partial) so a single rAF doesn't hand the GPU one huge command
+    /// buffer. See `MIN_TILES_PER_FRAME`.
+    pub tiles_on_frame: i32,
     /// During interactive transforms we keep `Target` between rAFs. Seed the
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
     /// repeatedly overwrite tiles that have already been updated.
@@ -404,6 +412,10 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// True while Backbuffer holds an untouched full-quality frame (set on
+    /// Full presents outside fast mode, cleared when any render pass or
+    /// preview writes Backbuffer again). Gates building the drag crop cache.
+    pub backbuffer_is_clean_full_frame: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -583,8 +595,10 @@ impl RenderState {
             export_context: None,
             cache_cleared_this_render: false,
             current_tile_had_shapes: false,
+            tiles_on_frame: 0,
             interactive_target_seeded: false,
             backbuffer_crop_cache: HashMap::default(),
+            backbuffer_is_clean_full_frame: false,
         })
     }
 
@@ -847,10 +861,6 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn flush(&mut self) {
-        self.surfaces.flush(SurfaceId::Backbuffer);
-    }
-
     pub fn flush_and_submit(&mut self) {
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
@@ -913,6 +923,7 @@ impl RenderState {
     /// This is currently not being used, but it's set there for testing purposes on
     /// upcoming tasks
     pub fn render_loading_overlay(&mut self) {
+        self.backbuffer_is_clean_full_frame = false;
         let canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
         let skia::ISize { width, height } = canvas.base_layer_size();
 
@@ -1422,7 +1433,6 @@ impl RenderState {
                 let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
-                let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
                 let stroke_kinds: Vec<StrokeKind> =
                     shape.visible_strokes().rev().map(|s| s.kind).collect();
                 let (mut stroke_paragraphs_list, stroke_opacities): (Vec<_>, Vec<_>) = shape
@@ -1439,16 +1449,13 @@ impl RenderState {
                     .unzip();
                 if skip_effects {
                     // Fast path: render fills and strokes only (skip shadows/blur).
-                    text::render(
-                        Some(self),
-                        None,
+                    text::render_fill_cached(
+                        self,
                         &shape,
-                        &mut paragraph_builders,
+                        text_content,
                         Some(fills_surface_id),
                         None,
-                        None,
                         text_fill_inset,
-                        None,
                     )?;
 
                     for (i, (stroke_paragraphs, layer_opacity)) in stroke_paragraphs_list
@@ -1496,23 +1503,33 @@ impl RenderState {
 
                     let inner_shadows = shape.inner_shadow_paints();
                     let blur_filter = shape.image_filter(1.);
-                    let mut paragraphs_with_shadows =
-                        text_content.paragraph_builder_group_from_text(Some(true));
+                    let needs_shadow_builders = parent_shadows.is_some()
+                        || !drop_shadows.is_empty()
+                        || !inner_shadows.is_empty();
+                    let mut paragraphs_with_shadows = if needs_shadow_builders {
+                        text_content.paragraph_builder_group_from_text(Some(true))
+                    } else {
+                        Vec::new()
+                    };
                     let (mut stroke_paragraphs_with_shadows_list, _shadow_opacities): (
                         Vec<_>,
                         Vec<_>,
-                    ) = shape
-                        .visible_strokes()
-                        .rev()
-                        .map(|stroke| {
-                            text::stroke_paragraph_builder_group_from_text(
-                                text_content,
-                                stroke,
-                                &shape.selrect(),
-                                Some(true),
-                            )
-                        })
-                        .unzip();
+                    ) = if needs_shadow_builders {
+                        shape
+                            .visible_strokes()
+                            .rev()
+                            .map(|stroke| {
+                                text::stroke_paragraph_builder_group_from_text(
+                                    text_content,
+                                    stroke,
+                                    &shape.selrect(),
+                                    Some(true),
+                                )
+                            })
+                            .unzip()
+                    } else {
+                        (Vec::new(), Vec::new())
+                    };
 
                     if let Some(parent_shadows) = parent_shadows {
                         if !shape.has_visible_strokes() {
@@ -1560,17 +1577,14 @@ impl RenderState {
                             }
                         }
 
-                        // 2. Text fills
-                        text::render(
-                            Some(self),
-                            None,
+                        // 2. Text fills — reuse cached laid-out paragraphs (no per-tile reshape).
+                        text::render_fill_cached(
+                            self,
                             &shape,
-                            &mut paragraph_builders,
+                            text_content,
                             Some(fills_surface_id),
-                            None,
                             blur_filter.as_ref(),
                             text_fill_inset,
-                            None,
                         )?;
 
                         // 3. Stroke drop shadows
@@ -1790,7 +1804,7 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
-    fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
+    pub fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
         self.backbuffer_crop_cache.clear();
 
         // Collect candidate shapes that are "recortable" and visible in the current viewport.
@@ -1992,6 +2006,9 @@ impl RenderState {
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
+        // Previews overwrite Backbuffer with scaled/atlas content; the drag
+        // crop cache must not be built from it.
+        self.backbuffer_is_clean_full_frame = false;
         let bg_color = self.background_color;
 
         // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
@@ -2159,6 +2176,9 @@ impl RenderState {
         sync_render: bool,
     ) -> Result<FrameType> {
         self.clear(tree);
+        // A new render pass will write Backbuffer; it is only "clean" again
+        // once the Full arm of continue_render_loop completes.
+        self.backbuffer_is_clean_full_frame = false;
 
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
@@ -2298,30 +2318,32 @@ impl RenderState {
         performance::begin_measure!("continue_render_loop");
         let frame_type = self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
 
-        if !self.options.is_interactive_transform() {
-            self.surfaces.draw_tile_atlas_to_backbuffer(
-                &self.viewbox,
-                &self.tile_viewbox,
-                self.background_color,
-            );
-        }
-
         match frame_type {
             FrameType::None => {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Partial frame: just flush GPU work. The display shows the last
-                // fully submitted frame; no need to copy or draw UI overlays here.
-                self.flush();
+                // Partial frame: flush AND submit so the GPU actually executes this
+                // chunk's draws now
+                self.surfaces.flush_and_submit(SurfaceId::Backbuffer);
             }
             FrameType::Full => {
-                // A full-quality frame is now complete. Rebuild the per-shape crop
-                // cache from the clean Backbuffer (no UI overlay yet) so that
-                // interactive drag backgrounds don't include the grid overlay.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.rebuild_backbuffer_crop_cache(tree);
+                if !self.options.is_interactive_transform() {
+                    self.surfaces.draw_tile_atlas_to_backbuffer(
+                        &self.viewbox,
+                        &self.tile_viewbox,
+                        self.background_color,
+                    );
                 }
+                // A full-quality frame is now complete and Backbuffer is clean
+                // (present_frame draws UI overlays on Target only). Don't rebuild
+                // the drag crop cache here — it takes a full DocAtlas snapshot
+                // (arming a whole-atlas COW on the next tile blit) plus per-shape
+                // Backbuffer copies, far too expensive to pay on every settle.
+                // Instead record that Backbuffer is usable; set_modifiers_start
+                // builds the cache from it when a drag actually begins.
+                self.backbuffer_is_clean_full_frame =
+                    !self.options.is_fast_mode() && !self.options.is_interactive_transform();
                 // present_frame: copy clean Backbuffer → Target, draw UI/debug
                 // overlays on Target only, then flush. Backbuffer stays overlay-free.
                 self.present_frame(tree);
@@ -3545,6 +3567,10 @@ impl RenderState {
     ) -> Result<FrameType> {
         let mut should_stop = false;
         self.viewer_render_root = base_object.copied();
+        self.tiles_on_frame = 0;
+        // Never fewer than the currently-visible tile count, so a
+        // normal viewport composites all its visible tiles in one rAF
+        let tile_budget = MIN_TILES_PER_FRAME.max(self.tile_viewbox.visible_rect.len());
         let root_ids = {
             if let Some(shape_id) = base_object {
                 vec![*shape_id]
@@ -3604,6 +3630,20 @@ impl RenderState {
                                 current_tile,
                                 tile_rect,
                             );
+                        }
+
+                        // Cap how many such tiles we submit per rAF so the GPU doesn't get one
+                        // giant command buffer. Skipped during interactive
+                        // transforms
+                        if allow_stop
+                            && !self.options.is_interactive_transform()
+                            && !self.viewer_masked_pass()
+                        {
+                            self.tiles_on_frame += 1;
+                            if self.tiles_on_frame >= tile_budget {
+                                self.viewer_render_root = None;
+                                return Ok(FrameType::Partial);
+                            }
                         }
                     }
                 } else if self.tiles.is_empty_at(current_tile) {
@@ -3745,6 +3785,17 @@ impl RenderState {
         }
     }
 
+    pub fn get_tiles_for_shape_unclamped(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+    ) -> TileRect {
+        let scale = self.get_scale();
+        let extrect = self.get_cached_extrect(shape, tree, scale);
+        let tile_size = tiles::get_tile_size(scale);
+        tiles::get_tiles_for_rect(extrect, tile_size)
+    }
+
     /*
      * Given a shape, check the indexes and update it's location in the tile set
      * returns the tiles that have changed in the process.
@@ -3869,6 +3920,10 @@ impl RenderState {
         self.surfaces.remove_cached_tile_surface(tile);
     }
 
+    pub fn invalidate_cached_tile_content(&mut self, tile: tiles::Tile) {
+        self.surfaces.invalidate_cached_tile_surface(tile);
+    }
+
     /// Rebuild the tile index (shape→tile mapping) for all top-level shapes.
     /// This does NOT invalidate the tile texture cache — cached tile images
     /// survive so that fast-mode renders during pan still show shadows/blur.
@@ -3963,13 +4018,14 @@ impl RenderState {
             if let Some(shape) = tree.get(shape_id) {
                 if shape_id != &Uuid::nil() {
                     all_tiles.extend(self.update_shape_tiles(shape, tree));
+                    let unclamped = self.get_tiles_for_shape_unclamped(shape, tree);
+                    all_tiles.extend(self.surfaces.cached_tiles_in_rect(&unclamped));
                 }
             }
         }
 
-        // Update the changed tiles
         for tile in all_tiles {
-            self.remove_cached_tile(tile);
+            self.invalidate_cached_tile_content(tile);
         }
 
         performance::end_measure!("rebuild_touched_tiles");

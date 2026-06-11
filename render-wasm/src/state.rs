@@ -114,6 +114,18 @@ impl State {
         get_render_state().continue_render_loop(None, &self.shapes, timestamp)
     }
 
+    /// Build the drag crop cache at drag start, when Backbuffer still holds a
+    /// clean full-quality frame. Entries from a previous drag/viewport are
+    /// always dropped; if Backbuffer is mid-settle or holds a preview the drag
+    /// simply renders live (no cache).
+    pub fn rebuild_drag_crop_cache(&mut self) {
+        let render_state = get_render_state();
+        render_state.backbuffer_crop_cache.clear();
+        if render_state.backbuffer_is_clean_full_frame {
+            render_state.rebuild_backbuffer_crop_cache(&self.shapes);
+        }
+    }
+
     pub fn clear_focus_mode(&mut self) {
         get_render_state().clear_focus_mode();
     }
