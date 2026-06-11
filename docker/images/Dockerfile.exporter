@@ -13,6 +13,7 @@ RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
     echo "nameserver 127.0.0.11" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
+    apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
       curl \
       tzdata \
