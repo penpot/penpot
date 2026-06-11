@@ -20,9 +20,9 @@
 ;; in a tokens library.
 
 (defprotocol ITokenStatus
-  (activate-theme [_ theme-id] "Add a theme uuid to active themes")
-  (deactivate-theme [_ theme-id] "Remove a theme uuid from active themes")
-  (toggle-theme-active [_ theme-id] "Toggle a theme uuid in active themes")
+  (activate-theme [_ tokens-lib theme-id] "Add a theme uuid to active themes")
+  (deactivate-theme [_ tokens-lib theme-id] "Remove a theme uuid from active themes")
+  (set-theme-status [_ tokens-lib theme-id status] "Add or remove a theme uuid to active themes")
   (theme-active? [_ theme-id] "Check if a theme uuid is active")
   (active-theme-count [_] "Return the number of active themes")
   (activate-set [_ set-id] "Add a set uuid to active sets")
@@ -43,16 +43,20 @@
                (c.json/-write (datafy this) writter options))])
 
   ITokenStatus
-  (activate-theme [_ theme-id]
-    (TokenStatus. (conj active-themes theme-id) active-sets))
+  (activate-theme [this tokens-lib theme-id]
+    (if (ctob/get-theme tokens-lib theme-id)
+      (TokenStatus. (conj active-themes theme-id) active-sets)
+      this))
 
-  (deactivate-theme [_ theme-id]
-    (TokenStatus. (disj active-themes theme-id) active-sets))
+  (deactivate-theme [this tokens-lib theme-id]
+    (if (ctob/get-theme tokens-lib theme-id)
+      (TokenStatus. (disj active-themes theme-id) active-sets)
+      this))
 
-  (toggle-theme-active [this theme-id]
-    (if (contains? active-themes theme-id)
-      (deactivate-theme this theme-id)
-      (activate-theme this theme-id)))
+  (set-theme-status [this tokens-lib theme-id status]
+    (if status
+      (activate-theme this tokens-lib theme-id)
+      (deactivate-theme this tokens-lib theme-id)))
 
   (theme-active? [_ theme-id]
     (contains? active-themes theme-id))
@@ -74,7 +78,7 @@
 
   (set-active? [_ set-id]
     (contains? active-sets set-id))
-  
+
   (active-set-count [_]
     (count active-sets)))
 

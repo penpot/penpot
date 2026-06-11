@@ -28,6 +28,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
+   [app.common.types.token-status :as ctos]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
@@ -397,6 +398,13 @@
      [:id ::sm/uuid]
      [:attrs [:maybe ctob/schema:token-theme-attrs]]]]
 
+   [:set-token-theme-status
+    [:map {:title "SetTokenThemeStatus"}
+     [:type [:= :set-token-theme-status]]
+     [:id ::sm/uuid]
+     [:status :boolean]]]
+
+   ;; TODO deprecate this once everyone uses set-token-theme-status
    [:set-active-token-themes
     [:map {:title "SetActiveTokenThemes"}
      [:type [:= :set-active-token-themes]]
@@ -1040,6 +1048,11 @@
                                    id
                                    (fn [prev-token-theme]
                                      (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
+
+(defmethod process-change :set-token-theme-status
+  [data {:keys [id status]}]
+  (-> (ctf/ensure-tokens-lib data)
+      (ctf/update-token-status ctos/set-theme-status id status)))
 
 (defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]

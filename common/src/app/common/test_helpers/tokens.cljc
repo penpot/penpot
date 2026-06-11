@@ -17,7 +17,11 @@
 
 (defn get-tokens-lib
   [file]
-  (:tokens-lib (ctf/file-data file)))
+  (-> file (ctf/file-data) (ctf/get-tokens-lib)))
+
+(defn get-token-status
+  [file]
+  (-> file (ctf/file-data) (ctf/get-token-status)))
 
 (defn add-tokens-lib
   "Ensure the file has a tokens-lib and a token-statusin its data, creating empty ones if not"
@@ -26,11 +30,17 @@
 
 (defn update-tokens-lib
   [file f]
-  (ctf/update-file-data file #(update % :tokens-lib f)))
+  (ctf/update-file-data file #(ctf/update-tokens-lib % f)))
 
 (defn update-token-status
   [file f]
-  (ctf/update-file-data file #(update % :token-status f)))
+  (ctf/update-file-data file #(ctf/update-token-status % f)))
+
+(defn sample-file-with-tokens [tokens-lib-fn token-status-fn]
+  (-> (thf/sample-file :file1)
+      (add-tokens-lib)
+      (update-tokens-lib tokens-lib-fn)
+      (update-token-status token-status-fn)))
 
 (defn get-token
   [file set-id token-id]

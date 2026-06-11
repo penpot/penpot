@@ -28,8 +28,8 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as txt]
-   [app.common.types.tokens-lib :as ctob]
    [app.common.types.token-status :as ctos]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -199,7 +199,7 @@
     (check-file file)))
 
 (defn ensure-tokens-lib
-  "Ensure file-data has a :tokens-lib key, creating one if necessary."
+  "Ensure file-data has a :tokens-lib and a :token-status keys, creating them if necessary."
   [file-data]
   (if (and (some? (:tokens-lib file-data)) (nil? (:token-status file-data)))
     ;; TODO: remove this when we deprecate old-style files without token-status
@@ -316,6 +316,26 @@
      file-data
      (fn [container]
        (update-objects-tree container f)))))
+
+;; Tokens helpers
+(defn get-tokens-lib
+  [file-data]
+  (:tokens-lib file-data))
+
+(defn get-token-status
+  [file-data]
+  (if (and (some? (:tokens-lib file-data)) (nil? (:token-status file-data)))
+    ;; TODO: remove this when we deprecate old-style files without token-status
+    (ctos/make-token-status-from-lib (:tokens-lib file-data))
+    (:token-status file-data)))
+
+(defn update-tokens-lib
+  [file-data f & args]
+  (d/update-when file-data :tokens-lib #(apply f % args)))
+
+(defn update-token-status
+  [file-data f & args]
+  (d/update-when file-data :token-status #(apply f % (get-tokens-lib file-data) args)))
 
 ;; Asset helpers
 (defn find-component-file

@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.file :as ctf]
    [app.common.types.path :as path]))
 
 (defn lookup-profile
@@ -42,12 +43,12 @@
   (let [current-file-data (lookup-file-data state)
         tokens-file-id (or (:tokens-file current-file-data) (:id current-file-data))
         tokens-file-data (lookup-file-data state tokens-file-id)]
-    (:tokens-lib tokens-file-data)))
+    (ctf/get-tokens-lib tokens-file-data)))
 
 (defn lookup-token-status
   [state]
   (let [current-file-data (lookup-file-data state)]
-    (:token-status current-file-data)))
+    (ctf/get-token-status current-file-data)))
 
 (defn get-page
   [fdata page-id]

@@ -267,11 +267,11 @@
   (ptk/reify ::set-token-theme-active
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data        (dsh/lookup-file-data state)
-            tokens-lib  (get-tokens-lib state)
-            changes (-> (pcb/empty-changes)
-                        (pcb/with-library-data data)
-                        (clt/generate-set-active-token-theme tokens-lib id active?))]
+      (let [data         (dsh/lookup-file-data state)
+            token-status (dsh/lookup-token-status state)
+            changes      (-> (pcb/empty-changes)
+                             (pcb/with-library-data data)
+                             (clt/generate-set-token-theme-status token-status id active?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
@@ -282,10 +282,10 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data (dsh/lookup-file-data state)
-            tokens-lib (get-tokens-lib state)
+            token-status (dsh/lookup-token-status state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (clt/generate-toggle-token-theme tokens-lib id))]
+                        (clt/generate-toggle-token-theme token-status id))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
