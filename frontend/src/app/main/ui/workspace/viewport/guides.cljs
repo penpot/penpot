@@ -308,6 +308,68 @@
     (and (>= (:position guide) (:y frame))
          (<= (:position guide) (+ (:y frame) (:height frame))))))
 
+(mf/defc guide-pill*
+  "Presentational pill shown next to a guide line: a colored rounded rect with
+  either the guide position as text or, when `editing`, an inline number input.
+  Shared by the SVG (`guide*`) and WASM overlay (`guide-overlay*`) renderers;
+  each owns its own interaction model and passes the relevant handlers in."
+  {::mf/wrap [mf/memo]}
+  [{:keys [pos vbox zoom axis color frame-offset editing
+           input-ref on-input-key-down on-input-blur on-double-click]}]
+  (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
+        (guide-pill-axis pos vbox zoom axis)
+        corner-radius (/ guide-pill-corner-radius zoom)
+        display-value (fmt/format-number (- pos frame-offset))
+        input-w       (/ guide-pill-width zoom)
+        input-h       (/ guide-pill-height zoom)]
+    [:g.guide-pill
+     [:rect {:x rect-x
+             :y rect-y
+             :width rect-width
+             :height rect-height
+             :rx corner-radius
+             :ry corner-radius
+             :style {:fill color}
+             :on-double-click on-double-click}]
+
+     (if editing
+       [:foreignObject {:x (- text-x (/ input-w 2))
+                        :y (- text-y (/ input-h 2))
+                        :width input-w
+                        :height input-h
+                        :transform (when (= axis :y)
+                                     (str "rotate(-90 " text-x "," text-y ")"))}
+        [:input {:ref input-ref
+                 :type "number"
+                 :step "any"
+                 :default-value display-value
+                 :auto-focus true
+                 :on-key-down on-input-key-down
+                 :on-blur on-input-blur
+                 :on-pointer-down dom/stop-propagation
+                 :style {:width "100%"
+                         :height "100%"
+                         :border "none"
+                         :outline "none"
+                         :padding 0
+                         :margin 0
+                         :background "transparent"
+                         :color colors/white
+                         :font-family rulers/font-family
+                         :font-size (str (/ rulers/font-size zoom) "px")
+                         :text-align "center"
+                         :-moz-appearance "textfield"}}]]
+       [:text {:x text-x
+               :y text-y
+               :text-anchor "middle"
+               :dominant-baseline "middle"
+               :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
+               :style {:font-size (/ rulers/font-size zoom)
+                       :font-family rulers/font-family
+                       :fill colors/white
+                       :pointer-events "none"}}
+        display-value])]))
+
 (mf/defc guide*
   {::mf/wrap [mf/memo]}
   [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
@@ -368,9 +430,6 @@
 
         guide-width
         (/ guide-width zoom)
-
-        guide-pill-corner-radius
-        (/ guide-pill-corner-radius zoom)
 
         frame-guide-outside?
         (and (some? frame)
@@ -499,59 +558,20 @@
                                              guide-opacity-hover
                                              guide-opacity)}}]))
 
+       ;; If the guide is associated to a frame we show the position relative
+       ;; to the frame (handled via `frame-offset` inside `guide-pill*`).
        (when (or is-hover (:hover @state) is-editing)
-         (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
-               (guide-pill-axis pos vbox zoom axis)
-               display-value (fmt/format-number (- pos frame-offset))
-               input-w       (/ guide-pill-width zoom)
-               input-h       (/ guide-pill-height zoom)]
-           [:g.guide-pill
-            [:rect {:x rect-x
-                    :y rect-y
-                    :width rect-width
-                    :height rect-height
-                    :rx guide-pill-corner-radius
-                    :ry guide-pill-corner-radius
-                    :style {:fill guide-color}
-                    :on-double-click on-double-click}]
-
-            (if is-editing
-              [:foreignObject {:x (- text-x (/ input-w 2))
-                               :y (- text-y (/ input-h 2))
-                               :width input-w
-                               :height input-h
-                               :transform (when (= axis :y)
-                                            (str "rotate(-90 " text-x "," text-y ")"))}
-               [:input {:ref input-ref
-                        :type "number"
-                        :step "any"
-                        :default-value display-value
-                        :auto-focus true
-                        :on-key-down on-input-key-down
-                        :on-blur accept-editing
-                        :on-pointer-down dom/stop-propagation
-                        :style {:width "100%"
-                                :height "100%"
-                                :border "none"
-                                :outline "none"
-                                :padding 0
-                                :margin 0
-                                :background "transparent"
-                                :color colors/white
-                                :font-family rulers/font-family
-                                :font-size (str (/ rulers/font-size zoom) "px")
-                                :text-align "center"
-                                :-moz-appearance "textfield"}}]]
-              [:text {:x text-x
-                      :y text-y
-                      :text-anchor "middle"
-                      :dominant-baseline "middle"
-                      :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                      :style {:font-size (/ rulers/font-size zoom)
-                              :font-family rulers/font-family
-                              :fill colors/white}}
-               ;; If the guide is associated to a frame we show the position relative to the frame
-               display-value])]))])))
+         [:> guide-pill* {:pos pos
+                          :vbox vbox
+                          :zoom zoom
+                          :axis axis
+                          :color guide-color
+                          :frame-offset frame-offset
+                          :editing is-editing
+                          :input-ref input-ref
+                          :on-input-key-down on-input-key-down
+                          :on-input-blur accept-editing
+                          :on-double-click on-double-click}])])))
 
 (mf/defc new-guide-area*
   [{:keys [vbox zoom axis get-hover-frame disabled-guides]}]
@@ -667,59 +687,16 @@
                        :stroke-opacity guide-opacity-hover}}])
 
      (when show-pill?
-       (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
-             (guide-pill-axis position vbox zoom axis)
-             corner-radius (/ guide-pill-corner-radius zoom)
-             display-value (fmt/format-number (- position frame-offset))
-             input-w       (/ guide-pill-width zoom)
-             input-h       (/ guide-pill-height zoom)]
-         [:g.guide-pill
-          [:rect {:x rect-x
-                  :y rect-y
-                  :width rect-width
-                  :height rect-height
-                  :rx corner-radius
-                  :ry corner-radius
-                  :style {:fill guide-color}}]
-
-          (if editing?
-            [:foreignObject {:x (- text-x (/ input-w 2))
-                             :y (- text-y (/ input-h 2))
-                             :width input-w
-                             :height input-h
-                             :transform (when (= axis :y)
-                                          (str "rotate(-90 " text-x "," text-y ")"))}
-             [:input {:ref input-ref
-                      :type "number"
-                      :step "any"
-                      :default-value display-value
-                      :auto-focus true
-                      :on-key-down on-key-down
-                      :on-blur on-blur
-                      :on-pointer-down dom/stop-propagation
-                      :style {:width "100%"
-                              :height "100%"
-                              :border "none"
-                              :outline "none"
-                              :padding 0
-                              :margin 0
-                              :background "transparent"
-                              :color colors/white
-                              :font-family rulers/font-family
-                              :font-size (str (/ rulers/font-size zoom) "px")
-                              :text-align "center"
-                              :-moz-appearance "textfield"}}]]
-            [:text {:x text-x
-                    :y text-y
-                    :text-anchor "middle"
-                    :dominant-baseline "middle"
-                    :transform (when (= axis :y)
-                                 (str "rotate(-90 " text-x "," text-y ")"))
-                    :style {:font-size (/ rulers/font-size zoom)
-                            :font-family rulers/font-family
-                            :fill colors/white
-                            :pointer-events "none"}}
-             display-value])]))]))
+       [:> guide-pill* {:pos position
+                        :vbox vbox
+                        :zoom zoom
+                        :axis axis
+                        :color guide-color
+                        :frame-offset frame-offset
+                        :editing editing?
+                        :input-ref input-ref
+                        :on-input-key-down on-key-down
+                        :on-input-blur on-blur}])]))
 
 (defn use-wasm-guide-interaction
   "Owns both drag and inline-edit lifecycles for WASM-rendered guides.
