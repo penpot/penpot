@@ -54,16 +54,16 @@
    ;; The content can arrive in markdown format, in these cases
    ;;  we will use the prop is-html to true to indicate it and
    ;; that the html injection is performed and the necessary css classes are applied.
-   [:div {:class (stl/css :context-text)
-          :dangerouslySetInnerHTML (when is-html #js {:__html content})}
-    (when-not is-html
-      [:*
-       content
-       (when (some? links)
-         (for [[index link] (d/enumerate links)]
-           ;; TODO Review this component
-           [:& lb/link-button {:class (stl/css :link)
-                               :on-click (:callback link)
-                               :value (:label link)
-                               :key (dm/str "link-" index)}]))])]])
+   (if is-html
+     [:div {:class (stl/css :context-text)
+            :dangerouslySetInnerHTML #js {:__html content}}]
+     [:div {:class (stl/css :context-text)}
+      content
+      (when (some? links)
+        (for [[index link] (d/enumerate links)]
+          ;; TODO Review this component
+          [:& lb/link-button {:class (stl/css :link)
+                              :on-click (:callback link)
+                              :value (:label link)
+                              :key (dm/str "link-" index)}]))])])
 
