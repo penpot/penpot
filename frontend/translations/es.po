@@ -19,6 +19,9 @@ msgstr "¿Tienes ya una cuenta?"
 msgid "auth.check-mail"
 msgstr "Comprueba tu correo"
 
+msgid "auth.check-email"
+msgstr "¡Comprueba tu correo!"
+
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
@@ -197,6 +200,9 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-email-sent"
 msgstr "Hemos enviado un email de verificación a"
+
+msgid "auth.verification-sent-email"
+msgstr "Hemos enviado un email de verificación a:"
 
 #: src/app/main/ui/auth/login.cljs:178, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:168
 msgid "auth.work-email"
