@@ -370,6 +370,63 @@
                        :pointer-events "none"}}
         display-value])]))
 
+(mf/defc guide-line*
+  "Presentational guide line. With a `frame`, draws the solid in-frame segment
+  and, on `hover?`, the dotted out-of-frame extensions; without a frame, a
+  single solid line. `show-main?` (default true) lets callers suppress the solid
+  segment when the render engine already draws it — e.g. the WASM hover overlay,
+  which only needs the dotted extensions on top of the WASM-rendered line."
+  {::mf/wrap [mf/memo]}
+  [{:keys [pos vbox zoom axis color frame hover? show-main?]
+    :or {show-main? true}}]
+  (let [width        (/ guide-width zoom)
+        main-opacity (if hover? guide-opacity-hover guide-opacity)
+        dash         (str "0, " (/ 6 zoom))]
+    (if (some? frame)
+      (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
+                    l2-x1 l2-y1 l2-x2 l2-y2
+                    l3-x1 l3-y1 l3-x2 l3-y2]}
+            (guide-line-axis pos vbox frame axis)]
+        [:g
+         (when hover?
+           [:line {:x1 l1-x1
+                   :y1 l1-y1
+                   :x2 l1-x2
+                   :y2 l1-y2
+                   :style {:stroke color
+                           :stroke-opacity guide-opacity-hover
+                           :stroke-dasharray dash
+                           :stroke-linecap "round"
+                           :stroke-width width}}])
+         (when show-main?
+           [:line {:x1 l2-x1
+                   :y1 l2-y1
+                   :x2 l2-x2
+                   :y2 l2-y2
+                   :style {:stroke color
+                           :stroke-width width
+                           :stroke-opacity main-opacity}}])
+         (when hover?
+           [:line {:x1 l3-x1
+                   :y1 l3-y1
+                   :x2 l3-x2
+                   :y2 l3-y2
+                   :style {:stroke color
+                           :stroke-opacity guide-opacity-hover
+                           :stroke-width width
+                           :stroke-dasharray dash
+                           :stroke-linecap "round"}}])])
+
+      (when show-main?
+        (let [{:keys [x1 y1 x2 y2]} (guide-line-axis pos vbox axis)]
+          [:line {:x1 x1
+                  :y1 y1
+                  :x2 x2
+                  :y2 y2
+                  :style {:stroke color
+                          :stroke-width width
+                          :stroke-opacity main-opacity}}])))))
+
 (mf/defc guide*
   {::mf/wrap [mf/memo]}
   [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom
@@ -427,9 +484,6 @@
 
         pos
         (+ (or (:new-position @state) (:position guide)) (get move-vec axis))
-
-        guide-width
-        (/ guide-width zoom)
 
         frame-guide-outside?
         (and (some? frame)
@@ -511,52 +565,13 @@
                    :on-context-menu on-context-menu
                    :on-double-click on-double-click}]))
 
-       (if (some? frame)
-         (let [{:keys [l1-x1 l1-y1 l1-x2 l1-y2
-                       l2-x1 l2-y1 l2-x2 l2-y2
-                       l3-x1 l3-y1 l3-x2 l3-y2]}
-               (guide-line-axis pos vbox frame axis)]
-           [:g
-            (when (or is-hover (:hover @state))
-              [:line {:x1 l1-x1
-                      :y1 l1-y1
-                      :x2 l1-x2
-                      :y2 l1-y2
-                      :style {:stroke guide-color
-                              :stroke-opacity guide-opacity-hover
-                              :stroke-dasharray (str "0, " (/ 6 zoom))
-                              :stroke-linecap "round"
-                              :stroke-width guide-width}}])
-            [:line {:x1 l2-x1
-                    :y1 l2-y1
-                    :x2 l2-x2
-                    :y2 l2-y2
-                    :style {:stroke guide-color
-                            :stroke-width guide-width
-                            :stroke-opacity (if (or is-hover (:hover @state))
-                                              guide-opacity-hover
-                                              guide-opacity)}}]
-            (when (or is-hover (:hover @state))
-              [:line {:x1 l3-x1
-                      :y1 l3-y1
-                      :x2 l3-x2
-                      :y2 l3-y2
-                      :style {:stroke guide-color
-                              :stroke-opacity guide-opacity-hover
-                              :stroke-width guide-width
-                              :stroke-dasharray (str "0, " (/ 6 zoom))
-                              :stroke-linecap "round"}}])])
-
-         (let [{:keys [x1 y1 x2 y2]} (guide-line-axis pos vbox axis)]
-           [:line {:x1 x1
-                   :y1 y1
-                   :x2 x2
-                   :y2 y2
-                   :style {:stroke guide-color
-                           :stroke-width guide-width
-                           :stroke-opacity (if (or is-hover (:hover @state))
-                                             guide-opacity-hover
-                                             guide-opacity)}}]))
+       [:> guide-line* {:pos pos
+                        :vbox vbox
+                        :zoom zoom
+                        :axis axis
+                        :color guide-color
+                        :frame frame
+                        :hover? (or is-hover (:hover @state))}]
 
        ;; If the guide is associated to a frame we show the position relative
        ;; to the frame (handled via `frame-offset` inside `guide-pill*`).
@@ -635,18 +650,18 @@
 
 (mf/defc guide-overlay*
   "Temporary SVG rendering of a guide that's being interacted with (drag, hover
-  or inline edit). In :hover mode the line is omitted (WASM still draws it) and
-  only the position pill is shown. In :edit mode the pill is an editable input."
-  [{:keys [guide position vbox zoom mode frame-offset
+  or inline edit). In :hover mode the WASM engine still draws the (in-frame)
+  line, so we only overlay the position pill plus, for frame-anchored guides,
+  the dotted out-of-frame extensions. Drag and edit hide the WASM line and draw
+  the full SVG line. In :edit mode the pill is an editable input."
+  [{:keys [guide position vbox zoom mode frame frame-offset
            on-input-commit on-input-cancel]}]
   (let [axis         (:axis guide)
         guide-color  (or (:color guide) default-guide-color)
-        stroke-width (/ guide-width zoom)
-        {:keys [x1 y1 x2 y2]} (guide-line-axis position vbox axis)
         input-ref    (mf/use-ref nil)
         ;; In :hover mode the WASM engine still renders the guide line, so we
-        ;; only overlay the pill. Drag and edit hide the WASM line and require
-        ;; the SVG line.
+        ;; only overlay the dotted extensions. Drag and edit hide the WASM line
+        ;; and require the full SVG line.
         show-line?   (not= mode :hover)
         show-pill?   (or (= mode :edit) (= mode :hover))
         editing?     (= mode :edit)
@@ -677,14 +692,26 @@
         (some-> (mf/ref-val input-ref) dom/select-text!)))
 
     [:g.guide-overlay
+     ;; Drag/edit: WASM hides its line, so draw the full SVG guide line.
      (when show-line?
-       [:line {:x1 x1
-               :y1 y1
-               :x2 x2
-               :y2 y2
-               :style {:stroke guide-color
-                       :stroke-width stroke-width
-                       :stroke-opacity guide-opacity-hover}}])
+       [:> guide-line* {:pos position
+                        :vbox vbox
+                        :zoom zoom
+                        :axis axis
+                        :color guide-color
+                        :hover? true}])
+
+     ;; Hover: WASM still draws the in-frame segment; only add the dotted
+     ;; out-of-frame extensions for frame-anchored guides.
+     (when (and (= mode :hover) (some? frame))
+       [:> guide-line* {:pos position
+                        :vbox vbox
+                        :zoom zoom
+                        :axis axis
+                        :color guide-color
+                        :frame frame
+                        :hover? true
+                        :show-main? false}])
 
      (when show-pill?
        [:> guide-pill* {:pos position
@@ -861,10 +888,18 @@
               (cond
                 (and (some? guide)
                      (not= (:id guide) current-hover-id))
-                (reset! state {:guide guide
-                               :new-position (:position guide)
-                               :frame-offset (guide-frame-offset guide)
-                               :mode :hover})
+                (let [frame (some-> (:frame-id guide) refs/object-by-id deref)]
+                  (reset! state {:guide guide
+                                 :new-position (:position guide)
+                                 :frame-offset (guide-frame-offset guide)
+                                 ;; Only root, non-rotated frames get the
+                                 ;; segmented line (matching the SVG renderer),
+                                 ;; so we only overlay dotted extensions there.
+                                 :frame (when (and frame
+                                                   (cfh/root-frame? frame)
+                                                   (not (ctst/rotated-frame? frame)))
+                                          frame)
+                                 :mode :hover}))
 
                 (and (nil? guide) (some? current-hover-id))
                 (reset! state nil)))))
@@ -981,7 +1016,7 @@
                                      :get-hover-frame get-hover-frame
                                      :focus focus})
 
-        {:keys [guide new-position mode frame-offset]} @state]
+        {:keys [guide new-position mode frame frame-offset]} @state]
 
     (when (some? guide)
       [:> guide-overlay* {:guide guide
@@ -989,6 +1024,7 @@
                           :vbox vbox
                           :zoom zoom
                           :mode mode
+                          :frame frame
                           :frame-offset (or frame-offset 0)
                           :on-input-commit commit-edit
                           :on-input-cancel cancel-edit}])))
