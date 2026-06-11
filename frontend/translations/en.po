@@ -4754,7 +4754,7 @@ msgstr "Invite members"
 #: src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Remember to include everyone. Developers, designers, managers... diversity "
+"Remember to include everyone. Developers, designers, managers... Diversity "
 "adds up :)"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
