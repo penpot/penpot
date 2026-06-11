@@ -509,7 +509,8 @@
               (if (nil? value)
                 (st/emit! (dwsh/update-shapes [id] #(dissoc % :blur)))
                 (let [id (obj/get self "$id")
-                      value (blur-defaults (parser/parse-blur value))]
+                      value (blur-defaults (parser/parse-blur value))
+                      value (assoc value :type :layer-blur)]
                   (cond
                     (not (sm/validate ctsb/schema:blur value))
                     (u/not-valid plugin-id :blur value)
@@ -528,7 +529,8 @@
               (if (nil? value)
                 (st/emit! (dwsh/update-shapes [id] #(dissoc % :background-blur)))
                 (let [id (obj/get self "$id")
-                      value (background-blur-defaults (parser/parse-blur value))]
+                      value (background-blur-defaults (parser/parse-blur value))
+                      value (assoc value :type :background-blur)]
                   (cond
                     (not (sm/validate ctsbb/schema:background-blur value))
                     (u/not-valid plugin-id :background-blur value)

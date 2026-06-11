@@ -209,7 +209,7 @@
          (and (identical? o-blur-values n-blur-values)
               (identical? o-background-blur-values n-background-blur-values)))))
 
-(mf/defc blur-menu* 
+(mf/defc blur-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values]}]
   (let [render-wasm?        (features/use-feature "render-wasm/v1")

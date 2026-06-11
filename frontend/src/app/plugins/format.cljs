@@ -232,16 +232,14 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur' | 'background-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }
 (defn format-blur
-  [{:keys [id type value hidden] :as blur}]
+  [{:keys [id value hidden] :as blur}]
   (when (some? blur)
     (obj/without-empty
      #js {:id (format-id id)
-          :type (format-key type)
           :value value
           :hidden hidden})))
 
