@@ -848,6 +848,9 @@ a[href].post-tag:visited {
 .illus-techguide {
   background-image: url(/img/home-technical-guide.webp);
 }
+.illus-mcp {
+  background-image: url(/img/home-mcp-server.webp);
+}
 .illus-plugins {
   background-image: url(/img/home-plugins.webp);
 }
