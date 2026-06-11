@@ -4592,23 +4592,23 @@ CommonLayout:
 
     ```
     interface CommonLayout {
-        alignItems?: "center" | "start" | "end" | "stretch";
+        alignItems?: "end" | "start" | "center" | "stretch";
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
             | "space-evenly";
-        justifyItems?: "center"
+        justifyItems?: "end"
         | "start"
-        | "end"
+        | "center"
         | "stretch";
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -4638,7 +4638,7 @@ CommonLayout:
     Properties:
       alignItems: |-
         ```
-        alignItems?: "center" | "start" | "end" | "stretch"
+        alignItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `alignItems` property specifies the default alignment for items inside the container.
@@ -4651,9 +4651,9 @@ CommonLayout:
       alignContent: |-
         ```
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -4672,7 +4672,7 @@ CommonLayout:
         * 'stretch': Content is stretched to fill the container.
       justifyItems: |-
         ```
-        justifyItems?: "center" | "start" | "end" | "stretch"
+        justifyItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `justifyItems` property specifies the default justification for items inside the container.
@@ -4685,9 +4685,9 @@ CommonLayout:
       justifyContent: |-
         ```
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7298,23 +7298,23 @@ FlexLayout:
 
     ```
     interface FlexLayout {
-        alignItems?: "center" | "start" | "end" | "stretch";
+        alignItems?: "end" | "start" | "center" | "stretch";
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
             | "space-evenly";
-        justifyItems?: "center"
+        justifyItems?: "end"
         | "start"
-        | "end"
+        | "center"
         | "stretch";
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7348,7 +7348,7 @@ FlexLayout:
     Properties:
       alignItems: |-
         ```
-        alignItems?: "center" | "start" | "end" | "stretch"
+        alignItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `alignItems` property specifies the default alignment for items inside the container.
@@ -7361,9 +7361,9 @@ FlexLayout:
       alignContent: |-
         ```
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7382,7 +7382,7 @@ FlexLayout:
         * 'stretch': Content is stretched to fill the container.
       justifyItems: |-
         ```
-        justifyItems?: "center" | "start" | "end" | "stretch"
+        justifyItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `justifyItems` property specifies the default justification for items inside the container.
@@ -7395,9 +7395,9 @@ FlexLayout:
       justifyContent: |-
         ```
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7856,23 +7856,23 @@ GridLayout:
 
     ```
     interface GridLayout {
-        alignItems?: "center" | "start" | "end" | "stretch";
+        alignItems?: "end" | "start" | "center" | "stretch";
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
             | "space-evenly";
-        justifyItems?: "center"
+        justifyItems?: "end"
         | "start"
-        | "end"
+        | "center"
         | "stretch";
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7915,7 +7915,7 @@ GridLayout:
     Properties:
       alignItems: |-
         ```
-        alignItems?: "center" | "start" | "end" | "stretch"
+        alignItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `alignItems` property specifies the default alignment for items inside the container.
@@ -7928,9 +7928,9 @@ GridLayout:
       alignContent: |-
         ```
         alignContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -7949,7 +7949,7 @@ GridLayout:
         * 'stretch': Content is stretched to fill the container.
       justifyItems: |-
         ```
-        justifyItems?: "center" | "start" | "end" | "stretch"
+        justifyItems?: "end" | "start" | "center" | "stretch"
         ```
 
         The `justifyItems` property specifies the default justification for items inside the container.
@@ -7962,9 +7962,9 @@ GridLayout:
       justifyContent: |-
         ```
         justifyContent?:
-            | "center"
-            | "start"
             | "end"
+            | "start"
+            | "center"
             | "stretch"
             | "space-between"
             | "space-around"
@@ -10592,7 +10592,7 @@ LayoutChildProperties:
         zIndex: number;
         horizontalSizing: "fill" | "auto" | "fix";
         verticalSizing: "fill" | "auto" | "fix";
-        alignSelf: "center" | "auto" | "start" | "end" | "stretch";
+        alignSelf: "end" | "start" | "center" | "auto" | "stretch";
         horizontalMargin: number;
         verticalMargin: number;
         topMargin: number;
@@ -10645,7 +10645,7 @@ LayoutChildProperties:
         * 'fix': The height is fixed.
       alignSelf: |-
         ```
-        alignSelf: "center" | "auto" | "start" | "end" | "stretch"
+        alignSelf: "end" | "start" | "center" | "auto" | "stretch"
         ```
 
         Aligns the child element within its container.
