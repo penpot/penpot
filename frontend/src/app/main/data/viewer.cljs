@@ -583,6 +583,13 @@
     (update [_ state]
       (d/dissoc-in state [:viewer-local :nav-scroll]))))
 
+(defn update-exports-cache
+  [shapes-key exports]
+  (ptk/reify ::update-exports-cache
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:inspect-exports-cache shapes-key] exports))))
+
 (defn complete-animation
   []
   (ptk/reify ::complete-animation
