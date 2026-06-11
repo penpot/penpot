@@ -29,6 +29,9 @@ impl From<u32> for RawGuideKind {
 ///
 /// The layout uses only 32-bit fields so it can be written from ClojureScript
 /// straight into the `HEAPU32`/`HEAPF32` views without padding surprises.
+///
+/// `frame_start` / `frame_end` carry the board clip range (along the guide's
+/// line direction). When the guide is not bound to a board they are `NaN`.
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -36,6 +39,8 @@ pub struct RawGuide {
     kind: u32,
     color: u32,
     position: f32,
+    frame_start: f32,
+    frame_end: f32,
 }
 
 impl From<RawGuide> for Guide {
@@ -44,7 +49,12 @@ impl From<RawGuide> for Guide {
             RawGuideKind::Vertical => GuideKind::Vertical(value.position),
             RawGuideKind::Horizontal => GuideKind::Horizontal(value.position),
         };
-        Guide::new(kind, value.color.into(), None)
+        let frame_range = if value.frame_start.is_nan() || value.frame_end.is_nan() {
+            None
+        } else {
+            Some((value.frame_start, value.frame_end))
+        };
+        Guide::new(kind, value.color.into(), None, frame_range)
     }
 }
 

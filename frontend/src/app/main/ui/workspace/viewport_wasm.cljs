@@ -551,11 +551,11 @@
     ;; Ruler guides: push the page guides to the render engine whenever they
     ;; change or their visibility toggles. When hidden we send an empty set.
     ;; While dragging, exclude the active guide so the SVG preview is the only line.
-    (mf/with-effect [@canvas-init? guides show-rulers? show-grids? @dragging-guide-id*]
+    (mf/with-effect [@canvas-init? guides objects show-rulers? show-grids? @dragging-guide-id*]
       (when @canvas-init?
         (let [guides (if (and show-rulers? show-grids?) (or guides {}) {})
               guides (if-let [id @dragging-guide-id*] (dissoc guides id) guides)]
-          (wasm.api/set-guides guides))))
+          (wasm.api/set-guides guides objects))))
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)

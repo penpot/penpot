@@ -29,14 +29,25 @@ pub struct Guide {
     pub color: Color,
     /// Index of the guide in the guide list (clojure side)
     pub index: usize,
+    /// When the guide belongs to a board, the `[start, end]` range (along the
+    /// guide's line direction) of that board. The guide is drawn solid only
+    /// within this range and trimmed outside it. `None` for free guides, which
+    /// span the whole viewport.
+    pub frame_range: Option<(f32, f32)>,
 }
 
 impl Guide {
-    pub fn new(kind: GuideKind, color: Color, index: Option<usize>) -> Self {
+    pub fn new(
+        kind: GuideKind,
+        color: Color,
+        index: Option<usize>,
+        frame_range: Option<(f32, f32)>,
+    ) -> Self {
         Self {
             kind,
             color,
             index: index.unwrap_or_default(),
+            frame_range,
         }
     }
 

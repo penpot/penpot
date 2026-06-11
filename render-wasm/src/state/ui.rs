@@ -109,11 +109,21 @@ mod tests {
     use crate::shapes::Color;
 
     fn vertical_guide(position: f32, index: usize) -> Guide {
-        Guide::new(GuideKind::Vertical(position), Color::BLACK, Some(index))
+        Guide::new(
+            GuideKind::Vertical(position),
+            Color::BLACK,
+            Some(index),
+            None,
+        )
     }
 
     fn horizontal_guide(position: f32, index: usize) -> Guide {
-        Guide::new(GuideKind::Horizontal(position), Color::BLACK, Some(index))
+        Guide::new(
+            GuideKind::Horizontal(position),
+            Color::BLACK,
+            Some(index),
+            None,
+        )
     }
 
     fn pool_with(guides: Vec<Guide>) -> GuidePool {

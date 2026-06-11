@@ -8,7 +8,9 @@
    (:require
     [app.common.data :as d]
     [app.common.data.macros :as dm]
+    [app.common.files.helpers :as cfh]
     [app.common.types.color :as clr]
+    [app.common.types.shape-tree :as ctst]
     [app.common.uuid :as uuid]
     [app.render-wasm.serializers.color :as sr-clr]
     [app.render-wasm.wasm :as wasm]
@@ -286,9 +288,11 @@
 
 ;; --- Guides
 
-;; Each guide is serialized as 3 x 32-bit words:
-;;   kind (u32) | color (u32 argb) | position (f32)
-(def ^:private guide-entry-size 12)
+;; Each guide is serialized as 5 x 32-bit words:
+;;   kind (u32) | color (u32 argb) | position (f32) | frame-start (f32) | frame-end (f32)
+;; `frame-start`/`frame-end` hold the board clip range (along the guide's line
+;; direction); they are NaN when the guide is not bound to a board.
+(def ^:private guide-entry-size 20)
 
 ;; Default guide color used when a guide has no explicit color (matches the
 ;; previous SVG overlay `default-guide-color`).
@@ -311,19 +315,37 @@
   [guides]
   (+ 4 (* (count (or guides {})) guide-entry-size)))
 
+(defn- guide-frame-range
+  "Returns the `[start end]` range of the board a guide belongs to, along the
+  guide's line direction (the board's y-range for vertical `:x` guides, its
+  x-range for horizontal `:y` guides). Returns nil for free guides and for
+  guides whose board is not a non-rotated root frame, matching the SVG
+  renderer's clip behavior."
+  [guide objects]
+  (when-let [frame (some->> (get guide :frame-id) (get objects))]
+    (when (and (cfh/root-frame? frame)
+               (not (ctst/rotated-frame? frame)))
+      (if (= :x (get guide :axis))
+        [(:y frame) (+ (:y frame) (:height frame))]
+        [(:x frame) (+ (:x frame) (:width frame))]))))
+
 (defn write-guides
   "Writes `guides` (a map id -> guide) into the heap views starting at the
   32-bit `offset`. Layout: count header (u32) followed by
-  `kind | color | position` per guide."
-  [guides heapu32 heapf32 offset]
+  `kind | color | position | frame-start | frame-end` per guide. The frame
+  range is resolved from `objects` and written as NaN for free guides."
+  [guides objects heapu32 heapf32 offset]
   (let [guides (vec (vals (or guides {})))
         total  (count guides)]
     (aset heapu32 offset total)
     (loop [i 0]
       (when (< i total)
         (let [guide (nth guides i)
-              base  (+ offset 1 (* i 3))]
+              base  (+ offset 1 (* i 5))
+              [frame-start frame-end] (guide-frame-range guide objects)]
           (aset heapu32 base (translate-guide-axis (get guide :axis)))
           (aset heapu32 (+ base 1) (sr-clr/hex->u32argb (or (get guide :color) default-guide-color) 1))
-          (aset heapf32 (+ base 2) (get guide :position)))
+          (aset heapf32 (+ base 2) (get guide :position))
+          (aset heapf32 (+ base 3) (or frame-start js/NaN))
+          (aset heapf32 (+ base 4) (or frame-end js/NaN)))
         (recur (inc i))))))
