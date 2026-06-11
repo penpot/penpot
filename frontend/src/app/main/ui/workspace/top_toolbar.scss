@@ -37,7 +37,7 @@
 }
 
 .main-toolbar-hidden {
-  --toolbar-offset-y: -#{deprecated.$s-4};
+  --toolbar-offset-y: calc(-1 * #{deprecated.$s-4});
 
   height: deprecated.$s-16;
   z-index: deprecated.$z-index-1;
