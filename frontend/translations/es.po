@@ -9324,6 +9324,10 @@ msgstr "Recursos"
 msgid "workspace.toolbar.color-palette"
 msgstr "Paleta de colores (%s)"
 
+#: src/app/main/ui/workspace/palette.cljs
+msgid "workspace.toolbar.palette-bar"
+msgstr "Barra de paletas"
+
 #: src/app/main/ui/workspace/right_header.cljs:214, src/app/main/ui/workspace/right_header.cljs:215
 msgid "workspace.toolbar.comments"
 msgstr "Comentarios (%s)"

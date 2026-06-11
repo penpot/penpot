@@ -9651,6 +9651,10 @@ msgstr "Assets"
 msgid "workspace.toolbar.color-palette"
 msgstr "Color Palette (%s)"
 
+#: src/app/main/ui/workspace/palette.cljs
+msgid "workspace.toolbar.palette-bar"
+msgstr "Palette bar"
+
 #: src/app/main/ui/workspace/right_header.cljs:214, src/app/main/ui/workspace/right_header.cljs:215
 msgid "workspace.toolbar.comments"
 msgstr "Comments (%s)"

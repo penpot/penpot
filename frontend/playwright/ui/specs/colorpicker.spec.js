@@ -318,4 +318,18 @@ test("Color picker color list", async ({ page }) => {
   await expect(
     colorpicker.getByRole("listitem", { name: "First color" }),
   ).toBeVisible();
+
+  //test show and hide color palette
+  const paletteToggle = workspacePage.page.getByRole('button', { name: 'Show/Hide color palette' });
+  await paletteToggle.click();
+  const paletteBar = workspacePage.page.getByRole('region', { name: 'Palette bar' });
+  await expect(paletteBar).toBeVisible();
+
+  // Check that color palette is open by checking the presence of a color swatch in the palette
+  const paletteSwatch = paletteBar.getByRole('button', { name: 'first color' });
+  await expect(paletteSwatch).toBeVisible();
+
+  // Close the color palette
+  await paletteToggle.click();
+  await expect(paletteSwatch).not.toBeVisible();
 });
