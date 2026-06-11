@@ -721,20 +721,68 @@
              :value (get values :layout-item-max-h)
              :nillable true}]])])]))
 
-(mf/defc layout-item-menu
-  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent? :is-grid-layout? :is-flex-layout? :applied-tokens}
-   ::mf/props :obj}
+(defn- check-layout-item-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")
+
+        old-applied-tokens (unchecked-get old-props "appliedTokens")
+        new-applied-tokens (unchecked-get new-props "appliedTokens")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? (unchecked-get old-props "isLayoutChild")
+                     (unchecked-get new-props "isLayoutChild"))
+         (identical? (unchecked-get old-props "isLayoutContainer")
+                     (unchecked-get new-props "isLayoutContainer"))
+         (identical? (unchecked-get old-props "isGridParent")
+                     (unchecked-get new-props "isGridParent"))
+         (identical? (unchecked-get old-props "isFlexParent")
+                     (unchecked-get new-props "isFlexParent"))
+         (identical? (unchecked-get old-props "isGridLayout")
+                     (unchecked-get new-props "isGridLayout"))
+         (identical? (unchecked-get old-props "isFlexLayout")
+                     (unchecked-get new-props "isFlexLayout"))
+         (identical? old-applied-tokens
+                     new-applied-tokens)
+         (identical? (get old-values :layout-item-margin)
+                     (get new-values :layout-item-margin))
+         (identical? (get old-values :layout-item-margin-type)
+                     (get new-values :layout-item-margin-type))
+         (identical? (get old-values :layout-item-h-sizing)
+                     (get new-values :layout-item-h-sizing))
+         (identical? (get old-values :layout-item-v-sizing)
+                     (get new-values :layout-item-v-sizing))
+         (identical? (get old-values :layout-item-max-h)
+                     (get new-values :layout-item-max-h))
+         (identical? (get old-values :layout-item-min-h)
+                     (get new-values :layout-item-min-h))
+         (identical? (get old-values :layout-item-max-w)
+                     (get new-values :layout-item-max-w))
+         (identical? (get old-values :layout-item-min-w)
+                     (get new-values :layout-item-min-w))
+         (identical? (get old-values :layout-item-align-self)
+                     (get new-values :layout-item-align-self))
+         (identical? (get old-values :layout-item-absolute)
+                     (get new-values :layout-item-absolute))
+         (identical? (get old-values :layout-item-z-index)
+                     (get new-values :layout-item-z-index)))))
+
+(mf/defc layout-item-menu*
+  {::mf/wrap [#(mf/memo' % check-layout-item-menu-props)]}
   [{:keys [ids values
-           ^boolean is-layout-child?
-           ^boolean is-layout-container?
-           ^boolean is-grid-parent?
-           ^boolean is-flex-parent?
-           ^boolean is-flex-layout?
-           ^boolean is-grid-layout?
+           ^boolean is-layout-child
+           ^boolean is-layout-container
+           ^boolean is-grid-parent
+           ^boolean is-flex-parent
+           ^boolean is-flex-layout
+           ^boolean is-grid-layout
            applied-tokens]}]
 
   (let [selection-parents* (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents  (mf/deref selection-parents*)
+        _ (prn "values" values)
 
         ^boolean
         is-absolute?       (:layout-item-absolute values)
@@ -743,16 +791,16 @@
         is-col?            (every? ctl/col? selection-parents)
 
         ^boolean
-        is-layout-child?   (and is-layout-child? (not is-absolute?))
+        is-layout-child?   (and is-layout-child (not is-absolute?))
 
         state*             (mf/use-state true)
         open?              (deref state*)
 
         toggle-content     (mf/use-fn #(swap! state* not))
         has-content?       (or is-layout-child?
-                               is-flex-parent?
-                               is-grid-parent?
-                               is-layout-container?)
+                               is-flex-parent
+                               is-grid-parent
+                               is-layout-container)
 
         ;; Align self
         align-self         (:layout-item-align-self values)
@@ -761,24 +809,24 @@
 
         title
         (cond
-          (and is-layout-container?
-               is-flex-layout?
+          (and is-layout-container
+               is-flex-layout
                (not is-layout-child?))
           "Flex board"
 
-          (and is-layout-container?
-               is-grid-layout?
+          (and is-layout-container
+               is-grid-layout
                (not is-layout-child?))
           "Grid board"
 
-          (and is-layout-container?
+          (and is-layout-container
                (not is-layout-child?))
           "Layout board"
 
-          is-flex-parent?
+          is-flex-parent
           "Flex element"
 
-          is-grid-parent?
+          is-grid-parent
           "Grid element"
 
           :else
@@ -882,19 +930,19 @@
          [:div {:class (stl/css-case
                         :behaviour-menu true
                         :wrap (and ^boolean is-layout-child?
-                                   ^boolean is-layout-container?))}
+                                   ^boolean is-layout-container))}
           [:& element-behaviour-horizontal
-           {:is-auto is-layout-container?
+           {:is-auto is-layout-container
             :has-fill is-layout-child?
             :value (:layout-item-h-sizing values)
             :on-change on-behaviour-h-change}]
           [:& element-behaviour-vertical
-           {:is-auto is-layout-container?
+           {:is-auto is-layout-container
             :has-fill is-layout-child?
             :value (:layout-item-v-sizing values)
             :on-change on-behaviour-v-change}]]]
 
-        (when (and is-layout-child? is-flex-parent?)
+        (when (and is-layout-child? is-flex-parent)
           [:div {:class (stl/css :align-row)}
            [:& align-self-row {:is-col is-col?
                                :value align-self
