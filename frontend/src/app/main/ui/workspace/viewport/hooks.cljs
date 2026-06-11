@@ -321,8 +321,16 @@
                    (filter #(or (root-frame-with-data? %)
                                 (and (cfh/group-shape? objects %)
                                      (not (contains? child-parent? %)))
+                                ;; WASM only: drop text from @hover unless the
+                                ;; cursor is over rendered glyphs, so clicks
+                                ;; pass through empty areas of the text box.
+                                ;; Skip this for shapes already in `selected`:
+                                ;; @hover drives on-click, and the first click
+                                ;; of a double-click would otherwise reselect
+                                ;; a parent/container after the pointer moves.
                                 (and (features/active-feature? @st/state "render-wasm/v1")
                                      (cfh/text-shape? (get objects %))
+                                     (not (contains? selected %))
                                      (not (wasm.api/intersect-position-in-shape % @last-point-ref)))))))
 
                remove-measure-xf
