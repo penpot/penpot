@@ -30,24 +30,18 @@
 
 ;; --- Text Editor Rendering
 
-(mf/defc block-component
-  {::mf/wrap-props false}
-  [props]
-  (let [bprops (obj/get props "blockProps")
-        data   (obj/get bprops "data")
-        style  (sts/generate-paragraph-styles (obj/get bprops "shape")
-                                              (obj/get bprops "data"))
-        dir    (:text-direction data "auto")]
-
-
+(mf/defc block-component*
+  {::mf/props :obj}
+  [{:keys [blockProps] :as props}]
+  (let [data  (.-data blockProps)
+        style (sts/generate-paragraph-styles (.-shape blockProps) data)
+        dir   (:text-direction data "auto")]
     [:div {:style style :dir dir}
      [:> draft/EditorBlock props]]))
 
-(mf/defc selection-component
-  {::mf/wrap-props false}
-  [props]
-  (let [children (obj/get props "children")]
-    [:span {:style {:background "#ccc" :display "inline-block"}} children]))
+(mf/defc selection-component*
+  [{:keys [children]}]
+  [:span {:style {:background "#ccc" :display "inline-block"}} children])
 
 (defn- render-block
   [block shape]
@@ -55,7 +49,7 @@
     (case type
       "unstyled"
       #js {:editable true
-           :component block-component
+           :component block-component*
            :props #js {:data (ted/get-editor-block-data block)
                        :shape shape}}
       nil)))
@@ -69,7 +63,7 @@
     (sts/generate-text-styles shape data {:show-text? false})))
 
 (def default-decorator
-  (ted/create-decorator "PENPOT_SELECTION" selection-component))
+  (ted/create-decorator "PENPOT_SELECTION" selection-component*))
 
 (def empty-editor-state
   (ted/create-editor-state nil default-decorator))
@@ -95,12 +89,11 @@
     "bottom" "flex-end"
     nil))
 
-(mf/defc text-shape-edit-html
+(mf/defc text-shape-edit-html*
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false
    ::mf/forward-ref true}
-  [props _]
-  (let [{:keys [id content] :as shape} (obj/get props "shape")
+  [{:keys [shape]} _]
+  (let [{:keys [id content]} shape
 
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
@@ -269,8 +262,7 @@
       (-> (gpt/subtract pt box)
           (gpt/multiply zoom)))))
 
-(mf/defc text-editor-svg
-  {::mf/wrap-props false}
+(mf/defc text-editor-svg*
   [{:keys [shape modifiers]}]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
@@ -343,6 +335,6 @@
 
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:style style}
-       [:& text-shape-edit-html
+       [:> text-shape-edit-html*
         {:shape shape
          :key (dm/str shape-id)}]]]]))
