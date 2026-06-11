@@ -49,7 +49,14 @@
                                                             :hint "operation aborted")))
        (obj/set! image "src" uri)
        (fn []
-         (obj/set! image "src" "")
+         ;; NOTE: We intentionally do NOT set `image.src = ""` here.
+         ;; Doing so discards the decoded pixel data immediately when this
+         ;; observable completes, but downstream operators (e.g. drawImage /
+         ;; createImageBitmap in `render-image-bitmap`) still need to read
+         ;; the pixel data after the image is emitted. Clearing `src` before
+         ;; the downstream pipeline finishes causes a NotReadableError
+         ;; ("The requested file could not be read..."). The image element
+         ;; will be garbage collected naturally when no references remain.
          (obj/set! image "onload" nil)
          (obj/set! image "onerror" nil)
          (obj/set! image "onabort" nil))))))
@@ -57,10 +64,13 @@
 (defn- svg-get-adjusted-size
   "Returns the adjusted size of an SVG."
   [width height max]
-  (let [ratio (/ width height)]
-    (if (< width height)
-      [max (* max (/ 1 ratio))]
-      [(* max ratio) max])))
+  ;; Guard against zero/NaN dimensions that would cause division by zero
+  ;; or produce invalid sizes, leading to createImageBitmap failures.
+  (when (and (pos? width) (pos? height))
+    (let [ratio (/ width height)]
+      (if (< width height)
+        [max (* max (/ 1 ratio))]
+        [(* max ratio) max]))))
 
 (defn- svg-get-size-from-viewbox
   "Returns the size of an SVG from its viewbox."
@@ -101,7 +111,10 @@
   "Sets the intrinsic size of an SVG to the given max size."
   [^js svg max]
   (let [doc   (get-document-element svg)
-        [w h] (svg-get-size svg max)]
+        [w h] (or (svg-get-size svg max)
+                  ;; Fallback: if we can't determine size from viewBox or
+                  ;; intrinsic attributes, use the max size as a square.
+                  [max max])]
     (dom/set-attribute! doc "width" (dm/str w))
     (dom/set-attribute! doc "height" (dm/str h)))
   svg)
