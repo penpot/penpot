@@ -30,6 +30,7 @@
    [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
@@ -938,15 +939,29 @@
          (fn [event]
            (dom/stop-propagation event)
            (let [renderer (or (-> profile :props :renderer) :svg)
-                 next-renderer (if (= renderer :wasm) :svg :wasm)]
-             (st/emit! (ev/event {::ev/name (if (= next-renderer :wasm)
-                                              "enable-webgl-rendering"
-                                              "disable-webgl-rendering")
-                                  ::ev/origin "workspace:menu"})
-                       (du/update-profile-props {:renderer next-renderer})
-                       (ntf/success (tr (if (= next-renderer :wasm)
-                                          "webgl.toast.webgl-render-enabled"
-                                          "webgl.toast.webgl-render-disabled")))))))
+                 next-renderer (if (= renderer :wasm) :svg :wasm)
+                 ev-name (if (= next-renderer :wasm)
+                           "enable-webgl-rendering"
+                           "disable-webgl-rendering")]
+             (if (cf/external-feature-flag "renderer-hard-reload" "test")
+               ;; Bare RPC + hard reload: skips `du/update-profile-props`, so
+               ;; `features/recompute-features` is not run here; bootstrap
+               ;; after reload resolves render-wasm/v1 from the saved profile.
+               (do
+                 (st/emit! (ev/event {::ev/name ev-name
+                                      ::ev/origin "workspace:menu"}))
+                 (->> (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
+                      (rx/subs! (fn [_] (dom/reload-current-window true))
+                                (fn [_]
+                                  (st/emit! (ntf/error (tr "errors.generic")))))))
+               ;; `update-profile-props` WatchEvent calls
+               ;; `features/recompute-features`.
+               (st/emit! (ev/event {::ev/name ev-name
+                                    ::ev/origin "workspace:menu"})
+                         (du/update-profile-props {:renderer next-renderer})
+                         (ntf/success (tr (if (= next-renderer :wasm)
+                                            "webgl.toast.webgl-render-enabled"
+                                            "webgl.toast.webgl-render-disabled"))))))))
 
         open-plugins-manager
         (mf/use-fn
