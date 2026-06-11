@@ -99,11 +99,10 @@
          (-> state
              (update :thumbnails
                      (fn [thumbs]
-                       (if-let [uri (get thumbs object-id)]
-                         (do (vreset! pending uri)
+                       (if-let [entry (get thumbs object-id)]
+                         (do (vreset! pending (:uri entry))
                              (dissoc thumbs object-id))
-                         thumbs)))
-             (update :thumbnails-meta dissoc object-id)))
+                         thumbs)))))
 
        ptk/WatchEvent
        (watch [_ _ _]
@@ -126,13 +125,12 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:thumbnails object-id])
-              now      (.now js/Date)]
-          (some->> prev-uri (vreset! prev-uri*))
+        (let [prev-entry (dm/get-in state [:thumbnails object-id])
+              now        (.now js/Date)]
+          (some->> prev-entry :uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
           (-> state
-              (update :thumbnails assoc object-id uri)
-              (update :thumbnails-meta assoc object-id {:rendered-at now}))))
+              (update :thumbnails assoc object-id {:uri uri :rendered-at now}))))
 
       ptk/EffectEvent
       (effect [_ _ _]

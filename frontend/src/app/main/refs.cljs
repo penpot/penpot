@@ -584,14 +584,14 @@
   [object-id]
   (l/derived
    (fn [state]
-     (some-> (dm/get-in state [:thumbnails object-id])
+     (some-> (dm/get-in state [:thumbnails object-id :uri])
              (cf/resolve-media)))
    st/state))
 
 (defn workspace-thumbnail-rendered-at
   [object-id]
   (l/derived
-   #(dm/get-in % [:thumbnails-meta object-id :rendered-at])
+   #(dm/get-in % [:thumbnails object-id :rendered-at])
    st/state))
 
 (def workspace-text-modifier
