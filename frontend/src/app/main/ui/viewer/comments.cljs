@@ -27,9 +27,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(mf/defc comments-menu
-  {::mf/props :obj
-   ::mf/memo true}
+(mf/defc comments-menu*
+  {::mf/wrap [mf/memo]}
   []
   (let [state           (mf/deref refs/comments-local)
         cmode           (:mode state)
@@ -126,8 +125,7 @@
         (assoc :frame-id (:frame-id data)))
     thread))
 
-(mf/defc comments-layer
-  {::mf/props :obj}
+(mf/defc comments-layer*
   [{:keys [zoom file frame page]}]
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)

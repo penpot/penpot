@@ -26,7 +26,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.modal :refer [modal-container*]]
-   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar*]]
+   [app.main.ui.viewer.comments :refer [comments-layer* comments-sidebar*]]
    [app.main.ui.viewer.header :as header]
    [app.main.ui.viewer.inspect :as inspect]
    [app.main.ui.viewer.interactions :as interactions]
@@ -92,8 +92,8 @@
              :height (* height zoom)
              :vbox   (str "0 0 " width " " height)})))
 
-(mf/defc viewer-pagination
-  [{:keys [index num-frames left-bar right-bar comment-sidebar] :as props}]
+(mf/defc viewer-pagination*
+  [{:keys [index num-frames left-bar right-bar comment-sidebar]}]
   (let [go-prev-frame  (mf/use-fn #(st/emit! dv/select-prev-frame))
         go-next-frame  (mf/use-fn #(st/emit! dv/select-next-frame))
         go-first-frame (mf/use-fn #(st/emit! dv/select-first-frame))]
@@ -120,13 +120,13 @@
        (str/join " / " [(+ index 1) num-frames])]
       [:span]]]))
 
-(mf/defc viewer-pagination-and-sidebar
+(mf/defc viewer-pagination-and-sidebar*
   {::mf/wrap [mf/memo]}
   [{:keys [section index users frame page]}]
   (let [comments-local  (mf/deref refs/comments-local)
         show-sidebar?   (and (= section :comments) (:show-sidebar? comments-local))]
     [:*
-     [:& viewer-pagination
+     [:> viewer-pagination*
       {:index index
        :num-frames (count (:frames page))
        :comment-sidebar show-sidebar?}]
@@ -137,7 +137,7 @@
          :frame frame
          :page page}])]))
 
-(mf/defc viewer-overlay
+(mf/defc viewer-overlay*
   [{:keys [overlay page frame zoom wrapper-size interactions-mode]}]
   (let [close-click-outside? (:close-click-outside overlay)
         background-overlay?  (:background-overlay overlay)
@@ -210,13 +210,12 @@
           :page page
           :interactions-mode interactions-mode}]])]))
 
-(mf/defc viewer-wrapper
-  {::mf/wrap-props false}
+(mf/defc viewer-wrapper*
   [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
            size frame interactions-mode overlays zoom section index]}]
 
   [:*
-   [:& viewer-pagination-and-sidebar
+   [:> viewer-pagination-and-sidebar*
     {:section section
      :index index
      :page page
@@ -260,7 +259,7 @@
         :interactions-mode interactions-mode}]
 
       (for [overlay overlays]
-        [:& viewer-overlay
+        [:> viewer-overlay*
          {:overlay overlay
           :key (dm/str (:id overlay))
           :page page
@@ -271,11 +270,11 @@
 
 
     (when (= section :comments)
-      [:& comments-layer {:file file
-                          :users users
-                          :frame frame
-                          :page page
-                          :zoom zoom}])]])
+      [:> comments-layer* {:file file
+                           :users users
+                           :frame frame
+                           :page page
+                           :zoom zoom}])]])
 
 (mf/defc viewer-content*
   [{:keys [data page-id share-id section index interactions-mode share]}]
@@ -578,7 +577,7 @@
 
          (some? frame)
          (if (= :inspect section)
-           [:& inspect/viewport
+           [:> inspect/viewport*
             {:frame frame
              :page page
              :file file
@@ -586,12 +585,12 @@
              :local local
              :size size
              :index index
-             :viewer-pagination viewer-pagination
+             :viewer-pagination* viewer-pagination*
              :interactions-mode interactions-mode
              :share-id share-id}]
 
            [:& (mf/provider ctx/current-zoom) {:value zoom}
-            [:& viewer-wrapper
+            [:> viewer-wrapper*
              {:wrapper-size wrapper-size
               :orig-frame orig-frame
               :orig-viewport-ref orig-viewport-ref

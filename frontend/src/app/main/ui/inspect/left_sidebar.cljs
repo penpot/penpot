@@ -23,10 +23,10 @@
   #(-> (l/in [:viewer-local :collapsed id])
        (l/derived st/state)))
 
-(mf/defc layer-item
-  [{:keys [item selected objects  depth component-child? hide-toggle?] :as props}]
+(mf/defc layer-item*
+  [{:keys [item selected-ids objects depth component-child? hide-toggle?]}]
   (let [id        (:id item)
-        selected? (contains? selected id)
+        selected? (contains? selected-ids id)
         item-ref  (mf/use-ref nil)
         depth     (+ depth 1)
 
@@ -62,9 +62,9 @@
              (st/emit! (dv/select-shape id)))))]
 
     (mf/use-effect
-     (mf/deps selected)
+     (mf/deps selected-ids)
      (fn []
-       (when (and (= (count selected) 1) selected?)
+       (when (and (= (count selected-ids) 1) selected?)
          (dom/scroll-into-view-if-needed! (mf/ref-val item-ref) true))))
 
     [:> layer-item-inner*
@@ -88,26 +88,26 @@
               :data-testid (dm/str "children-" id)}
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
-            [:& layer-item
+            [:> layer-item*
              {:item item
-              :selected selected
+              :selected-ids selected-ids
               :index index
               :objects objects
               :key (dm/str id)
               :depth depth
               :component-child? component-tree?}]))])]))
 
-(mf/defc left-sidebar
+(mf/defc left-sidebar*
   [{:keys [frame page local]}]
-  (let [selected (:selected local)
+  (let [selected-ids (:selected local)
         objects  (:objects page)]
 
     [:aside {:class (stl/css :settings-bar-left)}
      [:div {:class (stl/css :settings-bar-inside)}
       [:div {:class (stl/css :element-list)}
-       [:& layer-item
+       [:> layer-item*
         {:item frame
-         :selected selected
+         :selected-ids selected-ids
          :index 0
          :objects objects
          :sortable? false
