@@ -298,6 +298,14 @@
 ;; previous SVG overlay `default-guide-color`).
 (def ^:private default-guide-color clr/new-danger)
 
+;; Sentinel clip range for a guide whose board is rotated or not a root frame.
+;; The engine clips each guide to `[start end]` and skips drawing when `start >
+;; end`; both bounds at +Infinity collapse to an empty range, so the guide is
+;; hidden (matching the SVG renderer, which drops it from the DOM).
+;; We hide via the range rather than by removing the guide from the set so the
+;; guide count stays stable and board rendering is unaffected.
+(def ^:private guide-hidden-range [js/Infinity js/Infinity])
+
 (defn- translate-guide-axis
   "Maps a guide axis to the RawGuideKind discriminant expected by WASM.
   `:x` (constant x) is a vertical guide, `:y` is a horizontal one."
@@ -316,18 +324,19 @@
   (+ 4 (* (count (or guides {})) guide-entry-size)))
 
 (defn- guide-frame-range
-  "Returns the `[start end]` range of the board a guide belongs to, along the
-  guide's line direction (the board's y-range for vertical `:x` guides, its
-  x-range for horizontal `:y` guides). Returns nil for free guides and for
-  guides whose board is not a non-rotated root frame, matching the SVG
-  renderer's clip behavior."
+  "Returns the `[start end]` clip range (along the guide's line direction) for a
+  board-bound guide: the board's y-range for vertical `:x` guides, its x-range
+  for horizontal `:y` guides. Returns nil for free guides (drawn full-length).
+  A guide bound to a rotated or non-root board returns `guide-hidden-range`, an
+  empty range the engine clips out, hiding it like the SVG renderer does."
   [guide objects]
   (when-let [frame (some->> (get guide :frame-id) (get objects))]
-    (when (and (cfh/root-frame? frame)
-               (not (ctst/rotated-frame? frame)))
+    (if (and (cfh/root-frame? frame)
+             (not (ctst/rotated-frame? frame)))
       (if (= :x (get guide :axis))
         [(:y frame) (+ (:y frame) (:height frame))]
-        [(:x frame) (+ (:x frame) (:width frame))]))))
+        [(:x frame) (+ (:x frame) (:width frame))])
+      guide-hidden-range)))
 
 (defn write-guides
   "Writes `guides` (a map id -> guide) into the heap views starting at the
