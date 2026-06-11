@@ -86,10 +86,6 @@
 (defonce transition-image-url* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
-(defonce snapshot-tiles-handler* (atom nil))
-
-(def ^:private snapshot-capture-debounce-ms 250)
-
 
 (defn initialized?
   "True when the WASM render context is ready to receive design-state
@@ -172,31 +168,6 @@
                      (fn [_]
                        (f))
                      #js {:once true}))
-
-(defonce ^:private schedule-canvas-snapshot-capture!
-  (fns/debounce
-   (fn []
-     (when (and (initialized?)
-                (some? wasm/canvas))
-       (-> (webgl/capture-canvas-snapshot-url)
-           (p/catch (fn [_] nil)))))
-   snapshot-capture-debounce-ms))
-
-(defn- start-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
-    (reset! snapshot-tiles-handler* handler)
-    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
-
-(defn- stop-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (reset! snapshot-tiles-handler* nil)
-  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
-    (cancel)))
 
 (defn text-editor-wasm?
   []
@@ -2072,7 +2043,6 @@
           (when can-listen?
             (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
             (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored))
-          (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)))
 
@@ -2099,7 +2069,6 @@
      (when wasm/canvas
        (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
        (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
-     (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)
        (free-gpu-resources)
