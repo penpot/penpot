@@ -187,11 +187,6 @@ export interface Blur {
    */
   id?: string;
   /**
-   * The optional type of the blur effect.
-   * Currently, only 'layer-blur' is supported.
-   */
-  type?: 'layer-blur';
-  /**
    * The optional intensity value of the blur effect.
    */
   value?: number;
@@ -3694,6 +3689,13 @@ export interface ShapeBase extends PluginData {
    * The blur effect applied to the shape.
    */
   blur?: Blur;
+
+  /**
+   * The background blur effect applied to the shape.
+   * Background blur creates a blur effect on the content behind the shape,
+   * rather than on the shape's own content.
+   */
+  backgroundBlur?: Blur;
 
   /**
    * The export settings of the shape.
