@@ -250,7 +250,7 @@
            (r/set-resize-type! :bottom)
            (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
            (st/emit! (dw/remove-layout-flag :textpalette)
-                     (-> (mdc/show-palette selected)
+                     (-> (mdc/toggle-palette selected)
                          (vary-meta assoc ::ev/origin "workspace-colorpicker")))))
 
         toggle-view-mode
@@ -332,7 +332,7 @@
 
       [:> icon-button*
        {:variant    "ghost"
-        :aria-label (tr "workspace.libraries.colors.show-color-palette")
+        :aria-label (tr "workspace.libraries.colors.toggle-color-palette")
         :on-click   toggle-palette
         :icon       i/swatches}]
 

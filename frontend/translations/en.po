@@ -6998,8 +6998,8 @@ msgid "workspace.libraries.colors.add-library-color"
 msgstr "Add color to library"
 
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs
-msgid "workspace.libraries.colors.show-color-palette"
-msgstr "Show color palette"
+msgid "workspace.libraries.colors.toggle-color-palette"
+msgstr "Show/Hide color palette"
 
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs
 msgid "workspace.libraries.colors.empty-recent-colors"
