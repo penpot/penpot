@@ -11,6 +11,7 @@
    [app.common.features :as cfeat]
    [app.common.files.defaults :refer [version]]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.tree-seq :as gsts]
@@ -203,7 +204,7 @@
   [file-data]
   (if (and (some? (:tokens-lib file-data)) (nil? (:token-status file-data)))
     ;; TODO: remove this when we deprecate old-style files without token-status
-    (assoc file-data :token-status (ctos/make-token-status-from-lib (:tokens-lib file-data)))
+    (assoc file-data :token-status (cfo/make-token-status-from-lib (:tokens-lib file-data)))
     (-> file-data
         (update :tokens-lib #(or % (ctob/make-tokens-lib)))
         (update :token-status #(or % (ctos/make-token-status))))))
@@ -326,7 +327,7 @@
   [file-data]
   (if (and (some? (:tokens-lib file-data)) (nil? (:token-status file-data)))
     ;; TODO: remove this when we deprecate old-style files without token-status
-    (ctos/make-token-status-from-lib (:tokens-lib file-data))
+    (cfo/make-token-status-from-lib (:tokens-lib file-data))
     (:token-status file-data)))
 
 (defn update-tokens-lib
@@ -337,9 +338,9 @@
 
 (defn update-token-status
   "Update the token-status inside file-data through a callback function.
-   The function will receive the tokens status, the tokens lib and the rest of args."
+   The function will receive the tokens status and the rest of args."
   [file-data f & args]
-  (d/update-when file-data :token-status #(apply f % (get-tokens-lib file-data) args)))
+  (d/update-when file-data :token-status #(apply f % args)))
 
 ;; Asset helpers
 (defn find-component-file

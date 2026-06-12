@@ -11,7 +11,6 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.transit :as t]
-   [app.common.types.tokens-lib :as ctob]
    [clojure.core.protocols :as cp]
    [clojure.datafy :refer [datafy]]
    [clojure.pprint :as pp]))
@@ -20,9 +19,9 @@
 ;; in a tokens library.
 
 (defprotocol ITokenStatus
-  (activate-theme [_ tokens-lib theme-id] "Add a theme uuid to active themes")
-  (deactivate-theme [_ tokens-lib theme-id] "Remove a theme uuid from active themes")
-  (set-theme-status [_ tokens-lib theme-id status] "Add or remove a theme uuid to active themes")
+  (activate-theme [_ theme-id] "Add a theme uuid to active themes")
+  (deactivate-theme [_ theme-id] "Remove a theme uuid from active themes")
+  (set-theme-status [_ theme-id status] "Add or remove a theme uuid to active themes")
   (theme-active? [_ theme-id] "Check if a theme uuid is active")
   (active-themes-count [_] "Return the number of active themes")
   (activate-set [_ set-id] "Add a set uuid to active sets")
@@ -43,27 +42,20 @@
                (c.json/-write (datafy this) writter options))])
 
   ITokenStatus
-  (activate-theme [this tokens-lib theme-id]
-    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (activate-theme [_ theme-id]
     (assert (uuid? theme-id) "expected valid theme-id")
-    (if (ctob/get-theme tokens-lib theme-id)
-      (TokenStatus. (conj active-themes theme-id) active-sets)
-      this))
+    (TokenStatus. (conj active-themes theme-id) active-sets))
 
-  (deactivate-theme [this tokens-lib theme-id]
-    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (deactivate-theme [_ theme-id]
     (assert (uuid? theme-id) "expected valid theme-id")
-    (if (ctob/get-theme tokens-lib theme-id)
-      (TokenStatus. (disj active-themes theme-id) active-sets)
-      this))
+    (TokenStatus. (disj active-themes theme-id) active-sets))
 
-  (set-theme-status [this tokens-lib theme-id status]
-    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (set-theme-status [this theme-id status]
     (assert (uuid? theme-id) "expected valid theme-id")
     (assert (boolean? status) "expected boolean status")
     (if status
-      (activate-theme this tokens-lib theme-id)
-      (deactivate-theme this tokens-lib theme-id)))
+      (activate-theme this theme-id)
+      (deactivate-theme this theme-id)))
 
   (theme-active? [_ theme-id]
     (assert (uuid? theme-id) "expected valid theme-id")
@@ -132,22 +124,6 @@
       (update :active-sets #(or % #{}))
       (check-token-status-attrs)
       (map->TokenStatus)))
-
-(defn make-token-status-from-lib
-  "Make a TokenStatus from a TokensLib, activating the themes and sets
-   marked as active in the library (to migrate from legacy files)."
-  [tokens-lib]
-  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
-  (let [active-themes (into #{}
-                            (comp (map :id)
-                                  (filter #(not= % ctob/hidden-theme-id)))
-                            (ctob/get-active-themes tokens-lib))
-        active-sets   (into #{}
-                            (comp (map #(ctob/get-set-by-name tokens-lib %))
-                                  (map ctob/get-id))
-                            (ctob/get-active-themes-set-names tokens-lib))]
-    (make-token-status :active-themes active-themes
-                       :active-sets active-sets)))
 
 ;; === Pretty-print for debugging ===
 
