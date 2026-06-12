@@ -201,7 +201,9 @@
          (identical? (unchecked-get old-props "type")
                      (unchecked-get new-props "type"))
          (identical? (get old-values :blur)
-                     (get new-values :blur)))))
+                     (get new-values :blur))
+         (identical? (get old-values :background-blur)
+                     (get new-values :background-blur)))))
 
 (mf/defc blur-menu*
   {::mf/wrap [#(mf/memo' % check-blur-menu-props)]}
@@ -209,8 +211,6 @@
   (let [render-wasm?        (features/use-feature "render-wasm/v1")
         bg-blur?            (and render-wasm?
                                  (contains? cf/flags :background-blur))
-
-
 
         blur-values          (get-blurs values)
 

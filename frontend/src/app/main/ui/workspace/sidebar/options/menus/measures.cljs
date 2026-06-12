@@ -132,11 +132,15 @@
 
 (defn- check-measures-menu-props
   [old-props new-props]
-  (let [old-applied-tokens (unchecked-get old-props "appliedTokens")
-        new-applied-tokens (unchecked-get new-props "appliedTokens")
-        o-values (unchecked-get old-props "values")
+  (let [o-values (unchecked-get old-props "values")
         n-values (unchecked-get new-props "values")]
-    (and (identical? (get o-values :x)
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
+         (identical? (get o-values :x)
                      (get n-values :x))
          (identical? (get o-values :y)
                      (get n-values :y))
@@ -163,11 +167,7 @@
          (identical? (get o-values :r4)
                      (get n-values :r4))
          (identical? (get o-values :proportion-lock)
-                     (get n-values :proportion-lock))
-         (identical? (unchecked-get old-props "ids")
-                     (unchecked-get new-props "ids"))
-         (identical? old-applied-tokens
-                     new-applied-tokens))))
+                     (get n-values :proportion-lock)))))
 
 (mf/defc measures-menu*
   {::mf/wrap [#(mf/memo' % check-measures-menu-props)]}

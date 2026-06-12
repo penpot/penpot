@@ -47,6 +47,8 @@
   [n-props o-props]
   (and (identical? (unchecked-get n-props "ids")
                    (unchecked-get o-props "ids"))
+       (identical? (unchecked-get n-props "type")
+                   (unchecked-get o-props "type"))
        (identical? (unchecked-get n-props "appliedTokens")
                    (unchecked-get o-props "appliedTokens"))
        (identical? (unchecked-get n-props "showCaps")

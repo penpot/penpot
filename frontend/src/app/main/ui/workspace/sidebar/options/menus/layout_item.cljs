@@ -512,7 +512,6 @@
                      :title "Align self end"
                      :id    "align-self-end"}]])
 
-
 (def ^:private schema:layout-item-props-schema
   [:map
    [:layout-item-margin
@@ -724,10 +723,7 @@
 (defn- check-layout-item-menu-props
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
-        new-values (unchecked-get new-props "values")
-
-        old-applied-tokens (unchecked-get old-props "appliedTokens")
-        new-applied-tokens (unchecked-get new-props "appliedTokens")]
+        new-values (unchecked-get new-props "values")]
     (and (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
          (identical? (unchecked-get old-props "type")
@@ -744,8 +740,8 @@
                      (unchecked-get new-props "isGridLayout"))
          (identical? (unchecked-get old-props "isFlexLayout")
                      (unchecked-get new-props "isFlexLayout"))
-         (identical? old-applied-tokens
-                     new-applied-tokens)
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
          (identical? (get old-values :layout-item-margin)
                      (get new-values :layout-item-margin))
          (identical? (get old-values :layout-item-margin-type)

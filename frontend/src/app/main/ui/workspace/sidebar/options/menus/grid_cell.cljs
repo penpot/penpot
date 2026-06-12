@@ -83,15 +83,14 @@
 
 (defn- check-options-props
   [old-props new-props]
-  (and (identical? (unchecked-get old-props "class")
-                   (unchecked-get new-props "class"))
-       (identical? (unchecked-get old-props "shape-id")
-                   (unchecked-get new-props "shape-id"))
+  (and (identical? (unchecked-get old-props "shapeId")
+                   (unchecked-get new-props "shapeId"))
        (identical? (unchecked-get old-props "cell")
                    (unchecked-get new-props "cell"))
        (identical? (unchecked-get old-props "cells")
                    (unchecked-get new-props "cells"))))
 
+;;TODO: Review this component only recieve cells prop ib this file app.main.ui.workspace.sidebar.options
 (mf/defc options*
   {::mf/wrap [#(mf/memo' % check-options-props)]}
   [{:keys [shape-id cell cells] :as props}]

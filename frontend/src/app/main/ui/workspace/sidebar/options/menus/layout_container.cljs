@@ -1072,11 +1072,15 @@
 
 (defn- check-layout-container-menu-props
   [old-props new-props]
-  (let [old-applied-tokens (unchecked-get old-props "appliedTokens")
-        new-applied-tokens (unchecked-get new-props "appliedTokens")
-        o-values (unchecked-get old-props "values")
+  (let [o-values (unchecked-get old-props "values")
         n-values (unchecked-get new-props "values")]
-    (and (identical? (get o-values :layout-gap)
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
+         (identical? (unchecked-get old-props "multiple")
+                     (unchecked-get new-props "multiple"))
+         (identical? (get o-values :layout-gap)
                      (get n-values :layout-gap))
          (identical? (get o-values :layout-gap-type)
                      (get n-values :layout-gap-type))
@@ -1095,11 +1099,7 @@
          (identical? (get o-values :layout-align-content)
                      (get n-values :layout-align-content))
          (identical? (get o-values :layout)
-                     (get n-values :layout))
-         (identical? (unchecked-get old-props "ids")
-                     (unchecked-get new-props "ids"))
-         (identical? old-applied-tokens
-                     new-applied-tokens))))
+                     (get n-values :layout)))))
 
 (mf/defc layout-container-menu*
   {::mf/wrap [#(mf/memo' % check-layout-container-menu-props)]}

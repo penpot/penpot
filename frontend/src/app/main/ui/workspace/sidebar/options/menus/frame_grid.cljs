@@ -298,27 +298,24 @@
 
 (defn- check-frame-grid-props
   [old-props new-props]
-  (and (identical? (unchecked-get old-props "class")
-                   (unchecked-get new-props "class"))
-       (identical? (unchecked-get old-props "grids")
+  (and (identical? (unchecked-get old-props "grids")
                    (unchecked-get new-props "grids"))
-       (identical? (unchecked-get old-props "shape-id")
-                   (unchecked-get new-props "shape-id"))
-       (identical? (unchecked-get old-props "frame-width")
-                   (unchecked-get new-props "frame-width"))
-       (identical? (unchecked-get old-props "frame-height")
-                   (unchecked-get new-props "frame-height"))))
+       (identical? (unchecked-get old-props "id")
+                   (unchecked-get new-props "id"))
+       (identical? (unchecked-get old-props "frameWidth")
+                   (unchecked-get new-props "frameWidth"))
+       (identical? (unchecked-get old-props "frameHeight")
+                   (unchecked-get new-props "frameHeight"))))
 
 (mf/defc frame-grid*
   {::mf/wrap [#(mf/memo' % check-frame-grid-props)]}
-  [{:keys [grids shape-id frame-width frame-height]}]
+  [{:keys [grids id frame-width frame-height]}]
   (let [state*              (mf/use-state true)
         open?               (deref state*)
         has-frame-grids?    (or (= :multiple grids) (some? (seq grids)))
 
         toggle-content      (mf/use-fn #(swap! state* not))
 
-        id                  shape-id
         default-grids       (mf/deref lens:default-grids)
         default-grid-params (mf/with-memo [default-grids]
                               (merge ctg/default-grid-params default-grids))
