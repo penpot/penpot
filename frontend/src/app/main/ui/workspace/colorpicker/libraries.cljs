@@ -193,6 +193,7 @@
   [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity disable-image]}]
   (let [selected*        (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         selected         (deref selected*)
+        layout           (mf/deref refs/workspace-layout)
 
         view-mode*       (mf/use-state :grid)
         view-mode        (deref view-mode*)
@@ -334,6 +335,7 @@
        {:variant    "ghost"
         :aria-label (tr "workspace.libraries.colors.toggle-color-palette")
         :on-click   toggle-palette
+        :aria-pressed (boolean (contains? layout :colorpalette))
         :icon       i/swatches}]
 
       [:> icon-button*

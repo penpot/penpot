@@ -320,7 +320,7 @@ test("Color picker color list", async ({ page }) => {
   ).toBeVisible();
 
   //test show and hide color palette
-  const paletteToggle = workspacePage.page.getByRole('button', { name: 'Show/Hide color palette' });
+  const paletteToggle = workspacePage.page.getByRole('button', { name: 'Toggle color palette' });
   await paletteToggle.click();
   const paletteBar = workspacePage.page.getByRole('region', { name: 'Palette bar' });
   await expect(paletteBar).toBeVisible();
