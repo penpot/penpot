@@ -42,7 +42,12 @@ pub use images::*;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
-const MIN_TILES_PER_FRAME: i32 = 8;
+/// Per-frame deadline for uncached-tile rendering, measured from the rAF
+/// timestamp (frame start), so JS work that ran earlier in the tick counts
+/// against it. The loop yields (Partial frame) once exceeded so heavy
+/// settles stream at frame rate instead of blocking the main thread.
+/// ~12ms leaves headroom for compositing + present within a 16.7ms frame.
+const TILE_FRAME_TIME_BUDGET_MS: i32 = 12;
 
 #[repr(u8)]
 pub enum FrameType {
@@ -399,11 +404,9 @@ pub(crate) struct RenderState {
     /// (must composite to present the work). Reset when current_tile
     /// changes.
     pub current_tile_had_shapes: bool,
-    /// Count of uncached tiles composited in the current rAF. Reset at the top
-    /// of `render_shape_tree_partial`; checked against the adaptive per-frame
-    /// budget (`max(MIN_TILES_PER_FRAME, visible_tile_count)`) to yield (flush +
-    /// return Partial) so a single rAF doesn't hand the GPU one huge command
-    /// buffer. See `MIN_TILES_PER_FRAME`.
+    /// Count of uncached tiles composited in the current rAF. Reset at the
+    /// top of `render_shape_tree_partial`. The yield decision is time-based:
+    /// see `TILE_FRAME_TIME_BUDGET_MS`.
     pub tiles_on_frame: i32,
     /// During interactive transforms we keep `Target` between rAFs. Seed the
     /// interactive backdrop exactly once per gesture (first rAF) so we don't
@@ -2323,12 +2326,33 @@ impl RenderState {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Partial frame: flush AND submit so the GPU actually executes this
-                // chunk's draws now
-                self.surfaces.flush_and_submit(SurfaceId::Backbuffer);
+                if !self.options.is_fast_mode()
+                    && !self.options.is_interactive_transform()
+                    && !self.viewer_masked_pass()
+                {
+                    // Progressive present: DocAtlas preview as backdrop (covers
+                    // not-yet-rendered tiles), finished tiles composited on top.
+                    // Cheap since the page atlas made compositing snapshot-free.
+                    self.surfaces
+                        .draw_atlas_to_backbuffer(self.viewbox, self.background_color);
+                    self.surfaces
+                        .draw_cached_tiles_over_backbuffer(&self.viewbox, &self.tile_viewbox);
+                    self.present_frame(tree);
+                } else {
+                    // Gesture previews / masked passes present elsewhere: just
+                    // flush so the GPU executes this chunk's draws now.
+                    self.surfaces.flush_and_submit(SurfaceId::Backbuffer);
+                }
             }
             FrameType::Full => {
-                if !self.options.is_interactive_transform() {
+                // A settle can complete mid-zoom-gesture (fast_mode with the
+                // zoom already diverged from cached_viewbox). The grid then
+                // still holds old-zoom tiles — compositing them at new-zoom
+                // positions flashes wrong-scale tiles with background gaps.
+                // Skip the composite + present and let the preview own the
+                // screen; the post-set_view_end settle presents the real frame.
+                let mid_zoom_gesture = self.options.is_fast_mode() && self.zoom_changed();
+                if !mid_zoom_gesture && !self.options.is_interactive_transform() {
                     self.surfaces.draw_tile_atlas_to_backbuffer(
                         &self.viewbox,
                         &self.tile_viewbox,
@@ -2344,9 +2368,13 @@ impl RenderState {
                 // builds the cache from it when a drag actually begins.
                 self.backbuffer_is_clean_full_frame =
                     !self.options.is_fast_mode() && !self.options.is_interactive_transform();
-                // present_frame: copy clean Backbuffer → Target, draw UI/debug
-                // overlays on Target only, then flush. Backbuffer stays overlay-free.
-                self.present_frame(tree);
+                if mid_zoom_gesture {
+                    self.surfaces.flush_and_submit(SurfaceId::Backbuffer);
+                } else {
+                    // present_frame: copy clean Backbuffer → Target, draw UI/debug
+                    // overlays on Target only, then flush. Backbuffer stays overlay-free.
+                    self.present_frame(tree);
+                }
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
             }
@@ -3568,9 +3596,17 @@ impl RenderState {
         let mut should_stop = false;
         self.viewer_render_root = base_object.copied();
         self.tiles_on_frame = 0;
-        // Never fewer than the currently-visible tile count, so a
-        // normal viewport composites all its visible tiles in one rAF
-        let tile_budget = MIN_TILES_PER_FRAME.max(self.tile_viewbox.visible_rect.len());
+        // Budget against the rAF frame deadline, not this call: `timestamp` is
+        // the rAF DOMHighResTimeStamp (same epoch as get_time()), so time the
+        // page spent in JS before this tick counts against the budget too.
+        // Fall back to "now" when no usable timestamp was passed (0 on the
+        // first render, sync/test paths, or a stale value).
+        let now = performance::get_time();
+        let frame_start = if timestamp > 0 && now >= timestamp && now - timestamp < 100 {
+            timestamp
+        } else {
+            now
+        };
         let root_ids = {
             if let Some(shape_id) = base_object {
                 vec![*shape_id]
@@ -3632,15 +3668,15 @@ impl RenderState {
                             );
                         }
 
-                        // Cap how many such tiles we submit per rAF so the GPU doesn't get one
-                        // giant command buffer. Skipped during interactive
-                        // transforms
+                        // Time-box the work per rAF (at least one tile per
+                        // tick guarantees progress). Skipped during interactive
+                        // transforms.
                         if allow_stop
                             && !self.options.is_interactive_transform()
                             && !self.viewer_masked_pass()
                         {
                             self.tiles_on_frame += 1;
-                            if self.tiles_on_frame >= tile_budget {
+                            if performance::get_time() - frame_start >= TILE_FRAME_TIME_BUDGET_MS {
                                 self.viewer_render_root = None;
                                 return Ok(FrameType::Partial);
                             }
