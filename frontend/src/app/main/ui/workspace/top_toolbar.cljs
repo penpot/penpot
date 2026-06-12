@@ -8,15 +8,18 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as deprecated-icon]
@@ -25,6 +28,61 @@
    [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(mf/defc mcp-indicator*
+  []
+  (let [profile          (mf/deref refs/profile)
+        mcp              (mf/deref refs/mcp)
+        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
+
+        mcp-enabled?      (true? (-> profile :props :mcp-enabled))
+        mcp-connected?    (= "connected" (:connection-status mcp))
+        show-indicator?   (and mcp-enabled? (false? mcp-key-expired?))
+
+        mcp-menu-open*   (mf/use-state false)
+        mcp-menu-open?   (deref mcp-menu-open*)
+
+        toggle-mcp-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! mcp-menu-open* not)))
+
+        close-mcp-menu
+        (mf/use-fn
+         #(reset! mcp-menu-open* false))
+
+        connect-mcp
+        (mf/use-fn
+         #(st/emit! (mcp/connect-mcp)
+                    (ev/event {::ev/name "connect-mcp-plugin"
+                               ::ev/origin "workspace:toolbar"})))]
+    (when show-indicator?
+      [:li
+       [:button
+        {:title (tr "workspace.toolbar.mcp")
+         :aria-label (tr "workspace.toolbar.mcp")
+         :class (stl/css-case :main-toolbar-options-button true
+                              :mcp-button true
+                              :selected mcp-menu-open?)
+         :on-click toggle-mcp-menu
+         :data-tool "mcp"
+         :data-testid "mcp-btn"}
+        [:span {:class (stl/css-case :mcp-status-dot true
+                                     :connected mcp-connected?)}]
+        [:span {:class (stl/css-case :mcp-button-label true
+                                     :connected mcp-connected?)}
+         (tr "workspace.toolbar.mcp")]]
+       [:> dropdown-menu* {:show mcp-menu-open?
+                           :on-close close-mcp-menu
+                           :class (stl/css :mcp-menu)}
+        (if mcp-connected?
+          [:li {:class (stl/css :mcp-menu-info)
+                :role "presentation"}
+           (tr "workspace.toolbar.mcp-connected")]
+          [:> dropdown-menu-item* {:class (stl/css :mcp-menu-item)
+                                   :on-click connect-mcp}
+           (tr "workspace.toolbar.mcp-connect-here")])]])))
 
 (mf/defc image-upload*
   {::mf/wrap [mf/memo]}
@@ -221,12 +279,13 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             deprecated-icon/bug]])]]
+             deprecated-icon/bug]])
+
+         (when (contains? cf/flags :mcp)
+           [:> mcp-indicator*])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
                  :class (stl/css :toolbar-handler)
                  :on-click toggle-toolbar}
         [:div {:class (stl/css :toolbar-handler-btn)}]]])))
-
-
