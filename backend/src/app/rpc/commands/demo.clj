@@ -7,9 +7,9 @@
 (ns app.rpc.commands.demo
   "A demo specific mutations."
   (:require
-   [app.auth :refer [derive-password]]
+   [app.auth :refer [derive-password-weak]]
    [app.common.exceptions :as ex]
-   [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
@@ -17,6 +17,7 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
+   [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -34,8 +35,8 @@
               :code :demo-users-not-allowed
               :hint "Demo users are disabled by config."))
 
-  (let [sem      (System/currentTimeMillis)
-        email    (str "demo-" sem ".demo@example.com")
+  (let [sem      (uuid/next)
+        email    (str "demo-" sem "@demo.example.com")
         fullname (str "Demo User " sem)
 
         password (-> (bn/random-bytes 16)
@@ -46,12 +47,18 @@
                   :fullname fullname
                   :is-active true
                   :is-demo true
-                  :deleted-at (ct/in-future (cf/get-deletion-delay))
-                  :password (derive-password password)
+                  :password (derive-password-weak password)
                   :props {}}
+
         profile  (db/tx-run! cfg (fn [cfg]
                                    (->> (auth/create-profile cfg params)
                                         (auth/create-profile-rels cfg))))]
+
+    (wrk/submit! (-> cfg
+                     (assoc ::wrk/task :demo-purge)
+                     (assoc ::wrk/delay (cf/get-deletion-delay))
+                     (assoc ::wrk/params {:profile-id (:id profile)})))
+
     (with-meta {:email email
                 :password password}
       {::audit/profile-id (:id profile)})))
