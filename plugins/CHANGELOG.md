@@ -10,6 +10,7 @@
 - **plugin-types**: Added `textBounds` property for text shapes
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
+- **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished
 
 ## 1.4.2 (2026-01-21)
 

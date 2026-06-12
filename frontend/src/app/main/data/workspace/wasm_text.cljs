@@ -125,6 +125,14 @@
            :else
            (rx/empty)))))))
 
+;; Signals that a wasm text resize is still in flight: set to true when a
+;; resize enters the debounce window below (or while `update-attrs` waits for
+;; a font load, see app.main.data.workspace.texts) and reset to false once the
+;; final resize is dispatched or the wait is cut short. Read by the plugin API
+;; `waitForLayoutUpdate` (app.plugins.api) to decide whether text geometry
+;; work is still in flight.
+(defonce resize-pending (atom false))
+
 ;; This event will debounce the resize events so, if there are many, they
 ;; are processed at the same time and not one-by-one. This will improve
 ;; performance because it's better to make only one layout calculation instead
@@ -150,13 +158,17 @@
               (rx/merge
                (->> stream
                     (rx/filter (ptk/type? ::resize-wasm-text-debounce-inner))
+                    (rx/tap #(reset! resize-pending true))
                     (rx/debounce debounce-resize-text-time)
                     (rx/take 1)
                     (rx/map (fn [evt]
                               (resize-wasm-text-debounce-commit
                                (some-> evt meta :undo-group)
                                (some-> evt meta :undo-id))))
-                    (rx/take-until stopper))
+                    (rx/take-until stopper)
+                    ;; Don't leave the flag stuck if the stopper cuts the
+                    ;; wait short while a resize is still debouncing
+                    (rx/finalize #(reset! resize-pending false)))
                (rx/of (with-meta
                         (resize-wasm-text-debounce-inner id)
                         {:undo-group undo-group :undo-id undo-id})))

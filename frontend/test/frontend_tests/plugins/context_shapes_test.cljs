@@ -9,12 +9,17 @@
    [app.common.math :as m]
    [app.common.test-helpers.files :as cthf]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.modifiers :as dwmm]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.wasm :as thw]))
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
 
 (t/deftest test-common-shape-properties
   (thw/with-wasm-mocks*
@@ -370,3 +375,152 @@
           (t/is (pos? (thw/call-count :clean-modifiers)))
           (t/is (pos? (thw/call-count :set-structure-modifiers)))
           (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+
+;; ---- waitForLayoutUpdate tests ------------------------------------------
+;;
+;; Each test sets up a fresh potok store and replaces st/state / st/stream so
+;; that st/emit! and waitForLayoutUpdate work against the same event bus.
+;; The fixture below restores the original globals and clears the pending
+;; flags so no state leaks between tests (or into other test namespaces).
+
+(def ^:private original-st-state st/state)
+(def ^:private original-st-stream st/stream)
+
+(defn- reset-pending-flags!
+  []
+  (reset! dwsl/layout-pending false)
+  (reset! dwwt/resize-pending false)
+  (reset! dwt/font-pending false))
+
+(t/use-fixtures :each
+  {:before reset-pending-flags!
+   :after (fn []
+            (reset-pending-flags!)
+            (set! st/state original-st-state)
+            (set! st/stream original-st-stream))})
+
+(defn- make-test-store
+  "Creates a minimal potok store with an empty state map and installs it as the
+  global st/state and st/stream for the duration of the calling test."
+  []
+  (let [test-store (ptk/store {:state {} :on-error (fn [e] (js/console.error e))})]
+    (set! st/state test-store)
+    (set! st/stream (ptk/input-stream test-store))
+    test-store))
+
+(t/deftest test-wait-for-layout-update-no-pending
+  ;; When all pending flags are clear the promise should resolve immediately
+  ;; via the fast path — no store event is needed.
+  (t/async done
+    (make-test-store)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved with no pending work")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done)))))))
+
+(t/deftest test-wait-for-layout-update-layout-pending
+  ;; layout-pending=true signals a flex/grid recalculation in progress.
+  ;; The promise should stay pending until ::update-layout-positions fires
+  ;; with the flag already cleared (mirroring the real pipeline, where the
+  ;; flag is reset when the buffer flushes, just before the event).
+  (t/async done
+    (make-test-store)
+    (reset! dwsl/layout-pending true)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved after update-layout-positions event")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done))))
+      ;; The Promise constructor ran synchronously so the subscription is
+      ;; already live on st/stream. Emitting now triggers the re-check.
+      (reset! dwsl/layout-pending false)
+      (st/emit! (ptk/data-event ::dwsl/update-layout-positions)))))
+
+(t/deftest test-wait-for-layout-update-resize-pending
+  ;; resize-pending=true signals wasm text geometry being recalculated.
+  ;; The promise should stay pending until ::apply-wasm-modifiers fires
+  ;; with the flag already cleared.
+  (t/async done
+    (make-test-store)
+    (reset! dwwt/resize-pending true)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved after apply-wasm-modifiers event")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done))))
+      (reset! dwwt/resize-pending false)
+      (st/emit! (ptk/data-event ::dwmm/apply-wasm-modifiers)))))
+
+(t/deftest test-wait-for-layout-update-font-pending
+  ;; font-pending=true signals a non-wasm CSS font measurement in progress.
+  ;; The promise should stay pending until ::commit-position-data fires
+  ;; with the flag already cleared.
+  (t/async done
+    (make-test-store)
+    (reset! dwt/font-pending true)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved after commit-position-data event")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done))))
+      (reset! dwt/font-pending false)
+      (st/emit! (ptk/data-event ::dwt/commit-position-data)))))
+
+(t/deftest test-wait-for-layout-update-rechecks-pending
+  ;; A completion event must NOT resolve the promise while any pending flag
+  ;; is still set. This covers the font-change resize flow, where an early
+  ;; ::apply-wasm-modifiers (pre font-load resize) fires while resize-pending
+  ;; is still true and only a later one marks the real completion.
+  (t/async done
+    (make-test-store)
+    (reset! dwwt/resize-pending true)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")
+          resolved (atom false)]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      ;; Early apply-wasm-modifiers: the flag is still set, so the re-check
+      ;; must keep the promise pending.
+      (st/emit! (ptk/data-event ::dwmm/apply-wasm-modifiers))
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must not resolve while resize-pending is set")
+         ;; Final apply-wasm-modifiers with the flag cleared resolves it.
+         (reset! dwwt/resize-pending false)
+         (st/emit! (ptk/data-event ::dwmm/apply-wasm-modifiers))
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once all flags are clear")
+            (done))
+          30))
+       30))))
+
+(t/deftest test-wait-for-layout-update-timeout
+  ;; When the optional timeout fires before any completion event the promise
+  ;; should reject with an Error whose message mentions "timeout".
+  (t/async done
+    (make-test-store)
+    (reset! dwsl/layout-pending true)
+    (let [^js ctx (api/create-context "00000000-0000-0000-0000-000000000000")]
+      (-> (.waitForLayoutUpdate ctx 20)
+          (.then (fn []
+                   (t/is false "expected rejection but promise resolved")
+                   (done)))
+          (.catch (fn [^js err]
+                    (t/is (instance? js/Error err) "rejection value should be an Error")
+                    (t/is (some? (re-find #"timeout" (.-message err))) "error message should mention timeout")
+                    (done)))))))

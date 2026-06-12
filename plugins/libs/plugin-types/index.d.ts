@@ -1330,6 +1330,17 @@ export interface Context {
    * @return The variant container created
    */
   createVariantFromComponents(shapes: Board[]): VariantContainer;
+
+  /**
+   * This method returns a promise that will be resolved when all the
+   * pending layout updates have finished. If no layout work is pending
+   * the promise resolves immediately.
+   * @param timeout Maximum time to wait, in milliseconds. If the timeout
+   * elapses before the layout settles, the promise is rejected. Without a
+   * timeout the promise waits indefinitely.
+   * @return The promise to be resolved when the layout is updated
+   */
+  waitForLayoutUpdate(timeout?: number): Promise<void>;
 }
 
 /**
