@@ -155,6 +155,62 @@ This bootstrap command will:
 > [!IMPORTANT]
 > Do not close the plugin's UI while using the MCP server, as this will close the connection.
 
+### Optional: Auto-register with an MCP Client
+
+Instead of editing client config files by hand, use the bundled installer:
+
+```shell
+# Interactive picker (arrow keys, Enter to confirm)
+npx -y @penpot/mcp install
+
+# Register with a specific client non-interactively
+npx -y @penpot/mcp install --client claude-code
+npx -y @penpot/mcp install --client claude-desktop
+npx -y @penpot/mcp install --client cursor
+npx -y @penpot/mcp install --client windsurf
+npx -y @penpot/mcp install --client cline
+npx -y @penpot/mcp install --client opencode
+npx -y @penpot/mcp install --client gemini
+npx -y @penpot/mcp install --client codex
+npx -y @penpot/mcp install --client antigravity
+npx -y @penpot/mcp install --client antigravity-cli
+npx -y @penpot/mcp install --client generic-json
+
+# Or register with every supported client at once
+npx -y @penpot/mcp install --client all
+
+# Preview the snippet without touching any file
+npx -y @penpot/mcp install --client claude-desktop --dry-run
+
+# Use a non-default server URL or rename the entry
+npx -y @penpot/mcp install --client claude-code \
+  --url http://localhost:4401/mcp --name penpot-dev
+
+# Health-check the local setup
+npx -y @penpot/mcp doctor
+
+# Remove a previously installed entry
+npx -y @penpot/mcp uninstall --client claude-code
+```
+
+Supported targets and their config locations:
+
+| Client          | Config file                                                                                    | Transport            |
+|-----------------|-------------------------------------------------------------------------------------------------|----------------------|
+| `claude-code`   | `~/.claude.json` (or `claude mcp add` when the CLI is on PATH)                                  | HTTP                 |
+| `claude-desktop`| `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) / `%APPDATA%/Claude/claude_desktop_config.json` (Windows) / `~/.config/Claude/claude_desktop_config.json` (Linux) | stdio via `mcp-remote` |
+| `cursor`        | `~/.cursor/mcp.json`                                                                            | HTTP                 |
+| `windsurf`      | `~/.codeium/windsurf/mcp_config.json`                                                           | HTTP                 |
+| `cline`         | VSCode globalStorage `cline_mcp_settings.json`                                                  | HTTP                 |
+| `opencode`      | `~/.config/opencode/opencode.jsonc`                                                             | HTTP (`type: remote`)|
+| `gemini`        | Delegates to `gemini mcp add`                                                                   | HTTP                 |
+| `codex`         | Delegates to `codex mcp add`                                                                    | HTTP                 |
+| `antigravity`   | `~/.gemini/antigravity/mcp_config.json`                                                         | HTTP                 |
+| `antigravity-cli` | `~/.gemini/config/mcp_config.json`                                                            | HTTP                 |
+| `generic-json`  | Prints a `mcpServers` JSON snippet to stdout; copy into any MCP client manually                 | HTTP                 |
+
+The installer makes a timestamped backup (e.g. `claude_desktop_config.json.bak-<ts>`) of any file it modifies, and refuses to overwrite an existing entry of the same name unless `--force` is passed.
+
 ### 3. Connect an MCP Client
 
 > [!IMPORTANT]  
@@ -274,6 +330,60 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools. Set to `true` to enable.      | `false`        |
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
+
+### Hybrid PAT Mode (browser-less subset)
+
+When a Penpot **Personal Access Token** is configured, the server exposes an extra
+set of tools that talk directly to the Penpot REST/RPC API and do **not** require
+the MCP plugin or a connected browser session. These tools are additive — the
+browser-based `execute_code` flow stays available for everything that needs the
+Plugin API runtime (rendering, selection state, CSS export, etc.).
+
+| Environment Variable | Description                                                                                                       | Default                     |
+|----------------------|-------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| `PENPOT_PAT`         | Personal Access Token issued from your Penpot account settings (Profile → Access tokens). Enables PAT-mode tools. | (unset)                     |
+| `PENPOT_BASE_URL`    | Base URL of the target Penpot instance.                                                                           | `https://design.penpot.app` |
+
+Prefer not exporting the token in your shell? Use the bundled `config set` subcommand to
+persist it in a `0600` file under `~/.config/penpot-mcp/` instead — see
+[Managing PAT and base URL with `config set`](#managing-pat-and-base-url-with-config-set)
+below.
+
+Tools enabled in PAT mode:
+
+- `list_penpot_files` — enumerate projects and files accessible to the token without touching the plugin.
+
+PAT mode does **not** unlock the following — they remain plugin-only because the
+Plugin API runs inside the browser:
+
+- Shape mutation with full validation (`execute_code` uses `naturalChildOrdering` + `throwValidationErrors`)
+- Shape rendering / image export
+- Selection, viewport and event listeners
+- CSS generation, applied-token detection
+
+#### Managing PAT and base URL with `config set`
+
+The PAT and base URL can also be stored on disk so you do not have to set environment
+variables every time you start the server:
+
+```shell
+# Interactive: prompts for the PAT (input hidden) and the base URL (pre-filled with the default)
+penpot-mcp config set
+
+# Non-interactive
+penpot-mcp config set --pat <pat> --base-url https://design.penpot.app
+
+# Inspect the resolved values
+penpot-mcp config show
+
+# Remove the stored file
+penpot-mcp config clear
+```
+
+The file is written to `~/.config/penpot-mcp/config.json` (or
+`%APPDATA%/penpot-mcp/config.json` on Windows) with `0600` permissions. Environment
+variables (`PENPOT_PAT`, `PENPOT_BASE_URL`) always take precedence over the file when
+both are present.
 
 ### Logging Configuration
 

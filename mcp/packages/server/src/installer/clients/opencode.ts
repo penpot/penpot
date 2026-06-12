@@ -1,0 +1,59 @@
+import { ClientInstaller, InstallOptions, InstallResult } from "../types";
+import { expandHome, readJsonFile, writeJsonFile, setNested, deleteNested, backupIfExists } from "../configWriter";
+
+const CONFIG_PATH = "~/.config/opencode/opencode.jsonc";
+
+export const opencode: ClientInstaller = {
+    id: "opencode",
+    label: "OpenCode",
+    describe() {
+        return "OpenCode. Uses `mcp` top-level key with `type: remote`.";
+    },
+    configPath() {
+        return expandHome(CONFIG_PATH);
+    },
+    snippet(opts: InstallOptions) {
+        return {
+            type: "remote",
+            url: opts.serverUrl,
+            enabled: true,
+        };
+    },
+    async install(opts: InstallOptions): Promise<InstallResult> {
+        const file = this.configPath();
+        const entry = this.snippet(opts);
+        if (opts.dryRun) {
+            return { client: this.id, path: file, written: false, skipped: "dry-run", snippet: entry };
+        }
+        backupIfExists(file);
+        const cfg: any = readJsonFile(file) ?? {};
+        if (!opts.force && cfg.mcp?.[opts.entryName]) {
+            return {
+                client: this.id,
+                path: file,
+                written: false,
+                skipped: `entry '${opts.entryName}' already exists; use --force`,
+                snippet: entry,
+            };
+        }
+        setNested(cfg, ["mcp", opts.entryName], entry);
+        writeJsonFile(file, cfg);
+        return { client: this.id, path: file, written: true, snippet: entry };
+    },
+    async uninstall(opts: InstallOptions): Promise<InstallResult> {
+        const file = this.configPath();
+        if (opts.dryRun) {
+            return { client: this.id, path: file, written: false, skipped: "dry-run" };
+        }
+        const cfg: any = readJsonFile(file);
+        if (!cfg) {
+            return { client: this.id, path: file, written: false, skipped: "no config file" };
+        }
+        const removed = deleteNested(cfg, ["mcp", opts.entryName]);
+        if (!removed) {
+            return { client: this.id, path: file, written: false, skipped: "entry not present" };
+        }
+        writeJsonFile(file, cfg);
+        return { client: this.id, path: file, written: true };
+    },
+};

@@ -17,6 +17,8 @@ import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
 import { CljsCompilerOutputTool } from "./tools/CljsCompilerOutputTool";
 import { CljCheckParentheses } from "./tools/CljCheckParentheses";
 import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
+import { ListPenpotFilesTool } from "./tools/ListPenpotFilesTool";
+import { PenpotRestClient } from "./PenpotRestClient";
 import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
@@ -207,6 +209,9 @@ export class PenpotMcpServer {
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
+        }
+        if (PenpotRestClient.isConfigured()) {
+            toolInstances.push(new ListPenpotFilesTool(this));
         }
         if (this.isDevEnv()) {
             const nreplClient = new NreplClient();
