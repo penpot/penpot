@@ -15,11 +15,27 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [promesa.core :as p]))
 
 ;; Needs to be here because moving it to `app.main.data.workspace.mcp` will
 ;; cause a circular dependency
 (def mcp-plugin-id "96dfa740-005d-8020-8007-55ede24a2bae")
+
+;; Promise that resolves when plugins runtime is initialized.
+;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
+(defonce ^:private runtime-ready-promise (p/deferred))
+
+(defn wait-for-runtime
+  "Returns a promise that resolves when plugins runtime is initialized."
+  []
+  runtime-ready-promise)
+
+(defn signal-runtime-ready
+  "Signals that plugins runtime has been initialized. Called by app.plugins/init-plugins-runtime."
+  []
+  (when (p/pending? runtime-ready-promise)
+    (p/resolve! runtime-ready-promise true)))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))

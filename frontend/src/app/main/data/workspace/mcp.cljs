@@ -15,7 +15,7 @@
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.plugins.register :refer [mcp-plugin-id]]
+   [app.plugins.register :as preg]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -29,7 +29,7 @@
   {:code "plugin.js"
    :name "Penpot MCP Plugin"
    :version 2
-   :plugin-id mcp-plugin-id
+   :plugin-id preg/mcp-plugin-id
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
    :permissions
@@ -195,41 +195,45 @@
 
 (defn init-mcp
   [stream]
-  (->> (rp/cmd! :get-current-mcp-token)
-       (rx/tap
-        (fn [{:keys [token]}]
-          (when token
-            (dp/start-plugin!
-             (assoc default-manifest
-                    :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
-                    :host (str (u/join cf/public-uri "plugins/mcp/")))
+  ;; Wait for plugins runtime to be initialized before starting the MCP plugin.
+  ;; This ensures global.ɵloadPlugin is available when start-plugin! is called.
+  (->> (rx/from (preg/wait-for-runtime))
+       (rx/mapcat
+        (fn [_]
+          (->> (rp/cmd! :get-current-mcp-token)
+               (rx/tap
+                (fn [{:keys [token]}]
+                  (when token
+                    (dp/start-plugin!
+                     (assoc default-manifest
+                            :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
+                            :host (str (u/join cf/public-uri "plugins/mcp/")))
 
-             ;; API extension for MCP server
-             #js {:mcp
-                  #js
-                   {:getToken (constantly token)
-                    :getServerUrl #(str cf/mcp-ws-uri)
-                    :setMcpStatus
-                    (fn [status]
-                      (when (= status "connected")
-                        (start-reconnect-watcher!))
-                      (st/emit! (update-mcp-connection-status status))
-                      (log/info :hint "MCP STATUS" :status status))
+                     ;; API extension for MCP server
+                     #js {:mcp
+                          #js
+                           {:getToken (constantly token)
+                            :getServerUrl #(str cf/mcp-ws-uri)
+                            :setMcpStatus
+                            (fn [status]
+                              (when (= status "connected")
+                                (start-reconnect-watcher!))
+                              (st/emit! (update-mcp-connection-status status))
+                              (log/info :hint "MCP STATUS" :status status))
 
-                    :on
-                    (fn [event cb]
-                      (when-let [event
-                                 (case event
-                                   "disconnect" ::disconnect
-                                   "connect" ::connect
-                                   nil)]
+                            :on
+                            (fn [event cb]
+                              (when-let [event
+                                         (case event
+                                           "disconnect" ::disconnect
+                                           "connect" ::connect
+                                           nil)]
 
-                        (let [stopper (rx/filter finalize-workspace? stream)]
-                          (->> stream
-                               (rx/filter (ptk/type? event))
-                               (rx/take-until stopper)
-                               (rx/subs! #(cb))))))}}))))
-       (rx/ignore)))
+                                (let [stopper (rx/filter finalize-workspace? stream)]
+                                  (->> stream
+                                       (rx/filter (ptk/type? event))
+                                       (rx/take-until stopper)
+                                       (rx/subs! #(cb))))))}})))))))))
 
 (defn init
   []
