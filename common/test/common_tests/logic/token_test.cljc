@@ -13,7 +13,6 @@
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
-   [clojure.datafy :refer [datafy]]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)

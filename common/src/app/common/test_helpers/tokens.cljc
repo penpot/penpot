@@ -29,6 +29,7 @@
   (ctf/update-file-data file ctf/ensure-tokens-lib))
 
 (defn update-tokens-lib
+  "Modify the tokens-lib of a file "
   [file f]
   (ctf/update-file-data file #(ctf/update-tokens-lib % f)))
 

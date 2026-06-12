@@ -778,6 +778,7 @@
   (delete-theme [_ id] "delete a theme in the library")
   (theme-count [_] "get the total number if themes in the library")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
+  (get-theme-tree-no-hidden [_] "get a nested tree of all themes in the library except the hidden theme")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ id] "get one theme looking for id")
   (get-theme-by-name [_ group name] "get one theme looking for group and name")
@@ -1191,6 +1192,9 @@ Will return a value that matches this schema:
 
   (get-theme-tree [_]
     themes)
+
+  (get-theme-tree-no-hidden [_]
+    (dissoc themes hidden-theme-group))
 
   (get-theme-groups [_]
     (into [] (comp

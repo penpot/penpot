@@ -11,6 +11,7 @@
    [app.common.i18n :refer [tr]]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
+   [app.common.types.token-status :as ctos]
    [app.common.types.tokens-lib :as ctob]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -302,6 +303,8 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Token
+
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
   This regexp also trims whitespace around the value."
@@ -373,3 +376,15 @@
 ;; FIXME: this should be precalculated ?
 (defn is-reference? [token]
   (str/includes? (:value token) "{"))
+
+;; Tokens status
+
+(defn set-theme-status
+  [token-status tokens-lib theme-id status]
+    (assert (ctos/token-status? token-status) "expected valid token-status")
+    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+    (assert (uuid? theme-id) "expected valid theme-id")
+    (assert (boolean? status) "expected boolean status")
+    (if (ctob/get-theme tokens-lib theme-id)
+      (ctos/set-theme-status token-status tokens-lib theme-id status)
+      token-status))

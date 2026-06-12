@@ -1087,7 +1087,7 @@
 
 ;; === Operations
 
-(def  decode-shape-attrs
+(def decode-shape-attrs
   (sm/decoder cts/schema:shape-attrs sm/json-transformer))
 
 (defmethod process-operation :assign

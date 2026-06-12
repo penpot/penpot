@@ -330,10 +330,14 @@
     (:token-status file-data)))
 
 (defn update-tokens-lib
+  "Update the tokens-lib inside file-data through a callback function.
+   The function will receive the tokens lib and the rest of args."
   [file-data f & args]
   (d/update-when file-data :tokens-lib #(apply f % args)))
 
 (defn update-token-status
+  "Update the token-status inside file-data through a callback function.
+   The function will receive the tokens status, the tokens lib and the rest of args."
   [file-data f & args]
   (d/update-when file-data :token-status #(apply f % (get-tokens-lib file-data) args)))
 

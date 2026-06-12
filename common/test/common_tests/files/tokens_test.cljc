@@ -7,6 +7,11 @@
 (ns common-tests.files.tokens-test
   (:require
    [app.common.files.tokens :as cfo]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.tokens :as tht]
+   [app.common.types.token-status :as ctos]
+   [app.common.types.tokens-lib :as ctob]
    [clojure.test :as t]))
 
 (t/deftest test-parse-token-value
@@ -80,3 +85,11 @@
     (t/is (nil? (cfo/shapes-token-applied? {:name "a"} [{:applied-tokens {:x "a"}}
                                                         {:applied-tokens {:x "a"}}]
                                            #{:y})))))
+
+(t/deftest set-theme-status
+  (t/testing "setting the status of a theme gets it activated or deactivated"
+    (let [tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme1) :name "theme")))
+          token-status (ctos/make-token-status)
+          token-status' (cfo/set-theme-status token-status tokens-lib (thi/id :theme1) true)]
+      (t/is (ctos/theme-active? token-status' (thi/id :theme1))))))

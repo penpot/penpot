@@ -10,8 +10,8 @@
    #?(:clj [clojure.data.json :as json])
    [app.common.test-helpers.ids-map :as thi]
    [app.common.transit :as tr]
-   [app.common.types.tokens-lib :as ctob]
    [app.common.types.token-status :as ctos]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.datafy :refer [datafy]]
    [clojure.test :as t]))
@@ -20,10 +20,10 @@
   (let [theme-id (uuid/next)
         set-id   (uuid/next)
         status   (ctos/make-token-status :active-themes #{theme-id}
-                                          :active-sets #{set-id})]
+                                         :active-sets #{set-id})]
     (t/is (ctos/token-status? status))
     (t/is (ctos/check-token-status status))
-    (t/is (= (ctos/active-theme-count status) 1))
+    (t/is (= (ctos/active-themes-count status) 1))
     (t/is (ctos/theme-active? status theme-id))
     (t/is (= (ctos/active-set-count status) 1))
     (t/is (ctos/set-active? status set-id))))
@@ -32,7 +32,7 @@
   (let [status (ctos/make-token-status)]
     (t/is (ctos/token-status? status))
     (t/is (ctos/check-token-status status))
-    (t/is (= (ctos/active-theme-count status) 0))
+    (t/is (= (ctos/active-themes-count status) 0))
     (t/is (= (ctos/active-set-count status) 0))))
 
 (t/deftest make-invalid-token-status
@@ -47,29 +47,35 @@
 
 (t/deftest activate-theme
   (let [theme-id (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-theme (ctob/make-token-theme :id theme-id :name "theme")))
         status   (ctos/make-token-status)
-        status'  (ctos/activate-theme status theme-id)]
+        status'  (ctos/activate-theme status tokens-lib theme-id)]
     (t/is (not (ctos/theme-active? status theme-id)))
     (t/is (ctos/theme-active? status' theme-id))
-    (t/is (= (ctos/active-theme-count status') 1))))
+    (t/is (= (ctos/active-themes-count status') 1))))
 
 (t/deftest deactivate-theme
   (let [theme-id (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-theme (ctob/make-token-theme :id theme-id :name "theme")))
         status   (ctos/make-token-status :active-themes #{theme-id})
-        status'  (ctos/deactivate-theme status theme-id)]
+        status'  (ctos/deactivate-theme status tokens-lib theme-id)]
     (t/is (ctos/theme-active? status theme-id))
     (t/is (not (ctos/theme-active? status' theme-id)))
-    (t/is (= (ctos/active-theme-count status') 0))))
+    (t/is (= (ctos/active-themes-count status') 0))))
 
-(t/deftest toggle-theme-active
+(t/deftest set-theme-status
   (let [theme-id (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-theme (ctob/make-token-theme :id theme-id :name "theme")))
         status   (ctos/make-token-status)
-        status'  (ctos/toggle-theme-active status theme-id)
-        status'' (ctos/toggle-theme-active status' theme-id)]
+        status'  (ctos/set-theme-status status tokens-lib theme-id true)
+        status'' (ctos/set-theme-status status' tokens-lib theme-id false)]
     (t/is (ctos/theme-active? status' theme-id))
     (t/is (not (ctos/theme-active? status'' theme-id)))
-    (t/is (= (ctos/active-theme-count status') 1))
-    (t/is (= (ctos/active-theme-count status'') 0))))
+    (t/is (= (ctos/active-themes-count status') 1))
+    (t/is (= (ctos/active-themes-count status'') 0))))
 
 (t/deftest activate-set
   (let [set-id  (uuid/next)
@@ -165,7 +171,7 @@
         token-status (ctos/make-token-status-from-lib tokens-lib)]
     (t/is (ctos/token-status? token-status))
     (t/is (ctos/check-token-status token-status))
-    (t/is (= (ctos/active-theme-count token-status) 2))
+    (t/is (= (ctos/active-themes-count token-status) 2))
     (t/is (ctos/theme-active? token-status (thi/id :theme-1)))
     (t/is (ctos/theme-active? token-status (thi/id :theme-2)))
     (t/is (= (ctos/active-set-count token-status) 2))
