@@ -181,6 +181,16 @@
         active-frames        (mf/use-state #{})
         canvas-init?         (mf/use-state false)
         initialized?         (mf/use-state false)
+        dragging-guide-id*   (mf/use-state nil)
+        guide-hover-axis*    (mf/use-state nil)
+
+        on-guide-drag
+        (mf/use-fn
+         #(reset! dragging-guide-id* %))
+
+        on-guide-hover
+        (mf/use-fn
+         #(reset! guide-hover-axis* %))
 
         ;; REFS
         [viewport-ref
@@ -341,6 +351,14 @@
 
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
+
+        wasm-guides
+        (mf/with-memo [guides focus show-rulers? show-grids? @dragging-guide-id*]
+          (guides/wasm-visible-guides
+           {:guides guides
+            :visible? (and show-rulers? show-grids?)
+            :focused focus
+            :dragging-id @dragging-guide-id*}))
 
         single-select?           (= (count selected-shapes) 1)
 
@@ -538,6 +556,13 @@
       (when @canvas-init?
         (wasm.api/render-ui-only)))
 
+    ;; Ruler guides: push the WASM-visible guide set to the render engine.
+    ;; `wasm-guides` is also passed to the SVG overlay for index-based hit
+    ;; testing — it must stay in sync with what we serialize here.
+    (mf/with-effect [@canvas-init? wasm-guides objects]
+      (when @canvas-init?
+        (wasm.api/set-guides wasm-guides objects)))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -622,7 +647,12 @@
        :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
-       :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
+       :class (dm/str @cursor " "
+                      (stl/css-case
+                       :global/drawing drawing-tool
+                       :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
+                       :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
+                       :viewport-controls true))
        :style {:touch-action "none"}
        :fill "none"
        :on-click         on-click
@@ -824,14 +854,21 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
+       ;; NOTE: ruler guides are being migrated to the WASM render engine.
+       ;; The SVG-overlay rendering is temporarily disabled while we implement
+       ;; the new path.
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
            :guides guides
+           :wasm-guides wasm-guides
+           :wasm-guides? true
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
-           :modifiers wasm-modifiers}])
+           :modifiers wasm-modifiers
+           :on-guide-drag on-guide-drag
+           :on-guide-hover on-guide-hover}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)

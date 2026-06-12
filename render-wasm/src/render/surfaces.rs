@@ -854,10 +854,17 @@ impl Surfaces {
 
     /// Copy the current `Backbuffer` contents into `Target`.
     /// This is a GPU→GPU copy via Skia (no ReadPixels).
-    pub fn copy_backbuffer_to_target(&mut self) {
+    ///
+    /// `Target` is cleared to `background` first so UI overlay pixels (guides,
+    /// grid) from the previous frame are fully erased. Without this, `SrcOver`
+    /// compositing would keep stale overlay pixels wherever the backbuffer is
+    /// transparent.
+    pub fn copy_backbuffer_to_target(&mut self, background: skia::Color) {
         let sampling_options = self.sampling_options;
+        let canvas = self.target.canvas();
+        canvas.clear(background);
         self.backbuffer.draw(
-            self.target.canvas(),
+            canvas,
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),

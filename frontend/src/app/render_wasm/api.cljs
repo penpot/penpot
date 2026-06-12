@@ -2240,6 +2240,35 @@
   (h/call wasm/internal-module "_hide_grid")
   (request-render "clear-grid"))
 
+;; Ruler guides ----------------------------------------------------------------
+
+(defn set-guides
+  "Serializes the page guides and sends them to the render engine.
+  `guides` is the page `:guides` map (id -> guide); `objects` is the page
+  objects map, used to resolve each guide's board clip range."
+  [guides objects]
+  (let [size    (sr/get-guides-byte-size guides)
+        offset  (mem/alloc->offset-32 size)
+        heapu32 (mem/get-heap-u32)
+        heapf32 (mem/get-heap-f32)]
+    (sr/write-guides guides objects heapu32 heapf32 offset)
+    (h/call wasm/internal-module "_set_guides")
+    (request-render "set-guides")))
+
+;; Screen-space hit tolerance for ruler guides. Must match
+;; `guide-active-area` in `app.main.ui.workspace.viewport.guides`.
+(def ^:private guide-active-area 16)
+
+(defn find-guide-at
+  "Returns the serialized guide index at `position` (viewport coordinates),
+  or -1 when no guide is within the hit tolerance."
+  [position zoom]
+  (h/call wasm/internal-module "_find_guide_at"
+          (:x position)
+          (:y position)
+          zoom
+          guide-active-area))
+
 (defn get-grid-coords
   [position]
   (let [offset  (h/call wasm/internal-module

@@ -4,9 +4,11 @@ use std::collections::HashMap;
 mod rulers;
 mod shapes_pool;
 mod text_editor;
+mod ui;
 pub use rulers::RulerState;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
+pub use ui::UIState;
 
 use crate::error::{Error, Result};
 use crate::render::FrameType;
