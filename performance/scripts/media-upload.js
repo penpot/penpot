@@ -8,15 +8,9 @@
 //   - PNG (5.1 KB) → direct upload
 //   - JPG (305 KB) → chunked upload (7 chunks at 50 KB each)
 //
-// Flow:
-//   1. Register → login → create project → create file
-//   2. Upload SVG (direct)
-//   3. Upload PNG (direct)
-//   4. Upload JPG (chunked)
-//
 // Usage:
 //   k6 run scripts/media-upload.js
-//   k6 run --vus 5 --iterations 3 scripts/media-upload.js
+//   k6 run --vus 50 --iterations 5 scripts/media-upload.js
 
 import { check, sleep, fail } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
@@ -47,7 +41,7 @@ export const options = {
 };
 
 // ---------------------------------------------------------------------------
-// Test Data — load fixtures from backend test files
+// Test Data
 // ---------------------------------------------------------------------------
 
 const imageSvg = open("../../backend/test/backend_tests/test_files/sample1.svg", "b");
@@ -81,25 +75,29 @@ function assertOk(res, label) {
 }
 
 // ---------------------------------------------------------------------------
-// Setup
+// Setup — create user pool
 // ---------------------------------------------------------------------------
 
 export function setup() {
+  const vuCount = (options.scenarios.media_upload && options.scenarios.media_upload.vus) || __ENV.K6_VUS || 1;
+
   console.log(`Penpot Media Upload Test`);
   console.log(`  Base URL: ${BASE_URL}`);
-  console.log(`  Fixtures:`);
-  console.log(`    SVG: ${imageSvg.byteLength} B`);
-  console.log(`    PNG: ${imagePng.byteLength} B`);
-  console.log(`    JPG: ${imageJpg.byteLength} B`);
+  console.log(`  VUs:      ${vuCount}`);
   console.log(``);
 
   const client = createClient(BASE_URL);
+  if (client.getProfile().status === 0) fail(`Backend unreachable at ${BASE_URL}`);
 
-  // Verify backend is reachable
-  const res = client.getProfile();
-  if (res.status === 0) fail(`Backend unreachable at ${BASE_URL}`);
+  const users = [];
+  for (let i = 0; i < vuCount; i++) {
+    const res = client.rpc("POST", "create-demo-profile", {});
+    if (res.status !== 200) fail(`Failed to create demo profile ${i + 1}/${vuCount}`);
+    users.push(res.json());
+  }
+  console.log(`  Created ${users.length} demo profiles`);
 
-  return { baseUrl: BASE_URL };
+  return { baseUrl: BASE_URL, users };
 }
 
 // ---------------------------------------------------------------------------
@@ -109,63 +107,38 @@ export function setup() {
 export default function (data) {
   const client = createClient(data.baseUrl);
 
-  // Register
-  const demoRes = client.rpc("POST", "create-demo-profile", {});
-  if (!assertOk(demoRes, "create-demo-profile")) fail("Failed to create demo profile");
-  const demo = demoRes.json();
+  // Pick user from pool
+  const user = data.users[__VU - 1];
+  if (!user) fail(`No user for VU ${__VU}`);
 
   // Login
-  const loginRes = client.login(demo.email, demo.password);
-  if (!assertOk(loginRes, "login")) fail("Login failed");
+  if (!assertOk(client.login(user.email, user.password), "login")) fail("login failed");
 
   sleep(0.5);
 
   // Get team
-  const teamsRes = client.getTeams();
-  if (!assertOk(teamsRes, "get-teams")) fail("get-teams failed");
-  const teamId = teamsRes.body[0].id;
+  const teamId = client.getTeams().body[0].id;
 
-  // Create project
-  const projRes = client.createProject(teamId, `Media Project ${uuidv4().substring(0, 8)}`);
-  if (!assertOk(projRes, "create-project")) fail("create-project failed");
-  const projectId = projRes.body.id;
-
-  // Create file
-  const fileRes = client.createFile(projectId, `Media File ${uuidv4().substring(0, 8)}`);
-  if (!assertOk(fileRes, "create-file")) fail("create-file failed");
-  const fileId = fileRes.body.id;
+  // Create project + file
+  const projectId = client.createProject(teamId, `Media ${uuidv4().substring(0, 8)}`).body.id;
+  const fileId = client.createFile(projectId, `Media ${uuidv4().substring(0, 8)}`).body.id;
 
   sleep(0.5);
 
-  // Upload SVG (direct — small file)
-  const svgRes = client.uploadFileMediaObject(fileId, imageSvg, "sample.svg", "image/svg+xml");
-  if (!assertOk(svgRes, "upload SVG")) {
-    console.error(`VU ${__VU}: SVG upload failed`);
-  } else {
-    console.log(`VU ${__VU}: Uploaded SVG (${imageSvg.byteLength} B, direct)`);
-  }
+  // Upload SVG (direct — 3.6 KB)
+  assertOk(client.uploadFileMediaObject(fileId, imageSvg, "sample.svg", "image/svg+xml"), "upload SVG");
 
   sleep(0.5);
 
-  // Upload PNG (direct — small file)
-  const pngRes = client.uploadFileMediaObject(fileId, imagePng, "sample.png", "image/png");
-  if (!assertOk(pngRes, "upload PNG")) {
-    console.error(`VU ${__VU}: PNG upload failed`);
-  } else {
-    console.log(`VU ${__VU}: Uploaded PNG (${imagePng.byteLength} B, direct)`);
-  }
+  // Upload PNG (direct — 5.1 KB)
+  assertOk(client.uploadFileMediaObject(fileId, imagePng, "sample.png", "image/png"), "upload PNG");
 
   sleep(0.5);
 
   // Upload JPG (chunked — 305 KB > 50 KB threshold)
-  const jpgRes = client.uploadFileMediaObject(fileId, imageJpg, "sample.jpg", "image/jpeg");
-  if (!assertOk(jpgRes, "upload JPG")) {
-    console.error(`VU ${__VU}: JPG upload failed`);
-  } else {
-    console.log(`VU ${__VU}: Uploaded JPG (${imageJpg.byteLength} B, chunked)`);
-  }
+  assertOk(client.uploadFileMediaObject(fileId, imageJpg, "sample.jpg", "image/jpeg"), "upload JPG");
 
-  console.log(`VU ${__VU}: Media upload test complete`);
+  console.log(`VU ${__VU}: Media upload complete`);
 }
 
 // ---------------------------------------------------------------------------

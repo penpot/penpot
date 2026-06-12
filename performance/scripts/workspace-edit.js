@@ -1,18 +1,18 @@
 // Workspace Edit Performance Test (Write-heavy)
 //
-// Simulates a user editing a file — repeatedly fetching the file (to get
+// Simulates users editing files — repeatedly fetching the file (to get
 // the latest revn) and submitting changes. Each VU edits its own file
 // independently, so there are no concurrency conflicts.
 //
-// Flow:
-//   1. Register (demo profile)
-//   2. Login
-//   3. Create project → create file
-//   4. Loop: get-file → update-file (add a shape) → sleep
+// setup() creates N demo profiles + 1 shared project.
+// Each VU picks its user, creates its own file, and edits it in a loop.
+//
+// Flow (per VU):
+//   Login → create file → loop: get-file → update-file → sleep
 //
 // Usage:
 //   k6 run scripts/workspace-edit.js
-//   k6 run --vus 10 --iterations 20 scripts/workspace-edit.js
+//   k6 run --vus 100 --iterations 50 scripts/workspace-edit.js
 
 import { check, sleep, fail } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
@@ -98,45 +98,39 @@ function makeAddRectChange(pageId, index) {
 }
 
 // ---------------------------------------------------------------------------
-// Setup — create a file per VU to edit
+// Setup — create N users + shared project
 // ---------------------------------------------------------------------------
 
 export function setup() {
+  const vuCount = (options.scenarios.workspace_edit && options.scenarios.workspace_edit.vus) || __ENV.K6_VUS || 1;
+
   console.log(`Penpot Workspace Edit Test`);
   console.log(`  Base URL:        ${BASE_URL}`);
+  console.log(`  VUs:             ${vuCount}`);
   console.log(`  Edit iterations: ${EDIT_ITERATIONS}`);
   console.log(``);
 
   const client = createClient(BASE_URL);
 
-  // Create demo profile
-  const demoRes = client.rpc("POST", "create-demo-profile", {});
-  if (demoRes.status !== 200) fail("Failed to create demo profile");
-  const demo = demoRes.json();
+  if (client.getProfile().status === 0) fail(`Backend unreachable at ${BASE_URL}`);
 
-  // Login
-  const loginRes = client.login(demo.email, demo.password);
-  if (loginRes.status !== 200) fail("Login failed");
+  // Create N demo profiles
+  const users = [];
+  for (let i = 0; i < vuCount; i++) {
+    const res = client.rpc("POST", "create-demo-profile", {});
+    if (res.status !== 200) fail(`Failed to create demo profile ${i + 1}/${vuCount}`);
+    users.push(res.json());
+  }
+  console.log(`  Created ${users.length} demo profiles`);
 
-  // Get default team
-  const teamsRes = client.getTeams();
-  if (teamsRes.status !== 200) fail("get-teams failed");
-  const teamId = teamsRes.body[0].id;
+  // Login with first user to create shared project
+  const loginRes = client.login(users[0].email, users[0].password);
+  if (loginRes.status !== 200) fail("Login failed for project setup");
+  const teamId = client.getTeams().body[0].id;
+  const projectId = client.createProject(teamId, "WS Edit Project").body.id;
+  console.log(`  Shared project: ${projectId}`);
 
-  // Create project for edit files
-  const projRes = client.createProject(teamId, "WS Edit Project");
-  if (projRes.status !== 200) fail("create-project failed");
-  const projectId = projRes.body.id;
-
-  console.log(`  Project: ${projectId}`);
-
-  return {
-    baseUrl: BASE_URL,
-    projectId,
-    profileId: loginRes.body.id,
-    email: demo.email,
-    password: demo.password,
-  };
+  return { baseUrl: BASE_URL, projectId, users };
 }
 
 // ---------------------------------------------------------------------------
@@ -146,10 +140,12 @@ export function setup() {
 export default function (data) {
   const client = createClient(data.baseUrl);
 
-  // Login with the profile that owns the project
-  const loginRes = client.login(data.email, data.password);
-  if (!assertOk(loginRes, "login")) fail("login failed");
+  // Pick user from pool
+  const user = data.users[__VU - 1];
+  if (!user) fail(`No user for VU ${__VU}`);
 
+  // Login
+  if (!assertOk(client.login(user.email, user.password), "login")) fail("login failed");
   sleep(0.5);
 
   // Create a file for this VU
@@ -160,9 +156,7 @@ export default function (data) {
   // Get initial file state
   const getFileRes = client.getFile(fileId);
   if (!assertOk(getFileRes, "get-file")) fail("get-file failed");
-  let pageId = getFileRes.body.data.pages[0];
-  let revn = getFileRes.body.revn;
-  let vern = getFileRes.body.vern;
+  const pageId = getFileRes.body.data.pages[0];
 
   sleep(0.5);
 
@@ -170,12 +164,8 @@ export default function (data) {
   for (let i = 0; i < EDIT_ITERATIONS; i++) {
     // Refresh file state to get latest revn
     const refreshRes = client.getFile(fileId);
-    if (!assertOk(refreshRes, "get-file")) {
-      console.warn(`VU ${__VU}: get-file failed on iteration ${i}, skipping`);
-      continue;
-    }
-    revn = refreshRes.body.revn;
-    vern = refreshRes.body.vern;
+    if (!assertOk(refreshRes, "get-file")) continue;
+    const { revn, vern } = refreshRes.body;
 
     sleep(0.3);
 
@@ -183,9 +173,7 @@ export default function (data) {
     const changes = [makeAddRectChange(pageId, i)];
     const updateRes = client.updateFile(fileId, revn, vern, client.sessionId, changes);
 
-    if (updateRes.status === 200) {
-      // ok
-    } else {
+    if (updateRes.status !== 200) {
       // Retry once on revn conflict
       const body = updateRes.body;
       const isConflict = body && (body.code === "revn-conflict" || body.type === "revn-conflict");

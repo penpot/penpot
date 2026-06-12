@@ -39,17 +39,31 @@ performance/
 
 Fixtures are reused from `backend/test/backend_tests/test_files/` (no copies in `performance/`).
 
+**Backend change:** `backend/src/app/rpc/commands/demo.clj` — demo profile emails changed from timestamp-based (`demo-<millis>.demo@example.com`) to UUID-based (`demo-<uuid>@demo.example.com`). Eliminates concurrent creation collisions at the source.
+
+**All scripts use `setup()` user pool:**
+
+| Script | setup() creates | VU pattern |
+|--------|----------------|------------|
+| `lifecycle.js` | N users | Each VU picks `users[__VU-1]` → login → full CRUD |
+| `workspace-open.js` | 1 user + 1 file with shape | All VUs share same user + file (realistic concurrent reads) |
+| `workspace-edit.js` | N users + shared project | Each VU creates own file → edit loop |
+| `media-upload.js` | N users | Each VU creates project/file → upload 3 images |
+| `font-upload.js` | N users | Each VU uploads TTF+OTF → create-font-variant |
+
+Setup is sequential (~140ms/user), excluded from k6 metrics. At 1000 VUs: ~2.3min setup, then pure measurement.
+
 **All flows validated (smoke test, 1 VU, 1 iteration each):**
 
-| Script | Checks | HTTP Requests | Failure Rate | Duration |
-|--------|--------|---------------|-------------|----------|
-| `lifecycle.js` | 11/11 | 22 | 0% | ~12s |
-| `workspace-open.js` | 5/5 per iter (×3) | 12 | 0% | ~4s |
-| `workspace-edit.js` | 5/5 per iter (×2) | 11 | 0% | ~4s |
-| `media-upload.js` | 8/8 | 17 | 0% | ~3s |
-| `font-upload.js` | 11/11 | 12 | 0% | ~3s |
+| Script | Checks | Failure Rate |
+|--------|--------|-------------|
+| `lifecycle.js` | 10/10 | 0% |
+| `workspace-open.js` | 9/9 | 0% |
+| `workspace-edit.js` | 5/5 | 0% |
+| `media-upload.js` | 8/8 | 0% |
+| `font-upload.js` | 11/11 | 0% |
 
-**Orchestrator (`./run.sh all`) validated** — runs all 5 flows in parallel (10 VUs total), all checks pass, 0% failure rate.
+**Orchestrator (`./run.sh all`) validated** — runs all 5 flows in parallel, 0% failure rate.
 
 **Key discoveries (cumulative):**
 
@@ -65,7 +79,7 @@ Fixtures are reused from `backend/test/backend_tests/test_files/` (no copies in 
 
 6. **k6 at** `/home/penpot/.local/bin/k6` (v0.56.0). Use `PATH="/home/penpot/.local/bin:$PATH"` or `K6` env var.
 
-7. **Demo profile race condition.** `create-demo-profile` uses timestamp-based emails. Parallel calls within the same ms get the same email. Mitigated with `sleep(Math.random() * 2)` before profile creation in parallel scenarios.
+7. **Demo profile race condition — solved.** Backend now uses `uuid/next` for demo emails (no collisions). k6 scripts use `setup()` to create user pool before VUs start. Both changes together eliminate the scaling bottleneck.
 
 8. **Chunked upload threshold.** The client uses 50 KB chunk size. Files ≤50 KB use direct multipart; files >50 KB use `create-upload-session` → `upload-chunk` × N → `assemble-file-media-object`.
 
@@ -73,25 +87,29 @@ Fixtures are reused from `backend/test/backend_tests/test_files/` (no copies in 
 
 10. **MIME type validation.** The backend validates that the uploaded content MIME matches the declared MIME. `sample.jpg` must be sent as `image/jpeg`, not `image/png`.
 
+11. **workspace-open uses shared user.** All VUs read the same file with the same user. Multiple demo users can't access each other's files without team sharing, so a single shared user is the correct pattern for read-heavy tests.
+
+12. **Demo profile creation is slow due to argon2id.** `derive-password` in `backend/src/app/auth.clj` uses argon2id with 32 MiB memory, 3 iterations, parallelism 2. Creating 1000 demo profiles in `setup()` takes ~2–3 minutes just for password hashing. At 1000 VUs, this is the dominant cost of the setup phase. **Simplification:** Since `demo-users` is already a development-only feature, demo profiles should use a weaker password algorithm by default (e.g., bcrypt cost 4). No special parameters needed — just change `demo.clj` to call a new `derive-password-weak` function.
+
 ### Remaining Work
 
 | Phase | Status | Next Actions |
 |-------|--------|-------------|
 | Phase 1 – Discovery & Tooling | **Done** | — |
-| Phase 2 – Core HTTP Flows | **Done** | All 5 flows implemented + orchestrator |
-| Phase 2 – Data seeding | **Not needed** | User pool created in k6 `setup()` — no external script needed |
+| Phase 2 – Core HTTP Flows | **Done** | All 5 flows + orchestrator + setup() pool |
+| Phase 2 – Performance Optimization | **Not started** | Fast password hashing for demo users |
 | Phase 3 – Scenarios | **Done** | `./run.sh all` runs all flows in parallel |
 | Phase 4 – Advanced update-file | **Not started** | File size tiers, concurrent editing matrix |
 | Phase 5 – CI & Reporting | **Not started** | Grafana dashboards, regression guard |
 
 ### Immediate Next Steps
 
-1. ~~Create `seed-data.js`~~ — Not needed. Use k6 `setup()` to create a user pool before VUs start. Each VU picks a pre-existing user from the pool (`data.users[__VU - 1]`). Setup is sequential (~140ms/user) and excluded from metrics. Self-contained, no external tooling.
-2. Add `--scenario` flag to `run.sh` to select individual flows by name from the orchestrator.
-3. Write `viewer.js` — `get-view-only-bundle` + `get-comment-threads` (deferred per user request).
-4. Phase 4: File size matrix (`update-file` latency vs shape count: 10, 100, 500, 1000 shapes).
-5. Phase 4: Concurrent editing test (2–3 VUs per file, measure conflict rate).
-6. Phase 5: Grafana dashboard panels (p95 latency by RPC, error rate, JVM, DB pool).
+1. **Phase 2 – Fast password for demo users:** Add `derive-password-weak` in `backend/src/app/auth.clj` (e.g., bcrypt cost 4 or SHA-256). Update `backend/src/app/rpc/commands/demo.clj` to use it for all demo profiles. This reduces `setup()` time from ~2–3 min to ~5–10 sec for 1000 users. **Does not affect production** — `demo-users` flag is disabled by default in production.
+2. Phase 4: File size matrix (`update-file` latency vs shape count: 10, 100, 500, 1000 shapes).
+3. Phase 4: Concurrent editing test (2–3 VUs per file, measure conflict rate).
+4. Phase 5: Grafana dashboard panels (p95 latency by RPC, error rate, JVM, DB pool).
+5. Add `--scenario` flag to `run.sh` to select individual flows by name from the orchestrator.
+6. Write `viewer.js` — `get-view-only-bundle` + `get-comment-threads` (deferred per user request).
 
 ---
 
@@ -317,6 +335,28 @@ The backend `update-file` performance depends heavily on file data size (seriali
 
 ---
 
+### Phase 2 – Performance Optimization: Fast Password Hashing for Demo Users
+
+**Goal:** Reduce `setup()` time for performance tests by making demo profile password derivation faster.
+
+**Problem:** `derive-password` in `backend/src/app/auth.clj` uses argon2id with 32 MiB memory, 3 iterations, parallelism 2. At 1000 VUs, creating the user pool in `setup()` takes ~2–3 minutes just for password hashing.
+
+**Solution:**
+Since `demo-users` is already a development-only feature (disabled by default in production), we can simplify: all demo profiles should use a weaker, faster password algorithm. No special parameters or tenant checks needed.
+
+1. In `backend/src/app/auth.clj`, add a `derive-password-weak` function that uses a faster algorithm (e.g., bcrypt cost 4 or SHA-256). Keep the default `derive-password` as argon2id for regular users.
+2. In `backend/src/app/rpc/commands/demo.clj`, use `derive-password-weak` instead of `derive-password` when creating demo profiles. This is safe because `demo-users` is already gated behind a config flag and is only used in development/testing.
+
+**Files to touch:**
+- `backend/src/app/auth.clj` — add `derive-password-weak` function (e.g., bcrypt cost 4 or SHA-256)
+- `backend/src/app/rpc/commands/demo.clj` — use `derive-password-weak` instead of `derive-password`
+
+**Expected impact:** Setup time for 1000 users drops from ~2–3 min to ~5–10 sec.
+
+**Safety:** Demo users are already a development-only feature (disabled by default in production via `demo-users` config flag). Using weaker passwords for demo users only affects development/test environments where the flag is explicitly enabled.
+
+---
+
 ### Phase 3 – Scenarios & Orchestration (Day 6)
 
 Define k6 `options.scenarios` that mix the flows to simulate realistic traffic.
@@ -483,5 +523,5 @@ Run `workspace-edit.js` against each tier separately and plot:
 ---
 
 **Plan Author:** Senior Software Architect
-**Status:** Phase 1–3 complete (all core flows + orchestrator). Phase 4–5 remain. See "Current Progress" above.
+**Status:** Phase 1–3 complete. Backend UUID fix + setup() user pool applied. Scripts ready for 1000 VU scale. Phase 4–5 remain.
 

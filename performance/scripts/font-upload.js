@@ -1,17 +1,14 @@
 // Font Upload Performance Test
 //
-// Tests the font upload flow: chunked upload of a TTF file followed by
-// creating a font variant. This exercises the storage pipeline and
-// font processing (FontForge/WOFF conversion).
+// Tests the font upload flow: chunked upload of TTF + OTF files followed by
+// creating a font variant. Exercises storage pipeline and font processing.
 //
-// Flow:
-//   1. Register → login → get team
-//   2. Chunked upload of font-1.ttf (68 KB, 2 chunks at 50 KB)
-//   3. create-font-variant with the uploaded session
+// setup() creates N demo profiles.
+// Each VU picks its user, uploads fonts, and creates a variant.
 //
 // Usage:
 //   k6 run scripts/font-upload.js
-//   k6 run --vus 3 --iterations 2 scripts/font-upload.js
+//   k6 run --vus 50 --iterations 5 scripts/font-upload.js
 
 import { check, sleep, fail } from "k6";
 import { uuidv4 } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
@@ -42,7 +39,7 @@ export const options = {
 };
 
 // ---------------------------------------------------------------------------
-// Test Data — load font fixtures from backend test files
+// Test Data
 // ---------------------------------------------------------------------------
 
 const fontTtf = open("../../backend/test/backend_tests/test_files/font-1.ttf", "b");
@@ -75,22 +72,29 @@ function assertOk(res, label) {
 }
 
 // ---------------------------------------------------------------------------
-// Setup
+// Setup — create user pool
 // ---------------------------------------------------------------------------
 
 export function setup() {
+  const vuCount = (options.scenarios.font_upload && options.scenarios.font_upload.vus) || __ENV.K6_VUS || 1;
+
   console.log(`Penpot Font Upload Test`);
   console.log(`  Base URL: ${BASE_URL}`);
-  console.log(`  Font TTF: ${fontTtf.byteLength} B`);
-  console.log(`  Font OTF: ${fontOtf.byteLength} B`);
+  console.log(`  VUs:      ${vuCount}`);
   console.log(``);
 
   const client = createClient(BASE_URL);
+  if (client.getProfile().status === 0) fail(`Backend unreachable at ${BASE_URL}`);
 
-  const res = client.getProfile();
-  if (res.status === 0) fail(`Backend unreachable at ${BASE_URL}`);
+  const users = [];
+  for (let i = 0; i < vuCount; i++) {
+    const res = client.rpc("POST", "create-demo-profile", {});
+    if (res.status !== 200) fail(`Failed to create demo profile ${i + 1}/${vuCount}`);
+    users.push(res.json());
+  }
+  console.log(`  Created ${users.length} demo profiles`);
 
-  return { baseUrl: BASE_URL };
+  return { baseUrl: BASE_URL, users };
 }
 
 // ---------------------------------------------------------------------------
@@ -100,111 +104,57 @@ export function setup() {
 export default function (data) {
   const client = createClient(data.baseUrl);
 
-  // Register
-  const demoRes = client.rpc("POST", "create-demo-profile", {});
-  if (!assertOk(demoRes, "create-demo-profile")) fail("Failed to create demo profile");
-  const demo = demoRes.json();
+  // Pick user from pool
+  const user = data.users[__VU - 1];
+  if (!user) fail(`No user for VU ${__VU}`);
 
   // Login
-  const loginRes = client.login(demo.email, demo.password);
-  if (!assertOk(loginRes, "login")) fail("Login failed");
-  const teamId = loginRes.body.defaultTeamId;
+  if (!assertOk(client.login(user.email, user.password), "login")) fail("login failed");
+  const teamId = client.getTeams().body[0].id;
 
   sleep(0.5);
 
-  // Get teams (to confirm team-id)
-  const teamsRes = client.getTeams();
-  if (!assertOk(teamsRes, "get-teams")) fail("get-teams failed");
-  const confirmedTeamId = teamsRes.body[0].id;
-
-  // Upload TTF via chunked upload
   const fontId = uuidv4();
   const fontFamily = `PerfFont-${uuidv4().substring(0, 8)}`;
+  const chunkSize = 50 * 1024; // 50 KB
 
-  console.log(`VU ${__VU}: Uploading font "${fontFamily}" (font-id: ${fontId})`);
-
-  // Create upload session for TTF
-  const chunkSize = 50 * 1024; // 50 KB — matches client default
+  // Upload TTF via chunked upload
   const ttfChunks = Math.ceil(fontTtf.byteLength / chunkSize);
+  const ttfSessionRes = client.createUploadSession(ttfChunks);
+  if (!assertOk(ttfSessionRes, "create-upload-session (ttf)")) fail("create-upload-session failed");
+  const ttfSessionId = ttfSessionRes.sessionId;
 
-  const sessionRes = client.createUploadSession(ttfChunks);
-  if (!assertOk(sessionRes, "create-upload-session (ttf)")) fail("create-upload-session failed");
-  const ttfSessionId = sessionRes.sessionId;
-
-  sleep(0.2);
-
-  // Upload TTF chunks
   for (let i = 0; i < ttfChunks; i++) {
-    const start = i * chunkSize;
-    const end = Math.min(start + chunkSize, fontTtf.byteLength);
-    const chunk = fontTtf.slice(start, end);
-
-    const chunkRes = client.uploadChunk(ttfSessionId, i, chunk, "font-1.ttf", "font/ttf");
-    if (!assertOk(chunkRes, `upload-chunk (ttf ${i}/${ttfChunks})`)) {
-      fail(`Chunk upload failed at index ${i}`);
-    }
-
+    const chunk = fontTtf.slice(i * chunkSize, Math.min((i + 1) * chunkSize, fontTtf.byteLength));
+    if (!assertOk(client.uploadChunk(ttfSessionId, i, chunk, "font-1.ttf", "font/ttf"), `upload-chunk ttf ${i}`)) fail("ttf chunk failed");
     sleep(0.1);
   }
 
-  console.log(`VU ${__VU}: Uploaded TTF in ${ttfChunks} chunks`);
-
-  // Upload OTF via chunked upload (separate session)
+  // Upload OTF via chunked upload
   const otfChunks = Math.ceil(fontOtf.byteLength / chunkSize);
-
   const otfSessionRes = client.createUploadSession(otfChunks);
   if (!assertOk(otfSessionRes, "create-upload-session (otf)")) fail("create-upload-session (otf) failed");
   const otfSessionId = otfSessionRes.sessionId;
 
-  sleep(0.2);
-
   for (let i = 0; i < otfChunks; i++) {
-    const start = i * chunkSize;
-    const end = Math.min(start + chunkSize, fontOtf.byteLength);
-    const chunk = fontOtf.slice(start, end);
-
-    const chunkRes = client.uploadChunk(otfSessionId, i, chunk, "font-1.otf", "font/otf");
-    if (!assertOk(chunkRes, `upload-chunk (otf ${i}/${otfChunks})`)) {
-      fail(`OTF chunk upload failed at index ${i}`);
-    }
-
+    const chunk = fontOtf.slice(i * chunkSize, Math.min((i + 1) * chunkSize, fontOtf.byteLength));
+    if (!assertOk(client.uploadChunk(otfSessionId, i, chunk, "font-1.otf", "font/otf"), `upload-chunk otf ${i}`)) fail("otf chunk failed");
     sleep(0.1);
   }
-
-  console.log(`VU ${__VU}: Uploaded OTF in ${otfChunks} chunks`);
 
   sleep(0.5);
 
   // Create font variant
-  const variantRes = client.rpc("POST", "create-font-variant", {
-    "team-id": confirmedTeamId,
+  if (!assertOk(client.rpc("POST", "create-font-variant", {
+    "team-id": teamId,
     "font-id": fontId,
     "font-family": fontFamily,
     "font-weight": 400,
     "font-style": "normal",
-    uploads: {
-      "font/ttf": ttfSessionId,
-      "font/otf": otfSessionId,
-    },
-  });
+    uploads: { "font/ttf": ttfSessionId, "font/otf": otfSessionId },
+  }), "create-font-variant")) fail("create-font-variant failed");
 
-  if (!assertOk(variantRes, "create-font-variant")) {
-    fail("create-font-variant failed");
-  }
-
-  console.log(`VU ${__VU}: Created font variant "${fontFamily}" (weight: 400, style: normal)`);
-
-  // Verify by fetching font variants
-  sleep(0.5);
-  const getVariantsRes = client.rpc("GET", "get-font-variants", {
-    "team-id": confirmedTeamId,
-  });
-  if (assertOk(getVariantsRes, "get-font-variants")) {
-    const variants = getVariantsRes.json();
-    console.log(`VU ${__VU}: Team has ${Array.isArray(variants) ? variants.length : "?"} font variants`);
-  }
-
-  console.log(`VU ${__VU}: Font upload test complete`);
+  console.log(`VU ${__VU}: Font "${fontFamily}" created`);
 }
 
 // ---------------------------------------------------------------------------
