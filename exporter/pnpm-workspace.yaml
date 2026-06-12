@@ -1,2 +1,9 @@
 allowBuilds:
   core-js-pure: false
+minimumReleaseAgeExclude:
+  - lodash@4.17.24
+  - lodash@4.17.23
+overrides:
+  lodash@<=4.17.23: ^4.17.24
+  lodash@>=4.0.0 <=4.17.22: ^4.17.23
+  lodash@>=4.0.0 <=4.17.23: ^4.17.24
