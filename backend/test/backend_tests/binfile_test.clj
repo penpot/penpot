@@ -103,5 +103,199 @@
                      (assoc ::bfc/profile-id (:id profile))
                      (assoc ::bfc/input output)
                      (v3/import-files!))]
-      (t/is (= (count result) 1))
-      (t/is (every? uuid? result)))))
+      (t/is (map? result))
+      (t/is (= 1 (count (:file-ids result))))
+      (t/is (every? uuid? (:file-ids result)))
+      (t/is (= [] (:auto-linked result)))
+      (t/is (= {} (:library-candidates result)))
+      (t/is (= [] (:external-libs result))))))
+
+(t/deftest slugify-name-test
+  (t/is (= "my-design-system" (bfc/slugify-name "My Design System!")))
+  (t/is (= "icons" (bfc/slugify-name "Icons")))
+  (t/is (= "brand-colors-2024" (bfc/slugify-name "Brand Colors 2024")))
+  (t/is (= "" (bfc/slugify-name "---"))))
+
+(t/deftest export-includes-external-libraries
+  (let [profile (th/create-profile* 1)
+        ;; Create a shared library file
+        library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Icons Library"})
+        ;; Create a file that uses the library
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+
+    ;; Link file to library
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    ;; Export without including libraries
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output))
+
+      ;; Read the manifest and check external-libraries
+      (let [manifest (v3/get-manifest output)]
+        (t/is (some? (:external-libraries manifest)))
+        (t/is (= 1 (count (:external-libraries manifest))))
+        (let [ext-lib (first (:external-libraries manifest))]
+          (t/is (= (:id library) (:id ext-lib)))
+          (t/is (= "Icons Library" (:name ext-lib)))
+          (t/is (= "icons-library" (:slug ext-lib)))
+          (t/is (= [(:id file)] (:used-by ext-lib))))))))
+
+(t/deftest import-auto-links-single-candidate
+  (let [profile (th/create-profile* 1)
+        ;; Create a shared library file
+        library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Icons Library"})
+        ;; Create a file that uses the library
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+
+    ;; Link file to library
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    ;; Export without including libraries
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output))
+
+      ;; Now create a new shared library with the same name in the same team
+      ;; (simulating the library existing in the target environment)
+      (let [library2 (th/create-file* 3 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Icons Library"})
+
+            result   (-> th/*system*
+                         (assoc ::bfc/project-id (:default-project-id profile))
+                         (assoc ::bfc/profile-id (:id profile))
+                         (assoc ::bfc/team-id (:default-team-id profile))
+                         (assoc ::bfc/input output)
+                         (v3/import-files!))]
+
+        ;; Check that the library was auto-linked
+        (t/is (= 1 (count (:auto-linked result))))
+        (t/is (= (:id library) (:id (first (:auto-linked result)))))
+        (t/is (= (:id library2) (:new-id (first (:auto-linked result)))))
+        (t/is (= {} (:library-candidates result)))
+
+        ;; Verify the file-library-rel was created
+        (let [rels (db/query th/*system* :file-library-rel
+                             {:library-file-id (:id library2)})]
+          (t/is (= 1 (count rels))))))))
+
+(t/deftest import-no-auto-link-no-match
+  (let [profile (th/create-profile* 1)
+        ;; Create a shared library file
+        library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Icons Library"})
+        ;; Create a file that uses the library
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+
+    ;; Link file to library
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    ;; Export without including libraries
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output))
+
+      ;; Import without any matching library in the team
+      (let [result (-> th/*system*
+                       (assoc ::bfc/project-id (:default-project-id profile))
+                       (assoc ::bfc/profile-id (:id profile))
+                       (assoc ::bfc/team-id (:default-team-id profile))
+                       (assoc ::bfc/input output)
+                       (v3/import-files!))]
+
+        ;; No auto-linking should happen
+        (t/is (= [] (:auto-linked result)))
+        (t/is (= {} (:library-candidates result)))))))
+
+(t/deftest import-returns-multi-match-candidates
+  (let [profile (th/create-profile* 1)
+        ;; Create a shared library file
+        library (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Icons Library"})
+        ;; Create a file that uses the library
+        file    (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})]
+
+    ;; Link file to library
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id file)
+                 :library-file-id (:id library)})
+
+    ;; Export without including libraries
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/embed-assets false)
+           (assoc ::bfc/include-libraries false))
+       (io/output-stream output))
+
+      ;; Create TWO shared libraries with the same name
+      (let [library2 (th/create-file* 3 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Icons Library"})
+            library3 (th/create-file* 4 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared true
+                                         :name "Icons Library"})
+
+            result   (-> th/*system*
+                         (assoc ::bfc/project-id (:default-project-id profile))
+                         (assoc ::bfc/profile-id (:id profile))
+                         (assoc ::bfc/team-id (:default-team-id profile))
+                         (assoc ::bfc/input output)
+                         (v3/import-files!))]
+
+        ;; No auto-linking (multi-match)
+        (t/is (= [] (:auto-linked result)))
+
+        ;; Should have candidates
+        (t/is (= 1 (count (:library-candidates result))))
+        (let [candidates (get (:library-candidates result) (:id library))]
+          (t/is (= 2 (count candidates))))
+
+        ;; No file-library-rel should be created automatically
+        (let [rels (db/query th/*system* :file-library-rel
+                             {:library-file-id (:id library2)})]
+          (t/is (= 0 (count rels))))
+        (let [rels (db/query th/*system* :file-library-rel
+                             {:library-file-id (:id library3)})]
+          (t/is (= 0 (count rels))))))))

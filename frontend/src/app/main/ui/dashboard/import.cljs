@@ -15,8 +15,10 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -173,7 +175,7 @@
             (swap! state update-with-analyze-result message))))))
 
 (defn- import-files
-  [state project-id entries]
+  [state library-resolution* project-id entries]
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
@@ -186,6 +188,11 @@
          (rx/filter (comp uuid? :file-id))
          (rx/subs!
           (fn [message]
+            ;; Capture library-resolution data if present (same for all
+            ;; entries from the same zip, so first one wins)
+            (when-let [resolution (:library-resolution message)]
+              (when (nil? @library-resolution*)
+                (reset! library-resolution* resolution)))
             (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
@@ -318,6 +325,55 @@
   (fn []
     (mapv #(assoc % :status :analyze) entries)))
 
+(defn- link-files-to-library!
+  "Call the link-file-to-library RPC for each file-id with the given
+  library-id. Returns an observable that completes when all links are done."
+  [file-ids library-id]
+  (->> (rx/from file-ids)
+       (rx/merge-map (fn [file-id]
+                       (->> (rp/cmd! :link-file-to-library
+                                     {:file-id file-id
+                                      :library-id library-id})
+                            (rx/catch (fn [cause]
+                                        (log/error :hint "failed to link library"
+                                                   :file-id file-id
+                                                   :library-id library-id
+                                                   :cause cause)
+                                        (rx/of nil))))))))
+
+(mf/defc library-resolution*
+  {::mf/private true}
+  [{:keys [resolution selections*]}]
+  (let [external-libs      (:external-libs resolution)
+        library-candidates (:library-candidates resolution)
+        selections         (deref selections*)
+
+        on-select
+        (mf/use-fn
+         (mf/deps selections*)
+         (fn [old-lib-id candidate-id]
+           (swap! selections* assoc old-lib-id candidate-id)))]
+
+    (when (seq library-candidates)
+      [:div {:class (stl/css :library-resolution)}
+       [:p {:class (stl/css :library-resolution-message)}
+        (tr "dashboard.import.resolve-libraries")]
+
+       (for [{:keys [id name]} external-libs]
+         (let [candidates (get library-candidates id)
+               options    (mapv (fn [c]
+                                  {:id (str (:id c))
+                                   :label (:name c)})
+                                candidates)
+               selected   (get selections id)]
+           [:div {:class (stl/css :library-resolution-item)
+                  :key (dm/str id)}
+            [:div {:class (stl/css :library-resolution-item-name)}
+             name]
+            [:> select* {:options options
+                         :default-selected (or (some-> selected str) "")
+                         :on-change (partial on-select id)}]]))])))
+
 (mf/defc import-dialog
   {::mf/register modal/components
    ::mf/register-as :import
@@ -338,13 +394,20 @@
         edition* (mf/use-state nil)
         edition  (deref edition*)
 
+        ;; Library resolution data from the backend (auto-linked + multi-match)
+        library-resolution*  (mf/use-state nil)
+        library-resolution   (deref library-resolution*)
+
+        ;; User selections for multi-match candidates: {old-lib-id candidate-id}
+        library-selections*  (mf/use-state {})
+
         continue-entries
         (mf/use-fn
          (mf/deps entries)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
              (reset! status* :import-progress)
-             (import-files state* project-id entries))))
+             (import-files state* library-resolution* project-id entries))))
 
         continue-template
         (mf/use-fn
@@ -407,6 +470,21 @@
              (continue-template template)
              (continue-entries))))
 
+        on-confirm-library-links
+        (mf/use-fn
+         (mf/deps library-resolution library-selections*)
+         (fn [event]
+           (dom/prevent-default event)
+           (let [selections @library-selections*
+                 file-ids   (:file-ids library-resolution)]
+             ;; Link each user-selected library to all imported files
+             (->> (rx/from (seq selections))
+                  (rx/merge-map (fn [[_old-lib-id candidate-id]]
+                                  (link-files-to-library! file-ids candidate-id)))
+                  (rx/reduce conj [])
+                  (rx/subs! (fn [_]
+                              (reset! status* :import-success)))))))
+
         on-accept
         (mf/use-fn
          (mf/deps on-finish-import)
@@ -432,7 +510,12 @@
               (zero? (count entries))))
 
         pending-analysis?
-        (some has-status-analyze? entries)]
+        (some has-status-analyze? entries)
+
+        auto-linked-count
+        (if (some? library-resolution)
+          (count (:auto-linked library-resolution))
+          0)]
 
     (mf/with-effect [entries]
       (cond
@@ -445,7 +528,12 @@
 
         (and (seq entries)
              (every? #(= :import-success (:status %)) entries))
-        (reset! status* :import-success)
+        ;; After all entries are imported, check if there are multi-match
+        ;; candidates that need user resolution
+        (if (and (some? @library-resolution*)
+                 (seq (:library-candidates @library-resolution*)))
+          (reset! status* :library-resolution)
+          (reset! status* :import-success))
 
         (and (seq entries)
              (and (every? #(not= :import-ready (:status %)) entries)
@@ -473,15 +561,33 @@
            :content (tr "dashboard.import.import-warning")}])
 
        (when (= :import-success status)
-         [:& context-notification
-          {:level (if (zero? import-success-total) :warning :success)
-           :content (tr "dashboard.import.import-message" (i18n/c import-success-total))}])
+         [:*
+          [:& context-notification
+           {:level (if (zero? import-success-total) :warning :success)
+            :content (tr "dashboard.import.import-message" (i18n/c import-success-total))}]
+          (when (pos? auto-linked-count)
+            [:& context-notification
+             {:level :success
+              :content (tr "dashboard.import.auto-linked-libraries" (i18n/c auto-linked-count))}])])
 
        (when (= :import-error status)
          [:& context-notification
           {:level :error
            :class (stl/css :context-notification-error)
            :content (tr "dashboard.import.import-error.disclaimer")}])
+
+       (when (= :library-resolution status)
+         [:*
+          [:& context-notification
+           {:level :success
+            :content (tr "dashboard.import.import-message" (i18n/c import-success-total))}]
+          (when (pos? auto-linked-count)
+            [:& context-notification
+             {:level :success
+              :content (tr "dashboard.import.auto-linked-libraries" (i18n/c auto-linked-count))}])
+          [:> library-resolution* {:resolution library-resolution
+                                   :selections* library-selections*
+                                   :file-ids (:file-ids library-resolution)}]])
 
        (if (or (= :import-error status) (and (= :analyze status) errors?))
          [:div {:class (stl/css :import-error-disclaimer)}
@@ -512,16 +618,17 @@
                      (tr "dashboard.import.import-error.unknown-error"))])]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
-         (for [entry entries]
-           [:> import-entry* {:edition edition
-                              :key (dm/str (:uri entry) "/" (:file-id entry))
-                              :entry entry
-                              :entries entries
-                              :importing? (= :import-progress status)
-                              :on-edit on-edit
-                              :on-change on-entry-change
-                              :on-delete on-entry-delete
-                              :can-be-deleted (> (count entries) 1)}]))
+         (when-not (= :library-resolution status)
+           (for [entry entries]
+             [:> import-entry* {:edition edition
+                                :key (dm/str (:uri entry) "/" (:file-id entry))
+                                :entry entry
+                                :entries entries
+                                :importing? (= :import-progress status)
+                                :on-edit on-edit
+                                :on-change on-entry-change
+                                :on-delete on-entry-delete
+                                :can-be-deleted (> (count entries) 1)}])))
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
@@ -547,6 +654,12 @@
                    :value (tr "labels.continue")
                    :disabled pending-analysis?
                    :on-click on-continue}])
+
+        (when (= :library-resolution status)
+          [:input {:class (stl/css :accept-btn)
+                   :type "button"
+                   :value (tr "dashboard.import.confirm-library-links")
+                   :on-click on-confirm-library-links}])
 
         (when (or (= :import-success status)
                   (= :import-error status)

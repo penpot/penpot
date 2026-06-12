@@ -204,33 +204,43 @@
           (rx/mapcat identity)
           (rx/merge-map
            (fn [[uri entries]]
-             (->> (import-blob-via-upload uri
-                                          {:name       (-> entries first :name)
-                                           :version    3
-                                           :project-id project-id})
-                  (rx/tap (fn [event]
-                            (let [payload (sse/get-payload event)
-                                  type    (sse/get-type event)]
-                              (if (= type "progress")
-                                (log/dbg :hint "import-binfile: progress"
-                                         :section (:section payload)
-                                         :name (:name payload))
-                                (log/dbg :hint "import-binfile: end")))))
-                  (rx/filter sse/end-of-stream?)
-                  (rx/mapcat (fn [_]
-                               (->> (rx/from entries)
-                                    (rx/map (fn [entry]
-                                              {:status :finish
-                                               :file-id (:file-id entry)})))))
-                  (rx/catch
-                   (fn [cause]
-                     (log/error :hint "unexpected error on import process"
-                                :project-id project-id
-                                ::log/sync? true
-                                :cause cause)
-                     (let [err (import-cause-message cause (tr "labels.error"))]
-                       (->> (rx/from entries)
-                            (rx/map (fn [entry]
-                                      {:status :error
-                                       :error err
-                                       :file-id (:file-id entry)})))))))))))))
+             (let [library-resolution* (volatile! nil)]
+               (->> (import-blob-via-upload uri
+                                            {:name       (-> entries first :name)
+                                             :version    3
+                                             :project-id project-id})
+                    (rx/tap (fn [event]
+                              (let [payload (sse/get-payload event)
+                                    type    (sse/get-type event)]
+                                (cond
+                                  (= type "progress")
+                                  (log/dbg :hint "import-binfile: progress"
+                                           :section (:section payload)
+                                           :name (:name payload))
+
+                                  (= type "library-candidates")
+                                  (vreset! library-resolution* payload)
+
+                                  :else
+                                  (log/dbg :hint "import-binfile: end")))))
+                    (rx/filter sse/end-of-stream?)
+                    (rx/mapcat (fn [_]
+                                 (let [resolution @library-resolution*]
+                                   (->> (rx/from entries)
+                                        (rx/map (fn [entry]
+                                                  (cond-> {:status :finish
+                                                           :file-id (:file-id entry)}
+                                                    (some? resolution)
+                                                    (assoc :library-resolution resolution))))))))
+                    (rx/catch
+                     (fn [cause]
+                       (log/error :hint "import-binfile: unexpected error on importing"
+                                  :project-id project-id
+                                  ::log/sync? true
+                                  :cause cause)
+                       (let [err (import-cause-message cause (tr "labels.error"))]
+                         (->> (rx/from entries)
+                              (rx/map (fn [entry]
+                                        {:status :error
+                                         :error err
+                                         :file-id (:file-id entry)}))))))))))))))
