@@ -944,21 +944,21 @@
 
 (defn set-shape-blur
   [blur]
-  (if (some? blur)
-    (let [type   (sr/translate-blur-type :layer-blur)
-          hidden (:hidden blur)
-          value  (:value blur)]
-      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-    (h/call wasm/internal-module "_clear_shape_blur")))
+  (let [type (sr/translate-blur-type :layer-blur)]
+    (if (some? blur)
+      (let [hidden (:hidden blur)
+            value  (:value blur)]
+        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+      (h/call wasm/internal-module "_clear_shape_blur" type))))
 
 (defn set-shape-background-blur
   [background-blur]
-  (if (some? background-blur)
-    (let [type   (sr/translate-blur-type :background-blur)
-          hidden (:hidden background-blur)
-          value  (:value background-blur)]
-      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-    (h/call wasm/internal-module "_clear_shape_blur")))
+  (let [type (sr/translate-blur-type :background-blur)]
+    (if (some? background-blur)
+      (let [hidden (:hidden background-blur)
+            value  (:value background-blur)]
+        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+      (h/call wasm/internal-module "_clear_shape_blur" type))))
 
 (defn set-shape-corners
   [corners]
