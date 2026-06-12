@@ -81,9 +81,20 @@
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
-(mf/defc options
-  {::mf/wrap [mf/memo]}
-  [{:keys [shape cell cells] :as props}]
+(defn- check-options-props
+  [old-props new-props]
+  (and (identical? (unchecked-get old-props "class")
+                   (unchecked-get new-props "class"))
+       (identical? (unchecked-get old-props "shape-id")
+                   (unchecked-get new-props "shape-id"))
+       (identical? (unchecked-get old-props "cell")
+                   (unchecked-get new-props "cell"))
+       (identical? (unchecked-get old-props "cells")
+                   (unchecked-get new-props "cells"))))
+
+(mf/defc options*
+  {::mf/wrap [#(mf/memo' % check-options-props)]}
+  [{:keys [shape-id cell cells] :as props}]
 
   (let [state* (mf/use-state {:open true})
         open?  (:open @state*)
@@ -115,23 +126,23 @@
 
         set-alignment
         (mf/use-callback
-         (mf/deps align-self (:id shape) cell-ids)
+         (mf/deps align-self shape-id cell-ids)
          (fn [value]
            (if (= align-self value)
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self nil}))
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self value})))))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:align-self nil}))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:align-self value})))))
 
         set-justify-self
         (mf/use-callback
-         (mf/deps justify-self (:id shape) cell-ids)
+         (mf/deps justify-self shape-id cell-ids)
          (fn [value]
            (if (= justify-self value)
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self nil}))
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self value})))))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:justify-self nil}))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:justify-self value})))))
 
         on-grid-coordinates
         (mf/use-callback
-         (mf/deps column row (:id shape) (:id cell))
+         (mf/deps column row shape-id (:id cell))
          (fn [field type value]
            (when-not multiple?
              (let [value  (mth/round value)
@@ -151,30 +162,30 @@
                      (and (= type :row) (= field :end))
                      [:row-span (max 1 (- value row))])]
 
-               (st/emit! (dwsl/update-grid-cell-position (:id shape) (:id cell) {property value}))))))
+               (st/emit! (dwsl/update-grid-cell-position shape-id (:id cell) {property value}))))))
 
         on-area-name-change
         (mf/use-callback
-         (mf/deps (:id shape) cell-ids)
+         (mf/deps shape-id cell-ids)
          (fn [event]
            (let [value (dom/get-value (dom/get-target event))]
              (if (= value "")
-               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name nil}))
-               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name value}))))))
+               (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:area-name nil}))
+               (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:area-name value}))))))
 
         set-cell-mode
         (mf/use-callback
-         (mf/deps (:id shape) cell-ids)
+         (mf/deps shape-id cell-ids)
          (fn [mode]
            (let [mode (-> mode keyword)]
-             (st/emit! (dwsl/change-cells-mode (:id shape) cell-ids mode)))))
+             (st/emit! (dwsl/change-cells-mode shape-id cell-ids mode)))))
 
         toggle-edit-mode
         (mf/use-fn
-         (mf/deps (:id shape))
+         (mf/deps shape-id)
          (fn []
-           (st/emit! (dw/start-edition-mode (:id shape))
-                     (dwge/clear-selection (:id shape)))))]
+           (st/emit! (dw/start-edition-mode shape-id)
+                     (dwge/clear-selection shape-id))))]
 
 
     [:div {:class (stl/css :grid-cell-menu)}

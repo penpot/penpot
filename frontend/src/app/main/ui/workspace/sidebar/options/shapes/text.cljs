@@ -162,8 +162,9 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
+       [:> grid-cell/options*
+        {:shape-id (-> (first parents)
+                       :id)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when is-layout-child?
