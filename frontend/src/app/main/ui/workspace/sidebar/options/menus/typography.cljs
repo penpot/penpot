@@ -165,6 +165,12 @@
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
+    (mf/with-effect [fonts]
+      (when (seq fonts)
+        (let [sel-id (:id @selected)]
+          (when-not (some #(= (:id %) sel-id) fonts)
+            (reset! selected (first fonts))))))
+
     (mf/with-effect [@selected]
       (when-let [inst (mf/ref-val flist)]
         (when-let [index (:index @selected)]
