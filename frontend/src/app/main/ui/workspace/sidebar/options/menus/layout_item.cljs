@@ -782,7 +782,6 @@
 
   (let [selection-parents* (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents  (mf/deref selection-parents*)
-        _ (prn "values" values)
 
         ^boolean
         is-absolute?       (:layout-item-absolute values)
