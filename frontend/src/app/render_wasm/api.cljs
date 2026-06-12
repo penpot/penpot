@@ -70,9 +70,9 @@
 ;; `penpot:wasm:tiles-complete`.
 ;;
 ;; - `page-transition?`: true while the overlay should be considered active.
-;; - `transition-image-url*`: URL used by the UI overlay (usually `blob:` from the
-;;   current WebGL canvas snapshot; on initial load it may be a tiny SVG data-url
-;;   derived from the page background color).
+;; - `transition-image*`: image shown by the UI overlay (usually an `ImageBitmap`
+;;   snapshot of the WebGL canvas; on initial load it may be a tiny SVG data-url
+;;   string derived from the page background color).
 ;; - `transition-epoch*`: monotonic counter used to ignore stale async work/events
 ;;   when the user clicks pages rapidly (A -> B -> C).
 ;; - `transition-tiles-handler*`: the currently installed DOM event handler for
@@ -83,7 +83,7 @@
 ;; rulers show through. False (page switch / context loss) keeps the snapshot's
 ;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
 (defonce transition-reveal-rulers? (atom false))
-(defonce transition-image-url* (atom nil))
+(defonce transition-image* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
@@ -100,13 +100,13 @@
 
 
 (defn set-transition-image-from-background!
-  "Sets `transition-image-url*` to a data URL representing a solid background color."
+  "Sets `transition-image*` to a data URL representing a solid background color."
   [background]
   (when (string? background)
     (let [svg (str "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
                    "<rect width='1' height='1' fill='" background "'/>"
                    "</svg>")]
-      (reset! transition-image-url*
+      (reset! transition-image*
               (str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent svg))))))
 
 (defn begin-page-transition!
@@ -120,7 +120,7 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image-url* nil))
+  (reset! transition-image* nil))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -146,7 +146,7 @@
   (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
   ;; ensure we still have a deterministic placeholder on initial load.
-  (when (or (not @page-transition?) (nil? @transition-image-url*))
+  (when (or (not @page-transition?) (nil? @transition-image*))
     (set-transition-image-from-background! background))
   (when-not @page-transition?
     ;; Start transition + bind the tiles-complete handler to this epoch.
@@ -161,7 +161,7 @@
   []
   (reset! context-loss-overlay? false)
   (when-not @page-transition?
-    (reset! transition-image-url* nil)))
+    (reset! transition-image* nil)))
 
 (defn listen-tiles-render-complete-once!
   "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
@@ -173,12 +173,28 @@
                        (f))
                      #js {:once true}))
 
+(defn capture-canvas-snapshot
+  "Captures the viewport canvas into `wasm/canvas-snapshot` (an `ImageBitmap`)
+   and closes the replaced snapshot unless the transition overlay is still
+   showing it (a replaced snapshot can never become displayed again, so closing
+   it is safe). Returns a promise resolving to the bitmap (or nil)."
+  []
+  (let [^js prev wasm/canvas-snapshot]
+    (-> (webgl/capture-canvas-snapshot)
+        (p/then (fn [^js bitmap]
+                  (when (and (some? prev)
+                             (some? bitmap)
+                             (not (identical? prev bitmap))
+                             (not (identical? prev @transition-image*)))
+                    (.close prev))
+                  bitmap)))))
+
 (defonce ^:private schedule-canvas-snapshot-capture!
   (fns/debounce
    (fn []
      (when (and (initialized?)
                 (some? wasm/canvas))
-       (-> (webgl/capture-canvas-snapshot-url)
+       (-> (capture-canvas-snapshot)
            (p/catch (fn [_] nil)))))
    snapshot-capture-debounce-ms))
 
@@ -239,7 +255,6 @@
 (def ^:const TEXT_EDITOR_EVENT_NEEDS_LAYOUT 4)
 
 ;; Re-export public WebGL functions
-(def capture-canvas-snapshot-url webgl/capture-canvas-snapshot-url)
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
 
 ;; Re-export public text editor functions
@@ -432,7 +447,7 @@
 
 (defn render-blurred-snapshot!
   "Blurs the current page into the canvas so a following
-   `capture-canvas-snapshot-url` grabs an already-blurred transition frame."
+   `capture-canvas-snapshot` grabs an already-blurred transition frame."
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_blurred_snapshot" TRANSITION_BLUR_RADIUS)))
@@ -1994,9 +2009,8 @@
   ;; Keep the last rendered pixels visible while context is lost/recovering.
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
-  (when-let [url wasm/canvas-snapshot-url]
-    (when (string? url)
-      (reset! transition-image-url* url)))
+  (when-let [snapshot wasm/canvas-snapshot]
+    (reset! transition-image* snapshot))
   (reset! wasm/context-lost? true)
   (st/async-emit!
    (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
@@ -2415,12 +2429,11 @@
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
     ;; the final target page finishes rendering. The caller (sitemap on-click) is
-    ;; responsible for ensuring `wasm/canvas-snapshot-url` was freshly captured
+    ;; responsible for ensuring `wasm/canvas-snapshot` was freshly captured
     ;; before invoking us.
     (when-not already?
-      (when-let [url wasm/canvas-snapshot-url]
-        (when (string? url)
-          (reset! transition-image-url* url))))))
+      (when-let [snapshot wasm/canvas-snapshot]
+        (reset! transition-image* snapshot)))))
 
 (defn render-shape-pixels
   [shape-id scale]
