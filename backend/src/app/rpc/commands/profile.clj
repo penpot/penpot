@@ -89,6 +89,12 @@
                 email)]
     email))
 
+(defn- with-nitrate-licence
+  [profile cfg]
+  (if (contains? cf/flags :nitrate)
+    (nitrate/add-nitrate-licence-to-profile cfg profile)
+    profile))
+
 ;; --- QUERY: Get profile (own)
 
 
@@ -106,9 +112,7 @@
     (let [profile (-> (get-profile pool profile-id)
                       (strip-private-attrs)
                       (update :props filter-props))]
-      (if (contains? cf/flags :nitrate)
-        (nitrate/add-nitrate-licence-to-profile cfg profile)
-        profile))
+      (with-nitrate-licence profile cfg))
 
     (catch Throwable cause
       (if (= :not-found (-> cause ex-data :type))
@@ -137,7 +141,7 @@
    ::sm/params schema:update-profile
    ::sm/result schema:profile
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id fullname lang theme] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
   ;; NOTE: we need to retrieve the profile independently if we use
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
@@ -158,6 +162,7 @@
     (-> profile
         (strip-private-attrs)
         (d/without-nils)
+        (with-nitrate-licence cfg)
         (rph/with-meta {::audit/props (audit/profile->props profile)}))))
 
 

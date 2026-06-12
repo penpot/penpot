@@ -136,10 +136,12 @@
                                         (some? days-until-expiry)
                                         (some? expiration-date-text))
         subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
+        teams-loaded? (seq teams)
         no-orgs-created? (mf/with-memo [teams]
-                           (->> teams
-                                vals
-                                (not-any? :organization)))
+                           (and (seq teams)
+                                (->> teams
+                                     vals
+                                     (not-any? :organization))))
 
         handle-click
         (mf/use-fn
@@ -163,7 +165,7 @@
 
     [:*
      ;; TODO add translations for this texts when we have the definitive ones
-     (if (and nitrate? no-orgs-created? (not show-subscription-warning?))
+     (if (and nitrate? teams-loaded? no-orgs-created? (not show-subscription-warning?))
        ;; Banner for users with active nitrate license but no organizations created
        [:div {:class (stl/css :nitrate-banner :highlighted)}
         [:div {:class (stl/css :nitrate-content)}
