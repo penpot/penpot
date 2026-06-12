@@ -19,6 +19,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.repo :as rp]
    [app.main.router :as-alias rt]
    [app.main.store :as st]
@@ -32,7 +33,8 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 (declare page-proxy)
 
@@ -269,9 +271,19 @@
         (not (r/check-permission plugin-id "content:read"))
         (u/not-valid plugin-id :openPage "Plugin doesn't have 'content:read' permission")
 
+        (true? new-window)
+        (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+            (js/Promise.resolve nil))
+
         :else
-        (let [new-window (if (boolean? new-window) new-window false)]
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+        (js/Promise.
+         (fn [resolve _]
+           (->> st/stream
+                (rx/filter (ptk/type? ::dwpg/initialized))
+                (rx/filter #(= (deref %) id))
+                (rx/take 1)
+                (rx/subs! #(resolve nil)))
+           (st/emit! (dcm/go-to-workspace :page-id id))))))
 
     :createFlow
     (fn [name frame]

@@ -1279,10 +1279,10 @@ export interface Context {
    *
    * @example
    * ```js
-   * context.openPage(page);
+   * await context.openPage(page);
    * ```
    */
-  openPage(page: Page | string, newWindow?: boolean): void;
+  openPage(page: Page | string, newWindow?: boolean): Promise<void>;
 
   /**
    * Aligning will move all the selected layers to a position relative to one

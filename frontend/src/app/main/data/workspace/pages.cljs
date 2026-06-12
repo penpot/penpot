@@ -88,6 +88,7 @@
       (let [page (dsh/lookup-page state file-id page-id)
             uris (into #{} xf:collect-file-media (:objects page))]
         (rx/merge
+         (rx/of (ptk/data-event ::initialized page-id))
          (->> (rx/from uris)
               (rx/map #(http/fetch-data-uri % false))
               (rx/ignore))
