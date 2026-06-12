@@ -94,6 +94,7 @@
                                       #(ctf/update-token-status
                                         %
                                         ctos/activate-theme
+                                        (tht/get-tokens-lib file)
                                         (thi/id :theme1)))
           token-status' (tht/get-token-status file')]
       (t/is (= 1 (ctos/active-themes-count token-status')))

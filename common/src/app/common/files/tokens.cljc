@@ -376,31 +376,3 @@
 ;; FIXME: this should be precalculated ?
 (defn is-reference? [token]
   (str/includes? (:value token) "{"))
-
-;; Tokens status
-
-(defn make-token-status-from-lib
-  "Make a TokenStatus from a TokensLib, activating the themes and sets
-   marked as active in the library (to migrate from legacy files)."
-  [tokens-lib]
-  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
-  (let [active-themes (into #{}
-                            (comp (map :id)
-                                  (filter #(not= % ctob/hidden-theme-id)))
-                            (ctob/get-active-themes tokens-lib))
-        active-sets   (into #{}
-                            (comp (map #(ctob/get-set-by-name tokens-lib %))
-                                  (map ctob/get-id))
-                            (ctob/get-active-themes-set-names tokens-lib))]
-    (ctos/make-token-status :active-themes active-themes
-                            :active-sets active-sets)))
-
-(defn set-theme-status
-  [token-status tokens-lib theme-id status]
-    (assert (ctos/token-status? token-status) "expected valid token-status")
-    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
-    (assert (uuid? theme-id) "expected valid theme-id")
-    (assert (boolean? status) "expected boolean status")
-    (if (ctob/get-theme tokens-lib theme-id)
-      (ctos/set-theme-status token-status theme-id status)
-      token-status))

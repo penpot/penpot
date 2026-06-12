@@ -780,6 +780,7 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-theme-tree-no-hidden [_] "get a nested tree of all themes in the library except the hidden theme")
   (get-themes [_] "get an ordered sequence of all themes in the library")
+  (get-themes-in-group [_ group] "get an ordered sequence of the themes in the group")
   (get-theme [_ id] "get one theme looking for id")
   (get-theme-by-name [_ group name] "get one theme looking for group and name")
   (get-theme-groups [_] "get a sequence of group names by order")
@@ -1205,6 +1206,10 @@ Will return a value that matches this schema:
   (get-themes [_]
     (->> (tree-seq d/ordered-map? vals themes)
          (filter (partial instance? TokenTheme))))
+
+  (get-themes-in-group [_ group]
+    (->> (get themes group)
+         (map (comp get-id val))))
 
   (theme-count [this]
     (count (get-themes this)))

@@ -11,30 +11,33 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.transit :as t]
+   [app.common.types.tokens-lib :as ctob]
    [clojure.core.protocols :as cp]
    [clojure.datafy :refer [datafy]]
-   [clojure.pprint :as pp]))
+   [clojure.pprint :as pp]
+   [clojure.set :as set]))
 
 ;; TokenStatus datatype contains the status of the active themes and sets
 ;; in a tokens library.
 
 (defprotocol ITokenStatus
-  (activate-theme [_ theme-id] "Add a theme uuid to active themes")
-  (deactivate-theme [_ theme-id] "Remove a theme uuid from active themes")
-  (set-theme-status [_ theme-id status] "Add or remove a theme uuid to active themes")
-  (theme-active? [_ theme-id] "Check if a theme uuid is active")
+  (activate-theme [_ tokens-lib theme-id] "Activate a theme and deactivate other themes in the same group. Update active sets.")
+  (deactivate-theme [_ tokens-lib theme-id] "Deactivate a theme and update active sets")
+  (set-theme-status [_ tokens-lib theme-id status] "Set the activation status of a theme")
+  (theme-active? [_ theme-id] "Check if a theme is active")
   (active-themes-count [_] "Return the number of active themes")
-  (activate-set [_ set-id] "Add a set uuid to active sets")
-  (deactivate-set [_ set-id] "Remove a set uuid from active sets")
-  (toggle-set-active [_ set-id] "Toggle a set uuid in active sets")
-  (set-active? [_ set-id] "Check if a set uuid is active")
+  (activate-set [_ set-id] "Add a set to active sets")
+  (deactivate-set [_ set-id] "Remove a set from active sets")
+  (toggle-set-active [_ set-id] "Toggle a set in active sets")
+  (set-active? [_ set-id] "Check if a set is active")
   (active-set-count [_] "Return the number of active sets"))
 
-(deftype TokenStatus [active-themes active-sets]
+(declare calculate-active-sets)
+(deftype TokenStatus [active-theme-ids active-set-ids]
   cp/Datafiable
   (datafy [_]
-    {:active-themes active-themes
-     :active-sets active-sets})
+    {:active-theme-ids active-theme-ids
+     :active-set-ids active-set-ids})
 
   #?@(:clj
       [c.json/JSONWriter
@@ -42,54 +45,77 @@
                (c.json/-write (datafy this) writter options))])
 
   ITokenStatus
-  (activate-theme [_ theme-id]
+  (activate-theme [this tokens-lib theme-id]
+    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
     (assert (uuid? theme-id) "expected valid theme-id")
-    (TokenStatus. (conj active-themes theme-id) active-sets))
+    (if-not (theme-active? this theme-id)
+      (if-let [theme (ctob/get-theme tokens-lib theme-id)]
+        (let [group-themes   (ctob/get-themes-in-group tokens-lib (:group theme))
+              active-theme-ids' (-> (set/difference active-theme-ids group-themes)
+                                 (conj theme-id))]
+          (TokenStatus. active-theme-ids'
+                        (calculate-active-sets active-theme-ids' tokens-lib)))
+        this)
+      this))
 
-  (deactivate-theme [_ theme-id]
+  (deactivate-theme [this tokens-lib theme-id]
+    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
     (assert (uuid? theme-id) "expected valid theme-id")
-    (TokenStatus. (disj active-themes theme-id) active-sets))
+    (if (theme-active? this theme-id)
+      (let [active-theme-ids' (disj active-theme-ids theme-id)]
+        (TokenStatus. active-theme-ids'
+                      (calculate-active-sets active-theme-ids' tokens-lib)))
+      this))
 
-  (set-theme-status [this theme-id status]
+  (set-theme-status [this tokens-lib theme-id status]
+    (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
     (assert (uuid? theme-id) "expected valid theme-id")
     (assert (boolean? status) "expected boolean status")
     (if status
-      (activate-theme this theme-id)
-      (deactivate-theme this theme-id)))
+      (activate-theme this tokens-lib theme-id)
+      (deactivate-theme this tokens-lib theme-id)))
 
   (theme-active? [_ theme-id]
     (assert (uuid? theme-id) "expected valid theme-id")
-    (contains? active-themes theme-id))
+    (contains? active-theme-ids theme-id))
 
   (active-themes-count [_]
-    (count active-themes))
+    (count active-theme-ids))
 
   (activate-set [_ set-id]
     (assert (uuid? set-id) "expected valid set-id")
-    (TokenStatus. active-themes (conj active-sets set-id)))
+    (TokenStatus. active-theme-ids (conj active-set-ids set-id)))
 
   (deactivate-set [_ set-id]
     (assert (uuid? set-id) "expected valid set-id")
-    (TokenStatus. active-themes (disj active-sets set-id)))
+    (TokenStatus. active-theme-ids (disj active-set-ids set-id)))
 
   (toggle-set-active [this set-id]
     (assert (uuid? set-id) "expected valid set-id")
-    (if (contains? active-sets set-id)
+    (if (contains? active-set-ids set-id)
       (deactivate-set this set-id)
       (activate-set this set-id)))
 
   (set-active? [_ set-id]
     (assert (uuid? set-id) "expected valid set-id")
-    (contains? active-sets set-id))
+    (contains? active-set-ids set-id))
 
   (active-set-count [_]
-    (count active-sets)))
+    (count active-set-ids)))
+
+(defn- calculate-active-sets
+  [active-theme-ids tokens-lib]
+  (let [active-themes (map #(ctob/get-theme tokens-lib %) active-theme-ids)    ;; OJOOOOOOOOOOOOOOOOOOOOO
+        active-set-names (reduce set/union #{} (map :sets active-themes))
+        active-sets (map #(ctob/get-set-by-name tokens-lib %) active-set-names)
+        active-set-ids (into #{} (map ctob/get-id) active-sets)]
+    active-set-ids))
 
 ;; === Helper & Predicate ===
 
 (defn map->TokenStatus
-  [{:keys [active-themes active-sets]}]
-  (TokenStatus. active-themes active-sets))
+  [{:keys [active-theme-ids active-set-ids]}]
+  (TokenStatus. active-theme-ids active-set-ids))
 
 (defn token-status?
   [o]
@@ -101,8 +127,8 @@
 
 (def schema:token-status-attrs
   [:map {:title "TokenStatus"}
-   [:active-themes [:set {:gen/max 5} ::sm/uuid]]
-   [:active-sets [:set {:gen/max 5} ::sm/uuid]]])
+   [:active-theme-ids [:set {:gen/max 5} ::sm/uuid]]
+   [:active-set-ids [:set {:gen/max 5} ::sm/uuid]]])
 
 (def schema:token-status
   [:and {:gen/gen (->> (sg/generator schema:token-status-attrs)
@@ -120,10 +146,26 @@
 (defn make-token-status
   [& {:as attrs}]
   (-> attrs
-      (update :active-themes #(or % #{}))
-      (update :active-sets #(or % #{}))
+      (update :active-theme-ids #(or % #{}))
+      (update :active-set-ids #(or % #{}))
       (check-token-status-attrs)
       (map->TokenStatus)))
+
+(defn make-token-status-from-lib
+  "Make a TokenStatus from a TokensLib, activating the themes and sets
+   marked as active in the library (to migrate from legacy files)."
+  [tokens-lib]
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [active-theme-ids (into #{}
+                               (comp (map :id)
+                                     (filter #(not= % ctob/hidden-theme-id)))
+                               (ctob/get-active-themes tokens-lib))
+        active-set-ids   (into #{}
+                               (comp (map #(ctob/get-set-by-name tokens-lib %))
+                                     (map ctob/get-id))
+                               (ctob/get-active-themes-set-names tokens-lib))]
+    (make-token-status :active-theme-ids active-theme-ids
+                       :active-set-ids active-set-ids)))
 
 ;; === Pretty-print for debugging ===
 

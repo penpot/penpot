@@ -1051,8 +1051,9 @@
 
 (defmethod process-change :set-token-theme-status
   [data {:keys [id status]}]
-  (-> (ctf/ensure-tokens-lib data)
-      (ctf/update-token-status ctos/set-theme-status id status)))
+  (let [data' (ctf/ensure-tokens-lib data)]
+    (-> data'
+        (ctf/update-token-status ctos/set-theme-status (ctf/get-tokens-lib data') id status))))
 
 (defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
