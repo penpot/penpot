@@ -10,6 +10,7 @@
    [app.auth :refer [derive-password]]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
@@ -34,8 +35,8 @@
               :code :demo-users-not-allowed
               :hint "Demo users are disabled by config."))
 
-  (let [sem      (System/currentTimeMillis)
-        email    (str "demo-" sem ".demo@example.com")
+  (let [sem      (uuid/next)
+        email    (str "demo-" sem "@demo.example.com")
         fullname (str "Demo User " sem)
 
         password (-> (bn/random-bytes 16)
