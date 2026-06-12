@@ -366,9 +366,15 @@ pub extern "C" fn set_view_end() -> Result<()> {
 #[wasm_error]
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     performance::begin_measure!("set_modifiers_start");
-    let render_state = get_render_state();
-    render_state.options.set_fast_mode(true);
-    render_state.options.set_interactive_transform(true);
+    with_state!(state, {
+        // Capture per-shape crops from the clean Backbuffer now, once per
+        // gesture, instead of speculatively on every Full frame (a full
+        // DocAtlas snapshot + per-shape copies was the dominant settle cost).
+        state.rebuild_drag_crop_cache();
+        let render_state = get_render_state();
+        render_state.options.set_fast_mode(true);
+        render_state.options.set_interactive_transform(true);
+    });
     performance::end_measure!("set_modifiers_start");
     Ok(())
 }
@@ -384,6 +390,11 @@ pub extern "C" fn set_modifiers_end() -> Result<()> {
     let render_state = get_render_state();
     render_state.options.set_fast_mode(false);
     render_state.options.set_interactive_transform(false);
+    // The crop cache is only read during interactive transforms. Drop it now:
+    // entries can share the Backbuffer texture (full-bounds snapshots), and a
+    // live shared snapshot forces a copy-on-write of the Backbuffer on every
+    // later write — a per-frame tax on pan/zoom if the images outlive the drag.
+    render_state.backbuffer_crop_cache.clear();
     performance::end_measure!("set_modifiers_end");
     Ok(())
 }

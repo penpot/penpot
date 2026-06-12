@@ -11,7 +11,6 @@ use crate::math::Point;
 use base64::{engine::general_purpose, Engine as _};
 use std::collections::{HashMap, HashSet};
 
-const TEXTURES_CACHE_CAPACITY: usize = 1024;
 const TEXTURES_BATCH_DELETE: usize = 256;
 
 // This is the amount of extra space we're going to give to all the surfaces to render shapes.
@@ -166,12 +165,39 @@ impl DocAtlas {
             new_bottom = new_bottom.max(doc_rect.bottom.ceil());
         }
 
-        // Add padding to reduce realloc frequency.
+        // Pad to reduce realloc frequency
         let pad = tiles::TILE_SIZE;
-        new_left -= pad;
-        new_top -= pad;
-        new_right += pad;
-        new_bottom += pad;
+        if needs_init {
+            new_left -= pad;
+            new_top -= pad;
+            new_right += pad;
+            new_bottom += pad;
+        } else {
+            let grow_x = ((current_right - current_left) * 0.5).max(4.0 * tiles::TILE_SIZE);
+            let grow_y = ((current_bottom - current_top) * 0.5).max(4.0 * tiles::TILE_SIZE);
+            if new_left < current_left {
+                new_left -= grow_x;
+            }
+            if new_right > current_right {
+                new_right += grow_x;
+            }
+            if new_top < current_top {
+                new_top -= grow_y;
+            }
+            if new_bottom > current_bottom {
+                new_bottom += grow_y;
+            }
+            if let Some(bounds) = self.doc_bounds {
+                new_left = new_left.max((bounds.left - pad).min(doc_rect.left.floor()));
+                new_top = new_top.max((bounds.top - pad).min(doc_rect.top.floor()));
+                new_right = new_right.min((bounds.right + pad).max(doc_rect.right.ceil()));
+                new_bottom = new_bottom.min((bounds.bottom + pad).max(doc_rect.bottom.ceil()));
+            }
+            new_left = new_left.min(current_left);
+            new_top = new_top.min(current_top);
+            new_right = new_right.max(current_right);
+            new_bottom = new_bottom.max(current_bottom);
+        }
 
         let doc_w = (new_right - new_left).max(1.0);
         let doc_h = (new_bottom - new_top).max(1.0);
@@ -228,7 +254,8 @@ impl DocAtlas {
         self.origin = skia::Point::new(new_left, new_top);
         self.size = skia::ISize::new(new_w, new_h);
         self.scale = new_scale;
-        gpu_state.delete_surface(&mut self.surface);
+        // Old surface is Skia-managed: dropping it on reassignment frees the
+        // texture back to the resource cache.
         self.surface = new_surface;
         Ok(())
     }
@@ -419,8 +446,6 @@ pub struct Surfaces {
     // Persistent viewport-sized surface used to keep the last presented frame.
     backbuffer: skia::Surface,
     // Atlas used to keep tiles.
-    tile_atlas: skia::Surface,
-
     tiles: TileTextureCache,
     pub atlas: DocAtlas,
     sampling_options: skia::SamplingOptions,
@@ -432,7 +457,6 @@ pub struct Surfaces {
     dpr: f32,
 }
 
-#[allow(dead_code)]
 impl Surfaces {
     pub fn try_new(
         (width, height): (i32, i32),
@@ -454,11 +478,6 @@ impl Surfaces {
             gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
 
         let max_texture_size = gpu_state.max_texture_size();
-        let tile_atlas = gpu_state.create_surface_with_dimensions(
-            "tile_atlas".to_string(),
-            max_texture_size,
-            max_texture_size,
-        )?;
 
         let current =
             gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
@@ -478,8 +497,7 @@ impl Surfaces {
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
 
-        // 512, why not?
-        let tiles = TileTextureCache::new(tile_atlas.width(), 512);
+        let tiles = TileTextureCache::try_new(max_texture_size)?;
         let atlas = DocAtlas::try_new()?;
         Ok(Self {
             target,
@@ -495,7 +513,6 @@ impl Surfaces {
             debug,
             export,
             backbuffer,
-            tile_atlas,
             tiles,
             atlas,
             sampling_options,
@@ -514,27 +531,38 @@ impl Surfaces {
         self.dpr = dpr;
     }
 
-    pub fn clear_tiles(&mut self) {
-        self.tiles.clear();
-    }
-
     pub fn draw_tile_atlas_to_backbuffer(
         &mut self,
         viewbox: &Viewbox,
         tile_viewbox: &TileViewbox,
         background: skia::Color,
     ) {
-        self.tiles.update(viewbox, tile_viewbox);
-        let atlas_image = self.tile_atlas.image_snapshot();
-        let canvas = self.backbuffer.canvas();
-        canvas.clear(background);
-        canvas.draw_atlas(
-            &atlas_image,
-            &self.tiles.transforms,
-            &self.tiles.textures,
+        self.backbuffer.canvas().clear(background);
+        self.draw_cached_tiles_over_backbuffer(viewbox, tile_viewbox);
+    }
+
+    /// Composite the visible cached tiles onto Backbuffer without clearing it
+    /// first. Used by progressive (Partial-frame) presents, where the DocAtlas
+    /// preview is drawn underneath as a backdrop for not-yet-rendered tiles.
+    pub fn draw_cached_tiles_over_backbuffer(
+        &mut self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+    ) {
+        let (xforms, texs) = self.tiles.visible_batch(viewbox, tile_viewbox);
+        if xforms.is_empty() {
+            return;
+        }
+        let sampling_options = self.atlas_sampling_options;
+        // One snapshot of the managed atlas, one batched draw from it.
+        let image = self.tiles.snapshot();
+        self.backbuffer.canvas().draw_atlas(
+            &image,
+            &xforms,
+            &texs,
             None,
             skia::BlendMode::SrcOver,
-            self.atlas_sampling_options,
+            sampling_options,
             None,
             None,
         );
@@ -681,12 +709,6 @@ impl Surfaces {
         self.dirty_surfaces = 0;
     }
 
-    pub fn flush(&mut self, id: SurfaceId) {
-        let gpu_state = get_gpu_state();
-        let surface = self.get_mut(id);
-        gpu_state.context.flush_surface(surface);
-    }
-
     pub fn flush_and_submit(&mut self, id: SurfaceId) {
         let gpu_state = get_gpu_state();
         let surface = self.get_mut(id);
@@ -822,7 +844,7 @@ impl Surfaces {
             SurfaceId::UI => &mut self.ui,
             SurfaceId::Export => &mut self.export,
             SurfaceId::Atlas => &mut self.atlas.surface,
-            SurfaceId::TileAtlas => &mut self.tile_atlas,
+            SurfaceId::TileAtlas => self.tiles.surface_mut(),
         }
     }
 
@@ -843,7 +865,7 @@ impl Surfaces {
             SurfaceId::UI => &self.ui,
             SurfaceId::Export => &self.export,
             SurfaceId::Atlas => &self.atlas.surface,
-            SurfaceId::TileAtlas => &self.tile_atlas,
+            SurfaceId::TileAtlas => self.tiles.surface(),
         }
     }
 
@@ -885,18 +907,7 @@ impl Surfaces {
     }
 
     pub fn clear_tile_atlas(&mut self) {
-        self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
-    }
-
-    /// Seed `Backbuffer` from `Target` (last presented frame).
-    pub fn seed_backbuffer_from_target(&mut self) {
-        let sampling_options = self.sampling_options;
-        self.target.draw(
-            self.backbuffer.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            Some(&skia::Paint::default()),
-        );
+        self.tiles.reset_all();
     }
 
     fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
@@ -1055,12 +1066,6 @@ impl Surfaces {
         self.backbuffer.canvas().clear(color);
     }
 
-    pub fn clear_backbuffer_rect(&mut self, rect: skia::Rect, color: skia::Color) {
-        let mut paint = Paint::default();
-        paint.set_color(color);
-        self.backbuffer.canvas().draw_rect(rect, &paint);
-    }
-
     pub fn reset(&mut self, color: skia::Color) {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
@@ -1171,9 +1176,9 @@ impl Surfaces {
                 .blit_tile_image_into_atlas(gpu_state, &tile_image, tile_doc_rect);
             self.atlas.tile_doc_rects.insert(*tile, tile_doc_rect);
 
-            // Draws current tile into tile atlas
+            // Write the tile into its allocated slot on the atlas surface.
             let tile_ref = self.tiles.add(tile_viewbox, tile);
-            self.tile_atlas.canvas().draw_image_rect(
+            self.tiles.surface_mut().canvas().draw_image_rect(
                 &tile_image,
                 None,
                 tile_ref.rect,
@@ -1184,6 +1189,10 @@ impl Surfaces {
 
     pub fn has_cached_tile_surface(&self, tile: Tile) -> bool {
         self.tiles.has(tile)
+    }
+
+    pub fn cached_tiles_in_rect(&self, rect: &TileRect) -> Vec<Tile> {
+        self.tiles.cached_tiles_in_rect(rect)
     }
 
     /// Builds a 1:1 workspace-pixel snapshot for `src_doc_bounds` / `src_irect` into
@@ -1215,6 +1224,9 @@ impl Surfaces {
             return None;
         }
 
+        // One snapshot of the managed atlas, sampled for every covered tile.
+        let tiles_image = self.tiles.snapshot();
+
         let canvas = scratch.canvas();
         canvas.clear(skia::Color::TRANSPARENT);
 
@@ -1240,31 +1252,21 @@ impl Surfaces {
                     (clip_doc.bottom - vb_top) * scale - iy0,
                 );
 
-                if let Some(tile_ref) = self.tiles.get(tile) {
-                    let bounds = skia::IRect::from_ltrb(
-                        tile_ref.rect.left as i32,
-                        tile_ref.rect.top as i32,
-                        tile_ref.rect.right as i32,
-                        tile_ref.rect.bottom as i32,
-                    );
-                    let Some(tile_image) = self.tile_atlas.image_snapshot_with_bounds(bounds)
-                    else {
-                        panic!("Cannot retrieve tile image");
-                    };
-                    let iw = tile_image.width() as f32;
-                    let ih = tile_image.height() as f32;
+                if let Some(slot) = self.tiles.slot(tile) {
+                    let iw = slot.rect.width();
+                    let ih = slot.rect.height();
                     let td_w = tile_doc.width().max(1e-6);
                     let td_h = tile_doc.height().max(1e-6);
 
+                    // Sub-rect of the tile, in atlas pixels.
                     let src = skia::Rect::from_ltrb(
-                        ((clip_doc.left - tile_doc.left) / td_w) * iw,
-                        ((clip_doc.top - tile_doc.top) / td_h) * ih,
-                        ((clip_doc.right - tile_doc.left) / td_w) * iw,
-                        ((clip_doc.bottom - tile_doc.top) / td_h) * ih,
+                        slot.rect.left + ((clip_doc.left - tile_doc.left) / td_w) * iw,
+                        slot.rect.top + ((clip_doc.top - tile_doc.top) / td_h) * ih,
+                        slot.rect.left + ((clip_doc.right - tile_doc.left) / td_w) * iw,
+                        slot.rect.top + ((clip_doc.bottom - tile_doc.top) / td_h) * ih,
                     );
-
                     canvas.draw_image_rect(
-                        tile_image,
+                        &tiles_image,
                         Some((&src, skia::canvas::SrcRectConstraint::Fast)),
                         dst,
                         &paint,
@@ -1295,35 +1297,32 @@ impl Surfaces {
 
     pub fn remove_cached_tile_surface(&mut self, tile: Tile) {
         let gpu_state = get_gpu_state();
-        // Mark tile as invalid
-        // Old content stays visible until new tile overwrites it atomically,
-        // preventing flickering during tile re-renders.
         self.tiles.remove(tile);
         // Also clear the corresponding region in the persistent atlas to avoid
         // leaving stale pixels when shapes move/delete.
         let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
     }
 
-    pub fn get_tile_image_from_tile_atlas(&mut self, tile: Tile) -> Option<skia::Image> {
-        let Some(tile_ref) = self.tiles.get(tile) else {
-            panic!("Tile not found {}:{}", tile.0, tile.1);
-        };
-
-        let rect = IRect::from_ltrb(
-            tile_ref.rect.left as i32,
-            tile_ref.rect.top as i32,
-            tile_ref.rect.right as i32,
-            tile_ref.rect.bottom as i32,
-        );
-        self.tile_atlas.image_snapshot_with_bounds(rect)
+    pub fn invalidate_cached_tile_surface(&mut self, tile: Tile) {
+        self.tiles.mark_stale(tile);
     }
 
     pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
-        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            // let rect = tile.get_rect_with_offset(&offset);
-            let backbuffer_canvas = self.backbuffer.canvas();
-            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
+        let Some(slot) = self.tiles.slot(tile) else {
+            panic!("Tile not found {}:{}", tile.0, tile.1);
+        };
+        let src = slot.rect;
+        if src.width() <= 0.0 || src.height() <= 0.0 {
+            return;
         }
+        // One snapshot of the managed atlas, plain image draw from it.
+        let image = self.tiles.snapshot();
+        self.backbuffer.canvas().draw_image_rect(
+            &image,
+            Some((&src, skia::canvas::SrcRectConstraint::Fast)),
+            *rect,
+            &skia::Paint::default(),
+        );
     }
 
     /// Draws the current tile directly to the backbuffer and cache surfaces without
@@ -1453,216 +1452,242 @@ impl Surfaces {
     }
 }
 
+/// Side length of the single tile atlas texture (clamped to the GPU cap).
+const ATLAS_SIZE: i32 = 4096;
+
 #[derive(Debug, Clone)]
 pub struct TileAtlasTextureRef {
     pub index: usize,
     pub rect: skia::Rect,
 }
 
-impl TileAtlasTextureRef {
-    pub fn new(index: usize, rect: skia::Rect) -> Self {
-        Self { index, rect }
-    }
-}
-
-pub struct TileAtlasTextureProvider {
-    pub index: usize,
-    pub length: usize,
-    pub in_use: Vec<bool>,
-    pub rects: Vec<Rect>,
-}
-
-impl TileAtlasTextureProvider {
-    pub fn new(texture_size: i32, tile_size: i32) -> Self {
-        let side = texture_size / tile_size;
-        let length = side * side;
-        let mut rects = Vec::with_capacity(length as usize);
-        for i in 0..length {
-            let left = (i % side) as f32 * tile_size as f32;
-            let top = (i / side) as f32 * tile_size as f32;
-            let right = left + tile_size as f32;
-            let bottom = top + tile_size as f32;
-            rects.push(Rect::new(left, top, right, bottom));
-        }
-        Self {
-            index: 0,
-            length: length as usize,
-            in_use: vec![false; length as usize],
-            rects,
-        }
-    }
-
-    pub fn allocate(&mut self) -> Option<TileAtlasTextureRef> {
-        let start = self.index;
-        loop {
-            if !self.in_use[self.index] {
-                self.in_use[self.index] = true;
-                return Some(TileAtlasTextureRef::new(self.index, self.rects[self.index]));
-            }
-
-            self.index = (self.index + 1) % self.length;
-            if self.index == start {
-                return None;
-            }
-        }
-    }
-
-    pub fn deallocate(&mut self, reference: TileAtlasTextureRef) -> bool {
-        // In this case the user of the provider it's trying to release
-        // a reference already freed.
-        if !self.in_use[reference.index] {
-            return false;
-        }
-        self.in_use[reference.index] = false;
-        self.index = reference.index;
-        true
-    }
-}
-
+/// A single Skia-managed atlas texture holding screen-space tiles at the
+/// current zoom. Because the surface is Skia-owned (budgeted), `image_snapshot`
+/// takes the cheap COW-guarded path: in the render loop's `write → snapshot →
+/// draw` order the snapshot is dropped before the next write, so no full-texture
+/// copy ever executes. That makes the per-page freeze/recycle/evict machinery
+/// (needed only to keep writes and snapshots off the same wrapped texture)
+/// unnecessary — one surface plus a slot free list is enough. See
+/// draw-atlas-analysis Part III.
 pub struct TileTextureCache {
     tile_size: f32,
-    provider: TileAtlasTextureProvider,
-    transforms: Vec<skia::RSXform>,
-    textures: Vec<skia::Rect>,
+    side: usize,
+    slots: usize,
+    surface: skia::Surface,
     grid: HashMap<Tile, TileAtlasTextureRef>,
+    free: Vec<usize>,
+    next: usize,
     removed: HashSet<Tile>,
+    stale: HashSet<Tile>,
 }
 
 impl TileTextureCache {
-    pub fn new(texture_size: i32, capacity: usize) -> Self {
-        Self {
+    pub fn try_new(max_texture_size: i32) -> Result<Self> {
+        let atlas_size = ATLAS_SIZE.min(max_texture_size.max(TILE_SIZE));
+        let side = (atlas_size / TILE_SIZE) as usize;
+        let mut surface = get_gpu_state().create_surface_with_dimensions(
+            "tile_atlas".to_string(),
+            atlas_size,
+            atlas_size,
+        )?;
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        Ok(Self {
             tile_size: tiles::TILE_SIZE,
-            provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE),
-            transforms: Vec::with_capacity(capacity),
-            textures: Vec::with_capacity(capacity),
-            grid: HashMap::with_capacity(capacity),
-            removed: HashSet::with_capacity(capacity),
-        }
+            side,
+            slots: side * side,
+            surface,
+            grid: HashMap::with_capacity(256),
+            free: Vec::new(),
+            next: 0,
+            removed: HashSet::with_capacity(256),
+            stale: HashSet::with_capacity(256),
+        })
+    }
+
+    fn slot_rect(&self, index: usize) -> skia::Rect {
+        let ts = TILE_SIZE as f32;
+        let left = (index % self.side) as f32 * ts;
+        let top = (index / self.side) as f32 * ts;
+        Rect::from_xywh(left, top, ts, ts)
     }
 
     fn gc(&mut self) {
-        // Make a real remove
-        for tile in self.removed.iter() {
-            if let Some(tile_ref) = self.grid.remove(tile) {
-                self.provider.deallocate(tile_ref);
+        let removed: Vec<Tile> = self.removed.drain().collect();
+        for tile in removed {
+            if let Some(slot) = self.grid.remove(&tile) {
+                self.free.push(slot.index);
             }
+            self.stale.remove(&tile);
         }
     }
 
     fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {
         let marked: Vec<_> = self
             .grid
-            .iter_mut()
-            .filter_map(|(tile, _)| {
-                if !tile_viewbox.is_visible(tile) {
-                    Some(*tile)
-                } else {
-                    None
-                }
-            })
+            .keys()
+            .filter(|tile| !tile_viewbox.is_in_interest_area(tile))
             .take(TEXTURES_BATCH_DELETE)
+            .copied()
             .collect();
 
         for tile in marked.iter() {
-            if let Some(tile_ref) = self.grid.remove(tile) {
-                self.provider.deallocate(tile_ref);
+            if let Some(slot) = self.grid.remove(tile) {
+                self.free.push(slot.index);
             }
+            self.removed.remove(tile);
+            self.stale.remove(tile);
         }
     }
 
-    pub fn update(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
-        if self.transforms.len() != tile_viewbox.visible_rect.len() as usize {
-            self.transforms.resize(
-                tile_viewbox.visible_rect.len() as usize,
-                skia::RSXform::new(1.0, 0.0, Point::default()),
-            );
-        }
-
-        if self.textures.len() != tile_viewbox.visible_rect.len() as usize {
-            self.textures.resize(
-                tile_viewbox.visible_rect.len() as usize,
-                skia::Rect::new_empty(),
-            );
-        }
-
-        for texture in self.textures.iter_mut() {
-            texture.set_empty();
-        }
-
+    /// Visible cached tiles as a single (xform, tex-rect) batch, ready for one
+    /// `draw_atlas` call from a single snapshot of the atlas surface.
+    pub fn visible_batch(
+        &self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+    ) -> (Vec<skia::RSXform>, Vec<skia::Rect>) {
+        let mut xforms: Vec<skia::RSXform> = vec![];
+        let mut texs: Vec<skia::Rect> = vec![];
         let offset = viewbox.get_offset();
-        let mut index = 0;
         for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
                 let tile = Tile(x, y);
-
-                let Some(tile_ref) = self.grid.get(&tile) else {
+                if self.removed.contains(&tile) {
+                    continue;
+                }
+                let Some(slot) = self.grid.get(&tile) else {
                     continue;
                 };
-
-                self.transforms[index].tx = x as f32 * self.tile_size - offset.x;
-                self.transforms[index].ty = y as f32 * self.tile_size - offset.y;
-
-                self.textures[index].set_ltrb(
-                    tile_ref.rect.left,
-                    tile_ref.rect.top,
-                    tile_ref.rect.right,
-                    tile_ref.rect.bottom,
-                );
-
-                index += 1;
+                xforms.push(skia::RSXform::new(
+                    1.0,
+                    0.0,
+                    Point::new(
+                        x as f32 * self.tile_size - offset.x,
+                        y as f32 * self.tile_size - offset.y,
+                    ),
+                ));
+                texs.push(slot.rect);
             }
         }
+        (xforms, texs)
+    }
+
+    /// A snapshot of the atlas surface, for sampling cached tiles. Cheap on the
+    /// Skia-managed surface: in `write → snapshot → draw` order the returned
+    /// image is dropped before the next write, so no copy executes.
+    pub fn snapshot(&mut self) -> skia::Image {
+        self.surface.image_snapshot()
+    }
+
+    pub fn surface(&self) -> &skia::Surface {
+        &self.surface
+    }
+
+    pub fn surface_mut(&mut self) -> &mut skia::Surface {
+        &mut self.surface
+    }
+
+    pub fn reset_all(&mut self) {
+        self.grid.clear();
+        self.removed.clear();
+        self.stale.clear();
+        self.free.clear();
+        self.next = 0;
+        self.surface.canvas().clear(skia::Color::TRANSPARENT);
     }
 
     pub fn has(&self, tile: Tile) -> bool {
-        self.grid.contains_key(&tile) && !self.removed.contains(&tile)
+        self.grid.contains_key(&tile)
+            && !self.removed.contains(&tile)
+            && !self.stale.contains(&tile)
     }
 
+    pub fn cached_tiles_in_rect(&self, rect: &TileRect) -> Vec<Tile> {
+        self.grid
+            .keys()
+            .filter(|tile| !self.removed.contains(tile) && rect.contains(tile))
+            .copied()
+            .collect()
+    }
+
+    /// Allocate a writable slot for `tile`.
     pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            // First we try to remove the obsolete tiles.
-            self.gc();
+        if let Some(old) = self.grid.remove(tile) {
+            self.free.push(old.index);
         }
-
-        // If we still have a texture capacity problem, then
-        // we try to remove all of those tiles that aren't
-        // visible.
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            self.gc_non_visible(tile_viewbox);
-        }
-
-        let Some(tile_ref) = self.provider.allocate() else {
-            panic!("Tile texture allocation failed {}:{}", tile.0, tile.1);
+        let index = self.allocate_index(tile_viewbox);
+        let slot = TileAtlasTextureRef {
+            index,
+            rect: self.slot_rect(index),
         };
-
-        self.grid.insert(*tile, tile_ref.clone());
-
-        if self.removed.contains(tile) {
-            self.removed.remove(tile);
-        }
-
-        tile_ref.clone()
+        self.grid.insert(*tile, slot.clone());
+        self.removed.remove(tile);
+        self.stale.remove(tile);
+        slot
     }
 
-    pub fn get(&mut self, tile: Tile) -> Option<&TileAtlasTextureRef> {
+    fn try_take_slot(&mut self) -> Option<usize> {
+        self.free.pop().or_else(|| {
+            (self.next < self.slots).then(|| {
+                self.next += 1;
+                self.next - 1
+            })
+        })
+    }
+
+    /// Evict one cached tile (prefer one outside the interest area) and reuse
+    /// its slot. The evicted tile simply re-renders on a later frame.
+    fn evict_one(&mut self, tile_viewbox: &TileViewbox) -> Option<usize> {
+        let victim = self
+            .grid
+            .keys()
+            .find(|tile| !tile_viewbox.is_in_interest_area(tile))
+            .or_else(|| self.grid.keys().next())
+            .copied()?;
+        let slot = self.grid.remove(&victim)?;
+        self.removed.remove(&victim);
+        self.stale.remove(&victim);
+        Some(slot.index)
+    }
+
+    fn allocate_index(&mut self, tile_viewbox: &TileViewbox) -> usize {
+        if let Some(index) = self.try_take_slot() {
+            return index;
+        }
+        self.gc();
+        if let Some(index) = self.try_take_slot() {
+            return index;
+        }
+        self.gc_non_visible(tile_viewbox);
+        if let Some(index) = self.try_take_slot() {
+            return index;
+        }
+        // Atlas full: evict a tile and reuse its slot.
+        self.evict_one(tile_viewbox).unwrap_or(0)
+    }
+
+    pub fn slot(&self, tile: Tile) -> Option<TileAtlasTextureRef> {
         if self.removed.contains(&tile) {
             return None;
         }
-        self.grid.get(&tile)
+        self.grid.get(&tile).cloned()
     }
 
     pub fn remove(&mut self, tile: Tile) {
-        if let Some(tile_ref) = self.grid.get(&tile) {
-            if tile_ref.index < self.textures.len() {
-                self.textures[tile_ref.index].set_empty();
-            }
-        }
         self.removed.insert(tile);
+    }
+
+    pub fn mark_stale(&mut self, tile: Tile) {
+        if self.grid.contains_key(&tile) && !self.removed.contains(&tile) {
+            self.stale.insert(tile);
+        }
     }
 
     pub fn clear(&mut self) {
         for k in self.grid.keys() {
             self.removed.insert(*k);
         }
+        // `removed` supersedes `stale` everywhere; drop the now-moot marks.
+        self.stale.clear();
     }
 }

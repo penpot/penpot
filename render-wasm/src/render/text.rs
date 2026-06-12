@@ -3,8 +3,8 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
-        StrokeKind, TextContent,
+        calculate_text_layout_data, position_cached_paragraphs, set_paint_fill, GrowType,
+        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -298,6 +298,118 @@ pub fn render(
         fill_inset,
         layer_opacity,
     )
+}
+
+pub fn render_fill_cached(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    text_content: &TextContent,
+    surface_id: Option<SurfaceId>,
+    blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
+) -> Result<()> {
+    if text_content.layout.paragraphs.is_empty() || text_content.grow_type() == GrowType::AutoWidth
+    {
+        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+        return render(
+            Some(render_state),
+            None,
+            shape,
+            &mut paragraph_builders,
+            surface_id,
+            None,
+            blur,
+            fill_inset,
+            None,
+        );
+    }
+
+    let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
+    let groups = &text_content.layout.paragraphs;
+
+    if let Some(blur_filter) = blur {
+        let text_bounds = shape
+            .get_text_content()
+            .calculate_bounds(shape, false)
+            .to_rect();
+        let bounds = blur_filter.compute_fast_bounds(text_bounds);
+        if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
+            let blur_filter_clone = blur_filter.clone();
+            if filters::render_with_filter_surface(
+                render_state,
+                bounds,
+                target_surface,
+                |state, temp_surface| {
+                    let temp_canvas = state.surfaces.canvas(temp_surface);
+                    paint_fill_cached_on_canvas(
+                        temp_canvas,
+                        shape,
+                        groups,
+                        Some(&blur_filter_clone),
+                        fill_inset,
+                    );
+                    Ok(())
+                },
+            )? {
+                return Ok(());
+            }
+        }
+    }
+
+    let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
+    paint_fill_cached_on_canvas(canvas, shape, groups, blur, fill_inset);
+    Ok(())
+}
+
+fn paint_fill_cached_on_canvas(
+    canvas: &Canvas,
+    shape: &Shape,
+    groups: &[Vec<skia::textlayout::Paragraph>],
+    blur: Option<&ImageFilter>,
+    fill_inset: Option<f32>,
+) {
+    if let Some(blur_filter) = blur {
+        let mut blur_paint = Paint::default();
+        blur_paint.set_image_filter(blur_filter.clone());
+        canvas.save_layer(&SaveLayerRec::default().paint(&blur_paint));
+    }
+
+    if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
+        if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
+            let mut layer_paint = Paint::default();
+            layer_paint.set_image_filter(erode);
+            canvas.save_layer(&SaveLayerRec::default().paint(&layer_paint));
+            draw_cached_fill(canvas, shape, groups);
+            canvas.restore();
+        } else {
+            draw_cached_fill(canvas, shape, groups);
+        }
+    } else {
+        draw_cached_fill(canvas, shape, groups);
+    }
+
+    if blur.is_some() {
+        canvas.restore();
+    }
+
+    canvas.restore();
+}
+
+fn draw_cached_fill(canvas: &Canvas, shape: &Shape, groups: &[Vec<skia::textlayout::Paragraph>]) {
+    canvas.save_layer(&SaveLayerRec::default());
+    for para in position_cached_paragraphs(shape, groups) {
+        para.paragraph.paint(canvas, (para.x, para.y));
+        for deco in &para.decorations {
+            draw_text_decorations(
+                canvas,
+                &deco.text_style,
+                Some(deco.y),
+                deco.thickness,
+                deco.left,
+                deco.width,
+            );
+        }
+    }
 }
 
 /// Like [`render`] but rasterizes color emoji as bitmap overlays for PDF/vector export.
