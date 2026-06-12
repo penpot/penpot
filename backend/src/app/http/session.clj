@@ -68,17 +68,24 @@
 (def ^:private valid-params?
   (sm/validator schema:params))
 
+(defn- decode-session
+  [session]
+  (cond-> session
+    (db/pgobject? (:props session))
+    (update :props db/decode-transit-pgobject)))
+
 (defn- database-manager
   [pool]
   (reify ISessionManager
     (read-session [_ id]
       (if (string? id)
-        ;; Backward compatibility
+        ;; Backward compatibility: http_session (v1) has no props column
         (let [session (db/exec-one! pool (sql/select :http-session {:id id}))]
           (-> session
               (assoc :modified-at (:updated-at session))
               (dissoc :updated-at)))
-        (db/exec-one! pool (sql/select :http-session-v2 {:id id}))))
+        (some-> (db/exec-one! pool (sql/select :http-session-v2 {:id id}))
+                (decode-session))))
 
     (create-session [_ params]
       (assert (valid-params? params) "expect valid session params")
@@ -100,7 +107,9 @@
                           (assoc :created-at modified-at)
                           (assoc :modified-at modified-at)))
           (db/update! pool :http-session-v2
-                      {:modified-at modified-at}
+                      (cond-> {:modified-at modified-at}
+                        (some? (:props session))
+                        (assoc :props (db/tjson (:props session))))
                       {:id (:id session)}
                       {::db/return-keys true}))))
 
@@ -129,9 +138,10 @@
           session))
 
       (update-session [_ session]
-        (let [modified-at (ct/now)]
-          (swap! cache update (:id session) assoc :modified-at modified-at)
-          (assoc session :modified-at modified-at)))
+        (let [modified-at (ct/now)
+              session     (assoc session :modified-at modified-at)]
+          (swap! cache assoc (:id session) session)
+          session))
 
       (delete-session [_ id]
         (swap! cache dissoc id)

@@ -114,10 +114,10 @@
     (if (some? team-id)
       (->> (rp/cmd! :auth-sso {:team-id team-id :url url})
            (rx/subs!
-            (fn [{:keys [authorized auth-url]}]
+            (fn [{:keys [authorized redirect-uri]}]
               (if authorized
                 (st/emit! (rt/navigated match send-event-info?))
-                (when auth-url (st/emit! (rt/nav-raw :uri (str auth-url))))))
+                (when redirect-uri (st/emit! (rt/nav-raw :uri (str redirect-uri))))))
             (fn [cause]
               (errors/on-error cause))))
       (st/emit! (rt/navigated match send-event-info?)))))

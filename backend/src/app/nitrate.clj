@@ -16,7 +16,6 @@
    [app.common.time :as ct]
    [app.common.types.organization :as cto]
    [app.config :as cf]
-   [app.db :as db]
    [app.http.client :as http]
    [app.http.session :as session]
    [app.rpc :as-alias rpc]
@@ -447,7 +446,7 @@
    [:base-url [:maybe :string]]
    [:client-secret [:maybe :string]]
    [:issuer [:maybe :string]]
-   [:scopes [:maybe :string]]])
+   [:scopes [:maybe [::sm/set ::sm/text]]]])
 
 (defn- get-org-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
@@ -520,13 +519,13 @@
     (if-not (:active sso)
       {:authorized true :sso sso}
       (if (or (:issuer sso) (:base-url sso))
-        (let [props           (some-> (:props session) db/decode-transit-pgobject)
+        (let [props           (:props session)
               sso-map         (get props :sso {})
               organization-id (:organization-id sso)
               exp             (get sso-map organization-id)
               now             (ct/now)
-              authorized      (boolean (and (ct/inst? exp)
-                                            (ct/is-after? exp now)))]
+              authorized      (and (ct/inst? exp)
+                                   (ct/is-after? exp now))]
           {:authorized authorized :sso sso})
         {:authorized false :sso sso}))))
 

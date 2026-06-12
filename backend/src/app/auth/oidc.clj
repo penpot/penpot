@@ -45,7 +45,7 @@
 (defn- discover-oidc-config
   [cfg {:keys [base-uri skip-ssrf-check?] :as provider}]
   (let [uri (u/join base-uri ".well-known/openid-configuration")
-        rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? (boolean skip-ssrf-check?)})]
+        rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? skip-ssrf-check?})]
 
     (if (= 200 (:status rsp))
       (let [data       (-> rsp :body json/decode)
@@ -107,7 +107,7 @@
 
 (defn- fetch-oidc-jwks
   [cfg jwks-uri {:keys [skip-ssrf-check?]}]
-  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? (boolean skip-ssrf-check?)})]
+  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? skip-ssrf-check?})]
     (if (= 200 status)
       (-> body json/decode :keys process-oidc-jwks)
       (ex/raise :type ::internal
@@ -773,8 +773,7 @@
                           :base-uri         (some-> (or base-url issuer)
                                                     (str/rtrim "/")
                                                     (str "/"))
-                          :scopes           (into default-oidc-scopes
-                                                  (when scopes (str/split scopes " ")))
+                          :scopes           (into default-oidc-scopes (or scopes #{}))
                           :skip-ssrf-check? true}))
 
 (defn- auth-handler
@@ -815,13 +814,9 @@
                 session         (session/get-session request)
                 exp             (ct/in-future {:hours 48})]
             (when (and session organization-id)
-              (let [props   (or (some-> (:props session) db/decode-transit-pgobject) {})
-                    sso-map (get props :sso {})
-                    props'  (assoc props :sso (assoc sso-map organization-id exp))]
-                (db/update! cfg :http-session-v2
-                            {:props (db/tjson props')}
-                            {:id (:id session)}
-                            {::db/return-keys false})))
+              (let [props (-> (or (:props session) {})
+                              (update :sso assoc organization-id exp))]
+                (session/update-session (::session/manager cfg) (assoc session :props props))))
             (redirect-response dest-url))
 
           (let [provider (resolve-provider cfg state)

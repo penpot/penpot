@@ -628,7 +628,7 @@
 (sv/defmethod ::auth-sso
   "Check if a user needs to login into the organization SSO.
   Returns {:authorized true} when SSO is not active for the team.
-  Returns {:authorized false :auth-url <url>} when SSO is active;
+  Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session."
   {::rpc/auth true
@@ -648,8 +648,8 @@
                                                     :organization-id organization-id
                                                     :issuer          issuer
                                                     :exp             (ct/in-future "4h")})
-              auth-url        (oidc/build-auth-redirect-uri oidc-provider state-token)]
+              redirect-uri        (oidc/build-auth-redirect-uri oidc-provider state-token)]
           {:authorized false
-           :auth-url   auth-url})
+           :redirect-uri redirect-uri})
         {:authorized false
-         :auth-url   nil}))))
+         :redirect-uri nil}))))
