@@ -2755,6 +2755,10 @@ msgstr "Bad Gateway"
 msgid "labels.blur"
 msgstr "Blur"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs
+msgid "labels.blur-effects"
+msgstr "Blur effects"
+
 #: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:543, src/app/main/ui/dashboard/team.cljs:866, src/app/main/ui/dashboard/team.cljs:1345, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:167, src/app/main/ui/settings/integrations.cljs:228, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:364, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:242
 msgid "labels.cancel"
 msgstr "Cancel"
@@ -7177,9 +7181,29 @@ msgstr "Layer blur"
 msgid "workspace.options.blur-options.remove-blur"
 msgstr "Remove blur"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Show/hide more options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr "Background blur is only supported in the new render. Switch to the new render in the Preferences menu to use this effect"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:113, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
 msgid "workspace.options.blur-options.title"
 msgstr "Blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Blur effects"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Group blur effects"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Selection blur effects"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title.group"
@@ -7192,6 +7216,10 @@ msgstr "Selection blur"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:141
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Toggle blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Blur type select"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"

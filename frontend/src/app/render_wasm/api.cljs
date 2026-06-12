@@ -945,9 +945,18 @@
 (defn set-shape-blur
   [blur]
   (if (some? blur)
-    (let [type   (-> blur :type sr/translate-blur-type)
+    (let [type   (sr/translate-blur-type :layer-blur)
           hidden (:hidden blur)
           value  (:value blur)]
+      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+    (h/call wasm/internal-module "_clear_shape_blur")))
+
+(defn set-shape-background-blur
+  [background-blur]
+  (if (some? background-blur)
+    (let [type   (sr/translate-blur-type :background-blur)
+          hidden (:hidden background-blur)
+          value  (:value background-blur)]
       (h/call wasm/internal-module "_set_shape_blur" type hidden value))
     (h/call wasm/internal-module "_clear_shape_blur")))
 
@@ -1331,6 +1340,7 @@
           bool-type    (get shape :bool-type)
           grow-type    (get shape :grow-type)
           blur         (get shape :blur)
+          background-blur (get shape :background-blur)
           svg-attrs    (get shape :svg-attrs)
           shadows      (get shape :shadow)]
 
@@ -1339,6 +1349,7 @@
       ;; Remaining properties that need separate calls (variable-length or conditional)
       (set-shape-children children)
       (set-shape-blur blur)
+      (set-shape-background-blur background-blur)
       (when (= type :group)
         (set-masked (boolean masked)))
       (when (= type :bool)

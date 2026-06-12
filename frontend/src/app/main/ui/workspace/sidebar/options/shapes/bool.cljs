@@ -135,7 +135,7 @@
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:> blur-menu* {:ids ids
-                     :values (select-keys shape [:blur])}]
+                     :values (select-keys shape [:blur :background-blur])}]
 
      [:> exports-menu* {:type type
                         :ids ids

@@ -38,13 +38,10 @@
   (d/concat-vec
    [{:id "BackgroundImageFix" :type :image-fix}]
 
-   ;; Background blur won't work in current SVG specification
-   ;; We can revisit this in the future
-   #_(->> shape :blur (into []) (blur-filters :background-blur))
-
    (->> shape :shadow (apply-filters :style :drop-shadow))
    [{:id "shape" :type :blend-filters}]
    (->> shape :shadow (apply-filters :style :inner-shadow))
+
    (->> shape :blur list (apply-filters :type :layer-blur))))
 
 (defn- calculate-filter-bounds
@@ -100,17 +97,13 @@
      ;; shapes because selrect stores the unrotated rectangle, not the screen-space bbox.
      (and (empty? (-> shape :shadow))
           (or (nil? (:blur shape))
-              (not= :layer-blur (-> shape :blur :type))
               (zero? (-> shape :blur :value (or 0)))))
      (-> (dm/get-prop shape :points)
          (grc/points->rect))
 
      :else
      (let [filters    (shape->filters shape)
-           blur-value (case (-> shape :blur :type)
-                        :layer-blur (or (-> shape :blur :value) 0)
-                        :background-blur 0
-                        0)
+           blur-value (or (-> shape :blur :value) 0)
            srect      (-> (dm/get-prop shape :points)
                           (grc/points->rect))]
        (get-rect-filter-bounds srect filters blur-value ignore-shadow-margin?)))))
@@ -242,10 +235,7 @@
            (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
 
          filters (shape->filters shape)
-         blur-value (case (-> shape :blur :type)
-                      :layer-blur (or (-> shape :blur :value) 0)
-                      :background-blur 0
-                      0)]
+         blur-value (or (-> shape :blur :value) 0)]
 
      (get-rect-filter-bounds children-bounds filters blur-value ignore-shadow-margin?))))
 

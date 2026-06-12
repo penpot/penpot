@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.common.types.shape.blur
+(ns app.common.types.shape.background-blur
   (:require
    [app.common.schema :as sm]))
 
-(def schema:blur
-  [:map {:title "Blur"}
+(def schema:background-blur
+  [:map {:title "BackgroundBlur"}
    [:id ::sm/uuid]
-   [:type [:enum :layer-blur]]
+   [:type [:enum :background-blur]]
    [:value ::sm/safe-number]
    [:hidden :boolean]])

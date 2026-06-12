@@ -18,12 +18,24 @@
   [:div {:class (stl/css :blur-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class (stl/css :blur-shape)}
-      (let [property :filter
-            value (css/get-css-value objects shape property)
-            property-name (cmm/get-css-rule-humanized property)
-            property-value (css/get-css-property objects shape property)]
-        [:> properties-row* {:key (dm/str "blur-property-" property)
-                             :term property-name
-                             :detail (dm/str value)
-                             :property property-value
-                             :copiable true}])])])
+      (let [blur-property :filter
+            blur-value (css/get-css-value objects shape blur-property)
+            background-blur-property :backdrop-filter
+            blur-property-name (cmm/get-css-rule-humanized blur-property)
+            blur-property-value (css/get-css-property objects shape blur-property)
+            background-blur-value (css/get-css-value objects shape background-blur-property)
+            background-blur-property-name (cmm/get-css-rule-humanized background-blur-property)
+            background-blur-property-value (css/get-css-property objects shape background-blur-property)]
+        [:*
+         (when blur-property-value
+           [:> properties-row* {:key (dm/str "blur-property-" blur-property)
+                                :term blur-property-name
+                                :detail (dm/str blur-value)
+                                :property blur-property-value
+                                :copiable true}])
+         (when background-blur-property-value
+           [:> properties-row* {:key (dm/str "blur-property-" background-blur-property)
+                                :term background-blur-property-name
+                                :detail (dm/str background-blur-value)
+                                :property background-blur-property-value
+                                :copiable true}])])])])
