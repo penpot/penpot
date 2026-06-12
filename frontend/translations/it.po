@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-02 17:01+0000\n"
+"PO-Revision-Date: 2026-06-13 06:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -9082,3 +9082,57 @@ msgstr "Impossibile verificare questo file."
 #: src/app/main/ui/dashboard/import.cljs:511
 msgid "dashboard.import.import-error.corrupt-file"
 msgstr "Questo file sembra essere danneggiato."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Non hai i permessi per invitare persone ad unirsi a questo team oppure "
+"modificare o eliminare gli inviti."
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr ""
+"Non hai i permessi per aggiungere team a nessuna delle tue organizzazioni."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Non sei autorizzato a creare team nell'organizzazione %s. Per maggiori "
+"informazioni, contatta il proprietario dell'organizzazione."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Non sei autorizzato ad eliminare team nell'organizzazione %s. Per maggiori "
+"informazioni, contatta il proprietario dell'organizzazione."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Non sei autorizzato a spostare team che fanno parte dell'organizzazione %s. "
+"Per maggiori informazioni, contatta il proprietario dell'organizzazione."
+
+#: src/app/main/ui/dashboard/import.cljs:514
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Qualcosa è andato storto durante l'elaborazione di questo file."
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"\"%s\" autorizza solo i membri dell'organizzazione ad unirsi al suo team. "
+"Qualsiasi invito in sospeso a persone al di fuori dell'organizzazione verrà "
+"revocato."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Gli inviti in sospeso ad utenti esterni verranno annullati."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr ""
+"Qui trovi tutte le organizzazioni dove sei autorizzato a creare o aggiungere "
+"team."
+
+#: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:431
+msgid "errors.tokens.empty-field"
+msgstr "Questo campo non può essere vuoto"
