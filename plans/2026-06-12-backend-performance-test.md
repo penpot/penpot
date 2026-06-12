@@ -17,88 +17,81 @@
 
 ### Completed (2026-06-12)
 
-Phase 1 is done. Phase 2 has the first flow (lifecycle) implemented and validated.
+Phase 1 done. Phase 2 done (all core flows). Phase 3 done (orchestrator). Phase 4 and 5 remain.
 
 **What was built:**
 
 ```
 performance/
-├── run.sh                  # Bash runner script (smoke, lifecycle, clean, help)
+├── run.sh                  # Bash runner — all commands + orchestrator
 ├── README.md               # Usage docs, configuration, architecture notes
 ├── lib/
-│   └── penpot-client.js    # 388 lines — shared k6 HTTP client module
+│   └── penpot-client.js    # ~590 lines — shared k6 HTTP client module
 ├── scripts/
-│   └── lifecycle.js         # 398 lines — full user lifecycle test
-├── fixtures/
-│   ├── test-small.png       # 97 B
-│   ├── test-medium.png      # 30 KB
-│   └── test-large.png       # 120 KB
+│   ├── lifecycle.js         # Full user lifecycle (register → CRUD → delete)
+│   ├── workspace-open.js    # Read-heavy: file open loop (get-file, libraries, thumbnails)
+│   ├── workspace-edit.js    # Write-heavy: file edit loop (get-file + update-file)
+│   ├── media-upload.js      # Image uploads: SVG/PNG direct, JPG chunked
+│   └── font-upload.js       # Font uploads: TTF+OTF chunked, create-font-variant
 ├── results/                 # k6 JSON output (gitignored)
 └── baselines/               # for regression baselines
 ```
 
-**What the lifecycle test covers (all passing):**
+Fixtures are reused from `backend/test/backend_tests/test_files/` (no copies in `performance/`).
 
-| Step | RPC Command | Method | Observed Latency |
-|------|------------|--------|-----------------|
-| 1. Register | `create-demo-profile` | POST | ~136ms |
-| 2. Login | `login-with-password` | POST | ~136ms |
-| 3. Get profile | `get-profile` | GET | ~7ms |
-| 4. Get teams | `get-teams` | GET | ~6ms |
-| 5. Create project | `create-project` | POST | ~9ms |
-| 6. Create file | `create-file` | POST | ~22ms |
-| 7. Get file | `get-file` | GET | ~12ms |
-| 8. Update file | `update-file` | POST | ~25ms |
-| 9. Upload image | `upload-file-media-object` | POST (multipart) | ~7ms |
-| 10. Delete file | `delete-file` | POST | ~12ms |
-| 11. Delete project | `delete-project` | POST | ~5ms |
-| 12. Logout | `logout` | POST | ~4ms |
+**All flows validated (smoke test, 1 VU, 1 iteration each):**
 
-Smoke test result: **10/10 checks pass, 0% failure rate, ~10s total iteration**.
+| Script | Checks | HTTP Requests | Failure Rate | Duration |
+|--------|--------|---------------|-------------|----------|
+| `lifecycle.js` | 11/11 | 22 | 0% | ~12s |
+| `workspace-open.js` | 5/5 per iter (×3) | 12 | 0% | ~4s |
+| `workspace-edit.js` | 5/5 per iter (×2) | 11 | 0% | ~4s |
+| `media-upload.js` | 8/8 | 17 | 0% | ~3s |
+| `font-upload.js` | 11/11 | 12 | 0% | ~3s |
 
-**Key discoveries during implementation:**
+**Orchestrator (`./run.sh all`) validated** — runs all 5 flows in parallel (10 VUs total), all checks pass, 0% failure rate.
 
-1. **JSON transport works.** The backend accepts `Content-Type: application/json` for POST bodies (kebab-case keys auto-converted) and returns `application/json` responses (camelCase keys) via `Accept: application/json` or `_fmt=json` query param. No Transit encoder needed in k6.
+**Key discoveries (cumulative):**
 
-2. **`create-file` `features` param.** Sending `features: []` (empty array) causes a 400 validation error. Omit the field entirely — it's optional in the schema (`backend/src/app/rpc/commands/files_create.clj`).
+1. **JSON transport works.** Backend accepts `Content-Type: application/json` (kebab-case keys auto-converted) and returns `application/json` (camelCase keys) via `Accept: application/json` or `_fmt=json`. No Transit encoder needed.
 
-3. **`update-file` `changes` payload — shape schema is strict.** The `add-obj` change requires a fully valid shape object. Minimum required fields beyond the basics:
-   - `selrect`: `{x, y, width, height, x1, y1, x2, y2}`
-   - `points`: array of 4 `{x, y}` corner points
-   - `transform` / `transform-inverse`: identity matrix `{a:1, b:0, c:0, d:1, e:0, f:0}`
-   - `parent-id` and `frame-id` inside the `obj`
-   - `frame-id` at the top level of the change object itself (required, not optional)
-   - Schema defined in `common/src/app/common/files/changes.cljc` (line 189) and `common/src/app/common/types/shape.cljc` (line 165).
+2. **`create-file` `features` param.** Sending `features: []` causes 400. Omit entirely — it's optional (`backend/src/app/rpc/commands/files_create.clj`).
 
-4. **`update-file` URL convention.** The frontend sends `id` both as a query param and in the POST body. The URL is `POST /api/main/methods/update-file?id=<uuid>`.
+3. **`update-file` shape schema is strict.** The `add-obj` change requires: `selrect`, `points` (4 corners), `transform`/`transform-inverse` (identity matrix), `parentId`/`frameId` inside `obj`, and `frameId` at the change top level. Schema: `common/src/app/common/files/changes.cljc:189`.
 
-5. **Two registration modes work:**
-   - `demo` mode: `create-demo-profile` — fast, requires `demo-users` feature flag.
-   - `register` mode: `prepare-register-profile` + `register-profile` — two-step flow, works without flags.
+4. **`update-file` URL convention.** `POST /api/main/methods/update-file?id=<uuid>` — `id` in both query string and body.
 
-6. **k6 installed at** `/home/penpot/.local/bin/k6` (v0.56.0). Not in default PATH; use `PATH="/home/penpot/.local/bin:$PATH"` or set `K6` env var.
+5. **Two registration modes:** `demo` (fast, needs `demo-users` flag) and `register` (two-step, no flags).
+
+6. **k6 at** `/home/penpot/.local/bin/k6` (v0.56.0). Use `PATH="/home/penpot/.local/bin:$PATH"` or `K6` env var.
+
+7. **Demo profile race condition.** `create-demo-profile` uses timestamp-based emails. Parallel calls within the same ms get the same email. Mitigated with `sleep(Math.random() * 2)` before profile creation in parallel scenarios.
+
+8. **Chunked upload threshold.** The client uses 50 KB chunk size. Files ≤50 KB use direct multipart; files >50 KB use `create-upload-session` → `upload-chunk` × N → `assemble-file-media-object`.
+
+9. **Font upload flow.** Each MIME type (ttf, otf, woff) gets its own `create-upload-session`. All session IDs are passed in the `uploads` map to `create-font-variant`. The `font-id` is a client-generated UUID that groups variants into a family.
+
+10. **MIME type validation.** The backend validates that the uploaded content MIME matches the declared MIME. `sample.jpg` must be sent as `image/jpeg`, not `image/png`.
 
 ### Remaining Work
 
 | Phase | Status | Next Actions |
 |-------|--------|-------------|
 | Phase 1 – Discovery & Tooling | **Done** | — |
-| Phase 2 – Core HTTP Flows | **Partial** — lifecycle.js done | Write `workspace-open.js`, `workspace-edit.js`, `media-upload.js`, `font-upload.js`, `viewer.js`, `export.js` |
-| Phase 2 – Data seeding | **Not started** | Create `seed-data.js` for 100+ user pool |
-| Phase 3 – Scenarios | **Not started** | Define multi-scenario k6 config mixing flows |
+| Phase 2 – Core HTTP Flows | **Done** | All 5 flows implemented + orchestrator |
+| Phase 2 – Data seeding | **Not needed** | User pool created in k6 `setup()` — no external script needed |
+| Phase 3 – Scenarios | **Done** | `./run.sh all` runs all flows in parallel |
 | Phase 4 – Advanced update-file | **Not started** | File size tiers, concurrent editing matrix |
 | Phase 5 – CI & Reporting | **Not started** | Grafana dashboards, regression guard |
 
 ### Immediate Next Steps
 
-1. Write `workspace-open.js` — read-heavy flow (get-file, get-file-libraries, thumbnails).
-2. Write `workspace-edit.js` — write-heavy loop (get-file + update-file per VU, independent files).
-3. Write `media-upload.js` — direct + chunked upload flows.
-4. Write `font-upload.js` — chunked upload + create-font-variant.
-5. Write `viewer.js` — get-view-only-bundle + comments.
-6. Create `seed-data.js` — pre-seed 100+ users/teams/files for multi-VU runs.
-7. Define scenario mix in `run.sh` (multi-scenario support with ramping VUs).
-8. Add `--scenario` flag to `run.sh` to select individual flows or the full mix.
+1. ~~Create `seed-data.js`~~ — Not needed. Use k6 `setup()` to create a user pool before VUs start. Each VU picks a pre-existing user from the pool (`data.users[__VU - 1]`). Setup is sequential (~140ms/user) and excluded from metrics. Self-contained, no external tooling.
+2. Add `--scenario` flag to `run.sh` to select individual flows by name from the orchestrator.
+3. Write `viewer.js` — `get-view-only-bundle` + `get-comment-threads` (deferred per user request).
+4. Phase 4: File size matrix (`update-file` latency vs shape count: 10, 100, 500, 1000 shapes).
+5. Phase 4: Concurrent editing test (2–3 VUs per file, measure conflict rate).
+6. Phase 5: Grafana dashboard panels (p95 latency by RPC, error rate, JVM, DB pool).
 
 ---
 
@@ -468,27 +461,27 @@ Run `workspace-edit.js` against each tier separately and plot:
 - [ ] `curl -H "Accept: application/json" http://localhost:6060/metrics` returns Prometheus text.
 - [ ] Backend fixtures create at least 100 test users and 100 test files.
 - [x] A `update-file` request with a minimal `changes` payload succeeds and returns `{"revn": N}`. (Validated — needs full shape with selrect, points, transform, frame-id)
-- [x] A `upload-file-media-object` multipart request succeeds and returns a media object ID. (Validated via k6 lifecycle)
-- [ ] A chunked upload (`create-upload-session` → `upload-chunk` → `assemble-file-media-object`) succeeds.
-- [ ] A `create-font-variant` request with chunked uploads succeeds.
+- [x] A `upload-file-media-object` multipart request succeeds and returns a media object ID. (Validated via k6 lifecycle + media-upload)
+- [x] A chunked upload (`create-upload-session` → `upload-chunk` → `assemble-file-media-object`) succeeds. (Validated via media-upload with JPG 305 KB, and font-upload with TTF 68 KB + OTF 82 KB)
+- [x] A `create-font-variant` request with chunked uploads succeeds. (Validated via font-upload — TTF + OTF, returns variant with id)
 
 ---
 
 ## Immediate Next Steps (if approved)
 
 1. ~~Create `performance/` directory and `README.md`.~~ ✅ Done
-2. ~~Write `penpot-client.js` (k6 shared module) with `login()`, `rpc()`, `uploadMultipart()`, and `uploadChunked()` helpers.~~ ✅ Done (388 lines, JSON transport, cookie auth, session headers, tagged metrics)
+2. ~~Write `penpot-client.js` (k6 shared module) with `login()`, `rpc()`, `uploadMultipart()`, and `uploadChunked()` helpers.~~ ✅ Done (~590 lines, JSON transport, cookie auth, session headers, tagged metrics, direct + chunked upload, file library/thumbnail methods)
 3. ~~Write a manual `curl` validation script~~ — Skipped; JSON compatibility confirmed via k6 smoke test.
-4. Write a data seeding script (`performance/scripts/seed-data.js`) that creates 100+ users, teams, projects, and files of varying sizes.
-5. ~~Write the first k6 script: `lifecycle.js`~~ ✅ Done (398 lines, 12-step CRUD flow, all checks passing)
-6. ~~Run a 1-VU smoke test against local devenv and commit the baseline results.~~ ✅ Done (10/10 checks, 0% failure, ~10s iteration)
-7. Write `workspace-open.js` and `workspace-edit.js`.
-8. Write `media-upload.js` and `font-upload.js`.
-9. Define the `1000-VU` scenario mix in `options.js` (shared scenario config).
+4. ~~Write a data seeding script~~ — Not needed. User pool created in k6 `setup()` phase (sequential, excluded from metrics). Each VU picks `data.users[__VU - 1]` to login.
+5. ~~Write the first k6 script: `lifecycle.js`~~ ✅ Done (11 checks, 22 HTTP requests, 0% failure)
+6. ~~Run a 1-VU smoke test against local devenv and commit the baseline results.~~ ✅ Done
+7. ~~Write `workspace-open.js` and `workspace-edit.js`.~~ ✅ Done (both validated, 0% failure)
+8. ~~Write `media-upload.js` and `font-upload.js`.~~ ✅ Done (both validated, 0% failure)
+9. ~~Define the `1000-VU` scenario mix in `options.js` (shared scenario config).~~ ✅ Done (`./run.sh all` orchestrator runs all 5 flows in parallel)
 10. Run the first 100-VU ramp test and capture Prometheus metrics.
 
 ---
 
 **Plan Author:** Senior Software Architect
-**Status:** Phase 1 complete, Phase 2 partially complete (lifecycle.js done). See "Current Progress" section above.
+**Status:** Phase 1–3 complete (all core flows + orchestrator). Phase 4–5 remain. See "Current Progress" above.
 

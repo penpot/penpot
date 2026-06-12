@@ -62,8 +62,8 @@ export const options = {
 // ---------------------------------------------------------------------------
 
 // Load test PNG fixtures — small uses direct upload, large uses chunked upload
-const testImageSmall = open("../fixtures/test-small.png", "b");
-const testImageLarge = open("../fixtures/test-large.png", "b");
+const testImageSmall = open("../../backend/test/backend_tests/test_files/sample.png", "b");
+const testImageLarge = open("../../backend/test/backend_tests/test_files/sample.jpg", "b");
 
 // A minimal "add-obj" change payload for update-file.
 // This adds a simple rectangle shape to the first page.
@@ -176,6 +176,10 @@ export function setup() {
 
 export default function (data) {
   const client = createClient(data.baseUrl);
+
+  // Small random delay to spread out concurrent demo profile creation
+  // (demo emails are timestamp-based and can collide within the same ms)
+  sleep(Math.random() * 2);
 
   // ---- Step 0: Create a user account ----
   let email, password;
@@ -366,8 +370,8 @@ export default function (data) {
     const uploadRes = client.uploadFileMediaObject(
       fileId,
       testImageLarge,
-      "test-large.png",
-      "image/png"
+      "sample.jpg",
+      "image/jpeg"
     );
     if (assertOk(uploadRes, "upload-file-media-object (chunked)")) {
       console.log(`VU ${__VU}: Uploaded large image (chunked)`);

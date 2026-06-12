@@ -220,6 +220,57 @@ export function createClient(baseUrl) {
   }
 
   /**
+   * Get libraries used by a file.
+   *
+   * @param {string} fileId - File UUID
+   * @returns {object} Parsed response { status, body }
+   */
+  function getFileLibraries(fileId) {
+    const res = rpc("GET", "get-file-libraries", {
+      "file-id": fileId,
+    });
+    return {
+      status: res.status,
+      body: res.status === 200 ? res.json() : null,
+      raw: res,
+    };
+  }
+
+  /**
+   * Get object thumbnails for a file.
+   *
+   * @param {string} fileId - File UUID
+   * @returns {object} Parsed response { status, body }
+   */
+  function getFileObjectThumbnails(fileId) {
+    const res = rpc("GET", "get-file-object-thumbnails", {
+      "file-id": fileId,
+    });
+    return {
+      status: res.status,
+      body: res.status === 200 ? res.json() : null,
+      raw: res,
+    };
+  }
+
+  /**
+   * Get file data for thumbnail generation.
+   *
+   * @param {string} fileId - File UUID
+   * @returns {object} Parsed response { status, body }
+   */
+  function getFileDataForThumbnail(fileId) {
+    const res = rpc("GET", "get-file-data-for-thumbnail", {
+      "file-id": fileId,
+    });
+    return {
+      status: res.status,
+      body: res.status === 200 ? res.json() : null,
+      raw: res,
+    };
+  }
+
+  /**
    * Update a file with changes.
    *
    * The backend uses optimistic concurrency control via `revn`.
@@ -511,6 +562,9 @@ export function createClient(baseUrl) {
     createProject,
     createFile,
     getFile,
+    getFileLibraries,
+    getFileObjectThumbnails,
+    getFileDataForThumbnail,
     updateFile,
     uploadFileMediaObject,
     uploadFileMediaObjectDirect,
