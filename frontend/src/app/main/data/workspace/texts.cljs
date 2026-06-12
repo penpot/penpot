@@ -957,10 +957,10 @@
                                           txt/text-transform-attrs)))
              values    (cond-> values
                          (number? (:line-height values))
-                         (update :line-height str)
+                         (update :line-height #(str (mth/precision % 2)))
 
                          (number? (:letter-spacing values))
-                         (update :letter-spacing str))
+                         (update :letter-spacing #(str (mth/precision % 2))))
 
              typ-id    (uuid/next)
              typ       (-> (if multiple?

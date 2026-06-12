@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
@@ -90,17 +91,26 @@
           (t/is (not (contains? result :password))))))
 
     (t/testing "update profile"
-      (let [data (assoc profile
-                        ::th/type :update-profile
-                        ::rpc/profile-id (:id profile)
-                        :fullname "Full Name"
-                        :lang "en"
-                        :theme "dark")
-            out  (th/command! data)]
+      (with-redefs [app.config/flags #{:nitrate}]
+        (with-redefs [nitrate/add-nitrate-licence-to-profile
+                      (fn [_ profile]
+                        (assoc profile :subscription {:plan :pro}))]
+          (let [data (assoc profile
+                            ::th/type :update-profile
+                            ::rpc/profile-id (:id profile)
+                            :fullname "Full Name"
+                            :lang "en"
+                            :theme "dark")
+                out  (th/command! data)]
 
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (map? (:result out)))))
+            ;; (th/print-result! out)
+            (t/is (nil? (:error out)))
+            (t/is (map? (:result out)))
+            (t/is (= "Full Name" (get-in out [:result :fullname])))
+            (t/is (= "en" (get-in out [:result :lang])))
+            (t/is (= "dark" (get-in out [:result :theme])))
+            (t/is (= {:plan :pro}
+                     (:subscription (:result out))))))))
 
     (t/testing "query profile after update"
       (let [data {::th/type :get-profile

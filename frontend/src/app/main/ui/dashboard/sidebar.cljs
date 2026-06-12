@@ -1298,6 +1298,11 @@
            (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
+    (mf/with-effect [teams]
+      (when (and (contains? cf/flags :nitrate)
+                 (empty? teams))
+        (st/emit! (dtm/fetch-teams))))
+
     (mf/with-effect [show-profile-menu?]
       (when-not show-profile-menu?
         (reset! sub-menu* nil)))
