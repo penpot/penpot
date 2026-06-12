@@ -206,10 +206,19 @@ server {
     proxy_pass http://localhost:9001/ws/notifications;
   }
 
+  # If you enable the MCP server
   location /mcp/ws {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
     proxy_pass http://localhost:9001/mcp/ws;
+  }
+
+  location /mcp/stream {
+    proxy_pass http://localhost:9001/mcp/stream;
+  }
+
+  location /mcp/sse {
+    proxy_pass http://localhost:9001/mcp/sse;
   }
 
   # Proxy pass
