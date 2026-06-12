@@ -32,7 +32,22 @@
      :value 4
      :hidden false}))
 
-(mf/defc blur-menu* [{:keys [ids type values]}]
+(defn- check-blur-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "class")
+                     (unchecked-get new-props "class"))
+         (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? (get old-values :blur)
+                     (get new-values :blur)))))
+
+(mf/defc blur-menu*
+  {::mf/wrap [#(mf/memo' % check-blur-menu-props)]}
+  [{:keys [ids type values]}]
   (let [blur           (:blur values)
         has-value?     (not (nil? blur))
         render-wasm?   (features/use-feature "render-wasm/v1")
