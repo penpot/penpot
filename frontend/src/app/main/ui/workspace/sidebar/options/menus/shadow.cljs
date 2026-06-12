@@ -48,7 +48,20 @@
   (map-indexed (fn [index shadow]
                  (assoc shadow ::index index))))
 
+(defn- check-shadow-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "class")
+                     (unchecked-get new-props "class"))
+         (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? old-values new-values))))
+
 (mf/defc shadow-menu*
+  {::mf/wrap [#(mf/memo' % check-shadow-menu-props)]}
   [{:keys [ids type values] :as props}]
   (let [shadows        (mf/with-memo [values]
                          (if (= :multiple values)

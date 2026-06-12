@@ -296,16 +296,29 @@
                [:button {:class (stl/css :option-btn)
                          :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])])]))
 
+(defn- check-frame-grid-props
+  [old-props new-props]
+  (and (identical? (unchecked-get old-props "class")
+                   (unchecked-get new-props "class"))
+       (identical? (unchecked-get old-props "grids")
+                   (unchecked-get new-props "grids"))
+       (identical? (unchecked-get old-props "shape-id")
+                   (unchecked-get new-props "shape-id"))
+       (identical? (unchecked-get old-props "frame-width")
+                   (unchecked-get new-props "frame-width"))
+       (identical? (unchecked-get old-props "frame-height")
+                   (unchecked-get new-props "frame-height"))))
+
 (mf/defc frame-grid*
-  [{:keys [shape]}]
+  {::mf/wrap [#(mf/memo' % check-frame-grid-props)]}
+  [{:keys [grids shape-id frame-width frame-height]}]
   (let [state*              (mf/use-state true)
         open?               (deref state*)
-        frame-grids         (:grids shape)
-        has-frame-grids?    (or (= :multiple frame-grids) (some? (seq frame-grids)))
+        has-frame-grids?    (or (= :multiple grids) (some? (seq grids)))
 
         toggle-content      (mf/use-fn #(swap! state* not))
 
-        id                  (:id shape)
+        id                  shape-id
         default-grids       (mf/deref lens:default-grids)
         default-grid-params (mf/with-memo [default-grids]
                               (merge ctg/default-grid-params default-grids))
@@ -328,15 +341,15 @@
                          :on-click handle-create-grid
                          :icon i/add}]]]
 
-     (when (and open? (seq frame-grids))
+     (when (and open? (seq grids))
        [:div  {:class (stl/css :element-set-content)}
-        (for [[index grid] (map-indexed vector frame-grids)]
+        (for [[index grid] (map-indexed vector grids)]
           [:> grid-options* {:key (str id "-" index)
                              :shape-id id
                              :grid grid
                              :index index
-                             :frame-width (:width shape)
-                             :frame-height (:height shape)
+                             :frame-width frame-width
+                             :frame-height frame-height
                              :default-grid-params default-grid-params}])])]))
 
 
