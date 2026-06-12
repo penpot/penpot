@@ -160,7 +160,10 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:> blur-menu* {:ids ids
                      :values (select-keys shape [:blur])}]
-     [:> frame-grid* {:shape shape}]
+     [:> frame-grid* {:grids (:grids shape)
+                      :shape-id (:id shape)
+                      :frame-width (:width shape)
+                      :frame-height (:height shape)}]
      [:> exports-menu* {:type shape-type
                         :ids ids
                         :shapes shapes
