@@ -1,12 +1,14 @@
 use crate::error::{Error, Result};
 use skia_safe::gpu::{
-    self, ganesh::context_options::Enable, gl::FramebufferInfo, gl::TextureInfo, ContextOptions,
-    DirectContext,
+    self, ganesh::context_options::Enable, gl::FramebufferInfo, ContextOptions, DirectContext,
 };
 use skia_safe::{self as skia, ISize};
 
 const MIN_MAX_TEXTURE_SIZE: i32 = 512;
 const MAX_MAX_TEXTURE_SIZE: i32 = 8192 * 2;
+
+/// GPU resource-cache budget for Skia-managed (budgeted) render targets.
+const RESOURCE_CACHE_LIMIT_BYTES: usize = 512 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct GpuState {
@@ -28,9 +30,16 @@ impl GpuState {
         // context_options.allow_multiple_glyph_cache_textures = Enable::Yes;
         // context_options.allow_path_mask_caching = false;
 
-        let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
+        let mut context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
             Error::CriticalError("Failed to create GL context".to_string()),
         )?;
+
+        // Skia-managed render targets are budgeted against the GPU resource
+        // cache. The default cap is 256 MB (GrResourceCache kDefaultMaxSize),
+        // which a single atlas-sized transient can exhaust on its own. Raise it
+        // so freed atlas/snapshot textures recycle as scratch instead of being
+        // re-allocated from the driver every frame.
+        context.set_resource_cache_limit(RESOURCE_CACHE_LIMIT_BYTES);
 
         let framebuffer_info = {
             let mut fboid: gl::types::GLint = 0;
@@ -57,54 +66,6 @@ impl GpuState {
             .clamp(MIN_MAX_TEXTURE_SIZE, MAX_MAX_TEXTURE_SIZE)
     }
 
-    fn delete_gl_texture(&mut self, texture_id: gl::types::GLuint) -> bool {
-        unsafe {
-            gl::DeleteTextures(1, &texture_id);
-            gl::GetError() == 0
-        }
-    }
-
-    fn create_gl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
-        let mut texture_id: gl::types::GLuint = 0;
-
-        unsafe {
-            gl::GenTextures(1, &mut texture_id);
-            gl::BindTexture(gl::TEXTURE_2D, texture_id);
-
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
-
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                gl::RGBA8 as i32,
-                width,
-                height,
-                0,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                std::ptr::null(),
-            );
-        }
-
-        texture_id
-    }
-
-    pub fn delete_surface(&mut self, surface: &mut skia::Surface) -> bool {
-        let Some(texture) = skia::gpu::surfaces::get_backend_texture(
-            surface,
-            skia_safe::surface::BackendHandleAccess::FlushRead,
-        ) else {
-            return false;
-        };
-        let Some(texture_info) = gpu::backend_textures::get_gl_texture_info(&texture) else {
-            return false;
-        };
-        self.delete_gl_texture(texture_info.id)
-    }
-
     pub fn create_surface_with_isize(
         &mut self,
         label: String,
@@ -115,28 +76,29 @@ impl GpuState {
 
     pub fn create_surface_with_dimensions(
         &mut self,
-        label: String,
+        _label: String,
         width: i32,
         height: i32,
     ) -> Result<skia::Surface> {
-        let backend_texture = unsafe {
-            let texture_id = self.create_gl_texture(width, height);
-            let texture_info = TextureInfo {
-                target: gl::TEXTURE_2D,
-                id: texture_id,
-                format: gl::RGBA8,
-                protected: skia::gpu::Protected::No,
-            };
-            gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, texture_info, label)
-        };
+        // Skia-managed render target (not a wrapped client texture): snapshots
+        // take the cheap COW-guarded path (`fCachedImage`, dropped for free on
+        // the next write when uniquely held) instead of scheduling an eager
+        // full-texture copy at snapshot time. See draw-atlas-analysis Part III.
+        let image_info = skia::ImageInfo::new(
+            (width, height),
+            skia::ColorType::RGBA8888,
+            skia::AlphaType::Premul,
+            None,
+        );
 
-        let surface = gpu::surfaces::wrap_backend_texture(
+        let surface = gpu::surfaces::render_target(
             &mut self.context,
-            &backend_texture,
+            gpu::Budgeted::Yes,
+            &image_info,
+            None,
             gpu::SurfaceOrigin::BottomLeft,
             None,
-            skia::ColorType::RGBA8888,
-            None,
+            false,
             None,
         )
         .ok_or(Error::CriticalError(
@@ -164,40 +126,5 @@ impl GpuState {
         ))?;
 
         Ok(surface)
-    }
-
-    #[allow(dead_code)]
-    pub fn create_surface_from_texture(
-        &mut self,
-        width: i32,
-        height: i32,
-        texture_id: u32,
-    ) -> skia::Surface {
-        let texture_info = TextureInfo {
-            target: gl::TEXTURE_2D,
-            id: texture_id,
-            format: gl::RGBA8,
-            protected: skia::gpu::Protected::No,
-        };
-
-        let backend_texture = unsafe {
-            gpu::backend_textures::make_gl(
-                (width, height),
-                gpu::Mipmapped::No,
-                texture_info,
-                String::from("export_texture"),
-            )
-        };
-
-        gpu::surfaces::wrap_backend_texture(
-            &mut self.context,
-            &backend_texture,
-            gpu::SurfaceOrigin::BottomLeft,
-            None,
-            skia::ColorType::RGBA8888,
-            None,
-            None,
-        )
-        .unwrap()
     }
 }

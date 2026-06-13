@@ -36,16 +36,6 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(rect, &paint);
 }
 
-pub fn render_debug_cache_surface(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
-    canvas.save();
-    canvas.scale((0.1, 0.1));
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Cache, SurfaceId::Debug, None);
-    render_state.surfaces.canvas(SurfaceId::Debug).restore();
-}
-
 pub fn render_wasm_label(render_state: &mut RenderState) {
     if render_state.preview_mode || !render_state.options.show_wasm_info() {
         return;
@@ -127,9 +117,6 @@ pub fn render(render_state: &mut RenderState) {
 
     // DEBUG VIEWBOX TILES - magenta - buggy?
     // render_debug_viewbox_tiles(render_state);
-
-    // DEBUG CACHE SURFACE - noisy - ?
-    // render_debug_cache_surface(render_state);
 
     render_state.surfaces.draw_into(
         SurfaceId::Debug,
@@ -267,22 +254,6 @@ pub extern "C" fn capture_frames(capture_frames: i32) -> Result<()> {
     get_render_state()
         .options
         .set_capture_frames(capture_frames);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_cache_console() -> Result<()> {
-    console_debug_surface(get_render_state(), SurfaceId::Cache);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_cache_base64() -> Result<()> {
-    console_debug_surface_base64(get_render_state(), SurfaceId::Cache);
     Ok(())
 }
 

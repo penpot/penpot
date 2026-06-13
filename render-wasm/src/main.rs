@@ -337,11 +337,10 @@ pub extern "C" fn set_view_end() -> Result<()> {
         if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
         } else if render_state.zoom_changed() {
-            // Zoom changed: tile sizes differ so all cached tile
-            // textures are invalid (wrong scale).  Rebuild the tile
-            // index and clear the tile texture cache, but *preserve*
-            // the cache canvas so render_from_cache can show a scaled
-            // preview of the old content while new tiles render.
+            // Zoom changed: tile sizes differ so all cached tile textures are
+            // invalid (wrong scale). Rebuild the tile index and invalidate the
+            // tile cache; the DocAtlas preview covers the viewport while new
+            // tiles render.
             render_state.rebuild_tile_index(&state.shapes);
             render_state.surfaces.invalidate_tile_cache();
         } else {

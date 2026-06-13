@@ -204,8 +204,11 @@ impl TileViewbox {
     }
 
     pub fn is_visible(&self, tile: &Tile) -> bool {
-        // TO CHECK self.interest_rect.contains(tile)
         self.visible_rect.contains(tile)
+    }
+
+    pub fn is_in_interest_area(&self, tile: &Tile) -> bool {
+        self.interest_rect.contains(tile)
     }
 }
 
@@ -357,47 +360,20 @@ impl TileSpiral {
             return;
         }
 
-        // Generate tiles in spiral order from center (same algorithm as before).
-        let mut cx = 0;
-        let mut cy = 0;
+        let cx = (columns / 2) as i32;
+        let cy = (rows / 2) as i32;
 
-        let ratio = (columns as f32 / rows as f32).ceil() as i32;
-
-        let mut direction_current = 0;
-        let mut direction_total_x = ratio;
-        let mut direction_total_y = 1;
-        let mut direction = 0;
-
-        self.offsets.push(Tile(cx, cy));
-        while self.offsets.len() < total {
-            match direction {
-                0 => cx += 1,
-                1 => cy += 1,
-                2 => cx -= 1,
-                3 => cy -= 1,
-                _ => unreachable!("Invalid direction"),
-            }
-
-            self.offsets.push(Tile(cx, cy));
-
-            direction_current += 1;
-            let direction_total = if direction % 2 == 0 {
-                direction_total_x
-            } else {
-                direction_total_y
-            };
-
-            if direction_current == direction_total {
-                if direction % 2 == 0 {
-                    direction_total_x += 1;
-                } else {
-                    direction_total_y += 1;
-                }
-                direction = (direction + 1) % 4;
-                direction_current = 0;
+        for j in 0..rows as i32 {
+            for i in 0..columns as i32 {
+                self.offsets.push(Tile(i - cx, j - cy));
             }
         }
 
+        // Center-out priority: sort nearest-first by Manhattan distance, then
+        // reverse so the consumer (`PendingTiles::update` pushes in iter order,
+        // the render loop pops from the back) renders the nearest tiles first.
+        self.offsets
+            .sort_by_key(|t| t.0.unsigned_abs() + t.1.unsigned_abs());
         self.offsets.reverse();
     }
 }
@@ -462,12 +438,10 @@ impl PendingTiles {
         self.interest_cached.clear();
         self.interest_uncached.clear();
 
-        // Compute the scheduling center explicitly (inclusive range).
-        // This avoids relying on `TileRect::center_x/center_y` semantics, which may be used
-        // elsewhere with different expectations.
+        // Scheduling center must match `TileSpiral::ensure`'s local center
         let center_tile = Tile(
-            (spiral_rect.x1() + spiral_rect.x2()) / 2,
-            (spiral_rect.y1() + spiral_rect.y2()) / 2,
+            spiral_rect.x1() + (columns / 2),
+            spiral_rect.y1() + (rows / 2),
         );
         for spiral_tile in self.spiral.iter() {
             let tile = Tile(spiral_tile.0 + center_tile.0, spiral_tile.1 + center_tile.1);

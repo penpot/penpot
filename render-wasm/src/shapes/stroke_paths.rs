@@ -12,8 +12,8 @@ use crate::math::Rect;
 /// `path_transform` maps from local shape coords to the drawing space (and back).
 ///
 /// When `solid_outline` is true, any dash/dot PathEffect is stripped so the result
-/// is a continuous stroke region — useful for clipping (e.g. drag crop cache) where
-/// dash gaps should not punch holes in the clip mask.
+/// is a continuous stroke region — useful for clipping where dash gaps should not
+/// punch holes in the clip mask.
 pub fn stroke_to_path(
     stroke: &Stroke,
     shape_path: &Path,
