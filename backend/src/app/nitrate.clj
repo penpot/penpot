@@ -17,8 +17,10 @@
    [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.http.client :as http]
+   [app.http.session :as session]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
+   [app.util.cache :as cache]
    [clojure.core :as c]
    [integrant.core :as ig]))
 
@@ -435,6 +437,28 @@
                          [:permissions [:map-of :keyword :string]]]
                         params)))
 
+(def ^:private schema:nitrate-sso
+  [:map
+   [:organization-id ::sm/uuid]
+   [:active [:maybe :boolean]]
+   [:provider [:maybe :string]]
+   [:client-id [:maybe :string]]
+   [:base-url [:maybe :string]]
+   [:client-secret [:maybe :string]]
+   [:issuer [:maybe :string]]
+   [:scopes [:maybe [::sm/set ::sm/text]]]])
+
+(defn- get-org-sso-by-team-api
+  [cfg {:keys [team-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/teams/"
+                             team-id
+                             "/sso")
+                        schema:nitrate-sso
+                        params)))
+
 (defn- get-org-members-api
   [cfg {:keys [organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -474,6 +498,7 @@
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
+     :get-org-sso-by-team          (partial get-org-sso-by-team-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
@@ -485,6 +510,41 @@
 ;; UTILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce ^:private sso-auth-cache
+  (cache/create :expire "1h" :max-size 1024))
+
+(defn- compute-sso-authorization
+  [cfg team-id session]
+  (let [sso (call cfg :get-org-sso-by-team {:team-id team-id})]
+    (if-not (:active sso)
+      {:authorized true :sso sso}
+      (if (or (:issuer sso) (:base-url sso))
+        (let [props           (:props session)
+              sso-map         (get props :sso {})
+              organization-id (:organization-id sso)
+              exp             (get sso-map organization-id)
+              now             (ct/now)
+              authorized      (and (ct/inst? exp)
+                                   (ct/is-after? exp now))]
+          {:authorized authorized :sso sso})
+        {:authorized false :sso sso}))))
+
+(defn sso-session-authorized?
+  "Fetches the org-SSO config for the given team and checks whether
+  the HTTP request has a valid session entry for it. Returns a map
+  with :authorized and :sso keys. Positive results are cached for 1h
+  by [team-id session-id]; negative results are never cached so that
+  a completed SSO login is reflected immediately."
+  [cfg team-id request]
+  (let [session    (session/get-session request)
+        session-id (:id session)]
+    (if (some? session-id)
+      (or (cache/get sso-auth-cache [team-id session-id])
+          (let [result (compute-sso-authorization cfg team-id session)]
+            (when (:authorized result)
+              (cache/get sso-auth-cache [team-id session-id] (constantly result)))
+            result))
+      (compute-sso-authorization cfg team-id session))))
 
 (defn add-nitrate-licence-to-profile
   "Enriches a profile map with subscription information from Nitrate.
