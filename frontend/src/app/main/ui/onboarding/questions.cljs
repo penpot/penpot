@@ -103,7 +103,7 @@
      [:div {:class (stl/css :paginator)} (str/ffmt "1/%" (if @show-step-3 4 3))]
 
      [:img {:class (stl/css :header-image)
-            :src "images/form/use-for-1.png"
+            :src "images/form/slide-1-help-us-know-you.svg"
             :alt (tr "onboarding.questions.lets-get-started")}]
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step1.title")]
@@ -153,15 +153,15 @@
   (let [design-tool-options
         (mf/with-memo []
           (-> (shuffle [{:label (tr "labels.figma")  :img-width "48px" :img-height "60px"
-                         :value "figma" :image "images/form/figma.png"}
+                         :value "figma" :image "images/form/slide-2-figma.png"}
                         {:label (tr "labels.sketch") :img-width "48px" :img-height "60px"
-                         :value "sketch" :image "images/form/sketch.png"}
+                         :value "sketch" :image "images/form/slide-2-sketch.png"}
                         {:label (tr "labels.adobe-xd") :img-width "48px" :img-height "60px"
-                         :value "adobe-xd" :image "images/form/adobe-xd.png"}
+                         :value "adobe-xd" :image "images/form/slide-2-adobe-xd.png"}
                         {:label (tr "labels.canva") :img-width "48px" :img-height "60px"
-                         :value "canva" :image "images/form/canva.png"}
+                         :value "canva" :image "images/form/slide-2-canva.png"}
                         {:label (tr "labels.invision")  :img-width "48px" :img-height "60px"
-                         :value "invision" :image "images/form/invision.png"}])
+                         :value "invision" :image "images/form/slide-2-invision.png"}])
               (conj {:label (tr "labels.other-short")  :value "other" :icon deprecated-icon/curve})))
 
         current-experience
@@ -268,15 +268,15 @@
   (let [start-options
         (mf/with-memo []
           (-> (shuffle [{:label (tr "onboarding.questions.start-with.ui")
-                         :value "ui" :image "images/form/Design.png"}
+                         :value "ui" :image "images/form/slide-3-design-app-ui-ux.svg"}
                         {:label (tr "onboarding.questions.start-with.wireframing")
-                         :value "wireframing" :image "images/form/templates.png"}
+                         :value "wireframing" :image "images/form/slide-3-wireframing.svg"}
                         {:label (tr "onboarding.questions.start-with.prototyping")
-                         :value "prototyping" :image "images/form/Prototype.png"}
+                         :value "prototyping" :image "images/form/slide-3-prototyping.svg"}
                         {:label (tr "onboarding.questions.start-with.ds")
-                         :value "ds" :image "images/form/components.png"}
+                         :value "ds" :image "images/form/slide-3-design-systems.svg"}
                         {:label (tr "onboarding.questions.start-with.code")
-                         :value "code" :image "images/form/design-and-dev.png"}])
+                         :value "code" :image "images/form/slide-3-code-from-design.svg"}])
               (conj {:label (tr "labels.other-short") :value "other" :icon deprecated-icon/curve})))
 
         current-start (dm/get-in @form [:data :start-with])
@@ -301,8 +301,8 @@
      [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step4.title")]
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/image-radio-buttons {:options start-options
-                                  :img-width "159px"
-                                  :img-height "120px"
+                                  :img-width "100px"
+                                  :img-height "110px"
                                   :name :start-with
                                   :on-change on-start-change}]
 

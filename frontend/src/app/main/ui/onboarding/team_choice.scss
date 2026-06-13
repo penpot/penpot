@@ -6,215 +6,131 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.color-light {
+  color: var(--color-foreground-primary);
+}
+
+.color-dimmed {
+  color: var(--color-foreground-secondary);
+}
+
+.text-align-right {
+  text-align: right;
+}
+
+.flex-align-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.margin-bottom {
+  margin-bottom: var(--sp-xxl);
+}
+
+.link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-align: center;
+  color: var(--color-foreground-secondary);
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
 .modal-overlay {
   @extend %modal-overlay-base;
 }
 
 .modal-container {
-  position: relative;
-  width: deprecated.$s-908;
-  max-height: deprecated.$s-800;
-  height: 100%;
-  padding-inline: deprecated.$s-100;
-  padding-block: deprecated.$s-40 deprecated.$s-40;
-  border-radius: deprecated.$br-8;
-  background-color: var(--modal-background-color);
-  border: deprecated.$s-2 solid var(--modal-border-color);
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-24;
+  gap: var(--sp-xxl);
+  position: relative;
+  inline-size: px2rem(908);
+  padding: $sz-64 px2rem(100);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
 }
 
 .modal-sections {
   display: grid;
-  grid-template-columns: 1fr deprecated.$s-32 1fr;
-  gap: deprecated.$s-24;
-  height: 100%;
-  overflow: hidden;
+  grid-template-columns: px2rem(310) $sz-32 1fr;
+  gap: var(--sp-xxl);
+  block-size: 100%;
 }
 
-.paginator {
-  @include deprecated.body-small-typography;
-
-  position: absolute;
-  top: deprecated.$s-40;
-  right: deprecated.$s-100;
-  padding: deprecated.$s-4;
-  border-radius: deprecated.$br-6;
-  color: var(--color-foreground-secondary);
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xl);
+  border: $b-1 solid var(--color-foreground-secondary);
+  padding: var(--sp-m);
+  border-radius: $br-12;
+  background-color: var(--color-background-quaternary);
 }
 
-// MODAL LEFT
-.modal-left {
+.modal-info-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.modal-info-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-l);
+}
+
+.modal-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-32;
+  block-size: $sz-32;
+  border-radius: $br-circle;
+  border: $b-1 solid var(--color-accent-primary);
+  color: var(--color-accent-primary);
+}
+
+.modal-separator {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-separator-line {
+  inline-size: px2rem(8);
+  block-size: 100%;
+  border-radius: $br-8;
+  opacity: 0.5;
+  background-color: var(--color-background-quaternary);
+}
+
+.modal-team {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xl);
+}
+
+.modal-team-form {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: deprecated.$s-32 auto auto 1fr;
-  gap: deprecated.$s-16;
-  overflow: auto;
+  gap: var(--sp-xxl);
 }
 
-.modal-title {
-  @include deprecated.big-title-typography;
-
-  color: var(--modal-title-foreground-color);
+.modal-team-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
 }
 
-.modal-subtitle {
-  @include deprecated.med-title-typography;
-
-  color: var(--modal-title-foreground-color);
-}
-
-.invite-subtitle {
-  padding-top: deprecated.$s-16;
-}
-
-.modal-text {
-  @include deprecated.body-large-typography;
-
-  color: var(--modal-text-foreground-color);
-  margin: 0;
-}
-
-.modal-desc {
-  @include deprecated.small-title-typography;
-
-  margin: 0;
-  color: var(--modal-title-foreground-color);
-}
-
-.team-features {
-  @include deprecated.flex-column;
-
-  gap: deprecated.$s-16;
-  margin: 0;
-}
-
-.feature {
-  @include deprecated.flex-row;
-
-  gap: deprecated.$s-16;
-}
-
-.icon {
-  @include deprecated.flex-center;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-32;
-  border-radius: deprecated.$br-circle;
-  border: deprecated.$s-1 solid var(--color-accent-primary);
-
-  svg {
-    @extend %button-icon;
-
-    stroke: var(--color-accent-primary);
-  }
-}
-
-.action-buttons {
-  @extend %modal-action-btns;
-
-  justify-content: flex-end;
-}
-
-.accept-button {
-  @extend %modal-accept-btn;
-}
-
-.back-button {
-  @extend %modal-cancel-btn;
-}
-
-// SEPARATOR
-.separator {
-  width: deprecated.$s-8;
-  height: 100%;
-  border-radius: deprecated.$br-8;
-  opacity: 0.42;
-  background-color: var(--modal-separator-background-color);
-}
-
-// MODAL RIGHT TEAM
-.modal-right {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr auto;
-  gap: deprecated.$s-24;
-  overflow: hidden;
-}
-
-.first-block {
-  overflow: auto;
-  flex-grow: 1;
-}
-
-.first-block,
-.second-block {
-  @include deprecated.flex-column;
-
-  gap: deprecated.$s-16;
-}
-
-.modal-form {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: deprecated.$s-16;
-}
-
-.team-name-input {
-  @extend %input-element-label;
-
-  label {
-    @include deprecated.flex-column;
-    @include deprecated.body-small-typography;
-
-    align-items: flex-start;
-    width: 100%;
-    border: none;
-    background-color: transparent;
-    height: 100%;
-
-    input {
-      @include deprecated.body-small-typography;
-
-      margin-top: deprecated.$s-8;
-    }
-  }
-}
-
-// MODAL RIGHT INVITATIONS
-
-.modal-right-invitations {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto 1fr;
-  gap: deprecated.$s-16;
-  max-height: deprecated.$s-512;
-}
-
-.modal-form-invitations {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto auto;
-  margin-block-end: deprecated.$s-72;
-  gap: deprecated.$s-8;
-}
-
-.role-title {
-  @include deprecated.uppercase-title-typography;
-
-  margin-block-end: deprecated.$s-8;
-  color: var(--modal-title-foreground-color);
-}
-
-.invitation-row {
-  margin: 0;
-  color: var(--modal-title-foreground-color);
-}
-
-.modal-hint {
-  @include deprecated.body-small-typography;
-
-  color: var(--modal-text-foreground-color);
-  text-align: right;
+.modal-team-sub-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
 }
