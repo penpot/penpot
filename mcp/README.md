@@ -331,31 +331,6 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
 
-### Hybrid PAT Mode (browser-less subset)
-
-When a Penpot **Personal Access Token** is configured, the server exposes an extra
-set of tools that talk directly to the Penpot REST/RPC API and do **not** require
-the MCP plugin or a connected browser session. These tools are additive — the
-browser-based `execute_code` flow stays available for everything that needs the
-Plugin API runtime (rendering, selection state, CSS export, etc.).
-
-| Environment Variable | Description                                                                                                       | Default                     |
-|----------------------|-------------------------------------------------------------------------------------------------------------------|-----------------------------|
-| `PENPOT_PAT`         | Personal Access Token issued from your Penpot account settings (Profile → Access tokens). Enables PAT-mode tools. | (unset)                     |
-| `PENPOT_BASE_URL`    | Base URL of the target Penpot instance.                                                                           | `https://design.penpot.app` |
-
-Tools enabled in PAT mode:
-
-- `list_penpot_files` — enumerate projects and files accessible to the token without touching the plugin.
-
-PAT mode does **not** unlock the following — they remain plugin-only because the
-Plugin API runs inside the browser:
-
-- Shape mutation with full validation (`execute_code` uses `naturalChildOrdering` + `throwValidationErrors`)
-- Shape rendering / image export
-- Selection, viewport and event listeners
-- CSS generation, applied-token detection
-
 ### Logging Configuration
 
 | Environment Variable   | Description                                          | Default  |
