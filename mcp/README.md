@@ -211,6 +211,36 @@ Supported targets and their config locations:
 
 The installer makes a timestamped backup (e.g. `claude_desktop_config.json.bak-<ts>`) of any file it modifies, and refuses to overwrite an existing entry of the same name unless `--force` is passed.
 
+> **Tested client coverage**
+>
+> The installer has been end-to-end tested on macOS for the following clients:
+>
+> - `claude-code`
+> - `claude-desktop`
+> - `cursor`
+>
+> The other adapters (`windsurf`, `cline`, `opencode`, `gemini`, `codex`,
+> `antigravity`, `antigravity-cli`, `generic-json`) are wired using each
+> client's documented configuration shape, but have not yet been individually
+> validated on this codebase. If something does not work for you, please open
+> an issue with the client name and platform so we can take a look.
+
+#### Using the installer with the published npm artifact
+
+The examples above use `npx -y @penpot/mcp install ...`, which will work once
+this change is included in a published `@penpot/mcp` release. Until then, the
+installer can be run from a local checkout:
+
+```shell
+# From the mcp/ directory of this repository
+node packages/server/dist/index.js install --client claude-code
+```
+
+For users connecting to a remote / managed MCP server (for example
+`test-mcp.penpot.dev`), the installer is intended to be used via the same
+`npx -y @penpot/mcp install ...` command — pass `--url` pointing at the
+remote endpoint if it differs from the default.
+
 ### 3. Connect an MCP Client
 
 > [!IMPORTANT]  
