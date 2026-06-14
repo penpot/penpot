@@ -11,6 +11,7 @@
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -2317,5 +2318,54 @@
                             :id (:id file)})]
 
     (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
+
+(t/deftest export-file-tokens-without-tokens
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :export-file-tokens
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+
+    (t/is (some? (:error out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :validation (:type edata)))
+      (t/is (= :no-tokens-in-file (:code edata))))))
+
+(t/deftest export-file-tokens-with-tokens
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :set-tokens-lib
+       :tokens-lib (ctob/make-tokens-lib)}])
+
+    (let [out (th/command! {::th/type :export-file-tokens
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:exported true} (:result out))))))
+
+(t/deftest export-file-tokens-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :export-file-tokens
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (some? (:error out)))
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))

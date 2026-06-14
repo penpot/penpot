@@ -8,6 +8,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add an `export-file-tokens` RPC command that emits the file's design tokens (W3C DTCG `tokens.json`) as a webhook event, so external CI can commit them to Git (by @filipsajdak) [#7091](https://github.com/penpot/penpot/issues/7091) (PR: [#10172](https://github.com/penpot/penpot/pull/10172))
 - Show a read-only W × H size badge below the bounding box of the current selection (by @bittoby) [#9205](https://github.com/penpot/penpot/issues/9205)
 - Expose `variants` retrieval on `LibraryComponent` via `isVariant()` type guard in plugin API (by @opcode81) [#9185](https://github.com/penpot/penpot/issues/9185) (PR: [#9302](https://github.com/penpot/penpot/pull/9302))
 - Add search bar to prototype interaction destination dropdown (by @EvaMarco) [#8618](https://github.com/penpot/penpot/issues/8618) (PR: [#9769](https://github.com/penpot/penpot/pull/9769))
