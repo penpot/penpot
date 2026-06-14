@@ -2319,3 +2319,66 @@
     (t/is (not (nil? (:error out))))
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
+
+(t/deftest get-file-plugin-data
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})]
+
+    ;; A file without plugin data returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))
+
+    ;; Set file-level plugin data through a change
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :set-plugin-data
+       :object-type :file
+       :namespace :shared/traceability
+       :key "req-id"
+       :value "REQ-123"}])
+
+    ;; The full plugin-data map is returned
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A namespace filter narrows the result
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :shared/traceability})]
+      (t/is (nil? (:error out)))
+      (t/is (= {:shared/traceability {"req-id" "REQ-123"}} (:result out))))
+
+    ;; A filter on an absent namespace returns an empty map
+    (let [out (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id profile)
+                            :id (:id file)
+                            :namespace :plugin/absent})]
+      (t/is (nil? (:error out)))
+      (t/is (= {} (:result out))))))
+
+(t/deftest get-file-plugin-data-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-plugin-data
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))
