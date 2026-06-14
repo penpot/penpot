@@ -1,5 +1,4 @@
 import { createLogger } from "./logger";
-import { resolvePat, resolveBaseUrl } from "./installer/config";
 
 /**
  * Default base URL pointing to the hosted Penpot instance.
@@ -59,23 +58,23 @@ export class PenpotRestClient {
     private readonly timeoutMs: number;
 
     constructor(opts: PenpotRestClientOptions = {}) {
-        const token = opts.token ?? resolvePat() ?? "";
+        const token = opts.token ?? process.env.PENPOT_PAT ?? "";
         if (!token) {
             throw new Error(
-                "PenpotRestClient requires a Personal Access Token. Set PENPOT_PAT, run `penpot-mcp config set`, or pass `token` explicitly."
+                "PenpotRestClient requires a Personal Access Token. Set PENPOT_PAT or pass `token` explicitly."
             );
         }
         this.token = token;
-        this.baseUrl = (opts.baseUrl ?? resolveBaseUrl() ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+        this.baseUrl = (opts.baseUrl ?? process.env.PENPOT_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
         this.timeoutMs = opts.timeoutMs ?? 30_000;
     }
 
     /**
-     * Whether the environment is configured for PAT-mode access (env var or config file).
+     * Whether the environment is configured for PAT-mode access.
      * Static so callers can decide between PAT and plugin paths without instantiating.
      */
     public static isConfigured(): boolean {
-        return Boolean(resolvePat());
+        return Boolean(process.env.PENPOT_PAT);
     }
 
     public static fromEnv(): PenpotRestClient | undefined {

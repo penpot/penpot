@@ -7,7 +7,7 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const pkg = require(path.join(root, "package.json"));
 
-const SUBCOMMANDS = new Set(["install", "uninstall", "doctor", "help", "config"]);
+const SUBCOMMANDS = new Set(["install", "uninstall", "doctor", "help"]);
 const HELP_FLAGS = new Set(["--help", "-h"]);
 const SERVER_DIST = path.join(root, "packages", "server", "dist", "index.js");
 

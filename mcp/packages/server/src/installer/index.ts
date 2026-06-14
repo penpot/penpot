@@ -30,7 +30,7 @@ const DEFAULT_SERVER_URL = process.env.PENPOT_MCP_INSTALL_URL ?? "http://localho
 const DEFAULT_ENTRY_NAME = "penpot";
 
 export interface CliArgs {
-    command: "install" | "uninstall" | "doctor" | "help" | "config";
+    command: "install" | "uninstall" | "doctor" | "help";
     client?: ClientId | "all";
     serverUrl?: string;
     entryName?: string;
@@ -170,10 +170,6 @@ Commands:
   serve [--multi-user]              Start MCP + plugin servers (default when no command given)
   install [--client <id|all>]       Register Penpot MCP with a client (interactive picker when --client is omitted)
   uninstall [--client <id|all>]     Remove Penpot MCP entry from a client (interactive picker when --client is omitted)
-  config set [--pat X --base-url Y] Store Penpot PAT and base URL in the user config file (interactive when no flags)
-  config show                       Print effective PAT (masked) and base URL
-  config clear                      Delete the stored config file
-  config get-pat | get-base-url     Print the resolved value (env var takes precedence over config file)
   doctor                            Health-check local MCP server + plugin connectivity
   help, --help, -h                  Show this message
 
@@ -191,9 +187,6 @@ Examples:
   penpot-mcp install --client all --dry-run
   penpot-mcp install --client claude-desktop --url http://localhost:4401/mcp --name penpot-dev
   penpot-mcp uninstall --client cursor
-  penpot-mcp config set                           # interactive PAT + base URL
-  penpot-mcp config set --base-url https://penpot.example.com
-  penpot-mcp config show
   penpot-mcp doctor
 `);
 }

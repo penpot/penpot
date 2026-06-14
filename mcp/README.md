@@ -344,11 +344,6 @@ Plugin API runtime (rendering, selection state, CSS export, etc.).
 | `PENPOT_PAT`         | Personal Access Token issued from your Penpot account settings (Profile → Access tokens). Enables PAT-mode tools. | (unset)                     |
 | `PENPOT_BASE_URL`    | Base URL of the target Penpot instance.                                                                           | `https://design.penpot.app` |
 
-Prefer not exporting the token in your shell? Use the bundled `config set` subcommand to
-persist it in a `0600` file under `~/.config/penpot-mcp/` instead — see
-[Managing PAT and base URL with `config set`](#managing-pat-and-base-url-with-config-set)
-below.
-
 Tools enabled in PAT mode:
 
 - `list_penpot_files` — enumerate projects and files accessible to the token without touching the plugin.
@@ -360,30 +355,6 @@ Plugin API runs inside the browser:
 - Shape rendering / image export
 - Selection, viewport and event listeners
 - CSS generation, applied-token detection
-
-#### Managing PAT and base URL with `config set`
-
-The PAT and base URL can also be stored on disk so you do not have to set environment
-variables every time you start the server:
-
-```shell
-# Interactive: prompts for the PAT (input hidden) and the base URL (pre-filled with the default)
-penpot-mcp config set
-
-# Non-interactive
-penpot-mcp config set --pat <pat> --base-url https://design.penpot.app
-
-# Inspect the resolved values
-penpot-mcp config show
-
-# Remove the stored file
-penpot-mcp config clear
-```
-
-The file is written to `~/.config/penpot-mcp/config.json` (or
-`%APPDATA%/penpot-mcp/config.json` on Windows) with `0600` permissions. Environment
-variables (`PENPOT_PAT`, `PENPOT_BASE_URL`) always take precedence over the file when
-both are present.
 
 ### Logging Configuration
 
