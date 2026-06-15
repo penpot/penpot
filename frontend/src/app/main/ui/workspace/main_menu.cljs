@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -791,20 +790,15 @@
   [{:keys [on-close]}]
   (let [plugins? (features/active-feature? @st/state "plugins/runtime")
 
-        profile  (mf/deref refs/profile)
-        mcp      (mf/deref refs/mcp)
-        tokens   (mf/deref refs/access-tokens)
-
-        expires-at (some->> tokens
-                            (some #(when (= (:type %) "mcp") %))
-                            :expires-at)
-        expired?   (and (some? expires-at) (> (ct/now) expires-at))
+        profile          (mf/deref refs/profile)
+        mcp              (mf/deref refs/mcp)
+        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
 
         mcp-enabled?   (true? (-> profile :props :mcp-enabled))
         mcp-connection (get mcp :connection-status)
         mcp-connected? (= mcp-connection "connected")
 
-        show-enabled?   (and mcp-enabled? (false? expired?))
+        show-enabled?   (and mcp-enabled? (false? mcp-key-expired?))
 
         on-nav-to-integrations
         (mf/use-fn
@@ -843,7 +837,7 @@
                                              :pos-6 plugins?)
                         :on-close on-close}
 
-     (when (and show-enabled? (not expired?))
+     (when (and show-enabled? (not mcp-key-expired?))
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
@@ -865,7 +859,6 @@
 (mf/defc menu*
   [{:keys [layout file]}]
   (let [profile            (mf/deref refs/profile)
-        mcp                (mf/deref refs/mcp)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
@@ -1062,11 +1055,8 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [tokens   (mf/deref refs/access-tokens)
-              expires-at (some->> tokens
-                                  (some #(when (= (:type %) "mcp") %))
-                                  :expires-at)
-              expired?   (and (some? expires-at) (> (ct/now) expires-at))
+        (let [mcp              (mf/deref refs/mcp)
+              mcp-key-expired? (mf/deref refs/mcp-key-expired?)
 
               mcp-enabled?   (true? (-> profile :props :mcp-enabled))
               mcp-connection (get mcp :connection-status)
@@ -1075,7 +1065,7 @@
 
               active?  (and mcp-enabled? mcp-connected?)
               failed?  (or (and mcp-enabled? mcp-error?)
-                           (true? expired?))]
+                           (true? mcp-key-expired?))]
 
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click

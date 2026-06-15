@@ -5,7 +5,7 @@ ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     DEBIAN_FRONTEND=noninteractive \
-    NODE_VERSION=v24.15.0 \
+    NODE_VERSION=v24.16.0 \
     TZ=Etc/UTC
 
 RUN set -ex; \
@@ -16,6 +16,7 @@ RUN set -ex; \
         ca-certificates \
         curl \
     ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
@@ -115,13 +116,13 @@ RUN set -ex; \
         woff2 \
     ; \
     find tmp/usr/share/zoneinfo/* -type d ! -name 'Etc' |xargs rm -rf; \
+    apt-get clean; \
     rm -rf /var/lib /var/cache; \
     rm -rf /usr/include; \
     mkdir -p /opt/data/assets; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot; \
-    chown -R penpot:penpot /opt/data; \
-    rm -rf /var/lib/apt/lists/*;
+    chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node

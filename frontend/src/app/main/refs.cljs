@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
+   [app.common.time :as ct]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
@@ -154,6 +155,14 @@
 
 (def mcp
   (l/derived :mcp st/state))
+
+(def mcp-key-expired?
+  (l/derived (fn [state]
+               (when-let [expires-at (some->> (:access-tokens state)
+                                              (some #(when (= (:type %) "mcp") %))
+                                              :expires-at)]
+                 (> (ct/now) expires-at)))
+             st/state))
 
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))

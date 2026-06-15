@@ -112,7 +112,7 @@
 - Fix exported path with strokes being cut off in SVG file [#9995](https://github.com/penpot/penpot/issues/9995) (PR: [#9996](https://github.com/penpot/penpot/pull/9996))
 - Fix French Canada locale falling back to French translations instead of French Canadian (by @alexismo) [#10017](https://github.com/penpot/penpot/issues/10017) (PR: [#10027](https://github.com/penpot/penpot/pull/10027))
 
-## 2.16.0 (Unreleased)
+## 2.16.0
 
 ### :boom: Breaking changes & Deprecations
 

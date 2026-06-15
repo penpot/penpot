@@ -27,6 +27,7 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -54,7 +55,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -571,11 +573,20 @@
       (let [id (cond
                  (page/page-proxy? page) (obj/get page "$id")
                  (string? page)          (uuid/parse* page)
-                 :else nil)
-            new-window (if (boolean? new-window) new-window false)]
+                 :else nil)]
         (if (nil? id)
           (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+          (if (true? new-window)
+            (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+                (js/Promise.resolve nil))
+            (js/Promise.
+             (fn [resolve _]
+               (->> st/stream
+                    (rx/filter (ptk/type? ::dwpg/initialized))
+                    (rx/filter #(= (deref %) id))
+                    (rx/take 1)
+                    (rx/subs! #(resolve nil)))
+               (st/emit! (dcm/go-to-workspace :page-id id))))))))
 
     :alignHorizontal
     (fn [shapes direction]

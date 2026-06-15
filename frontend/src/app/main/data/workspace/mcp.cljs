@@ -10,13 +10,10 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
-   [app.main.data.event :as ev]
-   [app.main.data.notifications :as ntf]
    [app.main.data.plugins :as dp]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.plugins.register :refer [mcp-plugin-id]]
-   [app.util.i18n :refer [tr]]
+   [app.plugins.register :as preg]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -29,7 +26,7 @@
   {:code "plugin.js"
    :name "Penpot MCP Plugin"
    :version 2
-   :plugin-id mcp-plugin-id
+   :plugin-id preg/mcp-plugin-id
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
    :permissions
@@ -38,6 +35,14 @@
      "content:write" "content:read"}})
 
 (defonce interval-sub (atom nil))
+
+(defn connect-mcp
+  []
+  (ptk/reify ::connect-mcp
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (mbc/event :mcp/force-disconnect {})
+             (ptk/data-event ::connect)))))
 
 (defn finalize-workspace?
   [event]
@@ -72,45 +77,6 @@
     (rx/dispose! @interval-sub)
     (reset! interval-sub nil)))
 
-(declare manage-mcp-notification)
-
-(defn handle-pong
-  [{:keys [id data]}]
-  (ptk/reify ::handle-pong
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [mcp-state (get state :mcp)]
-        (cond
-          (= "connected" (:connection-status data))
-          (update state :mcp assoc :connected-tab id)
-
-          (and (= "disconnected" (:connection-status data))
-               (= id (:connected-tab mcp-state)))
-          (update state :mcp dissoc :connected-tab)
-
-          :else
-          state)))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (manage-mcp-notification)))))
-
-;; This event will arrive when a new workspace is open in another tab
-(defn handle-ping
-  []
-  (ptk/reify ::handle-ping
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [conn-status (get-in state [:mcp :connection-status])]
-        (rx/of (mbc/event :mcp/pong {:connection-status conn-status}))))))
-
-(defn notify-other-tabs-disconnect
-  []
-  (ptk/reify ::notify-other-tabs-disconnect
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (mbc/event :mcp/pong {:connection-status "disconnected"})))))
-
 ;; This event will arrive when the mcp is enabled in the dashboard
 (defn update-mcp-status
   [value]
@@ -121,12 +87,10 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       (rx/of (manage-mcp-notification))
-       (case value
-         true  (rx/of (ptk/data-event ::connect))
-         false (rx/of (ptk/data-event ::disconnect))
-         nil)))))
+      (case value
+        true  (rx/of (connect-mcp))
+        false (rx/of (ptk/data-event ::disconnect))
+        nil))))
 
 (defn update-mcp-connection-status
   [value]
@@ -137,20 +101,13 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (manage-mcp-notification)
-             (mbc/event :mcp/pong {:connection-status value})))))
-
-(defn connect-mcp
-  []
-  (ptk/reify ::connect-mcp
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :mcp assoc :connected-tab (:session-id state)))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (mbc/event :mcp/force-disconect {})
-             (ptk/data-event ::connect)))))
+      ;; Only one MCP plugin instance may be active across browser tabs.
+      ;; When this tab becomes connected, tell every other tab to
+      ;; disconnect (which also stops their reconnect watcher). Otherwise
+      ;; several tabs stay connected at once and the MCP server reports
+      ;; "multiple instances connected" and the agent fails.
+      (when (= "connected" value)
+        (rx/of (mbc/event :mcp/force-disconnect {}))))))
 
 ;; This event will arrive when the user selects disconnect on the menu
 ;; or there is a broadcast message for disconnection
@@ -166,77 +123,54 @@
     (effect [_ _ _]
       (stop-reconnect-watcher!))))
 
-(defn- manage-mcp-notification
-  []
-  (ptk/reify ::manage-mcp-notification
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [mcp-state          (get state :mcp)
-
-            mcp-enabled?       (-> state :profile :props :mcp-enabled)
-
-            current-tab-id     (get state :session-id)
-            connected-tab-id   (get mcp-state :connected-tab)]
-
-        (if mcp-enabled?
-          (if (= connected-tab-id current-tab-id)
-            (rx/of (ntf/hide))
-            (rx/of (ntf/dialog
-                    {:content (tr "notifications.mcp.active-in-another-tab")
-                     :cancel {:label (tr "labels.dismiss")
-                              :callback #(st/emit! (ntf/hide)
-                                                   (ev/event {::ev/name "dismiss-mcp-tab-switch"
-                                                              ::ev/origin "workspace-notification"}))}
-                     :accept {:label (tr "labels.switch")
-                              :callback #(st/emit! (connect-mcp)
-                                                   (ev/event {::ev/name "confirm-mcp-tab-switch"
-                                                              ::ev/origin "workspace-notification"}))}})))
-          (rx/of (ntf/hide)))))))
-
 (defn init-mcp
   [stream]
-  (->> (rp/cmd! :get-current-mcp-token)
-       (rx/tap
-        (fn [{:keys [token]}]
-          (when token
-            (dp/start-plugin!
-             (assoc default-manifest
-                    :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
-                    :host (str (u/join cf/public-uri "plugins/mcp/")))
+  ;; Wait for plugins runtime to be initialized before starting the MCP plugin.
+  ;; This ensures global.ɵloadPlugin is available when start-plugin! is called.
+  (->> (rx/from (preg/wait-for-runtime))
+       (rx/mapcat
+        (fn [_]
+          (->> (rp/cmd! :get-current-mcp-token)
+               (rx/tap
+                (fn [{:keys [token]}]
+                  (when token
+                    (dp/start-plugin!
+                     (assoc default-manifest
+                            :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
+                            :host (str (u/join cf/public-uri "plugins/mcp/")))
 
-             ;; API extension for MCP server
-             #js {:mcp
-                  #js
-                   {:getToken (constantly token)
-                    :getServerUrl #(str cf/mcp-ws-uri)
-                    :setMcpStatus
-                    (fn [status]
-                      (when (= status "connected")
-                        (start-reconnect-watcher!))
-                      (st/emit! (update-mcp-connection-status status))
-                      (log/info :hint "MCP STATUS" :status status))
+                     ;; API extension for MCP server
+                     #js {:mcp
+                          #js
+                           {:getToken (constantly token)
+                            :getServerUrl #(str cf/mcp-ws-uri)
+                            :setMcpStatus
+                            (fn [status]
+                              (when (= status "connected")
+                                (start-reconnect-watcher!))
+                              (st/emit! (update-mcp-connection-status status))
+                              (log/info :hint "MCP STATUS" :status status))
 
-                    :on
-                    (fn [event cb]
-                      (when-let [event
-                                 (case event
-                                   "disconnect" ::disconnect
-                                   "connect" ::connect
-                                   nil)]
+                            :on
+                            (fn [event cb]
+                              (when-let [event
+                                         (case event
+                                           "disconnect" ::disconnect
+                                           "connect" ::connect
+                                           nil)]
 
-                        (let [stopper (rx/filter finalize-workspace? stream)]
-                          (->> stream
-                               (rx/filter (ptk/type? event))
-                               (rx/take-until stopper)
-                               (rx/subs! #(cb))))))}}))))
-       (rx/ignore)))
+                                (let [stopper (rx/filter finalize-workspace? stream)]
+                                  (->> stream
+                                       (rx/filter (ptk/type? event))
+                                       (rx/take-until stopper)
+                                       (rx/subs! #(cb))))))}})))))))))
 
 (defn init
   []
   (ptk/reify ::init
     ptk/UpdateEvent
     (update [_ state]
-      (update state :mcp assoc :connected-tab (:session-id state) :active true))
+      (update state :mcp assoc :active true))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -251,22 +185,8 @@
                 (rx/merge
                  (init-mcp stream)
 
-                 (rx/of (mbc/event :mcp/ping {}))
-
                  (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/ping))
-                      (rx/filter (fn [{:keys [id]}]
-                                   (not= session-id id)))
-                      (rx/map handle-ping))
-
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/pong))
-                      (rx/filter (fn [{:keys [id]}]
-                                   (not= session-id id)))
-                      (rx/map handle-pong))
-
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/force-disconect))
+                      (rx/filter (mbc/type? :mcp/force-disconnect))
                       (rx/filter (fn [{:keys [id]}]
                                    (not= session-id id)))
                       (rx/map deref)
@@ -276,9 +196,9 @@
               (->> mbc/stream
                    (rx/filter (mbc/type? :mcp/enable))
                    (rx/mapcat (fn [_]
-                                ;; NOTE: we don't need an explicit
-                                ;; connect because the plugin has
-                                ;; auto-connect
+                                ;; Re-init so the force-disconnect
+                                ;; listener is set up now that MCP
+                                ;; is enabled.
                                 (rx/of (update-mcp-status true)
                                        (init)))))
 
@@ -286,7 +206,6 @@
                    (rx/filter (mbc/type? :mcp/disable))
                    (rx/mapcat (fn [_]
                                 (rx/of (update-mcp-status false)
-                                       (init)
                                        (user-disconnect-mcp))))))
 
              (rx/take-until stoper-s))))))

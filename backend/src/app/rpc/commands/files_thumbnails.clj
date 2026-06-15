@@ -311,10 +311,29 @@
                  :object-id object-id
                  :tag tag})))
 
+(defn- delete-file-object-thumbnails!
+  "Soft-deletes multiple object thumbnails in a single UPDATE statement
+   with RETURNING, then touches all returned media objects."
+  [{:keys [::db/conn ::sto/storage]} object-ids]
+  (let [ids  (db/create-array conn "text" (seq object-ids))
+        sql  (str/concat
+              "UPDATE file_tagged_object_thumbnail"
+              " SET deleted_at = now()"
+              " WHERE object_id = ANY(?)"
+              "   AND deleted_at IS NULL"
+              " RETURNING media_id")
+        rows (db/exec! conn [sql ids])]
+    (doseq [{:keys [media-id]} rows]
+      (sto/touch-object! storage media-id))))
+
 (def ^:private schema:delete-file-object-thumbnail
   [:map {:title "delete-file-object-thumbnail"}
    [:file-id ::sm/uuid]
    [:object-id [:string {:max 250}]]])
+
+(def ^:private schema:delete-file-object-thumbnails
+  [:map {:title "delete-file-object-thumbnails"}
+   [:object-ids [:vector {:max 200} [:string {:max 250}]]]])
 
 (sv/defmethod ::delete-file-object-thumbnail
   {::doc/added "1.19"
@@ -328,6 +347,30 @@
                         (update ::sto/storage sto/configure conn)
                         (delete-file-object-thumbnail! file-id object-id))
                     nil)))
+
+(sv/defmethod ::delete-file-object-thumbnails
+  {::doc/added "1.19"
+   ::doc/module :files
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
+   ::sm/params schema:delete-file-object-thumbnails
+   ::audit/skip true}
+  [cfg {:keys [::rpc/profile-id object-ids]}]
+  (when (seq object-ids)
+    ;; Extract unique file-ids from object-ids for permission checks
+    (let [file-ids (->> object-ids
+                        (map thc/get-file-id)
+                        (into #{}))]
+      ;; Check permissions for each unique file using a single connection
+      (db/run! cfg (fn [{:keys [::db/conn]}]
+                     (doseq [file-id file-ids]
+                       (files/check-edition-permissions! conn profile-id file-id))))
+      ;; Delete all matching thumbnails in one transaction
+      (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                        (-> cfg
+                            (update ::sto/storage sto/configure conn)
+                            (delete-file-object-thumbnails! object-ids))
+                        nil)))))
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
 

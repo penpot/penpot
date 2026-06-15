@@ -406,18 +406,16 @@
 (mf/defc mcp-server-section*
   {::mf/private true}
   []
-  (let [tokens  (mf/deref refs/access-tokens)
-        profile (mf/deref refs/profile)
+  (let [tokens           (mf/deref refs/access-tokens)
+        profile          (mf/deref refs/profile)
+        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
 
         mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
         mcp-token    (:token mcp-key "")
         mcp-url      (dm/str cf/mcp-server-url "?userToken=" mcp-token)
         mcp-enabled? (true? (-> profile :props :mcp-enabled))
 
-        expires-at  (:expires-at mcp-key)
-        expired?    (and (some? expires-at) (> (ct/now) expires-at))
-
-        show-enabled?  (and mcp-enabled? (false? expired?))
+        show-enabled?  (and mcp-enabled? (false? mcp-key-expired?))
 
         tooltip-id
         (mf/use-id)
@@ -494,7 +492,7 @@
        (tr "integrations.mcp-server.status")]
 
       [:div {:class (stl/css :mcp-server-block)}
-       (when expired?
+       (when mcp-key-expired?
          [:> notification-pill* {:level :error
                                  :type :context}
           [:div {:class (stl/css :mcp-server-notification)}
@@ -517,7 +515,7 @@
         (when (and (false? mcp-enabled?) (nil? mcp-key))
           [:div {:class (stl/css :mcp-server-switch-cover)
                  :on-click handle-generate-mcp-key}])
-        (when (true? expired?)
+        (when (true? mcp-key-expired?)
           [:div {:class (stl/css :mcp-server-switch-cover)
                  :on-click handle-regenerate-mcp-key}])]]]
 
