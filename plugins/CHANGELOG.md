@@ -3,6 +3,7 @@
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
+- **plugin-types**: `penpot.openPage()` now returns `Promise<void>` and should be awaited before performing operations on the new page
 - **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
 - **plugin-types:** Change `LibraryComponent.isVariant()` return type to type guard `this is LibraryVariantComponent`
 - **plugin-types**: Added `createVariantFromComponents`
