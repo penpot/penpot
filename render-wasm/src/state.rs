@@ -80,7 +80,9 @@ impl State {
     }
 
     pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<FrameType> {
-        get_render_state().start_render_loop(Some(id), &self.shapes, timestamp, true)
+        let render_state = get_render_state();
+        render_state.prepare_sync_shape_render();
+        render_state.start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
     pub fn render_shape_pixels(
