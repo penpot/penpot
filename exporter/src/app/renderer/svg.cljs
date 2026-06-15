@@ -6,7 +6,7 @@
 
 (ns app.renderer.svg
   (:require
-   ["svgo" :as svgo]
+   ["@penpot/svgo" :as svgo]
    ["xml-js" :as xml]
    [app.browser :as bw]
    [app.common.data :as d]
