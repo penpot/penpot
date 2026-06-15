@@ -299,6 +299,11 @@
   (when (some? node)
     (.-selectionStart node)))
 
+(defn selection-end
+  [^js node]
+  (when (some? node)
+    (.-selectionEnd node)))
+
 (defn set-selection-range!
   [^js node start end]
   (when (some? node)
