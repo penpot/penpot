@@ -1,5 +1,12 @@
 packages:
   - 'apps/**'
   - 'libs/**'
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: true
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+  puppeteer: false
 
 linkWorkspacePackages: true
