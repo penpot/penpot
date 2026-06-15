@@ -91,18 +91,17 @@
                                       :bottom-link (not (or has-trial? code-action)))
                  :on-click cta-link} cta-text])
      (when code-action
-       [:button {:class (stl/css-case :cta-button true
-                                      :activate-by-code (= code-action :activate)
-                                      :renew-by-code (= code-action :renovate)
-                                      :bottom-link (= code-action :renovate))
-                 :on-click (cond
-                             (= code-action :activate)
-                             #(st/emit! (modal/show {:type :nitrate-code-activation}))
-                             (= code-action :renovate)
-                             #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))}
-        (if (= code-action :activate)
-          (tr "subscription.settings.activate-by-code")
-          (tr "nitrate.subscription.settings.renew-with-code"))])
+       (if (= code-action :activate)
+         [:button {:class (stl/css :cta-button :activate-by-code)
+                   :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
+          (tr "subscription.settings.activate-by-code")]
+
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :renew-by-code :bottom-link)
+                      :on-click #(st/emit! (modal/show :nitrate-code-activation {:renew? true}))}
+          (tr "nitrate.subscription.settings.renew-with-code")]))
+
      (when inline-error
        [:p {:class (stl/css :inline-error)} inline-error])]))
 
