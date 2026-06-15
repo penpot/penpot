@@ -907,6 +907,14 @@ impl RenderState {
 
     pub fn reset_canvas(&mut self) {
         self.surfaces.reset(self.background_color);
+        self.surfaces.clear_backbuffer(self.background_color);
+        self.surfaces.clear_target(self.background_color);
+    }
+
+    /// Drop cached tile textures before a one-shot `render_sync_shape` render.
+    pub fn prepare_sync_shape_render(&mut self) {
+        self.surfaces.clear_tile_atlas();
+        self.surfaces.invalidate_tile_cache();
     }
 
     /// NOTE:
@@ -1083,11 +1091,6 @@ impl RenderState {
 
     fn viewer_masked_pass(&self) -> bool {
         self.include_filter.is_some()
-    }
-
-    fn reset_viewer_masked_surfaces(&mut self) {
-        self.surfaces.clear_backbuffer(self.background_color);
-        self.surfaces.clear_tile_atlas();
     }
 
     /// True when the shape or any descendant is whitelisted.
@@ -2190,13 +2193,6 @@ impl RenderState {
         } else {
             self.reset_canvas();
             self.interactive_target_seeded = false;
-        }
-
-        // Viewer fixed-scroll passes reuse the same WASM context; `reset` does not
-        // clear Backbuffer, so pass 2 would otherwise keep pass-1 pixels in regions
-        // that render no shapes for the current mask. Target is cleared in present_frame.
-        if self.viewer_masked_pass() {
-            self.reset_viewer_masked_surfaces();
         }
 
         let surface_ids = SurfaceId::Strokes as u32

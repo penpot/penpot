@@ -12,6 +12,7 @@
    [app.render-wasm.wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [app.util.webapi :as webapi]
    [goog.events :as events]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -30,14 +31,16 @@
   (atom {:os-canvas nil
          :page-key  nil
          :canvas-w  0
-         :canvas-h  0}))
+         :canvas-h  0
+         :dpr       1}))
 
 (defn- reset-viewer-snapshot! []
   (reset! viewer-snapshot
           {:os-canvas nil
            :page-key nil
            :canvas-w 0
-           :canvas-h 0}))
+           :canvas-h 0
+           :dpr 1}))
 
 (defn- draw-bitmap!
   [canvas os-canvas object-id vis-w vis-h finish]
@@ -135,9 +138,12 @@
                           (resolve nil))
            vis-w        (.-width canvas)
            vis-h        (.-height canvas)
+           dpr          (wasm.api/get-dpr)
            snap         @viewer-snapshot
            same-page?   (and (some? page-key) (identical? page-key (:page-key snap)))
-           same-size?   (and (= vis-w (:canvas-w snap)) (= vis-h (:canvas-h snap)))
+           same-size?   (and (= vis-w (:canvas-w snap))
+                             (= vis-h (:canvas-h snap))
+                             (= dpr (:dpr snap)))
            os           (:os-canvas snap)
            do-render!   (fn [os-canvas]
                           (viewer-do-render! page-objects canvas os-canvas object-id
@@ -151,7 +157,7 @@
            (do
              (when-not same-size?
                (wasm.api/resize-offscreen-canvas! os vis-w vis-h)
-               (swap! viewer-snapshot assoc :canvas-w vis-w :canvas-h vis-h))
+               (swap! viewer-snapshot assoc :canvas-w vis-w :canvas-h vis-h :dpr dpr))
              (do-render! os))
            (let [os-canvas (js/OffscreenCanvas. vis-w vis-h)]
              (when (wasm.api/initialized?)
@@ -162,7 +168,8 @@
                          {:os-canvas os-canvas
                           :page-key  page-key
                           :canvas-w  vis-w
-                          :canvas-h  vis-h})
+                          :canvas-h  vis-h
+                          :dpr       dpr})
                  (wasm.api/initialize-viewport
                   page-objects scale size
                   :background-opacity 0
@@ -192,50 +199,71 @@
            (let [key (events/listen section "scroll" (fn [_] (sync!)))]
              #(events/unlistenByKey key))))))))
 
+(defn- use-viewer-dpr-key
+  "Bump a counter when browser zoom changes devicePixelRatio so WASM canvases
+  are resized like the workspace viewport."
+  []
+  (let [dpr-key (mf/use-state 0)]
+    (mf/use-effect
+     (mf/deps [])
+     (fn []
+       (webapi/on-dpr-change (fn [_] (swap! dpr-key inc)))))
+    @dpr-key))
+
 (defn- use-viewer-wasm-layers!
   [page-id page-objects size scale frame-id not-fixed-ref fixed-ref
-   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids]
-  (mf/use-layout-effect
-   (mf/deps page-id page-objects size scale frame-id
-            not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
-   (fn []
-     (when (get page-objects frame-id)
-       (->> @wasm.api/module
-            (p/fmap
-             (fn [ready?]
-               (when ready?
-                 (let [not-fixed-canvas (mf/ref-val not-fixed-ref)
-                       fixed-canvas     (mf/ref-val fixed-ref)
-                       passes
-                       (cond-> []
-                         not-fixed-canvas
-                         (conj {:canvas not-fixed-canvas
-                                :opts   (cond-> {}
-                                          (seq not-fixed-include-ids)
-                                          (assoc :include-ids not-fixed-include-ids))})
+   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta dpr-key]
+  ;; The hot-areas SVG shifts every object by `-(size + delta)` so the frame
+  ;; `selrect` lands flush against the overlay snap side, ignoring the extra
+  ;; padding reserved for shadows/blur/strokes. Bake the same `delta` into the
+  ;; WASM view origin so the rendered canvas aligns with that SVG (otherwise it
+  ;; appears offset by the shadow margin).
+  (let [render-size (-> size
+                        (update :x + (:x delta 0))
+                        (update :y + (:y delta 0)))]
+    (mf/use-layout-effect
+     (mf/deps page-id page-objects render-size scale frame-id dpr-key
+              not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
+     (fn []
+       (when (get page-objects frame-id)
+         (->> @wasm.api/module
+              (p/fmap
+               (fn [ready?]
+                 (when ready?
+                   (let [not-fixed-canvas (mf/ref-val not-fixed-ref)
+                         fixed-canvas     (mf/ref-val fixed-ref)
+                         passes
+                         (cond-> []
+                           not-fixed-canvas
+                           (conj {:canvas not-fixed-canvas
+                                  :opts   (cond-> {}
+                                            (seq not-fixed-include-ids)
+                                            (assoc :include-ids not-fixed-include-ids))})
 
-                         (and fixed-canvas (seq fixed-include-ids))
-                         (conj {:canvas fixed-canvas
-                                :opts   (cond-> {:include-ids fixed-include-ids}
-                                          (seq fixed-clear-fills-ids)
-                                          (assoc :clear-fills-ids fixed-clear-fills-ids))}))]
-                   (when (seq passes)
-                     (enqueue-wasm-render!
-                      (fn []
-                        (reduce (fn [chain {:keys [canvas opts]}]
-                                  (p/then chain
-                                          #(render-viewer-frame* page-id page-objects
-                                                                 canvas size scale frame-id
-                                                                 nil opts)))
-                                (p/resolved nil)
-                                passes)))))))))))))
+                           (and fixed-canvas (seq fixed-include-ids))
+                           (conj {:canvas fixed-canvas
+                                  :opts   (cond-> {:include-ids fixed-include-ids}
+                                            (seq fixed-clear-fills-ids)
+                                            (assoc :clear-fills-ids fixed-clear-fills-ids))}))]
+                     (when (seq passes)
+                       (enqueue-wasm-render!
+                        (fn []
+                          (reduce (fn [chain {:keys [canvas opts]}]
+                                    (p/then chain
+                                            #(render-viewer-frame* page-id page-objects
+                                                                   canvas render-size scale frame-id
+                                                                   nil opts)))
+                                  (p/resolved nil)
+                                  passes))))))))))))))
 
 (defn use-viewer-wasm-viewport!
   "WASM render passes and fixed-scroll DOM sync for the viewer viewport."
   [page-id page-objects size scale frame-id
    not-fixed-ref fixed-ref fixed-scroll-layer-ref
-   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids]
+   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta]
   (use-fixed-scroll-sync! (some? fixed-scroll-layer-ref) fixed-scroll-layer-ref)
-  (use-viewer-wasm-layers! page-id page-objects size scale frame-id
-                           not-fixed-ref fixed-ref
-                           not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids))
+  (let [dpr-key (use-viewer-dpr-key)]
+    (use-viewer-wasm-layers! page-id page-objects size scale frame-id
+                             not-fixed-ref fixed-ref
+                             not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
+                             delta dpr-key)))
