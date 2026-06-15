@@ -212,50 +212,58 @@
 
 (defn- use-viewer-wasm-layers!
   [page-id page-objects size scale frame-id not-fixed-ref fixed-ref
-   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids dpr-key]
-  (mf/use-layout-effect
-   (mf/deps page-id page-objects size scale frame-id dpr-key
-            not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
-   (fn []
-     (when (get page-objects frame-id)
-       (->> @wasm.api/module
-            (p/fmap
-             (fn [ready?]
-               (when ready?
-                 (let [not-fixed-canvas (mf/ref-val not-fixed-ref)
-                       fixed-canvas     (mf/ref-val fixed-ref)
-                       passes
-                       (cond-> []
-                         not-fixed-canvas
-                         (conj {:canvas not-fixed-canvas
-                                :opts   (cond-> {}
-                                          (seq not-fixed-include-ids)
-                                          (assoc :include-ids not-fixed-include-ids))})
+   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta dpr-key]
+  ;; The hot-areas SVG shifts every object by `-(size + delta)` so the frame
+  ;; `selrect` lands flush against the overlay snap side, ignoring the extra
+  ;; padding reserved for shadows/blur/strokes. Bake the same `delta` into the
+  ;; WASM view origin so the rendered canvas aligns with that SVG (otherwise it
+  ;; appears offset by the shadow margin).
+  (let [render-size (-> size
+                        (update :x + (:x delta 0))
+                        (update :y + (:y delta 0)))]
+    (mf/use-layout-effect
+     (mf/deps page-id page-objects render-size scale frame-id dpr-key
+              not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
+     (fn []
+       (when (get page-objects frame-id)
+         (->> @wasm.api/module
+              (p/fmap
+               (fn [ready?]
+                 (when ready?
+                   (let [not-fixed-canvas (mf/ref-val not-fixed-ref)
+                         fixed-canvas     (mf/ref-val fixed-ref)
+                         passes
+                         (cond-> []
+                           not-fixed-canvas
+                           (conj {:canvas not-fixed-canvas
+                                  :opts   (cond-> {}
+                                            (seq not-fixed-include-ids)
+                                            (assoc :include-ids not-fixed-include-ids))})
 
-                         (and fixed-canvas (seq fixed-include-ids))
-                         (conj {:canvas fixed-canvas
-                                :opts   (cond-> {:include-ids fixed-include-ids}
-                                          (seq fixed-clear-fills-ids)
-                                          (assoc :clear-fills-ids fixed-clear-fills-ids))}))]
-                   (when (seq passes)
-                     (enqueue-wasm-render!
-                      (fn []
-                        (reduce (fn [chain {:keys [canvas opts]}]
-                                  (p/then chain
-                                          #(render-viewer-frame* page-id page-objects
-                                                                 canvas size scale frame-id
-                                                                 nil opts)))
-                                (p/resolved nil)
-                                passes)))))))))))))
+                           (and fixed-canvas (seq fixed-include-ids))
+                           (conj {:canvas fixed-canvas
+                                  :opts   (cond-> {:include-ids fixed-include-ids}
+                                            (seq fixed-clear-fills-ids)
+                                            (assoc :clear-fills-ids fixed-clear-fills-ids))}))]
+                     (when (seq passes)
+                       (enqueue-wasm-render!
+                        (fn []
+                          (reduce (fn [chain {:keys [canvas opts]}]
+                                    (p/then chain
+                                            #(render-viewer-frame* page-id page-objects
+                                                                   canvas render-size scale frame-id
+                                                                   nil opts)))
+                                  (p/resolved nil)
+                                  passes))))))))))))))
 
 (defn use-viewer-wasm-viewport!
   "WASM render passes and fixed-scroll DOM sync for the viewer viewport."
   [page-id page-objects size scale frame-id
    not-fixed-ref fixed-ref fixed-scroll-layer-ref
-   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids]
+   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids delta]
   (use-fixed-scroll-sync! (some? fixed-scroll-layer-ref) fixed-scroll-layer-ref)
   (let [dpr-key (use-viewer-dpr-key)]
     (use-viewer-wasm-layers! page-id page-objects size scale frame-id
                              not-fixed-ref fixed-ref
                              not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
-                             dpr-key)))
+                             delta dpr-key)))

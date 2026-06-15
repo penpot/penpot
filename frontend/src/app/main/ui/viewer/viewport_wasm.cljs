@@ -150,7 +150,8 @@
      page-id objects size scale frame-id
      not-fixed-wasm-ref fixed-wasm-ref
      (when has-fixed? fixed-layer-ref)
-     not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
+     not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
+     delta)
 
     [:& (mf/provider shapes/base-frame-ctx) {:value (get prepared-all (:id base))}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
