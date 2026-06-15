@@ -48,6 +48,32 @@
         self-reference? (get token-references token-name)]
     (boolean self-reference?)))
 
+;; TODO: Review this function when tokenscript is implemented. 
+(defn token-circular-reference?
+  "Checks if the given `tokens` map contains a circular reference reachable from
+   `token-name`. Uses DFS with 3-color marking (:in-progress / :done) to detect
+   cycles without false positives on diamond dependencies (A->B, A->C, B->C).
+   Returns the token name that closes the cycle, or nil."
+  [tokens token-name]
+  (let [find-refs (fn [v] (when (string? v) (find-token-value-references v)))
+        state (atom {})]
+    (letfn [(visit [name]
+              (let [mark (get @state name)]
+                (if (= mark :in-progress)
+                  name
+                  (when-not (= mark :done)
+                    (swap! state assoc name :in-progress)
+                    (let [token (get tokens name)
+                          result (when token
+                                   (let [refs (find-refs (:value token))]
+                                     (some visit refs)))]
+                      (swap! state assoc name :done)
+                      result)))))]
+      (let [token (get tokens token-name)]
+        (when token
+          (let [refs (find-refs (:value token))]
+            (some visit refs)))))))
+
 (defn references-token?
   "Recursively check if a value references the token name. Handles strings, maps, and sequences."
   [value token-name]
