@@ -504,8 +504,7 @@
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
-              (rx/take-until stoper-s))
-         (rx/of (mcp/notify-other-tabs-disconnect)))))
+              (rx/take-until stoper-s)))))
 
     ptk/EffectEvent
     (effect [_ _ _]

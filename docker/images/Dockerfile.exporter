@@ -3,7 +3,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v24.15.0 \
+    NODE_VERSION=v24.16.0 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:/opt/imagick/bin:$PATH \
     PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers
@@ -20,6 +20,7 @@ RUN set -ex; \
       locales \
       ca-certificates \
     ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -81,6 +82,7 @@ RUN set -ex; \
       libzip4t64 \
       libzstd1 \
     ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -eux; \
