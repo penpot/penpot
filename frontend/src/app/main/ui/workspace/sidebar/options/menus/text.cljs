@@ -480,7 +480,15 @@
                             :aria-label        (tr "workspace.options.convert-to-typography")
                             :on-click          on-convert-to-typography
                             :tooltip-placement "top-left"
-                            :icon              i/add}])]]]
+                            :icon              i/add}])]]
+      (when (and token-typography-row-enabled? token-dropdown-open?)
+        [:> searchable-options-dropdown* {:on-click     on-option-click
+                                          :id           listbox-id
+                                          :options      (resolve-delay dropdown-options)
+                                          :selected     selected-token-id
+                                          :align        "right"
+                                          :placeholder  (tr "workspace.tokens.search-by-token")
+                                          :ref          set-option-ref}])]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -540,13 +548,4 @@
           [:div {:class (stl/css :text-decoration-options)}
            [:> vertical-align* common-props]
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])
-
-     (when (and token-typography-row-enabled? token-dropdown-open?)
-       [:> searchable-options-dropdown* {:on-click     on-option-click
-                                         :id           listbox-id
-                                         :options      (resolve-delay dropdown-options)
-                                         :selected     selected-token-id
-                                         :align        "right"
-                                         :placeholder  (tr "workspace.tokens.search-by-token")
-                                         :ref          set-option-ref}])]))
+           [:> text-direction-options* common-props]])])]))
