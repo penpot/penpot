@@ -2668,28 +2668,22 @@ impl RenderState {
             _ => {}
         }
 
-        // Strokes are drawn over children for clipped frames (all strokes), and for non-clipped
-        // frames with inner strokes (inner strokes only — non-inner were rendered before children).
-        // Skip when focus mode excludes this subtree (focus_mode.exit runs after this, so
-        // is_active() still reflects this element's focus state here).
-        let needs_exit_strokes = self.focus_mode.is_active()
+        // Frame strokes must be painted over its children, so they are drawn here:
+        // - Clipped frames skip them inline
+        // - Non-clipped frames had them stripped from the inline pass above.
+        // Skip when focus mode excludes this element. NOTE: We can't use `focus_mode.is_active()`
+        // because this element's children already cleared it via `focus_mode.exit`
+        // before we reach the parent's exit. `should_focus` queries this element directly
+        // and is unaffected by that ordering.
+        let needs_exit_strokes = self.focus_mode.should_focus(&element.id)
             && (element.clip()
-                || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke()));
+                || (matches!(element.shape_type, Type::Frame(_)) && element.has_visible_strokes()));
 
         if needs_exit_strokes {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
             element_strokes.to_mut().clear_fills();
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
-
-            // For non-clipped frames, non-inner strokes were already rendered inline.
-            if !element.clip() {
-                let is_open = element.is_open();
-                element_strokes
-                    .to_mut()
-                    .strokes
-                    .retain(|s| s.render_kind(is_open) == StrokeKind::Inner);
-            }
 
             // Frame blur is applied at the save_layer level - avoid double blur on the stroke paint
             if Self::frame_clip_layer_blur(element).is_some() {
@@ -3426,17 +3420,12 @@ impl RenderState {
                         .draw_into(SurfaceId::DropShadows, target_surface, None);
                 }
 
-                // For frames without clip_content, inner strokes must render after children in
-                // render_shape_exit so children don't paint over them. Strip them here.
                 let element_for_inline: Cow<Shape> = if matches!(element.shape_type, Type::Frame(_))
                     && !element.clip_content
-                    && element.has_inner_stroke()
+                    && element.has_visible_strokes()
                 {
-                    let is_open = element.is_open();
                     let mut modified = element.clone();
-                    modified
-                        .strokes
-                        .retain(|s| s.render_kind(is_open) != StrokeKind::Inner);
+                    modified.strokes.clear();
                     Cow::Owned(modified)
                 } else {
                     Cow::Borrowed(element)
