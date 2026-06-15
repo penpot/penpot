@@ -1,16 +1,33 @@
+import fs from "node:fs";
 import { ClientInstaller, InstallOptions, InstallResult } from "../types";
 import { expandHome, readJsonFile, writeJsonFile, setNested, deleteNested, backupIfExists } from "../configWriter";
 
-const CONFIG_PATH = "~/.config/opencode/opencode.jsonc";
+/**
+ * Candidate config file names recognised by OpenCode. The first existing path is
+ * used; if neither is present, `opencode.jsonc` is created (matching the format
+ * documented by OpenCode and supporting `//` comments).
+ */
+const CANDIDATE_PATHS = ["~/.config/opencode/opencode.jsonc", "~/.config/opencode/opencode.json"];
+
+function resolveConfigPath(): string {
+    for (const candidate of CANDIDATE_PATHS) {
+        const expanded = expandHome(candidate);
+        if (fs.existsSync(expanded)) {
+            return expanded;
+        }
+    }
+    // none of the candidates exists yet — default to the .jsonc variant
+    return expandHome(CANDIDATE_PATHS[0]);
+}
 
 export const opencode: ClientInstaller = {
     id: "opencode",
     label: "OpenCode",
     describe() {
-        return "OpenCode. Uses `mcp` top-level key with `type: remote`.";
+        return "OpenCode. Uses `mcp` top-level key with `type: remote`. Reads either opencode.jsonc or opencode.json.";
     },
     configPath() {
-        return expandHome(CONFIG_PATH);
+        return resolveConfigPath();
     },
     snippet(opts: InstallOptions) {
         return {
