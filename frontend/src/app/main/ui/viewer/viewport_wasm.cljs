@@ -12,12 +12,17 @@
    [app.main.render-viewer-wasm :as rwv]
    [app.main.ui.viewer.shapes :as shapes]
    [app.main.ui.viewer.viewport-common :as vpc]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (defn- canvas-dimensions
+  "Physical canvas pixels (CSS layout size × DPR), matching the workspace WASM path."
   [scale size]
-  {:width (js/Math.round (* scale (:base-width size)))
-   :height (js/Math.round (* scale (:base-height size)))})
+  (let [css-w (js/Math.round (* scale (:base-width size)))
+        css-h (js/Math.round (* scale (:base-height size)))
+        dpr   (wasm.api/get-dpr)]
+    {:width  (js/Math.round (* css-w dpr))
+     :height (js/Math.round (* css-h dpr))}))
 
 (mf/defc wasm-hotspots-svg*
   [{:keys [vbox size class prepared prepared-all prepared-frame shape-filter]}]

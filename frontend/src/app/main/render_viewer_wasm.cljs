@@ -12,6 +12,7 @@
    [app.render-wasm.wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [app.util.webapi :as webapi]
    [goog.events :as events]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
@@ -30,14 +31,16 @@
   (atom {:os-canvas nil
          :page-key  nil
          :canvas-w  0
-         :canvas-h  0}))
+         :canvas-h  0
+         :dpr       1}))
 
 (defn- reset-viewer-snapshot! []
   (reset! viewer-snapshot
           {:os-canvas nil
            :page-key nil
            :canvas-w 0
-           :canvas-h 0}))
+           :canvas-h 0
+           :dpr 1}))
 
 (defn- draw-bitmap!
   [canvas os-canvas object-id vis-w vis-h finish]
@@ -135,9 +138,12 @@
                           (resolve nil))
            vis-w        (.-width canvas)
            vis-h        (.-height canvas)
+           dpr          (wasm.api/get-dpr)
            snap         @viewer-snapshot
            same-page?   (and (some? page-key) (identical? page-key (:page-key snap)))
-           same-size?   (and (= vis-w (:canvas-w snap)) (= vis-h (:canvas-h snap)))
+           same-size?   (and (= vis-w (:canvas-w snap))
+                             (= vis-h (:canvas-h snap))
+                             (= dpr (:dpr snap)))
            os           (:os-canvas snap)
            do-render!   (fn [os-canvas]
                           (viewer-do-render! page-objects canvas os-canvas object-id
@@ -151,7 +157,7 @@
            (do
              (when-not same-size?
                (wasm.api/resize-offscreen-canvas! os vis-w vis-h)
-               (swap! viewer-snapshot assoc :canvas-w vis-w :canvas-h vis-h))
+               (swap! viewer-snapshot assoc :canvas-w vis-w :canvas-h vis-h :dpr dpr))
              (do-render! os))
            (let [os-canvas (js/OffscreenCanvas. vis-w vis-h)]
              (when (wasm.api/initialized?)
@@ -162,7 +168,8 @@
                          {:os-canvas os-canvas
                           :page-key  page-key
                           :canvas-w  vis-w
-                          :canvas-h  vis-h})
+                          :canvas-h  vis-h
+                          :dpr       dpr})
                  (wasm.api/initialize-viewport
                   page-objects scale size
                   :background-opacity 0
@@ -192,11 +199,22 @@
            (let [key (events/listen section "scroll" (fn [_] (sync!)))]
              #(events/unlistenByKey key))))))))
 
+(defn- use-viewer-dpr-key
+  "Bump a counter when browser zoom changes devicePixelRatio so WASM canvases
+  are resized like the workspace viewport."
+  []
+  (let [dpr-key (mf/use-state 0)]
+    (mf/use-effect
+     (mf/deps [])
+     (fn []
+       (webapi/on-dpr-change (fn [_] (swap! dpr-key inc)))))
+    @dpr-key))
+
 (defn- use-viewer-wasm-layers!
   [page-id page-objects size scale frame-id not-fixed-ref fixed-ref
-   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids]
+   not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids dpr-key]
   (mf/use-layout-effect
-   (mf/deps page-id page-objects size scale frame-id
+   (mf/deps page-id page-objects size scale frame-id dpr-key
             not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
    (fn []
      (when (get page-objects frame-id)
@@ -236,6 +254,8 @@
    not-fixed-ref fixed-ref fixed-scroll-layer-ref
    not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids]
   (use-fixed-scroll-sync! (some? fixed-scroll-layer-ref) fixed-scroll-layer-ref)
-  (use-viewer-wasm-layers! page-id page-objects size scale frame-id
-                           not-fixed-ref fixed-ref
-                           not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids))
+  (let [dpr-key (use-viewer-dpr-key)]
+    (use-viewer-wasm-layers! page-id page-objects size scale frame-id
+                             not-fixed-ref fixed-ref
+                             not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
+                             dpr-key)))

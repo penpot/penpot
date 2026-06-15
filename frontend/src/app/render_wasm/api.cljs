@@ -1920,15 +1920,6 @@
     (h/call wasm/internal-module "_set_view_end")
     (reset! view-interaction-active? false)))
 
-(defn resize-offscreen-canvas!
-  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
-  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
-  design state (shape pool) is preserved so `set-objects` is not needed again."
-  [canvas new-physical-w new-physical-h]
-  (set! (.-width canvas) new-physical-w)
-  (set! (.-height canvas) new-physical-h)
-  (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))
-
 (defn- debug-flags
   []
   (cond-> 0
@@ -1938,6 +1929,22 @@
     (bit-or 2r00000000000000000000000000000100)
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
+
+(defn set-render-options!
+  "Updates WASM render options with a new DPR value."
+  [new-dpr]
+  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
+
+(defn resize-offscreen-canvas!
+  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
+  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
+  design state (shape pool) is preserved so `set-objects` is not needed again."
+  [canvas new-physical-w new-physical-h]
+  (let [dpr (get-dpr)]
+    (set! (.-width canvas) new-physical-w)
+    (set! (.-height canvas) new-physical-h)
+    (set-render-options! dpr)
+    (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr))))
 
 (defn- wasm-get-numeric-value
   [name]
@@ -1952,11 +1959,6 @@
   (when-let [value (wasm-get-numeric-value param-name)]
     (let [setter-name (str/concat "_set_" (name param-name))]
       (h/call wasm/internal-module setter-name value))))
-
-(defn set-render-options!
-  "Updates WASM render options with a new DPR value."
-  [new-dpr]
-  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
 
 (defn- canvas-css-size
   "Return canvas size in CSS pixels.
