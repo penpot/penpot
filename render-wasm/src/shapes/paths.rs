@@ -156,6 +156,7 @@ impl Path {
         let mut current_point = 0;
         let mut current_conic = 0;
         let mut last_point = skia::Point::new(0.0, 0.0);
+        let mut subpath_start = skia::Point::new(0.0, 0.0);
 
         for verb in verbs {
             match verb {
@@ -163,12 +164,15 @@ impl Path {
                     let p = points[current_point];
                     segments.push(Segment::MoveTo((p.x, p.y)));
                     last_point = p;
+                    subpath_start = p;
                     current_point += 1;
                 }
                 skia::PathVerb::Line => {
                     let p = points[current_point];
-                    segments.push(Segment::LineTo((p.x, p.y)));
-                    last_point = p;
+                    if p != last_point {
+                        segments.push(Segment::LineTo((p.x, p.y)));
+                        last_point = p;
+                    }
                     current_point += 1;
                 }
                 skia::PathVerb::Quad => {
@@ -239,6 +243,13 @@ impl Path {
                     current_point += 3;
                 }
                 skia::PathVerb::Close => {
+                    if let Some(Segment::LineTo(p)) = segments.last() {
+                        if (p.0 - subpath_start.x).abs() < 1e-5
+                            && (p.1 - subpath_start.y).abs() < 1e-5
+                        {
+                            segments.pop();
+                        }
+                    }
                     segments.push(Segment::Close);
                 }
             }
