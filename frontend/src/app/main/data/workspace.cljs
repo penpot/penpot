@@ -73,6 +73,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.wasm :as wasm-state]
@@ -253,8 +254,12 @@
       (rx/merge
        (rx/of (dp/check-open-plugin)
               (fdf/fix-deleted-fonts-for-local-library file-id))
-       (when (contains? cf/flags :mcp)
-         (rx/of (mcp/init)))))))
+       (if (contains? cf/flags :mcp)
+         ;; We wait the plugin runtime to be ready before launch the
+         ;; mcp initialization
+         (->> (rx/from (preg/wait-for-runtime))
+              (rx/map (fn [_] (mcp/init))))
+         (rx/empty))))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -376,10 +381,7 @@
                  (rx/of (ntf/hide)
                         (dcmt/retrieve-comment-threads file-id)
                         (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id))
-
-                 (when (contains? cf/flags :mcp)
-                   (rx/of (du/fetch-access-tokens))))
+                        (df/fetch-fonts team-id)))
 
                 ;; Once the essential data is fetched, lets proceed to
                 ;; fetch the file bundle

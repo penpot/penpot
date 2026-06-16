@@ -6,12 +6,14 @@
 
 (ns app.main.data.workspace.mcp
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
    [app.main.data.plugins :as dp]
-   [app.main.repo :as rp]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.util.timers :as ts]
@@ -22,7 +24,8 @@
 
 (log/set-level! :info)
 
-(def ^:private default-manifest
+(def ^:private
+  default-manifest
   {:code "plugin.js"
    :name "Penpot MCP Plugin"
    :version 2
@@ -34,7 +37,8 @@
      "comment:read" "comment:write"
      "content:write" "content:read"}})
 
-(defonce interval-sub (atom nil))
+(defonce interval-sub
+  (atom nil))
 
 (defn connect-mcp
   []
@@ -44,20 +48,8 @@
       (rx/of (mbc/event :mcp/force-disconnect {})
              (ptk/data-event ::connect)))))
 
-(defn finalize-workspace?
-  [event]
-  (= (ptk/type event) :app.main.data.workspace/finalize-workspace))
-
-(defn set-mcp-active
-  [value]
-  (ptk/reify ::set-mcp-active
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:mcp :active] value))))
-
-(defn start-reconnect-watcher!
+(defn- start-reconnect-watcher
   []
-  (st/emit! (set-mcp-active true))
   (when (nil? @interval-sub)
     (reset!
      interval-sub
@@ -72,7 +64,6 @@
 
 (defn stop-reconnect-watcher!
   []
-  (st/emit! (set-mcp-active false))
   (when @interval-sub
     (rx/dispose! @interval-sub)
     (reset! interval-sub nil)))
@@ -83,7 +74,9 @@
   (ptk/reify ::update-mcp-status
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:profile :props] assoc :mcp-enabled value))
+      (-> state
+          (update :mcp assoc :enabled value)
+          (update-in [:profile :props] assoc :mcp-enabled value)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -123,75 +116,119 @@
     (effect [_ _ _]
       (stop-reconnect-watcher!))))
 
-(defn init-mcp
-  [stream]
-  ;; Wait for plugins runtime to be initialized before starting the MCP plugin.
-  ;; This ensures global.ɵloadPlugin is available when start-plugin! is called.
-  (->> (rx/from (preg/wait-for-runtime))
-       (rx/mapcat
-        (fn [_]
-          (->> (rp/cmd! :get-current-mcp-token)
-               (rx/tap
-                (fn [{:keys [token]}]
-                  (when token
-                    (dp/start-plugin!
-                     (assoc default-manifest
-                            :url (str (u/join cf/public-uri "plugins/mcp/manifest.json"))
-                            :host (str (u/join cf/public-uri "plugins/mcp/")))
+(defn- init-mcp-plugin
+  "Waits the plugin runtime and initializes the bundled MCP plugin."
+  [{:keys [token]}]
+  (ptk/reify ::init-mcp-plugin
+    ptk/EffectEvent
+    (effect [_ _ stream]
+      (let [manifest  (-> default-manifest
+                          (assoc :url (str (u/join cf/public-uri "plugins/mcp/manifest.json")))
+                          (assoc :host (str (u/join cf/public-uri "plugins/mcp/"))))
 
-                     ;; API extension for MCP server
-                     #js {:mcp
-                          #js
-                           {:getToken (constantly token)
-                            :getServerUrl #(str cf/mcp-ws-uri)
-                            :setMcpStatus
-                            (fn [status]
-                              (when (= status "connected")
-                                (start-reconnect-watcher!))
-                              (st/emit! (update-mcp-connection-status status))
-                              (log/info :hint "MCP STATUS" :status status))
+            stopper-s (rx/merge
+                       (rx/filter (ptk/type? :app.main.data.workspace/finalize-workspace) stream)
+                       (rx/filter (ptk/type? ::stop-mcp-plugin) stream))
 
-                            :on
-                            (fn [event cb]
-                              (when-let [event
-                                         (case event
-                                           "disconnect" ::disconnect
-                                           "connect" ::connect
-                                           nil)]
+            extension #js {:getToken (constantly token)
+                           :getServerUrl #(str cf/mcp-ws-uri)
+                           :setMcpStatus
+                           (fn [status]
+                             (when (= status "connected")
+                               (start-reconnect-watcher))
+                             (st/emit! (update-mcp-connection-status status))
+                             (log/info :hint "MCP STATUS" :status status))
 
-                                (let [stopper (rx/filter finalize-workspace? stream)]
-                                  (->> stream
-                                       (rx/filter (ptk/type? event))
-                                       (rx/take-until stopper)
-                                       (rx/subs! #(cb))))))}})))))))))
+                           :on
+                           (fn [event cb]
+                             (when-let [event
+                                        (case event
+                                          "disconnect" ::disconnect
+                                          "connect" ::connect
+                                          nil)]
+
+                               (->> stream
+                                    (rx/filter (ptk/type? event))
+                                    (rx/take-until stopper-s)
+                                    (rx/subs! (fn [_] (cb))))))}]
+
+        (dp/start-plugin! manifest #js {:mcp extension})))))
+
+(defn- stop-mcp-plugin
+  []
+  (ptk/reify ::stop-mcp-plugin
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (dp/close-plugin! default-manifest))))
+
+(defn- init-mcp-state
+  [access-tokens]
+  (let [token  (d/seek #(= "mcp" (:type %)) access-tokens)
+        valid? (and token
+                    (as-> (get token :expires-at) expires-at
+                      (or (nil? expires-at)
+                          (> expires-at (ct/now)))))]
+
+    (ptk/reify ::init-mcp-state
+      IDeref
+      (-deref [_]
+        (when valid? token))
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (if token
+          (update state :mcp (fn [state]
+                               (-> state
+                                   (assoc :token (:token token))
+                                   (assoc :token-id (:id token))
+                                   (assoc :token-valid valid?))))
+          state)))))
 
 (defn init
+  "Initialize MCP runtime. This event expects plugin runtime initialized."
   []
   (ptk/reify ::init
     ptk/UpdateEvent
     (update [_ state]
-      (update state :mcp assoc :active true))
+      (let [profile      (get state :profile)
+            mcp-enabled? (-> profile :props :mcp-enabled boolean)]
+        (update state :mcp assoc :enabled mcp-enabled?)))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s   (rx/merge
+      (let [stopper-s  (rx/merge
                         (rx/filter (ptk/type? :app.main.data.workspace/finalize-workspace) stream)
                         (rx/filter (ptk/type? ::init) stream))
+
             session-id (get state :session-id)
-            enabled?   (-> state :profile :props :mcp-enabled)]
+            mcp-state  (get state :mcp)]
 
         (->> (rx/merge
-              (if enabled?
-                (rx/merge
-                 (init-mcp stream)
+              (rx/of (du/fetch-access-tokens))
 
-                 (->> mbc/stream
-                      (rx/filter (mbc/type? :mcp/force-disconnect))
-                      (rx/filter (fn [{:keys [id]}]
-                                   (not= session-id id)))
-                      (rx/map deref)
-                      (rx/map (fn [] (user-disconnect-mcp)))))
+              ;; Wait until access tokens are initialized and are
+              ;; setup on the state
+              (->> stream
+                   (rx/filter (ptk/type? ::du/access-tokens-fetched))
+                   (rx/map deref)
+                   (rx/take 1)
+                   (rx/map init-mcp-state))
+
+              (if (:enabled mcp-state)
+                (->> stream
+                     (rx/filter (ptk/type? ::init-mcp-state))
+                     (rx/take 1)
+                     (rx/map deref)
+                     (rx/filter some?)
+                     (rx/map init-mcp-plugin))
                 (rx/empty))
+
+              (->> mbc/stream
+                   (rx/filter (mbc/type? :mcp/force-disconnect))
+                   (rx/filter (fn [{:keys [id]}]
+                                (not= session-id id)))
+                   (rx/map deref)
+                   (rx/map (fn [] (user-disconnect-mcp))))
 
               (->> mbc/stream
                    (rx/filter (mbc/type? :mcp/enable))
@@ -206,6 +243,7 @@
                    (rx/filter (mbc/type? :mcp/disable))
                    (rx/mapcat (fn [_]
                                 (rx/of (update-mcp-status false)
-                                       (user-disconnect-mcp))))))
+                                       (user-disconnect-mcp)
+                                       (stop-mcp-plugin))))))
 
-             (rx/take-until stoper-s))))))
+             (rx/take-until stopper-s))))))
