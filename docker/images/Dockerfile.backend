@@ -10,7 +10,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         binutils \
         ca-certificates \
@@ -85,7 +85,7 @@ ENV LANG='C.UTF-8' \
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
         curl \
