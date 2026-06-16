@@ -151,7 +151,7 @@
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
-(def ^:private imagemagick-defaults
+(def ^:private imagemagick-default-env
   "Default environment variables for ImageMagick resource limits.
    These are the soft ceiling — policy.xml is the hard ceiling."
   {"MAGICK_THREAD_LIMIT" "2"
@@ -161,34 +161,27 @@
    "MAGICK_DISK_LIMIT" "1GiB"
    "MAGICK_TIME_LIMIT" "30"})
 
-(defn- imagemagick-env
+(defn- get-imagemagick-env
   "Returns environment variables for ImageMagick commands.
    Reads individual PENPOT_IMAGEMAGICK_* config values, falling back to defaults."
   []
-  (cond-> imagemagick-defaults
-    (cf/get :imagemagick-thread-limit)
-    (assoc "MAGICK_THREAD_LIMIT" (cf/get :imagemagick-thread-limit))
-
-    (cf/get :imagemagick-memory-limit)
-    (assoc "MAGICK_MEMORY_LIMIT" (cf/get :imagemagick-memory-limit))
-
-    (cf/get :imagemagick-map-limit)
-    (assoc "MAGICK_MAP_LIMIT" (cf/get :imagemagick-map-limit))
-
-    (cf/get :imagemagick-area-limit)
-    (assoc "MAGICK_AREA_LIMIT" (cf/get :imagemagick-area-limit))
-
-    (cf/get :imagemagick-disk-limit)
-    (assoc "MAGICK_DISK_LIMIT" (cf/get :imagemagick-disk-limit))
-
-    (cf/get :imagemagick-time-limit)
-    (assoc "MAGICK_TIME_LIMIT" (cf/get :imagemagick-time-limit))
-
-    (cf/get :imagemagick-width-limit)
-    (assoc "MAGICK_WIDTH_LIMIT" (cf/get :imagemagick-width-limit))
-
-    (cf/get :imagemagick-height-limit)
-    (assoc "MAGICK_HEIGHT_LIMIT" (cf/get :imagemagick-height-limit))))
+  (let [thread (cf/get :imagemagick-thread-limit)
+        memory (cf/get :imagemagick-memory-limit)
+        map-l  (cf/get :imagemagick-map-limit)
+        area   (cf/get :imagemagick-area-limit)
+        disk   (cf/get :imagemagick-disk-limit)
+        time   (cf/get :imagemagick-time-limit)
+        width  (cf/get :imagemagick-width-limit)
+        height (cf/get :imagemagick-height-limit)]
+    (cond-> imagemagick-default-env
+      thread (assoc "MAGICK_THREAD_LIMIT" thread)
+      memory (assoc "MAGICK_MEMORY_LIMIT" memory)
+      map-l  (assoc "MAGICK_MAP_LIMIT" map-l)
+      area   (assoc "MAGICK_AREA_LIMIT" area)
+      disk   (assoc "MAGICK_DISK_LIMIT" disk)
+      time   (assoc "MAGICK_TIME_LIMIT" time)
+      width  (assoc "MAGICK_WIDTH_LIMIT" width)
+      height (assoc "MAGICK_HEIGHT_LIMIT" height))))
 
 (defn- exec-magick!
   "Execute an ImageMagick command with resource limits.
@@ -197,7 +190,7 @@
   (let [cmd    (into ["magick"] args)
         result (shell/exec! system
                             :cmd cmd
-                            :env (imagemagick-env)
+                            :env (get-imagemagick-env)
                             :timeout 60)]
     (when (not= 0 (:exit result))
       (ex/raise :type :internal
