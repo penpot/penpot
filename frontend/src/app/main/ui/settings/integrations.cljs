@@ -7,6 +7,7 @@
 (ns app.main.ui.settings.integrations
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -43,7 +44,7 @@
    [:name [::sm/text {:max 250}]]
    [:expiration-date [::sm/text {:max 250}]]])
 
-(def ^:private schema:form-mcp-key
+(def ^:private schema:form-mcp-token
   [:map
    [:expiration-date [::sm/text {:max 250}]]])
 
@@ -51,7 +52,7 @@
   {:name ""
    :expiration-date "never"})
 
-(def form-initial-data-mcp-key
+(def form-initial-data-mcp-token
   {:expiration-date "never"})
 
 (mf/defc input-copy*
@@ -70,7 +71,7 @@
 
 (mf/defc token-created*
   {::mf/private true}
-  [{:keys [title mcp-key?]}]
+  [{:keys [title is-mcp]}]
   (let [token-created (mf/deref refs/access-token-created)
 
         on-copy-to-clipboard
@@ -81,7 +82,7 @@
            (clipboard/to-clipboard (:token token-created))
            (st/emit! (ntf/show {:level :info
                                 :type :toast
-                                :content (if mcp-key?
+                                :content (if is-mcp
                                            (tr "integrations.notification.success.mcp-key-copied")
                                            (tr "integrations.notification.success.token-copied"))
                                 :timeout notification-timeout}))))]
@@ -97,7 +98,7 @@
       [:> text* {:as "div"
                  :typography t/body-small
                  :class (stl/css :color-primary)}
-       (if mcp-key?
+       (if is-mcp
          (tr "integrations.mcp-key.info.non-recuperable")
          (tr "integrations.token.info.non-recuperable"))]]
 
@@ -109,14 +110,14 @@
                  :typography t/body-small
                  :class (stl/css :color-secondary)}
        (if (:expires-at token-created)
-         (if mcp-key?
+         (if is-mcp
            (tr "integrations.mcp-key.will-expire" (ct/format-inst (:expires-at token-created) "PPP"))
            (tr "integrations.token.will-expire" (ct/format-inst (:expires-at token-created) "PPP")))
-         (if mcp-key?
+         (if is-mcp
            (tr "integrations.mcp-key.will-not-expire")
            (tr "integrations.token.will-not-expire")))]]
 
-     (when mcp-key?
+     (when is-mcp
        [:div {:class (stl/css :modal-content)}
         [:> text* {:as "div"
                    :typography t/body-small
@@ -125,15 +126,15 @@
         [:textarea {:class (stl/css :textarea)
                     :wrap "off"
                     :rows 7
-                    :read-only true}
-         (dm/str
-          "{\n"
-          "  \"mcpServers\": {\n"
-          "    \"penpot\": {\n"
-          "      \"url\": \"" cf/mcp-server-url "?userToken=" (:token token-created "") "\"\n"
-          "    }\n"
-          "  }"
-          "\n}")]])
+                    :read-only true
+                    :value (dm/str
+                            "{\n"
+                            "  \"mcpServers\": {\n"
+                            "    \"penpot\": {\n"
+                            "      \"url\": \"" cf/mcp-server-url "?userToken=" (:token token-created "") "\"\n"
+                            "    }\n"
+                            "  }"
+                            "\n}")}]])
 
      [:div {:class (stl/css :modal-footer)}
       [:> button* {:variant "secondary"
@@ -142,13 +143,13 @@
 
 (mf/defc create-token*
   {::mf/private true}
-  [{:keys [title info mcp-key? on-created]}]
+  [{:keys [title info is-mcp on-created]}]
   (let [form (fm/use-form
-              :initial (if mcp-key?
-                         form-initial-data-mcp-key
+              :initial (if is-mcp
+                         form-initial-data-mcp-token
                          form-initial-data-access-token)
-              :schema (if mcp-key?
-                        schema:form-mcp-key
+              :schema (if is-mcp
+                        schema:form-mcp-token
                         schema:form-access-token))
 
         on-error
@@ -158,12 +159,14 @@
 
         on-success
         (mf/use-fn
-         #(st/emit! (du/fetch-access-tokens)
-                    (ntf/success (tr "integrations.notification.success.created"))
-                    (on-created)))
+         (mf/deps on-created)
+         (fn []
+           (when (fn? on-created)
+             (on-created))))
 
         on-submit
         (mf/use-fn
+         (mf/deps is-mcp)
          (fn [form]
            (let [cdata      (:clean-data @form)
                  mdata      {:on-success (partial on-success form)
@@ -171,9 +174,12 @@
                  expiration (:expiration-date cdata)
                  params     (cond-> {:name  (:name cdata)
                                      :perms (:perms cdata)}
-                              (not= "never" expiration) (assoc :expiration expiration)
-                              (true? mcp-key?)          (assoc :type "mcp"
-                                                               :name "MCP key"))]
+                              (not= "never" expiration)
+                              (assoc :expiration expiration)
+
+                              (true? is-mcp)
+                              (assoc :type "mcp" :name "MCP key"))]
+
              (st/emit! (du/create-access-token (with-meta params mdata))))))]
 
     [:> fc/form* {:form form
@@ -193,7 +199,7 @@
                    :class (stl/css :color-primary)}
          info]])
 
-     (if mcp-key?
+     (if is-mcp
        [:div {:class (stl/css :modal-content)}
         [:> text* {:as "div"
                    :typography t/body-medium
@@ -233,7 +239,8 @@
   {::mf/register modal/components
    ::mf/register-as :create-access-token}
   []
-  (let [created? (mf/use-state false)
+  (let [created?
+        (mf/use-state false)
 
         on-close
         (mf/use-fn
@@ -243,7 +250,9 @@
 
         on-created
         (mf/use-fn
-         #(reset! created? true))]
+         (fn []
+           (reset! created? true)
+           (st/emit! (ntf/success (tr "integrations.notification.success.created")))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -258,9 +267,9 @@
         [:> create-token* {:title (tr "integrations.create-access-token.title")
                            :on-created on-created}])]]))
 
-(mf/defc generate-mcp-key-modal
+(mf/defc generate-mcp-token-modal
   {::mf/register modal/components
-   ::mf/register-as :generate-mcp-key}
+   ::mf/register-as :generate-mcp-token}
   []
   (let [created? (mf/use-state false)
 
@@ -273,7 +282,10 @@
         on-created
         (mf/use-fn
          (fn []
+           ;; NOTE: Analytics events use "key" terminology for historical reasons;
+           ;; these names are immutable to avoid breaking analytics dashboards.
            (st/emit! (du/update-profile-props {:mcp-enabled true})
+                     (ntf/success (tr "integrations.notification.success.created"))
                      (ev/event {::ev/name "generate-mcp-key"
                                 ::ev/origin "integrations"})
                      (ev/event {::ev/name "enable-mcp"
@@ -292,20 +304,20 @@
 
       (if @created?
         [:> token-created* {:title (tr "integrations.generate-mcp-key.title.created")
-                            :mcp-key? true}]
+                            :is-mcp true}]
         [:> create-token* {:title (tr "integrations.generate-mcp-key.title")
-                           :mcp-key? true
+                           :is-mcp true
                            :on-created on-created}])]]))
 
-(mf/defc regenerate-mcp-key-modal
-  {::mf/register modal/components
-   ::mf/register-as :regenerate-mcp-key}
-  []
-  (let [created?   (mf/use-state false)
+(defn- mcp-access-token?
+  [atoken]
+  (= "mcp" (:type atoken)))
 
-        tokens     (mf/deref refs/access-tokens)
-        mcp-key    (some #(when (= (:type %) "mcp") %) tokens)
-        mcp-key-id (:id mcp-key)
+(mf/defc regenerate-mcp-token-modal
+  {::mf/register modal/components
+   ::mf/register-as :regenerate-mcp-token}
+  []
+  (let [created?      (mf/use-state false)
 
         on-close
         (mf/use-fn
@@ -316,8 +328,9 @@
         on-created
         (mf/use-fn
          (fn []
-           (st/emit! (du/delete-access-token {:id mcp-key-id})
-                     (du/update-profile-props {:mcp-enabled true})
+           ;; NOTE: Analytics event uses "key" terminology for historical reasons.
+           (st/emit! (du/update-profile-props {:mcp-enabled true})
+                     (ntf/success (tr "integrations.notification.success.created"))
                      (ev/event {::ev/name "regenerate-mcp-key"
                                 ::ev/origin "integrations"})
                      (mbc/event :mcp/enable {}))
@@ -333,16 +346,16 @@
 
       (if @created?
         [:> token-created* {:title (tr "integrations.regenerate-mcp-key.title.created")
-                            :mcp-key? true}]
+                            :is-mcp true}]
         [:> create-token* {:title (tr "integrations.regenerate-mcp-key.title")
                            :info (tr "integrations.regenerate-mcp-key.info")
-                           :mcp-key? true
+                           :is-mcp true
                            :on-created on-created}])]]))
 
 (mf/defc token-item*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [name expires-at on-delete]}]
+  [{:keys [id name expires-at on-delete]}]
   (let [expires-txt (some-> expires-at (ct/format-inst "PPP"))
         expired?    (and (some? expires-at) (> (ct/now) expires-at))
 
@@ -357,18 +370,23 @@
         (mf/use-fn
          #(reset! menu-open* (not menu-open?)))
 
+        handle-delete
+        (mf/use-fn
+         (mf/deps on-delete id)
+         #(on-delete id))
+
         handle-open-confirm-modal
         (mf/use-fn
-         (mf/deps on-delete)
+         (mf/deps handle-delete)
          (fn []
            (st/emit! (modal/show {:type :confirm
                                   :title (tr "integrations.delete-token.title")
                                   :message (tr "integrations.delete-token.message")
                                   :accept-label (tr "integrations.delete-token.accept")
-                                  :on-accept on-delete}))))
+                                  :on-accept handle-delete}))))
 
         options
-        (mf/with-memo [on-delete]
+        (mf/with-memo [handle-delete]
           [{:name    (tr "labels.delete")
             :id      "token-delete"
             :handler handle-open-confirm-modal}])]
@@ -403,22 +421,31 @@
                          :left -138
                          :options options}]]]))
 
+(defn valid-mcp-token?
+  "Given access tokens list, return if it contains a valid (not expired) mcp key"
+  [{:keys [expires-at] :as token}]
+  (if token
+    (or (nil? expires-at)
+        (> expires-at (ct/now)))
+    false))
+
 (mf/defc mcp-server-section*
   {::mf/private true}
-  []
-  (let [tokens           (mf/deref refs/access-tokens)
-        profile          (mf/deref refs/profile)
-        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
+  [{:keys [access-tokens]}]
+  (let [profile       (mf/deref refs/profile)
 
-        mcp-key      (some #(when (= (:type %) "mcp") %) tokens)
-        mcp-token    (:token mcp-key "")
-        mcp-url      (dm/str cf/mcp-server-url "?userToken=" mcp-token)
-        mcp-enabled? (true? (-> profile :props :mcp-enabled))
+        token         (mf/with-memo [access-tokens]
+                        (when-let [token (d/seek mcp-access-token? access-tokens)]
+                          (assoc token :is-valid (valid-mcp-token? token))))
 
-        show-enabled?  (and mcp-enabled? (false? mcp-key-expired?))
+        token-valid?  (get token :is-valid)
+        token-str     (get token :token)
+        enabled?      (-> profile :props :mcp-enabled boolean)
 
-        tooltip-id
-        (mf/use-id)
+        url           (dm/str cf/mcp-server-url "?userToken=" token-str)
+
+        show-enabled? (and enabled? token-valid?)
+        tooltip-id    (mf/use-id)
 
         handle-mcp-change
         (mf/use-fn
@@ -437,19 +464,18 @@
                        (mbc/event :mcp/enable {})
                        (mbc/event :mcp/disable {})))))
 
-        handle-generate-mcp-key
+        handle-open-modal-generate
         (mf/use-fn
-         #(st/emit! (modal/show {:type :generate-mcp-key})))
+         #(st/emit! (modal/show {:type :generate-mcp-token})))
 
-        handle-regenerate-mcp-key
+        handle-open-modal-regenerate
         (mf/use-fn
-         #(st/emit! (modal/show {:type :regenerate-mcp-key})))
+         #(st/emit! (modal/show {:type :regenerate-mcp-token})))
 
         handle-delete
         (mf/use-fn
-         (mf/deps mcp-key)
-         (fn []
-           (let [params {:id (:id mcp-key)}
+         (fn [id]
+           (let [params {:id id}
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
                        (du/update-profile-props {:mcp-enabled false})
@@ -457,10 +483,10 @@
 
         on-copy-to-clipboard
         (mf/use-fn
-         (mf/deps mcp-url)
+         (mf/deps url)
          (fn [event]
            (dom/prevent-default event)
-           (clipboard/to-clipboard mcp-url)
+           (clipboard/to-clipboard url)
            (st/emit! (ntf/show {:level :info
                                 :type :toast
                                 :content (tr "integrations.notification.success.copied-link")
@@ -492,7 +518,7 @@
        (tr "integrations.mcp-server.status")]
 
       [:div {:class (stl/css :mcp-server-block)}
-       (when mcp-key-expired?
+       (when (and (some? token) (not token-valid?))
          [:> notification-pill* {:level :error
                                  :type :context}
           [:div {:class (stl/css :mcp-server-notification)}
@@ -512,14 +538,16 @@
                               (tr "integrations.mcp-server.status.disabled"))
                      :default-checked show-enabled?
                      :on-change handle-mcp-change}]
-        (when (and (false? mcp-enabled?) (nil? mcp-key))
-          [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-generate-mcp-key}])
-        (when (true? mcp-key-expired?)
-          [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-regenerate-mcp-key}])]]]
 
-     (when (some? mcp-key)
+        (when-not token
+          [:div {:class (stl/css :mcp-server-switch-cover)
+                 :on-click handle-open-modal-generate}])
+
+        (when (and token (not token-valid?))
+          [:div {:class (stl/css :mcp-server-switch-cover)
+                 :on-click handle-open-modal-regenerate}])]]]
+
+     (when (some? token)
        [:div {:class (stl/css :mcp-server-key)}
         [:> text* {:as "h3"
                    :typography t/headline-small
@@ -530,7 +558,7 @@
          [:div {:class (stl/css :mcp-server-regenerate)}
           [:> button* {:variant "primary"
                        :class (stl/css :fit-content)
-                       :on-click handle-regenerate-mcp-key}
+                       :on-click handle-open-modal-regenerate}
            (tr "integrations.mcp-server.mcp-keys.regenerate")]
           [:> tooltip* {:content (tr "integrations.mcp-server.mcp-keys.tootip")
                         :id tooltip-id}
@@ -538,21 +566,24 @@
                       :class (stl/css :color-secondary)}]]]
 
          [:div {:class (stl/css :list)}
-          [:> token-item* {:key (:id mcp-key)
-                           :name (:name mcp-key)
-                           :expires-at (:expires-at mcp-key)
+          [:> token-item* {:key (:id token)
+                           :id (:id token)
+                           :name (:name token)
+                           :expires-at (:expires-at token)
                            :on-delete handle-delete}]]]])
 
      [:> notification-pill* {:level :default
                              :type :context}
       [:div {:class (stl/css :mcp-server-notification)}
-       [:> text* {:as "div"
-                  :typography t/body-medium
-                  :class (stl/css :color-secondary)}
-        (tr "integrations.mcp-server.mcp-keys.info")]
+       (when token
+         [:> text* {:as "div"
+                    :typography t/body-medium
+                    :class (stl/css :color-secondary)}
+          (tr "integrations.mcp-server.mcp-keys.info")])
 
-       [:> input-copy* {:value mcp-url
-                        :on-copy-to-clipboard on-copy-to-clipboard}]
+       (when token
+         [:> input-copy* {:value url
+                          :on-copy-to-clipboard on-copy-to-clipboard}])
 
        [:> text* {:as "div"
                   :typography t/body-medium
@@ -561,12 +592,15 @@
              :target "_blank"
              :rel "noopener noreferrer"
              :class (stl/css :mcp-server-notification-link)}
-         (tr "integrations.mcp-server.mcp-keys.help") [:> icon* {:icon-id i/open-link}]]]]]]))
+         (tr "integrations.mcp-server.mcp-keys.help")
+         [:> icon* {:icon-id i/open-link}]]]]]]))
 
 (mf/defc access-tokens-section*
   {::mf/private true}
-  []
-  (let [tokens (mf/deref refs/access-tokens)
+  [{:keys [access-tokens]}]
+  (let [access-tokens
+        (mf/with-memo [access-tokens]
+          (not-empty (filter #(nil? (:type %)) access-tokens)))
 
         handle-click
         (mf/use-fn
@@ -595,40 +629,49 @@
                   :on-click handle-click}
       (tr "integrations.access-tokens.create")]
 
-     (if (empty? tokens)
+     (if access-tokens
+       [:div {:class (stl/css :list)}
+        (for [{:keys [id] :as token} access-tokens]
+          [:> token-item* {:key (dm/str id)
+                           :id id
+                           :name (:name token)
+                           :expires-at (:expires-at token)
+                           :on-delete handle-delete}])]
+
        [:div {:class (stl/css :frame)}
         [:> text* {:as "div"
                    :typography t/body-medium
                    :class (stl/css :color-secondary :text-center)}
          [:div (tr "integrations.access-tokens.empty.no-access-tokens")]
-         [:div (tr "integrations.access-tokens.empty.add-one")]]]
-
-       [:div {:class (stl/css :list)}
-        (for [token tokens]
-          (when (nil? (:type token))
-            [:> token-item* {:key (:id token)
-                             :name (:name token)
-                             :expires-at (:expires-at token)
-                             :on-delete (partial handle-delete (:id token))}]))])]))
+         [:div (tr "integrations.access-tokens.empty.add-one")]]])]))
 
 (mf/defc integrations-page*
   []
-  (mf/with-effect []
-    (dom/set-html-title (tr "title.settings.integrations"))
-    (st/emit! (du/fetch-access-tokens)))
+  (let [access-tokens (mf/deref refs/access-tokens)
+        props         (mf/props {:access-tokens access-tokens})
 
-  [:div {:class (stl/css :integrations)}
-   [:> heading* {:level 1
-                 :typography t/title-large
-                 :class (stl/css :color-primary)}
-    (tr "integrations.title")]
+        access-tokens-enabled?
+        (contains? cf/flags :access-tokens)
 
-   (when (contains? cf/flags :mcp)
-     [:> mcp-server-section*])
+        mcp-enabled?
+        (contains? cf/flags :mcp)]
 
-   (when (and (contains? cf/flags :mcp)
-              (contains? cf/flags :access-tokens))
-     [:hr {:class (stl/css :separator)}])
+    (mf/with-effect []
+      (dom/set-html-title (tr "title.settings.integrations"))
+      (st/emit! (du/fetch-access-tokens)))
 
-   (when (contains? cf/flags :access-tokens)
-     [:> access-tokens-section*])])
+    [:div {:class (stl/css :integrations)}
+     [:> heading* {:level 1
+                   :typography t/title-large
+                   :class (stl/css :color-primary)}
+      (tr "integrations.title")]
+
+     (when ^boolean mcp-enabled?
+       [:> mcp-server-section* props])
+
+     (when (and ^boolean mcp-enabled?
+                ^boolean access-tokens-enabled?)
+       [:hr {:class (stl/css :separator)}])
+
+     (when ^boolean access-tokens-enabled?
+       [:> access-tokens-section* props])]))

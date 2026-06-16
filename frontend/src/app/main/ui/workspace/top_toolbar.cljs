@@ -31,26 +31,28 @@
 
 (mf/defc mcp-indicator*
   []
-  (let [profile          (mf/deref refs/profile)
-        mcp              (mf/deref refs/mcp)
-        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
+  (let [mcp              (mf/deref refs/mcp)
 
-        mcp-enabled?      (true? (-> profile :props :mcp-enabled))
-        mcp-connected?    (= "connected" (:connection-status mcp))
-        show-indicator?   (and mcp-enabled? (false? mcp-key-expired?))
+        conn-status      (get mcp :connection-status)
+        has-valid-token? (get mcp :token-valid)
 
-        mcp-menu-open*   (mf/use-state false)
-        mcp-menu-open?   (deref mcp-menu-open*)
+        enabled?         (get mcp :enabled)
 
-        toggle-mcp-menu
+        mcp-connected?   (= "connected" conn-status)
+        show-indicator?  (and enabled? has-valid-token?)
+
+        menu-open*       (mf/use-state false)
+        menu-open?       (deref menu-open*)
+
+        toggle-menu
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! mcp-menu-open* not)))
+           (swap! menu-open* not)))
 
-        close-mcp-menu
+        close-menu
         (mf/use-fn
-         #(reset! mcp-menu-open* false))
+         #(reset! menu-open* false))
 
         connect-mcp
         (mf/use-fn
@@ -64,8 +66,8 @@
          :aria-label (tr "workspace.toolbar.mcp")
          :class (stl/css-case :main-toolbar-options-button true
                               :mcp-button true
-                              :selected mcp-menu-open?)
-         :on-click toggle-mcp-menu
+                              :selected menu-open?)
+         :on-click toggle-menu
          :data-tool "mcp"
          :data-testid "mcp-btn"}
         [:span {:class (stl/css-case :mcp-status-dot true
@@ -73,8 +75,8 @@
         [:span {:class (stl/css-case :mcp-button-label true
                                      :connected mcp-connected?)}
          (tr "workspace.toolbar.mcp")]]
-       [:> dropdown-menu* {:show mcp-menu-open?
-                           :on-close close-mcp-menu
+       [:> dropdown-menu* {:show menu-open?
+                           :on-close close-menu
                            :class (stl/css :mcp-menu)}
         (if mcp-connected?
           [:li {:class (stl/css :mcp-menu-info)
