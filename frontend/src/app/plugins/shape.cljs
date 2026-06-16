@@ -361,6 +361,22 @@
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-v value))))))}
 
+           :fixedWhenScrolling
+           {:this true
+            :get #(-> % u/proxy->shape :fixed-scroll boolean)
+            :set
+            (fn [self value]
+              (cond
+                (not (boolean? value))
+                (u/not-valid plugin-id :fixedWhenScrolling value)
+
+                (not (r/check-permission plugin-id "content:write"))
+                (u/not-valid plugin-id :fixedWhenScrolling "Plugin doesn't have 'content:write' permission")
+
+                :else
+                (let [id (obj/get self "$id")]
+                  (st/emit! (dwsh/update-shapes [id] #(assoc % :fixed-scroll value))))))}
+
            :borderRadius
            {:this true
             :get #(-> % u/proxy->shape :r1)
