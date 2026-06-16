@@ -214,6 +214,11 @@ impl State {
     /// invalidated and recalculated to include the new child. This ensures that frames
     /// and groups properly encompass their children.
     pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
+        // Reparent preview during drag is handled by structure modifiers only.
+        if get_render_state().options.is_interactive_transform() {
+            return;
+        }
+
         let Some(shape) = self.current_shape_mut() else {
             panic!("Invalid current shape")
         };
