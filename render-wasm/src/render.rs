@@ -865,8 +865,10 @@ impl RenderState {
             self.surfaces.clear_target(skia::Color::TRANSPARENT);
             self.surfaces.copy_backbuffer_to_target_replace();
         } else {
-            self.surfaces.copy_backbuffer_to_target();
+            self.surfaces
+                .copy_backbuffer_to_target(self.background_color);
         }
+
         if self.options.is_debug_visible() {
             debug::render(self);
         }

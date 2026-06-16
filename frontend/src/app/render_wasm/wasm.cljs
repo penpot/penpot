@@ -62,6 +62,7 @@
        :wrap-type shared/RawWrapType
        :grid-track-type shared/RawGridTrackType
        :shadow-style shared/RawShadowStyle
+       :guide-kind shared/RawGuideKind
        :stroke-style shared/RawStrokeStyle
        :stroke-cap shared/RawStrokeCap
        :shape-type shared/RawShapeType
