@@ -1170,8 +1170,8 @@ export interface Context {
 
   /**
    * Creates a Text shape with the specified text content. Requires `content:write` permission.
-   * @param text The text content for the Text shape.
-   * @return Returns the new created shape, if the shape wasn't created can return null.
+   * @param text The text content for the Text shape. Must be a non-empty string.
+   * @return Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
    *
    * @example
    * ```js

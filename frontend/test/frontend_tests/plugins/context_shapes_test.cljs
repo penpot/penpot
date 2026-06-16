@@ -331,6 +331,10 @@
               (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
               (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
 
+        (t/testing "createText with empty string returns null"
+          (t/is (nil? (.createText context "")))
+          (t/is (some? (.createText context "Hello"))))
+
         (t/testing "Relative properties"
           (let [board (.createBoard context)]
             (set! (.-x board) 100)
