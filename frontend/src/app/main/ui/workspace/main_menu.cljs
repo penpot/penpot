@@ -798,7 +798,7 @@
         mcp-connection (get mcp :connection-status)
         mcp-connected? (= mcp-connection "connected")
 
-        show-enabled?   (and mcp-enabled? (false? mcp-key-expired?))
+        show-enabled?   (and mcp-enabled? (not mcp-key-expired?))
 
         on-nav-to-integrations
         (mf/use-fn
