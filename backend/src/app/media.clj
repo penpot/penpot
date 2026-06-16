@@ -203,7 +203,7 @@
 (defn- generic-process
   [{:keys [input format convert-args] :as params}]
   (let [{:keys [path mtype]} input
-        format (or (cm/mtype->format mtype) format)
+        format (or format (cm/mtype->format mtype))
         ext    (cm/format->extension format)
         tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)
         args   (into [(str path)] (conj (vec convert-args) (str tmp)))]

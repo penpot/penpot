@@ -41,7 +41,8 @@
   [penv k v]
   (.put ^java.util.Map penv
         ^String k
-        ^String v))
+        ^String v)
+  penv)
 
 (defn exec!
   [system & {:keys [cmd in out-enc in-enc env timeout]
@@ -50,8 +51,8 @@
   (assert (vector? cmd) "a command parameter should be a vector")
   (assert (every? string? cmd) "the command should be a vector of strings")
 
-  (let [executor (::wrk/executor system)]
-    (assert (some? executor) "executor is required, check ::wrk/executor")
+  (let [executor (or (::wrk/executor system)
+                     (px/cached-executor))]
 
     (let [builder  (ProcessBuilder. ^List cmd)
           env-map  (.environment ^ProcessBuilder builder)
