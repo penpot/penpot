@@ -107,7 +107,7 @@
         plugins?
         (features/active-feature? @st/state "plugins/runtime")
 
-        mcp?
+        mcp-enabled?
         (contains? cf/flags :mcp)
 
         show-shortcuts
@@ -137,9 +137,9 @@
                         :on-close on-close
                         :class (stl/css-case :base-menu true
                                              :sub-menu true
-                                             :pos-final-5 (not (or plugins? mcp?))
-                                             :pos-final-6 (not= plugins? mcp?)
-                                             :pos-final-7 (and plugins? mcp?))}
+                                             :pos-final-5 (not (or plugins? mcp-enabled?))
+                                             :pos-final-6 (not= plugins? mcp-enabled?)
+                                             :pos-final-7 (and plugins? mcp-enabled?))}
      [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
                               :on-click    nav-to-helpc-center
                               :on-key-down (fn [event]
@@ -787,18 +787,15 @@
 
 (mf/defc mcp-menu*
   {::mf/private true}
-  [{:keys [on-close]}]
-  (let [plugins? (features/active-feature? @st/state "plugins/runtime")
+  [{:keys [on-close mcp]}]
+  (let [plugins-enabled? (features/use-feature "plugins/runtime")
+        has-valid-token? (get mcp :token-valid)
+        enabled?         (get mcp :enabled)
 
-        profile          (mf/deref refs/profile)
-        mcp              (mf/deref refs/mcp)
-        mcp-key-expired? (mf/deref refs/mcp-key-expired?)
+        conn-status      (get mcp :connection-status)
+        connected?       (= conn-status "connected")
 
-        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-        mcp-connection (get mcp :connection-status)
-        mcp-connected? (= mcp-connection "connected")
-
-        show-enabled?   (and mcp-enabled? (not mcp-key-expired?))
+        show-enabled?    (and enabled? has-valid-token?)
 
         on-nav-to-integrations
         (mf/use-fn
@@ -815,8 +812,9 @@
 
         on-toggle-mcp-plugin
         (mf/use-fn
+         (mf/deps connected?)
          (fn []
-           (if mcp-connected?
+           (if connected?
              (st/emit! (mcp/user-disconnect-mcp)
                        (ev/event {::ev/name "disconnect-mcp-plugin"
                                   ::ev/origin "workspace:menu"}))
@@ -833,17 +831,18 @@
     [:> dropdown-menu* {:show true
                         :class (stl/css-case :base-menu true
                                              :sub-menu true
-                                             :pos-5 (not plugins?)
-                                             :pos-6 plugins?)
+                                             :pos-5 (not plugins-enabled?)
+                                             :pos-6 plugins-enabled?)
                         :on-close on-close}
 
-     (when (and show-enabled? (not mcp-key-expired?))
+
+     (when (and show-enabled? has-valid-token?)
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
                                 :on-key-down on-toggle-mcp-plugin-key-down}
         [:span {:class (stl/css :item-name)}
-         (if mcp-connected?
+         (if connected?
            (tr "workspace.header.menu.mcp.plugin.status.disconnect")
            (tr "workspace.header.menu.mcp.plugin.status.connect"))]])
 
@@ -864,6 +863,7 @@
         show-menu?         (deref show-menu*)
         selected-sub-menu* (mf/use-state nil)
         selected-sub-menu  (deref selected-sub-menu*)
+        mcp                (mf/deref refs/mcp)
 
         toggle-menu
         (mf/use-fn
@@ -1055,17 +1055,17 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [mcp              (mf/deref refs/mcp)
-              mcp-key-expired? (mf/deref refs/mcp-key-expired?)
+        (let [enabled?         (get mcp :enabled)
+              conn-status      (get mcp :connection-status)
+              has-valid-token? (get mcp :token-valid)
 
-              mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-              mcp-connection (get mcp :connection-status)
-              mcp-connected? (= mcp-connection "connected")
-              mcp-error?     (= mcp-connection "error")
+              connected?       (= conn-status "connected")
+              error?           (= conn-status "error")
 
-              active?  (and mcp-enabled? mcp-connected?)
-              failed?  (or (and mcp-enabled? mcp-error?)
-                           (true? mcp-key-expired?))]
+
+              active?          (and enabled? connected?)
+              failed?          (or (and enabled? error?)
+                                   (not has-valid-token?))]
 
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
@@ -1140,7 +1140,7 @@
                           :on-close close-sub-menu}]
 
        :mcp
-       [:> mcp-menu* {:on-close close-sub-menu}]
+       [:> mcp-menu* {:on-close close-sub-menu :mcp mcp}]
 
        :help-info
        [:> help-info-menu* {:layout layout
