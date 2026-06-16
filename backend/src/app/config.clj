@@ -127,6 +127,17 @@
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
+
+    ;; ImageMagick resource limits (PENPOT_IMAGEMAGICK_*)
+    [:imagemagick-thread-limit {:optional true} :string]
+    [:imagemagick-memory-limit {:optional true} :string]
+    [:imagemagick-map-limit {:optional true} :string]
+    [:imagemagick-area-limit {:optional true} :string]
+    [:imagemagick-disk-limit {:optional true} :string]
+    [:imagemagick-time-limit {:optional true} :string]
+    [:imagemagick-width-limit {:optional true} :string]
+    [:imagemagick-height-limit {:optional true} :string]
+
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]

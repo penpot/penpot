@@ -18,7 +18,7 @@ if [ -f ./environ ]; then
     source ./environ
 fi
 
-export JAVA_OPTS="-Dim4java.useV7=true -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED --enable-preview $JVM_OPTS $JAVA_OPTS"
+export JAVA_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --sun-misc-unsafe-memory-access=allow --enable-native-access=ALL-UNNAMED --enable-preview $JVM_OPTS $JAVA_OPTS"
 
 ENTRYPOINT=${1:-app.main};
 

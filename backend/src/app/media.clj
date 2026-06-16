@@ -21,6 +21,7 @@
    [app.media.sanitize :as sanitize]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
+   [app.util.shell :as shell]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.shell :as sh]
@@ -34,9 +35,7 @@
    java.io.InputStream
    javax.xml.parsers.SAXParserFactory
    javax.xml.XMLConstants
-   org.apache.commons.io.IOUtils
-   org.im4java.core.ConvertCmd
-   org.im4java.core.IMOperation))
+   org.apache.commons.io.IOUtils))
 
 (def schema:upload
   [:map {:title "Upload"}
@@ -152,16 +151,70 @@
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
+(def ^:private imagemagick-defaults
+  "Default environment variables for ImageMagick resource limits.
+   These are the soft ceiling — policy.xml is the hard ceiling."
+  {"MAGICK_THREAD_LIMIT" "2"
+   "MAGICK_MEMORY_LIMIT" "256MiB"
+   "MAGICK_MAP_LIMIT" "512MiB"
+   "MAGICK_AREA_LIMIT" "128MP"
+   "MAGICK_DISK_LIMIT" "1GiB"
+   "MAGICK_TIME_LIMIT" "30"})
+
+(defn- imagemagick-env
+  "Returns environment variables for ImageMagick commands.
+   Reads individual PENPOT_IMAGEMAGICK_* config values, falling back to defaults."
+  []
+  (cond-> imagemagick-defaults
+    (cf/get :imagemagick-thread-limit)
+    (assoc "MAGICK_THREAD_LIMIT" (cf/get :imagemagick-thread-limit))
+
+    (cf/get :imagemagick-memory-limit)
+    (assoc "MAGICK_MEMORY_LIMIT" (cf/get :imagemagick-memory-limit))
+
+    (cf/get :imagemagick-map-limit)
+    (assoc "MAGICK_MAP_LIMIT" (cf/get :imagemagick-map-limit))
+
+    (cf/get :imagemagick-area-limit)
+    (assoc "MAGICK_AREA_LIMIT" (cf/get :imagemagick-area-limit))
+
+    (cf/get :imagemagick-disk-limit)
+    (assoc "MAGICK_DISK_LIMIT" (cf/get :imagemagick-disk-limit))
+
+    (cf/get :imagemagick-time-limit)
+    (assoc "MAGICK_TIME_LIMIT" (cf/get :imagemagick-time-limit))
+
+    (cf/get :imagemagick-width-limit)
+    (assoc "MAGICK_WIDTH_LIMIT" (cf/get :imagemagick-width-limit))
+
+    (cf/get :imagemagick-height-limit)
+    (assoc "MAGICK_HEIGHT_LIMIT" (cf/get :imagemagick-height-limit))))
+
+(defn- exec-magick!
+  "Execute an ImageMagick command with resource limits.
+   `args` is a vector of string arguments to pass to `magick`."
+  [system args]
+  (let [cmd    (into ["magick"] args)
+        result (shell/exec! system
+                            :cmd cmd
+                            :env (imagemagick-env)
+                            :timeout 60)]
+    (when (not= 0 (:exit result))
+      (ex/raise :type :internal
+                :code :imagemagick-error
+                :hint (str "ImageMagick command failed: " (:err result))
+                :cmd cmd
+                :exit (:exit result)))
+    result))
+
 (defn- generic-process
-  [{:keys [input format operation] :as params}]
+  [{:keys [input format convert-args] :as params}]
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)
-        tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)]
-
-    (doto (ConvertCmd.)
-      (.run operation (into-array (map str [path tmp]))))
-
+        tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)
+        args   (into [(str path)] (conj (vec convert-args) (str tmp)))]
+    (exec-magick! nil args)
     (assoc params
            :format format
            :mtype  (cm/format->mtype format)
@@ -171,36 +224,24 @@
 (defmethod process :generic-thumbnail
   [params]
   (let [{:keys [quality width height] :as params}
-        (check-thumbnail-params params)
-
-        operation
-        (doto (IMOperation.)
-          (.addImage)
-          (.autoOrient)
-          (.strip)
-          (.thumbnail ^Integer (int width) ^Integer (int height) ">")
-          (.quality (double quality))
-          (.addImage))]
-
-    (generic-process (assoc params :operation operation))))
+        (check-thumbnail-params params)]
+    (generic-process
+     (assoc params
+            :convert-args ["-auto-orient" "-strip"
+                           "-thumbnail" (str width "x" height ">")
+                           "-quality" (str quality)]))))
 
 (defmethod process :profile-thumbnail
   [params]
   (let [{:keys [quality width height] :as params}
-        (check-thumbnail-params params)
-
-        operation
-        (doto (IMOperation.)
-          (.addImage)
-          (.autoOrient)
-          (.strip)
-          (.thumbnail ^Integer (int width) ^Integer (int height) "^")
-          (.gravity "center")
-          (.extent (int width) (int height))
-          (.quality (double quality))
-          (.addImage))]
-
-    (generic-process (assoc params :operation operation))))
+        (check-thumbnail-params params)]
+    (generic-process
+     (assoc params
+            :convert-args ["-auto-orient" "-strip"
+                           "-thumbnail" (str width "x" height "^")
+                           "-gravity" "center"
+                           "-extent" (str width "x" height)
+                           "-quality" (str quality)]))))
 
 (defn get-basic-info-from-svg
   [{:keys [tag attrs] :as data}]
@@ -233,8 +274,8 @@
 (defn- get-dimensions-with-orientation [^String path]
   ;; Image magick doesn't give info about exif rotation so we use the identify command
   ;; If we are processing an animated gif we use the first frame with -scene 0
-  (let [dim-result (sh/sh "identify" "-format" "%w %h\n" path)
-        orient-result (sh/sh "identify" "-format" "%[EXIF:Orientation]\n" path)]
+  (let [dim-result    (exec-magick! nil ["identify" "-format" "%w %h\n" path])
+        orient-result (exec-magick! nil ["identify" "-format" "%[EXIF:Orientation]\n" path])]
     (when (= 0 (:exit dim-result))
       (let [[w h] (-> (:out dim-result)
                       str/trim
@@ -260,7 +301,7 @@
         (merge input info {:ts (ct/now) :size (fs/size path)}))
 
       (let [path-str      (str path)
-            identify-res  (sh/sh "identify" "-format" "image/%[magick]\n" path-str)
+            identify-res  (exec-magick! nil ["identify" "-format" "image/%[magick]\n" path-str])
             ;; identify prints one line per frame (animated GIFs, etc.); we take the first one
             mtype'        (if (zero? (:exit identify-res))
                             (-> identify-res
@@ -290,13 +331,6 @@
                :height height
                :size (fs/size path)
                :ts (ct/now))))))
-
-(defmethod process-error org.im4java.core.InfoException
-  [error]
-  (ex/raise :type :validation
-            :code :invalid-image
-            :hint "invalid image"
-            :cause error))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE HELPERS
