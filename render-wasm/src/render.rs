@@ -236,20 +236,20 @@ impl NodeRenderState {
 #[derive(Clone)]
 pub struct FocusMode {
     shapes: Vec<Uuid>,
-    active: bool,
+    depth: u32,
 }
 
 impl FocusMode {
     pub fn new() -> Self {
         FocusMode {
             shapes: Vec::new(),
-            active: false,
+            depth: 0,
         }
     }
 
     pub fn clear(&mut self) {
         self.shapes.clear();
-        self.active = false;
+        self.depth = 0;
     }
 
     pub fn set_shapes(&mut self, shapes: Vec<Uuid>) {
@@ -263,23 +263,23 @@ impl FocusMode {
     }
 
     pub fn enter(&mut self, id: &Uuid) {
-        if !self.active && self.should_focus(id) {
-            self.active = true;
+        if self.should_focus(id) {
+            self.depth += 1;
         }
     }
 
     pub fn exit(&mut self, id: &Uuid) {
-        if self.active && self.should_focus(id) {
-            self.active = false;
+        if self.should_focus(id) && self.depth > 0 {
+            self.depth -= 1;
         }
     }
 
     pub fn is_active(&self) -> bool {
-        self.active
+        self.depth > 0
     }
 
     pub fn reset(&mut self) {
-        self.active = false;
+        self.depth = 0;
     }
 }
 
@@ -2606,8 +2606,6 @@ impl RenderState {
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             self.surfaces.canvas(target_surface).save_layer(&layer_rec);
         }
-
-        self.focus_mode.enter(&element.id);
     }
 
     #[inline]
