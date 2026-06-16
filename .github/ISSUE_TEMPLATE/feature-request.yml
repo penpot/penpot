@@ -1,9 +1,7 @@
 description: Suggest an idea for this project.
 labels: ["needs triage"]
 name: "Feature request"
-title: "feature: "
 type: Enhancement
-projects: ["penpot/8"]
 
 body:
   - type: markdown
