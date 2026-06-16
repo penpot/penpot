@@ -48,6 +48,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :children
     :exports          :shape
@@ -61,6 +62,7 @@
     :fill             :children
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :children
     :text             :children
     :exports          :shape
@@ -74,6 +76,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -87,6 +90,7 @@
     :fill             :text
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :text
     :exports          :shape
@@ -100,6 +104,7 @@
     :fill             :ignore
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :ignore
     :text             :ignore
     :exports          :shape
@@ -113,6 +118,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -126,6 +132,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -139,6 +146,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -152,6 +160,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape

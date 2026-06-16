@@ -190,7 +190,6 @@
 
           (t/testing " - blur"
             (set! (.-blur shape) #js {:value 10})
-            (t/is (= (-> (. shape -blur) (aget "type")) "layer-blur"))
             (t/is (= (-> (. shape -blur) (aget "value")) 10))
             (t/is (= (-> (. shape -blur) (aget "hidden")) false))
             (let [id (-> (. shape -blur) (aget "id") uuid/uuid)]

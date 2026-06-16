@@ -649,10 +649,7 @@ impl RenderState {
         {
             return;
         }
-        let blur = match shape
-            .blur
-            .filter(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
-        {
+        let blur = match shape.visible_background_blur() {
             Some(blur) => blur,
             None => return,
         };
@@ -1208,6 +1205,7 @@ impl RenderState {
             && parent_shadows.is_none()
             && !shape.needs_layer()
             && shape.blur.is_none()
+            && shape.background_blur.is_none()
             && !has_inherited_blur
             && shape.shadows.is_empty()
             && shape.transform.is_identity()
@@ -1317,20 +1315,9 @@ impl RenderState {
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
 
-        // Remove background blur from the shape so it doesn't get processed
-        // as a layer blur. The actual rendering is done before the save_layer
-        // in render_background_blur() so it's independent of shape opacity.
-        if !skip_effects
-            && apply_to_current_surface
-            && fills_surface_id == SurfaceId::Fills
-            && !matches!(shape.shape_type, Type::Text(_))
-            && !matches!(shape.shape_type, Type::SVGRaw(_))
-            && shape
-                .blur
-                .is_some_and(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
-        {
-            shape.to_mut().set_blur(None);
-        }
+        // Background blur is stored separately (shape.background_blur) and is
+        // rendered before the save_layer in render_background_blur(), so here
+        // shape.blur only ever holds a layer blur.
 
         let frame_has_blur = Self::frame_clip_layer_blur(&shape).is_some();
         let shape_has_blur = shape.blur.is_some();
@@ -2838,6 +2825,7 @@ impl RenderState {
 
         plain_shape_mut.clear_shadows();
         plain_shape_mut.blur = None;
+        plain_shape_mut.background_blur = None;
 
         // Shadow rendering uses a single render_shape call with no render_shape_exit,
         // so strokes must be drawn here. Disable clip_content to avoid skip_strokes
@@ -3641,10 +3629,8 @@ impl RenderState {
                 // assigned to this tile) because the blur snapshots Current
                 // which must contain the shapes behind it.
                 let tile_has_bg_blur = ids.iter().any(|id| {
-                    tree.get(id).is_some_and(|s| {
-                        s.blur
-                            .is_some_and(|b| !b.hidden && b.blur_type == BlurType::BackgroundBlur)
-                    })
+                    tree.get(id)
+                        .is_some_and(|s| s.visible_background_blur().is_some())
                 });
 
                 // We only need first level shapes, in the same order as the parent node.

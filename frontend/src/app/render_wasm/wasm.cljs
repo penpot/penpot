@@ -45,7 +45,6 @@
   (set! context-initialized? false)
   (reset! context-lost? false))
 
-
 (defonce serializers
   #js {:blur-type shared/RawBlurType
        :blend-mode shared/RawBlendMode
