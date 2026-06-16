@@ -459,12 +459,11 @@
                        (mbc/event :mcp/enable {})
                        (mbc/event :mcp/disable {})))))
 
-        handle-generate-mcp-token
+        handle-open-modal-generate
         (mf/use-fn
          #(st/emit! (modal/show {:type :generate-mcp-token})))
 
-        ;; TODO: rename
-        handle-regenerate-mcp-token
+        handle-open-modal-regenerate
         (mf/use-fn
          #(st/emit! (modal/show {:type :regenerate-mcp-token})))
 
@@ -538,11 +537,11 @@
 
         (when-not token
           [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-generate-mcp-token}])
+                 :on-click handle-open-modal-generate}])
 
         (when (and token (not token-valid?))
           [:div {:class (stl/css :mcp-server-switch-cover)
-                 :on-click handle-regenerate-mcp-token}])]]]
+                 :on-click handle-open-modal-regenerate}])]]]
 
      (when (some? token)
        [:div {:class (stl/css :mcp-server-key)}
@@ -555,7 +554,7 @@
          [:div {:class (stl/css :mcp-server-regenerate)}
           [:> button* {:variant "primary"
                        :class (stl/css :fit-content)
-                       :on-click handle-regenerate-mcp-token}
+                       :on-click handle-open-modal-regenerate}
            (tr "integrations.mcp-server.mcp-keys.regenerate")]
           [:> tooltip* {:content (tr "integrations.mcp-server.mcp-keys.tootip")
                         :id tooltip-id}
