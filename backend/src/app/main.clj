@@ -38,7 +38,6 @@
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
-   [app.svgo :as-alias svgo]
    [app.util.cron]
    [app.worker :as-alias wrk]
    [app.worker.executor]
