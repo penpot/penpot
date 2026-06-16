@@ -90,7 +90,6 @@
     upload))
 
 (defmulti process (fn [_system params] (:cmd params)))
-(defmulti process-error class)
 
 (defmethod process :default
   [_system {:keys [cmd] :as params}]
@@ -98,16 +97,9 @@
             :code :not-implemented
             :hint (str/fmt "No impl found for process cmd: %s" cmd)))
 
-(defmethod process-error :default
-  [error]
-  (throw error))
-
 (defn run
   [system params]
-  (try
-    (process system params)
-    (catch Throwable e
-      (process-error e))))
+  (process system params))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG PARSING

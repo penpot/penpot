@@ -321,7 +321,7 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
-    :app.nitrate/client (ig/ref :app.nitrate/client)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::wrk/executor       (ig/ref ::wrk/executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
@@ -357,7 +357,7 @@
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
-    :app.nitrate/client (ig/ref :app.nitrate/client)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
