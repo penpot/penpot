@@ -970,7 +970,8 @@ impl RenderState {
 
         // Viewer masked passes render a partial scene. Reusing the tile texture cache would
         // SrcOver-blend onto textures from the previous pass and leak pixels into the blob.
-        if self.viewer_masked_pass() {
+        // `render_sync_shape` (viewer/thumbnails) uses the same direct backbuffer path.
+        if self.viewer_masked_pass() || self.viewer_render_root.is_some() {
             // Use viewbox-aligned bounds (not grid-snapped) to match interactive-transform
             // compositing and avoid a visible offset vs the DOM canvas.
             let tile_rect = self.get_current_tile_bounds()?;
