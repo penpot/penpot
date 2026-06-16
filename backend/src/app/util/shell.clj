@@ -15,8 +15,8 @@
   (:import
    java.io.InputStream
    java.io.OutputStream
-   java.util.List
    java.util.concurrent.TimeUnit
+   java.util.List
    org.apache.commons.io.IOUtils))
 
 (set! *warn-on-reflection* true)
@@ -51,39 +51,38 @@
   (assert (vector? cmd) "a command parameter should be a vector")
   (assert (every? string? cmd) "the command should be a vector of strings")
 
-  (let [executor (or (::wrk/executor system)
-                     (px/cached-executor))]
+  (let [executor (::wrk/executor system)
+        _        (assert (some? executor) "executor is required, check ::wrk/executor")
+        builder  (ProcessBuilder. ^List cmd)
+        env-map  (.environment ^ProcessBuilder builder)
+        _        (reduce-kv set-env env-map env)
+        process  (.start builder)]
 
-    (let [builder  (ProcessBuilder. ^List cmd)
-          env-map  (.environment ^ProcessBuilder builder)
-          _        (reduce-kv set-env env-map env)
-          process  (.start builder)]
+    (if in
+      (px/run! executor
+               (fn []
+                 (with-open [^OutputStream stdin (.getOutputStream ^Process process)]
+                   (io/write stdin in :encoding in-enc))))
+      (io/close (.getOutputStream ^Process process)))
 
-      (if in
-        (px/run! executor
-                 (fn []
-                   (with-open [^OutputStream stdin (.getOutputStream ^Process process)]
-                     (io/write stdin in :encoding in-enc))))
-        (io/close (.getOutputStream ^Process process)))
-
-      (with-open [stdout (.getInputStream ^Process process)
-                  stderr (.getErrorStream ^Process process)]
-        (let [out (px/submit! executor (fn [] (try (read-with-enc stdout out-enc)
-                                                   (catch java.io.IOException _ ""))))
-              err (px/submit! executor (fn [] (try (read-as-string stderr)
-                                                   (catch java.io.IOException _ ""))))
-              ext (if timeout
-                    (let [completed (.waitFor ^Process process (long timeout) TimeUnit/SECONDS)]
-                      (if completed
-                        (.exitValue ^Process process)
-                        (do
-                          (.destroyForcibly ^Process process)
-                          (ex/raise :type :internal
-                                    :code :process-timeout
-                                    :hint (str "process timed out after " timeout " seconds")
-                                    :cmd cmd
-                                    :timeout timeout))))
-                    (.waitFor ^Process process))]
-          {:exit ext
-           :out @out
-           :err @err})))))
+    (with-open [stdout (.getInputStream ^Process process)
+                stderr (.getErrorStream ^Process process)]
+      (let [out (px/submit! executor (fn [] (try (read-with-enc stdout out-enc)
+                                                 (catch java.io.IOException _ ""))))
+            err (px/submit! executor (fn [] (try (read-as-string stderr)
+                                                 (catch java.io.IOException _ ""))))
+            ext (if timeout
+                  (let [completed (.waitFor ^Process process (long timeout) TimeUnit/SECONDS)]
+                    (if completed
+                      (.exitValue ^Process process)
+                      (do
+                        (.destroyForcibly ^Process process)
+                        (ex/raise :type :internal
+                                  :code :process-timeout
+                                  :hint (str "process timed out after " timeout " seconds")
+                                  :cmd cmd
+                                  :timeout timeout))))
+                  (.waitFor ^Process process))]
+        {:exit ext
+         :out @out
+         :err @err}))))

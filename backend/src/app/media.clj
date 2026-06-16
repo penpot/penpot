@@ -89,11 +89,11 @@
                                 max-size)))
     upload))
 
-(defmulti process :cmd)
+(defmulti process (fn [_system params] (:cmd params)))
 (defmulti process-error class)
 
 (defmethod process :default
-  [{:keys [cmd] :as params}]
+  [_system {:keys [cmd] :as params}]
   (ex/raise :type :internal
             :code :not-implemented
             :hint (str/fmt "No impl found for process cmd: %s" cmd)))
@@ -103,9 +103,9 @@
   (throw error))
 
 (defn run
-  [params]
+  [system params]
   (try
-    (process params)
+    (process system params)
     (catch Throwable e
       (process-error e))))
 
@@ -201,13 +201,13 @@
     result))
 
 (defn- generic-process
-  [{:keys [input format convert-args] :as params}]
+  [system {:keys [input format convert-args] :as params}]
   (let [{:keys [path mtype]} input
         format (or format (cm/mtype->format mtype))
         ext    (cm/format->extension format)
         tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)
         args   (into [(str path)] (conj (vec convert-args) (str tmp)))]
-    (exec-magick! nil args)
+    (exec-magick! system args)
     (assoc params
            :format format
            :mtype  (cm/format->mtype format)
@@ -215,26 +215,26 @@
            :data   tmp)))
 
 (defmethod process :generic-thumbnail
-  [params]
+  [system params]
   (let [{:keys [quality width height] :as params}
         (check-thumbnail-params params)]
-    (generic-process
-     (assoc params
-            :convert-args ["-auto-orient" "-strip"
-                           "-thumbnail" (str width "x" height ">")
-                           "-quality" (str quality)]))))
+    (generic-process system
+                     (assoc params
+                            :convert-args ["-auto-orient" "-strip"
+                                           "-thumbnail" (str width "x" height ">")
+                                           "-quality" (str quality)]))))
 
 (defmethod process :profile-thumbnail
-  [params]
+  [system params]
   (let [{:keys [quality width height] :as params}
         (check-thumbnail-params params)]
-    (generic-process
-     (assoc params
-            :convert-args ["-auto-orient" "-strip"
-                           "-thumbnail" (str width "x" height "^")
-                           "-gravity" "center"
-                           "-extent" (str width "x" height)
-                           "-quality" (str quality)]))))
+    (generic-process system
+                     (assoc params
+                            :convert-args ["-auto-orient" "-strip"
+                                           "-thumbnail" (str width "x" height "^")
+                                           "-gravity" "center"
+                                           "-extent" (str width "x" height)
+                                           "-quality" (str quality)]))))
 
 (defn get-basic-info-from-svg
   [{:keys [tag attrs] :as data}]
@@ -264,11 +264,11 @@
                  {:width (int width)
                   :height (int height)})))]))
 
-(defn- get-dimensions-with-orientation [^String path]
+(defn- get-dimensions-with-orientation [system ^String path]
   ;; Image magick doesn't give info about exif rotation so we use the identify command
   ;; If we are processing an animated gif we use the first frame with -scene 0
-  (let [dim-result    (exec-magick! nil ["identify" "-format" "%w %h\n" path])
-        orient-result (exec-magick! nil ["identify" "-format" "%[EXIF:Orientation]\n" path])]
+  (let [dim-result    (exec-magick! system ["identify" "-format" "%w %h\n" path])
+        orient-result (exec-magick! system ["identify" "-format" "%[EXIF:Orientation]\n" path])]
     (when (= 0 (:exit dim-result))
       (let [[w h] (-> (:out dim-result)
                       str/trim
@@ -283,7 +283,7 @@
           {:width w :height h})))))        ; If orientation can't be read, use dimensions as-is
 
 (defmethod process :info
-  [{:keys [input] :as params}]
+  [system {:keys [input] :as params}]
   (let [{:keys [path mtype] :as input} (check-input input)]
     (if (= mtype "image/svg+xml")
       (let [info (some-> path slurp parse-svg get-basic-info-from-svg)]
@@ -294,7 +294,7 @@
         (merge input info {:ts (ct/now) :size (fs/size path)}))
 
       (let [path-str      (str path)
-            identify-res  (exec-magick! nil ["identify" "-format" "image/%[magick]\n" path-str])
+            identify-res  (exec-magick! system ["identify" "-format" "image/%[magick]\n" path-str])
             ;; identify prints one line per frame (animated GIFs, etc.); we take the first one
             mtype'        (if (zero? (:exit identify-res))
                             (-> identify-res
@@ -307,7 +307,7 @@
                                       :code :invalid-image
                                       :hint "invalid image"))
             {:keys [width height]}
-            (or (get-dimensions-with-orientation path-str)
+            (or (get-dimensions-with-orientation system path-str)
                 (do
                   (l/warn "Failed to read image dimensions with orientation" {:path path})
                   (ex/raise :type :validation
@@ -398,7 +398,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod process :generate-fonts
-  [{:keys [input] :as params}]
+  [_system {:keys [input] :as params}]
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".otf"))
