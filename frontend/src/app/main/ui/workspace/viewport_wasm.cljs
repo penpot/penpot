@@ -117,6 +117,44 @@
       (uuid? outlined-frame-id) (conj outlined-frame-id)
       (uuid? edition) (disj edition))))
 
+(mf/defc transition-overlay*
+  "Frozen-frame overlay shown while switching pages or recovering from WebGL
+   context loss. `image` is either an `ImageBitmap` snapshot of the canvas or
+   a data-url string placeholder (initial load)."
+  [{:keys [image clip-path]}]
+  (let [canvas-ref (mf/use-ref nil)
+        bitmap?    (not (string? image))]
+    (mf/with-effect [image]
+      (when bitmap?
+        (when-let [canvas (mf/ref-val canvas-ref)]
+          ;; A closed ImageBitmap reports zero size; skip instead of throwing.
+          (when (pos? (.-width ^js image))
+            (set! (.-width ^js canvas) (.-width ^js image))
+            (set! (.-height ^js canvas) (.-height ^js image))
+            (let [ctx (.getContext ^js canvas "2d")]
+              (.drawImage ^js ctx image 0 0))))))
+    (if bitmap?
+      ;; Full-bleed so the snapshot overlays the canvas 1:1.
+      [:canvas {:data-testid "canvas-wasm-transition"
+                :ref canvas-ref
+                :style {:position "absolute"
+                        :inset 0
+                        :width "100%"
+                        :height "100%"
+                        :object-fit "cover"
+                        :pointer-events "none"
+                        :clip-path clip-path}}]
+      [:img {:data-testid "canvas-wasm-transition"
+             :src image
+             :draggable false
+             :style {:position "absolute"
+                     :inset 0
+                     :width "100%"
+                     :height "100%"
+                     :object-fit "cover"
+                     :pointer-events "none"
+                     :clip-path clip-path}}])))
+
 (mf/defc viewport*
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
@@ -393,7 +431,7 @@
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))
         shapes-loading? (mf/deref wasm.api/shapes-loading?)
-        transition-image-url (mf/deref wasm.api/transition-image-url*)]
+        transition-image (mf/deref wasm.api/transition-image*)]
 
     ;; NOTE: We need this page-id dependency to react to it and reset the
     ;;       canvas, even though we are not using `page-id` inside the hook.
@@ -618,25 +656,16 @@
 
      ;; Show the transition image when switching pages or recovering from WebGL context loss.
      (when (and (or page-transition? context-loss-overlay?)
-                (some? transition-image-url))
-       (let [src transition-image-url]
-         [:img {:data-testid "canvas-wasm-transition"
-                :src src
-                :draggable false
-                ;; Full-bleed so the snapshot overlays the canvas 1:1.
-                :style {:position "absolute"
-                        :inset 0
-                        :width "100%"
-                        :height "100%"
-                        :object-fit "cover"
-                        :pointer-events "none"
-                        ;; Initial load: clip to the live canvas frame (rounded
-                        ;; corner + ruler strips when present) so it shows
-                        ;; through. No frame in hide-UI mode -> no clip.
-                        :clip-path (when (and transition-reveal-rulers? frame-visible?)
-                                     (let [strip (if show-rulers? rulers/ruler-area-size 0)]
-                                       (dm/str "inset(" strip "px 0 0 " strip "px round "
-                                               rulers/canvas-border-radius "px)")))}}]))
+                (some? transition-image))
+       [:> transition-overlay*
+        {:image transition-image
+         ;; Initial load: clip to the live canvas frame (rounded
+         ;; corner + ruler strips when present) so it shows
+         ;; through. No frame in hide-UI mode -> no clip.
+         :clip-path (when (and transition-reveal-rulers? frame-visible?)
+                      (let [strip (if show-rulers? rulers/ruler-area-size 0)]
+                        (dm/str "inset(" strip "px 0 0 " strip "px round "
+                                rulers/canvas-border-radius "px)")))}])
 
 
      [:svg.viewport-controls
