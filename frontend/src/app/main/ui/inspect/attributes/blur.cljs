@@ -52,7 +52,7 @@
             [:div {:class (stl/css :blur-row)
                    :key (dm/str "block-" (:id shape) "-blur")}
              (when background-blur
-               [:*
+               [:div {:key (dm/str "block-" (:id shape) "-background-blur")}
                 [:div {:class (stl/css :global/attr-label)}
                  "Backdrop Filter"]
                 [:div {:class (stl/css :global/attr-value)}
@@ -60,7 +60,7 @@
                   [:div {:class (stl/css :button-children)}
                    (css/get-css-value objects shape :backdrop-filter)]]]])
              (when layer-blur
-               [:*
+               [:div {:key (dm/str "block-" (:id shape) "-layer-blur")}
                 [:div {:class (stl/css :global/attr-label)}
                  "Filter"]
                 [:div {:class (stl/css :global/attr-value)}

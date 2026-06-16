@@ -26,7 +26,7 @@
             background-blur-value (css/get-css-value objects shape background-blur-property)
             background-blur-property-name (cmm/get-css-rule-humanized background-blur-property)
             background-blur-property-value (css/get-css-property objects shape background-blur-property)]
-        [:*
+        [:div
          (when blur-property-value
            [:> properties-row* {:key (dm/str "blur-property-" blur-property)
                                 :term blur-property-name
