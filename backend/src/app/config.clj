@@ -241,7 +241,6 @@
     [:assets-path {:optional true} :string]
 
     [:netty-io-threads {:optional true} ::sm/int]
-    [:executor-threads {:optional true} ::sm/int]
 
     [:nitrate-backend-uri {:optional true} ::sm/uri]
 

@@ -162,8 +162,8 @@
    ::wrk/netty-io-executor
    {:threads (cf/get :netty-io-threads)}
 
-   ::wrk/netty-executor
-   {:threads (cf/get :executor-threads)}
+   ::wrk/executor
+   {}
 
    :app.migrations/migrations
    {::db/pool (ig/ref ::db/pool)}
@@ -178,9 +178,6 @@
    {::rds/uri
     (cf/get :redis-uri)
 
-    ::wrk/netty-executor
-    (ig/ref ::wrk/netty-executor)
-
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
 
@@ -189,12 +186,12 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::mbus/msgbus
-   {::wrk/executor (ig/ref ::wrk/netty-executor)
+   {::wrk/executor (ig/ref ::wrk/executor)
     ::rds/client   (ig/ref ::rds/client)
     ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    :app.storage.tmp/cleaner
-   {::wrk/executor (ig/ref ::wrk/netty-executor)}
+   {::wrk/executor (ig/ref ::wrk/executor)}
 
    ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
@@ -308,12 +305,12 @@
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::climit/config      (cf/get :rpc-climit-config)
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/netty-executor)
+   {::wrk/executor (ig/ref ::wrk/executor)
 
     :app.loggers.mattermost/reporter
     (ig/ref :app.loggers.mattermost/reporter)
@@ -326,7 +323,7 @@
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     :app.nitrate/client (ig/ref :app.nitrate/client)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
     ::sto/storage        (ig/ref ::sto/storage)
@@ -356,7 +353,7 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::session/manager    (ig/ref ::session/manager)
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
