@@ -128,6 +128,8 @@ COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
 COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
 
+COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
+
 ARG BUNDLE_PATH="./bundle-backend/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/backend/
 
