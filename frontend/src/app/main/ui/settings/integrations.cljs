@@ -626,20 +626,20 @@
       (tr "integrations.access-tokens.create")]
 
      (if access-tokens
-       [:div {:class (stl/css :frame)}
-        [:> text* {:as "div"
-                   :typography t/body-medium
-                   :class (stl/css :color-secondary :text-center)}
-         [:div (tr "integrations.access-tokens.empty.no-access-tokens")]
-         [:div (tr "integrations.access-tokens.empty.add-one")]]]
-
        [:div {:class (stl/css :list)}
         (for [{:keys [id] :as token} access-tokens]
           [:> token-item* {:key (dm/str id)
                            :name (:name token)
                            :expires-at (:expires-at token)
                            ;; TODO: this partial
-                           :on-delete (partial handle-delete id)}])])]))
+                           :on-delete (partial handle-delete id)}])]
+
+       [:div {:class (stl/css :frame)}
+        [:> text* {:as "div"
+                   :typography t/body-medium
+                   :class (stl/css :color-secondary :text-center)}
+         [:div (tr "integrations.access-tokens.empty.no-access-tokens")]
+         [:div (tr "integrations.access-tokens.empty.add-one")]]])]))
 
 (mf/defc integrations-page*
   []
