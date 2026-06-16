@@ -17,7 +17,7 @@
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^5.11.1",
-    "playwright": "^1.60.0",
+    "playwright": "^1.61.0",
     "raw-body": "^3.0.2",
     "source-map-support": "^0.5.21",
     "@penpot/svgo": "penpot/svgo#3.3.0",
