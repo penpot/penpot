@@ -87,12 +87,12 @@
    value map))
 
 (defn gen-all-code
-  [style-code markup-code images-data]
+  [style-code markup-code images-data fonts-data]
   (let [markup-code (cond-> markup-code
                       embed-images? (replace-map images-data))
 
         style-code (cond-> style-code
-                     embed-images? (replace-map images-data))]
+                     embed-images? (replace-map (merge images-data fonts-data)))]
     (str/format page-template style-code markup-code)))
 
 (mf/defc code*
@@ -101,11 +101,13 @@
         markup-type*   (mf/use-state "html")
         fontfaces-css* (mf/use-state nil)
         images-data*   (mf/use-state nil)
+        fonts-data*    (mf/use-state nil)
 
         style-type     (deref style-type*)
         markup-type    (deref markup-type*)
         fontfaces-css  (deref fontfaces-css*)
         images-data    (deref images-data*)
+        fonts-data     (deref fonts-data*)
 
         collapsed*        (mf/use-state #{})
         collapsed-css?    (contains? @collapsed* :css)
@@ -199,9 +201,9 @@
 
         handle-copy-all-code
         (mf/use-fn
-         (mf/deps style-code markup-code images-data)
+         (mf/deps style-code markup-code images-data fonts-data)
          (fn []
-           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data))
+           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data fonts-data))
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
@@ -228,8 +230,8 @@
                         (conj collapsed panel-type)))))))
         copy-css-fn
         (mf/use-fn
-         (mf/deps style-code images-data)
-         #(replace-map style-code images-data))
+         (mf/deps style-code images-data fonts-data)
+         #(replace-map style-code (merge images-data fonts-data)))
 
         copy-html-fn
         (mf/use-fn
@@ -244,6 +246,20 @@
             (fn [result]
               (let [css (str/join "\n" result)]
                 (reset! fontfaces-css* css))))))
+
+    ;; Resolve the font URLs to data URIs. The inspect view keeps the original
+    ;; URLs (more readable), but copying embeds the fonts so the styles render
+    ;; outside of Penpot, where the original URLs require auth/CORS.
+    (mf/with-effect [fontfaces-css]
+      (->> (rx/from (fonts/extract-fontface-urls (or fontfaces-css "")))
+           (rx/merge-map
+            (fn [uri]
+              (->> (http/fetch-data-uri uri true)
+                   (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
+           (rx/reduce conj {})
+           (rx/subs!
+            (fn [result]
+              (reset! fonts-data* result)))))
 
     (mf/with-effect [images-urls]
       (->> (rx/from images-urls)
