@@ -301,14 +301,14 @@
               org))
           orgs)))
 
-(defn- delete-owned-orgs-api
+(defn- cleanup-deleted-penpot-user-api
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/users/"
                              profile-id
-                             "/delete-owned-organizations")
+                             "/cleanup-after-deletion")
                         nil params)))
 
 (defn- set-team-org-api
@@ -350,16 +350,6 @@
                              "/api/organizations/"
                              organization-id
                              "/remove-user")
-                        nil params)))
-
-(defn- remove-profile-from-all-orgs-api
-  [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/remove-organizations")
                         nil params)))
 
 (defn- remove-team-from-org-api
@@ -469,10 +459,9 @@
      :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
      :get-org-members              (partial get-org-members-api cfg)
-     :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
+     :cleanup-deleted-penpot-user  (partial cleanup-deleted-penpot-user-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
-     :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)

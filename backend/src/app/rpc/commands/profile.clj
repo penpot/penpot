@@ -496,10 +496,11 @@
     ;; (during delete-owned-orgs) and ::notify-organization-deletion.
     ;; Both preserve org teams unchanged and only prefix or delete
     ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; Let Nitrate clean up the data associated with the deleted Penpot user:
+    ;; owned organizations, remaining memberships, and subscription cancellation.
     (when (contains? cf/flags :nitrate)
-      (nitrate/call cfg :delete-owned-orgs {:profile-id profile-id})
-      ;; Remove the user from any remaining org memberships.
-      (nitrate/call cfg :remove-profile-from-all-orgs {:profile-id profile-id}))
+      (nitrate/call cfg :cleanup-deleted-penpot-user
+                    {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
     (wrk/submit! {::db/conn conn
