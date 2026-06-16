@@ -355,7 +355,7 @@
 (mf/defc token-item*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [name expires-at on-delete]}]
+  [{:keys [id name expires-at on-delete]}]
   (let [expires-txt (some-> expires-at (ct/format-inst "PPP"))
         expired?    (and (some? expires-at) (> (ct/now) expires-at))
 
@@ -370,18 +370,23 @@
         (mf/use-fn
          #(reset! menu-open* (not menu-open?)))
 
+        handle-delete
+        (mf/use-fn
+         (mf/deps on-delete id)
+         #(on-delete id))
+
         handle-open-confirm-modal
         (mf/use-fn
-         (mf/deps on-delete)
+         (mf/deps handle-delete)
          (fn []
            (st/emit! (modal/show {:type :confirm
                                   :title (tr "integrations.delete-token.title")
                                   :message (tr "integrations.delete-token.message")
                                   :accept-label (tr "integrations.delete-token.accept")
-                                  :on-accept on-delete}))))
+                                  :on-accept handle-delete}))))
 
         options
-        (mf/with-memo [on-delete]
+        (mf/with-memo [handle-delete]
           [{:name    (tr "labels.delete")
             :id      "token-delete"
             :handler handle-open-confirm-modal}])]
@@ -469,9 +474,8 @@
 
         handle-delete
         (mf/use-fn
-         (mf/deps token)
-         (fn []
-           (let [params {:id (:id token)}
+         (fn [id]
+           (let [params {:id id}
                  mdata  {:on-success #(st/emit! (du/fetch-access-tokens))}]
              (st/emit! (du/delete-access-token (with-meta params mdata))
                        (du/update-profile-props {:mcp-enabled false})
@@ -563,6 +567,7 @@
 
          [:div {:class (stl/css :list)}
           [:> token-item* {:key (:id token)
+                           :id (:id token)
                            :name (:name token)
                            :expires-at (:expires-at token)
                            :on-delete handle-delete}]]]])
@@ -628,10 +633,10 @@
        [:div {:class (stl/css :list)}
         (for [{:keys [id] :as token} access-tokens]
           [:> token-item* {:key (dm/str id)
+                           :id id
                            :name (:name token)
                            :expires-at (:expires-at token)
-                           ;; TODO: this partial
-                           :on-delete (partial handle-delete id)}])]
+                           :on-delete handle-delete}])]
 
        [:div {:class (stl/css :frame)}
         [:> text* {:as "div"
