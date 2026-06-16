@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-09 16:01+0000\n"
+"PO-Revision-Date: 2026-06-16 13:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.6\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -8914,3 +8914,231 @@ msgstr "Aucun token, ensemble ou thème n'a été trouvé dans ce fichier."
 #: src/app/main/data/workspace/tokens/errors.cljs:58
 msgid "errors.tokens.number-too-large"
 msgstr "Valeur de token invalide. La valeur résultante est trop grande : %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:88, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "errors.tokens.opacity-range"
+msgstr "L'opacité doit être entre 0 et 100 % ou 0 et 1 (ex. 50 % ou 0.5)."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:50, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:304, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:242
+msgid "errors.tokens.self-reference"
+msgstr "Le token s'autoréférence"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:124
+msgid "errors.tokens.shadow-blur-range"
+msgstr "Le flou de l'ombre doit être plus grand ou égal à 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:128
+msgid "errors.tokens.shadow-spread-range"
+msgstr "L'étalement de l'ombre doit être plus grand ou égal à 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:92, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "errors.tokens.stroke-width-range"
+msgstr "La largeur du contour doit être plus grande ou égale à 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:84
+msgid "errors.tokens.value-with-percent"
+msgstr "Valeur invalide : %s n'est pas permis."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:80
+msgid "errors.tokens.value-with-units"
+msgstr "Valeur invalide : les unités ne sont pas permises."
+
+#: src/app/main/ui/settings/integrations.cljs:588
+msgid "integrations.access-tokens.personal"
+msgstr "Tokens d'accès personnel"
+
+#: src/app/main/ui/settings/integrations.cljs:593
+msgid "integrations.access-tokens.personal.description"
+msgstr ""
+"Les tokens d'accès personnel fonctionnent comme une alternative au système "
+"d'authentification par usager/mot de passe et peuvent être utilisés pour "
+"permettre à une application d'accéder à l'API interne de Penpot"
+
+#: src/app/main/ui/settings/integrations.cljs:67
+msgid "integrations.copy-to-clipboard"
+msgstr "Copier au presse-papiers"
+
+#: src/app/main/ui/settings/integrations.cljs:258
+msgid "integrations.create-access-token.title"
+msgstr "Créer un token d'accès"
+
+#: src/app/main/ui/settings/integrations.cljs:257
+msgid "integrations.create-access-token.title.created"
+msgstr "Token d'accès créé"
+
+#: src/app/main/ui/settings/integrations.cljs:367
+msgid "integrations.delete-token.accept"
+msgstr "Supprimer le token"
+
+#: src/app/main/ui/settings/integrations.cljs:366
+msgid "integrations.delete-token.message"
+msgstr "Vraiment supprimer ce token?"
+
+#: src/app/main/ui/settings/integrations.cljs:365
+msgid "integrations.delete-token.title"
+msgstr "Supprimer un token"
+
+#: src/app/main/ui/settings/integrations.cljs:221
+msgid "integrations.expiration-180-days"
+msgstr "180 jours"
+
+#: src/app/main/ui/settings/integrations.cljs:218
+msgid "integrations.expiration-30-days"
+msgstr "30 jours"
+
+#: src/app/main/ui/settings/integrations.cljs:219
+msgid "integrations.expiration-60-days"
+msgstr "60 jours"
+
+#: src/app/main/ui/settings/integrations.cljs:220
+msgid "integrations.expiration-90-days"
+msgstr "90 jours"
+
+#: src/app/main/ui/settings/integrations.cljs:216
+msgid "integrations.expiration-date.label"
+msgstr "Date d'expiration"
+
+#: src/app/main/ui/settings/integrations.cljs:217
+msgid "integrations.expiration-never"
+msgstr "Jamais"
+
+#: src/app/main/ui/settings/integrations.cljs:389
+msgid "integrations.expired-on"
+msgstr "Expiré le %s"
+
+#: src/app/main/ui/settings/integrations.cljs:390
+msgid "integrations.expires-on"
+msgstr "Expire le %s"
+
+#: src/app/main/ui/settings/integrations.cljs:296
+msgid "integrations.generate-mcp-key.title"
+msgstr "Générer une clé MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:294
+msgid "integrations.generate-mcp-key.title.created"
+msgstr "Clé MCP générée"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:320
+msgid "inspect.attributes.typography.mixed-font-family"
+msgstr "Polices de caractères variées"
+
+#: src/app/main/ui/settings/integrations.cljs:598
+msgid "integrations.access-tokens.create"
+msgstr "Créer un nouveau token d'accès"
+
+#: src/app/main/ui/settings/integrations.cljs:606
+msgid "integrations.access-tokens.empty.add-one"
+msgstr "Clique le bouton « Créer un nouveau token d'accès » pour en générer un."
+
+#: src/app/main/ui/settings/integrations.cljs:605
+msgid "integrations.access-tokens.empty.no-access-tokens"
+msgstr "Aucun token."
+
+#: src/app/main/ui/settings/integrations.cljs:113
+msgid "integrations.mcp-key.will-expire"
+msgstr "La clé MCP expire le %s"
+
+#: src/app/main/ui/settings/integrations.cljs:116
+msgid "integrations.mcp-key.will-not-expire"
+msgstr "La clé MCP n'a pas de date d'expiration"
+
+#: src/app/main/ui/settings/integrations.cljs:488
+msgid "integrations.mcp-server.description"
+msgstr ""
+"Le serveur MCP de Penpot permet aux clients MCP d'interagir directement avec "
+"les fichiers design Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:415
+#, unused
+msgid "integrations.mcp-server.mcp-keys.copy"
+msgstr "Copier le lien"
+
+#: src/app/main/ui/settings/integrations.cljs:566
+msgid "integrations.mcp-server.mcp-keys.help"
+msgstr "Comment configurer les clients MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Ceci est l'URL serveur nécessaire pour configurer ton client MCP afin qu'il "
+"se connecte au serveur MCP Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "Regénérer la clé MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:529
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "Clé MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "La clé MCP est nécessaire à la configuration du client MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:494
+msgid "integrations.mcp-server.status"
+msgstr "Statut"
+
+#: src/app/main/ui/settings/integrations.cljs:514
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Désactivé"
+
+#: src/app/main/ui/settings/integrations.cljs:513
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Activé"
+
+#: src/app/main/ui/settings/integrations.cljs:504
+msgid "integrations.mcp-server.status.expired.0"
+msgstr ""
+"La clé MCP utilisée pour se connecter au serveur MCP a expiré. Donc, une "
+"connexion n'a pu être établie."
+
+#: src/app/main/ui/settings/integrations.cljs:509
+msgid "integrations.mcp-server.status.expired.1"
+msgstr ""
+"Merci de regénérer la clé MCP et mettre ta configuration client à jour avec "
+"la nouvelle clé."
+
+#: src/app/main/ui/settings/integrations.cljs:479
+msgid "integrations.mcp-server.title"
+msgstr "Serveur MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:483
+msgid "integrations.mcp-server.title.beta"
+msgstr "Bêta"
+
+#: src/app/main/ui/settings/integrations.cljs:208
+msgid "integrations.name.label"
+msgstr "Nom"
+
+#: src/app/main/ui/settings/integrations.cljs:209
+msgid "integrations.name.placeholder"
+msgstr "Le nom peut aider à savoir en quoi ce token sera utilisé"
+
+#: src/app/main/ui/settings/integrations.cljs:388
+msgid "integrations.no-expiration"
+msgstr "Aucune date d'expiration"
+
+#: src/app/main/ui/settings/integrations.cljs:468
+msgid "integrations.notification.success.copied-link"
+msgstr "Lien copié au presse-papiers"
+
+#: src/app/main/ui/settings/integrations.cljs:162
+msgid "integrations.notification.success.created"
+msgstr "Le token a été créé"
+
+#: src/app/main/ui/settings/integrations.cljs:85
+msgid "integrations.notification.success.mcp-key-copied"
+msgstr "Clé MCP copiée"
+
+#: src/app/main/ui/settings/integrations.cljs:433
+msgid "integrations.notification.success.mcp-server-disabled"
+msgstr "Serveur MCP désactivé"
+
+#: src/app/main/ui/settings/integrations.cljs:432
+msgid "integrations.notification.success.mcp-server-enabled"
+msgstr "Serveur MCP activé"
+
+#: src/app/main/ui/settings/integrations.cljs:86
+msgid "integrations.notification.success.token-copied"
+msgstr "Token copié"
