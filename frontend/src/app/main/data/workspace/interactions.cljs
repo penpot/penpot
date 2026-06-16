@@ -129,6 +129,20 @@
     (or (some ctsi/flow-origin? (map :interactions children))
         (some #(ctsi/flow-to? % frame-id) (map :interactions (vals objects))))))
 
+(defn- new-flow-event
+  "Returns an `add-flow` event that creates an implicit flow for the root
+  frame containing `shape-id`, or nil when that frame is already part of a
+  flow. Mirrors the editor behavior of creating a flow when an interaction
+  is added outside of any existing flow."
+  [state page-id shape-id]
+  (let [page    (dsh/lookup-page state page-id)
+        objects (get page :objects)
+        frame   (cfh/get-root-frame objects shape-id)
+        flow    (ctp/get-frame-flow (get page :flows) (:id frame))]
+    (when (and (not (connected-frame? objects (:id frame)))
+               (nil? flow))
+      (add-flow (:id frame)))))
+
 (defn add-interaction
   [page-id shape-id interaction]
   (ptk/reify ::add-interaction
@@ -143,7 +157,9 @@
                (when (:destination interaction)
                  (dwsh/update-shapes [(:destination interaction)]
                                      cls/show-in-viewer
-                                     {:page-id page-id})))))))
+                                     {:page-id page-id}))
+               (when (ctsi/flow-origin? [interaction])
+                 (new-flow-event state page-id shape-id)))))))
 
 (defn add-new-interaction
   ([shape] (add-new-interaction shape nil))
@@ -154,11 +170,8 @@
        (let [page-id  (:current-page-id state)
              page     (dsh/lookup-page state page-id)
              objects  (get page :objects)
-             frame    (cfh/get-root-frame objects (:id shape))
 
-             first?   (not-any? #(seq (:interactions %)) (vals objects))
-             flows    (get page :flows)
-             flow     (ctp/get-frame-flow flows (:id frame))]
+             first?   (not-any? #(seq (:interactions %)) (vals objects))]
          (rx/concat
           (rx/of (dwsh/update-shapes
                   [(:id shape)]
@@ -171,9 +184,8 @@
           (when destination
             (rx/of (dwsh/update-shapes [destination] cls/show-in-viewer)))
 
-          (when (and (not (connected-frame? objects (:id frame)))
-                     (nil? flow))
-            (rx/of (add-flow (:id frame))))
+          (when-let [flow-event (new-flow-event state page-id (:id shape))]
+            (rx/of flow-event))
           (if first?
             ;; When the first interaction of the page is created we emit the event "create-prototype"
             (rx/of (ev/event {::ev/name "create-prototype"}))
