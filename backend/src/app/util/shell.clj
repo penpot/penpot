@@ -8,6 +8,7 @@
   "A penpot specific, modern api for executing external (shell)
   subprocesses"
   (:require
+   [app.common.exceptions :as ex]
    [app.worker :as-alias wrk]
    [datoteka.io :as io]
    [promesa.exec :as px])
@@ -15,6 +16,7 @@
    java.io.InputStream
    java.io.OutputStream
    java.util.List
+   java.util.concurrent.TimeUnit
    org.apache.commons.io.IOUtils))
 
 (set! *warn-on-reflection* true)
@@ -42,7 +44,7 @@
         ^String v))
 
 (defn exec!
-  [system & {:keys [cmd in out-enc in-enc env]
+  [system & {:keys [cmd in out-enc in-enc env timeout]
              :or {out-enc "UTF-8"
                   in-enc "UTF-8"}}]
   (assert (vector? cmd) "a command parameter should be a vector")
@@ -63,9 +65,22 @@
 
     (with-open [stdout (.getInputStream ^Process process)
                 stderr (.getErrorStream ^Process process)]
-      (let [out (px/submit! executor (fn [] (read-with-enc stdout out-enc)))
-            err (px/submit! executor (fn [] (read-as-string stderr)))
-            ext (.waitFor ^Process process)]
+      (let [out (px/submit! executor (fn [] (try (read-with-enc stdout out-enc)
+                                                 (catch java.io.IOException _ ""))))
+            err (px/submit! executor (fn [] (try (read-as-string stderr)
+                                                 (catch java.io.IOException _ ""))))
+            ext (if timeout
+                  (let [completed (.waitFor ^Process process (long timeout) TimeUnit/SECONDS)]
+                    (if completed
+                      (.exitValue ^Process process)
+                      (do
+                        (.destroyForcibly ^Process process)
+                        (ex/raise :type :internal
+                                  :code :process-timeout
+                                  :hint (str "process timed out after " timeout " seconds")
+                                  :cmd cmd
+                                  :timeout timeout))))
+                  (.waitFor ^Process process))]
         {:exit ext
          :out @out
          :err @err}))))
