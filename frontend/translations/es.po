@@ -4369,7 +4369,7 @@ msgstr "Revisa tu correo y haz clic en el enlace para crear una nueva contraseñ
 
 #: src/app/main/ui/static.cljs:167
 msgid "not-found.login.signup-free"
-msgstr "Registrate gratis"
+msgstr "Regístrate gratis"
 
 #: src/app/main/ui/static.cljs:168
 msgid "not-found.login.start-using"
