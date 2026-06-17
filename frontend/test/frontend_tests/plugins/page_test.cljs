@@ -100,6 +100,15 @@
 
       (mock-page-initialized store page2-id))))
 
+(t/deftest test-flows-returns-empty-array-when-no-flows
+  ;; page.flows must always return an array, even when the page has no flows
+  (let [{:keys [context]} (setup)
+        ^js pages         (.. context -currentFile -pages)
+        ^js page1         (aget pages 0)
+        ^js flows         (.-flows page1)]
+    (t/is (array? flows))
+    (t/is (= 0 (.-length flows)))))
+
 (t/deftest test-open-page-does-not-resolve-for-wrong-page
   ;; Promise should not resolve when a different page is initialized
   (t/async done
