@@ -1896,6 +1896,10 @@ msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
 msgid "errors.tokens.self-reference"
 msgstr "Token has self reference"
 
+#: src/app/common/files/tokens.cljc
+msgid "errors.tokens.circular-reference"
+msgstr "Token has circular reference"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:124
 msgid "errors.tokens.shadow-blur-range"
 msgstr "Shadow blur must be greater than or equal to 0."

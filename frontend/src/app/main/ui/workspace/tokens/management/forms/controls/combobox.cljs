@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -49,9 +50,9 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (if (cto/token-circular-reference? tokens (:name token))
-      (rx/of {:error (wte/error-with-value :error.token/direct-self-reference nil)})
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
       (->> (if (contains? cf/flags :tokenscript)
              (rx/of (ts/resolve-tokens tokens))
              (sd/resolve-tokens-interactive tokens))

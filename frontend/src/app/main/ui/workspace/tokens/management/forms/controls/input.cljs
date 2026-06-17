@@ -171,9 +171,9 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (if (cto/token-circular-reference? tokens (:name token))
-      (rx/of {:error (wte/error-with-value :error.token/direct-self-reference nil)})
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cft/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
       (->> tokens
            (sd/resolve-tokens-interactive)
            (rx/mapcat
@@ -328,7 +328,7 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if (or extra-error (and touched? error))
+        (if (or extra-error (and touched? error) (and (= :line-height input-name) error))
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message (or error extra-error))})
           props)
@@ -377,7 +377,6 @@
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (swap! form update :async-errors dissoc :reference)
                              (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]

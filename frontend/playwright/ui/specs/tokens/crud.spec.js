@@ -156,7 +156,7 @@ test.describe("Tokens - creation", () => {
 
     await nameField.fill("my-token-2");
     await valueField.fill("4 + 4");
-      await expect(
+    await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 8"),
     ).toBeVisible();
 
@@ -2347,10 +2347,19 @@ test.describe("Tokens tab - edition", () => {
 
     // Show error with line-height depending on invalid font-size
     await fontSizeField.fill("");
+    await page.keyboard.press("Enter");
     await expect(saveButton).toBeDisabled();
+    await expect(
+      tokensUpdateCreateModal.getByText(/Invalid token value:/),
+    ).not.toBeVisible();
+
+    await expect(
+      tokensUpdateCreateModal.getByText(/Line Height depends on Font Size/),
+    ).toBeVisible();
 
     // Fill in values for all fields and verify they persist when switching tabs
-    await fontSizeField.fill("16");
+    await fontSizeField.fill("16 + 3");
+
     await expect(saveButton).toBeEnabled();
 
     const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
@@ -2560,10 +2569,10 @@ test.describe("Tokens tab - edition", () => {
     await editValueField.fill("{linear}");
 
     // The circular reference error should appear gracefully
-    const selfRefError = tokensUpdateCreateModal.getByText(
-      "Token has self reference",
+    const circularError = tokensUpdateCreateModal.getByText(
+      "Token has circular reference",
     );
-    await expect(selfRefError).toBeVisible({ timeout: 5000 });
+    await expect(circularError).toBeVisible({ timeout: 5000 });
 
     // Save button should be disabled
     const editSubmitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -2625,10 +2634,10 @@ test.describe("Tokens tab - edition", () => {
     await editValueField.fill("{Third}");
 
     // The circular reference error should appear gracefully
-    const selfRefError = tokensUpdateCreateModal.getByText(
-      "Token has self reference",
+    const circularError = tokensUpdateCreateModal.getByText(
+      "Token has circular reference",
     );
-    await expect(selfRefError).toBeVisible({ timeout: 5000 });
+    await expect(circularError).toBeVisible({ timeout: 5000 });
 
     // Save button should be disabled
     const editSubmitButton = tokensUpdateCreateModal.getByRole("button", {
