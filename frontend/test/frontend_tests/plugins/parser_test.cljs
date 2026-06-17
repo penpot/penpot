@@ -7,6 +7,9 @@
 (ns frontend-tests.plugins.parser-test
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.schema :as sm]
+   [app.common.types.shape.interactions :as ctsi]
+   [app.common.uuid :as uuid]
    [app.plugins.parser :as parser]
    [cljs.test :as t :include-macros true]))
 
@@ -31,3 +34,37 @@
       (t/is (gpt/point? result))
       (t/is (= 0 (:x result)))
       (t/is (= 0 (:y result))))))
+
+(t/deftest test-parse-close-overlay-without-animation-validates
+  (t/testing "close-overlay without animation parses and validates"
+    (let [result (parser/parse-interaction "click" #js {:type "close-overlay"} nil)]
+      (t/is (= {:event-type :click
+                :action-type :close-overlay}
+               result))
+      (t/is (false? (contains? result :animation)))
+      (t/is (true? (sm/validate ctsi/schema:interaction result)))))
+
+  (t/testing "close-overlay preserves destination without animation"
+    (let [destination-id (uuid/next)
+          result         (parser/parse-interaction
+                          "click"
+                          #js {:type "close-overlay"
+                               :destination #js {"$id" destination-id}}
+                          nil)]
+      (t/is (= destination-id (:destination result)))
+      (t/is (false? (contains? result :animation)))
+      (t/is (true? (sm/validate ctsi/schema:interaction result)))))
+
+  (t/testing "close-overlay preserves an explicit dissolve animation"
+    (let [result (parser/parse-interaction
+                  "click"
+                  #js {:type "close-overlay"
+                       :animation #js {:type "dissolve"
+                                       :duration 300
+                                       :easing "linear"}}
+                  nil)]
+      (t/is (= {:animation-type :dissolve
+                :duration 300
+                :easing :linear}
+               (:animation result)))
+      (t/is (true? (sm/validate ctsi/schema:interaction result))))))

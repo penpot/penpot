@@ -485,9 +485,9 @@ export interface CloseOverlay {
   readonly destination?: Board;
 
   /**
-   * Animation displayed with this interaction.
+   * Animation displayed with this interaction. Omit it to close with no transition.
    */
-  readonly animation: Animation;
+  readonly animation?: Animation;
 }
 
 /**
