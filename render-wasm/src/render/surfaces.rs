@@ -25,6 +25,7 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
     right: TILE_MARGIN_SIZE + TILE_SIZE,
     bottom: TILE_MARGIN_SIZE + TILE_SIZE,
 };
+const DOC_ATLAS_MAX_DIM: i32 = 4096;
 
 pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
@@ -178,7 +179,10 @@ impl DocAtlas {
 
         // Compute atlas scale needed to fit within the fixed texture cap.
         // Keep the highest possible scale (closest to 1.0) that still fits.
-        let cap = gpu_state.max_texture_size().max(TILE_SIZE) as f32;
+        let cap = gpu_state
+            .max_texture_size()
+            .clamp(TILE_SIZE, DOC_ATLAS_MAX_DIM) as f32;
+
         let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
 
         // Never upscale the atlas (it would add blur and churn).
