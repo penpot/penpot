@@ -20,8 +20,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc step-container
-  {::mf/props :obj}
+(mf/defc step-container*
   [{:keys [form step on-next on-prev children class label]}]
 
   (let [on-next*
@@ -69,8 +68,7 @@
           (and (= role "other")
                (not (str/blank? role-other)))))]])
 
-(mf/defc step-1
-  {::mf/props :obj}
+(mf/defc step-1*
   [{:keys [on-next form show-step-3]}]
   (let [use-options
         (mf/with-memo []
@@ -89,24 +87,25 @@
                         {:label (tr "labels.product-management") :value "manager" :key "manager"}])
               (conj {:label (tr "labels.other-short") :value "other"})))
 
-
         current-role
         (dm/get-in @form [:data :role])]
 
+    [:> step-container* {:form form
+                         :step 1
+                         :label "questions:about-you"
+                         :on-next on-next
+                         :class (stl/css :step)}
 
-    [:& step-container {:form form
-                        :step 1
-                        :label "questions:about-you"
-                        :on-next on-next
-                        :class (stl/css :step-1)}
-
-     [:div {:class (stl/css :paginator)} (str/ffmt "1/%" (if @show-step-3 4 3))]
+     [:div {:class (stl/css :paginator)}
+      (str/ffmt "1/%" (if @show-step-3 4 3))]
 
      [:img {:class (stl/css :header-image)
             :src "images/form/slide-1-help-us-know-you.svg"
             :alt (tr "onboarding.questions.lets-get-started")}]
+
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step1.title")]
+
      [:p {:class (stl/css :modal-text)}
       (tr "onboarding.questions.step1.subtitle")]
 
@@ -116,17 +115,18 @@
 
       [:& fm/radio-buttons {:options use-options
                             :name :expected-use
-                            :class (stl/css :radio-btns)}]
+                            :class (stl/css :radio)}]
 
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question1")]
+      [:h3 {:class (stl/css :modal-subtitle)}
+       (tr "onboarding.questions.step3.question1")]
+
       [:& fm/select {:options role-options
-                     :select-class (stl/css :select-class)
+                     :select-class (stl/css :select)
                      :default ""
                      :name :role}]
 
       (when (= current-role "other")
         [:& fm/input {:name :role-other
-                      :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
                       :show-error false
                       :label ""}])]]))
@@ -147,8 +147,7 @@
             (and (= experience "other")
                  (not (str/blank? experience-other))))))]])
 
-(mf/defc step-2
-  {::mf/props :obj}
+(mf/defc step-2*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [design-tool-options
         (mf/with-memo []
@@ -175,34 +174,33 @@
              (swap! form d/dissoc-in [:data :experience-design-tool-other])
              (swap! form d/dissoc-in [:errors :experience-design-tool-other]))))]
 
-    [:& step-container {:form form
-                        :step 2
-                        :label "questions:experience-design-tool"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-2)}
+    [:> step-container* {:form form
+                         :step 2
+                         :label "questions:experience-design-tool"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "2/%" (if @show-step-3 4 3))]
-
+     [:div {:class (stl/css :paginator)}
+      (str/ffmt "2/%" (if @show-step-3 4 3))]
 
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step2.title")]
+
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/image-radio-buttons {:options design-tool-options
                                   :img-width "48px"
                                   :img-height "60px"
                                   :name :experience-design-tool
                                   :image true
-                                  :class (stl/css :image-radio)
+                                  :class (stl/css :radio-image)
                                   :on-change on-design-tool-change}]
 
       (when (= current-experience "other")
         [:& fm/input {:name :experience-design-tool-other
-                      :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
                       :show-error false
                       :label ""}])]]))
-
 
 (def ^:private schema:questions-form-3
   [:and
@@ -210,8 +208,7 @@
     [:team-size
      [:enum "1" "2-100" "101-500" "501-1000" "1001-5000" "5001+"]]]])
 
-(mf/defc step-3
-  {::mf/props :obj}
+(mf/defc step-3*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [team-size-options
         (mf/with-memo []
@@ -231,14 +228,15 @@
            {:label (tr "onboarding.questions.team-size.more-than-5001")
             :value "5001+" :key "5001+"}])]
 
-    [:& step-container {:form form
-                        :step 3
-                        :label "questions:about-your-job"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-3)}
+    [:> step-container* {:form form
+                         :step 3
+                         :label "questions:about-your-job"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "3/%" (if @show-step-3 4 3))]
+     [:div {:class (stl/css :paginator)}
+      (str/ffmt "3/%" (if @show-step-3 4 3))]
 
      [:h1 {:class (stl/css :modal-title)}
       (tr "onboarding.questions.step3.title")]
@@ -246,7 +244,7 @@
      [:div {:class (stl/css :modal-question)}
       [:& fm/select {:options team-size-options
                      :default ""
-                     :select-class (stl/css :select-class)
+                     :select-class (stl/css :select)
                      :name :team-size}]]]))
 
 (def ^:private schema:questions-form-4
@@ -262,8 +260,7 @@
           (and (= start-with "other")
                (not (str/blank? start-with-other)))))]])
 
-(mf/defc step-4
-  {::mf/props :obj}
+(mf/defc step-4*
   [{:keys [on-next on-prev form show-step-3]}]
   (let [start-options
         (mf/with-memo []
@@ -284,21 +281,24 @@
         on-start-change
         (mf/use-fn
          (mf/deps current-start)
-         (fn [_ _]
+         (fn []
            (when (not= current-start "other")
              (swap! form d/dissoc-in [:data :start-with-other])
              (swap! form d/dissoc-in [:errors :start-with-other]))))]
 
-    [:& step-container {:form form
-                        :step 4
-                        :label "questions:how-start"
-                        :on-next on-next
-                        :on-prev on-prev
-                        :class (stl/css :step-4)}
+    [:> step-container* {:form form
+                         :step 4
+                         :label "questions:how-start"
+                         :on-next on-next
+                         :on-prev on-prev
+                         :class (stl/css :step)}
 
-     [:div {:class (stl/css :paginator)} (str/ffmt "%/%" (if @show-step-3 4 3) (if @show-step-3 4 3))]
+     [:div {:class (stl/css :paginator)}
+      (str/ffmt "%/%" (if @show-step-3 4 3) (if @show-step-3 4 3))]
 
-     [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step4.title")]
+     [:h1 {:class (stl/css :modal-title)}
+      (tr "onboarding.questions.step4.title")]
+
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/image-radio-buttons {:options start-options
                                   :img-width "100px"
@@ -308,12 +308,9 @@
 
       (when (= current-start "other")
         [:& fm/input {:name :start-with-other
-                      :class (stl/css :input-spacing)
                       :label ""
                       :show-error false
                       :placeholder (tr "labels.other")}])]]))
-
-
 
 (mf/defc questions-modal
   []
@@ -369,10 +366,10 @@
             :ref container}
 
       (case @step
-        1 [:& step-1 {:on-next on-next :on-prev on-prev :form step-1-form :show-step-3 show-step-3}]
-        2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
+        1 [:> step-1* {:on-next on-next :on-prev on-prev :form step-1-form :show-step-3 show-step-3}]
+        2 [:> step-2* {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
         3 (if @show-step-3
-            [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
-            [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
+            [:> step-3* {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
+            [:> step-4* {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
         (when @show-step-3
-          4 [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
+          4 [:> step-4* {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
