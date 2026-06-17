@@ -35,6 +35,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.wasm :as wasm.exports]
+   [app.main.data.persistence :as dwp]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
@@ -47,6 +48,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.fills :as fills]
@@ -1295,7 +1297,19 @@
                                      :scale     (:scale value 1)}]}]
                      (js/Promise.
                       (fn [resolve reject]
-                        (->> (rp/cmd! :export payload)
+                        ;; The exporter renders the file from its persisted
+                        ;; state, so flush pending local changes and wait until
+                        ;; they are saved before invoking it. Otherwise it may
+                        ;; export a stale/empty shape. (The wasm export above
+                        ;; renders locally and does not need this.)
+                        (st/emit! ::dwp/force-persist)
+                        (->> (rx/concat
+                              (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+                                   (rx/filter #(or (nil? %) (= :saved %)))
+                                   (rx/first)
+                                   (rx/timeout 5000 (rx/empty))
+                                   (rx/ignore))
+                              (rp/cmd! :export payload))
                              (rx/mapcat (fn [{:keys [uri]}]
                                           (->> (http/send! {:method :get
                                                             :uri uri
