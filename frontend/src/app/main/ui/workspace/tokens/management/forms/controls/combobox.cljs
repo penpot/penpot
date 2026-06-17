@@ -147,12 +147,14 @@
         toggle-dropdown
         (mf/use-fn
          (mf/deps is-open)
-         (fn [event]
+         (fn [event & [select-text?]]
            (dom/prevent-default event)
            (swap! is-open* not)
            (reset! selected-id* (get-selected-id))
-           (let [input-node (mf/ref-val ref)]
-             (dom/focus! input-node))))
+           (when select-text?
+             (let [input-node (mf/ref-val ref)]
+               (dom/select-text! input-node)
+               (dom/focus! input-node)))))
 
         resolve-stream
         (mf/with-memo [token]
@@ -264,7 +266,7 @@
                                      :tab-index "-1"
                                      :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                      :on-mouse-down dom/prevent-default
-                                     :on-click toggle-dropdown}]))})
+                                     :on-click #(toggle-dropdown % true)}]))})
         props
         (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"

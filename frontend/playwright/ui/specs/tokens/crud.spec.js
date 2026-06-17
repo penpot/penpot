@@ -113,6 +113,80 @@ test.describe("Tokens - creation", () => {
     ).toBeVisible();
   });
 
+  test("User creates a token referencing another via combobox, replacing existing text", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: "Add Token: Border Radius",
+    });
+
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Create first token
+    await nameField.fill("my-token");
+    await valueField.fill("1 + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "border radius");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
+    ).toBeEnabled();
+
+    // Create second token — type text first, then replace it via combobox
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-2");
+    await valueField.fill("4 + 4");
+      await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 8"),
+    ).toBeVisible();
+
+    const toggleDropdownButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Open token list",
+    });
+    await toggleDropdownButton.click();
+
+    const option = page.getByRole("option", { name: "my-token" });
+    await expect(option).toBeVisible();
+    await option.click();
+
+    // The typed text should have been replaced by {my-token}
+    await expect(valueField).toHaveValue("{my-token}");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    // Original text must no longer be present
+    await expect(valueField).not.toHaveValue("some text to replace");
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "border radius");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    ).toBeEnabled();
+  });
+
   test("User creates dimensions token", async ({ page }) => {
     await testTokenCreationFlow(page, {
       tokenLabel: "Dimensions",
