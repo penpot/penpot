@@ -488,8 +488,8 @@
          {:action-type action-type
           :destination (-> (obj/get action "destination") (obj/get "$id"))
           :relative-to (-> (obj/get action "relativeTo") (obj/get "$id"))
-          :overlay-pos-type (-> (obj/get action "position") parse-keyword)
-          :overlay-position (-> (obj/get action "manualPositionLocation") parse-point (d/nilv (gpt/point 0 0)))
+          :overlay-pos-type (or (-> (obj/get action "position") parse-keyword) :center)
+          :overlay-position (-> (obj/get action "manualPositionLocation") parse-point)
           :close-click-outside (obj/get action "closeWhenClickOutside")
           :background-overlay (obj/get action "addBackgroundOverlay")
           :animation (-> (obj/get action "animation") parse-animation)}
