@@ -5042,12 +5042,18 @@ export interface TokenTypography extends TokenBase {
 
 /**
  * Any possible type of value field in a token.
+ *
+ * Token values are always stored as strings, including for numeric token
+ * types such as `spacing`, `dimension` or `borderRadius` (e.g. `"16"` or
+ * `"16px"`). A plain `number` is also accepted on input and coerced to its
+ * string representation.
  */
 export type TokenValueString =
   | TokenShadowValueString
   | TokenTypographyValueString
   | string
-  | string[];
+  | string[]
+  | number;
 
 /**
  * The supported Design Tokens in Penpot.
@@ -5175,7 +5181,11 @@ export interface TokenSet {
    * @param type The type of the token.
    * @param name The name of the token (required). It may contain
    * a group path, separated by `.`.
-   * @param value The value of the token (required), in the string form.
+   * @param value The value of the token (required), always in its string
+   * form. This applies to numeric token types too (e.g. `spacing`,
+   * `dimension`, `borderRadius`): use `"16"` or `"16px"` rather than `16`.
+   * For convenience a plain number is also accepted and coerced to its
+   * string representation (`16` becomes `"16"`).
    * @return Returns the created Token.
    */
   addToken({
