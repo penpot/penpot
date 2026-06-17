@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-16 13:01+0000\n"
+"PO-Revision-Date: 2026-06-18 00:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -2044,7 +2044,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Thèmes actifs"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:68
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Copier le CSS abrégé au presse-papiers"
 
@@ -9142,3 +9141,237 @@ msgstr "Serveur MCP activé"
 #: src/app/main/ui/settings/integrations.cljs:86
 msgid "integrations.notification.success.token-copied"
 msgstr "Token copié"
+
+#: src/app/main/ui/settings/integrations.cljs:124
+msgid "integrations.info.mcp-client-config"
+msgstr "Ajoute cette configuration à ton client MCP (ex. ~/.mcp.json)."
+
+#: src/app/main/ui/settings/integrations.cljs:201
+msgid "integrations.info.mcp-server"
+msgstr ""
+"Le serveur MCP Penpot permet aux clients MCP d'interagir directement avec "
+"les fichiers Penpot design."
+
+#: src/app/main/ui/settings/integrations.cljs:101
+msgid "integrations.mcp-key.info.non-recuperable"
+msgstr ""
+"Cette clé unique MCP n'est pas récupérable. En cas de perte, il faudra en "
+"créer une nouvelle."
+
+#: src/app/main/ui/settings/integrations.cljs:338
+msgid "integrations.regenerate-mcp-key.info"
+msgstr ""
+"Régénérer la clé MCP invalidera immédiatement la clé actuelle. Toute "
+"application qui s'en sert cessera de fonctionner."
+
+#: src/app/main/ui/settings/integrations.cljs:337
+msgid "integrations.regenerate-mcp-key.title"
+msgstr "Régénérer la clé MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:335
+msgid "integrations.regenerate-mcp-key.title.created"
+msgstr "Clé MCP régénérée"
+
+#: src/app/main/ui/settings/integrations.cljs:626
+msgid "integrations.title"
+msgstr "Intégrations"
+
+#: src/app/main/ui/settings/integrations.cljs:102
+msgid "integrations.token.info.non-recuperable"
+msgstr ""
+"Ce token unique n'est pas récupérable. S'il est perdu, il faudra en créer un "
+"nouveau."
+
+#: src/app/main/ui/settings/integrations.cljs:114
+msgid "integrations.token.will-expire"
+msgstr "Ce token expire le %s"
+
+#: src/app/main/ui/settings/integrations.cljs:117
+msgid "integrations.token.will-not-expire"
+msgstr "Ce token n'a pas de date d'expiration"
+
+#: src/app/main/ui/settings/profile.cljs:116
+msgid "labels.delete-profile-photo.message"
+msgstr "Vraiment supprimer la photo de profil?"
+
+#: src/app/main/ui/settings/profile.cljs:115
+msgid "labels.delete-profile-photo.title"
+msgstr "Supprimer la photo de profil"
+
+#: src/app/main/data/workspace/mcp.cljs:186
+msgid "labels.dismiss"
+msgstr "Ignorer"
+
+#: src/app/main/ui/dashboard/fonts.cljs:284
+msgid "labels.download-simple"
+msgstr "Télécharger"
+
+#: src/app/main/ui/exports/files.cljs:186
+msgid "labels.downloading-file"
+msgstr "Téléchargement du fichier…"
+
+#: src/app/main/data/workspace/versions.cljs:303
+msgid "labels.exit"
+msgstr "Quitter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1246
+msgid "labels.flex-layout"
+msgstr "Disposition flex"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1250
+msgid "labels.grid-layout"
+msgstr "Disposition en grille"
+
+#: src/app/main/ui/settings/sidebar.cljs:123
+msgid "labels.integrations"
+msgstr "Intégrations"
+
+#: src/app/main/ui/static.cljs:330
+msgid "labels.nitrate-unavailable.main-message"
+msgstr ""
+"Penpot est temporairement indisponible dû à une erreur système. Réessayer "
+"plus tard."
+
+#: src/app/main/ui/components/select.cljs:256
+msgid "labels.no-matches"
+msgstr "Aucun résultat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:705
+msgid "labels.open"
+msgstr "Ouvrir"
+
+#: src/app/main/ui/dashboard/import.cljs:536
+msgid "labels.uploading-file"
+msgstr "Téléversement du fichier…"
+
+#: src/app/main/ui/dashboard/import.cljs:297
+#, unused
+msgid "labels.warning-count"
+msgid_plural "labels.warning-count"
+msgstr[0] "%s avertissement"
+msgstr[1] "%s avertissements"
+
+#: src/app/main/data/nitrate.cljs:195
+msgid "modals.before-leave-org.message"
+msgstr ""
+"Tu es le seul membre de certaines équipes. Ces équipes, ainsi que leurs "
+"projets et fichiers, seront supprimées."
+
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/change_owner.cljs:151
+msgid "modals.before-leave-org.title"
+msgstr "AVANT DE QUITTER L'ORGANISATION"
+
+#: src/app/main/data/nitrate.cljs:198
+msgid "modals.before-leave-org.warning"
+msgstr "Toute équipe dont tu es le seul membre sera supprimée."
+
+#: src/app/main/ui/settings/delete_account.cljs
+#, unused
+msgid "modals.delete-account.info.with-orgs"
+msgstr ""
+"Cette action est irréversible. Ton compte, abonnement et organisations "
+"seront supprimés immédiatement. L'accès aux projets et fichiers courants "
+"sera perdu."
+
+#: src/app/main/ui/settings/delete_account.cljs:82
+msgid "modals.delete-account.owned-orgs.list-title"
+msgstr "Organisations qui seront supprimées"
+
+#: src/app/main/ui/settings/delete_account.cljs:97
+msgid "modals.delete-account.owned-orgs.members-count"
+msgstr "%s membres"
+
+#: src/app/main/ui/settings/delete_account.cljs:95
+msgid "modals.delete-account.owned-orgs.teams-count"
+msgstr "%s équipes"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:229
+msgid "modals.delete-asset-group.message"
+msgid_plural "modals.delete-asset-group.message"
+msgstr[0] "Vraiment supprimer cet atout?"
+msgstr[1] "Vraiment supprimer ces %s atouts?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:228
+msgid "modals.delete-asset-group.title"
+msgstr "Supprimer le groupe"
+
+#: src/app/main/data/team.cljs:129
+msgid "modals.delete-org-team-confirm.message"
+msgstr "Vraiment supprimer cette équipe qui fait partie de l'organisation %s?"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
+msgid "modals.import-library-tokens.description"
+msgstr ""
+"La bibliothèque contient des tokens et thèmes qui sont probablement utilisés "
+"par ses composants."
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
+msgid "modals.import-library-tokens.import"
+msgstr "Importer des tokens"
+
+#: src/app/main/ui/workspace/tokens/import_from_library.cljs:72
+msgid "modals.import-library-tokens.title"
+msgstr "Importer des tokens depuis la bibliothèque?"
+
+#: src/app/main/data/team.cljs:583
+msgid "modals.invite-restricted-members.all-blocked"
+msgstr ""
+"Seuls les membres actuels de l'organisation peuvent être invités. Comme les "
+"personnes de la liste ne sont pas membres, aucune invitation a été envoyée."
+
+#: src/app/main/data/team.cljs:582
+msgid "modals.invite-restricted-members.all-blocked-title"
+msgstr "Aucune invitation envoyée"
+
+#: src/app/main/data/team.cljs:162
+msgid "modals.invite-restricted-members.all-org-members-in-team"
+msgstr ""
+"Seuls les membres de l'organisation « %s » peuvent être invités à cette "
+"équipe et ils sont tous déjà membres. Pour plus d'informations, contacter le "
+"propriétaire de l'organisation."
+
+#: src/app/main/ui/dashboard/team.cljs:308
+msgid "modals.invite-restricted-members.blocked-addresses"
+msgstr "Adresses qui ne recevront pas d'invitation"
+
+#: src/app/main/ui/dashboard/team.cljs:325
+msgid "modals.invite-restricted-members.cancel"
+msgstr "Annuler"
+
+#: src/app/main/ui/dashboard/team.cljs:298
+msgid "modals.invite-restricted-members.description"
+msgstr "Seuls les membres actuels de l'organisation peuvent être invités."
+
+#: src/app/main/ui/dashboard/team.cljs:333
+msgid "modals.invite-restricted-members.send"
+msgstr "Envoyer les invitations"
+
+#: src/app/main/ui/dashboard/team.cljs:293
+msgid "modals.invite-restricted-members.title"
+msgstr "Certaines invitations n'ont pu être envoyées"
+
+#: src/app/main/ui/dashboard/team.cljs:299
+msgid "modals.invite-restricted-members.warning"
+msgstr "Certaines personnes de la liste ne recevront pas d'invitation."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:158
+msgid "modals.leave-org-and-reassign.hint"
+msgstr ""
+"Tu es propriétaire de certaines équipes de cette organisation. Sélectionner "
+"un autre membre afin de les promouvoir au rôle de propriétaire."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:161
+msgid "modals.leave-org-and-reassign.hint-delete"
+msgstr ""
+"Tu es membre unique de certaines équipes. Ces équipes ainsi que leurs "
+"projets et fichiers seront supprimés."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:163
+msgid "modals.leave-org-and-reassign.hint-promote"
+msgstr ""
+"De plus, tu es propriétaire de certaines équipes de cette organisation. "
+"Sélectionner un autre membre afin de les promouvoir au rôle de propriétaire."
+
+#: src/app/main/data/nitrate.cljs:196, src/app/main/data/nitrate.cljs:205
+msgid "modals.leave-org-confirm.accept"
+msgstr "Quitter l'organisation"
