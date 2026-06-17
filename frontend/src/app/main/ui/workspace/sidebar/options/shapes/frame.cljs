@@ -19,8 +19,8 @@
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
@@ -113,7 +113,7 @@
      (when is-variant?
        [:> component-variant-main* {:shapes shapes}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type shape-type
        :ids ids
        :applied-tokens applied-tokens
@@ -121,22 +121,23 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
+       [:> grid-cell/options*
+        {:shape-id (-> (first parents)
+                       :id)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when (or is-layout-child? is-layout-container?)
-       [:& layout-item-menu
+       [:> layout-item-menu*
         {:ids ids
          :type shape-type
          :values layout-item-values
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
-         :is-flex-layout? is-flex-layout?
-         :is-grid-layout? is-grid-layout?
-         :is-layout-child? is-layout-child?
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
+         :is-flex-layout is-flex-layout?
+         :is-grid-layout is-grid-layout?
+         :is-layout-child is-layout-child?
          :applied-tokens applied-tokens
-         :is-layout-container? is-layout-container?
+         :is-layout-container is-layout-container?
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
@@ -159,8 +160,11 @@
                                 :libraries libraries}]
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:> blur-menu* {:ids ids
-                     :values (select-keys shape [:blur :background-blur])}]
-     [:> frame-grid* {:shape shape}]
+                     :values (select-keys shape [:blur])}]
+     [:> frame-grid* {:grids (:grids shape)
+                      :id (:id shape)
+                      :frame-width (:width shape)
+                      :frame-height (:height shape)}]
      [:> exports-menu* {:type shape-type
                         :ids ids
                         :shapes shapes

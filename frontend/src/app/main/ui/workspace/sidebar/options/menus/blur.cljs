@@ -192,31 +192,25 @@
     (conj {:key :background-blur
            :value (:background-blur values)})))
 
-(defn- check-props
-  "A blur-menu specific memoize check function that only checks if
-  specific values are changed on provided props. This allows pass the
-  whole shape as values without adding additional rerenders when other
-  shape properties changes."
-  [n-props o-props]
-  (and (identical? (unchecked-get n-props "ids")
-                   (unchecked-get o-props "ids"))
-       (let [o-vals  (unchecked-get o-props "values")
-             n-vals  (unchecked-get n-props "values")
-             o-blur-values (get o-vals :blur)
-             n-blur-values (get n-vals :blur)
-             o-background-blur-values (get o-vals :background-blur)
-             n-background-blur-values (get n-vals :background-blur)]
-         (and (identical? o-blur-values n-blur-values)
-              (identical? o-background-blur-values n-background-blur-values)))))
+(defn- check-blur-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? (get old-values :blur)
+                     (get new-values :blur))
+         (identical? (get old-values :background-blur)
+                     (get new-values :background-blur)))))
 
 (mf/defc blur-menu*
-  {::mf/wrap [#(mf/memo' % check-props)]}
+  {::mf/wrap [#(mf/memo' % check-blur-menu-props)]}
   [{:keys [ids type values]}]
   (let [render-wasm?        (features/use-feature "render-wasm/v1")
         bg-blur?            (and render-wasm?
                                  (contains? cf/flags :background-blur))
-
-
 
         blur-values          (get-blurs values)
 

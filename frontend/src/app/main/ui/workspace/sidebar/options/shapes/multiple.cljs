@@ -27,8 +27,8 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
@@ -339,6 +339,9 @@
         (mf/with-memo [shapes]
           (into #{} d/xf:map-id shapes))
 
+        typographies
+        (mf/deref refs/workspace-file-typography)
+
         is-layout-child-ref
         (mf/with-memo [shape-ids]
           (refs/is-layout-child? shape-ids))
@@ -468,7 +471,7 @@
      (when (some? components)
        [:> component-menu* {:shapes components}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type type
        :ids layout-container-ids
        :values layout-container-values
@@ -476,13 +479,13 @@
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
-       [:& layout-item-menu
+       [:> layout-item-menu*
         {:type type
          :ids layout-item-ids
-         :is-layout-child? all-layout-child?
-         :is-layout-container? all-flex-layout-container?
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
+         :is-layout-child all-layout-child?
+         :is-layout-container all-flex-layout-container?
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
          :applied-tokens layout-item-tokens
          :values layout-item-values}])
 
@@ -494,7 +497,10 @@
         {:type type
          :ids text-ids
          :values text-values
-         :applied-tokens text-tokens}])
+         :applied-tokens text-tokens
+         :libraries libraries
+         :file-id file-id
+         :typographies typographies}])
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type
