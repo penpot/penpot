@@ -1263,12 +1263,30 @@ export interface Context {
   openViewer(): void;
 
   /**
-   * Creates a new page. Requires `content:write` permission.
+   * Creates a new page and returns it. Requires `content:write` permission.
+   *
+   * IMPORTANT: creating a page does **not** make it the active page.
+   * To build content inside the new page, activate it first with
+   * {@link Context.openPage} (and `await` it) before mutate shapes:
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.name = 'New Page';
+   * await penpot.openPage(page); // make the new page active first
+   * const board = penpot.createBoard();
+   * board.resize(375, 812);
+   * page.root.appendChild(board);
+   * ```
    */
   createPage(): Page;
 
   /**
-   * Changes the current open page to given page. Requires `content:read` permission.
+   * Changes the current open page to the given page, making it the **active page**.
+   * The active page is the one all shape creation and structural operations
+   * (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+   * so call this (and `await` it) after {@link Context.createPage} before adding
+   * shapes to the newly created page. Requires `content:read` permission.
    * @param page the page to open (a Page object or a page UUID string)
    * @param newWindow if true opens the page in a new window, defaults to false
    *
