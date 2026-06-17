@@ -339,6 +339,9 @@
         (mf/with-memo [shapes]
           (into #{} d/xf:map-id shapes))
 
+        typographies
+        (mf/deref refs/workspace-file-typography)
+
         is-layout-child-ref
         (mf/with-memo [shape-ids]
           (refs/is-layout-child? shape-ids))
@@ -494,7 +497,10 @@
         {:type type
          :ids text-ids
          :values text-values
-         :applied-tokens text-tokens}])
+         :applied-tokens text-tokens
+         :libraries libraries
+         :file-id file-id
+         :typographies typographies}])
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type

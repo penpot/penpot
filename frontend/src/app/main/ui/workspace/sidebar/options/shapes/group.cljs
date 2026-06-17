@@ -37,6 +37,9 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
+        typographies 
+        (mf/deref refs/workspace-file-typography)
+
         applied-tokens
         (get shape :applied-tokens)
 
@@ -175,7 +178,10 @@
        [:> ot/text-menu* {:type type
                           :ids text-ids
                           :values text-values
-                          :applied-tokens text-tokens}])
+                          :applied-tokens text-tokens
+                          :libraries libraries
+                          :file-id file-id
+                          :typographies typographies}])
 
      (when-not (empty? svg-values)
        [:> svg-attrs-menu* {:ids ids :values svg-values}])

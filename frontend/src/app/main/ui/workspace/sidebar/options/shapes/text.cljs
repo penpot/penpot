@@ -36,6 +36,9 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
+        typographies
+        (mf/deref refs/workspace-file-typography)
+
         applied-tokens
         (get shape :applied-tokens)
 
@@ -187,7 +190,10 @@
       {:ids ids
        :type type
        :applied-tokens applied-tokens
-       :values text-values}]
+       :values text-values
+       :libraries libraries
+       :file-id file-id
+       :typographies typographies}]
 
      [:> fill/fill-menu*
       {:ids ids
