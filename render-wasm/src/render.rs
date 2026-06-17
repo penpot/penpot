@@ -673,7 +673,6 @@ impl RenderState {
                 None => return,
             };
 
-        let target_surface_snapshot = self.surfaces.snapshot(target_surface);
         let translation = self
             .surfaces
             .get_render_context_translation(self.render_area, scale);
@@ -720,17 +719,33 @@ impl RenderState {
             }
         }
 
-        // Reset matrix so snapshot draws pixel-for-pixel on the surface.
-        // Clips survive reset_matrix (stored in device coords).
+        // Reset matrix so the blur is applied in device space (sigma is already
+        // scaled by the zoom). Clips survive reset_matrix (stored in device coords).
         canvas.reset_matrix();
 
-        // Use Src blend to replace content within the clip with the
-        // blurred version (not SrcOver which would double-render).
+        // Apply the blur as a backdrop filter on a save_layer. A backdrop filter
+        // samples the *current device* contents (respecting the active clip),
+        // which includes whatever has been drawn so far — including any in-flight
+        // ancestor save_layer, such as a parent frame with opacity < 100% or a
+        // non-default blend mode. This way the background blur reflects the actual
+        // pixels behind the shape regardless of the layer stack. Src blend makes
+        // the layer replace the clipped region with the blurred backdrop instead
+        // of compositing over it (which would double-render the backdrop).
         let mut paint = skia::Paint::default();
-        paint.set_image_filter(blur_filter);
         paint.set_blend_mode(skia::BlendMode::Src);
-        canvas.draw_image(&target_surface_snapshot, (0, 0), Some(&paint));
+        let layer_rec = skia::canvas::SaveLayerRec::default()
+            .backdrop(&blur_filter)
+            .backdrop_tile_mode(skia::TileMode::Clamp)
+            .paint(&paint);
+        canvas.save_layer(&layer_rec);
 
+        // Two restores are required, balancing two separate pushes:
+        // 1. this restore pops the save_layer above; it is the step that composites
+        //    the blurred-backdrop layer back onto the canvas (with the Src paint),
+        //    so it is what actually produces the blurred output.
+        // 2. the final restore pops the canvas.save() above, removing the shape clip
+        //    and the scale/translate/transform so they don't leak into later drawing.
+        canvas.restore();
         canvas.restore();
     }
 
