@@ -304,12 +304,16 @@
 
 (defn error-messages
   [explain]
-  (->> (:errors explain)
-       (reduce csm/interpret-schema-problem {})
-       (flatten-error-map)
-       (map (fn [[field message]]
-              (tr "plugins.validation.message" field message)))
-       (str/join ". ")))
+  (let [msg (->> (:errors explain)
+                 (reduce csm/interpret-schema-problem {})
+                 (flatten-error-map)
+                 (map (fn [[field message]]
+                        (tr "plugins.validation.message" field message)))
+                 (str/join ". "))]
+    ;; Return nil (not "") when the explain has no mappable errors, so
+    ;; `handle-error` can fall back to a non-empty message instead of
+    ;; surfacing a bare "Value not valid. Code: :error" (#9692).
+    (when-not (str/blank? msg) msg)))
 
 (defn handle-error
   "Function to be used in plugin proxies methods to handle errors and print a readable
@@ -320,8 +324,13 @@
           (if-let [explain (-> cause ex-data ::sm/explain)]
             (do
               (js/console.error (sm/humanize-explain explain))
-              (error-messages explain))
-            (ex-data cause))]
+              ;; A well-formed explain renders a message; an empty or
+              ;; unmappable one falls back to the raw explain so we never
+              ;; surface a bare "Value not valid" (#9692).
+              (or (error-messages explain) (pr-str explain)))
+            ;; Non-malli throwables (plain js/Error, TypeError, …) carry no
+            ;; ::sm/explain, so surface their own message instead of nil (#9692).
+            (or (ex-data cause) (ex-message cause) (str cause)))]
       (js/console.log (.-stack cause))
       (not-valid plugin-id :error message))))
 
