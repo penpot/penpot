@@ -2271,7 +2271,11 @@ impl RenderState {
         if sync_render {
             frame_type = self.render_shape_tree_sync(base_object, tree, timestamp)?;
         } else {
-            frame_type = self.continue_render_loop(base_object, tree, timestamp)?;
+            // Keep progressive yielding, except for a localized shape edit on a
+            // stable viewbox (e.g. recoloring) which renders in one frame.
+            let allow_stop =
+                !preserve_target || self.zoom_changed() || self.options.is_interactive_transform();
+            frame_type = self.continue_render_loop(base_object, tree, timestamp, allow_stop)?;
 
             // This is an option to debug frames.
             if self.options.capture_frames > 0 {
@@ -2331,9 +2335,11 @@ impl RenderState {
         base_object: Option<&Uuid>,
         tree: ShapesPoolRef,
         timestamp: i32,
+        allow_stop: bool,
     ) -> Result<FrameType> {
         performance::begin_measure!("continue_render_loop");
-        let frame_type = self.render_shape_tree_partial(base_object, tree, timestamp, true)?;
+        let frame_type =
+            self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
         if !self.options.is_interactive_transform() {
             self.surfaces.draw_tile_atlas_to_backbuffer(
