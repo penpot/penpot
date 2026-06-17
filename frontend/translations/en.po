@@ -6763,6 +6763,18 @@ msgstr "Hide fonts palette"
 msgid "workspace.header.menu.lock-guides"
 msgstr "Lock guides"
 
+msgid "workspace.header.menu.show-comments"
+msgstr "Show comments"
+
+msgid "workspace.header.menu.hide-comments"
+msgstr "Hide comments"
+
+msgid "workspace.toast.comments-visible"
+msgstr "Comments visible"
+
+msgid "workspace.toast.comments-hidden"
+msgstr "Comments hidden"
+
 #: src/app/main/ui/workspace/main_menu.cljs:853
 msgid "workspace.header.menu.mcp.plugin.status.connect"
 msgstr "Connect"

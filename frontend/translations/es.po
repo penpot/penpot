@@ -6592,6 +6592,18 @@ msgstr "Ocultar nombres de tableros"
 msgid "workspace.header.menu.hide-guides"
 msgstr "Ocultar guías"
 
+msgid "workspace.header.menu.show-comments"
+msgstr "Mostrar comentarios"
+
+msgid "workspace.header.menu.hide-comments"
+msgstr "Ocultar comentarios"
+
+msgid "workspace.toast.comments-visible"
+msgstr "Comentarios visibles"
+
+msgid "workspace.toast.comments-hidden"
+msgstr "Comentarios ocultos"
+
 #: src/app/main/ui/workspace/main_menu.cljs:413
 msgid "workspace.header.menu.hide-palette"
 msgstr "Ocultar paleta de colores"
