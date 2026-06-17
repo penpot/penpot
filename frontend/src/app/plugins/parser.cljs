@@ -336,17 +336,17 @@
     (d/without-nils
      {:type (-> (obj/get guide "type") parse-keyword)
       :display (obj/get guide "display")
-      :params (-> (obj/get guide "params") parse-frame-guide-column-params)})))
+      :params (-> (obj/get guide "params") parse-frame-guide-square-params)})))
 
 (defn parse-frame-guide
   [^js guide]
   (when (some? guide)
     (case (obj/get guide "type")
       "column"
-      parse-frame-guide-column
+      (parse-frame-guide-column guide)
 
       "row"
-      parse-frame-guide-row
+      (parse-frame-guide-row guide)
 
       "square"
       (parse-frame-guide-square guide))))
