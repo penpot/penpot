@@ -21,6 +21,19 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- prlimit-cmd
+  "Build a prlimit command prefix from a resource limits map.
+   Returns nil if limits is nil/empty."
+  [limits]
+  (when (seq limits)
+    (let [prefix (cond-> ["prlimit"]
+                   (:mem limits)
+                   (conj (str "--as=" (* (long (:mem limits)) 1024 1024)))
+
+                   (:cpu limits)
+                   (conj (str "--cpu=" (long (:cpu limits)))))]
+      (conj prefix "--"))))
+
 (defn- read-as-bytes
   [in]
   (with-open [^InputStream input (io/input-stream in)]
@@ -45,7 +58,7 @@
   penv)
 
 (defn exec!
-  [system & {:keys [cmd in out-enc in-enc env timeout]
+  [system & {:keys [cmd in out-enc in-enc env prlimit timeout]
              :or {out-enc "UTF-8"
                   in-enc "UTF-8"}}]
   (assert (vector? cmd) "a command parameter should be a vector")
@@ -53,7 +66,10 @@
 
   (let [executor (::wrk/executor system)
         _        (assert (some? executor) "executor is required, check ::wrk/executor")
-        builder  (ProcessBuilder. ^List cmd)
+        full-cmd (cond->> cmd
+                   (seq prlimit)
+                   (into (prlimit-cmd prlimit)))
+        builder  (ProcessBuilder. ^List full-cmd)
         env-map  (.environment ^ProcessBuilder builder)
         _        (reduce-kv set-env env-map env)
         process  (.start builder)]
