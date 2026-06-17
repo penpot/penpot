@@ -72,7 +72,7 @@
      :get
      (fn [self]
        (when-let [frame (-> self u/proxy->flow :starting-frame)]
-         (shape/shape-proxy file-id page-id frame)))
+         (shape/shape-proxy plugin-id file-id page-id frame)))
      :set
      (fn [_ value]
        (cond
