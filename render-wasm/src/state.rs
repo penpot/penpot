@@ -115,7 +115,8 @@ impl State {
     }
 
     pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
-        get_render_state().continue_render_loop(None, &self.shapes, timestamp)
+        let allow_stop = true;
+        get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
     }
 
     pub fn clear_focus_mode(&mut self) {
