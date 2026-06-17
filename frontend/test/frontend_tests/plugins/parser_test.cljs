@@ -7,6 +7,8 @@
 (ns frontend-tests.plugins.parser-test
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.schema :as sm]
+   [app.common.types.grid :as ctg]
    [app.plugins.parser :as parser]
    [cljs.test :as t :include-macros true]))
 
@@ -61,3 +63,25 @@
     (t/is (= :row (:type row)))
     (t/is (= false (:display row)))
     (t/is (= :center (get-in row [:params :type])))))
+
+(t/deftest test-parse-frame-guides
+  ;; Regression test for issue #9773.
+  ;;
+  ;; `parse-frame-guide` returned the parser fns for column/row instead of
+  ;; calling them with the guide, and the `board.guides` setter validated
+  ;; against an unregistered `::ctg/grid` reference (now `ctg/schema:grid`).
+  ;; Parsed guides must be plain maps that validate against the same direct
+  ;; schema the setter uses, and clearing (empty input) must validate too.
+  (let [column #js {:type "column" :display true
+                    :params #js {:color #js {:color "#DE4762" :opacity 0.2}
+                                 :type "stretch" :size 12 :gutter 16 :margin 16}}
+        square #js {:type "square" :display true
+                    :params #js {:color #js {:color "#DE4762" :opacity 0.2} :size 8}}
+        parsed (parser/parse-frame-guides #js [column square])]
+    (t/is (= :column (-> parsed first :type)))
+    (t/is (= :square (-> parsed second :type)))
+    (t/is (map? (-> parsed first :params)))
+    (t/is (sm/validate [:vector ctg/schema:grid] parsed)))
+
+  (t/testing "clearing guides with an empty vector validates"
+    (t/is (sm/validate [:vector ctg/schema:grid] (parser/parse-frame-guides #js [])))))
