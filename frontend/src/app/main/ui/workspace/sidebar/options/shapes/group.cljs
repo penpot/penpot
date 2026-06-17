@@ -37,7 +37,7 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
-        typographies 
+        typographies
         (mf/deref refs/workspace-file-typography)
 
         applied-tokens

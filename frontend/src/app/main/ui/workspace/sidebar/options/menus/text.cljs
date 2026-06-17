@@ -245,18 +245,18 @@
        (d/seek #(= (:id %) (uuid/uuid id)))))
 
 (defn- check-props [n-props o-props]
-  (and (identical? (unchecked-get n-props "ids")
-                   (unchecked-get o-props "ids"))
-       (identical? (unchecked-get n-props "type")
-                   (unchecked-get o-props "type"))
-       (identical? (unchecked-get n-props "appliedTokens")
-                   (unchecked-get o-props "appliedTokens"))
-       (identical? (unchecked-get n-props "fileId")
-                   (unchecked-get o-props "fileId"))
-       (identical? (unchecked-get n-props "typographies")
-                   (unchecked-get o-props "typographies"))
-       (let [o-values (unchecked-get o-props "values")
-             n-values (unchecked-get n-props "values")]
+  (let [o-values (unchecked-get o-props "values")
+        n-values (unchecked-get n-props "values")]
+    (and (identical? (unchecked-get n-props "ids")
+                     (unchecked-get o-props "ids"))
+         (identical? (unchecked-get n-props "type")
+                     (unchecked-get o-props "type"))
+         (identical? (unchecked-get n-props "appliedTokens")
+                     (unchecked-get o-props "appliedTokens"))
+         (identical? (unchecked-get n-props "fileId")
+                     (unchecked-get o-props "fileId"))
+         (identical? (unchecked-get n-props "typographies")
+                     (unchecked-get o-props "typographies"))
          (identical? (get o-values :fills)
                      (get n-values :fills))
          (identical? (get o-values :font-family)
@@ -300,9 +300,7 @@
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values applied-tokens libraries file-id typographies]}]
 
-  (let [_ (prn "entro en el text-menu*")
-        _ (.log js/console (clj->js values))
-        ;; --- UI state
+  (let [;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
                                             :more-options false})
         menu-state           (deref menu-state*)

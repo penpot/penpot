@@ -108,14 +108,14 @@
 
      (when is-layout-child?
        [:> layout-item-menu* {:ids ids
-                             :type type
-                             :values layout-item-values
-                             :is-layout-child true
-                             :is-layout-container false
-                             :is-flex-parent is-flex-parent?
-                             :is-grid-parent is-grid-parent?
-                             :applied-tokens applied-tokens
-                             :shape shape}])
+                              :type type
+                              :values layout-item-values
+                              :is-layout-child true
+                              :is-layout-container false
+                              :is-flex-parent is-flex-parent?
+                              :is-grid-parent is-grid-parent?
+                              :applied-tokens applied-tokens
+                              :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
        [:> constraints-menu* {:ids ids
