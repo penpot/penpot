@@ -6,6 +6,7 @@
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.types.tokens-lib :as ctob]
    [app.plugins.tokens :as ptok]
    [cljs.test :as t :include-macros true]))
 
@@ -80,3 +81,33 @@
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))
   (t/is (false? (boolean (ptok/token-attr? "not-a-real-attr"))))
   (t/is (false? (boolean (ptok/token-attr? nil)))))
+
+;; ---------------------------------------------------------------------
+;; Issue #10070 — creating a (reference) token must work when the target set
+;; exists but isn't active. `addToken` resolves the new token against the
+;; active-set tree; with no active theme the target set's own tokens are
+;; absent, so a same-set reference can't resolve and creation is refused.
+;; The fix forces the target set active during resolution
+;; (`get-tokens-in-active-sets-force`), mirroring the UI. These tests pin the
+;; resolution premise the fix relies on.
+
+(def ^:private inactive-set-id #uuid "00000000-0000-0000-0000-0000000000aa")
+
+(defn- lib-with-inactive-set
+  []
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id inactive-set-id :name "core"))
+      (ctob/add-token inactive-set-id
+                      (ctob/make-token {:name "color.gray.50" :type :color :value "#808080"}))))
+
+(t/deftest addtoken-target-set-absent-from-active-tree-without-force
+  ;; No active theme -> the inactive set's tokens are not in the active tree,
+  ;; so the old non-force resolution couldn't see them.
+  (let [lib (lib-with-inactive-set)]
+    (t/is (not (contains? (ctob/get-tokens-in-active-sets lib) "color.gray.50")))))
+
+(t/deftest addtoken-target-set-present-in-active-tree-with-force
+  ;; Forcing the target set active surfaces its tokens, so a reference into
+  ;; that set resolves and `addToken` can create the token (#10070).
+  (let [lib (lib-with-inactive-set)]
+    (t/is (contains? (ctob/get-tokens-in-active-sets-force lib inactive-set-id) "color.gray.50"))))

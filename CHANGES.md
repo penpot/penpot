@@ -36,6 +36,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix plugin API `addToken` refusing to create a token in a set that exists but isn't active, by forcing the target set active during resolution like the UI does (by @filipsajdak) [Github #10070](https://github.com/penpot/penpot/issues/10070)
 - Fix plugin API `fileVersion.restore()` promise hanging indefinitely on restore failure [Github #9092](https://github.com/penpot/penpot/issues/9092)
 - Fix LDAP provider params schema typo (`bind-passwor` → `bind-password`) introduced during the `clojure.spec` → `malli` migration; the schema slot now matches the runtime key actually read by `prepare-params` (`:password (:bind-password cfg)`) and `try-connectivity` (`(:bind-password cfg)`), so a wrong type for the password no longer slips through unvalidated
 - Fix `login-with-ldap` silently dropping its error message on the `ldap-not-initialized` restriction (typo `:hide` → `:hint`); the message `"ldap auth provider is not initialized"` now actually surfaces in logs and error responses instead of being discarded into an unread key

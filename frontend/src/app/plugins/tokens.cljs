@@ -328,7 +328,11 @@
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)
                   token (ctob/make-token attrs)
-                  tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                  ;; Force the target set active during resolution, mirroring the
+                  ;; UI (`get-tokens-in-active-sets-force` in sidebar.cljs), so a
+                  ;; token can be created in a set that exists but isn't currently
+                  ;; in the active themes (#10070).
+                  tokens-tree (-> (ctob/get-tokens-in-active-sets-force tokens-lib id)
                                   (assoc (:name token) token))
                   resolved-tokens (ts/resolve-tokens tokens-tree)
 
