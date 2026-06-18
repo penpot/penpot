@@ -5,7 +5,6 @@ ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     DEBIAN_FRONTEND=noninteractive \
-    NODE_VERSION=v24.16.0 \
     TZ=Etc/UTC
 
 RUN set -ex; \
@@ -18,30 +17,6 @@ RUN set -ex; \
     ; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         OPENSSL_ARCH='linux-aarch64'; \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         ;; \
-       amd64|x86_64) \
-         OPENSSL_ARCH='linux-x86_64'; \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; \
-         exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
-    mkdir -p /opt/node; \
-    cd /opt/node; \
-    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
-    chown -R root /opt/node; \
-    find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
-    rm -rf /tmp/nodejs.tar.gz;
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -78,7 +53,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jre" \
-    PATH=/opt/jre/bin:/opt/node/bin:/opt/imagick/bin:$PATH \
+    PATH=/opt/jre/bin:/opt/imagick/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
@@ -125,8 +100,9 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
-COPY --from=build /opt/node /opt/node
 COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
+
+COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
 
 ARG BUNDLE_PATH="./bundle-backend/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/backend/

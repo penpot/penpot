@@ -123,11 +123,10 @@
      :bucket "file-media-object"}))
 
 (defn- process-thumb-image
-  [info]
-  (let [thumb (-> thumbnail-options
-                  (assoc :cmd :generic-thumbnail)
-                  (assoc :input info)
-                  (media/run))
+  [cfg info]
+  (let [thumb (media/run cfg (assoc thumbnail-options
+                                    :cmd :generic-thumbnail
+                                    :input info))
         hash  (sto/calculate-hash (:data thumb))
         data  (-> (sto/content (:data thumb) (:size thumb))
                   (sto/wrap-with-hash hash))]
@@ -138,12 +137,12 @@
      :bucket "file-media-object"}))
 
 (defn- process-image
-  [content]
-  (let [info (media/run {:cmd :info :input content})]
+  [cfg content]
+  (let [info (media/run cfg {:cmd :info :input content})]
     (cond-> info
       (and (not (svg-image? info))
            (big-enough-for-thumbnail? info))
-      (assoc ::thumb (process-thumb-image info))
+      (assoc ::thumb (process-thumb-image cfg info))
 
       :always
       (assoc ::image (process-main-image info)))))
@@ -170,7 +169,7 @@
            :path (str (:path content))
            :origin origin)
 
-    (let [result  (process-image content)
+    (let [result  (process-image cfg content)
           image   (sto/put-object! storage (::image result))
           thumb   (when-let [params (::thumb result)]
                     (sto/put-object! storage params))

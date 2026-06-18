@@ -1,5 +1,7 @@
 ## 1.5.0 (Unreleased)
 
+- **plugins-runtime**: changes outside the current page now raise a validation error when the target belongs to a page that is not currently active, instead of silently operating on the active page.
+- **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
@@ -11,6 +13,7 @@
 - **plugin-types**: Added `textBounds` property for text shapes
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
+- **plugin-types**: Added `fixedWhenScrolling` property for shapes
 
 ## 1.4.2 (2026-01-21)
 

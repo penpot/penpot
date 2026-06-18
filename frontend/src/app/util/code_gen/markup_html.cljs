@@ -38,7 +38,7 @@
                        indent))
 
              (cfh/text-shape? shape)
-             (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape* #js {:shape shape :is-code true}))
+             (let [text-shape-html (rds/renderToStaticMarkup (mf/element text/text-shape* #js {:shape shape :isCode true}))
                    text-shape-html (str/replace text-shape-html #"style\s*=\s*[\"'][^\"']*[\"']" "")]
                (dm/fmt "%<div class=\"%\">\n%\n%</div>"
                        indent

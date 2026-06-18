@@ -1854,6 +1854,10 @@ msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
 msgid "errors.tokens.self-reference"
 msgstr "El token tiene una autoreferencia"
 
+#: src/app/common/files/tokens.cljc
+msgid "errors.tokens.circular-reference"
+msgstr "El token tiene una referencia circular"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:124
 msgid "errors.tokens.shadow-blur-range"
 msgstr "El desenfoque (blur) de la sombra debe ser mayor o igual a 0."
@@ -2466,12 +2470,6 @@ msgstr ""
 "El servidor MCP de Penpot permite a los clientes MCP interactuar "
 "directamente con los archivos de diseño de Penpot."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Esta clave MCP única no es recuperable. Si la pierdes, tendrás que crear "
-"una nueva."
-
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
 msgstr "La clave MCP expirará el %s"
@@ -2684,6 +2682,10 @@ msgstr "Error del servidor (Bad Gateway)"
 #: src/app/main/ui/inspect/styles/style_box.cljs:26
 msgid "labels.blur"
 msgstr "Desenfoque"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs
+msgid "labels.blur-effects"
+msgstr "Efectos de desenfoque"
 
 #: src/app/main/data/common.cljs:119, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:543, src/app/main/ui/dashboard/team.cljs:866, src/app/main/ui/dashboard/team.cljs:1345, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:167, src/app/main/ui/settings/integrations.cljs:228, src/app/main/ui/viewer/share_link.cljs:204, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:364, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:242
 msgid "labels.cancel"
@@ -4365,7 +4367,7 @@ msgstr "Revisa tu correo y haz clic en el enlace para crear una nueva contraseñ
 
 #: src/app/main/ui/static.cljs:167
 msgid "not-found.login.signup-free"
-msgstr "Registrate gratis"
+msgstr "Regístrate gratis"
 
 #: src/app/main/ui/static.cljs:168
 msgid "not-found.login.start-using"
@@ -7004,9 +7006,29 @@ msgstr "Desenfoque de capa"
 msgid "workspace.options.blur-options.remove-blur"
 msgstr "Eliminar desenfoque"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Mostrar/ocultar más opciones"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr "El desenfoque de fondo (Background Blur) solo está disponible en el nuevo motor de renderizado. Actívalo desde el menú de Preferencias para utilizar este efecto."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:113, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
 msgid "workspace.options.blur-options.title"
 msgstr "Desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Efectos de desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Efectos de desenfoque del grupo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Efectos de desenfoque de la selección"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.title.group"
@@ -7019,6 +7041,10 @@ msgstr "Desenfoque de la selección"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:141
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Mostrar/ocultar desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Selector de tipo de desenfoque"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"

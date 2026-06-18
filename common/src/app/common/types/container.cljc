@@ -339,7 +339,10 @@
                                                                           ;; We must avoid that destiny frame is inside the component frame
                                                                           (nil? (get component-children (:id %)))
                                                                           ;; We must avoid that destiny frame is inside a copy
-                                                                          (not (ctk/in-component-copy? %)))}))
+                                                                          (not (ctk/in-component-copy? %))
+                                                                          ;; We must avoid that destiny frame is a variant container,
+                                                                          ;; because their children must be variant mains
+                                                                          (not (ctk/is-variant-container? %)))}))
          frame           (get-shape page frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 

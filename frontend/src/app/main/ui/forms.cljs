@@ -79,7 +79,6 @@
                       (or (nil? form)
                           (true? disabled)
                           (not (:valid form-state))
-                          (seq (:async-errors form-state))
                           (seq (:extra-errors form-state))))))
 
         handle-key-down-save

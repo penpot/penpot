@@ -451,5 +451,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
-                         :tooltip-position "top-left"
+                         :tooltip-placement "top-left"
                          :icon i/move}])]))

@@ -317,6 +317,9 @@
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :group-shapes shapes)
 
+        (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+        (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
+
         :else
         (let [file-id (:current-file-id @st/state)
               page-id (:current-page-id @st/state)
@@ -334,6 +337,10 @@
 
         (and (some? rest) (not (every? shape/shape-proxy? rest)))
         (u/not-valid plugin-id :ungroup rest)
+
+        (or (not (u/page-active? (obj/get group "$page")))
+            (some #(not (u/page-active? (obj/get % "$page"))) rest))
+        (u/not-valid plugin-id :ungroup "Cannot modify a page that is not currently active")
 
         :else
         (let [shapes (concat [group] rest)
@@ -372,8 +379,11 @@
     :createText
     (fn [text]
       (cond
-        (or (not (string? text)) (empty? text))
+        (not (string? text))
         (u/not-valid plugin-id :createText text)
+
+        (empty? text)
+        nil
 
         :else
         (let [page  (dsh/lookup-page @st/state)
@@ -443,6 +453,9 @@
 
           (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
           (u/not-valid plugin-id :createBoolean-shapes shapes)
+
+          (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+          (u/not-valid plugin-id :createBoolean "Cannot modify a page that is not currently active")
 
           :else
           (let [ids      (into #{} (map #(obj/get % "$id")) shapes)

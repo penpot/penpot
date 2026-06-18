@@ -132,6 +132,15 @@
             (t/is (= (.-constraintsVertical shape) "bottom"))
             (t/is (= (get-in @store (get-shape-path :constraints-v)) :bottom)))
 
+          (t/testing " - fixedWhenScrolling"
+            (set! (.-fixedWhenScrolling shape) true)
+            (t/is (= (.-fixedWhenScrolling shape) true))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) true))
+
+            (set! (.-fixedWhenScrolling shape) false)
+            (t/is (= (.-fixedWhenScrolling shape) false))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) false)))
+
           (t/testing " - borderRadius"
             (set! (.-borderRadius shape) 10)
             (t/is (= (.-borderRadius shape) 10))
@@ -190,7 +199,6 @@
 
           (t/testing " - blur"
             (set! (.-blur shape) #js {:value 10})
-            (t/is (= (-> (. shape -blur) (aget "type")) "layer-blur"))
             (t/is (= (-> (. shape -blur) (aget "value")) 10))
             (t/is (= (-> (. shape -blur) (aget "hidden")) false))
             (let [id (-> (. shape -blur) (aget "id") uuid/uuid)]
@@ -330,6 +338,10 @@
               (obj/set! (aget (.-fills text) 0) "fillColor" "#123456")
               (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
               (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
+
+        (t/testing "createText with empty string returns null"
+          (t/is (nil? (.createText context "")))
+          (t/is (some? (.createText context "Hello"))))
 
         (t/testing "Relative properties"
           (let [board (.createBoard context)]

@@ -15,7 +15,7 @@
     "test:watch:e2e": "vitest --browser"
   },
   "devDependencies": {
-    "@playwright/test": "^1.61.0",
+    "@playwright/test": "1.61.0",
     "@types/node": "^25.9.2",
     "@vitest/browser": "^4.1.9",
     "@vitest/coverage-v8": "^4.1.9",
@@ -23,7 +23,7 @@
     "canvas": "^3.2.3",
     "esbuild": "^0.28.0",
     "jsdom": "^29.1.1",
-    "playwright": "^1.61.0",
+    "playwright": "1.61.0",
     "prettier": "^3.8.4",
     "vite": "^8.0.16",
     "vitest": "^4.1.9"

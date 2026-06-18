@@ -29,7 +29,7 @@
       (default-validate-token)))
 
 (mf/defc form*
-  [{:keys [token token-type] :rest props}]
+  [{:keys [token token-type current-token-path] :rest props}]
   (let [token
         (mf/with-memo [token]
           (if token
@@ -37,7 +37,7 @@
             {:type token-type}))
         props (mf/spread-props props {:token token
                                       :token-type token-type
-                                      :make-schema #(-> (cfo/make-token-schema %1 token-type)
+                                      :make-schema #(-> (cfo/make-token-schema %1 token-type current-token-path)
                                                         (sm/dissoc-key :id)
                                                         ;; The value as edited in the form is a simple stirng.
                                                         ;; It's converted to vector in the validator.

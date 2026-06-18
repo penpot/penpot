@@ -115,7 +115,8 @@ impl State {
     }
 
     pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
-        get_render_state().continue_render_loop(None, &self.shapes, timestamp)
+        let allow_stop = true;
+        get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -214,6 +215,11 @@ impl State {
     /// invalidated and recalculated to include the new child. This ensures that frames
     /// and groups properly encompass their children.
     pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
+        // Reparent preview during drag is handled by structure modifiers only.
+        if get_render_state().options.is_interactive_transform() {
+            return;
+        }
+
         let Some(shape) = self.current_shape_mut() else {
             panic!("Invalid current shape")
         };

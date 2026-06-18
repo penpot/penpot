@@ -43,7 +43,16 @@
    :m4 :margin-bottom-left})
 
 (def ^:private map:token-attr-plugin->token-attr
-  (map-invert map:token-attr->token-attr-plugin))
+  (merge
+   (map-invert map:token-attr->token-attr-plugin)
+   {:padding-top    :p1
+    :padding-right  :p2
+    :padding-bottom :p3
+    :padding-left   :p4
+    :margin-top     :m1
+    :margin-right   :m2
+    :margin-bottom  :m3
+    :margin-left    :m4}))
 
 (defn token-attr->token-attr-plugin
   [k]
@@ -317,7 +326,8 @@
                                       (ctob/tokens-tree))]
                   [:tuple (-> (cfo/make-token-schema
                                tokens-tree
-                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
+                               nil)
                               ;; Don't allow plugins to set the id
                               (sm/dissoc-key :id)
                               ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
@@ -544,4 +554,3 @@
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
                (token-set-proxy plugin-id file-id set-id))))}))
-
