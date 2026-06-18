@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS build
+FROM ubuntu:26.04 AS build
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -9,7 +9,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         binutils \
         ca-certificates \
@@ -47,7 +47,7 @@ RUN set -eux; \
        --add-modules java.base,jdk.net,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
        --output /opt/jre;
 
-FROM ubuntu:24.04 AS image
+FROM ubuntu:26.04 AS image
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -60,7 +60,7 @@ ENV LANG='C.UTF-8' \
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
         curl \
@@ -81,8 +81,8 @@ RUN set -ex; \
         libwebp7 \
         libwebpdemux2 \
         libwebpmux3 \
-        libxml2 \
-        libzip4t64 \
+        libxml2-16 \
+        libzip5 \
         libzstd1 \
         python3 \
         python3-tabulate \
@@ -100,7 +100,7 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
-COPY --from=penpotapp/imagemagick:7.1.2-13 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 
 COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
 
