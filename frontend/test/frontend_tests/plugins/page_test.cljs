@@ -7,9 +7,12 @@
 (ns frontend-tests.plugins.page-test
   (:require
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as cths]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.shape :as shape]
    [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -26,6 +29,39 @@
         _       (set! st/stream (ptk/input-stream store))
         context (api/create-context "00000000-0000-0000-0000-000000000000")]
     {:file file :store store :context context}))
+
+(def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
+
+(defn- setup-with-board
+  "Creates a file with a board on the current page and a plugin context."
+  []
+  (let [file    (-> (cthf/sample-file :file1 :page-label :page1)
+                    (cths/add-sample-shape :board1 :type :frame))
+        store   (ths/setup-store file)
+        _       (set! st/state store)
+        _       (set! st/stream (ptk/input-stream store))
+        context (api/create-context plugin-id)]
+    {:file file :store store :context context :board-id (thi/id :board1)}))
+
+(t/deftest test-create-flow-starting-board-is-valid
+  ;; Regression: the flow proxy returned by createFlow (and obtained later via
+  ;; page.flows) must expose a valid board proxy for `startingBoard`, carrying
+  ;; the plugin id rather than a corrupted handle. See issue #10203.
+  (let [{:keys [context board-id]} (setup-with-board)
+        ^js page  (.-currentPage context)
+        ^js board (.getShapeById page (str board-id))
+        ^js flow  (.createFlow page "flow1" board)
+        ^js sb    (.-startingBoard flow)]
+    (t/is (shape/shape-proxy? sb))
+    (t/is (= (str board-id) (.-id sb)))
+    (t/is (= plugin-id (obj/get sb "$plugin")))
+
+    ;; Re-fetching the flow through page.flows must yield the same valid board
+    (let [^js flow2 (aget (.-flows page) 0)
+          ^js sb2   (.-startingBoard flow2)]
+      (t/is (shape/shape-proxy? sb2))
+      (t/is (= (str board-id) (.-id sb2)))
+      (t/is (= plugin-id (obj/get sb2 "$plugin"))))))
 
 (defn- mock-page-initialized
   "Simulates the two effects of initialize-page* without routing:
