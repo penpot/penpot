@@ -1209,8 +1209,9 @@
                  (u/not-valid plugin-id :addGridLayout "Cannot modify a page that is not currently active")
 
                  :else
-                 (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
-                     (se/event plugin-id "create-shape-layout" :layout "grid")
+                 (do (st/emit!
+                      (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false)
+                      (se/event plugin-id "create-shape-layout" :layout "grid"))
                      (grid/grid-layout-proxy plugin-id file-id page-id id)))))
 
            ;; Make masks for groups
