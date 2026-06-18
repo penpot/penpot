@@ -532,7 +532,16 @@ impl Surfaces {
     ) {
         self.tiles.update(viewbox, tile_viewbox);
         if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
-            self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
+            // Snapshot only the occupied sub-region (origin stays at 0,0 so the
+            // `textures` atlas coordinates remain valid) instead of the whole
+            // max_texture_size² atlas — avoids a full-atlas COW copy each settle.
+            let snap = match self.tiles.used_bounds() {
+                Some(bounds) => self.tile_atlas.image_snapshot_with_bounds(bounds),
+                None => Some(self.tile_atlas.image_snapshot()),
+            };
+            if let Some(image) = snap {
+                self.tile_atlas_image = Some(image);
+            }
             self.tiles.snapshot();
         }
         let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
@@ -1577,6 +1586,35 @@ impl TileTextureCache {
 
     pub fn snapshot(&mut self) {
         self.is_updated = false;
+    }
+
+    /// Bounding box (from the atlas origin) of the slots actually sampled this
+    /// frame. Slots are allocated row-major from index 0 and freed slots are
+    /// reused first, so occupied slots cluster near (0,0): snapshotting only
+    /// `(0,0)..(max_right,max_bottom)` keeps the `textures`/`transforms`
+    /// coordinates valid (origin stays 0) while avoiding a full-atlas
+    /// `image_snapshot` (1GB→content-sized). `None` when nothing is in use.
+    pub fn used_bounds(&self) -> Option<skia::IRect> {
+        let mut max_right = 0.0f32;
+        let mut max_bottom = 0.0f32;
+        let mut any = false;
+        for r in self.textures.iter() {
+            if r.is_empty() {
+                continue;
+            }
+            any = true;
+            max_right = max_right.max(r.right);
+            max_bottom = max_bottom.max(r.bottom);
+        }
+        if !any {
+            return None;
+        }
+        Some(skia::IRect::new(
+            0,
+            0,
+            max_right.ceil() as i32,
+            max_bottom.ceil() as i32,
+        ))
     }
 
     fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {

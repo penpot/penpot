@@ -42,6 +42,7 @@ pub use images::*;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
+#[cfg_attr(feature = "profile-macros", derive(Debug))]
 #[repr(u8)]
 pub enum FrameType {
     None = 0,
@@ -877,6 +878,7 @@ impl RenderState {
     /// on top of Target, then present. Backbuffer is left clean so it can be reused
     /// as-is across interactive-transform frames without stale overlay pixels.
     pub fn present_frame(&mut self, tree: ShapesPoolRef) {
+        performance::begin_measure!("present_frame");
         // Viewer masked passes render a partial scene onto a transparent backbuffer.
         // SrcOver would keep pass-1 pixels wherever the backbuffer stays transparent.
         if self.viewer_masked_pass() {
@@ -892,7 +894,10 @@ impl RenderState {
         }
         ui::render(self, tree);
         debug::render_wasm_label(self);
+        performance::begin_measure!("present_frame:flush_submit");
         self.surfaces.flush_and_submit(SurfaceId::Target);
+        performance::end_measure!("present_frame:flush_submit");
+        performance::end_measure!("present_frame");
     }
 
     /// Renders only the canvas background and UI surface (rulers/frame), without
@@ -2346,10 +2351,36 @@ impl RenderState {
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
         if !self.options.is_interactive_transform() {
+            performance::begin_measure!("atlas_to_backbuffer");
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
                 &self.tile_viewbox,
                 self.background_color,
+            );
+            performance::end_measure!("atlas_to_backbuffer");
+        }
+
+        #[cfg(feature = "profile-macros")]
+        {
+            let usage = get_gpu_state().context.resource_cache_usage();
+            let limit_mb = get_gpu_state().context.resource_cache_limit() as f64 / 1_048_576.0;
+            let mts = get_gpu_state().max_texture_size();
+            let atlas_mb = (mts as f64 * mts as f64 * 4.0) / 1_048_576.0;
+            let cdim = self.surfaces.cache_dimensions();
+            let cache_mb = (cdim.width as f64 * cdim.height as f64 * 4.0) / 1_048_576.0;
+            crate::console_log!(
+                "[GPU] frame={:?} interactive={} fast={} rcache_mb={:.1} limit_mb={:.1} rcache_n={} cache={}x{} cache_mb={:.1} max_tex={} atlas_mb={:.1}",
+                frame_type,
+                self.options.is_interactive_transform(),
+                self.options.is_fast_mode(),
+                usage.resource_bytes as f64 / 1_048_576.0,
+                limit_mb,
+                usage.resource_count,
+                cdim.width,
+                cdim.height,
+                cache_mb,
+                mts,
+                atlas_mb
             );
         }
 
