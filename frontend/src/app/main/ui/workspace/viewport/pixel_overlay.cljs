@@ -261,10 +261,11 @@
   "Maps client (viewport) coordinates to device-pixel canvas coordinates."
   [viewport-node client-x client-y]
   (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
+        dpr (wasm.api/get-dpr)
         x (mth/floor (- client-x brx))
         y (mth/floor (- client-y bry))]
-    [(mth/floor (* x wasm.api/dpr))
-     (mth/floor (* y wasm.api/dpr))]))
+    [(mth/floor (* x dpr))
+     (mth/floor (* y dpr))]))
 
 (defn process-pointer-move-wasm
   "Updates the magnifier loupe with the canvas region under the cursor. The
