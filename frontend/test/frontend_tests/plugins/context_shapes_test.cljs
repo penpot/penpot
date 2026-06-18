@@ -382,3 +382,23 @@
           (t/is (pos? (thw/call-count :clean-modifiers)))
           (t/is (pos? (thw/call-count :set-structure-modifiers)))
           (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+
+(t/deftest test-array-properties-return-empty-array-when-no-items
+  ;; Array-typed properties must always return an array, never null,
+  ;; even when the shape has no items for that property.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
+            _           (set! st/state store)
+            ^js shape   (.createRectangle context)]
+
+        (t/testing " - exports (no exports set)"
+          (let [exports (.-exports shape)]
+            (t/is (array? exports))
+            (t/is (= 0 (.-length exports)))))
+
+        (t/testing " - shadows (no shadows set)"
+          (let [shadows (.-shadows shape)]
+            (t/is (array? shadows))
+            (t/is (= 0 (.-length shadows)))))))))
