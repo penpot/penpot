@@ -3969,6 +3969,11 @@ export interface ShapeBase extends PluginData {
 
   /**
    * Adds a new interaction to the shape.
+   *
+   * If the interaction starts a flow (for example a `navigate-to` action) and
+   * the shape's board is not already part of any flow, a new flow starting at
+   * that board is created automatically, matching the behavior of the editor.
+   *
    * @param trigger defines the conditions under which the action will be triggered
    * @param action defines what will be executed when the trigger happens
    * @param delay for the type of trigger `after-delay` will specify the time after triggered. Ignored otherwise.

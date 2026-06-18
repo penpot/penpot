@@ -12,6 +12,7 @@
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
+   [frontend-tests.data.workspace-interactions-test]
    [frontend-tests.data.workspace-mcp-test]
    [frontend-tests.data.workspace-media-test]
    [frontend-tests.data.workspace-shortcuts-test]
@@ -27,6 +28,7 @@
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.interactions-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
@@ -67,6 +69,7 @@
     frontend-tests.data.uploads-test
     frontend-tests.data.viewer-test
     frontend-tests.data.workspace-colors-test
+    frontend-tests.data.workspace-interactions-test
     frontend-tests.data.workspace-mcp-test
     frontend-tests.data.workspace-media-test
     frontend-tests.data.workspace-shortcuts-test
@@ -81,6 +84,7 @@
     frontend-tests.logic.pasting-in-containers-test
     frontend-tests.plugins.context-shapes-test
     frontend-tests.plugins.page-active-validation-test
+    frontend-tests.plugins.interactions-test
     frontend-tests.plugins.page-test
     frontend-tests.plugins.parser-test
     frontend-tests.plugins.tokens-test
