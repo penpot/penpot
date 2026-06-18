@@ -2536,12 +2536,6 @@ msgstr ""
 "The Penpot MCP Server enables MCP clients to interact directly with Penpot "
 "design files."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"This unique MCP key is non-recoverable. If you lose it, you will need to "
-"create a new one."
-
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
 msgstr "The MCP key will expire on %s"
