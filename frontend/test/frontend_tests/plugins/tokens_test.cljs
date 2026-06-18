@@ -11,6 +11,7 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.tokenscript :as ts]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.tokens :as ptok]
@@ -148,3 +149,80 @@
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))
   (t/is (false? (boolean (ptok/token-attr? "not-a-real-attr"))))
   (t/is (false? (boolean (ptok/token-attr? nil)))))
+
+;; Regression coverage for issue #10070.
+;;
+;; The Plugin API's `addToken` rejected reference tokens whose target
+;; lives in an *inactive* token set, even though the referenced token
+;; exists structurally. The proxy `:fn` resolved the new token against
+;; active sets only (`get-tokens-in-active-sets`), so a reference into an
+;; inactive set never resolved and fell into the generic `not-valid`
+;; error path.
+;;
+;; The fix resolves against *all* tokens in the library (inactive sets
+;; included), mirroring the workspace token-creation form. These tests
+;; reproduce the exact `tokens-tree` construction from both the buggy and
+;; the fixed `addToken` `:fn` and assert resolution behaviour directly —
+;; the proxy `:fn` itself drives the global store and `st/emit!`, so it is
+;; not unit-testable, but the resolve step it gates on is.
+
+(defn- inactive-set-library
+  "A library with `primitives` (holding `color.gray.50`) left inactive and
+  an active, empty `semantic` set — the repro from the issue."
+  []
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :primitives)
+                                         :name "primitives"))
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :semantic)
+                                         :name "semantic"))
+      (ctob/add-token (cthi/id :primitives)
+                      (ctob/make-token {:name "color.gray.50"
+                                        :value "#fafafa"
+                                        :type :color}))
+      ;; `add-set` does not activate sets, so activate only `semantic`,
+      ;; leaving `primitives` (the reference target) inactive.
+      (ctob/toggle-set-in-theme ctob/hidden-theme-id "semantic")))
+
+(t/deftest add-token-active-sets-only-fails-to-resolve-cross-set-reference
+  ;; Demonstrates the bug: resolving the new token against active sets
+  ;; only leaves the reference unresolved.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.gray.50}"
+                                :type :color})
+        tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (nil? resolved-value))
+    (t/is (seq errors))))
+
+(t/deftest add-token-resolves-cross-set-reference-into-inactive-set
+  ;; The fix: resolving against all tokens in the library (inactive sets
+  ;; included) resolves the reference even though `primitives` is inactive.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.gray.50}"
+                                :type :color})
+        tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                               (ctob/get-tokens tokens-lib (cthi/id :semantic)))
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (some? resolved-value))
+    (t/is (empty? errors))))
+
+(t/deftest add-token-still-fails-for-references-missing-from-every-set
+  ;; A reference to a token that exists in *no* set must still fail, even
+  ;; with the all-tokens resolution.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.does.not.exist}"
+                                :type :color})
+        tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                               (ctob/get-tokens tokens-lib (cthi/id :semantic)))
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (nil? resolved-value))
+    (t/is (seq errors))))
