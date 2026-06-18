@@ -4501,7 +4501,7 @@ msgstr "Check your email and click on the link to create a new password."
 
 #: src/app/main/ui/static.cljs:167
 msgid "not-found.login.signup-free"
-msgstr "Signup for free"
+msgstr "Sign up for free"
 
 #: src/app/main/ui/static.cljs:168
 msgid "not-found.login.start-using"
