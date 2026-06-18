@@ -754,6 +754,7 @@
            on-guide-drag on-guide-hover get-hover-frame focus]}]
   (let [dragging-ref       (mf/use-ref false)
         moved-ref          (mf/use-ref false)
+        editing-ref        (mf/use-ref false)
         start-ref          (mf/use-ref nil)
         guide-ref          (mf/use-ref nil)
         pending-ref        (mf/use-ref nil)
@@ -813,6 +814,7 @@
         reset-state
         (fn []
           (clear-drag-refs)
+          (mf/set-ref-val! editing-ref false)
           (when (some? on-guide-drag)
             (on-guide-drag nil))
           (emit-hover-axis nil)
@@ -874,7 +876,7 @@
                     (reset! state pending)))))))
 
         editing?
-        (fn [] (= :edit (:mode @state)))
+        (fn [] (mf/ref-val editing-ref))
 
         guide-at-event
         (fn [event]
@@ -976,6 +978,7 @@
                 (when (some? on-guide-drag)
                   (on-guide-drag id))
                 (mf/set-ref-val! guide-ref guide)
+                (mf/set-ref-val! editing-ref true)
                 (let [frame  (some-> frame-id refs/object-by-id deref)
                       offset (if frame
                                (if (= :x axis) (:x frame) (:y frame))
