@@ -239,38 +239,41 @@
          #(replace-map markup-code images-data))]
 
     (mf/with-effect [fonts]
-      (->> (rx/from fonts)
-           (rx/merge-map fonts/fetch-font-css)
-           (rx/reduce conj [])
-           (rx/subs!
-            (fn [result]
-              (let [css (str/join "\n" result)]
-                (reset! fontfaces-css* css))))))
+      (let [sub (->> (rx/from fonts)
+                     (rx/merge-map fonts/fetch-font-css)
+                     (rx/reduce conj [])
+                     (rx/subs!
+                      (fn [result]
+                        (let [css (str/join "\n" result)]
+                          (reset! fontfaces-css* css)))))]
+        #(rx/dispose! sub)))
 
     ;; Resolve the font URLs to data URIs. The inspect view keeps the original
     ;; URLs (more readable), but copying embeds the fonts so the styles render
     ;; outside of Penpot, where the original URLs require auth/CORS.
     (mf/with-effect [fontfaces-css]
-      (->> (rx/from (fonts/extract-fontface-urls (or fontfaces-css "")))
-           (rx/merge-map
-            (fn [uri]
-              (->> (http/fetch-data-uri uri true)
-                   (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
-           (rx/reduce conj {})
-           (rx/subs!
-            (fn [result]
-              (reset! fonts-data* result)))))
+      (let [sub (->> (rx/from (fonts/extract-fontface-urls (or fontfaces-css "")))
+                     (rx/merge-map
+                      (fn [uri]
+                        (->> (http/fetch-data-uri uri true)
+                             (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
+                     (rx/reduce conj {})
+                     (rx/subs!
+                      (fn [result]
+                        (reset! fonts-data* result))))]
+        #(rx/dispose! sub)))
 
     (mf/with-effect [images-urls]
-      (->> (rx/from images-urls)
-           (rx/merge-map
-            (fn [[_ uri]]
-              (->> (http/fetch-data-uri uri true)
-                   (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
-           (rx/reduce conj {})
-           (rx/subs!
-            (fn [result]
-              (reset! images-data* result)))))
+      (let [sub (->> (rx/from images-urls)
+                     (rx/merge-map
+                      (fn [[_ uri]]
+                        (->> (http/fetch-data-uri uri true)
+                             (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
+                     (rx/reduce conj {})
+                     (rx/subs!
+                      (fn [result]
+                        (reset! images-data* result))))]
+        #(rx/dispose! sub)))
 
     [:div {:class (stl/css-case :element-options true
                                 :viewer-code-block (= :viewer from))}
