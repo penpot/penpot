@@ -388,10 +388,16 @@
 ;; FONTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private font-prlimit
-  "Resource limits for font processing tools."
-  {:mem 512   ;; 512 MiB address space ceiling
-   :cpu 30})  ;; 30 seconds CPU time
+(defn- get-font-prlimit
+  "Returns resource limits for font processing tools, read from config."
+  []
+  {:mem (cf/get :font-process-mem)
+   :cpu (cf/get :font-process-cpu)})
+
+(defn- get-font-timeout
+  "Returns the wall-clock timeout for font processing, read from config."
+  []
+  (cf/get :font-process-timeout))
 
 (defn- exec-font!
   "Execute a font processing command with resource limits.
@@ -399,8 +405,8 @@
   [system args]
   (shell/exec! system
                :cmd args
-               :prlimit font-prlimit
-               :timeout 60))
+               :prlimit (get-font-prlimit)
+               :timeout (get-font-timeout)))
 
 (defmethod process :generate-fonts
   [system {:keys [input] :as params}]
@@ -450,8 +456,8 @@
                 (let [res (shell/exec! system
                                        :cmd ["woff2sfnt" (str finput)]
                                        :out-enc :bytes
-                                       :prlimit font-prlimit
-                                       :timeout 60)]
+                                       :prlimit (get-font-prlimit)
+                                       :timeout (get-font-timeout))]
                   (when (zero? (:exit res))
                     (:out res)))
                 (finally

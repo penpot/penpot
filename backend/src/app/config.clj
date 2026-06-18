@@ -74,6 +74,10 @@
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
+   :font-process-mem 512    ;; 512 MiB address space ceiling
+   :font-process-cpu 30     ;; 30 seconds CPU time
+   :font-process-timeout 60 ;; 60 seconds wall-clock
+
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
@@ -127,6 +131,11 @@
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
+
+    ;; Font processing resource limits (PENPOT_FONT_PROCESS_*)
+    [:font-process-mem {:optional true} ::sm/int]
+    [:font-process-cpu {:optional true} ::sm/int]
+    [:font-process-timeout {:optional true} ::sm/int]
 
     ;; ImageMagick resource limits (PENPOT_IMAGEMAGICK_*)
     [:imagemagick-thread-limit {:optional true} :string]
