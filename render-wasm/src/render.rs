@@ -2298,7 +2298,10 @@ impl RenderState {
         let frame_type =
             self.render_shape_tree_partial(base_object, tree, timestamp, allow_stop)?;
 
-        if !self.options.is_interactive_transform() {
+        // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
+        // presented (only flushed), so defer composition to the final frame and
+        // avoid re-snapshotting up to 4096² on every rAF during async tile work.
+        if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
                 &self.tile_viewbox,
