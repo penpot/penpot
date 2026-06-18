@@ -327,6 +327,10 @@
                                 :variant "comfortable"
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
+
+        ;; On Typography composite tokens, line-height depends on font-size. If a typography
+        ;; token contains a line-height but no font-size, validation should fail and surface
+        ;; the corresponding error so the user understands why submission is blocked.
         props
         (if (or extra-error (and touched? error) (and (= :line-height input-name) error))
           (mf/spread-props props {:hint-type "error"
