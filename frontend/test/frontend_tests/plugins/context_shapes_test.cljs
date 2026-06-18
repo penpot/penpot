@@ -132,6 +132,15 @@
             (t/is (= (.-constraintsVertical shape) "bottom"))
             (t/is (= (get-in @store (get-shape-path :constraints-v)) :bottom)))
 
+          (t/testing " - fixedWhenScrolling"
+            (set! (.-fixedWhenScrolling shape) true)
+            (t/is (= (.-fixedWhenScrolling shape) true))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) true))
+
+            (set! (.-fixedWhenScrolling shape) false)
+            (t/is (= (.-fixedWhenScrolling shape) false))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) false)))
+
           (t/testing " - borderRadius"
             (set! (.-borderRadius shape) 10)
             (t/is (= (.-borderRadius shape) 10))

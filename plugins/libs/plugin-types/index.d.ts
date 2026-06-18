@@ -3670,6 +3670,11 @@ export interface ShapeBase extends PluginData {
   constraintsVertical: 'top' | 'bottom' | 'topbottom' | 'center' | 'scale';
 
   /**
+   * Indicates whether the shape stays fixed in place while scrolling.
+   */
+  fixedWhenScrolling: boolean;
+
+  /**
    * The border radius of the shape.
    */
   borderRadius: number;
