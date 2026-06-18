@@ -19,6 +19,9 @@ msgstr "Already have an account?"
 msgid "auth.check-mail"
 msgstr "Check your email"
 
+msgid "auth.check-email"
+msgstr "Check your email!"
+
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
@@ -192,6 +195,9 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
+
+msgid "auth.verification-sent-email"
+msgstr "We've sent a verification email to:"
 
 #: src/app/main/ui/auth/login.cljs:178, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:168
 msgid "auth.work-email"
@@ -4746,7 +4752,7 @@ msgstr "Invite members"
 #: src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Remember to include everyone. Developers, designers, managers... diversity "
+"Remember to include everyone. Developers, designers, managers... Diversity "
 "adds up :)"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
