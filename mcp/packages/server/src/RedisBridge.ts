@@ -3,16 +3,6 @@ import { PluginTaskRequest, PluginTaskResponse } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 
 /**
- * Channel name prefixes for the task request/response pub/sub protocol.
- *
- * Request channels are keyed by user token (one per connected plugin); response
- * channels are keyed by the task ID, so that only the instance that issued a given
- * request receives its response.
- */
-const TASK_REQUEST_CHANNEL_PREFIX = "penpot.mcp.task.req.";
-const TASK_RESPONSE_CHANNEL_PREFIX = "penpot.mcp.task.res.";
-
-/**
  * Handler invoked for a task request arriving on a subscribed request channel.
  */
 export type TaskRequestHandler = (request: PluginTaskRequest) => void;
@@ -46,6 +36,7 @@ export class RedisBridge {
     private readonly logger = createLogger("RedisBridge");
     private readonly publisher: Redis;
     private readonly subscriber: Redis;
+    private readonly tenant: string;
 
     /**
      * Message handlers keyed by channel name.
@@ -60,8 +51,11 @@ export class RedisBridge {
      * Creates a Redis bridge connected to the given Redis instance.
      *
      * @param redisUri - The Redis connection URI (e.g. `redis://host:6379`)
+     * @param tenant - The tenant identifier, used to qualify Redis channel names so that
+     *   multiple environments sharing a Redis instance do not interfere.
      */
-    constructor(redisUri: string) {
+    constructor(redisUri: string, tenant: string) {
+        this.tenant = tenant;
         this.publisher = new Redis(redisUri);
         this.subscriber = new Redis(redisUri);
 
@@ -73,6 +67,16 @@ export class RedisBridge {
                 this.logger.warn(`Received message on channel with no registered handler: ${channel}`);
             }
         });
+    }
+
+    /** Builds the Redis Pub/Sub channel name for a task request addressed to a user token. */
+    private requestChannel(userToken: string): string {
+        return `penpot.mcp.${this.tenant}.task.req.${userToken}`;
+    }
+
+    /** Builds the Redis Pub/Sub channel name for a task response keyed by task ID. */
+    private responseChannel(taskId: string): string {
+        return `penpot.mcp.${this.tenant}.task.res.${taskId}`;
     }
 
     /**
@@ -93,8 +97,8 @@ export class RedisBridge {
         request: PluginTaskRequest,
         onResponse: TaskResponseHandler
     ): Promise<void> {
-        const responseChannel = `${TASK_RESPONSE_CHANNEL_PREFIX}${request.id}`;
-        const requestChannel = `${TASK_REQUEST_CHANNEL_PREFIX}${userToken}`;
+        const responseChannel = this.responseChannel(request.id);
+        const requestChannel = this.requestChannel(userToken);
 
         this.handlers.set(responseChannel, (rawMessage) => {
             // a response channel is single-use: remove the handler and unsubscribe on delivery
@@ -122,7 +126,7 @@ export class RedisBridge {
      * @param taskId - The task ID whose response channel to unsubscribe from
      */
     async unsubscribeFromResponse(taskId: string): Promise<void> {
-        const responseChannel = `${TASK_RESPONSE_CHANNEL_PREFIX}${taskId}`;
+        const responseChannel = this.responseChannel(taskId);
         this.handlers.delete(responseChannel);
         await this.subscriber.unsubscribe(responseChannel);
     }
@@ -137,7 +141,7 @@ export class RedisBridge {
      * @param response - The serialized plugin task response, passed through verbatim
      */
     publishTaskResponse(taskId: string, response: PluginTaskResponse<any>): void {
-        const responseChannel = `${TASK_RESPONSE_CHANNEL_PREFIX}${taskId}`;
+        const responseChannel = this.responseChannel(taskId);
         void this.publisher.publish(responseChannel, JSON.stringify(response));
     }
 
@@ -150,7 +154,7 @@ export class RedisBridge {
      * @param handler - The handler to invoke for incoming requests
      */
     async subscribeToTasks(userToken: string, handler: TaskRequestHandler): Promise<void> {
-        const requestChannel = `${TASK_REQUEST_CHANNEL_PREFIX}${userToken}`;
+        const requestChannel = this.requestChannel(userToken);
         this.handlers.set(requestChannel, (rawMessage) => {
             try {
                 handler(JSON.parse(rawMessage) as PluginTaskRequest);
@@ -167,7 +171,7 @@ export class RedisBridge {
      * @param userToken - The user token whose request channel to unsubscribe from
      */
     async unsubscribeFromTasks(userToken: string): Promise<void> {
-        const requestChannel = `${TASK_REQUEST_CHANNEL_PREFIX}${userToken}`;
+        const requestChannel = this.requestChannel(userToken);
         this.handlers.delete(requestChannel);
         await this.subscriber.unsubscribe(requestChannel);
     }
