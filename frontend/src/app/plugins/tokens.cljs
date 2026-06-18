@@ -317,7 +317,8 @@
                                       (ctob/tokens-tree))]
                   [:tuple (-> (cfo/make-token-schema
                                tokens-tree
-                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
+                               nil)
                               ;; Don't allow plugins to set the id
                               (sm/dissoc-key :id)
                               ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)

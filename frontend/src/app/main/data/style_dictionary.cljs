@@ -108,7 +108,7 @@
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
 (defn- parse-sd-token-general-value
-  "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  "Parses `value` of a `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
   (let [parsed-value  (cfo/parse-token-value value)

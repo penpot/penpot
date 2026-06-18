@@ -165,19 +165,62 @@
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
+(defn find-refs [value]
+  (prn value)
+  (cond
+    (string? value)
+    (cto/find-token-value-references value)
+
+    (map? value)
+    (->> (vals value)
+         (keep :reference)
+         (mapcat cto/find-token-value-references))
+
+    :else
+    nil))
+
+(defn token-circular-reference?
+  "Checks if the given `tokens` map contains a circular reference reachable from
+   `token-name`. Uses DFS with 3-color marking (:in-progress / :done) to detect
+   cycles without false positives on diamond dependencies (A->B, A->C, B->C).
+   Returns the token name that closes the cycle, or nil."
+  [tokens token-name]
+  (let [state (atom {})]
+    (letfn [(visit [name]
+              (let [mark (get @state name)]
+                (if (= mark :in-progress)
+                  name
+                  (when-not (= mark :done)
+                    (swap! state assoc name :in-progress)
+                    (let [token (get tokens name)
+                          result (when token
+                                   (let [refs (find-refs (:value token))]
+                                     (some visit refs)))]
+                      (swap! state assoc name :done)
+                      result)))))]
+      (let [token (get tokens token-name)]
+        (when token
+          (let [refs (find-refs (:value token))]
+            (some visit refs)))))))
 
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn make-token-schema
-  [tokens-tree token-type]
+  [tokens-tree token-type current-token-path]
   [:and
    (sm/merge
     cto/schema:token-attrs
     [:map
-     [:name (make-token-name-schema tokens-tree)]
+     [:name (make-token-name-schema (-> tokens-tree
+                                        (d/dissoc-in current-token-path)))]
      [:value (make-token-value-schema token-type)]
      [:description {:optional true} schema:token-description]])
+   [:fn {:error/field :value
+         :error/fn #(tr "errors.tokens.circular-reference")}
+    (fn [{:keys [name]}]
+      (when name
+        (not (token-circular-reference? tokens-tree name))))]
    [:fn {:error/field :value
          :error/fn #(tr "errors.tokens.self-reference")}
     (fn [{:keys [name value]}]

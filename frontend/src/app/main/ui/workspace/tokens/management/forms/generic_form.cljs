@@ -77,9 +77,10 @@
            initial-errors
            value-type
            value-subfield
-           input-value-placeholder] :as props}]
+           input-value-placeholder
+           current-token-path] :as props}]
 
-  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type)
+  (let [make-schema     (or make-schema #(-> (cfo/make-token-schema % token-type current-token-path)
                                              (sm/dissoc-key :id)))
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
@@ -165,9 +166,9 @@
          (fn [new-tab]
            (let [new-tab (keyword new-tab)]
              (if (= new-tab :reference)
-               (swap! form assoc-in [:async-errors :reference]
+               (swap! form assoc-in [:errors :reference]
                       {:message "Need valid reference"})
-               (swap! form update :async-errors dissoc :reference))
+               (swap! form update :errors dissoc :reference))
              (reset! active-tab* new-tab))))
 
         on-cancel

@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -67,21 +68,23 @@
 
         tokens
         (update tokens (:name token) #(ctob/make-token (merge % prev-token token)))]
-
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (if errors
-                                 (first errors)
-                                 (wte/error-with-value :error/unknown value))}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (if errors
+                                   (first errors)
+                                   (wte/error-with-value :error/unknown value))})))))))))
 
 (mf/defc fonts-combobox*
   [{:keys [token tokens name] :rest props}]
