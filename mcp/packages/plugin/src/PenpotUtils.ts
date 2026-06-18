@@ -539,8 +539,9 @@ export class PenpotUtils {
      *
      * @example
      * // Three button variants differing in Size
+     * // Given three main components s, m, l (here: the first three main components on the page)
      * const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3) as Board[];
-     * const container = PenpotUtils.createVariant([
+     * const container = PenpotUtils.createVariantContainer([
      *   { shape: s, properties: { Size: 'Small' } },
      *   { shape: m, properties: { Size: 'Medium' } },
      *   { shape: l, properties: { Size: 'Large' } },
@@ -548,13 +549,13 @@ export class PenpotUtils {
      *
      * @example
      * // Two properties: Size × State
-     * const container = PenpotUtils.createVariant([
+     * const container = PenpotUtils.createVariantContainer([
      *   { shape: s, properties: { Size: 'Small', State: 'Default' } },
      *   { shape: m, properties: { Size: 'Medium', State: 'Default' } },
      *   { shape: l, properties: { Size: 'Large', State: 'Hover' } },
      * ]);
      */
-    public static createVariant(
+    public static createVariantContainer(
         components: Array<{ shape: Board; properties: Record<string, string> }>
     ): VariantContainer {
         // Collect all unique property names (preserving first-seen order)
@@ -569,7 +570,12 @@ export class PenpotUtils {
         // @ts-ignore — createVariantFromComponents was added after plugin-types@1.4.1
         const container: VariantContainer = (penpot as any).createVariantFromComponents(components.map((c) => c.shape));
         const variants = container.variants;
-        if (!variants) return container;
+        if (!variants) {
+            throw new Error(
+                "createVariantContainer: the created container has no `variants`. " +
+                    "Ensure every provided shape is a main component instance (Board)."
+            );
+        }
 
         // 2. Rename / add properties
         // createVariantFromComponents always creates exactly one property ("Property 1")

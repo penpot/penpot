@@ -50,14 +50,14 @@ function makeMockPenpot(variantComps: ReturnType<typeof makeVariantComponent>[])
 // Tests
 // ---------------------------------------------------------------------------
 
-test("createVariant — single property: renames Property 1 and sets values", () => {
+test("createVariantContainer — single property: renames Property 1 and sets values", () => {
     const calls: string[] = [];
     const comps = [makeVariantComponent(calls), makeVariantComponent(calls), makeVariantComponent(calls)];
     const { mock, variants } = makeMockPenpot(comps);
 
     (globalThis as any).penpot = mock;
 
-    PenpotUtils.createVariant([
+    PenpotUtils.createVariantContainer([
         { shape: {} as any, properties: { Size: "Small" } },
         { shape: {} as any, properties: { Size: "Medium" } },
         { shape: {} as any, properties: { Size: "Large" } },
@@ -75,14 +75,14 @@ test("createVariant — single property: renames Property 1 and sets values", ()
     ]);
 });
 
-test("createVariant — two properties: renames first, adds and renames second, sets all values", () => {
+test("createVariantContainer — two properties: renames first, adds and renames second, sets all values", () => {
     const calls: string[] = [];
     const comps = [makeVariantComponent(calls), makeVariantComponent(calls)];
     const { mock, variants } = makeMockPenpot(comps);
 
     (globalThis as any).penpot = mock;
 
-    PenpotUtils.createVariant([
+    PenpotUtils.createVariantContainer([
         { shape: {} as any, properties: { Size: "Small", State: "Default" } },
         { shape: {} as any, properties: { Size: "Large", State: "Hover" } },
     ]);
@@ -100,7 +100,7 @@ test("createVariant — two properties: renames first, adds and renames second, 
     ]);
 });
 
-test("createVariant — property name order follows first-seen order across components", () => {
+test("createVariantContainer — property name order follows first-seen order across components", () => {
     const calls: string[] = [];
     const comps = [makeVariantComponent(calls), makeVariantComponent(calls)];
     const { mock, variants } = makeMockPenpot(comps);
@@ -108,7 +108,7 @@ test("createVariant — property name order follows first-seen order across comp
     (globalThis as any).penpot = mock;
 
     // "Color" appears first in comp[0]; "Size" appears first in comp[0] too
-    PenpotUtils.createVariant([
+    PenpotUtils.createVariantContainer([
         { shape: {} as any, properties: { Color: "Red", Size: "Small" } },
         { shape: {} as any, properties: { Color: "Blue", Size: "Large" } },
     ]);
@@ -122,11 +122,11 @@ test("createVariant — property name order follows first-seen order across comp
     ]);
 });
 
-test("createVariant — returns the container from createVariantFromComponents", () => {
+test("createVariantContainer — returns the container from createVariantFromComponents", () => {
     const { mock, container } = makeMockPenpot([]);
     (globalThis as any).penpot = mock;
 
-    const result = PenpotUtils.createVariant([{ shape: {} as any, properties: { X: "1" } }]);
+    const result = PenpotUtils.createVariantContainer([{ shape: {} as any, properties: { X: "1" } }]);
 
     assert.equal(result, container);
 });
