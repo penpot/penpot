@@ -48,7 +48,6 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.fills :as fills]
@@ -1304,10 +1303,7 @@
                         ;; renders locally and does not need this.)
                         (st/emit! ::dwp/force-persist)
                         (->> (rx/concat
-                              (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-                                   (rx/filter #(or (nil? %) (= :saved %)))
-                                   (rx/first)
-                                   (rx/timeout 5000 (rx/empty))
+                              (->> (dwp/wait-persisted 5000)
                                    (rx/ignore))
                               (rp/cmd! :export payload))
                              (rx/mapcat (fn [{:keys [uri]}]
