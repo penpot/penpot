@@ -14,6 +14,7 @@
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
+- **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
 
 ## 1.4.2 (2026-01-21)
 

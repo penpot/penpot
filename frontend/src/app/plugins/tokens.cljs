@@ -338,7 +338,14 @@
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)
                   token (ctob/make-token attrs)
-                  tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                  ;; Resolve against all tokens in the library (including those
+                  ;; in inactive sets) so that references to structurally
+                  ;; existing tokens resolve even if their set is not active.
+                  ;; The target set's tokens take precedence over equally named
+                  ;; tokens in other sets, and the new token takes precedence
+                  ;; over all.
+                  tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                                         (ctob/get-tokens tokens-lib id))
                                   (assoc (:name token) token))
                   resolved-tokens (ts/resolve-tokens tokens-tree)
 
