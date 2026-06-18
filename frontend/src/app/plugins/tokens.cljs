@@ -535,12 +535,27 @@
      :schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
                                      (u/locate-tokens-lib file-id)
                                      nil))
-                         (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
+                         (sm/dissoc-key :id) ;; We don't allow plugins to set the id
+                         ;; Allow an optional `active` flag so a plugin can create
+                         ;; an already-active set in a single call. Newly created
+                         ;; sets are inactive by default (only active sets affect
+                         ;; shapes and reference resolution). `active` is not part
+                         ;; of the token-set data model, so the :fn strips it and
+                         ;; applies it through the set-activation logic.
+                         (sm/merge [:map [:active {:optional true} ::sm/boolean]]))]
 
      :fn (fn [attrs]
-           (let [attrs (update attrs :name ctob/normalize-set-name)
-                 set (ctob/make-token-set attrs)]
+           (let [active? (boolean (:active attrs))
+                 attrs   (-> attrs
+                             (dissoc :active)
+                             (update :name ctob/normalize-set-name))
+                 set     (ctob/make-token-set attrs)]
              (st/emit! (dwtl/create-token-set set))
+             ;; Newly created sets are inactive by default; activate it when
+             ;; requested. Enabling only adds the set name to the hidden theme,
+             ;; so it does not depend on the create event having propagated yet.
+             (when active?
+               (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) true)))
              ;; Pass the set name as `initial-name` so the proxy can resolve
              ;; it immediately, before the async `st/emit!` above propagates
              ;; the new set into `@st/state`.
