@@ -5,6 +5,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
+   [frontend-tests.code-gen-style-test]
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.repo-test]
@@ -57,6 +58,7 @@
 
 (def test-namespaces
   '[frontend-tests.basic-shapes-test
+    frontend-tests.code-gen-style-test
     frontend-tests.copy-as-svg-test
     frontend-tests.data.nitrate-test
     frontend-tests.data.repo-test
