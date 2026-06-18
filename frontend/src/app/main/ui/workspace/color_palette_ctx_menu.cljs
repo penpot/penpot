@@ -22,9 +22,11 @@
 
 (defn- extract-colors
   [{:keys [data] :as file}]
-  (let [colors (into [] xf:sample-colors (:colors data))]
+  (let [all-colors (:colors data)
+        colors (into [] xf:sample-colors all-colors)]
     (-> file
-        (assoc :colors colors)
+        (assoc :colors colors
+               :total-colors (count all-colors))
         (dissoc :data))))
 
 (mf/defc color-palette-ctx-menu*
@@ -36,6 +38,9 @@
         local-colors  (mf/with-memo [libraries file-id]
                         (let [colors (dm/get-in libraries [file-id :data :colors])]
                           (into [] xf:sample-colors colors)))
+
+        local-colors-count (mf/with-memo [libraries file-id]
+                             (count (dm/get-in libraries [file-id :data :colors])))
 
         libraries     (mf/with-memo [libraries file-id]
                         (->> (dissoc libraries file-id)
@@ -63,7 +68,7 @@
             [:span {:class (stl/css :lib-name)}
              (dm/str (:name library))]
             [:span {:class (stl/css :lib-num)}
-             (dm/str "(" (count colors) ")")]]
+             (dm/str "(" (:total-colors library) ")")]]
            (when (= selected id)
              [:span {:class (stl/css :icon-wrapper)}
               deprecated-icon/tick])]
@@ -87,7 +92,7 @@
           [:span {:class (stl/css :lib-name)}
            (dm/str (tr "workspace.libraries.colors.file-library"))]
           [:span {:class (stl/css :lib-num)}
-           (dm/str "(" (count local-colors) ")")]]
+           (dm/str "(" local-colors-count ")")]]
 
          (when (= selected :file)
            [:span {:class (stl/css :icon-wrapper)}
