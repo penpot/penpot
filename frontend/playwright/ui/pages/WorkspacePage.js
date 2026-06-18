@@ -448,33 +448,6 @@ export class WorkspacePage extends BaseWebSocketPage {
     await pagesToggle.click();
   }
 
-  async selectToolbarTool(workspacePage, toolName) {
-    await workspacePage.page
-      .getByRole("button", { name: toolName })
-      .first()
-      .click();
-  }
-
-  async selectToolFromFlyout(
-    workspacePage,
-    { triggerToolName, targetToolName },
-  ) {
-    const trigger = workspacePage.page
-      .getByRole("button", { name: triggerToolName })
-      .first();
-
-    const option = workspacePage.page
-      .getByRole("menuitemradio", { name: targetToolName })
-      .first();
-
-    await trigger.hover();
-    // Flyout opening is delayed by 350ms in the toolbar component.
-    await workspacePage.page.waitForTimeout(450);
-    await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await option.waitFor({ state: "visible" });
-    await option.click();
-  }
-
   async moveSelectionToShape(name) {
     await this.page.locator("rect.viewport-selrect").hover();
     await this.page.mouse.down();
