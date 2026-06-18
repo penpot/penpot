@@ -222,7 +222,7 @@
 
     (d/without-nils {:name name
                      :type type
-                     :value value
+                     :value (cond-> value (number? value) str)
                      :description description})))
 
 ;; Token set
