@@ -196,6 +196,9 @@
       (not (sm/validate [:vector types.fills/schema:fill] value))
       (u/not-valid plugin-id :fills value)
 
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :fills "Cannot modify a page that is not currently active")
+
       (cfh/text-shape? shape)
       (st/emit! (dwt/update-attrs id {:fills value}))
 
@@ -215,6 +218,9 @@
 
       (not (r/check-permission plugin-id "content:write"))
       (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
 
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
@@ -268,6 +274,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :name "Cannot modify a page that is not currently active")
+
                   (not valid?)
                   (u/not-valid plugin-id :name value)
 
@@ -286,6 +295,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :blocked "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :blocked "Cannot modify a page that is not currently active")
+
                 :else
                 (let [id (obj/get self "$id")]
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :blocked value))))))}
@@ -301,6 +313,9 @@
 
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :hidden "Plugin doesn't have 'content:write' permission")
+
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :hidden "Cannot modify a page that is not currently active")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -318,6 +333,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :visible "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :visible "Cannot modify a page that is not currently active")
+
                 :else
                 (let [id (obj/get self "$id")]
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden (not value)))))))}
@@ -333,6 +351,9 @@
 
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :proportionLock "Plugin doesn't have 'content:write' permission")
+
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :proportionLock "Cannot modify a page that is not currently active")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -352,6 +373,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :constraintsHorizontal "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :constraintsHorizontal "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-h value))))))}
 
@@ -369,6 +393,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :constraintsVertical "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :constraintsVertical "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-v value))))))}
 
@@ -384,6 +411,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :borderRadius "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :borderRadius "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-all-corners % value))))))}
@@ -401,6 +431,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :borderRadiusTopLeft "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :borderRadiusTopLeft "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r1 value))))))}
 
@@ -416,6 +449,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :borderRadiusTopRight "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :borderRadiusTopRight "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r2 value))))))}
@@ -433,6 +469,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :borderRadiusBottomRight "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :borderRadiusBottomRight "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r3 value))))))}
 
@@ -449,6 +488,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :borderRadiusBottomLeft "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :borderRadiusBottomLeft "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r4 value))))))}
 
@@ -464,6 +506,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :opacity "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :opacity "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :opacity value))))))}
@@ -482,6 +527,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :blendMode "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :blendMode "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :blend-mode value))))))}
 
@@ -498,6 +546,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :shadows "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))}
@@ -519,6 +570,9 @@
                     (not (r/check-permission plugin-id "content:write"))
                     (u/not-valid plugin-id :blur "Plugin doesn't have 'content:write' permission")
 
+                    (not (u/page-active? page-id))
+                    (u/not-valid plugin-id :blur "Cannot modify a page that is not currently active")
+
                     :else
                     (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value)))))))}
 
@@ -539,6 +593,9 @@
                     (not (r/check-permission plugin-id "content:write"))
                     (u/not-valid plugin-id :background-blur "Plugin doesn't have 'content:write' permission")
 
+                    (not (u/page-active? page-id))
+                    (u/not-valid plugin-id :background-blur "Cannot modify a page that is not currently active")
+
                     :else
                     (st/emit! (dwsh/update-shapes [id] #(assoc % :background-blur value)))))))}
 
@@ -555,6 +612,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :exports "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))}
@@ -573,6 +633,9 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :x "Plugin doesn't have 'content:write' permission")
 
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :x "Cannot modify a page that is not currently active")
+
                   :else
                   (st/emit! (dw/update-position id
                                                 {:x value}
@@ -590,6 +653,9 @@
 
                   (not (r/check-permission plugin-id "content:write"))
                   (u/not-valid plugin-id :y "Plugin doesn't have 'content:write' permission")
+
+                  (not (u/page-active? page-id))
+                  (u/not-valid plugin-id :y "Cannot modify a page that is not currently active")
 
                   :else
                   (st/emit! (dw/update-position id
@@ -636,6 +702,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :parentX "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :parentX "Cannot modify a page that is not currently active")
+
                 :else
                 (let [id (obj/get self "$id")
                       parent-id (-> self u/proxy->shape :parent-id)
@@ -662,6 +731,9 @@
 
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :parentY "Plugin doesn't have 'content:write' permission")
+
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :parentY "Cannot modify a page that is not currently active")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -690,6 +762,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :frameX "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :frameX "Cannot modify a page that is not currently active")
+
                 :else
                 (let [id (obj/get self "$id")
                       frame-id (-> self u/proxy->shape :frame-id)
@@ -716,6 +791,9 @@
 
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :frameY "Plugin doesn't have 'content:write' permission")
+
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :frameY "Cannot modify a page that is not currently active")
 
                 :else
                 (let [id (obj/get self "$id")
@@ -754,6 +832,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :rotation "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :rotation "Cannot modify a page that is not currently active")
+
                 :else
                 (let [shape (u/proxy->shape self)]
                   (st/emit! (dw/increase-rotation #{(:id shape)} value)))))}
@@ -770,6 +851,9 @@
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :flipX "Plugin doesn't have 'content:write' permission")
 
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :flipX "Cannot modify a page that is not currently active")
+
                 :else
                 (let [id (obj/get self "$id")]
                   (st/emit! (dw/flip-horizontal-selected #{id})))))}
@@ -785,6 +869,9 @@
 
                 (not (r/check-permission plugin-id "content:write"))
                 (u/not-valid plugin-id :flipY "Plugin doesn't have 'content:write' permission")
+
+                (not (u/page-active? page-id))
+                (u/not-valid plugin-id :flipY "Cannot modify a page that is not currently active")
 
                 :else
                 (let [id (obj/get self "$id")]
@@ -853,6 +940,9 @@
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :resize "Cannot modify a page that is not currently active")
+
                :else
                (st/emit! (dw/update-dimensions [id] :width width)
                          (dw/update-dimensions [id] :height height))))
@@ -870,6 +960,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :rotate "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :rotate "Cannot modify a page that is not currently active")
+
                  :else
                  (st/emit! (dw/increase-rotation [id] angle {:center center :delta? true})))))
 
@@ -880,6 +973,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :clone "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :clone "Cannot modify a page that is not currently active")
+
                  :else
                  (do (st/emit! (dws/duplicate-shapes #{id} :change-selection? false :return-ref ret-v))
                      (shape-proxy plugin-id (deref ret-v))))))
@@ -889,6 +985,9 @@
              (cond
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :remove "Cannot modify a page that is not currently active")
 
                :else
                (st/emit! (dwsh/delete-shapes #{id}))))
@@ -915,6 +1014,9 @@
 
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :setPluginData "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :setPluginData "Cannot modify a page that is not currently active")
 
                :else
                (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "plugin" (str plugin-id)) key value))))
@@ -951,6 +1053,9 @@
 
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :setSharedPluginData "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :setSharedPluginData "Cannot modify a page that is not currently active")
 
                :else
                (st/emit! (dp/set-plugin-data file-id :shape id page-id (keyword "shared" namespace) key value))))
@@ -1002,6 +1107,10 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
+                 (or (not (u/page-active? page-id))
+                     (not (u/page-active? (obj/get child "$page"))))
+                 (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
+
                  :else
                  (let [child-id     (obj/get child "$id")
                        child-shape (u/locate-shape file-id page-id child-id)
@@ -1032,6 +1141,10 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :insertChild "Plugin doesn't have 'content:write' permission")
 
+                 (or (not (u/page-active? page-id))
+                     (not (u/page-active? (obj/get child "$page"))))
+                 (u/not-valid plugin-id :insertChild "Cannot modify a page that is not currently active")
+
                  :else
                  (let [child-id (obj/get child "$id")
                        child-shape (u/locate-shape file-id page-id child-id)
@@ -1057,6 +1170,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :addFlexLayout "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :addFlexLayout "Cannot modify a page that is not currently active")
+
                  :else
                  (do (st/emit!
                       (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false)
@@ -1072,6 +1188,9 @@
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :addGridLayout "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :addGridLayout "Cannot modify a page that is not currently active")
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
@@ -1089,6 +1208,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :makeMask "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :makeMask "Cannot modify a page that is not currently active")
+
                  :else
                  (st/emit!
                   (dwg/mask-group #{id})
@@ -1103,6 +1225,9 @@
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :removeMask "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :removeMask "Cannot modify a page that is not currently active")
 
                  :else
                  (st/emit! (dwg/unmask-group #{id})))))
@@ -1148,6 +1273,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :applyTypography "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :applyTypography "Cannot modify a page that is not currently active")
+
                  :else
                  (let [typography (u/proxy->library-typography typography)]
                    (st/emit! (dwt/apply-typography #{id} typography file-id))))))
@@ -1161,6 +1289,9 @@
 
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :setParentIndex "Cannot modify a page that is not currently active")
 
                :else
                (st/emit! (dw/set-shape-index file-id page-id id index))))
@@ -1247,7 +1378,12 @@
 
            :detach
            (fn []
-             (st/emit! (dwl/detach-component id)))
+             (cond
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :detach "Cannot modify a page that is not currently active")
+
+               :else
+               (st/emit! (dwl/detach-component id))))
 
            ;; Export
            :export
@@ -1363,6 +1499,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :addRulerGuide "Cannot modify a page that is not currently active")
+
                  :else
                  (let [ruler-id  (uuid/next)
                        axis      (parser/orientation->axis orientation)
@@ -1387,6 +1526,9 @@
 
                (not (r/check-permission plugin-id "content:write"))
                (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'content:write' permission")
+
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :removeRulerGuide "Cannot modify a page that is not currently active")
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
@@ -1494,6 +1636,9 @@
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
 
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :children "Cannot modify a page that is not currently active")
+
                  (not (every? shape-proxy? children))
                  (u/not-valid plugin-id :children "Every children needs to be shape proxies")
 
@@ -1527,6 +1672,9 @@
                      (not (r/check-permission plugin-id "content:write"))
                      (u/not-valid plugin-id :clipContent "Plugin doesn't have 'content:write' permission")
 
+                     (not (u/page-active? page-id))
+                     (u/not-valid plugin-id :clipContent "Cannot modify a page that is not currently active")
+
                      :else
                      (st/emit! (dwsh/update-shapes [id] #(assoc % :show-content (not value))))))}
 
@@ -1542,6 +1690,9 @@
 
                      (not (r/check-permission plugin-id "content:write"))
                      (u/not-valid plugin-id :showInViewMode "Plugin doesn't have 'content:write' permission")
+
+                     (not (u/page-active? page-id))
+                     (u/not-valid plugin-id :showInViewMode "Cannot modify a page that is not currently active")
 
                      :else
                      (st/emit! (dwsh/update-shapes [id] #(assoc % :hide-in-viewer (not value))))))}
@@ -1578,6 +1729,9 @@
                             (not (r/check-permission plugin-id "content:write"))
                             (u/not-valid plugin-id :guides "Plugin doesn't have 'content:write' permission")
 
+                            (not (u/page-active? page-id))
+                            (u/not-valid plugin-id :guides "Cannot modify a page that is not currently active")
+
                             :else
                             (st/emit! (dwsh/update-shapes [id] #(assoc % :grids value))))))}
 
@@ -1603,6 +1757,9 @@
                        (not (r/check-permission plugin-id "content:write"))
                        (u/not-valid plugin-id :horizontalSizing "Plugin doesn't have 'content:write' permission")
 
+                       (not (u/page-active? page-id))
+                       (u/not-valid plugin-id :horizontalSizing "Cannot modify a page that is not currently active")
+
                        :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
 
@@ -1618,6 +1775,9 @@
 
                        (not (r/check-permission plugin-id "content:write"))
                        (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
+
+                       (not (u/page-active? page-id))
+                       (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
 
                        :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
@@ -1642,6 +1802,9 @@
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
                    (u/not-valid plugin-id :content "Plugin doesn't have 'content:write' permission")
+
+                   (not (u/page-active? page-id))
+                   (u/not-valid plugin-id :content "Cannot modify a page that is not currently active")
 
                    (not (sm/validate path/schema:segments segments))
                    (u/not-valid plugin-id :content segments)
@@ -1668,6 +1831,9 @@
                  (cond
                    (not (r/check-permission plugin-id "content:write"))
                    (u/not-valid plugin-id :content "Plugin doesn't have 'content:write' permission")
+
+                   (not (u/page-active? page-id))
+                   (u/not-valid plugin-id :content "Cannot modify a page that is not currently active")
 
                    (not (cfh/path-shape? data))
                    (u/not-valid plugin-id :content-type type)

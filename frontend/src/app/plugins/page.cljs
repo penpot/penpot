@@ -330,6 +330,9 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
+          (not (u/page-active? id))
+          (u/not-valid plugin-id :addRulerGuide "Cannot modify a page that is not currently active")
+
           :else
           (let [ruler-id (uuid/next)]
             (st/emit!
@@ -350,6 +353,9 @@
 
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+
+        (not (u/page-active? id))
+        (u/not-valid plugin-id :removeRulerGuide "Cannot modify a page that is not currently active")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]
