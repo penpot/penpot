@@ -22,6 +22,12 @@
   [row]
   (dissoc row :perms))
 
+(def ^:private sql:clean-old-mcp-tokens
+  "DELETE FROM access_token
+    WHERE profile_id = ?
+      AND id != ?
+      AND type = 'mcp'")
+
 (defn create-access-token
   [{:keys [::db/conn] :as cfg} profile-id name expiration type]
   (let [token-id   (uuid/next)
@@ -42,6 +48,13 @@
                                 :updated-at created-at
                                 :expires-at expires-at
                                 :perms (db/create-array conn "text" [])})]
+
+    ;; If the created token is of mcp type, we should proceed to
+    ;; delete all other mcp tokens on the table for the current
+    ;; profile.
+    (when (= type "mcp")
+      (db/exec! conn [sql:clean-old-mcp-tokens profile-id (:id token)]))
+
     (decode-row token)))
 
 (defn repl:create-access-token
@@ -85,14 +98,20 @@
   (->> (db/query pool :access-token
                  {:profile-id profile-id}
                  {:order-by [[:expires-at :asc] [:created-at :asc]]
-                  :columns [:id :name :perms :type :created-at :updated-at :expires-at]})
-       (mapv decode-row)))
+                  :columns [:id :name :perms :type :created-at :updated-at :expires-at :token]})
+       (map decode-row)
+       (map (fn [{:keys [type] :as row}]
+              (if (not= type "mcp")
+                (dissoc row :token)
+                row)))
+       (vec)))
 
 (def ^:private schema:get-current-mcp-token
   [:map {:title "get-current-mcp-token"}])
 
 (sv/defmethod ::get-current-mcp-token
   {::doc/added "2.15"
+   ::doc/deprecated true
    ::sm/params schema:get-current-mcp-token}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id ::rpc/request-at]}]
   (->> (db/query pool :access-token
