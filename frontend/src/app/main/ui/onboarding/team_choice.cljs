@@ -14,6 +14,7 @@
    [app.main.data.profile :as du]
    [app.main.data.team :as dtm]
    [app.main.store :as st]
+   [app.main.ui.components.link :refer [link*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -232,12 +233,10 @@
                        :class (stl/css :color-dimmed :text-align-right)}
              "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")"])])]]
 
-     [:> text* {:as "div"
-                :typography t/headline-small
-                :class (stl/css :link)
-                :on-click on-skip
-                :tab-index "0"}
-      (tr "onboarding.choice.team-up.continue-without-a-team")]]))
+     [:div {:class (stl/css :link-wrapper)}
+      [:> link* {:class (stl/css :link)
+                 :action on-skip}
+       (tr "onboarding.choice.team-up.continue-without-a-team")]]]))
 
 (mf/defc onboarding-team-modal*
   [{:keys [go-to-team]}]

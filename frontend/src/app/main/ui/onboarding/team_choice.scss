@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
@@ -30,10 +31,18 @@
   margin-bottom: var(--sp-xxl);
 }
 
+.link-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
 .link {
+  @include t.use-typography("body-small");
+
   cursor: pointer;
   text-decoration: underline;
   text-align: center;
+  text-transform: uppercase;
   color: var(--color-foreground-secondary);
 
   &:hover {
