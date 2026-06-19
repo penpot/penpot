@@ -197,11 +197,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :panning] true)))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (dwvw/maybe-view-interaction-start! state))))
+          (assoc-in [:workspace-local :panning] true)))))
 
 (defn start-panning []
   (ptk/reify ::start-panning
@@ -229,8 +225,4 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :panning)))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (dwvw/maybe-view-interaction-end! state))))
+          (update :workspace-local dissoc :panning)))))

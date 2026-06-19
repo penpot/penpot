@@ -105,6 +105,40 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn render2(timestamp: i32, flags: u8) -> Result<FrameType> {
+    with_state!(state, {
+        let render_state = get_render_state();
+        render_state.rebuild_touched_tiles(&state.shapes);
+
+        // Drain the throttled modifier-tile invalidation accumulated
+        // since the previous rAF. set_modifiers skips this work during
+        // interactive_transform; we do it once here, with the current
+        // modifier set, so the cost is paid once per rAF rather than
+        // once per pointer move.
+        if render_state.options.is_interactive_transform() {
+            // Collect into an owned Vec to release the immutable borrow on
+            // `state.shapes` before the mutable `rebuild_modifier_tiles` call.
+            let ids = state.shapes.modifier_ids().to_vec();
+            if !ids.is_empty() {
+                render_state.rebuild_modifier_tiles(&mut state.shapes, &ids)?;
+            }
+        }
+        let frame_type = if flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8 {
+            state
+                .continue_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        } else {
+            state
+                .start_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        };
+        return Ok(frame_type);
+    });
+
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
     with_state!(state, {
         state.rebuild_touched_tiles();
@@ -215,21 +249,21 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
     Ok(())
 }
 
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
-    with_state!(state, {
-        // Don't cancel the animation frame — let the async render
-        // continue populating the tile HashMap in the background.
-        // `continue_render_loop` skips flush_and_submit in fast
-        // mode so it won't present stale Target content.  The
-        // tile HashMap is position-independent, so tiles rendered
-        // for the old viewport can be reused by the next full
-        // render at the new viewport position.
-        state.render_from_cache();
-    });
-    Ok(())
-}
+// #[no_mangle]
+// #[wasm_error]
+// pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
+//     with_state!(state, {
+//         // Don't cancel the animation frame — let the async render
+//         // continue populating the tile HashMap in the background.
+//         // `continue_render_loop` skips flush_and_submit in fast
+//         // mode so it won't present stale Target content.  The
+//         // tile HashMap is position-independent, so tiles rendered
+//         // for the old viewport can be reused by the next full
+//         // render at the new viewport position.
+//         state.render_from_cache();
+//     });
+//     Ok(())
+// }
 
 #[no_mangle]
 #[wasm_error]
@@ -311,13 +345,13 @@ static mut VIEW_INTERACTION_START: i32 = 0;
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_start() -> Result<()> {
-    #[cfg(feature = "profile-macros")]
-    unsafe {
-        VIEW_INTERACTION_START = performance::get_time();
-    }
-    performance::begin_measure!("set_view_start");
-    get_render_state().options.set_fast_mode(true);
-    performance::end_measure!("set_view_start");
+    // #[cfg(feature = "profile-macros")]
+    // unsafe {
+    //     VIEW_INTERACTION_START = performance::get_time();
+    // }
+    // performance::begin_measure!("set_view_start");
+    // get_render_state().options.set_fast_mode(true);
+    // performance::end_measure!("set_view_start");
     Ok(())
 }
 
@@ -329,32 +363,19 @@ pub extern "C" fn set_view_start() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_end() -> Result<()> {
-    with_state!(state, {
-        performance::begin_measure!("set_view_end");
-        let render_state = get_render_state();
-        render_state.options.set_fast_mode(false);
-        render_state.tile_viewbox.update(&render_state.viewbox);
+    // with_state!(state, {
+    //     performance::begin_measure!("set_view_end");
+    //     let render_state = get_render_state();
+    //     render_state.options.set_fast_mode(false);
+    //     render_state.tile_viewbox.update(&render_state.viewbox);
 
-        if render_state.options.is_profile_rebuild_tiles() {
-            state.rebuild_tiles();
-        } else if render_state.zoom_changed() {
-            // Zoom changed: tile sizes differ so all cached tile
-            // textures are invalid (wrong scale).  Rebuild the tile
-            // index and clear the tile texture cache, but *preserve*
-            // the cache canvas so render_from_cache can show a scaled
-            // preview of the old content while new tiles render.
-            render_state.rebuild_tile_index(&state.shapes);
-            render_state.surfaces.invalidate_tile_cache();
-        } else {
-            // Pure pan at the same zoom level: tile contents have not
-            // changed — only the viewport position moved. Update the
-            // tile index (which tiles are in the interest area) but
-            // keep cached tile textures so the render can blit them
-            // instead of re-drawing every visible tile from scratch.
-            render_state.rebuild_tile_index(&state.shapes);
-        }
-        performance::end_measure!("set_view_end");
-    });
+    //     render_state.rebuild_tile_index(&state.shapes);
+    //     if render_state.zoom_changed() {
+    //         render_state.surfaces.invalidate_tile_cache();
+    //     }
+
+    //     performance::end_measure!("set_view_end");
+    // });
     Ok(())
 }
 
@@ -368,7 +389,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
 pub extern "C" fn set_modifiers_start() -> Result<()> {
     performance::begin_measure!("set_modifiers_start");
     let render_state = get_render_state();
-    render_state.options.set_fast_mode(true);
+    // render_state.options.set_fast_mode(true);
     render_state.options.set_interactive_transform(true);
     performance::end_measure!("set_modifiers_start");
     Ok(())
@@ -383,7 +404,7 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 pub extern "C" fn set_modifiers_end() -> Result<()> {
     performance::begin_measure!("set_modifiers_end");
     let render_state = get_render_state();
-    render_state.options.set_fast_mode(false);
+    // render_state.options.set_fast_mode(false);
     render_state.options.set_interactive_transform(false);
     performance::end_measure!("set_modifiers_end");
     Ok(())

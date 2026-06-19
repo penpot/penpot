@@ -1,7 +1,5 @@
 mod background_blur;
-pub mod cache;
 mod debug;
-pub mod drag_crop;
 pub mod drop_shadow;
 pub mod enter_exit;
 pub mod export;
@@ -29,12 +27,11 @@ pub mod walk;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
-pub use drag_crop::InteractiveDragCrop;
 pub use focus_mode::FocusMode;
 pub(crate) use walk::{get_simplified_children, sort_z_index};
 pub use walk::{ClipStack, NodeRenderState, RenderStats};
@@ -115,9 +112,6 @@ pub(crate) struct RenderState {
     /// Preview render mode - when true, uses simplified rendering for progressive loading
     pub preview_mode: bool,
     pub export_context: Option<(Rect, f32)>,
-    /// Cleared at the beginning of a render pass; set to true after we clear Cache the first
-    /// time we are about to blit a tile into Cache for this pass.
-    pub cache_cleared_this_render: bool,
     /// True if the current tile had shapes assigned to it when we
     /// started rendering it. Lets us distinguish a genuinely empty
     /// tile (skip composite, just clear) from a tile whose walker
@@ -125,46 +119,14 @@ pub(crate) struct RenderState {
     /// (must composite to present the work). Reset when current_tile
     /// changes.
     pub current_tile_had_shapes: bool,
-    /// During interactive transforms we keep `Target` between rAFs. Seed the
-    /// interactive backdrop exactly once per gesture (first rAF) so we don't
-    /// repeatedly overwrite tiles that have already been updated.
-    pub interactive_target_seeded: bool,
     /// When true, the next `start_render_loop` keeps the last presented `Target`
     /// pixels instead of clearing the canvas. Set after incremental shape updates
     /// (e.g. adding a rect) so the workspace stays visible while only affected
     /// tiles are re-rendered asynchronously.
     pub preserve_target_during_render: bool,
-    /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
-    /// drag, entries for the moved top-level selection are ensured here
-    pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
 }
 
 impl RenderState {
-    /// Decide whether a top-level node can be served from `backbuffer_crop_cache` during an
-    /// interactive transform (drag/resize/rotate).
-    ///
-    /// We only reuse cached pixels when it is safe and visually correct:
-    /// - **Top-level only**: cache entries are built for direct children of the root.
-    /// - **Moved node**: only allow cache reuse for *pure translations* (no scale/rotate/skew),
-    ///   because other transforms would require resampling and can diverge from the live render.
-    /// - **Other cached nodes**: if the moving bounds overlap this cached crop, invalidate it so
-    ///   we don't show stale content while something moves over/inside it.
-    fn should_use_cached_top_level_during_interactive(
-        &mut self,
-        node_id: Uuid,
-        tree: ShapesPoolRef,
-        moved_ids: &[Uuid],
-        moved_bounds: Option<Rect>,
-    ) -> bool {
-        drag_crop::should_use_cached_top_level_during_interactive(
-            self,
-            node_id,
-            tree,
-            moved_ids,
-            moved_bounds,
-        )
-    }
-
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
         let sampling_options =
@@ -219,11 +181,9 @@ impl RenderState {
             ignore_nested_blurs: false,
             preview_mode: false,
             export_context: None,
-            cache_cleared_this_render: false,
             current_tile_had_shapes: false,
-            interactive_target_seeded: false,
             preserve_target_during_render: false,
-            backbuffer_crop_cache: HashMap::default(),
+            // backbuffer_crop_cache: HashMap::default(),
         })
     }
 
@@ -360,10 +320,6 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn flush(&mut self) {
-        self.surfaces.flush(SurfaceId::Backbuffer);
-    }
-
     pub fn flush_and_submit(&mut self) {
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
@@ -467,10 +423,6 @@ impl RenderState {
 
         canvas.restore();
         self.flush_and_submit();
-    }
-
-    pub fn apply_render_to_final_canvas(&mut self) -> Result<()> {
-        cache::apply_render_to_final_canvas(self)
     }
 
     /// This function draws the "surface stack" into the specified "target" surface.
@@ -616,22 +568,24 @@ impl RenderState {
                 s.canvas().save();
             });
         }
-        let fast_mode = self.options.is_fast_mode();
+        // let fast_mode = self.options.is_fast_mode();
         // Skip anti-aliasing entirely during fast_mode (interactive
         // gestures + pan/zoom). AA edge sampling is per-pixel and adds
         // up across many shapes; reverts to full quality on commit.
-        let antialias = !fast_mode
-            && shape.should_use_antialias(self.get_scale_fast(), self.options.antialias_threshold);
-        let skip_effects = fast_mode;
+        let antialias = true;
+            // && shape.should_use_antialias(self.get_scale_fast(), self.options.antialias_threshold);
+        let skip_effects = false;
 
         let has_nested_fills = self
             .nested_fills
             .last()
             .is_some_and(|fills| !fills.is_empty());
+
         let has_inherited_blur = !self.ignore_nested_blurs
             && self.nested_blurs.iter().flatten().any(|blur| {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             });
+
         let can_render_directly = apply_to_current_surface
             && clip_bounds.is_none()
             && offset.is_none()
@@ -1218,13 +1172,13 @@ impl RenderState {
         self.surfaces.update_render_context(self.render_area, scale);
     }
 
-    fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
-        drag_crop::rebuild_backbuffer_crop_cache(self, tree)
-    }
+    // fn rebuild_backbuffer_crop_cache(&mut self, tree: ShapesPoolRef) {
+    //     drag_crop::rebuild_backbuffer_crop_cache(self, tree)
+    // }
 
-    pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
-        cache::render_from_cache(self, shapes)
-    }
+    // pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
+    //     cache::render_from_cache(self, shapes)
+    // }
 
     /// Render a preview of the shapes during loading.
     /// This rebuilds tiles for touched shapes and renders synchronously.
@@ -1234,8 +1188,8 @@ impl RenderState {
 
         // Enable fast_mode during preview to skip expensive effects (blur, shadows).
         // Restore the previous state afterward so the final render is full quality.
-        let current_fast_mode = self.options.is_fast_mode();
-        self.options.set_fast_mode(true);
+        // let current_fast_mode = self.options.is_fast_mode();
+        // self.options.set_fast_mode(true);
 
         // Skip tile rebuilding during preview - we'll do it at the end
         // Just rebuild tiles for touched shapes and render synchronously
@@ -1244,7 +1198,7 @@ impl RenderState {
         // Use the sync render path
         self.start_render_loop(None, tree, timestamp, true)?;
 
-        self.options.set_fast_mode(current_fast_mode);
+        // self.options.set_fast_mode(current_fast_mode);
 
         performance::end_measure!("render_preview");
         performance::end_timed_log!("render_preview", _start);
@@ -1304,50 +1258,50 @@ impl RenderState {
         self.tile_viewbox.update(&self.viewbox);
         self.focus_mode.reset();
 
+        // render_state.tile_viewbox.update(&render_state.viewbox);
+
+        // render_state.rebuild_tile_index(&state.shapes);
+        // if render_state.zoom_changed() {
+        //     render_state.surfaces.invalidate_tile_cache();
+        // }
+
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
 
-        // Compute and set document-space bounds (1 unit == 1 doc px @ 100% zoom)
-        // to clamp atlas updates. This prevents zoom-out tiles from forcing atlas
-        // growth far beyond real content.
-        let doc_bounds = self.compute_document_bounds(base_object, tree);
-        self.surfaces.atlas.set_doc_bounds(doc_bounds);
-
-        self.cache_cleared_this_render = false;
         let preserve_target = self.preserve_target_during_render;
         self.preserve_target_during_render = false;
 
-        if self.options.is_interactive_transform() {
-            // Keep `Target` as the previous frame and overwrite only the tiles
-            // that changed. This avoids clearing + redrawing an atlas backdrop
-            // every rAF during drag (a common source of GPU work/stalls).
-            self.surfaces
-                .reset_interactive_transform(self.background_color);
-            if !self.interactive_target_seeded {
-                // Seed from the last presented frame; this is stable even when
-                // fast_mode skips cache updates and regardless of atlas coverage.
-                self.interactive_target_seeded = true;
-            }
-        } else if preserve_target || self.zoom_changed() {
-            // Shape updates or zoom-end: keep the last presented frame on screen
-            // while tiles are re-rendered asynchronously. During zoom the
-            // preview from render_from_cache stays visible until the full-
-            // quality pass completes.
-            self.surfaces
-                .reset_interactive_transform(self.background_color);
-            self.surfaces.seed_backbuffer_from_target();
-            self.interactive_target_seeded = false;
-        } else {
-            self.reset_canvas();
-            self.interactive_target_seeded = false;
-            // Paint rulers/frame now so they survive the progressive frames
-            // instead of blanking until the first full `present_frame`.
-            // Skip on sync renders (thumbnails/exports)
-            if !sync_render {
-                ui::render(self, tree);
-                self.flush_and_submit();
-            }
-        }
+        // if self.options.is_interactive_transform() {
+        //     // Keep `Target` as the previous frame and overwrite only the tiles
+        //     // that changed. This avoids clearing + redrawing an atlas backdrop
+        //     // every rAF during drag (a common source of GPU work/stalls).
+        //     self.surfaces
+        //         .reset_interactive_transform(self.background_color);
+        //     if !self.interactive_target_seeded {
+        //         // Seed from the last presented frame; this is stable even when
+        //         // fast_mode skips cache updates and regardless of atlas coverage.
+        //         self.interactive_target_seeded = true;
+        //     }
+        // } else if preserve_target || self.zoom_changed() {
+        //     // Shape updates or zoom-end: keep the last presented frame on screen
+        //     // while tiles are re-rendered asynchronously. During zoom the
+        //     // preview from render_from_cache stays visible until the full-
+        //     // quality pass completes.
+        //     self.surfaces
+        //         .reset_interactive_transform(self.background_color);
+        //     self.surfaces.seed_backbuffer_from_target();
+        //     self.interactive_target_seeded = false;
+        // } else {
+            // self.reset_canvas();
+            // self.interactive_target_seeded = false;
+            // // Paint rulers/frame now so they survive the progressive frames
+            // // instead of blanking until the first full `present_frame`.
+            // // Skip on sync renders (thumbnails/exports)
+            // if !sync_render {
+            //     ui::render(self, tree);
+            //     self.flush_and_submit();
+            // }
+        // }
 
         // Viewer fixed-scroll passes reuse the same WASM context; `reset` does not
         // clear Backbuffer, so pass 2 would otherwise keep pass-1 pixels in regions
@@ -1361,15 +1315,16 @@ impl RenderState {
             | SurfaceId::InnerShadows as u32
             | SurfaceId::TextDropShadows as u32;
 
+        // NOTE: Why we're scaling in here these surfaces?
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
         });
 
-        self.surfaces.resize_cache_from_viewbox(
-            &self.viewbox,
-            &self.cached_viewbox,
-            self.options.dpr_viewport_interest_area_threshold,
-        )?;
+        // self.surfaces.resize_cache_from_viewbox(
+        //     &self.viewbox,
+        //     &self.cached_viewbox,
+        //     self.options.dpr_viewport_interest_area_threshold,
+        // )?;
 
         // FIXME - review debug
         // debug::render_debug_tiles_for_viewbox(self);
@@ -1384,7 +1339,7 @@ impl RenderState {
 
         performance::end_timed_log!("tile_cache_update", _tile_start);
 
-        self.draw_shape_surface_stack_into(None, SurfaceId::Current);
+        // self.draw_shape_surface_stack_into(None, SurfaceId::Current);
 
         #[allow(unused)]
         let mut frame_type = FrameType::None;
@@ -1401,17 +1356,6 @@ impl RenderState {
             if self.options.capture_frames > 0 {
                 self.options.capture_frames -= 1;
             }
-
-            // Update cached_viewbox after visible tiles render
-            // synchronously so that render_from_cache uses the correct
-            // zoom ratio even if interest-area tiles are still rendering
-            // asynchronously.  Without this, panning right after a zoom
-            // would keep scaling the Cache surface by the old zoom ratio
-            // (pixelated/wrong-scale tiles) because the async render
-            // never completes — each pan frame cancels it.
-            if self.cache_cleared_this_render {
-                self.cached_viewbox = self.viewbox;
-            }
         }
 
         performance::end_measure!("start_render_loop");
@@ -1419,36 +1363,36 @@ impl RenderState {
         Ok(frame_type)
     }
 
-    fn compute_document_bounds(
-        &mut self,
-        base_object: Option<&Uuid>,
-        tree: ShapesPoolRef,
-    ) -> Option<skia::Rect> {
-        let ids: Vec<Uuid> = if let Some(id) = base_object {
-            vec![*id]
-        } else {
-            let root = tree.get(&Uuid::nil())?;
-            root.children_ids(false)
-        };
+    // fn compute_document_bounds(
+    //     &mut self,
+    //     base_object: Option<&Uuid>,
+    //     tree: ShapesPoolRef,
+    // ) -> Option<skia::Rect> {
+    //     let ids: Vec<Uuid> = if let Some(id) = base_object {
+    //         vec![*id]
+    //     } else {
+    //         let root = tree.get(&Uuid::nil())?;
+    //         root.children_ids(false)
+    //     };
 
-        let mut acc: Option<skia::Rect> = None;
-        for id in ids.iter() {
-            let Some(shape) = tree.get(id) else {
-                continue;
-            };
-            let r = shape.extrect(tree, 1.0);
-            if r.is_empty() {
-                continue;
-            }
-            acc = Some(if let Some(mut a) = acc {
-                a.join(r);
-                a
-            } else {
-                r
-            });
-        }
-        acc
-    }
+    //     let mut acc: Option<skia::Rect> = None;
+    //     for id in ids.iter() {
+    //         let Some(shape) = tree.get(id) else {
+    //             continue;
+    //         };
+    //         let r = shape.extrect(tree, 1.0);
+    //         if r.is_empty() {
+    //             continue;
+    //         }
+    //         acc = Some(if let Some(mut a) = acc {
+    //             a.join(r);
+    //             a
+    //         } else {
+    //             r
+    //         });
+    //     }
+    //     acc
+    // }
 
     pub fn continue_render_loop(
         &mut self,
@@ -1464,32 +1408,22 @@ impl RenderState {
         // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
         // presented (only flushed), so defer composition to the final frame and
         // avoid re-snapshotting up to 4096² on every rAF during async tile work.
-        if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
+        // if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
                 &self.tile_viewbox,
                 self.background_color,
             );
-        }
+        // }
 
         match frame_type {
             FrameType::None => {
                 panic!("FrameType::None");
             }
             FrameType::Partial => {
-                // Partial frame: just flush GPU work. The display shows the last
-                // fully submitted frame; no need to copy or draw UI overlays here.
-                self.flush();
+                self.present_frame(tree);
             }
             FrameType::Full => {
-                // A full-quality frame is now complete. Rebuild the per-shape crop
-                // cache from the clean Backbuffer (no UI overlay yet) so that
-                // interactive drag backgrounds don't include the grid overlay.
-                if !self.options.is_fast_mode() && !self.options.is_interactive_transform() {
-                    self.rebuild_backbuffer_crop_cache(tree);
-                }
-                // present_frame: copy clean Backbuffer → Target, draw UI/debug
-                // overlays on Target only, then flush. Backbuffer stays overlay-free.
                 self.present_frame(tree);
                 wapi::notify_tiles_render_complete!();
                 performance::end_measure!("render");
@@ -1619,14 +1553,6 @@ impl RenderState {
         enter_exit::render_shape_exit(self, element, visited_mask, clip_bounds, target_surface)
     }
 
-    pub fn get_current_tile_bounds(&mut self) -> Result<Rect> {
-        let tile = self
-            .current_tile
-            .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
-        let offset = self.viewbox.get_offset();
-        Ok(tile.get_rect_with_offset(&offset))
-    }
-
     pub fn get_rect_bounds(&mut self, rect: skia::Rect) -> Rect {
         let scale = self.get_scale();
         let offset_x = self.viewbox.area.left * scale;
@@ -1718,48 +1644,6 @@ impl RenderState {
         if export {
             target_surface = SurfaceId::Export;
         }
-
-        // During interactive transforms we compute the union of the current bounds of all
-        // modified shapes (doc-space @ 100% zoom, scale=1.0). This is used as a cheap overlap
-        // guard to decide when cached top-level crops are unsafe to reuse (something is moving
-        // over/inside them), without doing expensive ancestor walks per node.
-        //
-        // `modifier_ids` is pre-computed once here and reused throughout the loop to avoid
-        // repeated allocations (formerly O(N_shapes) HashMap builds) per node.
-        let modifier_ids = tree.modifier_ids();
-        let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
-            let mut acc: Option<Rect> = None;
-            for id in modifier_ids.iter() {
-                // Current (post-modifier) bounds
-                if let Some(s) = tree.get(id) {
-                    let r = s.extrect(tree, 1.0);
-                    acc = Some(match acc {
-                        None => r,
-                        Some(mut prev) => {
-                            prev.join(r);
-                            prev
-                        }
-                    });
-                }
-
-                // Pre-modifier bounds: important so cached top-level crops that still contain the
-                // shape at its original position are considered "unsafe" even after the shape
-                // has moved away (e.g. dragging a child out of a clipped frame).
-                if let Some(raw) = tree.get_raw(id) {
-                    let r0 = raw.extrect(tree, 1.0);
-                    acc = Some(match acc {
-                        None => r0,
-                        Some(mut prev) => {
-                            prev.join(r0);
-                            prev
-                        }
-                    });
-                }
-            }
-            acc
-        } else {
-            None
-        };
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -1869,71 +1753,6 @@ impl RenderState {
                 }
             }
 
-            // Interactive drag cache: if this node is cacheable during interactive transform,
-            // draw it directly from Backbuffer crop on the current tile surface and skip
-            // traversing/rendering the subtree.
-            if self.options.is_interactive_transform() {
-                let use_cached = self.should_use_cached_top_level_during_interactive(
-                    node_id,
-                    tree,
-                    modifier_ids,
-                    moved_bounds,
-                );
-
-                if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
-                        let crop_image = &crop.image;
-                        let crop_src_selrect = crop.src_selrect;
-
-                        let cur_selrect = tree.get(&node_id).map(|s| s.selrect());
-                        let (dx, dy) = match cur_selrect {
-                            Some(cur) => (
-                                cur.left - crop_src_selrect.left,
-                                cur.top - crop_src_selrect.top,
-                            ),
-                            None => (0.0, 0.0),
-                        };
-                        let scale = self.get_scale_fast();
-                        let translation = self
-                            .surfaces
-                            .get_render_context_translation(self.render_area, scale);
-
-                        let canvas = self.surfaces.canvas(target_surface);
-                        canvas.save();
-                        canvas.reset_matrix();
-                        // If the crop includes shadows/blur (extrect pixels outside the fill/stroke
-                        // silhouette), do NOT apply the silhouette clip or we'd cut those pixels.
-                        let should_clip_crop = element.shadows.is_empty() && element.blur.is_none();
-                        if should_clip_crop {
-                            if let Some(clip_path) = element.drag_crop_clip_path() {
-                                let mut doc_to_tile = Matrix::new_identity();
-                                // Map document-space coordinates into tile pixels.
-                                // Rendering surfaces apply: scale(scale) then translate(translation) in doc units.
-                                // Equivalent point mapping: (doc + translation) * scale.
-                                doc_to_tile.post_translate((translation.0, translation.1));
-                                doc_to_tile.post_scale((scale, scale), None);
-                                let clip_path = clip_path.make_transform(&doc_to_tile);
-                                canvas.clip_path(&clip_path, skia::ClipOp::Intersect, true);
-                            }
-                        }
-                        let doc_left =
-                            crop.capture_vb_left + (crop.capture_src_left as f32 / scale) + dx;
-                        let doc_top =
-                            crop.capture_vb_top + (crop.capture_src_top as f32 / scale) + dy;
-
-                        let x = (doc_left + translation.0) * scale;
-                        let y = (doc_top + translation.1) * scale;
-                        let bw = crop_image.width() as f32;
-                        let bh = crop_image.height() as f32;
-                        let dst = skia::Rect::from_xywh(x, y, bw, bh);
-                        canvas.draw_image_rect(crop_image, None, dst, &skia::Paint::default());
-
-                        canvas.restore();
-                    }
-                    continue;
-                }
-            }
-
             let can_flatten = element.can_flatten() && !self.focus_mode.should_focus(&element.id);
 
             // Skip render_shape_enter/exit for flattened containers
@@ -1947,7 +1766,6 @@ impl RenderState {
                 // the layer blur (which would make it more diffused than without clipping)
                 let shadow_before_layer = !node_render_state.is_root()
                     && self.focus_mode.is_active()
-                    && !self.options.is_fast_mode()
                     && !matches!(element.shape_type, Type::Text(_))
                     && Self::frame_clip_layer_blur(element).is_some()
                     && element.drop_shadows_visible().next().is_some();
@@ -1975,8 +1793,8 @@ impl RenderState {
 
             if !node_render_state.is_root() && self.focus_mode.is_active() {
                 // Skip expensive drop shadow rendering in fast mode (during pan/zoom).
-                let skip_shadows = self.options.is_fast_mode();
-
+                // let skip_shadows = self.options.is_fast_mode();
+                let skip_shadows = false;
                 // Skip shadow block when already rendered before the layer (frame_clip_layer_blur)
                 let shadows_already_rendered = Self::frame_clip_layer_blur(element).is_some();
 
@@ -2155,23 +1973,22 @@ impl RenderState {
                     }
                     performance::end_measure!("render_shape_tree::uncached");
 
-                    let tile_rect = self.get_current_tile_bounds()?;
                     // Composite if the walker did work in this PAF (`!is_empty`) OR
                     // the tile has unfinished work from a previous PAF
                     // (`current_tile_had_shapes` was set when we populated pending_nodes
                     // for this tile).
                     if !is_empty || self.current_tile_had_shapes {
-                        if self.options.is_interactive_transform() {
-                            // During drag, avoid snapshot-based caching. Draw Current directly
-                            // into Target (and Cache) to reduce stalls.
-                            self.surfaces.draw_current_tile_into_backbuffer(
-                                &tile_rect,
-                                self.background_color,
-                                surfaces::DrawOnCache::Yes,
-                            );
-                        } else {
-                            self.apply_render_to_final_canvas()?;
-                        }
+                        let tile_rect = self.get_current_aligned_tile_bounds()?;
+
+                        let current_tile = *self
+                            .current_tile
+                            .as_ref()
+                            .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
+
+                        self.surfaces.draw_current_tile_into_tile_atlas(
+                            &self.tile_viewbox,
+                            &current_tile,
+                        );
 
                         if self.options.is_debug_visible() {
                             debug::render_workspace_current_tile(
@@ -2232,7 +2049,8 @@ impl RenderState {
                 // all root shapes that can contribute to this tile; otherwise, unchanged
                 // siblings inside the same tile would disappear.
                 let mut valid_ids = Vec::with_capacity(ids.len());
-                if self.options.is_interactive_transform() || tile_has_bg_blur {
+                if self.options.is_interactive_transform()
+                || tile_has_bg_blur {
                     valid_ids.extend(root_ids.iter().copied());
                 } else {
                     for root_id in root_ids.iter() {
@@ -2271,9 +2089,7 @@ impl RenderState {
         // cached_viewbox here would make zoom_changed() return false,
         // so set_view_end would skip tile invalidation and the next
         // full render would reuse the low-quality tiles.
-        if !self.options.is_fast_mode() {
-            self.cached_viewbox = self.viewbox;
-        }
+        self.cached_viewbox = self.viewbox;
 
         Ok(FrameType::Full)
     }
@@ -2337,27 +2153,6 @@ impl RenderState {
             .map_or(Vec::new(), |t| t.iter().copied().collect());
 
         let mut result = HashSet::<tiles::Tile>::with_capacity(old_tiles.len());
-
-        // When the shape has an active modifier (i.e. is being moved/resized),
-        // clear its OLD doc-space extent from the atlas using the raw
-        // (pre-modifier) shape.  The per-tile clearing done later via
-        // `clear_tile_in_atlas` only covers tiles tracked in `atlas.tile_doc_rects`
-        // at the current zoom level. However, the atlas may also contain stale
-        // pixels from previous zoom levels (tiles are larger / smaller in doc
-        // space at different zoom scales) that were never re-tracked after a zoom
-        // change.  Clearing the full raw extrect here removes all such residual
-        // content without growing the atlas.
-        //
-        // We intentionally skip this when there is NO modifier so that plain
-        // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
-        if tree.get_modifier(&shape.id).is_some() {
-            if let Some(raw_shape) = tree.get_raw(&shape.id) {
-                let old_extrect = raw_shape.extrect(tree, 1.0);
-                self.surfaces
-                    .atlas
-                    .clear_doc_rect_in_atlas_clipped(old_extrect);
-            }
-        }
 
         // First, remove the shape from all tiles where it was previously located
         for tile in old_tiles {
@@ -2478,9 +2273,7 @@ impl RenderState {
         // Zoom changes world tile size: a partial cache update would mix scales in the
         // mosaic and glitch. Same zoom as last finished render (typical pan): drop only
         // tile textures and keep the cache canvas for render_from_cache.
-        if self.zoom_changed() {
-            self.surfaces.remove_cached_tiles(self.background_color);
-        } else {
+        if !self.zoom_changed() {
             self.surfaces.invalidate_tile_cache();
         }
 
@@ -2515,7 +2308,6 @@ impl RenderState {
         }
 
         // Invalidate changed tiles - old content stays visible until new tiles render
-        self.surfaces.remove_cached_tiles(self.background_color);
         for tile in all_tiles {
             self.remove_cached_tile(tile);
         }
@@ -2640,7 +2432,7 @@ impl RenderState {
 
     pub fn prepare_context_loss_cleanup(&mut self) {
         // Drop cached GPU-backed snapshots before dropping the render state.
-        self.backbuffer_crop_cache.clear();
+        // self.backbuffer_crop_cache.clear();
         self.surfaces.invalidate_tile_cache();
         // Mark context as abandoned so resource destructors avoid issuing
         // GL commands when the browser has already lost/restored the context.

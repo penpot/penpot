@@ -19,12 +19,12 @@
   (when (and (features/active-feature? state "render-wasm/v1") (not (render-context-lost? state)))
     (wasm.api/sync-workspace-local-viewport! state)))
 
-(defn maybe-view-interaction-start!
+#_(defn maybe-view-interaction-start!
   [state]
   (when (and (features/active-feature? state "render-wasm/v1") (not (render-context-lost? state)))
     (wasm.api/view-interaction-start!)))
 
-(defn maybe-view-interaction-end!
+#_(defn maybe-view-interaction-end!
   [state]
   (when (and (features/active-feature? state "render-wasm/v1") (not (render-context-lost? state)))
     (wasm.api/view-interaction-end!)))
