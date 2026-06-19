@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-18 00:01+0000\n"
+"PO-Revision-Date: 2026-06-19 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9375,3 +9375,320 @@ msgstr ""
 #: src/app/main/data/nitrate.cljs:196, src/app/main/data/nitrate.cljs:205
 msgid "modals.leave-org-confirm.accept"
 msgstr "Quitter l'organisation"
+
+#: src/app/main/data/nitrate.cljs:204
+msgid "modals.leave-org-confirm.message"
+msgstr ""
+"Tu perdras accès en permanence à toutes les équipes, leurs projets et "
+"fichiers."
+
+#: src/app/main/data/nitrate.cljs:203
+msgid "modals.leave-org-confirm.title"
+msgstr "Quitter l'organisation %s?"
+
+#: src/app/main/data/nitrate.cljs:252
+msgid "modals.remove-team-org.accept"
+msgstr "Retirer de l'organisation"
+
+#: src/app/main/data/nitrate.cljs:250
+msgid "modals.remove-team-org.info"
+msgstr ""
+"Les projets et fichiers demeureront disponibles aux membres de l'équipe, "
+"mais les paramètres de l'organisation ne s'appliqueront plus."
+
+#: src/app/main/data/nitrate.cljs:249
+msgid "modals.remove-team-org.text"
+msgstr "Vraiment retirer l'équipe « %s » de l'organisation « %s »?"
+
+#: src/app/main/data/nitrate.cljs:248
+msgid "modals.remove-team-org.title"
+msgstr "RETIRER L'ÉQUIPE DE L'ORGANISATION"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:58
+msgid "nitrate.activation-code.expired-error"
+msgstr "Ce code a expiré."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.invalid-error"
+msgstr "Code invalide."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
+msgid "nitrate.activation-success.active-until"
+msgstr "L'abonnement est actif jusqu'au %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:150, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:68
+msgid "nitrate.activation-success.create-org"
+msgstr "Créer une organisation"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:63
+msgid "nitrate.activation-success.enjoy"
+msgstr "Profite de ton abonnement!"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
+msgid "nitrate.activation-success.manage-info"
+msgstr ""
+"Gère ton abonnement en tout temps à partir de la page Abonnement dans les "
+"paramètres du compte."
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
+msgid "nitrate.activation-success.title"
+msgstr "Tu es Nitrate d'affaires!"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+msgid "nitrate.code-activation.footer"
+msgstr "Besoin d'un code? Contacte-nous :"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
+msgid "nitrate.code-activation.input-label"
+msgstr "Saisis ton code d'activation"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:90
+msgid "nitrate.code-activation.placeholder"
+msgstr "Colle ton code d'activation ici"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+msgid "nitrate.code-activation.renew-title"
+msgstr "RENOUVELER NITRATE"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:101
+msgid "nitrate.code-activation.submit"
+msgstr "Activer"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+msgid "nitrate.code-activation.title"
+msgstr "Activer Nitrate"
+
+#, unused
+msgid "nitrate.contact-sales.button"
+msgstr "Contacter les ventes"
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-contact-info"
+msgstr ""
+"Pour basculer à cet abonnement, merci de contacter l'équipe des ventes. Nous "
+"t'aiderons à mettre à jour l'abonnement et faire en sorte que tout soit bien "
+"configuré."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-org-deleted"
+msgstr "Ton organisation sera supprimée."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-storage-limited"
+msgstr ""
+"Le stockage total, l'historique des versions automatiques et la période de "
+"recouvrement des fichiers seront limités."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-teams-available"
+msgstr ""
+"Les équipes, projets et fichiers ne feront partie d'aucune organisation mais "
+"resteront disponibles."
+
+#, unused
+msgid "nitrate.contact-sales.downgrade-title"
+msgstr "Lors de la mise à niveau inférieure :"
+
+#, unused
+msgid "nitrate.contact-sales.title"
+msgstr "Passer au forfait %s?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77
+msgid "nitrate.form.cancel-anytime"
+msgstr ""
+"Le paiement sera prélevé à la fin de la période d'essai. Il est possible "
+"d'annuler à tout moment."
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:92
+msgid "nitrate.form.contact-trial"
+msgstr "Contacte-nous pour faire l'essai d'Enterprise pour 14 jours :"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:91
+msgid "nitrate.form.contact-upgrade"
+msgstr "Contacte-nous pour mettre à niveau vers Enterprise :"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:82, src/app/main/ui/nitrate/nitrate_form.cljs:102
+msgid "nitrate.form.enter-code"
+msgstr "Saisir le code d'activation"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:57
+msgid "nitrate.form.enterprise-feature-1"
+msgstr "Permissions globales et granulaires pour les équipes et projets"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:59
+msgid "nitrate.form.enterprise-feature-2"
+msgstr ""
+"Contrôle centralisé sur qui fait quoi et quand, depuis la console admin "
+"dédiée"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:61
+msgid "nitrate.form.enterprise-feature-3"
+msgstr ""
+"La pleine liberté du code source libre, avec la gouvernance dont ton "
+"organisation a besoin"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:54
+msgid "nitrate.form.enterprise-intro"
+msgstr ""
+"Tout ce dont les équipes ont besoin pour travailler de manière sécuritaire à "
+"grande échelle :"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:768
+msgid "nitrate.form.enterprise.price"
+msgstr "par membre par mois"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
+msgid "nitrate.form.have-code"
+msgstr "Tu as un code d'activation?"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:86
+msgid "nitrate.form.see-plan"
+msgstr "Voir mon forfait actuel"
+
+#, unused
+msgid "nitrate.form.start-enterprise"
+msgstr "Démarrer avec Enterprise"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:51
+msgid "nitrate.form.title"
+msgstr "Déverrouille des fonctionnalités Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:164, src/app/main/ui/nitrate/nitrate_form.cljs:75
+msgid "nitrate.form.try-free"
+msgstr "Essai gratuit de 14 jours"
+
+#: src/app/plugins/utils.cljs:311
+msgid "plugins.validation.message"
+msgstr "Le champ %s est invalide : %s"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.find"
+msgstr "Trouver"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.find-and-replace"
+msgstr "Recherche et remplacement"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.paste-replace"
+msgstr "Coller et remplacer"
+
+#: src/app/main/ui/dashboard/subscription.cljs:146
+msgid "subscription.banner.create-org-info"
+msgstr ""
+"Crée une organisation et vois exactement comment fonctionne Enterprise. "
+"Établis les règles, gère les équipes et profite d'un nouveau niveau de "
+"contrôle sur le flux de travail du design."
+
+#: src/app/main/ui/dashboard/subscription.cljs:144
+msgid "subscription.banner.see-enterprise"
+msgstr "Voir Enterprise à l'action"
+
+#: src/app/main/ui/dashboard/subscription.cljs:188
+msgid "subscription.current-plan.enterprise"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:187
+msgid "subscription.current-plan.nitrate"
+msgstr "Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:186
+msgid "subscription.current-plan.nitrate-trial"
+msgstr "Enterprise (Essai)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:181
+msgid "subscription.current-plan.professional"
+msgstr "Professionnel"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+msgid "subscription.current-plan.title"
+msgstr "Ton abonnement"
+
+#: src/app/main/ui/dashboard/subscription.cljs:184
+msgid "subscription.current-plan.unlimited"
+msgstr "Illimité"
+
+#: src/app/main/ui/dashboard/subscription.cljs:183
+msgid "subscription.current-plan.unlimited-trial"
+msgstr "Illimité (Essai)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.banner.unlock-features"
+msgstr "Débloquer les fonctionnalités Enterprise"
+
+#: src/app/main/ui/dashboard/subscription.cljs:158
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr ""
+"Établis des permissions détaillées et garantis la sécurité des opérations de "
+"design, sans compromettre la liberté du code source ouvert que ton équipe "
+"aime tant."
+
+#: src/app/main/ui/dashboard/subscription.cljs:163
+msgid "subscription.dashboard.banner.upgrade-nitrate"
+msgstr "Démarrer avec Enterprise"
+
+#: src/app/main/ui/settings/subscription.cljs:409
+msgid "subscription.error.nitrate.checkout-cancelled"
+msgstr "Le paiement ne s'est pas complété. Essayer de nouveau."
+
+#: src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.error.nitrate.checkout-failed"
+msgstr ""
+"Nous n'avons pas pu initier le processus de paiement. Essayer de nouveau. Si "
+"le problème persiste, contacte-nous : support@penpot.app."
+
+#: src/app/main/ui/settings/subscription.cljs:408
+msgid "subscription.error.nitrate.checkout-finish-failed"
+msgstr ""
+"Nous n'avons pu valider l'abonnement. Vérifier le statut de l'abonnement sur "
+"la page Abonnement. Essayer à nouveau au besoin."
+
+#: src/app/main/ui/settings/subscription.cljs:104
+msgid "subscription.settings.activate-by-code"
+msgstr "Saisir le code d'activation"
+
+#: src/app/main/ui/settings/subscription.cljs:725
+msgid "subscription.settings.organization-member-month"
+msgstr "membre d'organisation par mois"
+
+#: src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr ""
+"Toutes les fonctionnalités de design et de prototypage, avec l'assistance de "
+"la communauté."
+
+#: src/app/main/ui/settings/subscription.cljs:595, src/app/main/ui/settings/subscription.cljs:673
+msgid "subscription.settings.professional.selfhost.control-over-data"
+msgstr "Contrôle complet sur les données et l'infrastructure."
+
+#: src/app/main/ui/settings/subscription.cljs:598, src/app/main/ui/settings/subscription.cljs:676
+msgid "subscription.settings.professional.selfhost.unlimited-users"
+msgstr "Usagers, équipes et fichiers illimités."
+
+#: src/app/main/ui/settings/integrations.cljs:619
+msgid "title.settings.integrations"
+msgstr "Intégrations - Penpot"
+
+#: src/app/main/ui/workspace/main_menu.cljs:853
+msgid "workspace.header.menu.mcp.plugin.status.connect"
+msgstr "Connecter"
+
+#: src/app/main/ui/workspace/main_menu.cljs:852
+msgid "workspace.header.menu.mcp.plugin.status.disconnect"
+msgstr "Déconnecter"
+
+#: src/app/main/ui/workspace/main_menu.cljs:862
+msgid "workspace.header.menu.mcp.server.status.disabled"
+msgstr "Gérer (statut : désactivé)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:861
+msgid "workspace.header.menu.mcp.server.status.enabled"
+msgstr "Gérer (statut : activé)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:1074
+msgid "workspace.header.menu.option.mcp"
+msgstr "Serveur MCP"
+
+#: src/app/main/ui/workspace/main_menu.cljs:400
+msgid "workspace.header.menu.unlock-guides"
+msgstr "Déverrouiller les guides"
