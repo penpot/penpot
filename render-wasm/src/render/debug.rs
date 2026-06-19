@@ -36,16 +36,6 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(rect, &paint);
 }
 
-pub fn render_debug_cache_surface(render_state: &mut RenderState) {
-    let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
-    canvas.save();
-    canvas.scale((0.1, 0.1));
-    render_state
-        .surfaces
-        .draw_into(SurfaceId::Cache, SurfaceId::Debug, None);
-    render_state.surfaces.canvas(SurfaceId::Debug).restore();
-}
-
 pub fn render_wasm_label(render_state: &mut RenderState) {
     if render_state.preview_mode || !render_state.options.show_wasm_info() {
         return;
@@ -79,7 +69,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
 }
 
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
-    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile_viewbox.interest_rect;
+    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile.tile_viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::RED);
@@ -262,48 +252,6 @@ pub fn console_debug_surface_rect(render_state: &mut RenderState, id: SurfaceId,
     if let Some(base64_image) = base64_image {
         run_script!(format!("console.log('%c ', 'font-size: 1px; background: url(data:image/png;base64,{base64_image}) no-repeat; padding: 100px; background-size: contain;')"))
     }
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn capture_frames(capture_frames: i32) -> Result<()> {
-    get_render_state()
-        .options
-        .set_capture_frames(capture_frames);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_cache_console() -> Result<()> {
-    console_debug_surface(get_render_state(), SurfaceId::Cache);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_cache_base64() -> Result<()> {
-    console_debug_surface_base64(get_render_state(), SurfaceId::Cache);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_atlas_console() -> Result<()> {
-    console_debug_surface(get_render_state(), SurfaceId::Atlas);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-#[cfg(target_arch = "wasm32")]
-pub extern "C" fn debug_atlas_base64() -> Result<()> {
-    console_debug_surface_base64(get_render_state(), SurfaceId::Atlas);
-    Ok(())
 }
 
 #[no_mangle]

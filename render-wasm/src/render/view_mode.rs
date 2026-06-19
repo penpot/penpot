@@ -22,7 +22,7 @@ pub fn precompute_viewer_visible_set(render_state: &mut RenderState, tree: Shape
     let Some(ref include) = render_state.include_filter else {
         return;
     };
-    let mut visible = include.clone();
+    let mut visible: HashSet<Uuid> = include.clone();
     for id in include.iter() {
         let mut current_id = id;
         while let Some(raw) = tree.get_raw(current_id) {

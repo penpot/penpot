@@ -27,8 +27,7 @@ pub fn render_shape_enter(
                 render_state.surfaces.canvas(target_surface).save();
                 if let Some(clips) = clip_bounds {
                     let scale = render_state.get_scale();
-                    let antialias = !render_state.options.is_fast_mode()
-                        && element
+                    let antialias = element
                             .should_use_antialias(scale, render_state.options.antialias_threshold);
                     render_state.clip_target_surface_to_stack(
                         clips,
@@ -40,15 +39,13 @@ pub fn render_shape_enter(
             }
 
             let mut paint = skia::Paint::default();
-            if !render_state.options.is_fast_mode() {
-                if let Some(blur) = element.masked_group_layer_blur() {
-                    let scale = render_state.get_scale();
-                    let sigma = radius_to_sigma(blur.value * scale);
-                    if let Some(filter) =
-                        skia::image_filters::blur((sigma, sigma), None, None, None)
-                    {
-                        paint.set_image_filter(filter);
-                    }
+            if let Some(blur) = element.masked_group_layer_blur() {
+                let scale = render_state.get_scale();
+                let sigma = radius_to_sigma(blur.value * scale);
+                if let Some(filter) =
+                    skia::image_filters::blur((sigma, sigma), None, None, None)
+                {
+                    paint.set_image_filter(filter);
                 }
             }
 
@@ -81,13 +78,11 @@ pub fn render_shape_enter(
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
 
-        if !render_state.options.is_fast_mode() {
-            if let Some(frame_blur) = layer_blur::frame_clip_layer_blur(element) {
-                let scale = render_state.get_scale();
-                let sigma = radius_to_sigma(frame_blur.value * scale);
-                if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                    paint.set_image_filter(filter);
-                }
+        if let Some(frame_blur) = layer_blur::frame_clip_layer_blur(element) {
+            let scale = render_state.get_scale();
+            let sigma = radius_to_sigma(frame_blur.value * scale);
+            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
+                paint.set_image_filter(filter);
             }
         }
 

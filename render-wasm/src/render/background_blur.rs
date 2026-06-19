@@ -7,9 +7,12 @@ pub fn render_background_blur(
     shape: &Shape,
     target_surface: SurfaceId,
 ) {
+    /*
     if render_state.options.is_fast_mode() {
         return;
     }
+    */
+
     if matches!(shape.shape_type, Type::Text(_)) || matches!(shape.shape_type, Type::SVGRaw(_)) {
         return;
     }

@@ -1,6 +1,5 @@
 // Render options flags
 const DEBUG_VISIBLE: u32 = 0x01;
-const PROFILE_REBUILD_TILES: u32 = 0x02;
 const TEXT_EDITOR_V3: u32 = 0x04;
 const SHOW_WASM_INFO: u32 = 0x08;
 
@@ -10,14 +9,13 @@ const SHOW_WASM_INFO: u32 = 0x08;
 const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MIN_DPR_VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 2;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
-const NODE_BATCH_THRESHOLD: i32 = 3;
+const NODE_BATCH_THRESHOLD: i32 = 100;
 const BLUR_DOWNSCALE_THRESHOLD: f32 = 8.0;
 const ANTIALIAS_THRESHOLD: f32 = 7.0;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct RenderOptions {
     pub flags: u32,
     pub dpr: f32,
-    fast_mode: bool,
     /// Active while the user is interacting with a shape (drag, resize,
     /// rotate). Implies `fast_mode` semantics for expensive effects but
     /// keeps per-frame flushing enabled (unlike pan/zoom, where
@@ -30,7 +28,6 @@ pub struct RenderOptions {
     pub max_blocking_time_ms: i32,
     pub node_batch_threshold: i32,
     pub blur_downscale_threshold: f32,
-    pub capture_frames: i32,
 }
 
 impl Default for RenderOptions {
@@ -38,7 +35,6 @@ impl Default for RenderOptions {
         Self {
             flags: 0,
             dpr: 1.0,
-            fast_mode: false,
             interactive_transform: false,
             antialias_threshold: ANTIALIAS_THRESHOLD,
             viewport_interest_area_threshold: VIEWPORT_INTEREST_AREA_THRESHOLD,
@@ -46,7 +42,6 @@ impl Default for RenderOptions {
             max_blocking_time_ms: MAX_BLOCKING_TIME_MS,
             node_batch_threshold: NODE_BATCH_THRESHOLD,
             blur_downscale_threshold: BLUR_DOWNSCALE_THRESHOLD,
-            capture_frames: 0,
         }
     }
 }
@@ -54,23 +49,6 @@ impl Default for RenderOptions {
 impl RenderOptions {
     pub fn is_debug_visible(&self) -> bool {
         self.flags & DEBUG_VISIBLE == DEBUG_VISIBLE
-    }
-
-    pub fn is_profile_rebuild_tiles(&self) -> bool {
-        self.flags & PROFILE_REBUILD_TILES == PROFILE_REBUILD_TILES
-    }
-
-    /// Use fast mode to enable / disable expensive operations
-    pub fn is_fast_mode(&self) -> bool {
-        self.fast_mode
-    }
-
-    pub fn set_fast_mode(&mut self, enabled: bool) {
-        self.fast_mode = enabled;
-    }
-
-    pub fn set_capture_frames(&mut self, capture_frames: i32) {
-        self.capture_frames = capture_frames;
     }
 
     /// Updates the dpr viewport interest area threshold.

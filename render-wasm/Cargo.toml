@@ -11,6 +11,7 @@ build = "build.rs"
 [features]
 default = []
 stats = []
+
 profile = ["profile-macros", "profile-raf"]
 profile-macros = []
 profile-raf = []

@@ -65,26 +65,27 @@ impl State {
         Ok(())
     }
 
-    pub fn render_from_cache(&mut self) {
-        get_render_state().render_from_cache(&self.shapes);
-    }
+    // pub fn render_from_cache(&mut self) {
+    //     get_render_state().render_from_cache(&self.shapes);
+    // }
 
     pub fn render_ui_only(&mut self) {
         get_render_state().render_ui_only(&self.shapes);
     }
 
     pub fn render_blurred_snapshot(&mut self, blur_radius: f32) {
-        get_render_state().render_blurred_snapshot(&self.shapes, blur_radius);
+        get_render_state().render_blurred_snapshot(blur_radius);
     }
 
     pub fn render_sync(&mut self, timestamp: i32) -> Result<FrameType> {
-        get_render_state().start_render_loop(None, &self.shapes, timestamp, true)
+        get_render_state().start_render_loop(timestamp, true)
     }
 
     pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<FrameType> {
         let render_state = get_render_state();
         render_state.prepare_sync_shape_render();
-        render_state.start_render_loop(Some(id), &self.shapes, timestamp, true)
+        render_state.base_object = Some(*id);
+        render_state.start_render_loop(timestamp, true)
     }
 
     pub fn render_shape_pixels(
@@ -100,24 +101,26 @@ impl State {
         crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
-        let render_state = get_render_state();
-        // If zoom changed (e.g. interrupted zoom render followed by pan), the
-        // tile index may be stale for the new viewport position. Rebuild the
-        // index so shapes are mapped to the correct tiles. We use
-        // rebuild_tile_index (NOT rebuild_tiles_shallow) to preserve the tile
-        // texture cache — otherwise cached tiles with shadows/blur would be
-        // cleared and re-rendered in fast mode without effects.
-        if render_state.zoom_changed() {
-            render_state.rebuild_tile_index(&self.shapes);
-        }
-        render_state.start_render_loop(None, &self.shapes, timestamp, false)
-    }
+    // pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
+    //     let render_state = get_render_state();
 
-    pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
-        let allow_stop = true;
-        get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
-    }
+    //     render_state.tile_viewbox.update(&render_state.viewbox);
+    //     render_state.rebuild_tile_index(&self.shapes);
+    //     if render_state.is_zoom_changed() {
+    //         render_state.surfaces.invalidate_tile_cache();
+    //     }
+    //     render_state.start_render_loop(
+    //         None,
+    //         &self.shapes,
+    //         timestamp,
+    //         false
+    //     )
+    // }
+
+    // pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
+    //     let allow_stop = true;
+    //     get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
+    // }
 
     pub fn clear_focus_mode(&mut self) {
         get_render_state().clear_focus_mode();
@@ -169,6 +172,7 @@ impl State {
             // Instead, remove the shape from *all* tiles where it was indexed, and
             // drop cached tiles for those entries.
             let indexed_tiles: Vec<tiles::Tile> = render_state
+                .tile
                 .tiles
                 .get_tiles_of(shape.id)
                 .map(|t| t.iter().copied().collect())
@@ -176,7 +180,7 @@ impl State {
 
             for tile in indexed_tiles {
                 render_state.remove_cached_tile(tile);
-                render_state.tiles.remove_shape_at(tile, shape.id);
+                render_state.tile.tiles.remove_shape_at(tile, shape.id);
             }
 
             if let Some(shape_to_delete) = self.shapes.get(&id) {
@@ -242,7 +246,7 @@ impl State {
     }
 
     pub fn rebuild_tiles_shallow(&mut self) {
-        get_render_state().rebuild_tiles_shallow(&self.shapes);
+        get_render_state().rebuild_tiles_shallow();
     }
 
     pub fn rebuild_tiles(&mut self) {
@@ -254,15 +258,15 @@ impl State {
     }
 
     pub fn rebuild_touched_tiles(&mut self) {
-        get_render_state().rebuild_touched_tiles(&self.shapes);
+        get_render_state().rebuild_touched_tiles();
     }
 
     pub fn render_preview(&mut self, timestamp: i32) {
-        let _ = get_render_state().render_preview(&self.shapes, timestamp);
+        let _ = get_render_state().render_preview(timestamp);
     }
 
     pub fn rebuild_modifier_tiles(&mut self, ids: &[Uuid]) -> Result<()> {
-        get_render_state().rebuild_modifier_tiles(&mut self.shapes, ids)
+        get_render_state().rebuild_modifier_tiles(ids)
     }
 
     pub fn font_collection(&self) -> &FontCollection {
