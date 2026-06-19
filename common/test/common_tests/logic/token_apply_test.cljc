@@ -331,7 +331,7 @@
                                                    d/txt-merge
                                                    {:fills (ths/sample-fills-color :fill-color "#fabada")
                                                     :font-size "1"
-                                                    :letter-spacing "0"
+                                                    :letter-spacing "2"
                                                     :font-family "Arial"}))
                                                 (:objects page)
                                                 {})
