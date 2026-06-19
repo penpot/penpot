@@ -332,6 +332,10 @@
   z-index: var(--z-index-dropdown);
 }
 
+.fonts-on-modal {
+  top: 0;
+}
+
 .show-recent {
   border-radius: $br-8 $br-8 0 0;
   background: var(--color-background-tertiary);
