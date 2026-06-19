@@ -198,8 +198,7 @@
        [:div {:class (stl/css :font-select-wrapper)}
         [:> font-selector* {:current-font font
                             :on-select on-select-font
-                            :on-close on-close-font-selector
-                            :full-size true}]])]))
+                            :on-close on-close-font-selector}]])]))
 
 (defn- on-composite-combobox-token-change
   ([form field value]
@@ -336,8 +335,7 @@
     [:*
      [:> input* props]
      (when font-selector-open?
-       [:div {:class (stl/css :font-select-wrapper)}
+       [:div {:class (stl/css :font-select-wrapper-composite)}
         [:> font-selector* {:current-font font
                             :on-select on-select-font
-                            :on-close on-close-font-selector
-                            :full-size true}]])]))
+                            :on-close on-close-font-selector}]])]))
