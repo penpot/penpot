@@ -76,3 +76,32 @@
                               :cmd ["sleep" "0.1"]
                               :timeout nil)]
       (t/is (= 0 (:exit result))))))
+
+(t/deftest exec-prlimit-normal
+  (t/testing "normal process completes within prlimit"
+    (let [result (shell/exec! {}
+                              :cmd ["echo" "hello"]
+                              :prlimit {:mem 256 :cpu 10}
+                              :timeout 10)]
+      (t/is (= 0 (:exit result)))
+      (t/is (str/includes? (:out result) "hello")))))
+
+(t/deftest exec-prlimit-cpu
+  (t/testing "process exceeding CPU limit is killed"
+    (let [result (shell/exec! {}
+                              :cmd ["bash" "-c" "while true; do :; done"]
+                              :prlimit {:cpu 2}
+                              :timeout 10)]
+      (t/is (not= 0 (:exit result))))))
+
+(t/deftest exec-prlimit-memory
+  (t/testing "process exceeding memory limit is killed"
+    ;; Use python3 to allocate more memory than the limit allows.
+    ;; This test requires python3 to be available in the environment.
+    (let [result (shell/exec! {}
+                              :cmd ["python3" "-c"
+                                    "import sys; x = bytearray(600 * 1024 * 1024); sys.exit(0)"]
+                              :prlimit {:mem 256}
+                              :timeout 10)]
+      ;; Should fail because 600 MiB > 256 MiB limit
+      (t/is (not= 0 (:exit result))))))

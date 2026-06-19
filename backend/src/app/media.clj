@@ -24,7 +24,6 @@
    [app.util.shell :as shell]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
-   [clojure.java.shell :as sh]
    [clojure.string]
    [clojure.xml :as xml]
    [cuerdas.core :as str]
@@ -389,48 +388,80 @@
 ;; FONTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- get-font-prlimit
+  "Returns resource limits for font processing tools, read from config."
+  []
+  {:mem (cf/get :font-process-mem)
+   :cpu (cf/get :font-process-cpu)})
+
+(defn- get-font-timeout
+  "Returns the wall-clock timeout for font processing, read from config."
+  []
+  (cf/get :font-process-timeout))
+
+(defn- exec-font!
+  "Execute a font processing command with resource limits.
+   `args` is a vector of string arguments."
+  [system args]
+  (shell/exec! system
+               :cmd args
+               :prlimit (get-font-prlimit)
+               :timeout (get-font-timeout)))
+
 (defmethod process :generate-fonts
-  [_system {:keys [input] :as params}]
+  [system {:keys [input] :as params}]
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".otf"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "fontforge" "-lang=ff" "-c"
-                                 (str/fmt "Open('%s'); Generate('%s')"
-                                          (str finput)
-                                          (str foutput)))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".otf"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["fontforge" "-lang=ff" "-c"
+                                              (str/fmt "Open('%s'); Generate('%s')"
+                                                       (str finput)
+                                                       (str foutput))])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (otf->ttf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".ttf"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "fontforge" "-lang=ff" "-c"
-                                 (str/fmt "Open('%s'); Generate('%s')"
-                                          (str finput)
-                                          (str foutput)))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".ttf"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["fontforge" "-lang=ff" "-c"
+                                              (str/fmt "Open('%s'); Generate('%s')"
+                                                       (str finput)
+                                                       (str foutput))])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (ttf-or-otf->woff [data]
-            ;; NOTE: foutput is not used directly, it represents the
-            ;; default output of the execution of the underlying
-            ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".woff"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "sfnt2woff" (str finput))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".woff"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["sfnt2woff" (str finput)])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (woff->sfnt [data]
-            (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
-                  _       (io/write* finput data)
-                  res     (sh/sh "woff2sfnt" (str finput)
-                                 :out-enc :bytes)]
-              (when (zero? (:exit res))
-                (:out res))))
+            (let [finput (tmp/tempfile :prefix "penpot" :suffix "")]
+              (try
+                (io/write* finput data)
+                (let [res (shell/exec! system
+                                       :cmd ["woff2sfnt" (str finput)]
+                                       :out-enc :bytes
+                                       :prlimit (get-font-prlimit)
+                                       :timeout (get-font-timeout))]
+                  (when (zero? (:exit res))
+                    (:out res)))
+                (finally
+                  (fs/delete finput)))))
 
           (woff2->sfnt [data]
             ;; woff2_decompress outputs to same directory with .ttf extension
@@ -438,7 +469,7 @@
                   foutput (fs/path (str/replace (str finput) #"\.woff2$" ".ttf"))]
               (try
                 (io/write* finput data)
-                (let [res (sh/sh "woff2_decompress" (str finput))]
+                (let [res (exec-font! system ["woff2_decompress" (str finput)])]
                   (if (zero? (:exit res))
                     foutput
                     (do
