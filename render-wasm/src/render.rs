@@ -890,7 +890,9 @@ impl RenderState {
         if self.options.is_debug_visible() {
             debug::render(self);
         }
-        ui::render(self, tree);
+        if !self.preview_mode {
+            ui::render(self, tree);
+        }
         debug::render_wasm_label(self);
         self.surfaces.flush_and_submit(SurfaceId::Target);
     }
@@ -2193,8 +2195,11 @@ impl RenderState {
             self.interactive_target_seeded = false;
             // Paint rulers/frame now so they survive the progressive frames
             // instead of blanking until the first full `present_frame`.
-            ui::render(self, tree);
-            self.flush_and_submit();
+            // Skip on sync renders (thumbnails/exports)
+            if !sync_render {
+                ui::render(self, tree);
+                self.flush_and_submit();
+            }
         }
 
         let surface_ids = SurfaceId::Strokes as u32
