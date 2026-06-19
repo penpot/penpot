@@ -25,34 +25,38 @@
   (let [all-colors (:colors data)
         colors (into [] xf:sample-colors all-colors)]
     (-> file
-        (assoc :colors colors
-               :total-colors (count all-colors))
+        (assoc :colors colors)
+        (assoc :total-colors (count all-colors))
         (dissoc :data))))
 
 (mf/defc color-palette-ctx-menu*
   [{:keys [show on-close on-select selected]}]
   (let [recent-colors (mf/deref refs/recent-colors)
         libraries     (mf/deref refs/libraries)
-
         file-id       (mf/use-ctx ctx/current-file-id)
-        local-colors  (mf/with-memo [libraries file-id]
-                        (let [colors (dm/get-in libraries [file-id :data :colors])]
-                          (into [] xf:sample-colors colors)))
 
-        local-colors-count (mf/with-memo [libraries file-id]
-                             (count (dm/get-in libraries [file-id :data :colors])))
+        local-colors
+        (mf/with-memo [libraries file-id]
+          (let [colors (dm/get-in libraries [file-id :data :colors])]
+            (into [] xf:sample-colors colors)))
 
-        libraries     (mf/with-memo [libraries file-id]
-                        (->> (dissoc libraries file-id)
-                             (vals)
-                             (mapv extract-colors)))
+        local-colors-count
+        (mf/with-memo [libraries file-id]
+          (count (dm/get-in libraries [file-id :data :colors])))
 
-        recent-colors (mf/with-memo [recent-colors]
-                        (->> (reverse recent-colors)
-                             (take 7)
-                             (map-indexed (fn [index color]
-                                            (assoc color ::id (dm/str index))))
-                             (vec)))]
+        libraries
+        (mf/with-memo [libraries file-id]
+          (->> (dissoc libraries file-id)
+               (vals)
+               (mapv extract-colors)))
+
+        recent-colors
+        (mf/with-memo [recent-colors]
+          (->> (reverse recent-colors)
+               (take 7)
+               (map-indexed (fn [index color]
+                              (assoc color ::id (dm/str index))))
+               (vec)))]
 
     [:& dropdown {:show show :on-close on-close}
      [:ul {:class (stl/css :palette-menu)}
