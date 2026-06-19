@@ -44,6 +44,10 @@
    {:error/code :error.token/direct-self-reference
     :error/fn #(tr "errors.tokens.self-reference")}
 
+   :error.token/circular-reference
+   {:error/code :error.token/circular-reference
+    :error/fn #(tr "errors.tokens.circular-reference")}
+
    :error.token/invalid-color
    {:error/code :error.token/invalid-color
     :error/fn #(str (tr "errors.tokens.invalid-color" %))}

@@ -19,6 +19,9 @@ msgstr "¿Tienes ya una cuenta?"
 msgid "auth.check-mail"
 msgstr "Comprueba tu correo"
 
+msgid "auth.check-email"
+msgstr "¡Comprueba tu correo!"
+
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
@@ -197,6 +200,9 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-email-sent"
 msgstr "Hemos enviado un email de verificación a"
+
+msgid "auth.verification-sent-email"
+msgstr "Hemos enviado un email de verificación a:"
 
 #: src/app/main/ui/auth/login.cljs:178, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:168
 msgid "auth.work-email"
@@ -1854,6 +1860,10 @@ msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
 msgid "errors.tokens.self-reference"
 msgstr "El token tiene una autoreferencia"
 
+#: src/app/common/files/tokens.cljc
+msgid "errors.tokens.circular-reference"
+msgstr "El token tiene una referencia circular"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:124
 msgid "errors.tokens.shadow-blur-range"
 msgstr "El desenfoque (blur) de la sombra debe ser mayor o igual a 0."
@@ -2465,12 +2475,6 @@ msgid "integrations.info.mcp-server"
 msgstr ""
 "El servidor MCP de Penpot permite a los clientes MCP interactuar "
 "directamente con los archivos de diseño de Penpot."
-
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Esta clave MCP única no es recuperable. Si la pierdes, tendrás que crear "
-"una nueva."
 
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
@@ -4369,7 +4373,7 @@ msgstr "Revisa tu correo y haz clic en el enlace para crear una nueva contraseñ
 
 #: src/app/main/ui/static.cljs:167
 msgid "not-found.login.signup-free"
-msgstr "Registrate gratis"
+msgstr "Regístrate gratis"
 
 #: src/app/main/ui/static.cljs:168
 msgid "not-found.login.start-using"
@@ -6591,6 +6595,18 @@ msgstr "Ocultar nombres de tableros"
 #: src/app/main/ui/workspace/main_menu.cljs:387
 msgid "workspace.header.menu.hide-guides"
 msgstr "Ocultar guías"
+
+msgid "workspace.header.menu.show-comments"
+msgstr "Mostrar comentarios"
+
+msgid "workspace.header.menu.hide-comments"
+msgstr "Ocultar comentarios"
+
+msgid "workspace.toast.comments-visible"
+msgstr "Comentarios visibles"
+
+msgid "workspace.toast.comments-hidden"
+msgstr "Comentarios ocultos"
 
 #: src/app/main/ui/workspace/main_menu.cljs:413
 msgid "workspace.header.menu.hide-palette"

@@ -4,118 +4,109 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "refactor/common-refactor.scss" as deprecated;
 @use "ds/_borders.scss" as *;
-@use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
-@use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
-@use "ds/z-index.scss" as *;
 
-.toolbar {
-  --toolbar-position-y: #{$sz-28};
-  --toolbar-offset-y: 0px;
-  --menu-border-color: var(--color-background-quaternary);
-  --menu-background-color: var(--color-background-primary);
-
-  cursor: default;
+.main-toolbar {
+  cursor: initial;
   position: absolute;
-  inset-inline-start: 50%;
+  left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: var(--sp-m);
-  border-radius: $br-8;
-  border: $b-2 solid var(--menu-border-color);
-  z-index: var(--z-index-panels);
-  background-color: var(--menu-background-color);
+  height: deprecated.$s-56;
+  padding: deprecated.$s-8 deprecated.$s-16;
+  border-radius: deprecated.$s-8;
+  border: deprecated.$s-2 solid var(--panel-border-color);
+  z-index: deprecated.$z-index-1;
+  background-color: var(--color-background-primary);
   transition:
-    inset-block-start 0.3s,
-    block-size 0.3s,
+    top 0.3s,
+    height 0.3s,
     opacity 0.3s;
-  inset-block-start: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
-  will-change: auto;
 
-  &.no-rulers {
-    --toolbar-position-y: 0px;
-    --toolbar-offset-y: 8px;
-  }
+  --toolbar-position-y: #{deprecated.$s-28};
+  --toolbar-offset-y: 0px;
 
-  &.hidden {
-    --toolbar-offset-y: -4px;
+  top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+}
 
-    block-size: $sz-16;
-    z-index: 1;
-    border-radius: 0 0 $br-8 $br-8;
-    border-block-start: 0;
+.main-toolbar-no-rulers {
+  --toolbar-position-y: 0px;
+  --toolbar-offset-y: #{deprecated.$s-8};
+}
 
-    .toolbar-options {
-      opacity: 0;
-      visibility: hidden;
-    }
+.main-toolbar-hidden {
+  --toolbar-offset-y: calc(-1 * #{deprecated.$s-4});
+
+  height: deprecated.$s-16;
+  z-index: deprecated.$z-index-1;
+  border-radius: 0 0 deprecated.$s-8 deprecated.$s-8;
+  border-block-start: 0;
+
+  .main-toolbar-options {
+    opacity: deprecated.$op-0;
+    visibility: hidden;
   }
 }
 
-.toolbar-options {
+.main-toolbar-options {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--sp-xs);
   margin: 0;
-  opacity: 1;
+  opacity: deprecated.$op-10;
   transition: opacity 0.3s ease;
-}
 
-.toolbar-option {
-  position: relative;
-}
-
-.toolbar-group {
-  position: relative;
-}
-
-.toolbar-group-flyout {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  position: absolute;
-  inset-block-start: 140%;
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-  margin-block-start: var(--sp-xxs);
-  padding: var(--sp-xxs) 0;
-  border-radius: $br-8;
-  border: #{$b-1} solid var(--menu-border-color);
-  background-color: var(--menu-background-color);
-  z-index: var(--z-index-panels);
-  display: flex;
-  transition:
-    opacity 80ms ease-out,
-    visibility 80ms linear;
-
-  &.open {
-    opacity: 1;
-    transition-delay: 0s;
-    visibility: visible;
-    pointer-events: auto;
+  li {
+    position: relative;
   }
 }
 
-.toolbar-mcp-button {
+.main-toolbar-options-button {
+  @extend %button-tertiary;
+
+  height: deprecated.$s-36;
+  width: deprecated.$s-36;
+  flex-shrink: 0;
+  border-radius: deprecated.$s-8;
+  margin: 0 deprecated.$s-2;
+
+  svg {
+    @extend %button-icon;
+
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &.selected {
+    @extend %button-icon-selected;
+  }
+}
+
+.mcp-button {
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
+  width: fit-content;
+  margin-inline-start: var(--sp-xs);
+  padding-inline: var(--sp-s);
 }
 
-.toolbar-mcp-button-label {
+.mcp-button-label {
+  @include t.use-typography("body-small");
+
   &.connected {
     color: var(--color-accent-primary);
   }
 }
 
-.toolbar-mcp-button-dot {
+.mcp-status-dot {
+  // Connection indicator placed before the label, vertically centered:
+  // a muted gray when disconnected, the primary accent when connected.
   position: relative;
-  display: flex;
   flex-shrink: 0;
   inline-size: px2rem(6);
   block-size: px2rem(6);
@@ -152,23 +143,23 @@
   }
 }
 
-.toolbar-mcp-menu {
-  position: absolute;
-  left: 0;
-  top: $sz-36;
-}
+.mcp-menu {
+  @include deprecated.menu-shadow;
 
-.toolbar-mcp-dropdown {
-  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  position: absolute;
+  inset-block-start: calc(100% + var(--sp-xs));
+  inset-inline-start: var(--sp-xs);
   z-index: var(--z-index-dropdown);
   margin: 0;
   padding: var(--sp-xs);
+  list-style: none;
   border: $b-1 solid var(--panel-border-color);
   border-radius: $br-8;
   background-color: var(--menu-background-color);
 }
 
-.toolbar-mcp-dropdown-info {
+// Non-interactive informational text inside the menu (no hover, not focusable).
+.mcp-menu-info {
   @include t.use-typography("body-small");
 
   padding: var(--sp-s) var(--sp-m);
@@ -176,7 +167,7 @@
   white-space: nowrap;
 }
 
-.toolbar-mcp-dropdown-item {
+.mcp-menu-item {
   @include t.use-typography("body-small");
 
   display: flex;
@@ -191,31 +182,26 @@
   }
 }
 
-.toolbar-separator {
-  --separator-color: var(--color-background-quaternary);
-
-  margin: 0 var(--sp-m);
-  border-inline-start: $b-1 solid var(--separator-color);
-  block-size: $sz-32;
-}
-
 .toolbar-handler {
-  block-size: $sz-12;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  appearance: none;
-  border: none;
-  background: transparent;
+  @include deprecated.flex-center;
+  @include deprecated.button-style;
+
   position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
+  left: 0;
+  bottom: 0;
+  height: deprecated.$s-12;
+  width: 100%;
+
+  .toolbar-handler-btn {
+    height: deprecated.$s-4;
+    width: 100%;
+    max-width: deprecated.$s-64;
+    padding: 0;
+    border-radius: deprecated.$s-4;
+    background-color: var(--palette-handler-background-color);
+  }
 }
 
-.toolbar-handler-indicator {
-  block-size: px2rem(4);
-  inline-size: $sz-64;
-  padding: 0;
-  border-radius: $br-4;
-  background-color: var(--color-accent-default);
+ul.main-toolbar-panels {
+  display: none;
 }

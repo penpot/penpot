@@ -320,7 +320,7 @@
   (try
     (let [storage (sto/resolve cfg)
           input   (media/download-image cfg uri)
-          input   (media/run {:cmd :info :input input})
+          input   (media/run cfg {:cmd :info :input input})
           hash    (sto/calculate-hash (:path input))
           content (-> (sto/content (:path input) (:size input))
                       (sto/wrap-with-hash hash))

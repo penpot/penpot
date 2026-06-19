@@ -20,172 +20,79 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
-   [app.main.ui.components.file-uploader :as file-uploader]
+   [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private toolbar-hidden-ref
-  (l/derived (fn [state]
-               (let [visibility      (get state :hide-toolbar)
-                     path-edit-state (get state :edit-path)
-                     selected        (get state :selected)
-                     edition         (get state :edition)
+(mf/defc mcp-indicator*
+  []
+  (let [mcp              (mf/deref refs/mcp)
 
-                     is-single       (= (count selected) 1)
-                     is-path-editing (and is-single (some? (get path-edit-state edition)))]
+        conn-status      (get mcp :connection-status)
+        has-valid-token? (get mcp :token-valid)
 
-                 (if is-path-editing true visibility)))
-             refs/workspace-local))
+        enabled?         (get mcp :enabled)
 
-(def grouped-tools
-  {:shapes {:default-tool :rect
-            :tools {:rect {:icon i/rectangle}
-                    :circle {:icon i/ellipse}}}
-   :free-draw {:default-tool :path
-               :tools {:path {:icon i/path}
-                       :curve {:icon i/curve}}}})
+        mcp-connected?   (= "connected" conn-status)
+        show-indicator?  (and enabled? has-valid-token?)
 
-(defn- tool-label
-  [tool]
-  (case tool
-    :move    (tr "workspace.toolbar.move"    (sc/get-tooltip :move))
-    :frame   (tr "workspace.toolbar.frame"   (sc/get-tooltip :draw-frame))
-    :rect    (tr "workspace.toolbar.rect"    (sc/get-tooltip :draw-rect))
-    :circle  (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-    :text    (tr "workspace.toolbar.text"    (sc/get-tooltip :draw-text))
-    :path    (tr "workspace.toolbar.path"    (sc/get-tooltip :draw-path))
-    :image   (tr "workspace.toolbar.image"   (sc/get-tooltip :insert-image))
-    :curve   (tr "workspace.toolbar.curve"   (sc/get-tooltip :draw-curve))
-    :plugins (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
-    :debug   "Debugging tool"
-    (name tool)))
+        menu-open*       (mf/use-state false)
+        menu-open?       (deref menu-open*)
 
-(defn- active-group-tool
-  [group drawtool]
-  (if (contains? (:tools group) drawtool)
-    drawtool
-    (:default-tool group)))
-
-(defn- is-selected-group
-  [group drawtool]
-  (contains? (:tools group) drawtool))
-
-(defn- group-menu-label
-  [group drawtool]
-  (let [tool-id (active-group-tool group drawtool)]
-    (str (tr "labels.options") ": " (tool-label tool-id))))
-
-(defn- cancel-timer!
-  [timer-ref*]
-  (when-let [timer (mf/ref-val timer-ref*)]
-    (ts/dispose! timer)
-    (mf/set-ref-val! timer-ref* nil)))
-
-(mf/defc group-tool*
-  {::mf/private true
-   ::mf/wrap [mf/memo]}
-  [{:keys [group drawtool on-select-tool]}]
-  (let [default-tool*  (mf/use-state (active-group-tool group drawtool))
-        default-tool   (deref default-tool*)
-
-        open*          (mf/use-state false)
-        open           (deref open*)
-
-        open-timer*    (mf/use-ref nil)
-        close-timer*   (mf/use-ref nil)
-
-        default-icon   (:icon (get-in group [:tools default-tool]))
-        subtools       (:tools group)
-        menu-label     (group-menu-label group drawtool)
-        selected       (boolean (is-selected-group group drawtool))
-
-        on-select-tool
+        toggle-menu
         (mf/use-fn
          (fn [event]
-           (let [tool (-> (dom/get-current-target event)
-                          (dom/get-data "tool")
-                          (keyword))]
-             (reset! default-tool* tool)
-             (on-select-tool event))))
+           (dom/stop-propagation event)
+           (swap! menu-open* not)))
 
-        on-display-menu
+        close-menu
         (mf/use-fn
-         (fn []
-           (cancel-timer! close-timer*)
-           (cancel-timer! open-timer*)
-           (mf/set-ref-val!
-            open-timer*
-            (ts/schedule 350
-                         #(do
-                            (reset! open* true)
-                            (mf/set-ref-val! open-timer* nil))))))
+         #(reset! menu-open* false))
 
-        on-hide-menu
+        connect-mcp
         (mf/use-fn
-         (fn []
-           (cancel-timer! open-timer*)
-           (cancel-timer! close-timer*)
-           (mf/set-ref-val!
-            close-timer*
-            (ts/schedule 350
-                         #(do
-                            (reset! open* false)
-                            (mf/set-ref-val! close-timer* nil))))))]
+         #(st/emit! (mcp/connect-mcp)
+                    (ev/event {::ev/name "connect-mcp-plugin"
+                               ::ev/origin "workspace:toolbar"})))]
+    (when show-indicator?
+      [:li
+       [:button
+        {:title (tr "workspace.toolbar.mcp")
+         :aria-label (tr "workspace.toolbar.mcp")
+         :class (stl/css-case :main-toolbar-options-button true
+                              :mcp-button true
+                              :selected menu-open?)
+         :on-click toggle-menu
+         :data-tool "mcp"
+         :data-testid "mcp-btn"}
+        [:span {:class (stl/css-case :mcp-status-dot true
+                                     :connected mcp-connected?)}]
+        [:span {:class (stl/css-case :mcp-button-label true
+                                     :connected mcp-connected?)}
+         (tr "workspace.toolbar.mcp")]]
+       [:> dropdown-menu* {:show menu-open?
+                           :on-close close-menu
+                           :class (stl/css :mcp-menu)}
+        (if mcp-connected?
+          [:li {:class (stl/css :mcp-menu-info)
+                :role "presentation"}
+           (tr "workspace.toolbar.mcp-connected")]
+          [:> dropdown-menu-item* {:class (stl/css :mcp-menu-item)
+                                   :on-click connect-mcp}
+           (tr "workspace.toolbar.mcp-connect-here")])]])))
 
-    (mf/with-effect []
-      (fn []
-        (cancel-timer! open-timer*)
-        (cancel-timer! close-timer*)))
-
-    [:li {:class (stl/css :toolbar-group)
-          :on-pointer-enter on-display-menu
-          :on-pointer-leave on-hide-menu}
-     [:div {:role "group"
-            :aria-label menu-label}
-      [:> icon-button* {:variant "ghost"
-                        :flyout-indicator true
-                        :aria-label (tool-label default-tool)
-                        :aria-haspopup true
-                        :aria-pressed selected
-                        :aria-expanded open
-                        :has-tooltip false
-                        :icon default-icon
-                        :on-click on-select-tool
-                        :data-tool (name default-tool)}]
-
-      [:ul {:role "menu"
-            :class (stl/css-case :toolbar-group-flyout true
-                                 :open open)
-            :aria-label menu-label}
-
-       (for [[id {:keys [icon]}] subtools]
-         [:li {:key (name id)
-               :role "none"}
-          [:> icon-button* {:variant "ghost"
-                            :tooltip-placement "bottom"
-                            :role "menuitemradio"
-                            :aria-label (tool-label id)
-                            :aria-pressed (= drawtool id)
-                            :aria-checked (= drawtool id)
-                            :icon icon
-                            :on-click on-select-tool
-                            :data-tool (name id)}]])]]]))
-
-(mf/defc image-upload-tool*
-  {::mf/private true
-   ::mf/wrap [mf/memo]}
+(mf/defc image-upload*
+  {::mf/wrap [mf/memo]}
   []
-  (let [ref      (mf/use-ref nil)
-        file-id  (mf/use-ctx ctx/current-file-id)
+  (let [ref            (mf/use-ref nil)
+        file-id        (mf/use-ctx ctx/current-file-id)
 
-        on-display-uploader
+        on-click
         (mf/use-fn
          (fn []
            (st/emit! :interrupt (dw/clear-edition-mode))
@@ -204,115 +111,50 @@
                          :blobs (seq blobs)
                          :position (gpt/point x y)}]
              (st/emit! (dwm/upload-media-workspace params)))))]
+    [:li
+     [:button
+      {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+       :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+       :on-click on-click
+       :class (stl/css :main-toolbar-options-button)}
+      deprecated-icon/img
+      [:& file-uploader
+       {:input-id "image-upload"
+        :accept dwm/accept-image-types
+        :multi true
+        :ref ref
+        :on-selected on-selected}]]]))
 
-    [:*
-     [:> icon-button* {:variant "ghost"
-                       :tooltip-placement "bottom"
-                       :aria-label (tool-label :image)
-                       :icon i/img
-                       :on-click on-display-uploader}]
-     [:& file-uploader/file-uploader {:input-id "image-upload"
-                                      :accept dwm/accept-image-types
-                                      :multi true
-                                      :ref ref
-                                      :on-selected on-selected}]]))
+(def ^:private toolbar-hidden-ref
+  (l/derived (fn [state]
+               (let [visibility      (get state :hide-toolbar)
+                     path-edit-state (get state :edit-path)
 
-(mf/defc mcp-tool*
-  {::mf/private true
-   ::mf/wrap [mf/memo]}
-  [{:keys [is-mcp-connected]}]
-  (let [menu-open*   (mf/use-state false)
-        menu-open?   (deref menu-open*)
+                     selected        (get state :selected)
+                     edition         (get state :edition)
+                     single?         (= (count selected) 1)
 
-        on-toggle-menu
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! menu-open* not)))
-
-        on-close-menu
-        (mf/use-fn
-         #(reset! menu-open* false))
-
-        on-connect
-        (mf/use-fn
-         #(st/emit! (mcp/connect-mcp)
-                    (ev/event {::ev/name "connect-mcp-plugin"
-                               ::ev/origin "workspace:toolbar"})))]
-
-    [:*
-     [:> button* {:variant "ghost"
-                  :on-click on-toggle-menu
-                  :aria-pressed menu-open?
-                  :data-tool "mcp"
-                  :data-testid "mcp-btn"}
-      [:div {:class (stl/css-case :toolbar-mcp-button true
-                                  :selected menu-open?)}
-       [:span {:class (stl/css-case :toolbar-mcp-button-dot true
-                                    :connected is-mcp-connected)}]
-       [:span {:class (stl/css-case :toolbar-mcp-button-label true
-                                    :connected is-mcp-connected)}
-        (tr "workspace.toolbar.mcp")]]]
-
-     [:div {:class (stl/css :toolbar-mcp-menu)}
-      [:> dropdown-menu* {:show menu-open?
-                          :on-close on-close-menu
-                          :class (stl/css :toolbar-mcp-dropdown)}
-       (if is-mcp-connected
-         [:li {:class (stl/css :toolbar-mcp-dropdown-info)
-               :role "presentation"}
-          (tr "workspace.toolbar.mcp-connected")]
-         [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
-                                  :on-click on-connect}
-          (tr "workspace.toolbar.mcp-connect-here")])]]]))
+                     path-editing?   (and single? (some? (get path-edit-state edition)))]
+                 (if path-editing? true visibility)))
+             refs/workspace-local))
 
 (mf/defc top-toolbar*
-  {::mf/wrap [mf/memo]}
+  {::mf/memo true}
   [{:keys [layout]}]
-  (let [selected-drawing-tool (mf/deref refs/selected-drawing-tool)
-        selected-edition      (mf/deref refs/selected-edition)
-        rulers-enabled        (mf/deref refs/rulers?)
-        toolbar-hidden        (mf/deref toolbar-hidden-ref)
-        mcp                   (mf/deref refs/mcp)
+  (let [drawtool      (mf/deref refs/selected-drawing-tool)
+        edition       (mf/deref refs/selected-edition)
 
-        plugins-enabled? (features/active-feature? @st/state "plugins/runtime")
-        read-only?       (mf/use-ctx ctx/workspace-read-only?)
+        profile       (mf/deref refs/profile)
+        props         (get profile :props)
 
-        mcp-conn-status  (get mcp :connection-status)
-        mcp-valid-token? (get mcp :token-valid)
-        mcp-enabled?     (get mcp :enabled)
+        read-only?    (mf/use-ctx ctx/workspace-read-only?)
+        rulers?       (mf/deref refs/rulers?)
+        hide-toolbar? (mf/deref toolbar-hidden-ref)
 
-        mcp-connected?   (= "connected" mcp-conn-status)
-        mcp-show?        (and (contains? cf/flags :mcp)
-                              mcp-enabled?
-                              mcp-valid-token?)
+        interrupt
+        (mf/use-fn #(st/emit! :interrupt (dw/clear-edition-mode)))
 
-        separator?       (or plugins-enabled? *assert* mcp-show?)
-
-        on-display-plugins-manager
-        (mf/use-fn
-         (fn []
-           (st/emit! (ev/event {::ev/name "open-plugins-manager"
-                                ::ev/origin "workspace:toolbar"})
-                     (modal/show :plugin-management {}))))
-
-        on-toggle-debug-panel
-        (mf/use-fn
-         (mf/deps layout)
-         (fn []
-           (let [is-sidebar-closed (contains? layout :collapse-left-sidebar)]
-             (when is-sidebar-closed
-               (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
-             (st/emit! (dw/remove-layout-flag :shortcuts)
-                       (-> (dw/toggle-layout-flag :debug-panel)
-                           (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
-
-        on-interrupt
-        (mf/use-fn
-         (fn []
-           (st/emit! :interrupt (dw/clear-edition-mode))))
-
-        on-select-tool
+        select-drawtool
         (mf/use-fn
          (fn [event]
            (let [tool (-> (dom/get-current-target event)
@@ -321,91 +163,131 @@
              (st/emit! :interrupt (dw/clear-edition-mode))
 
              ;; Delay so anything that launched :interrupt can finish
-             (ts/schedule 100
-                          #(st/emit! (dw/select-for-drawing tool))))))
+             (ts/schedule 100 #(st/emit! (dw/select-for-drawing tool))))))
 
-        on-toggle-toolbar
+        toggle-debug-panel
+        (mf/use-fn
+         (mf/deps layout)
+         (fn []
+           (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
+             (when is-sidebar-closed?
+               (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+             (st/emit!
+              (dw/remove-layout-flag :shortcuts)
+              (-> (dw/toggle-layout-flag :debug-panel)
+                  (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))
+
+        toggle-toolbar
         (mf/use-fn
          (fn [event]
            (dom/blur! (dom/get-target event))
-           (st/emit! (dwc/toggle-toolbar-visibility))))]
+           (st/emit! (dwc/toggle-toolbar-visibility))))
+
+        test-tooltip-board-text
+        (if (not (:workspace-visited props))
+          (tr "workspace.toolbar.frame-first-time" (sc/get-tooltip :draw-frame))
+          (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame)))]
 
     (when-not ^boolean read-only?
-      [:div {:role "toolbar"
-             :aria-label (tr "workspace.toolbar.label")
-             :tabindex "0"
-             :class (stl/css-case :toolbar true
-                                  :no-rulers (not rulers-enabled)
-                                  :hidden toolbar-hidden)}
-       [:ul {:class (stl/css :toolbar-options)
+      [:aside {:class (stl/css-case :main-toolbar true
+                                    :main-toolbar-no-rulers (not rulers?)
+                                    :main-toolbar-hidden hide-toolbar?)}
+       [:ul {:class (stl/css :main-toolbar-options)
              :data-testid "toolbar-options"}
-        [:li {:class (stl/css :toolbar-option)}
-         [:> icon-button* {:variant "ghost"
-                           :tooltip-placement "bottom"
-                           :aria-pressed (and (nil? selected-drawing-tool)
-                                              (not selected-edition))
-                           :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
-                           :icon i/move
-                           :on-click on-interrupt}]]
+        [:li
+         [:button
+          {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+           :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+           :class (stl/css-case :main-toolbar-options-button true
+                                :selected (and (nil? drawtool)
+                                               (not edition)))
+           :on-click interrupt}
+          deprecated-icon/move]]
+        [:*
+         [:li
+          [:button
+           {:title test-tooltip-board-text
+            :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :class  (stl/css-case :main-toolbar-options-button true :selected (= drawtool :frame))
+            :on-click select-drawtool
+            :data-tool "frame"
+            :data-testid "artboard-btn"}
+           deprecated-icon/board]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :rect))
+            :on-click select-drawtool
+            :data-tool "rect"
+            :data-testid "rect-btn"}
+           deprecated-icon/rectangle]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :circle))
+            :on-click select-drawtool
+            :data-tool "circle"
+            :data-testid "ellipse-btn"}
+           deprecated-icon/ellipse]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :text))
+            :on-click select-drawtool
+            :data-tool "text"}
+           deprecated-icon/text]]
 
-        [:li {:class (stl/css :toolbar-option)}
-         [:> icon-button* {:variant "ghost"
-                           :tooltip-placement "bottom"
-                           :aria-pressed (= selected-drawing-tool :frame)
-                           :aria-label (tool-label :frame)
-                           :icon i/board
-                           :on-click on-select-tool
-                           :data-tool "frame"}]]
+         [:> image-upload*]
 
-        [:> group-tool* {:key :shapes
-                         :group (get grouped-tools :shapes)
-                         :drawtool selected-drawing-tool
-                         :on-select-tool on-select-tool}]
+         [:li
+          [:button
+           {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :curve))
+            :on-click select-drawtool
+            :data-tool "curve"
+            :data-testid "curve-btn"}
+           deprecated-icon/curve]]
+         [:li
+          [:button
+           {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :path))
+            :on-click select-drawtool
+            :data-tool "path"
+            :data-testid "path-btn"}
+           deprecated-icon/path]]
 
-        [:li {:class (stl/css :toolbar-option)}
-         [:> icon-button* {:variant "ghost"
-                           :tooltip-placement "bottom"
-                           :aria-pressed (= selected-drawing-tool :text)
-                           :aria-label (tool-label :text)
-                           :icon i/text
-                           :on-click on-select-tool
-                           :data-tool "text"}]]
+         (when (features/active-feature? @st/state "plugins/runtime")
+           [:li
+            [:button
+             {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :class (stl/css :main-toolbar-options-button)
+              :on-click #(st/emit!
+                          (ev/event {::ev/name "open-plugins-manager"
+                                     ::ev/origin "workspace:toolbar"})
+                          (modal/show :plugin-management {}))
+              :data-tool "plugins"
+              :data-testid "plugins-btn"}
+             deprecated-icon/puzzle]])
 
-        [:li {:class (stl/css :toolbar-option)}
-         [:> image-upload-tool*]]
+         (when *assert*
+           [:li
+            [:button
+             {:title "Debugging tool"
+              :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
+              :on-click toggle-debug-panel}
+             deprecated-icon/bug]])
 
-        [:> group-tool* {:key :free-draw
-                         :group (get grouped-tools :free-draw)
-                         :drawtool selected-drawing-tool
-                         :on-select-tool on-select-tool}]
-
-        (when separator?
-          [:div {:class (stl/css :toolbar-separator)}])
-
-        (when plugins-enabled?
-          [:li {:class (stl/css :toolbar-option)}
-           [:> icon-button* {:variant "ghost"
-                             :tooltip-placement "bottom"
-                             :aria-label (tool-label :plugins)
-                             :icon i/puzzle
-                             :on-click on-display-plugins-manager
-                             :data-tool "plugins"}]])
-
-        (when *assert*
-          [:li {:class (stl/css :toolbar-option)}
-           [:> icon-button* {:variant "ghost"
-                             :tooltip-placement "bottom"
-                             :aria-pressed (contains? layout :debug-panel)
-                             :aria-label (tool-label :debug)
-                             :icon i/bug
-                             :on-click on-toggle-debug-panel}]])
-
-        (when mcp-show?
-          [:li {:class (stl/css :toolbar-option)}
-           [:> mcp-tool* {:is-mcp-connected mcp-connected?}]])]
+         (when (contains? cf/flags :mcp)
+           [:> mcp-indicator*])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
                  :class (stl/css :toolbar-handler)
-                 :on-click on-toggle-toolbar}
-        [:div {:class (stl/css :toolbar-handler-indicator)}]]])))
+                 :on-click toggle-toolbar}
+        [:div {:class (stl/css :toolbar-handler-btn)}]]])))

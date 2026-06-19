@@ -76,6 +76,7 @@ const setupEmptyTokensFileRender = async (page, options = {}) => {
     tokenSetItems: workspacePage.tokenSetItems,
     tokensSidebar: workspacePage.tokensSidebar,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokenContextMenuForToken: workspacePage.tokenContextMenuForToken,
     tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
   };
 };

@@ -19,6 +19,9 @@ msgstr "Already have an account?"
 msgid "auth.check-mail"
 msgstr "Check your email"
 
+msgid "auth.check-email"
+msgstr "Check your email!"
+
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
@@ -192,6 +195,9 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs:238
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
+
+msgid "auth.verification-sent-email"
+msgstr "We've sent a verification email to:"
 
 #: src/app/main/ui/auth/login.cljs:178, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:168
 msgid "auth.work-email"
@@ -1896,6 +1902,10 @@ msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
 msgid "errors.tokens.self-reference"
 msgstr "Token has self reference"
 
+#: src/app/common/files/tokens.cljc
+msgid "errors.tokens.circular-reference"
+msgstr "Token has circular reference"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:124
 msgid "errors.tokens.shadow-blur-range"
 msgstr "Shadow blur must be greater than or equal to 0."
@@ -2535,12 +2545,6 @@ msgid "integrations.info.mcp-server"
 msgstr ""
 "The Penpot MCP Server enables MCP clients to interact directly with Penpot "
 "design files."
-
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"This unique MCP key is non-recoverable. If you lose it, you will need to "
-"create a new one."
 
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
@@ -4501,7 +4505,7 @@ msgstr "Check your email and click on the link to create a new password."
 
 #: src/app/main/ui/static.cljs:167
 msgid "not-found.login.signup-free"
-msgstr "Signup for free"
+msgstr "Sign up for free"
 
 #: src/app/main/ui/static.cljs:168
 msgid "not-found.login.start-using"
@@ -4748,7 +4752,7 @@ msgstr "Invite members"
 #: src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Remember to include everyone. Developers, designers, managers... diversity "
+"Remember to include everyone. Developers, designers, managers... Diversity "
 "adds up :)"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
@@ -6762,6 +6766,18 @@ msgstr "Hide fonts palette"
 #: src/app/main/ui/workspace/main_menu.cljs:401
 msgid "workspace.header.menu.lock-guides"
 msgstr "Lock guides"
+
+msgid "workspace.header.menu.show-comments"
+msgstr "Show comments"
+
+msgid "workspace.header.menu.hide-comments"
+msgstr "Hide comments"
+
+msgid "workspace.toast.comments-visible"
+msgstr "Comments visible"
+
+msgid "workspace.toast.comments-hidden"
+msgstr "Comments hidden"
 
 #: src/app/main/ui/workspace/main_menu.cljs:853
 msgid "workspace.header.menu.mcp.plugin.status.connect"

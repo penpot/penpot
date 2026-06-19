@@ -17,7 +17,10 @@
 (defn initialize
   [enabled?]
   (if enabled?
-    (set! app.common.types.path/wasm:calc-bool-content wasm.api/calculate-bool)
+    (do
+      (set! app.common.types.path/wasm:calc-bool-content wasm.api/calculate-bool)
+      ;; Preload the WASM engine at boot so it's ready when a file opens.
+      (wasm.api/preload-module!))
     (set! app.common.types.path/wasm:calc-bool-content nil))
   (set! app.common.types.shape/wasm-enabled? enabled?)
   (set! app.common.types.shape/wasm-create-shape wasm.shape/create-shape))

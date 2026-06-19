@@ -2555,4 +2555,10 @@
                 (p/resolved false)))))
       (p/resolved false))))
 
+(defn preload-module!
+  "Starts downloading + compiling the WASM engine now instead of on first
+   viewport mount. Idempotent: the `delay` caches its in-flight promise."
+  []
+  @module)
+
 

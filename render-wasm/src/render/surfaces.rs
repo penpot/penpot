@@ -1323,28 +1323,6 @@ impl Surfaces {
         let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
     }
 
-    pub fn get_tile_image_from_tile_atlas(&mut self, tile: Tile) -> Option<skia::Image> {
-        let Some(tile_ref) = self.tiles.get(tile) else {
-            panic!("Tile not found {}:{}", tile.0, tile.1);
-        };
-
-        let rect = IRect::from_ltrb(
-            tile_ref.rect.left as i32,
-            tile_ref.rect.top as i32,
-            tile_ref.rect.right as i32,
-            tile_ref.rect.bottom as i32,
-        );
-        self.tile_atlas.image_snapshot_with_bounds(rect)
-    }
-
-    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
-        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            // let rect = tile.get_rect_with_offset(&offset);
-            let backbuffer_canvas = self.backbuffer.canvas();
-            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
-        }
-    }
-
     /// Draws the current tile directly to the backbuffer and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).

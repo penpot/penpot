@@ -110,7 +110,7 @@
   [:div {:class (stl/css :auth-form-wrapper :register-success)}
    [:div {:class (stl/css :auth-title-wrapper)}
     [:h2 {:class (stl/css :auth-title)}
-     (tr "auth.check-mail")]
+     (tr "auth.check-email")]
     [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery")]]
    [:div {:class (stl/css :notification-text-email)} email]
    [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery-check")]])
