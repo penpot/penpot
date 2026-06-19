@@ -988,8 +988,7 @@ impl RenderState {
 
         // Viewer masked passes render a partial scene. Reusing the tile texture cache would
         // SrcOver-blend onto textures from the previous pass and leak pixels into the blob.
-        // `render_sync_shape` (viewer/thumbnails) uses the same direct backbuffer path.
-        if self.viewer_masked_pass() || self.viewer_render_root.is_some() {
+        if self.viewer_masked_pass() {
             // Use viewbox-aligned bounds (not grid-snapped) to match interactive-transform
             // compositing and avoid a visible offset vs the DOM canvas.
             let tile_rect = self.get_current_tile_bounds()?;
@@ -2347,6 +2346,17 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<FrameType> {
         self.render_shape_tree_partial(base_object, tree, timestamp, false)?;
+
+        // Same composition as `continue_render_loop` for full frames: snapshot only the
+        // drawable tile rect into the atlas (no blur-margin overlap), then blit once.
+        if !self.viewer_masked_pass() {
+            self.surfaces.draw_tile_atlas_to_backbuffer(
+                &self.viewbox,
+                &self.tile_viewbox,
+                self.background_color,
+            );
+        }
+
         let saved_preview_mode = self.preview_mode;
         self.preview_mode = true;
         self.present_frame(tree);
