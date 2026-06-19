@@ -72,6 +72,7 @@
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [Github #9137](https://github.com/penpot/penpot/issues/9137)
 - Fix plugin `addInteraction` silently rejecting `open-overlay` actions with `manualPositionLocation` [Github #8409](https://github.com/penpot/penpot/issues/8409)
 - Fix typography style creation with tokenized line-height (by @juan-flores077) [Github #8479](https://github.com/penpot/penpot/issues/8479)
+- Fix Assets panel crash when previewing components with non-frame roots (by @moorsecopers99) [Github #8606](https://github.com/penpot/penpot/issues/8606)
 - Fix colorpicker layout so the eyedropper button is visible again [Taiga #14057](https://tree.taiga.io/project/penpot/issue/14057)
 - Fix SVG stroke line join not applied when pasting strokes [#4836](https://github.com/penpot/penpot/issues/4836) (PR: [#9982](https://github.com/penpot/penpot/pull/9982), [#10019](https://github.com/penpot/penpot/pull/10019))
 - Fix blend-mode hover preview on canvas not reverted when dismissing dropdown (by @jack-stormentswe) [#9235](https://github.com/penpot/penpot/issues/9235) (PR: [#9237](https://github.com/penpot/penpot/pull/9237))

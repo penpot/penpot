@@ -370,13 +370,14 @@
           height      (* (:height root-shape') zoom)
           vbox        (format-viewbox {:width (:width root-shape' 0)
                                        :height (:height root-shape' 0)})
+          ;; `shape-wrapper-factory` already handles every shape type
+          ;; (frame, group, rect, circle, text, path, image, bool, …)
+          ;; and adds its own shape-container, so it works as the root
+          ;; wrapper regardless of how the component was created (e.g.
+          ;; via the UI or via MCP, which can produce non-frame roots).
           root-shape-wrapper
-          (mf/use-memo
-           (mf/deps objects root-shape')
-           (fn []
-             (case (:type root-shape')
-               :group (group-wrapper-factory objects)
-               :frame (frame-wrapper-factory objects))))]
+          (mf/with-memo [objects]
+            (shape-wrapper-factory objects))]
 
       [:svg {:view-box vbox
              :width (ust/format-precision width viewbox-decimal-precision)
@@ -390,9 +391,8 @@
 
        (when-not is-hidden
          [:*
-          [:> shape-container {:shape root-shape'}
-           [:& (mf/provider muc/is-component?) {:value true}
-            [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
+          [:& (mf/provider muc/is-component?) {:value true}
+           [:& root-shape-wrapper {:shape root-shape'}]]
 
           (when show-grids?
             [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])])))
@@ -584,15 +584,12 @@
          {:width (:width selrect)
           :height (:height selrect)})
 
-        group-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         (fn [] (group-wrapper-factory objects)))
-
-        frame-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         (fn [] (frame-wrapper-factory objects)))]
+        ;; Use the generic `shape-wrapper-factory`, which renders any
+        ;; shape type (including non-frame roots that components built
+        ;; via MCP may have).
+        shape-wrapper
+        (mf/with-memo [objects]
+          (shape-wrapper-factory objects))]
 
     (when root-shape
       [:> "symbol" #js {:id (str (:id component))
@@ -605,10 +602,7 @@
                         "penpot:main-instance-parent" main-instance-parent
                         "penpot:main-instance-frame" main-instance-frame}
        [:title name]
-       [:> shape-container {:shape root-shape}
-        (case (:type root-shape)
-          :group [:& group-wrapper {:shape root-shape :view-box vbox}]
-          :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]])))
+       [:& shape-wrapper {:shape root-shape}]])))
 
 (mf/defc components-svg
   {::mf/wrap-props false}
