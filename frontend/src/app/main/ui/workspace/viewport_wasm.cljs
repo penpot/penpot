@@ -528,6 +528,10 @@
                                           :background background
                                           :on-shapes-ready
                                           (fn []
+                                            ;; The target page's shapes are now loaded; arm
+                                            ;; the transition so the next full frame (the one
+                                            ;; that actually shows this page) removes the blur.
+                                            (wasm.api/arm-page-transition-end!)
                                             (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
