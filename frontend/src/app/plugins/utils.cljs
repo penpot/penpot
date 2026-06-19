@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.utils
   "RPC for plugins runtime."
@@ -42,6 +42,13 @@
   [file-id page-id id]
   (assert (uuid? id) "Shape not valid uuid")
   (dm/get-in (locate-page file-id page-id) [:objects id]))
+
+(defn page-active?
+  "Returns true if `page-id` is the currently active page. Plugin structural
+  operations only affect the active page, so callers use this to reject
+  attempts to modify shapes that live on a different page."
+  [page-id]
+  (= page-id (:current-page-id @st/state)))
 
 (defn locate-library-color
   [file-id id]

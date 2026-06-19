@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,7 @@
    [app.main.data.auth :as da]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
-   [app.main.ui.auth.recovery :refer [recovery-page]]
+   [app.main.ui.auth.recovery :refer [recovery-page*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page* register-success-page* register-validate-page* terms-register*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -69,7 +69,7 @@
         [:& recovery-request-page]
 
         :auth-recovery
-        [:& recovery-page {:params params}])
+        [:> recovery-page* {:params params}])
 
       (when (= section :auth-register)
         [:> terms-register*])]]))

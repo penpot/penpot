@@ -273,6 +273,7 @@ The Penpot MCP server can be configured using environment variables.
 | `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable. | `false`        |
 | `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools. Set to `true` to enable.      | `false`        |
 | `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
+| `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
 
 ### Logging Configuration
 
@@ -299,12 +300,10 @@ you may set the following environment variables to configure the two servers
 (MCP server & plugin server) appropriately:
  * `PENPOT_MCP_REMOTE_MODE=true`: This ensures that the MCP server is operating
    in remote mode, with local file system access disabled.
- * `PENPOT_MCP_SERVER_LISTEN_ADDRESS` and `PENPOT_MCP_PLUGIN_SERVER_LISTEN_ADDRESS`:
+ * `PENPOT_MCP_SERVER_HOST` and `PENPOT_MCP_PLUGIN_SERVER_HOST`:
    Set these according to your requirements for remote connectivity.
    To bind all interfaces, use `0.0.0.0` (use caution in untrusted networks).
- * `PENPOT_MCP_SERVER_ADDRESS=<your-address>`: This sets the hostname or IP address
-   where the MCP server can be reached. The Penpot MCP Plugin uses this to construct
-   the WebSocket URL as `ws://<your-address>:<port>` (default port: `4402`).
+
 
 ## Development
 

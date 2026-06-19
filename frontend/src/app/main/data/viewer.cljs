@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.viewer
   (:require
@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -219,7 +220,8 @@
   (ptk/reify ::update-page-position-data
     ptk/WatchEvent
     (watch [_ state _]
-      (if (features/active-feature? state "render-wasm/v1")
+      (if (and (features/active-feature? state "render-wasm/v1")
+               (contains? cf/flags :available-viewer-wasm))
         (let [objects (dsh/lookup-page-objects state file-id page-id)
 
               shapes
@@ -580,6 +582,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (d/dissoc-in state [:viewer-local :nav-scroll]))))
+
+(defn update-exports-cache
+  [shapes-key exports]
+  (ptk/reify ::update-exports-cache
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:inspect-exports-cache shapes-key] exports))))
 
 (defn complete-animation
   []

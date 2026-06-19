@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.verify-token
   (:require
@@ -185,7 +185,10 @@
         registration-disabled? (not (contains? cf/flags :registration))
 
         org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        membership             (when org-invitation?
+        ;; Membership only makes sense for a logged-in profile; querying it for
+        ;; an anonymous recipient would call nitrate with a nil profile-id and
+        ;; mask the clean :invalid-token response with a generic error.
+        membership             (when (and profile org-invitation?)
                                  (nitrate/call cfg :get-org-membership {:profile-id profile-id
                                                                         :organization-id organization-id}))]
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.library
   (:require
@@ -517,6 +517,9 @@
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
+        (not (u/page-active? (obj/get shape "$page")))
+        (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
         :else
         (let [shape-id   (obj/get shape "$id")
               typography (u/locate-library-typography file-id id)]
@@ -530,6 +533,9 @@
 
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
+
+        (not (u/page-active? (obj/get range "$page")))
+        (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
 
         :else
         (let [shape-id (obj/get range "$id")

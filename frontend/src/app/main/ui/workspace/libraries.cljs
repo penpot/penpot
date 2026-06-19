@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.libraries
   (:require-macros [app.main.style :as stl])
@@ -331,7 +331,7 @@
                       :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
-       [:div {:class (stl/css :section-list-item)}
+       [:div {:class (stl/css :section-list-publish)}
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}

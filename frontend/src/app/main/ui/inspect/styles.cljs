@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.styles
   (:require-macros [app.main.style :as stl])
@@ -51,7 +51,6 @@
    :grid-column
    :grid-row])
 
-
 (def type->panel-group
   {:multiple [:fill :stroke :text :shadow :blur :layout-element]
    :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
@@ -72,7 +71,8 @@
   (seq (:strokes shape)))
 
 (defn- has-blur? [shape]
-  (:blur shape))
+  (or (:blur shape)
+      (:background-blur shape)))
 
 (defn- has-text? [shape]
   (:content shape))

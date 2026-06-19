@@ -2,11 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.event
   (:require
-   ["ua-parser-js" :as ua]
+   ["@penpot/ua-parser" :as ua]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.json :as json]
@@ -66,22 +66,22 @@
 
 (defn- collect-context
   []
-  (let [uagent (new ua/UAParser)]
+  (let [result (ua/parse)]
     (merge
      {:version (:full cf/version)
       :locale i18n/*current-locale*}
-     (let [browser (.getBrowser uagent)]
+     (let [browser (.getBrowser result)]
        {:browser (obj/get browser "name")
         :browser-version (obj/get browser "version")})
-     (let [engine (.getEngine uagent)]
+     (let [engine (.getEngine result)]
        {:engine (obj/get engine "name")
         :engine-version (obj/get engine "version")})
-     (let [os      (.getOS uagent)
+     (let [os      (.getOS result)
            name    (obj/get os "name")
            version (obj/get os "version")]
        {:os (str name " " version)
         :os-version version})
-     (let [device (.getDevice uagent)]
+     (let [device (.getDevice result)]
        (if-let [type (obj/get device "type")]
          {:device-type type
           :device-vendor (obj/get device "vendor")
@@ -93,7 +93,7 @@
         :screen-height (obj/get screen "height")
         :screen-color-depth (obj/get screen "colorDepth")
         :screen-orientation (obj/get orientation "type")})
-     (let [cpu (.getCPU uagent)]
+     (let [cpu (.getCPU result)]
        {:device-arch (obj/get cpu "architecture")}))))
 
 (def context

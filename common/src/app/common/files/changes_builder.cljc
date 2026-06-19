@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.changes-builder
   (:require
@@ -312,10 +312,12 @@
 
 (defn del-page
   [changes page]
-  (-> changes
-      (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
-      (apply-changes-local)))
+  (let [page-id (:id page)]
+    (assert (some? page-id) "page must have a valid :id")
+    (-> changes
+        (update :redo-changes conj {:type :del-page :id page-id})
+        (update :undo-changes conj {:type :add-page :id page-id :page page})
+        (apply-changes-local))))
 
 (defn move-page
   [changes page-id index prev-index]

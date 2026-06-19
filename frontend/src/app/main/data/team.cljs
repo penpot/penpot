@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.team
   (:require
@@ -159,7 +159,7 @@
                   (if all-org-members-in-team?
                     (rx/of (modal/show
                             {:type :alert
-                             :message (tr "modals.invite-restricted-members.all-org-members-in-team")
+                             :message (tr "modals.invite-restricted-members.all-org-members-in-team" (get-in team [:organization :name]))
                              :accept-label (tr "labels.accept")
                              :accept-style :primary
                              :title (tr "modals.invite-team-member.title")}))

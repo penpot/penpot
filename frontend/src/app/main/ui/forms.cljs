@@ -2,16 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.forms
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def context (mf/create-context nil))
@@ -26,6 +31,7 @@
                         (get-in @form [:touched input-name]))
 
         error      (get-in @form [:errors input-name])
+        extra-error (get-in @form [:extra-errors input-name])
 
         value      (get-in @form [:data input-name] "")
 
@@ -41,15 +47,157 @@
                                 :value value})
 
         props
-        (if (and error touched?)
+        (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)]
 
     [:> input* props]))
 
+(defn- conj-dedup
+  "Adds item into a vector and removes possible duplicates."
+  [coll item]
+  (into [] (distinct) (conj coll item)))
+
+(mf/defc form-multi-input*
+  [{:keys [name trim valid-item-fn caution-item-fn] :rest props}]
+  (let [form     (mf/use-ctx context)
+
+        touched? (and (contains? (:data @form) name)
+                      (get-in @form [:touched name]))
+
+        value    (mf/use-state "")
+        focus?   (mf/use-state false)
+
+        items
+        (mf/use-state
+         (fn []
+           (let [initial (get-in @form [:data name])]
+             (if (or (vector? initial) (set? initial))
+               (mapv (fn [val]
+                       {:text val
+                        :valid (valid-item-fn val)
+                        :caution (caution-item-fn val)})
+                     initial)
+               []))))
+
+        on-focus
+        (mf/use-fn
+         #(reset! focus? true))
+
+        on-change
+        (mf/use-fn
+         (fn [event]
+           (let [content (-> event dom/get-target dom/get-input-value)]
+             (reset! value content))))
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps @value form name valid-item-fn caution-item-fn trim)
+         (fn [event]
+           (let [val (cond-> @value trim str/trim)]
+             (cond
+               (or (k/enter? event) (k/comma? event) (k/space? event))
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (swap! form assoc-in [:touched name] true)
+                 (when (and (valid-item-fn val) (not (str/empty? @value)))
+                   (reset! value "")
+                   (swap! form assoc-in [:touched name] false)
+                   (doseq [v (str/split val #",|\s+")]
+                     (let [v (str/trim v)]
+                       (swap! items conj-dedup {:text v
+                                                :valid (valid-item-fn v)
+                                                :caution (caution-item-fn v)})))))
+
+               (and (k/backspace? event) (str/empty? @value))
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (swap! items (fn [items]
+                                (if (empty? items) items (pop items)))))))))
+
+        on-paste
+        (mf/use-fn
+         (fn [event]
+           (let [paste-data (-> event .-clipboardData (.getData "text"))]
+             (when (and (string? paste-data)
+                        (re-find #"[,\s]" paste-data))
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+
+               ;; Mark as touched
+               (swap! form assoc-in [:touched name] true)
+
+               ;; Split pasted text by commas and/or whitespace, add each valid part
+               (let [parts (->> (str/split paste-data #",|\s+")
+                                (map str/trim)
+                                (remove str/empty?))]
+                 (doseq [part parts]
+                   (when (valid-item-fn part)
+                     (swap! items conj-dedup {:text part
+                                              :valid true
+                                              :caution (caution-item-fn part)})))
+
+                 ;; Reset input value and mark as untouched after successful paste
+                 (reset! value "")
+                 (swap! form assoc-in [:touched name] false))))))
+
+        on-blur
+        (mf/use-fn
+         (fn []
+           (reset! focus? false)
+           (when-not (get-in @form [:touched name])
+             (swap! form assoc-in [:touched name] true))))
+
+        on-remove-item
+        (mf/use-fn
+         (fn [item]
+           (swap! items #(filterv (fn [x] (not= x item)) %))))
+
+        props
+        (mf/spread-props props {:value @value
+                                :on-change on-change
+                                :on-focus on-focus
+                                :on-blur on-blur
+                                :on-key-down on-key-down
+                                :on-paste on-paste
+                                :hint-type (when (and touched?
+                                                      (not (str/empty? @value))
+                                                      (not (valid-item-fn @value))) "error")})]
+
+    ;; Sync form data whenever items or input value changes.
+    ;; This ensures the current (unconfirmed) input value is included in the
+    ;; form data when the user submits without pressing Enter/Space/Comma.
+    (mf/with-effect [@items @value]
+      (let [items-text (mapv :text @items)
+            val        (cond-> @value trim str/trim)
+            combined   (if (and (valid-item-fn val) (not (str/empty? val)))
+                         (conj items-text val)
+                         items-text)
+            data       (str/join " " combined)]
+        (fm/update-input-value! form name data)))
+
+    [:div {:class (stl/css :multi-input)}
+     [:> input* props]
+
+     (when-let [items-seq (seq @items)]
+       [:div {:class (stl/css :multi-input-chips)}
+        (for [item items-seq]
+          [:div {:class (stl/css :multi-input-chip)
+                 :key (:text item)}
+           [:span {:class (stl/css :multi-input-chip-text)}
+            (:text item)]
+           [:> icon-button* {:variant "ghost"
+                             :class (stl/css :multi-input-chip-icon)
+                             :icon i/close
+                             :icon-size "s"
+                             :aria-label (tr "labels.remove")
+                             :on-click (partial on-remove-item item)}]])])]))
+
 (mf/defc form-select*
-  [{:keys [name] :as props}]
+  [{:keys [name] :rest props}]
   (let [select-name name
         form        (mf/use-ctx context)
         value       (get-in @form [:data select-name] "")
@@ -78,7 +226,6 @@
                       (or (nil? form)
                           (true? disabled)
                           (not (:valid form-state))
-                          (seq (:async-errors form-state))
                           (seq (:extra-errors form-state))))))
 
         handle-key-down-save

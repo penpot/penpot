@@ -2,11 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.config :as cfg]
@@ -89,10 +90,10 @@
         (when (and (>= x 0) (< x img-width) (>= y 0) (< y img-height))
           (let [offset (* (+ (* y img-width) x) 4)
                 rgba   (unchecked-get image-data "data")
-                r      (obj/get rgba (+ 0 offset))
-                g      (obj/get rgba (+ 1 offset))
-                b      (obj/get rgba (+ 2 offset))
-                a      (obj/get rgba (+ 3 offset))
+                r      (d/check-num (obj/get rgba (+ 0 offset)) 255)
+                g      (d/check-num (obj/get rgba (+ 1 offset)) 255)
+                b      (d/check-num (obj/get rgba (+ 2 offset)) 255)
+                a      (d/check-num (obj/get rgba (+ 3 offset)) 255)
                 color  [r g b a]]
             ;; Store latest color synchronously so the click handler always reads
             ;; the correct pixel even before the rAF fires (fixes race condition)
@@ -256,23 +257,26 @@
            :on-mouse-enter handle-mouse-enter}]))
 
 
+(defn- viewport->canvas-coords
+  "Maps client (viewport) coordinates to device-pixel canvas coordinates."
+  [viewport-node client-x client-y]
+  (let [{brx :left bry :top} (dom/get-bounding-rect viewport-node)
+        x (mth/floor (- client-x brx))
+        y (mth/floor (- client-y bry))]
+    [(mth/floor (* x wasm.api/dpr))
+     (mth/floor (* y wasm.api/dpr))]))
+
 (defn process-pointer-move-wasm
-  [viewport-node canvas canvas-image-data zoom-view-context last-picked-color client-x client-y]
-  (when-let [image-data (mf/ref-val canvas-image-data)]
+  "Updates the magnifier loupe with the canvas region under the cursor. The
+   actual color is only read on click (see `pick-color-at-wasm`)."
+  [viewport-node canvas zoom-view-context client-x client-y]
+  (when canvas
     (when-let [zoom-view-node (dom/get-element "picker-detail")]
       (when-not (mf/ref-val zoom-view-context)
         (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
       (let [zoom-view-width  260
             zoom-view-height 140
-            {brx :left bry :top} (dom/get-bounding-rect viewport-node)
-            x (mth/floor (- client-x brx))
-            y (mth/floor (- client-y bry))
-
-            canvas-x (* x wasm.api/dpr)
-            canvas-y (* y wasm.api/dpr)
-
-            img-width  (.-width image-data)
-            img-height (.-height image-data)
+            [canvas-x canvas-y] (viewport->canvas-coords viewport-node client-x client-y)
 
             zoom-context (mf/ref-val zoom-view-context)
 
@@ -284,38 +288,44 @@
         (when (obj/get zoom-context "imageSmoothingEnabled")
           (obj/set! zoom-context "imageSmoothingEnabled" false))
         (.clearRect zoom-context 0 0 zoom-view-width zoom-view-height)
-        (.drawImage zoom-context canvas sx sy sw sh 0 0 zoom-view-width zoom-view-height)
+        (.drawImage zoom-context canvas sx sy sw sh 0 0 zoom-view-width zoom-view-height)))))
 
-        ;; Only pick color when cursor is within canvas bounds to avoid garbage pixels
-        (when (and (>= canvas-x 0) (< canvas-x img-width) (>= canvas-y 0) (< canvas-y img-height))
-          (let [;; image-data pixels start from the bottom-left corner; invert y accordingly
-                inverted-y (- img-height canvas-y)
-                offset     (* (+ (* inverted-y img-width) canvas-x) 4)
-                rgba       (.-data image-data)
-                r          (obj/get rgba (+ 0 offset))
-                g          (obj/get rgba (+ 1 offset))
-                b          (obj/get rgba (+ 2 offset))
-                a          (obj/get rgba (+ 3 offset))
-                color      [r g b a]]
-            ;; Store latest color synchronously so the click handler always reads
-            ;; the correct pixel even before the rAF fires (fixes race condition)
-            (mf/set-ref-val! last-picked-color color)
-            ;; rAF throttles state updates to avoid an infinite React re-render loop
-            (timers/raf
-             (fn []
-               (st/emit! (dwc/pick-color color))))))))))
+;; Tiny scratch 2D canvas used to sample a single pixel from the WebGL canvas.
+(def ^:private get-pick-canvas
+  ((fn []
+     (let [internal-state #js {:canvas nil}]
+       (fn []
+         (or (unchecked-get internal-state "canvas")
+             (let [c (js/OffscreenCanvas. 1 1)]
+               (obj/set! internal-state "canvas" c)
+               c)))))))
+
+(defn pick-color-at-wasm
+  "Reads the [r g b a] pixel under the cursor by compositing the WebGL canvas
+   into a 2D canvas via `drawImage` and reading it back with `getImageData`.
+
+   This is the same browser-composited path the loupe preview uses, so it gives
+   the correct color even on GPUs where a raw WebGL `readPixels` returned
+   values with their byte order swapped."
+  [viewport-node canvas client-x client-y]
+  (when canvas
+    (let [[canvas-x canvas-y] (viewport->canvas-coords viewport-node client-x client-y)
+          img-width  (.-width canvas)
+          img-height (.-height canvas)]
+      (when (and (>= canvas-x 0) (< canvas-x img-width) (>= canvas-y 0) (< canvas-y img-height))
+        (let [scratch (get-pick-canvas)
+              ctx     (.getContext scratch "2d" #js {:willReadFrequently true})]
+          (.clearRect ctx 0 0 1 1)
+          ;; Copy just the source pixel (top-left origin, no y-flip — same as the loupe).
+          (.drawImage ctx canvas canvas-x canvas-y 1 1 0 0 1 1)
+          (let [data (.-data (.getImageData ctx 0 0 1 1))]
+            [(aget data 0) (aget data 1) (aget data 2) (aget data 3)]))))))
 
 (mf/defc pixel-overlay-wasm*
   [{:keys [viewport-ref canvas-ref]}]
   (let [viewport-node     (mf/ref-val viewport-ref)
         canvas            (mf/ref-val canvas-ref)
-        canvas-context    (mf/use-ref nil)
-        canvas-image-data (mf/use-ref nil)
         zoom-view-context (mf/use-ref nil)
-        ;; Holds the last successfully picked [r g b a] synchronously so that
-        ;; the pointer-down handler always has the current pixel, regardless of
-        ;; whether the rAF-deferred store update has fired yet.
-        last-picked-color (mf/use-ref nil)
         ;; Use a ref (not state) so tracking the cursor doesn't cause re-renders.
         ;; Updated by both on-mouse-enter and a document-level pointermove listener
         ;; so that the position is always current when the canvas first becomes ready.
@@ -333,12 +343,13 @@
 
         handle-pointer-down-picker
         (mf/use-callback
+         (mf/deps viewport-node canvas)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           ;; Emit pick-color synchronously with the latest pixel colour before
-           ;; pick-color-select, so the colorpicker effect never sees a stale value.
-           (let [color (mf/ref-val last-picked-color)]
+           ;; Read the pixel under the cursor only on click — not on every move.
+           (let [color (pick-color-at-wasm viewport-node canvas
+                                           (.-clientX event) (.-clientY event))]
              (if (some? color)
                (st/emit! (dwu/start-undo-transaction :mouse-down-picker)
                          (dwc/pick-color color)
@@ -357,21 +368,13 @@
 
         handle-draw-picker-canvas
         (mf/use-callback
-         (mf/deps canvas-context)
          (fn []
-           (when-let [canvas-context (mf/ref-val canvas-context)]
-             (let [width  (.-width canvas)
-                   height (.-height canvas)
-                   buffer (js/Uint8ClampedArray. (* width height 4))
-                   _      (.readPixels canvas-context 0 0 width height (.-RGBA canvas-context) (.-UNSIGNED_BYTE canvas-context) buffer)
-                   image-data (js/ImageData. buffer width height)
-                   ;; Read current mouse position from ref so the zoom
-                   ;; is populated immediately even without a mouse-move.
-                   {mx :x my :y} (mf/ref-val initial-mouse-pos)]
-               (mf/set-ref-val! canvas-image-data image-data)
-               (process-pointer-move-wasm viewport-node canvas canvas-image-data
-                                          zoom-view-context last-picked-color
-                                          mx my)))))
+           (when canvas
+             ;; Read current mouse position from ref so the loupe refreshes on
+             ;; each render even without a mouse-move.
+             (let [{mx :x my :y} (mf/ref-val initial-mouse-pos)]
+               (process-pointer-move-wasm viewport-node canvas
+                                          zoom-view-context mx my)))))
 
         handle-canvas-changed
         (mf/use-callback
@@ -390,13 +393,7 @@
         (mf/use-callback
          (mf/deps viewport-node)
          (fn [event]
-           (process-pointer-move-wasm viewport-node canvas canvas-image-data zoom-view-context last-picked-color (.-clientX event) (.-clientY event))))]
-
-    (mf/use-effect
-     (mf/deps canvas)
-     (fn []
-       (let [context (.getContext canvas "webgl2" #js {:willReadFrequently true :preserveDrawingBuffer true})]
-         (mf/set-ref-val! canvas-context context))))
+           (process-pointer-move-wasm viewport-node canvas zoom-view-context (.-clientX event) (.-clientY event))))]
 
     ;; Move focus to the overlay div on mount so the eyedropper button loses
     ;; :focus styling immediately.  Without this, prevent-default on pointer-down

@@ -9,28 +9,36 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 
 # Development workflow
 
-- Commit only when explicitly asked. Commit/PR format + changelog: `mem:workflow/creating-commits`, `mem:workflow/creating-prs`.
+- Commit only when explicitly asked. Commit/PR format + changelog: `mem:workflow/creating-commits`, `mem:workflow/creating-prs`. Issue creation (titles, labels, body templates, Issue Types): `mem:workflow/creating-issues`.
 - You have access to the GitHub CLI `gh` or corresponding MCP tools.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
+- Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps.
+  *After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
+- Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
 
 # Project modules
 
 This is a monorepo. Principles that apply to one module do *not* generally apply to others. Do not make assumptions.
 
-- `frontend/`: ClojureScript + SCSS SPA/design editor. 
-- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers. 
-- `common/`: shared CLJC data types, geometry, schemas, file/change logic, and utilities. 
-- `render-wasm/`: Rust -> WebAssembly Skia renderer consumed by frontend. 
-- `exporter/`: ClojureScript/Node headless Playwright SVG/PDF export. 
-- `mcp/`: TypeScript Model Context Protocol integration. 
-- `plugins/`: TypeScript plugin runtime/examples and Plugin API types. 
-- `library/`: design library workflows. 
-- `docs/`: documentation site. 
+- `frontend/`: ClojureScript + SCSS SPA/design editor.
+- `backend/`: JVM Clojure HTTP/RPC server with PostgreSQL, Redis, storage, mail, and workers.Runtime services and the task-queue vs Pub/Sub topology that constrains horizontal scaling: `mem:prod-infra/core`.
+- `common/`: shared CLJC data types, geometry, schemas, file/change logic, and utilities.
+- `render-wasm/`: Rust -> WebAssembly Skia renderer consumed by frontend.
+- `exporter/`: ClojureScript/Node headless Playwright SVG/PDF export.
+- `mcp/`: TypeScript Model Context Protocol integration.
+- `plugins/`: TypeScript plugin runtime/examples and Plugin API types.
+- `library/`: design library workflows.
+- `docs/`: documentation site.
+
+The memory is structured in a way that you can get the critical information about the
+module. You can read it from `mem:<MODULE>/core`
 
 # Low-centrality project paths
 
-- `docker/` contains devenv related code, not needed unless specifically instructed. 
-   More info in docs/technical-guide if instructed to work on this.
+- `docker/` contains devenv related code, not needed unless specifically instructed.
+   When working on devenv startup, compose layout, instance config (`defaults.env`),
+   tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
+   `*-devenv` commands, read `mem:devenv/core`.
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
 
@@ -49,6 +57,6 @@ semantics change.
 
 ## Detecting Crashes
 
-The Penpot frontend can crash silently from the JS API's perspective: `execute_code` calls return successfully, but 1-2s later the workspace becomes unusable (Internal Error page). 
+The Penpot frontend can crash silently from the JS API's perspective: `execute_code` calls return successfully, but 1-2s later the workspace becomes unusable (Internal Error page).
 The `execute_code` tool then stops working, but `cljs_repl` still works. Use it to detect a crash via `(some? (:exception @app.main.store/state))`.
 For details on handling crashes, read memory `mem:frontend/handling-crashes`.

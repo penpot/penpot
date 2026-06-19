@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.comments
   (:require
@@ -135,6 +135,9 @@
 
              (not (r/check-permission plugin-id "comment:write"))
              (u/not-valid plugin-id :position "Plugin doesn't have 'comment:write' permission")
+
+             (not (u/page-active? page-id))
+             (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
 
              :else
              (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))

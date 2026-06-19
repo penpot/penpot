@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.changes
   (:require
@@ -92,15 +92,17 @@
     (effect [_ state _]
       (when (and wasm/context-initialized?
                  (not @wasm/context-lost?))
-        (let [objects (dsh/lookup-page-objects state)]
-          (doseq [{:keys [type id parent-id]} redo-changes
-                  :when (contains? wasm-structural-change-types type)
-                  :let [shape-id (case type
-                                   :add-obj id
-                                   :mov-objects parent-id)
-                        shape (get objects shape-id)]
-                  :when shape]
-            (wasm.api/process-object shape))
+        (let [objects (dsh/lookup-page-objects state)
+              shapes
+              (into []
+                    (keep (fn [{:keys [type id parent-id]}]
+                            (when (contains? wasm-structural-change-types type)
+                              (get objects (case type
+                                             :add-obj id
+                                             :mov-objects parent-id)))))
+                    redo-changes)]
+
+          (wasm.api/process-objects shapes)
           (wasm.api/request-render "sync-wasm-structural-changes"))))))
 
 (defn- apply-changes-localy

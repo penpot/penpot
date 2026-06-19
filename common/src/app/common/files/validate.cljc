@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.validate
   (:require
@@ -591,7 +591,7 @@
      -it should be a main component
      -its parent should be a variant-container
      -its variant-name is derived from the properties
-     -its name should be tha same as its parent's
+     -its name should be the same as its parent's
    "
   [shape file page]
   (let [parent    (ctst/get-shape page (:parent-id shape))
@@ -707,7 +707,7 @@
 
               (if (#{:main-top :main-nested :main-any} context)
                 (report-error :not-component-not-allowed
-                              "Not compoments are not allowed inside a main"
+                              "Not components are not allowed inside a main"
                               shape file page)
                 (check-shape-not-component shape file page libraries)))))))))
 

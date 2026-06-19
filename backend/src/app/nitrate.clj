@@ -301,14 +301,14 @@
               org))
           orgs)))
 
-(defn- delete-owned-orgs-api
+(defn- cleanup-deleted-penpot-user-api
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/users/"
                              profile-id
-                             "/delete-owned-organizations")
+                             "/cleanup-after-deletion")
                         nil params)))
 
 (defn- set-team-org-api
@@ -352,16 +352,6 @@
                              "/remove-user")
                         nil params)))
 
-(defn- remove-profile-from-all-orgs-api
-  [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/remove-organizations")
-                        nil params)))
-
 (defn- remove-team-from-org-api
   [cfg {:keys [team-id organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)
@@ -390,6 +380,24 @@
                              "/api/subscriptions/"
                              profile-id)
                         schema:subscription params)))
+
+(def ^:private schema:subscription-warning
+  [:maybe
+   [:map {:title "SubscriptionWarning"}
+    [:type {:optional true} ::sm/text]
+    [:days-from-expiry {:optional true} ::sm/int]
+    [:days-until-expiry {:optional true} ::sm/int]
+    [:expiration-date {:optional true} schema:timestamp]]])
+
+(defn- get-subscription-warning-api
+  [cfg {:keys [penpot-id profile-id] :as params}]
+  (let [baseuri   (cf/get :nitrate-backend-uri)
+        penpot-id (or penpot-id profile-id)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/subscription-warning/"
+                             penpot-id)
+                        schema:subscription-warning params)))
 
 (defn- get-connectivity-api
   [cfg params]
@@ -451,14 +459,14 @@
      :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
      :get-org-members              (partial get-org-members-api cfg)
-     :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
+     :cleanup-deleted-penpot-user  (partial cleanup-deleted-penpot-user-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
-     :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
+     :get-subscription-warning     (partial get-subscription-warning-api cfg)
      :connectivity                 (partial get-connectivity-api cfg)
      :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
 
@@ -527,6 +535,3 @@
                 :context {:team-id (:id team)
                           :organization-id (:organization-id params)}))
     team))
-
-
-

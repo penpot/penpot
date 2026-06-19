@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.logic.shapes
   (:require
@@ -539,5 +539,12 @@
   (update shape :interactions ctsi/add-interaction interaction))
 
 (defn show-in-viewer
+  "Auto-unhide the shape in viewer when it becomes an interaction
+   destination, but only when the user has not explicitly hidden it.
+   Preserves explicit `:hide-in-viewer true` so that adding or updating
+   an interaction whose destination has been deliberately hidden does not
+   silently flip the viewer-visibility flag the user set. See #9049."
   [shape]
-  (dissoc shape :hide-in-viewer))
+  (if (true? (:hide-in-viewer shape))
+    shape
+    (dissoc shape :hide-in-viewer)))

@@ -85,3 +85,11 @@ From the `mcp/` directory, run
 
 * `pnpm run build` to test the build of all packages
 * `pnpm run fmt` to apply the auto-formatter
+
+## Devenv plugin/server wiring
+
+In the normal Penpot devenv MCP path, the browser plugin does not discover or route through Postgres. The frontend provides the plugin extension API with `mcp.getServerUrl()`, currently derived from `frontend/src/app/config.cljs` as `penpotMcpServerURI` if set, otherwise `<public-uri>/mcp/ws`. The MCP plugin opens a direct WebSocket to that URL and appends the current MCP access token as a query parameter.
+
+The live plugin connection registry is in-memory inside each MCP server process (`PluginBridge.connectedClients` / `clientsByToken`). The database only stores MCP access tokens and profile props such as `mcp-enabled`; it does not manage which plugin is connected to which MCP server.
+
+For parallel devenvs, prefer same-origin MCP routing: each Penpot instance should expose `/mcp/ws` through its own nginx/Caddy path to the MCP server running inside the same main container. Keep container-internal ports fixed (MCP defaults `4401/4402/4403`, backend/exporter/frontend defaults, etc.) and only offset host-side published ports per instance. If internal ports are offset, hardcoded local proxy config such as `docker/devenv/files/nginx.conf` will misroute unless templated too.

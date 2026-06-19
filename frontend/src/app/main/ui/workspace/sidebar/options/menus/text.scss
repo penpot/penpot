@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 @use "ds/typography.scss" as t;
@@ -14,12 +14,11 @@
 
 .element-set {
   @include sidebar.option-grid-structure;
-
-  position: relative;
 }
 
 .element-title {
   grid-column: span 8;
+  position: relative;
 }
 
 .element-content {

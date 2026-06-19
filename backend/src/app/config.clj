@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -109,6 +109,11 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
+
     [:exporter-shared-key {:optional true} :string]
     [:nitrate-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
@@ -122,6 +127,17 @@
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
+
+    ;; ImageMagick resource limits (PENPOT_IMAGEMAGICK_*)
+    [:imagemagick-thread-limit {:optional true} :string]
+    [:imagemagick-memory-limit {:optional true} :string]
+    [:imagemagick-map-limit {:optional true} :string]
+    [:imagemagick-area-limit {:optional true} :string]
+    [:imagemagick-disk-limit {:optional true} :string]
+    [:imagemagick-time-limit {:optional true} :string]
+    [:imagemagick-width-limit {:optional true} :string]
+    [:imagemagick-height-limit {:optional true} :string]
+
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
@@ -236,7 +252,6 @@
     [:assets-path {:optional true} :string]
 
     [:netty-io-threads {:optional true} ::sm/int]
-    [:executor-threads {:optional true} ::sm/int]
 
     [:nitrate-backend-uri {:optional true} ::sm/uri]
 

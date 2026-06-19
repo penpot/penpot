@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.code-gen.style-css
   (:require
@@ -50,7 +50,10 @@ body {
 
 (def shape-wrapper-css-properties
   #{:flex-shrink
-    :margin
+    :margin-block-start
+    :margin-block-end
+    :margin-inline-start
+    :margin-inline-end
     :max-height
     :min-height
     :max-width
@@ -113,7 +116,6 @@ body {
 
    ;; Flex/grid self properties
    :flex-shrink
-   :margin
    :margin-block-start
    :margin-block-end
    :margin-inline-start

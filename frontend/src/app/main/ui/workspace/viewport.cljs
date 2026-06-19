@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport
   (:require-macros [app.main.style :as stl])
@@ -223,7 +223,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -537,33 +539,33 @@
               :bounds vbox}]]))
 
        (when show-padding?
-         [:& mfc/padding-control
+         [:> mfc/padding-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-padding?
-         [:& mfc/gap-control
+         [:> mfc/gap-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-margin?
-         [:& mfc/margin-control
+         [:> mfc/margin-control*
           {:shape first-shape
            :parent selected-frame
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?}])
+           :is-alt @alt?
+           :is-shift @shift?}])
 
        [:> widgets/frame-titles*
         {:objects base-objects
@@ -641,14 +643,14 @@
           {:page-id page-id}])
 
        (when-not hide-ui?
-         [:& rulers/rulers
+         [:> rulers/rulers*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
            :offset-y offset-y
-           :show-rulers? show-rulers?}])
+           :show-rulers show-rulers?}])
 
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*

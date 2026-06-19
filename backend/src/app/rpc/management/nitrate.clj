@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.management.nitrate
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
@@ -12,11 +12,13 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization]]
+   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
+   [app.loggers.audit :as audit]
    [app.media :as media]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -29,7 +31,8 @@
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.worker :as wrk]))
+   [app.worker :as wrk]
+   [cuerdas.core :as str]))
 
 
 (defn- profile-to-map [profile]
@@ -48,7 +51,8 @@
   [cfg {:keys [::rpc/profile-id] :as params}]
   (let [profile            (profile/get-profile cfg profile-id)]
     (-> (profile-to-map profile)
-        (assoc :theme (:theme profile)))))
+        (assoc :theme (:theme profile))
+        (assoc :lang (:lang profile)))))
 
 ;; ---- API: get-teams
 
@@ -472,10 +476,7 @@ RETURNING id, deleted_at;")
   {::doc/added "2.15"
    ::sm/params [:map
                 [:email ::sm/email]
-                [:id ::sm/uuid]
-                [:name ::sm/text]
-                [:initials [:maybe :string]]
-                [:logo ::sm/uri]]}
+                [:organization schema:organization-with-avatar]]}
   [cfg params]
   (db/tx-run! cfg ti/create-org-invitation params)
   nil)
@@ -490,6 +491,7 @@ RETURNING id, deleted_at;")
           ti.email_to AS email,
           ti.created_at AS sent_at,
           p.fullname AS name,
+          p.id AS profile_id,
           p.photo_id
      FROM team_invitation AS ti
 LEFT JOIN profile AS p
@@ -511,6 +513,7 @@ LEFT JOIN profile AS p
     [:email ::sm/email]
     [:sent-at ::sm/inst]
     [:name {:optional true} [:maybe ::sm/text]]
+    [:profile-id {:optional true} [:maybe ::sm/uuid]]
     [:photo-url {:optional true} ::sm/uri]]])
 
 (sv/defmethod ::get-org-invitations
@@ -675,7 +678,40 @@ LEFT JOIN profile AS p
                                 (count valid-teams-to-transfer)
                                 (count valid-teams-to-exit))))
 
-;; API: cleanup-org-team-invitations
+;; API: send-renewal-email
+
+(def ^:private schema:send-renewal-email-params
+  [:map
+   [:profile-id ::sm/uuid]
+   [:user-email ::sm/email]
+   [:user-name [:maybe ::sm/text]]
+   [:renewal-date :string]
+   [:estimated-amount :double]
+   [:organizations [:vector schema:organization-with-avatar]]])
+
+(sv/defmethod ::send-renewal-email
+  "Send an Enterprise subscription renewal notice email to a user."
+  {::doc/added "2.17"
+   ::sm/params schema:send-renewal-email-params
+   ::rpc/auth false}
+  [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
+  (let [amount-str (format "$%.2f" estimated-amount)
+        user-name  (if (str/empty? user-name)
+                     (:fullname (profile/get-profile cfg profile-id))
+                     user-name)]
+    (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                      (eml/send! {::eml/conn    conn
+                                  ::eml/factory eml/renewal-notice
+                                  :public-uri   (cf/get :public-uri)
+                                  :to           user-email
+                                  :user-name    user-name
+                                  :renewal-date renewal-date
+                                  :estimated-amount amount-str
+                                  :organizations organizations}))))
+  nil)
+
+;; API: exists-org-team-invitations-for-non-members /
+;;      delete-org-team-invitations-for-non-members
 
 (def ^:private sql:get-profile-emails-by-ids
   "SELECT email
@@ -683,42 +719,107 @@ LEFT JOIN profile AS p
     WHERE id = ANY(?)
       AND deleted_at IS NULL")
 
-(def ^:private sql:delete-orphaned-team-invitations
+(def ^:private sql:exists-non-member-org-team-invitations
+  "SELECT EXISTS (
+            SELECT 1
+              FROM team_invitation
+             WHERE team_id = ANY(?)
+               AND email_to <> ALL(?)
+         ) AS non_member")
+
+(def ^:private sql:delete-non-member-org-team-invitations
   "DELETE FROM team_invitation
     WHERE team_id = ANY(?)
       AND email_to <> ALL(?)
-      AND valid_until >= now()
    RETURNING email_to")
 
-(def ^:private schema:cleanup-org-team-invitations-params
+(def ^:private schema:org-team-invitations-for-non-members-params
   [:map
-   [:organization-id ::sm/uuid]
    [:team-ids [:vector ::sm/uuid]]
    [:member-ids [:vector ::sm/uuid]]])
 
-(sv/defmethod ::cleanup-org-team-invitations
-  "Delete team invitations for emails that are not organization members
-   and do not have pending org-level invitations"
+(def ^:private schema:exists-org-team-invitations-for-non-members-result
+  [:map [:exists ::sm/boolean]])
+
+(defn- org-team-invitations-for-non-members-arrays
+  "Member emails and PG arrays used by exists/delete org team invitation endpoints."
+  [conn {:keys [team-ids member-ids]}]
+  (let [member-ids-array (db/create-array conn "uuid" member-ids)
+        member-emails    (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
+                              (map :email)
+                              (into #{}))]
+    {:emails-array (db/create-array conn "text" (vec member-emails))
+     :teams-array  (db/create-array conn "uuid" team-ids)}))
+
+(defn- non-member-org-team-invitations-exist?
+  [conn params]
+  (let [{:keys [emails-array teams-array]}
+        (org-team-invitations-for-non-members-arrays conn params)]
+    (-> (db/exec-one! conn [sql:exists-non-member-org-team-invitations
+                            teams-array
+                            emails-array])
+        :non-member)))
+
+(sv/defmethod ::exists-org-team-invitations-for-non-members
+  "Return if there are any team invitations for emails that are not organization members."
   {::doc/added "2.18"
-   ::sm/params schema:cleanup-org-team-invitations-params
-   ::db/transaction true}
-  [cfg {:keys [organization-id team-ids member-ids]}]
+   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::sm/result schema:exists-org-team-invitations-for-non-members-result}
+  [cfg params]
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [;; Get emails of organization members
-                       member-ids-array   (db/create-array conn "uuid" member-ids)
-                       member-emails      (->> (db/exec! conn [sql:get-profile-emails-by-ids member-ids-array])
-                                               (map :email)
-                                               (into #{}))
+                 {:exists (boolean (non-member-org-team-invitations-exist? conn params))})))
 
-                       ;; Get emails with org-level invitations
-                       org-invitation-emails (cnit/get-org-direct-invitation-emails conn organization-id)
-
-                       ;; Combine both sets: emails that should be kept
-                       emails-to-keep     (into member-emails org-invitation-emails)
-                       emails-array       (db/create-array conn "text" (vec emails-to-keep))
-                       teams-array        (db/create-array conn "uuid" team-ids)]
-
-                   ;; Delete invitations that are not in the keep list
-                   (db/exec! conn [sql:delete-orphaned-team-invitations teams-array emails-array])
+(sv/defmethod ::delete-org-team-invitations-for-non-members
+  "Delete team invitations for emails that are not organization members."
+  {::doc/added "2.18"
+   ::sm/params schema:org-team-invitations-for-non-members-params
+   ::db/transaction true}
+  [cfg params]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [{:keys [emails-array teams-array]}
+                       (org-team-invitations-for-non-members-arrays conn params)]
+                   (db/exec! conn [sql:delete-non-member-org-team-invitations
+                                   teams-array
+                                   emails-array])
                    nil))))
+
+;; ---- API: push-audit-events
+
+(def ^:private schema:nitrate-audit-event
+  [:map {:title "NitrateAuditEvent"}
+   [:name [:and [:string {:max 250}]
+           [:re #"[\d\w-]{1,50}"]]]
+   [:profile-id ::sm/uuid]
+   [:props {:optional true} [:map-of :keyword :any]]])
+
+(def ^:private schema:push-audit-events-params
+  [:map {:title "PushAuditEventsParams"}
+   [:events [:vector schema:nitrate-audit-event]]])
+
+(defn- submit-nitrate-audit-event
+  [cfg {:keys [name profile-id props]}]
+  (let [now (ct/now)]
+    (audit/submit* cfg {:type "action"
+                        :name name
+                        :profile-id profile-id
+                        :props (or props {})
+                        :context {}
+                        :tracked-at now
+                        :created-at now
+                        :source "nitrate"
+                        :ip-addr "0.0.0.0"})))
+
+(sv/defmethod ::push-audit-events
+  "Push audit events from Nitrate to Penpot audit log"
+  {::doc/added "2.19"
+   ::sm/params schema:push-audit-events-params
+   ::rpc/auth false}
+  [{:keys [::db/pool] :as cfg} {:keys [events]}]
+  (let [telemetry? (contains? cf/flags :telemetry)
+        audit-log? (contains? cf/flags :audit-log)
+        enabled?   (and (not (db/read-only? pool))
+                        (or audit-log? telemetry?))]
+    (when (and enabled? (seq events))
+      (run! (partial submit-nitrate-audit-event cfg) events))
+    nil))
 

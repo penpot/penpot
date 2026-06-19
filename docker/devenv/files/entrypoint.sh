@@ -27,4 +27,8 @@ export JAVA_OPTS="-Djava.net.preferIPv4Stack=true"
 export PATH="/home/penpot/.cargo/bin:$PATH"
 export CARGO_HOME="/home/penpot/.cargo"
 
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+export COLORTERM=truecolor
+
 exec "$@"

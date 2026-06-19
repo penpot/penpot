@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.logic.copying-and-duplicating-test
   (:require
@@ -16,6 +16,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as dwp]
    [app.main.data.workspace.selection :as dws]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
@@ -152,7 +153,8 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-state new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 18)))))))))
 
 (t/deftest main-and-first-level-copy-2
@@ -178,7 +180,8 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-state new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 15)))))))))
 
 (t/deftest main-and-first-level-copy-3
@@ -205,9 +208,9 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-state new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 12)))))))))
-
 
 (t/deftest main-and-first-level-copy-4
   (t/async
@@ -234,7 +237,8 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-state new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              (t/is (= (count-shapes file' "rect-simple-1" "#444444") 6)))))))))
 
 (t/deftest copy-nested-in-main-1
@@ -258,6 +262,7 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 28)))))))))
 
@@ -282,6 +287,7 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              ;; Check propagation to duplicated.
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 9)))))))))
 
@@ -306,6 +312,7 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))))
 
@@ -331,9 +338,9 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 20)))))))))
-
 
 (t/deftest copy-nested-2
   (t/async
@@ -360,11 +367,11 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)]
+             (cthf/validate-file! file')
              ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 11))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 7))
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))))
-
 
 (t/deftest copy-nested-3
   (t/async done
@@ -391,6 +398,7 @@
          (fn [new-state]
            (let [file' (-> (ths/get-file-from-state new-state)
                            (cthf/switch-to-page :page-2))]
+             (cthf/validate-file! file')
              ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 4))
@@ -420,7 +428,7 @@
                      (cthc/make-component :component-1 :frame-1))
             page-id (cthf/current-page-id file)
             store (ths/setup-store file)
-            events [(app.main.data.workspace.pages/duplicate-page page-id)]]
+            events [(dwp/duplicate-page page-id)]]
         (ths/run-store
          store done events
          (fn [new-state]
@@ -432,8 +440,7 @@
                  new-objects (:objects new-page)
                  group (some #(when (= (:name %) "group-1") %) (vals new-objects))
                  frame (some #(when (= (:name %) "frame-1") %) (vals new-objects))
-                 shape (some #(when (= (:name %) "shape-1") %) (vals new-objects))
-                 component-ids (map :component-id (filter :component-root (vals new-objects)))]
+                 shape (some #(when (= (:name %) "shape-1") %) (vals new-objects))]
 
              (t/is group "Group exists in duplicated page")
              (t/is frame "Frame exists in duplicated page")
@@ -452,3 +459,177 @@
                      (str "Duplicated page contains an instance of the original main component (component-id: " component-id ")")))
 
              (done))))))))
+
+(defn- setup-swapped-copies-file
+  "Creates a file with a component with two levels of nested copies inside. The component
+   has one copy, and inside it, the topmost nested copy is swapped with a second component,
+   also with one nested copy inside.
+
+   {:frame-simple-1} [:name Frame1]                   # [Component :simple-1]                                                                                                
+       :rect-simple-1 [:name Rect1]                                                                                                                                          
+
+   {:frame-composed-1} [:name frame-composed-1]       # [Component :composed-1]                                                                                              
+       :copy-simple-1-in-composed-1 [:name Frame1]    @--> frame-simple-1                                                                                                    
+           <no-label #000894> [:name Rect1]           ---> rect-simple-1                                                                                                     
+
+   {:frame-composed-2} [:name frame-composed-2]       # [Component :composed-2]                                                                                              
+       :copy-composed-1-in-composed-2 [:name frame-composed-1] @--> frame-composed-1                                                                                         
+           <no-label #000899> [:name Frame1]          @--> copy-simple-1-in-composed-1                                                                                       
+               <no-label #00089a> [:name Rect1]       ---> <no-label #000894>                                                                                                
+
+   {:frame-simple-2} [:name Frame1]                   # [Component :simple-2]                                                                                                
+       :rect-simple-2 [:name Rect1]                                                                                                                                          
+
+   {:frame-composed-3} [:name frame-composed-3]       # [Component :composed-3]                                                                                              
+       :copy-simple-2-in-composed-3 [:name Frame1]    @--> frame-simple-2                                                                                                    
+           <no-label #0008a4> [:name Rect1]           ---> rect-simple-2                                                                                                     
+
+   :copy-composed-2 [:name frame-composed-2]          #--> [Component :composed-2] frame-composed-2                                                                          
+       :swapped-composed-3 [:name frame-composed-3, :swap-slot-label :copy-composed-1-in-composed-2] @--> frame-composed-3                                                   
+           :swapped-simple-2-frame [:name Frame1]          @--> copy-simple-2-in-composed-3                                                                                       
+               :swapped-simple-2-rect [:name Rect1]       ---> <no-label #0008a4>
+   "
+  []
+  (-> (cthf/sample-file :file1 :page-label :page-1)
+      ;; 1. Simple component :simple-1
+      (ctho/add-simple-component :simple-1 :frame-simple-1 :rect-simple-1)
+
+      ;; 2. Composed component :composed-1 containing a copy of :simple-1
+      (ctho/add-frame :frame-composed-1 :name "frame-composed-1")
+      (cthc/instantiate-component :simple-1 :copy-simple-1-in-composed-1
+                                  :parent-label :frame-composed-1)
+      (cthc/make-component :composed-1 :frame-composed-1)
+
+      ;; 3. Composed component :composed-2 containing a copy of :composed-1
+      (ctho/add-frame :frame-composed-2 :name "frame-composed-2")
+      (cthc/instantiate-component :composed-1 :copy-composed-1-in-composed-2
+                                  :parent-label :frame-composed-2)
+      (cthc/make-component :composed-2 :frame-composed-2)
+
+      ;; 4. Simple component :simple-2
+      (ctho/add-simple-component :simple-2 :frame-simple-2 :rect-simple-2)
+
+      ;; 5. Composed component :composed-3 containing a copy of :simple-2
+      (ctho/add-frame :frame-composed-3 :name "frame-composed-3")
+      (cthc/instantiate-component :simple-2 :copy-simple-2-in-composed-3
+                                  :parent-label :frame-composed-3)
+      (cthc/make-component :composed-3 :frame-composed-3)
+
+      ;; 6. A copy of :composed-2
+      (cthc/instantiate-component :composed-2 :copy-composed-2
+                                  :children-labels [:nested-copy-composed-1])
+
+      ;; 7. Swap the nested copy of :composed-1 in the copy of :composed-2 with :composed-3
+      (cthc/component-swap :nested-copy-composed-1 :composed-3 :swapped-composed-3
+                           :children-labels [:swapped-simple-2-frame :swapped-simple-2-rect])))
+
+(t/deftest duplicate-swapped-copies
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [;; ==== Setup
+            file     (setup-swapped-copies-file)
+            store    (ths/setup-store file)
+
+            ;; ==== Action
+            ;; Copy to the clipboard all the shapes in the swapped copy one by one,
+            ;; and paste them outside the copy, under uuid/zero
+            events   (concat (copy-paste-shape :copy-composed-2 file :target-container-id uuid/zero)
+                             (copy-paste-shape :swapped-composed-3 file :target-container-id uuid/zero)
+                             (copy-paste-shape :swapped-simple-2-frame file :target-container-id uuid/zero)
+                             (copy-paste-shape :swapped-simple-2-rect file :target-container-id uuid/zero))]
+
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 page' (cthf/current-page file')]
+
+             (cthf/validate-file! file')
+
+             ;; ==== Check
+             ;; Shape count breakdown (including page root):
+             ;;  page root: 1
+             ;;  :simple-1 main: 2 shapes (frame + rect)
+             ;;  :composed-1 main: 3 shapes (frame + instance-of-simple-1 + its child)
+             ;;  :composed-2 main: 4 shapes (frame + instance-of-composed-1 + its descendants)
+             ;;  :simple-2 main: 2 shapes (frame + rect)
+             ;;  :composed-3 main: 3 shapes (frame + instance-of-simple-2 + its child)
+             ;;  copy of :composed-2 (with swapped child): 4 shapes
+             ;;  pasted copy of :copy-composed-2: 4 shapes
+             ;;  pasted copy of :composed-3: 3 shapes
+             ;;  pasted copy of :swapped-simple-2-frame: 2 shapes
+             ;;  pasted copy of :swapped-simple-2-rect: 1 shapes
+             ;;  Total = 1 + 2 + 3 + 4 + 2 + 3 + 4 + 4 + 3 + 2 + 1 = 29
+             (t/is (= (count (:objects page')) 29)))))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests for issue-14302
+;; Pasting a board with text shapes must clear stale position-data so the
+;; workspace can remeasure the text and avoid incorrect line breaks.
+;; ---------------------------------------------------------------------------
+
+(defn- setup-board-with-texts
+  "Two-page file. Page 1 has a board with two text shapes that carry stale
+   position-data (simulating a shape that was already laid out on a
+   different page). Page 2 is empty. Current page is page-1."
+  []
+  (let [stale-pd [{:x 999 :y 999 :width 999 :height 20 :fills [] :text "stale"}]]
+    (-> (cthf/sample-file :file1 :page-label :page-1)
+        (ctho/add-frame :frame-1 :name "board-with-texts")
+        (cths/add-sample-shape :text-a :type :text :parent-label :frame-1 :name "text-a")
+        (cths/update-shape :text-a :position-data stale-pd)
+        (cths/add-sample-shape :text-b :type :text :parent-label :frame-1 :name "text-b")
+        (cths/update-shape :text-b :position-data stale-pd)
+        (cthf/add-sample-page :page-2)
+        (cthf/switch-to-page :page-1))))
+
+(t/deftest paste-to-empty-page-clears-text-position-data
+  "Regression for issue-14302: copying a board with text shapes and pasting
+   onto an empty page produced incorrect line breaks because stale
+   position-data from the source page was preserved."
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file   (setup-board-with-texts)
+            store  (ths/setup-store file)
+            ;; copy-paste-shape handles initialize-page + select-shape (needed
+            ;; for calculate-paste-position) + paste-shapes + return to page-1
+            events (copy-paste-shape :frame-1 file
+                                     :target-page-label :page-2
+                                     :target-container-id uuid/zero)]
+
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file'        (ths/get-file-from-state new-state)
+                 page-2       (cthf/get-page file' :page-2)
+                 pasted-texts (->> (vals (:objects page-2))
+                                   (filter #(= :text (:type %))))]
+             (t/is (= 2 (count pasted-texts))
+                   "Both text shapes are pasted onto the empty page")
+             (t/is (every? #(nil? (:position-data %)) pasted-texts)
+                   "Pasted text shapes have nil position-data so they get remeasured"))))))))
+
+(t/deftest paste-to-same-page-clears-text-position-data
+  "Position-data is stripped on paste regardless of destination page."
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file   (setup-board-with-texts)
+            store  (ths/setup-store file)
+            events (copy-paste-shape :frame-1 file
+                                     :target-container-id uuid/zero)]
+
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file'        (ths/get-file-from-state new-state)
+                 page-1'      (cthf/get-page file' :page-1)
+                 ;; Pasted copies have IDs not registered in idmap — they show
+                 ;; up as "<no-label …>" strings from cthi/label.
+                 pasted-texts (->> (vals (:objects page-1'))
+                                   (filter #(= :text (:type %)))
+                                   (remove #(keyword? (cthi/label (:id %)))))]
+             (t/is (= 2 (count pasted-texts))
+                   "Two new text shapes are pasted onto the same page")
+             (t/is (every? #(nil? (:position-data %)) pasted-texts)
+                   "Pasted text shapes have nil position-data"))))))))
+

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.onboarding.templates
   (:require
@@ -19,7 +19,7 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(mf/defc template-item
+(mf/defc template-item*
   [{:keys [name path image project-id]}]
   (let [downloading? (mf/use-state false)
         link         (dm/str (assoc cf/public-uri :path path))
@@ -42,6 +42,7 @@
                (rx/subs! (fn [{:keys [body] :as response}]
                            (open-import-modal {:name name :uri (wapi/create-uri body)}))
                          (fn [error]
+                           (reset! downloading? false)
                            (js/console.error "error" error))
                          (fn []
                            (reset! downloading? false)))))]
@@ -77,12 +78,12 @@
        [:p (tr "onboarding.templates.subtitle")]
 
        [:div.templates
-        [:& template-item
+        [:> template-item*
          {:path "/github/penpot-files/Penpot-Design-system.penpot"
           :image "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
           :name "Penpot Design System"
           :project-id project-id}]
-        [:& template-item
+        [:> template-item*
          {:path "/github/penpot-files/Material-Design-Kit.penpot"
           :image "https://penpot.app/images/libraries/cover-material.jpg"
           :name "Material Design Kit"

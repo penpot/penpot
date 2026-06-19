@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.svg-attrs
   (:require-macros [app.main.style :as stl])
@@ -63,7 +63,17 @@
                                  :on-change on-change
                                  :on-delete on-delete}]])])]))
 
+(defn- check-svg-attrs-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (get old-values :svg-attrs)
+                     (get new-values :svg-attrs)))))
+
 (mf/defc svg-attrs-menu*
+  {::mf/wrap [#(mf/memo' % check-svg-attrs-menu-props)]}
   [{:keys [ids values]}]
   (let [state*          (mf/use-state true)
         open?           (deref state*)

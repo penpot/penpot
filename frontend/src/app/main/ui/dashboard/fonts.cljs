@@ -2,14 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.fonts
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.types.font :as ctf]
@@ -54,6 +53,16 @@
   [font]
   (and (contains? font :font-family-tmp)
        (str/blank? (:font-family-tmp font))))
+
+(defn- handle-font-upload
+  [{:keys [id] :as item}]
+  (->> (df/upload-font-variant item)
+       ;; This delay fixes the UI problem. When the font is uploaded quickly,
+       ;; the user only sees a flicker on the button. With a small delay we
+       ;; have a clear transition from uploading state to uploaded
+       (rx/delay-at-least 2000)
+       (rx/map (fn [font]
+                 [id font]))))
 
 (mf/defc header*
   {::mf/memo true
@@ -107,30 +116,23 @@
                           (fn [error]
                             (js/console.error "error" error))))))
 
-        on-upload*
-        (mf/use-fn
-         (fn [{:keys [id] :as item}]
-           (swap! uploading* conj id)
-           (->> (df/upload-font-variant item)
-                (rx/delay-at-least 2000)
-                (rx/subs! (fn [font]
-                            (swap! fonts* dissoc id)
-                            (swap! uploading* disj id)
-                            (st/emit! (df/add-font font)))
-                          (fn [cause]
-                            (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
-                            (swap! fonts* dissoc id)
-                            (ex/print-throwable cause))))))
-
         on-upload
         (mf/use-fn
-         (mf/deps fonts on-upload*)
+         (mf/deps fonts)
          (fn [event]
            (let [id   (-> (dom/get-current-target event)
                           (dom/get-data "id")
                           (uuid/parse))
                  item (get fonts id)]
-             (on-upload* item))))
+             (swap! uploading* conj id)
+             (->> (handle-font-upload item)
+                  (rx/subs! (fn [[previous-id font]]
+                              (swap! fonts* dissoc previous-id)
+                              (swap! uploading* disj previous-id)
+                              (st/emit! (df/add-font font)))
+                            (fn [cause]
+                              (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
+                              (js/console.error "Unexpected error on uploading font" cause)))))))
 
         on-blur-name
         (mf/use-fn
@@ -168,7 +170,20 @@
         (mf/use-fn
          (mf/deps font-vals)
          (fn [_]
-           (run! on-upload* font-vals)))
+           (->> (rx/from font-vals)
+                (rx/tap #(swap! uploading* conj (:id %)))
+                (rx/mapcat (fn [{:keys [id] :as item}]
+                             (->> (handle-font-upload item)
+                                  (rx/catch (fn [cause]
+                                              (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
+                                              (js/console.error "Unexpected error on uploading font" cause)
+                                              (rx/of [id nil]))))))
+
+                (rx/subs! (fn [[previous-id font]]
+                            (swap! fonts* dissoc previous-id)
+                            (swap! uploading* disj previous-id)
+                            (when font
+                              (st/emit! (df/add-font font))))))))
 
         on-dismis-all
         (mf/use-fn
@@ -258,9 +273,8 @@
                     :on-click on-delete}
              deprecated-icon/close]]]))]]))
 
-(mf/defc installed-font-context-menu
-  {::mf/props :obj
-   ::mf/private true}
+(mf/defc installed-font-context-menu*
+  {::mf/private true}
   [{:keys [is-open on-close on-edit on-download on-delete]}]
   (let [options (mf/with-memo [on-edit on-download on-delete]
                   [{:name    (tr "labels.edit")
@@ -281,10 +295,9 @@
       :left -115
       :options options}]))
 
-(mf/defc installed-font
-  {::mf/props :obj
-   ::mf/private true
-   ::mf/memo true}
+(mf/defc installed-font*
+  {::mf/private true
+   ::mf/wrap [mf/memo]}
   [{:keys [font-id variants can-edit]}]
   (let [font        (first variants)
 
@@ -430,7 +443,7 @@
                   :on-click on-menu-open}
            deprecated-icon/menu]
 
-          [:& installed-font-context-menu
+          [:> installed-font-context-menu*
            {:on-close on-menu-close
             :is-open menu-open?
             :on-delete on-delete-font
@@ -465,10 +478,10 @@
         (for [[font-id variants] (->> (vals fonts)
                                       (filter matches?)
                                       (group-by :font-id))]
-          [:& installed-font {:key (dm/str font-id "-installed")
-                              :font-id font-id
-                              :can-edit can-edit
-                              :variants variants}])]
+          [:> installed-font* {:key (dm/str font-id "-installed")
+                               :font-id font-id
+                               :can-edit can-edit
+                               :variants variants}])]
 
        (nil? fonts)
        [:div {:class (stl/css :fonts-placeholder)}

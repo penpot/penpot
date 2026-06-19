@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.foundations.assets.icon
   (:refer-clojure :exclude [mask drop filter remove])
@@ -133,7 +133,7 @@
 (def ^:icon-id easing-ease-out "easing-ease-out")
 (def ^:icon-id easing-linear "easing-linear")
 (def ^:icon-id effects "effects")
-(def ^:icon-id elipse "elipse")
+(def ^:icon-id ellipse "ellipse")
 (def ^:icon-id exit "exit")
 (def ^:icon-id expand "expand")
 (def ^:icon-id external-link "external-link")

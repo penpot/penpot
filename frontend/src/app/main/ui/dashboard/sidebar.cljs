@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.sidebar
   (:require-macros [app.main.style :as stl])
@@ -1297,6 +1297,11 @@
          (fn []
            (st/emit! (ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
+
+    (mf/with-effect [teams]
+      (when (and (contains? cf/flags :nitrate)
+                 (empty? teams))
+        (st/emit! (dtm/fetch-teams))))
 
     (mf/with-effect [show-profile-menu?]
       (when-not show-profile-menu?

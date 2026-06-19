@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.browser
   (:require
@@ -48,11 +48,30 @@
   (.waitForTimeout ^js page ms))
 
 (defn wait-for-fonts
-  "Wait until the browser has finished loading all fonts"
+  "Wait until the browser has finished loading all fonts.
+
+  Checking `document.fonts.status === 'loaded'` on its own is not enough:
+  the render page injects its `@font-face` rules asynchronously and the
+  browser only loads a face lazily, when some painted text actually uses
+  it. A face that is declared but not yet requested stays in the `unloaded`
+  state, which does NOT keep `document.fonts.status` at `loading`, so the
+  check can pass before any real font glyphs are available. The export is
+  then captured with a (usually wider) fallback font, and auto-width text
+  laid out with the real font metrics overflows its bounds and gets clipped.
+
+  To avoid that we explicitly request every declared face and await
+  `document.fonts.ready` before checking the status."
   ([page] (wait-for-fonts page nil))
   ([page {:keys [timeout] :or {timeout 15000}}]
    (-> (.waitForFunction ^js page
-                         "() => document.fonts && document.fonts.status === 'loaded'"
+                         "async () => {
+                            if (!document.fonts) return true;
+                            try {
+                              await Promise.all(Array.from(document.fonts, (face) => face.load()));
+                            } catch (e) {}
+                            await document.fonts.ready;
+                            return document.fonts.status === 'loaded';
+                          }"
                          nil
                          #js {:timeout timeout})
        (p/catch (fn [cause]

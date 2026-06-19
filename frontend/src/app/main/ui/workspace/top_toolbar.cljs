@@ -2,21 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as deprecated-icon]
@@ -25,6 +28,63 @@
    [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(mf/defc mcp-indicator*
+  []
+  (let [mcp              (mf/deref refs/mcp)
+
+        conn-status      (get mcp :connection-status)
+        has-valid-token? (get mcp :token-valid)
+
+        enabled?         (get mcp :enabled)
+
+        mcp-connected?   (= "connected" conn-status)
+        show-indicator?  (and enabled? has-valid-token?)
+
+        menu-open*       (mf/use-state false)
+        menu-open?       (deref menu-open*)
+
+        toggle-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! menu-open* not)))
+
+        close-menu
+        (mf/use-fn
+         #(reset! menu-open* false))
+
+        connect-mcp
+        (mf/use-fn
+         #(st/emit! (mcp/connect-mcp)
+                    (ev/event {::ev/name "connect-mcp-plugin"
+                               ::ev/origin "workspace:toolbar"})))]
+    (when show-indicator?
+      [:li
+       [:button
+        {:title (tr "workspace.toolbar.mcp")
+         :aria-label (tr "workspace.toolbar.mcp")
+         :class (stl/css-case :main-toolbar-options-button true
+                              :mcp-button true
+                              :selected menu-open?)
+         :on-click toggle-menu
+         :data-tool "mcp"
+         :data-testid "mcp-btn"}
+        [:span {:class (stl/css-case :mcp-status-dot true
+                                     :connected mcp-connected?)}]
+        [:span {:class (stl/css-case :mcp-button-label true
+                                     :connected mcp-connected?)}
+         (tr "workspace.toolbar.mcp")]]
+       [:> dropdown-menu* {:show menu-open?
+                           :on-close close-menu
+                           :class (stl/css :mcp-menu)}
+        (if mcp-connected?
+          [:li {:class (stl/css :mcp-menu-info)
+                :role "presentation"}
+           (tr "workspace.toolbar.mcp-connected")]
+          [:> dropdown-menu-item* {:class (stl/css :mcp-menu-item)
+                                   :on-click connect-mcp}
+           (tr "workspace.toolbar.mcp-connect-here")])]])))
 
 (mf/defc image-upload*
   {::mf/wrap [mf/memo]}
@@ -170,7 +230,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           deprecated-icon/elipse]]
+           deprecated-icon/ellipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -221,12 +281,13 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             deprecated-icon/bug]])]]
+             deprecated-icon/bug]])
+
+         (when (contains? cf/flags :mcp)
+           [:> mcp-indicator*])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
                  :class (stl/css :toolbar-handler)
                  :on-click toggle-toolbar}
         [:div {:class (stl/css :toolbar-handler-btn)}]]])))
-
-
