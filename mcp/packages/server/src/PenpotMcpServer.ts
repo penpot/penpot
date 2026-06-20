@@ -148,7 +148,7 @@ export class PenpotMcpServer {
         }
 
         this.pluginBridge = new PluginBridge(this, this.webSocketPort, this.redisBridge);
-        this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
+        this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host, process.env.PENPOT_MCP_REPL_TOKEN);
     }
 
     /**

@@ -23,7 +23,8 @@ export class ReplServer {
     constructor(
         private readonly pluginBridge: PluginBridge,
         port: number = 4403,
-        host: string = "localhost"
+        host: string = "localhost",
+        private readonly token?: string
     ) {
         this.port = port;
         this.host = host;
@@ -53,6 +54,12 @@ export class ReplServer {
 
         // API endpoint for executing code
         this.app.post("/execute", async (req, res) => {
+            if (this.token) {
+                const authHeader = req.headers["authorization"];
+                if (!authHeader || authHeader !== `Bearer ${this.token}`) {
+                    return res.status(401).json({ error: "Unauthorized" });
+                }
+            }
             try {
                 const { code } = req.body;
 
