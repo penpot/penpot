@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 test("BUG 7466 - Layers tab height extends to the bottom when 'Pages' is collapsed", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
 
   await workspace.goToWorkspace();

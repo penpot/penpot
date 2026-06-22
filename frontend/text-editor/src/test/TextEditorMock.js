@@ -1,6 +1,9 @@
 import { createRoot } from "../editor/content/dom/Root.js";
-import { createParagraph } from "../editor/content/dom/Paragraph.js";
-import { createEmptyTextSpan, createTextSpan } from "../editor/content/dom/TextSpan.js";
+import { createParagraph, createParagraphWith } from "../editor/content/dom/Paragraph.js";
+import {
+  createEmptyTextSpan,
+  createTextSpan,
+} from "../editor/content/dom/TextSpan.js";
 import { createLineBreak } from "../editor/content/dom/LineBreak.js";
 
 export class TextEditorMock extends EventTarget {
@@ -38,14 +41,14 @@ export class TextEditorMock extends EventTarget {
   static createTextEditorMockWithRoot(root) {
     const container = TextEditorMock.getTemplate();
     const selectionImposterElement = container.querySelector(
-      ".text-editor-selection-imposter"
+      ".text-editor-selection-imposter",
     );
     const textEditorMock = new TextEditorMock(
       container.querySelector(".text-editor-content"),
       {
         root,
         selectionImposterElement,
-      }
+      },
     );
     return textEditorMock;
   }
@@ -64,7 +67,7 @@ export class TextEditorMock extends EventTarget {
   /**
    * Creates an empty TextEditor mock.
    *
-   * @returns
+   * @returns {TextEditorMock}
    */
   static createTextEditorMockEmpty() {
     const root = createRoot([
@@ -80,14 +83,14 @@ export class TextEditorMock extends EventTarget {
    * created.
    *
    * @param {string} text
-   * @returns
+   * @returns {TextEditorMock}
    */
   static createTextEditorMockWithText(text) {
     return this.createTextEditorMockWithParagraphs([
       createParagraph([
         text.length === 0
-        ? createEmptyTextSpan()
-        : createTextSpan(new Text(text))
+          ? createEmptyTextSpan()
+          : createTextSpan(new Text(text)),
       ]),
     ]);
   }
@@ -96,17 +99,37 @@ export class TextEditorMock extends EventTarget {
    * Creates a TextEditor mock with some textSpans and
    * only one paragraph.
    *
+   * @see createTextEditorMockWith
    * @param {Array<HTMLSpanElement>} textSpans
-   * @returns
+   * @returns {TextEditorMock}
    */
   static createTextEditorMockWithParagraph(textSpans) {
-    return this.createTextEditorMockWithParagraphs([createParagraph(textSpans)]);
+    return this.createTextEditorMockWithParagraphs([
+      createParagraph(textSpans),
+    ]);
+  }
+
+  /**
+   * Creates a TextEditor mock with some text.
+   *
+   * @param {Array<Array<string>>|Array<string>} paragraphs
+   * @returns {TextEditorMock}
+   */
+  static createTextEditorMockWith(paragraphs) {
+    const root = createRoot(paragraphs.map((paragraph) => createParagraphWith(paragraph)));
+    return this.createTextEditorMockWithRoot(root);
   }
 
   #element = null;
   #root = null;
   #selectionImposterElement = null;
 
+  /**
+   * Constructor
+   *
+   * @param {HTMLDivElement} element
+   * @param {*} options
+   */
   constructor(element, options) {
     super();
     this.#element = element;

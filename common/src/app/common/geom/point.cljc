@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.point
   (:refer-clojure :exclude [divide min max abs zero?])
@@ -151,7 +151,7 @@
                  (dm/get-prop p2 :y))))
 
 (defn multiply
-  "Returns the subtraction of the supplied value to both
+  "Returns the multiplication of the supplied value to both
   coordinates of the point as a new point."
   [p1 p2]
   (assert (and (point? p1)
@@ -509,12 +509,10 @@
   (let [old-length (length vector)]
     (scale vector (/ new-length old-length))))
 
-;; FIXME: perfromance
 (defn abs
   [point]
-  (-> point
-      (update :x mth/abs)
-      (update :y mth/abs)))
+  (pos->Point (mth/abs (dm/get-prop point :x))
+              (mth/abs (dm/get-prop point :y))))
 
 ;; --- Debug
 

@@ -6,12 +6,14 @@ on:
       - edited
       - reopened
       - synchronize
+      - ready_for_review
   pull_request_target:
     types:
       - opened
       - edited
       - reopened
       - synchronize
+      - ready_for_review
   push:
     branches:
       - main
@@ -20,13 +22,14 @@ on:
 
 jobs:
   check-commit-message:
+    if: ${{ !github.event.pull_request.draft }}
     name: Check Commit Message
     runs-on: ubuntu-latest
     steps:
       - name: Check Commit Type
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^(((:(lipstick|globe_with_meridians|wrench|books|arrow_up|arrow_down|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle|rewind|construction_worker):)\s[A-Z].*[^.])|(Merge|Revert).+[^.])$'
+          pattern: '^(((:(lipstick|globe_with_meridians|wrench|books|arrow_up|arrow_down|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle|rewind|construction_worker):)\s[A-Z].*[^.])|(Merge|Revert|Reapply).+[^.])$'
           flags: 'gm'
           error: 'Commit should match CONTRIBUTING.md guideline'
           checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request

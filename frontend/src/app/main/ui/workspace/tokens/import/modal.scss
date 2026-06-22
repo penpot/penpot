@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
@@ -30,6 +30,7 @@
 
 .import-actions {
   @include t.use-typography("body-small");
+
   display: flex;
   justify-content: flex-end;
   gap: var(--sp-s);
@@ -40,8 +41,7 @@
   border-end-start-radius: 0;
   border-inline-start: $b-1 solid var(--color-accent-tertiary);
   width: var(--sp-xxxl);
-  padding-inline-start: 0;
-  padding-inline-end: 0;
+  padding-inline: 0;
   justify-content: center;
 }
 

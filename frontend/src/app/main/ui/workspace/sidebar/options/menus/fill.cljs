@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.fill
   (:require-macros [app.main.style :as stl])
@@ -52,16 +52,15 @@
   [n-props o-props]
   (and (identical? (unchecked-get n-props "ids")
                    (unchecked-get o-props "ids"))
+       (identical? (unchecked-get n-props "appliedTokens")
+                   (unchecked-get o-props "appliedTokens"))
        (let [o-vals  (unchecked-get o-props "values")
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
-             o-applied-tokens (get o-vals :applied-tokens)
-             n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
              n-hide  (get n-vals :hide-fill-on-export)]
          (and (identical? o-hide n-hide)
-              (identical? o-applied-tokens n-applied-tokens)
               (identical? o-fills n-fills)))))
 
 (mf/defc fill-menu*
@@ -73,7 +72,6 @@
         fill-token-applied (:fill applied-tokens)
 
         render-wasm?   (feat/use-feature "render-wasm/v1")
-
 
         ^boolean
         multiple?      (= :multiple fills)
@@ -175,17 +173,17 @@
          (mf/deps ids)
          (fn [_ token]
            (st/emit!
-            (dwta/toggle-token {:token token
-                                :attrs #{:fill}
-                                :shape-ids ids
-                                :expand-with-children true}))))
+            (dwta/apply-token-from-input {:token token
+                                          :attrs #{:fill}
+                                          :shape-ids ids
+                                          :expand-with-children true}))))
 
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token]
-           (st/emit! (dwta/unapply-token {:attributes #{:fill}
-                                          :token token
+         (fn [token-name]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{:fill}
                                           :shape-ids ids}))))]
 
     (mf/with-layout-effect [hide-on-export]
@@ -196,7 +194,8 @@
           (dom/set-attribute! checkbox "indeterminate" true)
           (dom/remove-attribute! checkbox "indeterminate"))))
 
-    [:div {:class (stl/css :fill-section)}
+    [:section {:class (stl/css :fill-section)
+               :aria-label (tr "workspace.options.fill.section")}
      [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)
@@ -215,7 +214,8 @@
      (when open?
        [:div {:class (stl/css :fill-content)}
         (cond
-          (= :multiple fills)
+          (or (= :multiple fills)
+              (= :multiple fill-token-applied))
           [:div {:class (stl/css :fill-multiple)}
            [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]

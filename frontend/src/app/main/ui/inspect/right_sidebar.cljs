@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.right-sidebar
   (:require-macros [app.main.style :as stl])
@@ -12,18 +12,18 @@
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
-   [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.inspect.attributes :refer [attributes]]
-   [app.main.ui.inspect.code :refer [code]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.inspect.attributes :refer [attributes*]]
+   [app.main.ui.inspect.code :refer [code*]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.main.ui.inspect.styles :refer [styles-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.shape-icon :as usi]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-libraries
@@ -74,7 +74,7 @@
            (when on-change-section
              (on-change-section (keyword new-section))
              (st/emit!
-              (ptk/event ::ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
+              (ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
 
         handle-expand
         (mf/use-fn
@@ -106,14 +106,14 @@
           (if (contains? cf/flags :inspect-styles)
             [{:label (tr "labels.styles")
               :id "styles"}
-             {:label (tr "inspect.tabs.computed")
+             {:label (tr "labels.computed")
               :id "computed"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]
-            [{:label (tr "inspect.tabs.info")
+            [{:label (tr "labels.info")
               :id "info"}
-             {:label (tr "inspect.tabs.code")
+             {:label (tr "labels.code")
               :data-testid "code"
               :id "code"}]))]
 
@@ -121,7 +121,7 @@
      (mf/deps shapes handle-change-tab)
      (fn []
        (if (seq shapes)
-         (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
+         (st/emit! (ev/event {::ev/name "inspect-mode-click-element"}))
          (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
 
     [:aside {:class (stl/css-case :settings-bar-right true
@@ -133,7 +133,7 @@
            [:*
             [:div {:class (stl/css :layers-icon)}
              [:> icon* {:icon-id i/layers :size "s"}]]
-            [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
+            [:span {:class (stl/css :layer-title)} (tr "inspect.multiple-selected" (count shapes))]]
            [:*
             [:div {:class (stl/css :shape-icon)}
              ;; Use the shape icon utility to get the correct icon for the first shape
@@ -162,15 +162,18 @@
         [:div {:class (stl/css :inspect-content)}
          (if (contains? cf/flags :inspect-styles)
            [:div {:class (stl/css :inspect-tab-switcher)}
-            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
+            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.layer-info")]
             [:div {:class (stl/css :inspect-tab-switcher-controls)}
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
-              [:> select* {:options color-spaces
+              [:> select* {:class (stl/css :inspect-tab-switcher-controls-color-space-select)
+                           :aria-label (tr "inspect.color-space-label")
+                           :options color-spaces
                            :default-selected "hex"
                            :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
+                           :aria-label (tr "inspect.tabs-switcher-label")
                            :default-selected (name @section)
                            :on-change handle-change-tab}]]]]
            nil)
@@ -182,55 +185,55 @@
               [:> styles-tab* {:color-space color-space
                                :objects objects
                                :shapes shapes
+                               :from from
                                :libraries libraries
-                               :file-id file-id}]
+                               :page-id page-id
+                               :file-id file-id
+                               :share-id share-id}]
               :computed
-              [:& attributes {:color-space color-space
-                              :page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:color-space color-space
+                               :page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])]
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])]
            [:> tab-switcher* {:tabs tabs
                               :selected (name @section)
                               :on-change handle-change-tab
                               :class (stl/css :viewer-tab-switcher)}
             (case @section
               :info
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]
+              [:> attributes* {:page-id page-id
+                               :objects objects
+                               :file-id file-id
+                               :frame frame
+                               :shapes shapes
+                               :from from
+                               :libraries libraries
+                               :share-id share-id}]
 
               :code
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}])])]]
-       [:div {:class (stl/css :empty)}
-        [:div {:class (stl/css :code-info)}
-         [:span {:class (stl/css :placeholder-icon)}
-          deprecated-icon/code]
-         [:span {:class (stl/css :placeholder-label)}
-          (tr "inspect.empty.select")]]
-        [:div {:class (stl/css :help-info)}
-         [:span {:class (stl/css :placeholder-icon)}
-          deprecated-icon/help]
-         [:span {:class (stl/css :placeholder-label)}
-          (tr "inspect.empty.help")]]
-        [:button {:class (stl/css :more-info-btn)
-                  :on-click navigate-to-help}
-         (tr "inspect.empty.more-info")]])]))
+              [:> code* {:frame frame
+                         :shapes shapes
+                         :on-expand handle-expand
+                         :from from}])])]]
+
+       [:*
+        [:div {:class (stl/css :empty)}
+         [:> empty-state* {:icon i/code
+                           :text (tr "inspect.empty.select")}]
+         [:> empty-state* {:icon i/help
+                           :text (tr "inspect.empty.help")}]]
+        [:div {:class (stl/css :empty-button)}
+         [:> button* {:variant "secondary"
+                      :on-click navigate-to-help}
+          (tr "inspect.empty.more")]]])]))

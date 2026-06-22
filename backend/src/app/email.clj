@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.email
   "Main api for send emails."
@@ -22,14 +22,33 @@
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
-   jakarta.mail.Message$RecipientType
-   jakarta.mail.Session
-   jakarta.mail.Transport
    jakarta.mail.internet.InternetAddress
    jakarta.mail.internet.MimeBodyPart
    jakarta.mail.internet.MimeMessage
    jakarta.mail.internet.MimeMultipart
+   jakarta.mail.Message$RecipientType
+   jakarta.mail.Session
+   jakarta.mail.Transport
    java.util.Properties))
+
+(defn clean
+  "Clean and normalizes email address string"
+  [email]
+  (let [email (str/lower email)
+        email (if (str/starts-with? email "mailto:")
+                (subs email 7)
+                email)
+        email (if (or (str/starts-with? email "<")
+                      (str/ends-with? email ">"))
+                (str/trim email "<>")
+                email)]
+    email))
+
+(defn get-domain
+  [email]
+  (let [email      (clean email)
+        [_ domain] (str/split email "@" 2)]
+    domain))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EMAIL IMPL
@@ -106,16 +125,16 @@
       (let [content-part      (MimeBodyPart.)
             alternative-mpart (MimeMultipart. "alternative")]
 
+        (when-let [content (get body "text/plain")]
+          (let [text-part (MimeBodyPart.)]
+            (.setText text-part ^String content ^String charset)
+            (.addBodyPart alternative-mpart text-part)))
+
         (when-let [content (get body "text/html")]
           (let [html-part (MimeBodyPart.)]
             (.setContent html-part ^String content
                          (str "text/html; charset=" charset))
             (.addBodyPart alternative-mpart html-part)))
-
-        (when-let [content (get body "text/plain")]
-          (let [text-part (MimeBodyPart.)]
-            (.setText text-part ^String content ^String charset)
-            (.addBodyPart alternative-mpart text-part)))
 
         (.setContent content-part alternative-mpart)
         (.addBodyPart mixed-mpart content-part))
@@ -124,8 +143,6 @@
       (throw (IllegalArgumentException. "invalid email body provided")))
 
     (doseq [[name content] attachments]
-
-      (prn "attachment" name)
       (let [attachment-part (MimeBodyPart.)]
         (.setFileName attachment-part ^String name)
         (.setContent attachment-part ^String content (str "text/plain; charset=" charset))
@@ -413,6 +430,41 @@
   (template-factory
    :id ::invite-to-team
    :schema schema:invite-to-team))
+
+(def ^:private schema:organization-data
+  [:map
+   [:name ::sm/text]
+   [:initials [:maybe :string]]
+   [:logo [:maybe ::sm/uri]]
+   [:avatar-bg-url [:maybe ::sm/uri]]])
+
+(def ^:private schema:invite-to-org
+  [:map
+   [:invited-by ::sm/text]
+   [:user-name [:maybe ::sm/text]]
+   [:token ::sm/text]
+   [:organization schema:organization-data]])
+
+(def invite-to-org
+  "Org member invitation email."
+  (template-factory
+   :id ::invite-to-org
+   :schema schema:invite-to-org))
+
+
+
+(def ^:private schema:renewal-notice
+  [:map
+   [:user-name [:maybe ::sm/text]]
+   [:renewal-date ::sm/text]
+   [:estimated-amount ::sm/text]
+   [:organizations [:vector schema:organization-data]]])
+
+(def renewal-notice
+  "Enterprise subscription renewal notice email."
+  (template-factory
+   :id ::renewal-notice
+   :schema schema:renewal-notice))
 
 (def ^:private schema:join-team
   [:map

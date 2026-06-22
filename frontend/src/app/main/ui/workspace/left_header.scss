@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -14,11 +14,13 @@
 }
 
 .main-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-32;
   height: deprecated.$s-32;
   min-height: deprecated.$s-32;
   margin-right: deprecated.$s-4;
+
   svg {
     min-height: deprecated.$s-32;
     width: deprecated.$s-32;
@@ -29,15 +31,17 @@
 .project-tree {
   position: relative;
   flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
   height: deprecated.$s-32;
   min-height: deprecated.$s-32;
-  max-width: calc(100% - deprecated.$s-64);
 }
 
 .project-name,
 .file-name {
-  @include deprecated.uppercaseTitleTipography;
-  @include deprecated.textEllipsis;
+  @include deprecated.uppercase-title-typography;
+  @include deprecated.text-ellipsis;
+
   height: deprecated.$s-16;
   width: 100%;
   padding-bottom: deprecated.$s-2;
@@ -46,7 +50,8 @@
 }
 
 .file-name {
-  @include deprecated.smallTitleTipography;
+  @include deprecated.small-title-typography;
+
   text-transform: none;
   color: var(--title-foreground-color-hover);
   align-items: center;
@@ -55,11 +60,12 @@
 }
 
 .file-name-label {
-  @include deprecated.textEllipsis;
+  @include deprecated.text-ellipsis;
 }
 
 .file-name-input {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: 100%;
   margin: 0;
   border: 0;
@@ -70,16 +76,19 @@
   color: var(--input-foreground-color);
   z-index: deprecated.$z-index-20;
   white-space: break-spaces;
+
   &:focus {
     outline: none;
   }
 }
 
 .shared-badge {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-16;
   height: deprecated.$s-32;
   margin-right: deprecated.$s-4;
+
   svg {
     stroke: var(--button-secondary-foreground-color-rest);
     fill: none;
@@ -118,9 +127,11 @@
   0% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-4px);
   }
+
   100% {
     transform: translateY(0);
   }

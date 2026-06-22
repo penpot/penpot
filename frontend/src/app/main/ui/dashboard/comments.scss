@@ -2,12 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard-comments-section {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   position: relative;
   border-radius: deprecated.$br-8;
 }
@@ -35,7 +36,8 @@
 }
 
 .comments-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
   height: deprecated.$s-24;
   width: deprecated.$s-24;
@@ -44,25 +46,28 @@
 
 .comment-button {
   position: relative;
+
   .unread {
     position: absolute;
     width: deprecated.$s-8;
     height: deprecated.$s-8;
     border: deprecated.$s-2 solid var(--color-background-tertiary);
     border-radius: 50%;
-    background: red;
+    background: var(--color-foreground-error);
     top: deprecated.$s-6;
     right: deprecated.$s-6;
   }
 }
 
 .comments-icon-small {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--comment-icon-small-foreground-color);
 }
 
 .dropdown {
-  @include deprecated.menuShadow;
+  @include deprecated.menu-shadow;
+
   background-color: var(--color-background-tertiary);
   border-radius: deprecated.$br-8;
   border: deprecated.$s-1 solid transparent;
@@ -101,6 +106,7 @@
   &:hover {
     cursor: pointer;
   }
+
   &.mark-all-as-read-button {
     border-radius: deprecated.$s-8;
     border: deprecated.$s-1 solid;

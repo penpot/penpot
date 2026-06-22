@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "sass:string";
 
@@ -10,10 +10,10 @@
   $style-name,
   $file,
   $unicode-range,
-  $weight: unquote("normal"),
+  $weight: string.unquote("normal"),
   $style: string.unquote("normal")
 ) {
-  $filepath: "/fonts/" + $file;
+  $filepath: "../fonts/" + $file;
 
   @font-face {
     font-family: "#{$style-name}";
@@ -22,6 +22,7 @@
       url($filepath + ".ttf") format("truetype");
     font-weight: string.unquote($weight);
     font-style: string.unquote($style);
+
     @if $unicode-range {
       unicode-range: $unicode-range;
     }
@@ -29,7 +30,7 @@
 }
 
 @mixin font-face-variable($style-name, $file, $unicode-range) {
-  $filepath: "/fonts/" + $file;
+  $filepath: "../fonts/" + $file;
 
   @font-face {
     font-family: "#{$style-name}";

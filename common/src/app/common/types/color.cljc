@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.color
   (:refer-clojure :exclude [test])
@@ -192,6 +192,9 @@
 (def ^:const background-quaternary "#2e3434")
 (def ^:const background-quaternary-light "#eef0f2")
 (def ^:const canvas "#E8E9EA")
+(def ^:const default-pixel-grid-color "#0070E4")
+
+(def ^:const default-pixel-grid-opacity 0.2)
 
 (def names
   {"aliceblue" "#f0f8ff"
@@ -610,6 +613,36 @@
   [hsv]
   (-> hsv hsv->hex hex->hsl))
 
+;; HSB (Hue, Saturation, Brightness) — same color model as HSV but with
+;; the brightness component normalized to a 0-100 range, matching Figma,
+;; Sketch, and Adobe XD conventions. Internally we reuse the HSV math and
+;; only rescale the brightness axis.
+
+(defn rgb->hsb
+  [rgb]
+  (let [[h s v] (rgb->hsv rgb)]
+    [h s (* (/ v 255.0) 100.0)]))
+
+(defn hsb->rgb
+  [[h s b]]
+  (hsv->rgb [h s (int (* (/ b 100.0) 255.0))]))
+
+(defn hex->hsb
+  [v]
+  (-> v hex->rgb rgb->hsb))
+
+(defn hsb->hex
+  [hsb]
+  (-> hsb hsb->rgb rgb->hex))
+
+(defn hsv->hsb
+  [[h s v]]
+  [h s (* (/ v 255.0) 100.0)])
+
+(defn hsb->hsv
+  [[h s b]]
+  [h s (int (* (/ b 100.0) 255.0))])
+
 (defn expand-hex
   [v]
   (cond
@@ -720,8 +753,10 @@
 
 (defn- offset-spread
   [from to num]
-  (->> (range 0 num)
-       (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2))))
+  (if (<= num 1)
+    [from]
+    (->> (range 0 num)
+         (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2)))))
 
 (defn uniform-spread?
   "Checks if the gradient stops are spread uniformly"
@@ -750,6 +785,9 @@
 (defn interpolate-gradient
   [stops offset]
   (let [idx   (d/index-of-pred stops #(<= offset (:offset %)))
-        start (if (= idx 0) (first stops) (get stops (dec idx)))
+        start (cond
+                (nil? idx) (last stops)
+                (= idx 0)  (first stops)
+                :else      (get stops (dec idx)))
         end   (if (nil? idx) (last stops) (get stops idx))]
     (interpolate-color start end offset)))

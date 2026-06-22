@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layout-container
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.token :as tk]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -26,13 +25,13 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -42,48 +41,10 @@
 (defn- dir-icons-refactor
   [val]
   (case val
-    :row            deprecated-icon/grid-row
-    :row-reverse    deprecated-icon/row-reverse
-    :column         deprecated-icon/column
-    :column-reverse deprecated-icon/column-reverse))
-
-
-(mf/defc numeric-input-wrapper*
-  {::mf/private true}
-  [{:keys [values name applied-tokens align on-detach] :rest props}]
-  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
-        input-type (cond
-                     (some #{:p2 :p4} [name])
-                     :horizontal-padding
-
-                     (some #{:p1 :p3} [name])
-                     :vertical-padding
-                     :else
-                     name)
-
-        tokens (mf/with-memo [tokens input-type]
-                 (delay
-                   (-> (deref tokens)
-                       (select-keys (get tk/tokens-by-input input-type))
-                       (not-empty))))
-        on-detach-attr
-        (mf/use-fn
-         (mf/deps on-detach name)
-         #(on-detach % name))
-
-        props  (mf/spread-props props
-                                {:placeholder (if (or (= :multiple (:applied-tokens values))
-                                                      (= :multiple (get values name))
-                                                      (nil? (get values name)))
-                                                (tr "settings.multiple")
-                                                "--")
-                                 :class (stl/css :numeric-input-measures)
-                                 :applied-token (get applied-tokens name)
-                                 :tokens tokens
-                                 :align align
-                                 :on-detach on-detach-attr
-                                 :value (get values name)})]
-    [:> numeric-input* props]))
+    :row            i/grid-row
+    :row-reverse    i/row-reverse
+    :column         i/column
+    :column-reverse i/column-reverse))
 
 ;; FLEX COMPONENTS
 
@@ -111,63 +72,63 @@
     :align-items
     (if column?
       (case val
-        :start    deprecated-icon/align-items-column-start
-        :end      deprecated-icon/align-items-column-end
-        :center   deprecated-icon/align-items-column-center)
+        :start    i/align-items-column-start
+        :end      i/align-items-column-end
+        :center   i/align-items-column-center)
       (case val
-        :start    deprecated-icon/align-items-row-start
-        :end      deprecated-icon/align-items-row-end
-        :center   deprecated-icon/align-items-row-center))
+        :start    i/align-items-row-start
+        :end      i/align-items-row-end
+        :center   i/align-items-row-center))
 
     :justify-content
     (if column?
       (case val
-        :start         deprecated-icon/justify-content-column-start
-        :end           deprecated-icon/justify-content-column-end
-        :center        deprecated-icon/justify-content-column-center
-        :space-around  deprecated-icon/justify-content-column-around
-        :space-evenly  deprecated-icon/justify-content-column-evenly
-        :space-between deprecated-icon/justify-content-column-between)
+        :start         i/justify-content-column-start
+        :end           i/justify-content-column-end
+        :center        i/justify-content-column-center
+        :space-around  i/justify-content-column-around
+        :space-evenly  i/justify-content-column-evenly
+        :space-between i/justify-content-column-between)
       (case val
-        :start         deprecated-icon/justify-content-row-start
-        :end           deprecated-icon/justify-content-row-end
-        :center        deprecated-icon/justify-content-row-center
-        :space-around  deprecated-icon/justify-content-row-around
-        :space-evenly  deprecated-icon/justify-content-row-evenly
-        :space-between deprecated-icon/justify-content-row-between))
+        :start         i/justify-content-row-start
+        :end           i/justify-content-row-end
+        :center        i/justify-content-row-center
+        :space-around  i/justify-content-row-around
+        :space-evenly  i/justify-content-row-evenly
+        :space-between i/justify-content-row-between))
 
     :align-content
     (if column?
       (case val
-        :start         deprecated-icon/align-content-column-start
-        :end           deprecated-icon/align-content-column-end
-        :center        deprecated-icon/align-content-column-center
-        :space-around  deprecated-icon/align-content-column-around
-        :space-evenly  deprecated-icon/align-content-column-evenly
-        :space-between deprecated-icon/align-content-column-between
+        :start         i/align-content-column-start
+        :end           i/align-content-column-end
+        :center        i/align-content-column-center
+        :space-around  i/align-content-column-around
+        :space-evenly  i/align-content-column-evenly
+        :space-between i/align-content-column-between
         :stretch nil)
 
       (case val
-        :start         deprecated-icon/align-content-row-start
-        :end           deprecated-icon/align-content-row-end
-        :center        deprecated-icon/align-content-row-center
-        :space-around  deprecated-icon/align-content-row-around
-        :space-evenly  deprecated-icon/align-content-row-evenly
-        :space-between deprecated-icon/align-content-row-between
+        :start         i/align-content-row-start
+        :end           i/align-content-row-end
+        :center        i/align-content-row-center
+        :space-around  i/align-content-row-around
+        :space-evenly  i/align-content-row-evenly
+        :space-between i/align-content-row-between
         :stretch nil))
 
     :align-self
     (if column?
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-row-left
-        :end      deprecated-icon/align-self-row-right
-        :center   deprecated-icon/align-self-row-center)
+        :auto     i/remove
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-column-top
-        :end      deprecated-icon/align-self-column-bottom
-        :center   deprecated-icon/align-self-column-center))))
+        :auto     i/remove
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))))
 
 (defn get-layout-grid-icon
   [type val ^boolean column?]
@@ -175,32 +136,32 @@
     :align-items
     (if column?
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-row-left
-        :end      deprecated-icon/align-self-row-right
-        :center   deprecated-icon/align-self-row-center)
+        :auto     i/remove
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     deprecated-icon/remove-icon
-        :start    deprecated-icon/align-self-column-top
-        :end      deprecated-icon/align-self-column-bottom
-        :center   deprecated-icon/align-self-column-center))
+        :auto     i/remove
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))
 
     :justify-items
     (if (not column?)
       (case val
-        :start         deprecated-icon/align-content-column-start
-        :center        deprecated-icon/align-content-column-center
-        :end           deprecated-icon/align-content-column-end
-        :space-around  deprecated-icon/align-content-column-around
-        :space-between deprecated-icon/align-content-column-between
-        :stretch       deprecated-icon/align-content-column-stretch)
+        :start         i/align-content-column-start
+        :center        i/align-content-column-center
+        :end           i/align-content-column-end
+        :space-around  i/align-content-column-around
+        :space-between i/align-content-column-between
+        :stretch       i/align-content-column-stretch)
       (case val
-        :start         deprecated-icon/align-content-row-start
-        :center        deprecated-icon/align-content-row-center
-        :end           deprecated-icon/align-content-row-end
-        :space-around  deprecated-icon/align-content-row-around
-        :space-between deprecated-icon/align-content-row-between
-        :stretch       deprecated-icon/align-content-row-stretch))))
+        :start         i/align-content-row-start
+        :center        i/align-content-row-center
+        :end           i/align-content-row-end
+        :space-around  i/align-content-row-around
+        :space-between i/align-content-row-between
+        :stretch       i/align-content-row-stretch))))
 
 (mf/defc direction-row-flex
   {::mf/props :obj
@@ -375,21 +336,14 @@
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (int? value))
-             (on-change :simple attr value event)
-             (do
-               (let [resolved-value (:resolved-value (first value))
-                     updated-attr (if (= :p1 attr) #{:p1 :p3} #{:p2 :p4})]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs updated-attr
-                                               :shape-ids ids}))
-                 (on-change :simple attr resolved-value event))))))
+           (let [on-change-fn #(on-change :simple attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids attr))))
 
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
-         (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -410,10 +364,10 @@
         (mf/use-fn (mf/deps on-focus) #(on-focus :p2))
 
         on-p1-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
+        (mf/use-fn (mf/deps on-change') #(on-change' % #{:p1 :p3}))
 
         on-p2-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :p2))]
+        (mf/use-fn (mf/deps on-change') #(on-change' % #{:p2 :p4}))]
 
     [:div {:class (stl/css :paddings-simple)}
      (if token-numeric-inputs
@@ -424,20 +378,26 @@
          :on-focus on-focus-p1
          :icon i/padding-top-bottom
          :min 0
-         :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.vertical")
+         :attr :p1
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.vertical")
          :nillable true
-         :applied-tokens {:p1 applied-to-p1}
-         :values {:p1 p1}}]
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1)
+                              (nil? p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.vertical")}
+              :title (tr "workspace.layout-grid.editor.padding.vertical")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
+          :aria-label (tr "workspace.layout-grid.editor.padding.vertical")
           :on-change on-p1-change
           :on-focus on-focus-p1
           :on-blur on-padding-blur
@@ -453,21 +413,27 @@
          :on-focus on-focus-p2
          :icon i/padding-left-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.horizontal")
+         :property (tr "workspace.layout-grid.editor.padding.horizontal")
          :nillable true
-         :applied-tokens {:p2 applied-to-p2}
-         :values {:p2 p2}}]
+         :applied-token applied-to-p2
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2)
+                              (nil? p2))
+                        (tr "settings.multiple")
+                        "--")
+         :value p2}]
 
        [:div {:class (stl/css :padding-simple)
-              :title (tr "workspace.layout_grid.editor.padding.horizontal")}
+              :title (tr "workspace.layout-grid.editor.padding.horizontal")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left-right]
         [:> deprecated-input/numeric-input*
          {:className (stl/css :numeric-input)
           :placeholder (tr "settings.multiple")
-          :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
+          :aria-label (tr "workspace.layout-grid.editor.padding.horizontal")
           :on-change on-p2-change
           :on-focus on-focus-p2
           :on-blur on-padding-blur
@@ -485,18 +451,17 @@
         p3 (:p3 value)
         p4 (:p4 value)
 
+        applied-to-p1 (:p1 applied-tokens)
+        applied-to-p2 (:p2 applied-tokens)
+        applied-to-p3 (:p3 applied-tokens)
+        applied-to-p4 (:p4 applied-tokens)
+
         on-change'
         (mf/use-fn
          (mf/deps on-change ids)
          (fn [value attr event]
-           (if (or (string? value) (int? value))
-             (on-change :multiple attr value event)
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change :multiple attr resolved-value event))))))
+           (let [on-change-fn #(on-change :multiple attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-focus
         (mf/use-fn
@@ -509,7 +474,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+           (st/emit! (dwta/unapply-token {:token-name token
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -546,19 +511,24 @@
          :on-focus on-focus-p1
          :icon i/padding-top
          :min 0
-         :name :p1
-         :property (tr "workspace.layout_grid.editor.padding.top")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p1
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.top")
+         :placeholder (if (or (= :multiple applied-to-p1)
+                              (= :multiple p1))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p1
+         :value p1}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.top")}
+              :title (tr "workspace.layout-grid.editor.padding.top")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-top]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.top")
+          :aria-label (tr "workspace.layout-grid.editor.padding.top")
           :data-attr "p1"
           :on-change on-p1-change
           :on-focus on-focus-p1
@@ -574,20 +544,25 @@
          :on-focus on-focus-p2
          :icon i/padding-right
          :min 0
-         :name :p2
+         :attr :p2
+         :input-type :horizontal-padding
          :align :right
-         :property (tr "workspace.layout_grid.editor.padding.right")
-         :applied-tokens applied-tokens
-         :values value}]
+         :property (tr "workspace.layout-grid.editor.padding.right")
+         :placeholder (if (or (= :multiple applied-to-p2)
+                              (= :multiple p2))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p2
+         :value p2}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.right")}
+              :title (tr "workspace.layout-grid.editor.padding.right")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-right]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.right")
+          :aria-label (tr "workspace.layout-grid.editor.padding.right")
           :data-attr "p2"
           :on-change on-p2-change
           :on-focus on-focus-p2
@@ -603,19 +578,24 @@
          :on-focus on-focus-p3
          :icon i/padding-bottom
          :min 0
-         :name :p3
-         :property (tr "workspace.layout_grid.editor.padding.bottom")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p3
+         :input-type :vertical-padding
+         :property (tr "workspace.layout-grid.editor.padding.bottom")
+         :placeholder (if (or (= :multiple applied-to-p3)
+                              (= :multiple p3))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p3
+         :value p3}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.bottom")}
+              :title (tr "workspace.layout-grid.editor.padding.bottom")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-bottom]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
+          :aria-label (tr "workspace.layout-grid.editor.padding.bottom")
           :data-attr "p3"
           :on-change on-p3-change
           :on-focus on-focus-p3
@@ -632,19 +612,24 @@
          :icon i/padding-left
          :min 0
          :align :right
-         :name :p4
-         :property (tr "workspace.layout_grid.editor.padding.left")
-         :applied-tokens applied-tokens
-         :values value}]
+         :attr :p4
+         :input-type :horizontal-padding
+         :property (tr "workspace.layout-grid.editor.padding.left")
+         :placeholder (if (or (= :multiple applied-to-p4)
+                              (= :multiple p4))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token applied-to-p4
+         :value p4}]
 
        [:div {:class (stl/css :padding-multiple)
-              :title (tr "workspace.layout_grid.editor.padding.left")}
+              :title (tr "workspace.layout-grid.editor.padding.left")}
         [:span {:class (stl/css :icon)}
          deprecated-icon/padding-left]
         [:> deprecated-input/numeric-input*
          {:class (stl/css :numeric-input)
           :placeholder "--"
-          :aria-label (tr "workspace.layout_grid.editor.padding.left")
+          :aria-label (tr "workspace.layout-grid.editor.padding.left")
           :data-attr "p4"
           :on-change on-p4-change
           :on-focus on-focus-p4
@@ -653,7 +638,7 @@
           :value p4}]])]))
 
 (mf/defc padding-section*
-  [{:keys [type on-type-change on-change] :as props}]
+  [{:keys [type on-type-change] :as props}]
   (let [on-type-change'
         (mf/use-fn
          (mf/deps on-type-change)
@@ -661,9 +646,7 @@
            (let [type (-> (dom/get-current-target event)
                           (dom/get-data "type"))
                  type (if (= type "multiple") :simple :multiple)]
-             (on-type-change type))))
-
-        props (mf/spread-object props {:on-change on-change})]
+             (on-type-change type))))]
 
     (mf/with-effect []
       ;; on destroy component
@@ -682,8 +665,8 @@
      [:button {:class (stl/css-case
                        :padding-toggle true
                        :selected (= type :multiple))
-               :title (tr "workspace.layout_grid.editor.padding.expand")
-               :aria-label (tr "workspace.layout_grid.editor.padding.expand")
+               :title (tr "workspace.layout-grid.editor.padding.expand")
+               :aria-label (tr "workspace.layout-grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
       deprecated-icon/padding-extended]]))
@@ -724,20 +707,14 @@
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
          (fn [value event attr]
-           (if (or (string? value) (int? value))
-             (on-change (= "nowrap" wrap-type) attr value event)
-             (do
-               (let [resolved-value (:resolved-value (first value))]
-                 (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
-                                               :shape-ids ids}))
-                 (on-change (= "nowrap" wrap-type) attr resolved-value event))))))
+           (let [on-change-fn #(on-change (= "nowrap" wrap-type) attr % event)]
+             (soc/emit-value-or-token value on-change-fn ids #{attr}))))
 
         on-detach-token
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (st/emit! (dwta/unapply-token {:token (first token)
+           (st/emit! (dwta/unapply-token {:token-name token
                                           :attributes #{attr}
                                           :shape-ids ids}))))
 
@@ -769,11 +746,16 @@
          :icon i/gap-vertical
          :nillable true
          :min 0
-         :name :row-gap
-         :applied-tokens applied-tokens
+         :attr :row-gap
          :property "Row gap"
          :values {:row-gap (:row-gap value)}
-         :disabled row-gap-disabled?}]
+         :disabled row-gap-disabled?
+         :placeholder (if (or (= :multiple (:row-gap applied-tokens))
+                              (= :multiple (:row-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:row-gap applied-tokens)
+         :value (:row-gap value)}]
 
        [:div {:class (stl/css-case
                       :row-gap true
@@ -803,11 +785,15 @@
          :icon i/gap-horizontal
          :nillable true
          :min 0
-         :name :column-gap
+         :attr :column-gap
          :align :right
-         :applied-tokens applied-tokens
          :property "Column gap"
-         :values {:column-gap (:column-gap value)}
+         :placeholder (if (or (= :multiple (:column-gap applied-tokens))
+                              (= :multiple (:column-gap value)))
+                        (tr "settings.multiple")
+                        "--")
+         :applied-token (:column-gap applied-tokens)
+         :value (:column-gap value)
          :disabled col-gap-disabled?}]
 
        [:div {:class (stl/css-case
@@ -865,7 +851,7 @@
      {:class (stl/css :edit-mode-btn)
       :alt  "Grid edit mode"
       :on-click toggle-edit-mode}
-     (tr "workspace.layout_grid.editor.options.edit-grid")]))
+     (tr "workspace.layout-grid.editor.options.edit-grid")]))
 
 (mf/defc align-grid-row
   {::mf/props :obj
@@ -1084,8 +1070,39 @@
   [_]
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
-(mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple :shapes :applied-tokens}}
+(defn- check-layout-container-menu-props
+  [old-props new-props]
+  (let [o-values (unchecked-get old-props "values")
+        n-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
+         (identical? (unchecked-get old-props "multiple")
+                     (unchecked-get new-props "multiple"))
+         (identical? (get o-values :layout-gap)
+                     (get n-values :layout-gap))
+         (identical? (get o-values :layout-gap-type)
+                     (get n-values :layout-gap-type))
+         (identical? (get o-values :layout-padding)
+                     (get n-values :layout-padding))
+         (identical? (get o-values :layout-padding-type)
+                     (get n-values :layout-padding-type))
+         (identical? (get o-values :layout-wrap-type)
+                     (get n-values :layout-wrap-type))
+         (identical? (get o-values :layout-align-items)
+                     (get n-values :layout-align-items))
+         (identical? (get o-values :layout-flex-dir)
+                     (get n-values :layout-flex-dir))
+         (identical? (get o-values :layout-justify-content)
+                     (get n-values :layout-justify-content))
+         (identical? (get o-values :layout-align-content)
+                     (get n-values :layout-align-content))
+         (identical? (get o-values :layout)
+                     (get n-values :layout)))))
+
+(mf/defc layout-container-menu*
+  {::mf/wrap [#(mf/memo' % check-layout-container-menu-props)]}
   [{:keys [ids values multiple applied-tokens]}]
   (let [;; Display
         layout-type    (:layout values)
@@ -1190,10 +1207,10 @@
          (fn [type prop val]
            (let [val (mth/finite val 0)]
              (cond
-               (and (= type :simple) (= prop :p1))
+               (and (= type :simple) (or (= prop :p1) (= prop #{:p1 :p3})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
-               (and (= type :simple) (= prop :p2))
+               (and (= type :simple) (or (= prop :p2) (= prop #{:p2 :p4})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
                (some? prop)
@@ -1247,15 +1264,31 @@
         (mf/use-fn #(swap! show-dropdown* not))
 
         on-hide-dropdown
-        (mf/use-fn #(reset! show-dropdown* false))]
+        (mf/use-fn #(reset! show-dropdown* false))
 
-    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
+        add-layout-dropdown
+        (mf/html
+         [:& dropdown {:show show-dropdown?
+                       :on-close on-hide-dropdown}
+          [:div {:class (stl/css :layout-options)}
+           [:button {:class (stl/css :layout-option)
+                     :data-type "flex"
+                     :on-click on-add-layout}
+            (tr "labels.flex-layout")]
+           [:button {:class (stl/css :layout-option)
+                     :data-type "grid"
+                     :on-click on-add-layout}
+            (tr "labels.grid-layout")]]])]
+
+    [:section {:class (stl/css :element-set)
+               :aria-label "Layout container section"
+               :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar*
        {:collapsable has-layout?
         :collapsed (not open?)
         :on-collapsed on-toggle-visibility
-        :title "Layout"
+        :title (tr "labels.layout")
         :class (stl/css-case :title-spacing-layout (not has-layout?))}
 
        (if (and (not multiple) (:layout values))
@@ -1265,17 +1298,7 @@
                             :on-click on-toggle-dropdown-visibility
                             :icon i/menu}]
 
-          [:& dropdown {:show show-dropdown?
-                        :on-close on-hide-dropdown}
-           [:div {:class (stl/css :layout-options)}
-            [:button {:class (stl/css :layout-option)
-                      :data-type "flex"
-                      :on-click on-add-layout}
-             "Flex layout"]
-            [:button {:class (stl/css :layout-option)
-                      :data-type "grid"
-                      :on-click on-add-layout}
-             "Grid layout"]]]
+          add-layout-dropdown
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
@@ -1289,17 +1312,7 @@
                             :on-click on-toggle-dropdown-visibility
                             :icon i/add}]
 
-          [:& dropdown {:show show-dropdown?
-                        :on-close on-hide-dropdown}
-           [:div {:class (stl/css :layout-options)}
-            [:button {:class (stl/css :layout-option)
-                      :data-type "flex"
-                      :on-click on-add-layout}
-             "Flex layout"]
-            [:button {:class (stl/css :layout-option)
-                      :data-type "grid"
-                      :on-click on-add-layout}
-             "Grid layout"]]]
+          add-layout-dropdown
 
           (when has-layout?
             [:> icon-button* {:variant "ghost"
@@ -1391,6 +1404,7 @@
           [:div {:class (stl/css :padding-row)}
            [:> padding-section* {:value (:layout-padding values)
                                  :type (:layout-padding-type values)
+                                 :ids ids
                                  :applied-tokens applied-tokens
                                  :on-type-change on-padding-type-change
                                  :on-change on-padding-change}]]]
@@ -1551,7 +1565,7 @@
                         :icon i/help}]
       [:button {:class (stl/css :exit-btn)
                 :on-click #(st/emit! (udw/clear-edition-mode))}
-       (tr "workspace.layout_grid.editor.options.exit")]]
+       (tr "workspace.layout-grid.editor.options.exit")]]
 
      [:div {:class (stl/css :row :first-row)}
       [:div {:class (stl/css :direction-edit)}
@@ -1577,7 +1591,7 @@
 
       [:> icon-button* {:variant "ghost"
                         :class (stl/css :locate-button)
-                        :aria-label (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")
+                        :aria-label (tr "workspace.layout-grid.editor.top-bar.locate.tooltip")
                         :on-click handle-locate-grid
                         :icon i/locate}]]
 

@@ -2,19 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.setup.keys
   "Keys derivation service."
   (:refer-clojure :exclude [derive])
   (:require
-   [app.common.spec :as us]
    [buddy.core.kdf :as bk]))
 
 (defn derive
   "Derive a key from secret-key"
   [secret-key & {:keys [salt size] :or {size 32}}]
-  (us/assert! ::us/not-empty-string secret-key)
+  (assert (string? secret-key) "expect string")
+  (assert (seq secret-key) "expect string")
   (let [engine (bk/engine {:key secret-key
                            :salt salt
                            :alg :hkdf

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.selection
   (:require
@@ -27,6 +27,7 @@
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -173,13 +174,17 @@
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
-             current-index  (d/index-of sibling-ids first-selected)
-             sibling        (if (= (dec (count sibling-ids)) current-index)
-                              (first sibling-ids)
-                              (nth sibling-ids (inc current-index)))]
+             ;; `index-of` is nil when the shape is not listed under the parent (stale
+             ;; selection or inconsistent tree). Do not call `nth` with `(dec nil)` — in
+             ;; ClojureScript that is -1 and throws (see penpot#7064).
+             current-index  (some-> sibling-ids (d/index-of first-selected))
+             sibling        (when (some? current-index)
+                              (if (= (dec (count sibling-ids)) current-index)
+                                (first sibling-ids)
+                                (nth sibling-ids (inc current-index) nil)))]
 
          (cond
-           (= 1 count-selected)
+           (and (= 1 count-selected) (some? sibling))
            (rx/of (select-shape sibling))
 
            (> count-selected 1)
@@ -198,12 +203,13 @@
              current        (get objects first-selected)
              parent         (get objects (:parent-id current))
              sibling-ids    (:shapes parent)
-             current-index  (d/index-of sibling-ids first-selected)
-             sibling        (if (= 0 current-index)
-                              (last sibling-ids)
-                              (nth sibling-ids (dec current-index)))]
+             current-index  (some-> sibling-ids (d/index-of first-selected))
+             sibling        (when (some? current-index)
+                              (if (= 0 current-index)
+                                (last sibling-ids)
+                                (nth sibling-ids (dec current-index) nil)))]
          (cond
-           (= 1 count-selected)
+           (and (= 1 count-selected) (some? sibling))
            (rx/of (select-shape sibling))
 
            (> count-selected 1)
@@ -264,10 +270,13 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)]
-        (rx/of
-         (dwc/expand-all-parents ids objects)
-         ::dwsp/interrupt)))))
+      (let [objects (dsh/lookup-page-objects state)
+            ;; Schedule expanding parents asynchronously to avoid blocking
+            ;; the event loop
+            expand-s (->> (rx/of (dwc/expand-all-parents ids objects))
+                          (rx/observe-on :async))
+            interrupt-s (rx/of ::dwsp/interrupt)]
+        (rx/merge expand-s interrupt-s)))))
 
 (defn select-all
   []
@@ -593,6 +602,10 @@
                 (assoc :workspace-focus-selected selected)
                 (assoc :workspace-pre-focus (:workspace-local state)))
             state))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))
 
     ptk/WatchEvent
     (watch [_ state stream]

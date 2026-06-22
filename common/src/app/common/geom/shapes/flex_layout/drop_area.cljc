@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.flex-layout.drop-area
   (:require
@@ -81,7 +81,7 @@
         h-center? (and row? (ctl/h-center? frame))
         h-end?    (and row? (ctl/h-end? frame))
         v-center? (and col? (ctl/v-center? frame))
-        v-end?    (and row? (ctl/v-end? frame))
+        v-end?    (and col? (ctl/v-end? frame))
 
         center (gco/shape->center frame)
         start-p (gmt/transform-point-center start-p center transform-inverse)

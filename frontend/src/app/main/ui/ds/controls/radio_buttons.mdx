@@ -1,0 +1,128 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as RadioButtons from "./radio_buttons.stories";
+
+<Meta title="Controls/Radio Buttons" />
+
+# Radio Buttons
+
+The `radio-buttons*` component lets users select a single option from a set of mutually exclusive choices.
+
+It is designed for immediate selection changes, without requiring a confirmation step.
+
+---
+
+## Variants
+
+### Text only
+
+Radio buttons using text labels. The label is displayed directly on each option.
+
+<Canvas of={RadioButtons.Default} />
+
+```clj
+[:> radio-buttons* {:selected "left"
+                    :on-change handle-change
+                    :name "alignment"
+                    :extended false
+                    :allow-empty false
+                    :options [{:id "align-left"
+                               :label "Left"
+                               :value "left"}
+                              {:id "align-center"
+                               :label "Center"
+                               :value "center"}
+                              {:id "align-right"
+                               :label "Right"
+                               :value "right"}]}]
+
+                               Icon only
+```
+
+### Icons only
+Radio buttons using icons instead of text labels. The label is used as tooltip and accessibility text.
+
+<Canvas of={RadioButtons.WithIcons} />
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+
+[:> radio-buttons* {:selected "left"
+                    :on-change handle-change
+                    :name "alignment"
+                    :extended false
+                    :allow-empty false
+                    :options [{:id "align-left"
+                               :icon i/text-align-left
+                               :label "Left align"
+                               :value "left"}
+                              {:id "align-center"
+                               :icon i/text-align-center
+                               :label "Center align"
+                               :value "center"}
+                              {:id "align-right"
+                               :icon i/text-align-right
+                               :label "Right align"
+                               :value "right"}]}]
+```
+### Anatomy
+
+Each option is composed of:
+
+A visible control (button or icon button)
+A hidden native input (radio or checkbox) that stores the state
+
+All options share the same name, forming a radio group. Selecting one option automatically deselects the previously selected one.
+
+## Behavior
+
+### Selection
+The selected prop controls the active option
+It must match the value of one of the provided options
+If selected is nil, no option is selected
+
+### Allow empty
+
+When allow-empty is enabled:
+
+The selected option can be deselected
+Only one option can still be active at a time
+This introduces toggle-like behavior over a single selection group
+
+### Extended
+
+When extended is enabled:
+
+The component expands to fill the width of its container
+Options are evenly distributed across available space
+
+### Disabled state
+The entire group can be disabled using the `:disabled` prop
+Individual options can also be disabled using `:disabled` inside each option
+Disabled options cannot be interacted with.
+
+## Usage Guidelines
+
+### When to use
+For settings where users must choose exactly one option
+For preference or configuration panels
+When changes should take effect immediately
+
+### When not to use
+
+For boolean toggles → use a switch or checkbox
+For multiple selection → use checkboxes
+For actions requiring confirmation → use buttons or dialogs
+For workflows that require an explicit “Apply” step
+
+### Notes
+
+This component is controlled: state must be managed externally via selected
+It does not manage internal state
+The on-change handler is called with the new value whenever selection changes

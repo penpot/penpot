@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC
+ * Copyright (c) KALEIDOS INC Sucursal en España SL
  */
 
 /**
@@ -38,7 +38,7 @@ export class ChangeController extends EventTarget {
    * @param {number} [time=500]
    */
   constructor(time = 500) {
-    super()
+    super();
     if (typeof time === "number" && (!Number.isInteger(time) || time <= 0)) {
       throw new TypeError("Invalid time");
     }
@@ -54,8 +54,12 @@ export class ChangeController extends EventTarget {
     return this.#hasPendingChanges;
   }
 
+  /**
+   * Handles timeout.
+   */
   #onTimeout = () => {
     this.dispatchEvent(new Event("change"));
+    this.#hasPendingChanges = false;
   };
 
   /**

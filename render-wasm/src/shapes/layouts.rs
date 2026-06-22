@@ -1,7 +1,6 @@
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub enum Layout {
     FlexLayout(LayoutData, FlexData),
     GridLayout(LayoutData, GridData),
@@ -226,7 +225,7 @@ pub struct LayoutItem {
     pub max_w: Option<f32>,
     pub min_w: Option<f32>,
     pub is_absolute: bool,
-    pub z_index: i32,
+    pub z_index: Option<i32>,
     pub align_self: Option<AlignSelf>,
 }
 

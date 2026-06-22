@@ -2,14 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.path.streams
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.types.path.segment :as path.segm]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
+   [app.common.types.path :as path]
    [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -29,16 +28,13 @@
   (= (ptk/type event) :app.main.data.workspace.common/clear-edition-mode))
 
 (defn to-pixel-snap [position]
-  (let [zoom  (get-in @st/state [:workspace-local :zoom] 1)
-        layout      (get @st/state :workspace-layout)
+  (let [layout      (get @st/state :workspace-layout)
         snap-pixel? (contains? layout :snap-pixel-grid)]
 
     (cond
       (or (not snap-pixel?) (not (gpt/point? position)))
       position
 
-      (>= zoom zoom-half-pixel-precision)
-      (gpt/round-step position 0.5)
 
       :else
       (gpt/round position))))
@@ -171,7 +167,7 @@
         ranges-stream
         (->> content-stream
              (rx/filter some?)
-             (rx/map path.segm/get-points)
+             (rx/map path/get-points)
              (rx/map snap/create-ranges))]
 
     (->> ms/mouse-position

@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
@@ -13,19 +14,19 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -34,6 +35,9 @@
         type   (dm/get-prop shape :type)
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
+
+        typographies
+        (mf/deref refs/workspace-file-typography)
 
         applied-tokens
         (get shape :applied-tokens)
@@ -84,40 +88,59 @@
         parents
         (mf/deref parents-by-ids-ref)
 
+        ;; Deref every editor-state ref unconditionally so the hook order
+        ;; stays stable when feature flags change at runtime (e.g. switching
+        ;; renderer while editing a text). The selection happens afterwards.
+        wasm-editor-styles-map (mf/deref refs/workspace-wasm-editor-styles)
+        v2-editor-state-map    (mf/deref refs/workspace-v2-editor-state)
+        v1-editor-state-map    (mf/deref refs/workspace-editor-state)
+        editor                 (mf/deref refs/workspace-editor)
+
+        text-editor-wasm? (features/active-feature? @st/state "text-editor-wasm/v1")
+        text-editor-v2?   (features/active-feature? @st/state "text-editor/v2")
+
         state-map
-        (if (features/active-feature? @st/state "text-editor/v2")
-          (mf/deref refs/workspace-v2-editor-state)
-          (mf/deref refs/workspace-editor-state))
+        (cond
+          text-editor-wasm? wasm-editor-styles-map
+          text-editor-v2?   v2-editor-state-map
+          :else             v1-editor-state-map)
+
+        editor-styles
+        (when text-editor-wasm?
+          (get state-map id))
 
         editor-state
-        (when (not (features/active-feature? @st/state "text-editor/v2"))
+        (when (not text-editor-v2?)
           (get state-map id))
 
         editor-instance
-        (when (features/active-feature? @st/state "text-editor/v2")
-          (mf/deref refs/workspace-editor))
+        (when text-editor-v2?
+          editor)
 
         fill-values
         (dwt/current-text-values
-         {:editor-state editor-state
+         {:editor-styles editor-styles
+          :editor-state editor-state
           :editor-instance editor-instance
           :shape shape
           :attrs (conj txt/text-fill-attrs :fills)})
 
         text-values
-        (merge
+        (d/merge
          (select-keys shape [:grow-type])
          (select-keys shape fill/fill-attrs)
          (dwt/current-root-values
           {:shape shape
            :attrs txt/root-attrs})
          (dwt/current-paragraph-values
-          {:editor-state editor-state
+          {:editor-styles editor-styles
+           :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
            :attrs txt/paragraph-attrs})
          (dwt/current-text-values
-          {:editor-state editor-state
+          {:editor-styles editor-styles
+           :editor-state editor-state
            :editor-instance editor-instance
            :shape shape
            :attrs txt/text-node-attrs}))]
@@ -125,6 +148,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu*
       {:ids ids
@@ -133,7 +157,7 @@
        :applied-tokens applied-tokens
        :shapes shapes}]
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type type
        :ids ids
        :values layout-container-values
@@ -141,29 +165,35 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
+       [:> grid-cell/options*
+        {:shape-id (-> (first parents)
+                       :id)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when is-layout-child?
-       [:& layout-item-menu
+       [:& layout-item-menu*
         {:ids ids
          :type type
          :values layout-item-values
-         :is-layout-child? true
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
+         :is-layout-child true
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
+         :applied-tokens applied-tokens
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu
+       [:> constraints-menu*
         {:ids ids
          :values (select-keys shape constraint-attrs)}])
 
-     [:& text-menu
+     [:> text-menu*
       {:ids ids
        :type type
-       :values text-values}]
+       :applied-tokens applied-tokens
+       :values text-values
+       :libraries libraries
+       :file-id file-id
+       :typographies typographies}]
 
      [:> fill/fill-menu*
       {:ids ids
@@ -171,11 +201,11 @@
        :values fill-values
        :applied-tokens applied-tokens}]
 
-     [:& stroke-menu {:ids ids
-                      :type type
-                      :values stroke-values
-                      :disable-stroke-style true
-                      :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type type
+                       :values stroke-values
+                       :disable-stroke-style true
+                       :applied-tokens applied-tokens}]
 
      (when (= :multiple (:fills fill-values))
        [:> color-selection-menu*
@@ -186,9 +216,9 @@
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 
-     [:& blur-menu
+     [:> blur-menu*
       {:ids ids
-       :values (select-keys shape [:blur])}]
+       :values (select-keys shape [:blur :background-blur])}]
 
      [:> exports-menu* {:type type
                         :ids ids

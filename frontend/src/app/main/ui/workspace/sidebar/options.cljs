@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options
   (:require-macros [app.main.style :as stl])
@@ -15,6 +15,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -25,7 +26,7 @@
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
-   [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as layout-container]
    [app.main.ui.workspace.sidebar.options.page :as page]
    [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
@@ -39,7 +40,6 @@
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
-
    [rumext.v2 :as mf]))
 
 ;; --- Options
@@ -50,11 +50,16 @@
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
+        wasm-modifiers (mf/deref refs/workspace-wasm-modifiers)
         modifiers  (mf/deref refs/workspace-modifiers)
-        modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
-        shape      (gsh/transform-shape shape modifiers)
-        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id})]
+        shape
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          (let [wasm-modifiers (into {} wasm-modifiers)]
+            (gsh/apply-transform shape (get wasm-modifiers shape-id)))
+          (gsh/transform-shape shape (dm/get-in modifiers [shape-id :modifiers])))
+
+        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id :libraries libraries})]
 
     (case shape-type
       :frame   [:> frame/options* props]
@@ -68,7 +73,7 @@
       nil)))
 
 (mf/defc shape-options*
-  {::mf/wrap [#(mf/throttle % 100)]
+  {::mf/wrap [#(mf/throttle % 200)]
    ::mf/private true}
   [{:keys [shapes shapes-with-children selected page-id file-id libraries]}]
   (if (= 1 (count selected))
@@ -116,13 +121,29 @@
         (->> (dm/get-in grid-edition [edition :selected])
              (map #(dm/get-in objects [edition :layout-grid-cells %])))
 
-        shapes-with-children
-        (mf/with-memo [selected objects shapes]
-          (let [xform    (comp (remove nil?)
-                               (mapcat #(cfh/get-children-ids objects %)))
-                selected (into selected xform selected)]
-            (sequence (keep (d/getf objects)) selected)))
+        shapes-with-children*
+        (mf/use-state nil)
 
+        _ (mf/use-effect
+           (mf/deps selected objects shapes)
+           (fn []
+             (reset! shapes-with-children* nil)
+             (let [result
+                   (loop [queue   (into #queue [] selected)
+                          visited selected]
+                     (if-let [id (peek queue)]
+                       (let [shape    (get objects id)
+                             children (:shapes shape)]
+                         (if (seq children)
+                           (let [new-children (remove visited children)]
+                             (recur (into (pop queue) new-children)
+                                    (into visited new-children)))
+                           (recur (pop queue) visited)))
+                       (sequence (keep (d/getf objects)) visited)))]
+               (reset! shapes-with-children* result))))
+
+        shapes-with-children
+        (deref shapes-with-children*)
 
         total-selected
         (count selected)]
@@ -136,8 +157,9 @@
 
      (cond
        (and edit-grid? (d/not-empty? selected-cells))
-       [:& grid-cell/options
-        {:shape (get objects edition)
+       [:> grid-cell/options*
+        {:shape-id (-> (get objects edition)
+                       :id)
          :cells selected-cells}]
 
        edit-grid?
@@ -198,6 +220,7 @@
   [{:keys [objects selected page-id file-id on-change-section on-expand]}]
   (let [permissions
         (mf/use-ctx ctx/permissions)
+        render-context-lost? (mf/deref refs/render-context-lost?)
 
         options-mode
         (mf/deref refs/options-mode-global)
@@ -207,7 +230,7 @@
           (sequence (keep (d/getf objects)) selected))]
 
     [:div {:class (stl/css :tool-window)}
-     (if (:can-edit permissions)
+     (if (and (:can-edit permissions) (not render-context-lost?))
        [:> tab-switcher* {:tabs options-tabs
                           :on-change on-option-tab-change
                           :selected (name options-mode)
@@ -215,7 +238,7 @@
         (case options-mode
           :prototype
           [:div {:class (stl/css :element-options :interaction-options)}
-           [:& interactions-menu {:shape (first shapes)}]]
+           [:> interactions-menu* {:shape (first shapes)}]]
 
           :inspect
           [:div {:class (stl/css :element-options :inspect-options)}

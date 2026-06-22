@@ -2,11 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.parser
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.json :as json]
+   [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -24,10 +27,16 @@
   (if (string? color) (-> color str/lower) color))
 
 (defn parse-point
+  "Parses a point-like JS object into a `gpt/point` record.
+
+  The schema for shape interactions (`schema:open-overlay-interaction`,
+  `::gpt/point`) requires a Point record — returning a plain map caused
+  plugin `addInteraction` calls with an `open-overlay` action and a
+  `manualPositionLocation` to be silently rejected. See issue #8409."
   [^js point]
   (when point
-    {:x (obj/get point "x")
-     :y (obj/get point "y")}))
+    (gpt/point (obj/get point "x")
+               (obj/get point "y"))))
 
 (defn parse-shape-type
   [type]
@@ -228,7 +237,6 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }
@@ -237,7 +245,6 @@
   (when (some? blur)
     (d/without-nils
      {:id (-> (obj/get blur "id") parse-id)
-      :type (-> (obj/get blur "type") parse-keyword)
       :value (obj/get blur "value")
       :hidden (obj/get blur "hidden")})))
 
@@ -514,3 +521,8 @@
   (case axis
     "horizontal" :y
     "vertical"   :x))
+
+(defn parse-commands
+  [commands]
+  (-> (json/->clj commands)
+      (path/decode-segments)))

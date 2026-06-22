@@ -1,0 +1,1655 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "variants/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/objects-map",
+      "tokens/numeric-input",
+      "render-wasm/v1",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~u647da7ef-3079-81fb-8007-8bb0246a083c",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "Nuevo Archivo 1",
+  "~:revn": 36,
+  "~:modified-at": "~m1776760054954",
+  "~:vern": 0,
+  "~:id": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content-v2",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content-v2",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0008-fix-library-colors-v4",
+      "0009-clean-library-colors",
+      "0009-add-partial-text-touched-flags",
+      "0010-fix-swap-slots-pointing-non-existent-shapes",
+      "0011-fix-invalid-text-touched-flags",
+      "0012-fix-position-data",
+      "0013-fix-component-path",
+      "0013-clear-invalid-strokes-and-fills",
+      "0014-fix-tokens-lib-duplicate-ids",
+      "0014-clear-components-nil-objects",
+      "0015-fix-text-attrs-blank-strings",
+      "0015-clean-shadow-color",
+      "0016-copy-fills-from-position-data-to-text-node",
+      "0017-fix-layout-flex-dir",
+      "0018-remove-unneeded-objects-from-components",
+      "0019-fix-missing-swap-slots",
+      "0020-sync-component-id-with-near-main"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~u647da7ef-3079-81fb-8007-8bb0246cef4d",
+  "~:created-at": "~m1776759390799",
+  "~:backend": "legacy-db",
+  "~:data": {
+    "~:pages": [
+      "~u1062e0a0-8fe0-80ae-8007-e70b4993f5f0"
+    ],
+    "~:pages-index": {
+      "~u1062e0a0-8fe0-80ae-8007-e70b4993f5f0": {
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u12f7a4ff-ddae-80ff-8007-e70be436041b",
+                "~u12f7a4ff-ddae-80ff-8007-e70c000c9c84",
+                "~u12f7a4ff-ddae-80ff-8007-e70c1654b4af",
+                "~u12f7a4ff-ddae-80ff-8007-e70bf473916f",
+                "~u12f7a4ff-ddae-80ff-8007-e70c000c9c85",
+                "~u12f7a4ff-ddae-80ff-8007-e70c1654b4b0",
+                "~u12f7a4ff-ddae-80ff-8007-e70c3496ef94",
+                "~u12f7a4ff-ddae-80ff-8007-e70c3aa79b6a"
+              ]
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c1654b4af": {
+            "~#shape": {
+              "~:y": 289,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": null,
+                            "~:text-transform": "capitalize",
+                            "~:font-id": "gfont-rufina",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "14",
+                            "~:font-weight": "700",
+                            "~:typography-ref-file": null,
+                            "~:font-variant-id": "700",
+                            "~:text-decoration": "line-through",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "Rufina",
+                            "~:text": "Text with no typography"
+                          }
+                        ],
+                        "~:typography-ref-id": null,
+                        "~:text-transform": "capitalize",
+                        "~:text-align": "left",
+                        "~:font-id": "gfont-rufina",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "0",
+                        "~:font-weight": "700",
+                        "~:typography-ref-file": null,
+                        "~:text-direction": "rtl",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "700",
+                        "~:text-decoration": "line-through",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "Rufina"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with no typography",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 854,
+                    "~:y": 289
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1122,
+                    "~:y": 289
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1122,
+                    "~:y": 348
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 854,
+                    "~:y": 348
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c1654b4af",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 306.239990234375,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "capitalize",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-rufina",
+                  "~:font-size": "14px",
+                  "~:font-weight": "700",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 168.320007324219,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "line-through",
+                  "~:letter-spacing": "0px",
+                  "~:x": 854,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Rufina",
+                  "~:height": 17.2899780273438,
+                  "~:text": "Text with no typography"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": 854,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 854,
+                  "~:y": 289,
+                  "~:width": 268,
+                  "~:height": 59,
+                  "~:x1": 854,
+                  "~:y1": 289,
+                  "~:x2": 1122,
+                  "~:y2": 348
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 59,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70bf473916f": {
+            "~#shape": {
+              "~:y": 380,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.4",
+                        "~:path": "",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.4",
+                            "~:path": "",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": "~u12f7a4ff-ddae-80ff-8007-e70b6a1d57ba",
+                            "~:text-transform": "uppercase",
+                            "~:font-id": "gfont-im-fell-french-canon-sc",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "16",
+                            "~:font-weight": "400",
+                            "~:typography-ref-file": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+                            "~:modified-at": "~m1776759448186",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "IM Fell French Canon SC",
+                            "~:text": "Text with typography asset two"
+                          }
+                        ],
+                        "~:typography-ref-id": "~u12f7a4ff-ddae-80ff-8007-e70b6a1d57ba",
+                        "~:text-transform": "uppercase",
+                        "~:text-align": "right",
+                        "~:font-id": "gfont-im-fell-french-canon-sc",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "16",
+                        "~:font-weight": "400",
+                        "~:typography-ref-file": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:modified-at": "~m1776759448186",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "IM Fell French Canon SC"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "center"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with typography asset two",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 206,
+                    "~:y": 380
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 474,
+                    "~:y": 380
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 474,
+                    "~:y": 439
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 206,
+                    "~:y": 439
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70bf473916f",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 407.670013427734,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "uppercase",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-im-fell-french-canon-sc",
+                  "~:font-size": "16px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 261.320007324219,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 216.110000610352,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "IM Fell French Canon SC",
+                  "~:height": 18.7400207519531,
+                  "~:text": "Text with typography asset "
+                },
+                {
+                  "~:y": 429.669982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "uppercase",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-im-fell-french-canon-sc",
+                  "~:font-size": "16px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 38.9199829101563,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 435.080017089844,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "IM Fell French Canon SC",
+                  "~:height": 18.739990234375,
+                  "~:text": "two"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": 206,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 206,
+                  "~:y": 380,
+                  "~:width": 268,
+                  "~:height": 59,
+                  "~:x1": 206,
+                  "~:y1": 380,
+                  "~:x2": 474,
+                  "~:y2": 439
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 59,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c3aa79b6a": {
+            "~#shape": {
+              "~:y": 371.999988555908,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Ellipse",
+              "~:width": 77,
+              "~:type": "~:circle",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 1226,
+                    "~:y": 371.999988555908
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1303,
+                    "~:y": 371.999988555908
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1303,
+                    "~:y": 435.999988555908
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1226,
+                    "~:y": 435.999988555908
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c3aa79b6a",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 1226,
+              "~:proportion": 1,
+              "~:shadow": [
+                {
+                  "~:id": "~u12f7a4ff-ddae-80ff-8007-e70db6016174",
+                  "~:style": "~:drop-shadow",
+                  "~:color": {
+                    "~:color": "#000000",
+                    "~:opacity": 0.2
+                  },
+                  "~:offset-x": 4,
+                  "~:offset-y": 4,
+                  "~:blur": 4,
+                  "~:spread": 0,
+                  "~:hidden": false
+                }
+              ],
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 1226,
+                  "~:y": 371.999988555908,
+                  "~:width": 77,
+                  "~:height": 64,
+                  "~:x1": 1226,
+                  "~:y1": 371.999988555908,
+                  "~:x2": 1303,
+                  "~:y2": 435.999988555908
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#B1B2B5",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 64,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c000c9c84": {
+            "~#shape": {
+              "~:y": 289,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "none",
+                            "~:font-id": "gfont-metrophobic",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "20",
+                            "~:font-weight": "400",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "underline",
+                            "~:letter-spacing": "2",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "Metrophobic",
+                            "~:text": "Text with typography token one"
+                          }
+                        ],
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "gfont-metrophobic",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "20",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "underline",
+                        "~:letter-spacing": "2",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "Metrophobic"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with typography token one",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 540,
+                    "~:y": 289
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 808,
+                    "~:y": 289
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 808,
+                    "~:y": 348
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 540,
+                    "~:y": 348
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c000c9c84",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:applied-tokens": {
+                "~:typography": "token-typo-one"
+              },
+              "~:position-data": [
+                {
+                  "~:y": 313.329986572266,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-metrophobic",
+                  "~:font-size": "20px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 242.419982910156,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "underline",
+                  "~:letter-spacing": "2px",
+                  "~:x": 541,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Metrophobic",
+                  "~:height": 24.6599731445313,
+                  "~:text": "Text with typography "
+                },
+                {
+                  "~:y": 337.330017089844,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-metrophobic",
+                  "~:font-size": "20px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 109.25,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "underline",
+                  "~:letter-spacing": "2px",
+                  "~:x": 541,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Metrophobic",
+                  "~:height": 24.6600036621094,
+                  "~:text": "token one"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": 540,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 540,
+                  "~:y": 289,
+                  "~:width": 268,
+                  "~:height": 59,
+                  "~:x1": 540,
+                  "~:y1": 289,
+                  "~:x2": 808,
+                  "~:y2": 348
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 59,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c000c9c85": {
+            "~#shape": {
+              "~:y": 378,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "capitalize",
+                            "~:font-id": "gfont-alumni-sans-sc",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "18",
+                            "~:font-weight": "400",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "Alumni Sans SC",
+                            "~:text": "Text with typography token two"
+                          }
+                        ],
+                        "~:text-transform": "capitalize",
+                        "~:text-align": "left",
+                        "~:font-id": "gfont-alumni-sans-sc",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "18",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "Alumni Sans SC"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with typography token two",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 540,
+                    "~:y": 378
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 808,
+                    "~:y": 378
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 808,
+                    "~:y": 437
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 540,
+                    "~:y": 437
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c000c9c85",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:applied-tokens": {
+                "~:typography": "token-typography-two"
+              },
+              "~:position-data": [
+                {
+                  "~:y": 400,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "capitalize",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-alumni-sans-sc",
+                  "~:font-size": "18px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 179.599975585938,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 540,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Alumni Sans SC",
+                  "~:height": 21.6000061035156,
+                  "~:text": "Text with typography token two"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": 540,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 540,
+                  "~:y": 378,
+                  "~:width": 268,
+                  "~:height": 59,
+                  "~:x1": 540,
+                  "~:y1": 378,
+                  "~:x2": 808,
+                  "~:y2": 437
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 59,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70be436041b": {
+            "~#shape": {
+              "~:y": 291.000000417233,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-height",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:path": "",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:path": "",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": "~u12f7a4ff-ddae-80ff-8007-e70b4e12167a",
+                            "~:text-transform": "lowercase",
+                            "~:font-id": "gfont-agdasima",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "18",
+                            "~:font-weight": "700",
+                            "~:typography-ref-file": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+                            "~:modified-at": "~m1776759420985",
+                            "~:font-variant-id": "700",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#000000",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "Agdasima",
+                            "~:text": "Text with typography asset one"
+                          }
+                        ],
+                        "~:typography-ref-id": "~u12f7a4ff-ddae-80ff-8007-e70b4e12167a",
+                        "~:text-transform": "lowercase",
+                        "~:text-align": "center",
+                        "~:font-id": "gfont-agdasima",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "18",
+                        "~:font-weight": "700",
+                        "~:typography-ref-file": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:modified-at": "~m1776759420985",
+                        "~:font-variant-id": "700",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#000000",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "Agdasima"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "top"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with typography asset one",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 206,
+                    "~:y": 291.000000417233
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 474,
+                    "~:y": 291.000000417233
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 474,
+                    "~:y": 313.000000238419
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 206,
+                    "~:y": 313.000000238419
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70be436041b",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 312.980010986328,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "lowercase",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-agdasima",
+                  "~:font-size": "18px",
+                  "~:font-weight": "700",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 189.099990844727,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 245.449996948242,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Agdasima",
+                  "~:height": 21.5599975585938,
+                  "~:text": "Text with typography asset one"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": 206,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 206,
+                  "~:y": 291.000000417233,
+                  "~:width": 268,
+                  "~:height": 21.9999998211861,
+                  "~:x1": 206,
+                  "~:y1": 291.000000417233,
+                  "~:x2": 474,
+                  "~:y2": 313.000000238419
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 21.9999998211861,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c3496ef94": {
+            "~#shape": {
+              "~:y": 270.717638632528,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 0.866025405744331,
+                  "~:b": 0.499999996605365,
+                  "~:c": -0.499999999814932,
+                  "~:d": 0.866025403891286,
+                  "~:e": 2.27373675443232e-13,
+                  "~:f": -1.36424205265939e-12
+                }
+              },
+              "~:rotation": 30,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Rectangle",
+              "~:width": 75.999946156548,
+              "~:type": "~:rect",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 1243.50013273954,
+                    "~:y": 255.000030219555
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1309.31801694632,
+                    "~:y": 293.000003039837
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1284.81801402569,
+                    "~:y": 335.435252904892
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1219.00012981892,
+                    "~:y": 297.43528008461
+                  }
+                }
+              ],
+              "~:r2": 4,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 0.866025403891288,
+                  "~:b": -0.499999996605366,
+                  "~:c": 0.499999999814933,
+                  "~:d": 0.866025405744333,
+                  "~:e": 4.85209646967248e-13,
+                  "~:f": 1.2951551141376e-12
+                }
+              },
+              "~:r3": 4,
+              "~:r1": 4,
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c3496ef94",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#b01c1c",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": 1226.15910030434,
+              "~:proportion": 1,
+              "~:r4": 4,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 1226.15910030434,
+                  "~:y": 270.717638632528,
+                  "~:width": 75.999946156548,
+                  "~:height": 49.0000058593917,
+                  "~:x1": 1226.15910030434,
+                  "~:y1": 270.717638632528,
+                  "~:x2": 1302.15904646089,
+                  "~:y2": 319.717644491919
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#1355c0",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 49.0000058593917,
+              "~:flip-y": null
+            }
+          },
+          "~u12f7a4ff-ddae-80ff-8007-e70c1654b4b0": {
+            "~#shape": {
+              "~:y": 378.000021457672,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:auto-height",
+              "~:content": {
+                "~:type": "root",
+                "~:key": "8j9me9oa49",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": null,
+                            "~:text-transform": "none",
+                            "~:font-id": "gfont-playwrite-tz",
+                            "~:key": "wgjr6b27pa",
+                            "~:font-size": "24",
+                            "~:font-weight": "400",
+                            "~:typography-ref-file": null,
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#1355c0",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "Playwrite TZ",
+                            "~:text": "Text with no typography two"
+                          }
+                        ],
+                        "~:typography-ref-id": null,
+                        "~:text-transform": "none",
+                        "~:text-align": "justify",
+                        "~:font-id": "gfont-playwrite-tz",
+                        "~:key": "1dpjnycmsmq",
+                        "~:font-size": "0",
+                        "~:font-weight": "400",
+                        "~:typography-ref-file": null,
+                        "~:text-direction": "rtl",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#1355c0",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "Playwrite TZ"
+                      }
+                    ]
+                  }
+                ],
+                "~:vertical-align": "bottom"
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "Text with no typography two",
+              "~:width": 268,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 854,
+                    "~:y": 378.000021457672
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1122,
+                    "~:y": 378.000021457672
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 1122,
+                    "~:y": 436.000020027161
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 854,
+                    "~:y": 436.000020027161
+                  }
+                }
+              ],
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:id": "~u12f7a4ff-ddae-80ff-8007-e70c1654b4b0",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~:y": 415.780029296875,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-playwrite-tz",
+                  "~:font-size": "24px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 275.199951171875,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 854,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#1355c0",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Playwrite TZ",
+                  "~:height": 46.3599853515625,
+                  "~:text": "Text with no "
+                },
+                {
+                  "~:y": 444.780029296875,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "gfont-playwrite-tz",
+                  "~:font-size": "24px",
+                  "~:font-weight": "400",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 205.989990234375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 916.010009765625,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#1355c0",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "Playwrite TZ",
+                  "~:height": 46.3599853515625,
+                  "~:text": "typography two"
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:outer",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#ac0f0f",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": 854,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 854,
+                  "~:y": 378.000021457672,
+                  "~:width": 268,
+                  "~:height": 57.9999985694885,
+                  "~:x1": 854,
+                  "~:y1": 378.000021457672,
+                  "~:x2": 1122,
+                  "~:y2": 436.000020027161
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 57.9999985694885,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:id": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~u1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    },
+    "~:typographies": {
+      "~u12f7a4ff-ddae-80ff-8007-e70b4e12167a": {
+        "~:line-height": "1.2",
+        "~:path": "",
+        "~:font-style": "normal",
+        "~:text-transform": "lowercase",
+        "~:font-id": "gfont-agdasima",
+        "~:font-size": "18",
+        "~:font-weight": "700",
+        "~:name": "typography one",
+        "~:modified-at": "~m1776759424008",
+        "~:font-variant-id": "700",
+        "~:id": "~u12f7a4ff-ddae-80ff-8007-e70b4e12167a",
+        "~:letter-spacing": "0",
+        "~:font-family": "Agdasima"
+      },
+      "~u12f7a4ff-ddae-80ff-8007-e70b6a1d57ba": {
+        "~:line-height": "1.4",
+        "~:path": "",
+        "~:font-style": "normal",
+        "~:text-transform": "uppercase",
+        "~:font-id": "gfont-im-fell-french-canon-sc",
+        "~:font-size": "16",
+        "~:font-weight": "400",
+        "~:name": "typography 2",
+        "~:modified-at": "~m1776759451211",
+        "~:font-variant-id": "regular",
+        "~:id": "~u12f7a4ff-ddae-80ff-8007-e70b6a1d57ba",
+        "~:letter-spacing": "0",
+        "~:font-family": "IM Fell French Canon SC"
+      }
+    },
+    "~:tokens-lib": {
+      "~#penpot/tokens-lib": {
+        "~:sets": {
+          "~#ordered-map": [
+            [
+              "S-Global",
+              {
+                "~#penpot/token-set": {
+                  "~:id": "~u12f7a4ff-ddae-80ff-8007-e70bba7e2db2",
+                  "~:name": "Global",
+                  "~:description": "",
+                  "~:modified-at": "~m1776759536029",
+                  "~:tokens": {
+                    "~#ordered-map": [
+                      [
+                        "token-typo-one",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u12f7a4ff-ddae-80ff-8007-e70bba7deb47",
+                            "~:name": "token-typo-one",
+                            "~:type": "~:typography",
+                            "~:value": {
+                              "~:font-family": [
+                                "Metrophobic"
+                              ],
+                              "~:font-size": "20",
+                              "~:letter-spacing": "2",
+                              "~:text-decoration": "underline"
+                            },
+                            "~:description": "",
+                            "~:modified-at": "~m1776759506423"
+                          }
+                        }
+                      ],
+                      [
+                        "token-typography-two",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u12f7a4ff-ddae-80ff-8007-e70bd4736112",
+                            "~:name": "token-typography-two",
+                            "~:type": "~:typography",
+                            "~:value": {
+                              "~:font-family": [
+                                "Alumni Sans SC"
+                              ],
+                              "~:font-size": "18",
+                              "~:text-case": "capitalize"
+                            },
+                            "~:description": "",
+                            "~:modified-at": "~m1776759533005"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "~:themes": {
+          "~#ordered-map": [
+            [
+              "",
+              {
+                "~#ordered-map": [
+                  [
+                    "__PENPOT__HIDDEN__TOKEN__THEME__",
+                    {
+                      "~#penpot/token-theme": {
+                        "~:id": "~u00000000-0000-0000-0000-000000000000",
+                        "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
+                        "~:group": "",
+                        "~:description": "",
+                        "~:is-source": false,
+                        "~:external-id": "",
+                        "~:modified-at": "~m1776759509463",
+                        "~:sets": {
+                          "~#set": [
+                            "Global"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        },
+        "~:active-themes": {
+          "~#set": [
+            "/__PENPOT__HIDDEN__TOKEN__THEME__"
+          ]
+        }
+      }
+    }
+  }
+}

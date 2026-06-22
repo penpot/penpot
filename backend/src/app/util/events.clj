@@ -2,13 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.events
   "A generic asynchronous events notifications subsystem; used mainly
   for mark event points in functions and be able to attach listeners
   to them. Mainly used in http.sse for progress reporting."
-  (:refer-clojure :exclude [tap run!])
+  (:refer-clojure :exclude [run!])
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]

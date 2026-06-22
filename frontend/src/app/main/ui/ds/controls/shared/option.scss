@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -14,8 +14,8 @@
   --options-empty: var(--color-canvas);
 
   display: grid;
-  align-items: center;
-  justify-items: start;
+  align-content: center;
+  place-items: center start;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
   width: 100%;
@@ -26,8 +26,9 @@
   outline-offset: calc(-1 * $b-1);
   background-color: var(--options-bg-color);
   color: var(--options-fg-color);
+  cursor: default;
 
-  &:hover,
+  &:hover:not(.option-disabled),
   &[aria-selected="true"] {
     --options-bg-color: var(--color-background-quaternary);
   }
@@ -35,6 +36,11 @@
 
 .option-with-icon {
   grid-template-columns: auto 1fr auto;
+}
+
+.option-with-avatar {
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-s);
 }
 
 .option-text {
@@ -56,10 +62,20 @@
 
 .option-current {
   --options-outline-color: var(--color-accent-primary);
+
   outline: $b-1 solid var(--options-outline-color);
 }
 
 .option-selected {
   --options-fg-color: var(--color-accent-primary);
   --options-icon-fg-color: var(--color-accent-primary);
+}
+
+.option-disabled {
+  opacity: 0.6;
+}
+
+.option-check {
+  color: var(--token-options-icon-fg-color);
+  min-width: var(--sp-l);
 }

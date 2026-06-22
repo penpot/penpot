@@ -2,12 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.viewport
   (:require
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.store :as st]
@@ -37,11 +37,11 @@
        (let [new-x (obj/get value "x")
              new-y (obj/get value "y")]
          (cond
-           (not (us/safe-number? new-x))
-           (u/display-not-valid :center-x new-x)
+           (not (sm/valid-safe-number? new-x))
+           (u/not-valid plugin-id :center-x new-x)
 
-           (not (us/safe-number? new-y))
-           (u/display-not-valid :center-y new-y)
+           (not (sm/valid-safe-number? new-y))
+           (u/not-valid plugin-id :center-y new-y)
 
            :else
            (let [vb (dm/get-in @st/state [:workspace-local :vbox])
@@ -62,8 +62,8 @@
      :set
      (fn [value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :zoom value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :zoom value)
 
          :else
          (let [z (dm/get-in @st/state [:workspace-local :zoom])]
@@ -87,7 +87,7 @@
     (fn [shapes]
       (cond
         (not (every? ps/shape-proxy? shapes))
-        (u/display-not-valid :zoomIntoView "Argument should be valid shapes")
+        (u/not-valid plugin-id :zoomIntoView "Argument should be valid shapes")
 
         :else
         (let [ids (->> shapes

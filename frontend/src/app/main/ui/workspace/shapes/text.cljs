@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.text
   (:require
@@ -27,7 +27,7 @@
         text-modifier
         (mf/deref text-modifier-ref)
 
-        shape (if (some? shape)
+        shape (if (and (some? shape) (some? text-modifier))
                 (dwt/apply-text-modifier shape text-modifier)
                 shape)]
 
@@ -36,4 +36,4 @@
       [:& text/text-shape {:shape shape}]]
 
      (when *assert*
-       [:& wsd/shape-debug {:shape shape}])]))
+       [:> wsd/shape-debug* {:shape shape}])]))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer.header
   (:require-macros [app.main.style :as stl])
@@ -14,7 +14,7 @@
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.exports.assets :refer [export-progress-widget]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.comments :refer [comments-menu]]
@@ -167,7 +167,7 @@
         (open-share-dialog)))
 
     [:div {:class (stl/css :options-zone)}
-     [:& export-progress-widget]
+     [:& progress-widget]
 
      (case section
        :interactions [:*

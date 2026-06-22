@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 const mainFileId = "3622460c-3408-81e2-8005-2fd0e55888b7";
 const sharedFileId = "3622460c-3408-81e2-8005-2fc938010233";
@@ -13,12 +13,12 @@ const sharedFileFragmentId1 = "3622460c-3408-81e2-8005-31859c15ff91";
 const sharedFileFragmentId2 = "3622460c-3408-81e2-8005-31859c15ff90";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9042
 test("Bug 9056 - 'More info' doesn't open the update tab", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.mockRPC(
@@ -76,7 +76,7 @@ test("Bug 9056 - 'More info' doesn't open the update tab", async ({ page }) => {
 test("Bug 10113 - Empty library modal for non-empty library", async ({
   page,
 }) => {
-  const workspace = new WorkspacePage(page);
+  const workspace = new WasmWorkspacePage(page);
 
   await workspace.setupEmptyFile(page);
   await workspace.mockRPC(/get\-file\?/, "workspace/get-file-10113.json");
@@ -109,4 +109,52 @@ test("Bug 10113 - Empty library modal for non-empty library", async ({
   await expect(
     workspace.page.getByText("Publish empty library"),
   ).not.toBeVisible();
+});
+
+test("BUG 14214 - Updates tab refreshes after syncing a freshly linked library", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile(page);
+
+  await workspace.mockRPC(
+    new RegExp(`get\\-file\\?id=${mainFileId}`),
+    "workspace/get-file-14214_main.json",
+  );
+  await workspace.mockRPC(
+    new RegExp(`get\\-file\\?id=${sharedFileId}`),
+    "workspace/get-file-14214_shared.json",
+  );
+  await workspace.mockRPC(
+    "get-file-libraries?file-id=*",
+    "workspace/get-file-libraries-14214.json",
+  );
+  await workspace.mockRPC(
+    "get-team-shared-files?team-id=*",
+    "workspace/get-team-shared-files-14214.json",
+  );
+  await workspace.mockRPC(
+    "link-file-to-library",
+    "workspace/link-file-to-library.json",
+  );
+
+  await workspace.goToWorkspace({ fileId: mainFileId, pageId: mainPageId });
+
+  // Open the library modal
+  await workspace.clickAssets();
+  await workspace.openLibrariesModal();
+  await workspace.librariesModal
+    .getByRole("button", { name: "Connect library" })
+    .click();
+
+  // Switch to the Updates tab — the library should appear as needing update.
+  await workspace.librariesModal.getByRole("tab", { name: "Updates" }).click();
+
+  const updatesPanel = workspace.librariesModal.getByRole("tabpanel", {
+    name: "UPDATES",
+  });
+  await updatesPanel.getByRole("button", { name: "Update" }).click();
+  await expect(
+    updatesPanel.getByText("There are no Shared Libraries that need update"),
+  ).toBeVisible();
 });

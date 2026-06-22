@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
@@ -15,6 +15,7 @@
   --input-meta-background: var(--color-background-tertiary);
 
   @include t.use-typography("body-small");
+
   border-radius: $br-8;
   background-color: var(--input-meta-background);
   padding: var(--sp-s);
@@ -28,6 +29,7 @@
 
   &:hover {
     --input-meta-background: var(--color-background-quaternary);
+
     cursor: text;
   }
 }

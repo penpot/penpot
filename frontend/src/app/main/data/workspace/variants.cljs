@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.variants
   (:require
@@ -128,14 +128,16 @@
             related-components (cfv/find-variant-components data objects variant-id)
 
             props              (-> related-components last :variant-properties)
-            prop-name          (-> props (nth pos) :name)
+            valid-pos?         (> (count props) pos)
+            prop-name          (when valid-pos? (-> props (nth pos) :name))
 
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/with-library-data data)
-                        (clvp/generate-update-property-name variant-id pos new-name))
+            changes            (when valid-pos?
+                                 (-> (pcb/empty-changes it page-id)
+                                     (pcb/with-objects objects)
+                                     (pcb/with-library-data data)
+                                     (clvp/generate-update-property-name variant-id pos new-name)))
             undo-id (js/Symbol)]
-        (when (not= prop-name new-name)
+        (when (and valid-pos? (not= prop-name new-name))
           (rx/of
            (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
@@ -445,8 +447,8 @@
                            :stroke-opacity 1
                            :stroke-width 2}
 
-            ;; Move the position of the variant container so the main shape doesn't
-            ;; change its position
+             ;; Move the position of the variant container so the main shape doesn't
+             ;; change its position
              delta        (or delta
                               (if (ctsl/any-layout? parent)
                                 (gpt/point 0 0)
@@ -454,8 +456,8 @@
              undo-id      (js/Symbol)]
 
 
-        ;;TODO Refactor all called methods in order to be able to
-        ;;generate changes instead of call the events
+         ;;TODO Refactor all called methods in order to be able to
+         ;;generate changes instead of call the events
 
 
          (rx/concat
@@ -465,7 +467,7 @@
            (when (not= name (:name main))
              (dwl/rename-component component-id name))
 
-          ;; Create variant container
+           ;; Create variant container
            (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
            (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
            (when flex? (dwsl/create-layout-from-id variant-id :flex))
@@ -474,12 +476,12 @@
            (cl/add-stroke variant-vec stroke-props)
            (set-variant-id component-id variant-id))
 
-         ;; Add the necessary number of new properties, with default values
+          ;; Add the necessary number of new properties, with default values
           (rx/from
            (repeatedly num-props
                        #(add-new-property variant-id {:fill-values? true})))
 
-         ;; When the component has path, set the path items as properties values
+          ;; When the component has path, set the path items as properties values
           (when (> (count cpath) 1)
             (rx/from
              (map
@@ -611,10 +613,10 @@
        vec))
 
 (defn combine-as-variants
-  [ids {:keys [page-id trigger]}]
+  [ids {:keys [page-id trigger variant-id]}]
   (ptk/reify ::combine-as-variants
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [it state stream]
       (let [current-page  (:current-page-id state)
 
             combine
@@ -632,7 +634,7 @@
                         prefix        (->> shapes
                                            (mapv #(cpn/split-path (:name %)))
                                            (common-prefix))
-                         ;; When the common parent is root, add a wrapper
+                        ;; When the common parent is root, add a wrapper
                         add-wrapper?  (empty? prefix)
                         first-shape   (first shapes)
                         delta         (gpt/point (- (:x rect) (:x first-shape) 30)
@@ -645,7 +647,7 @@
                                           :shapes
                                           count
                                           inc)
-                        variant-id    (uuid/next)
+                        variant-id    (or variant-id (uuid/next))
                         undo-id       (js/Symbol)]
 
                     (rx/concat
@@ -663,12 +665,13 @@
                             (dwsh/relocate-shapes #{variant-id} common-parent index)
                             (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
-                            (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}))
+                            (ev/event (-> {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}
+                                          (merge (meta it)))))
 
-                      ;; NOTE: we need to schedule a commit into a
-                      ;; microtask for ensure that all the scheduled
-                      ;; microtask of previous events execute before the
-                      ;; commit
+                     ;; NOTE: we need to schedule a commit into a
+                     ;; microtask for ensure that all the scheduled
+                     ;; microtask of previous events execute before the
+                     ;; commit
                      (->> (rx/of (dwu/commit-undo-transaction undo-id))
                           (rx/observe-on :async)))))))
 
@@ -699,11 +702,11 @@
   [shape {:keys [pos val] :as params}]
   (ptk/reify ::variant-switch
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [libraries    (dsh/lookup-libraries state)
             component-id (:component-id shape)
             component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
-             ;; If the value is already val, do nothing
+        ;; If the value is already val, do nothing
         (when (not= val (dm/get-in component [:variant-properties pos :value]))
           (let [current-page-objects   (dsh/lookup-page-objects state)
                 variant-id             (:variant-id component)
@@ -733,20 +736,23 @@
                   (rx/empty))
                 (rx/of
                  (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)
-                 (ev/event {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}))))))))))
+                 (ev/event (-> {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}
+                               (merge (meta it)))))))))))))
 
 (defn variants-switch
   "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
   [{:keys [shapes] :as params}]
   (ptk/reify ::variants-switch
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [it _ _]
       (let [ids (into (d/ordered-set) d/xf:map-id shapes)
             undo-id (js/Symbol)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
          (->> (rx/from shapes)
-              (rx/map #(variant-switch % params)))
+              (rx/map (fn [data]
+                        (-> (variant-switch data params)
+                            (with-meta (meta it))))))
          (rx/of (dwu/commit-undo-transaction undo-id)
                 (dws/select-shapes ids)))))))
 

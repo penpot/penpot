@@ -2,39 +2,69 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
 
 .color-values {
-  @include deprecated.flexColumn;
-  margin-top: deprecated.$s-8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding: 0 1px;
+  margin-block-start: var(--sp-s);
 
   &.disable-opacity {
-    grid-template-columns: 3.5rem repeat(3, 1fr);
+    grid-template-columns: px2rem(56) repeat(3, 1fr);
   }
-  .colors-row {
-    @include deprecated.flexRow;
-    .input-wrapper {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
-      width: deprecated.$s-84;
-      display: flex;
-      align-items: baseline;
-    }
+}
+
+.model-switcher {
+  display: flex;
+  align-self: flex-start;
+  gap: var(--sp-xs);
+  padding: var(--sp-xxs);
+  margin-block-end: var(--sp-s);
+  border-radius: $br-6;
+  background-color: var(--color-background-tertiary);
+}
+
+.model-pill {
+  @include t.use-typography("body-small");
+
+  padding: var(--sp-xxs) var(--sp-s);
+  border: none;
+  border-radius: $br-4;
+  color: var(--color-foreground-secondary);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-foreground-primary);
   }
-  .hex-alpha-wrapper {
-    @include deprecated.flexRow;
-    .input-wrapper {
-      @extend .input-element;
-      @include deprecated.bodySmallTypography;
-      width: deprecated.$s-84;
-      &.hex {
-        width: deprecated.$s-172;
-        display: flex;
-        align-items: baseline;
-        gap: deprecated.$s-8;
-      }
-    }
-  }
+}
+
+.model-pill-active {
+  background-color: var(--color-background-primary);
+  color: var(--color-accent-primary);
+}
+
+.colors-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-xs);
+}
+
+.hex-alpha-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-xs);
+}
+
+.hex-input {
+  grid-column: span 2;
 }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.cond
   "Conditional loading middleware.
@@ -19,7 +19,7 @@
     of the object. This function can be applied to the object returned by the
     `get-object` but also to the RPC return value (in case you don't provide
     the return value calculated key under `::key` metadata prop.
-  - `::reuse-key?` enables reusing the key calculated on first time; usefull
+  - `::reuse-key?` enables reusing the key calculated on first time; useful
     when the target object is not retrieved on the RPC (typical on retrieving
     dependent objects).
   "
@@ -39,9 +39,8 @@
 (defn- encode
   [s]
   (-> s
-      bh/blake2b-256
-      bc/bytes->b64u
-      bc/bytes->str))
+      (bh/blake2b-256)
+      (bc/bytes->b64-str true)))
 
 (defn- fmt-key
   [s]

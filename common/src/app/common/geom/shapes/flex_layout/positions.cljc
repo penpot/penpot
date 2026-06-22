@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.flex-layout.positions
   (:require
@@ -61,7 +61,7 @@
         (gpt/add (hv free-width-gap))
 
         around?
-        (gpt/add (hv (max lines-gap-col (/ free-width num-lines) 2)))
+        (gpt/add (hv (max lines-gap-col (/ free-width num-lines 2))))
 
         evenly?
         (gpt/add (hv (max lines-gap-col (/ free-width (inc num-lines)))))))))

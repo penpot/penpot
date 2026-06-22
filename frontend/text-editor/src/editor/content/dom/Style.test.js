@@ -17,14 +17,22 @@ describe("Style", () => {
 
   test("setStyles should apply multiple styles to an element using an Object", () => {
     const element = document.createElement("div");
-    setStyles(element, [["display"]], {
-      "text-decoration": "none",
-      "font-size": "32px",
-      display: "none",
-    });
+    setStyles(
+      element,
+      [
+        ["display"],
+        ["font-size", "px"],
+        ["text-decoration"],
+      ],
+      {
+        "text-decoration": "none",
+        "font-size": "32",
+        display: "none",
+      },
+    );
     expect(element.style.display).toBe("none");
-    expect(element.style.fontSize).toBe("");
-    expect(element.style.textDecoration).toBe("");
+    expect(element.style.fontSize).toBe("32px");
+    expect(element.style.textDecoration).toBe("none");
   });
 
   test("setStyles should apply multiple styles to an element using a CSSStyleDeclaration", () => {

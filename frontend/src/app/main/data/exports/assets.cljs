@@ -2,17 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.exports.assets
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
-   [app.main.refs :as refs]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -62,6 +64,9 @@
                        (dsh/lookup-shapes state selected)
                        (reverse (dsh/filter-shapes state #(pos? (count (:exports %))))))
 
+            page      (dsh/lookup-page state)
+            page-name (:name page)
+
             exports  (for [shape  shapes
                            export (:exports shape)]
                        (-> export
@@ -73,10 +78,12 @@
                            (assoc :name (:name shape))))]
 
         (rx/of (modal/show :export-shapes
-                           {:exports (vec exports) :origin origin}))))))
+                           {:exports (vec exports)
+                            :origin origin
+                            :name page-name}))))))
 
 (defn show-viewer-export-dialog
-  [{:keys [shapes page-id file-id share-id exports]}]
+  [{:keys [shapes page-id file-id share-id exports name]}]
   (ptk/reify ::show-viewer-export-dialog
     ptk/WatchEvent
     (watch [_ _ _]
@@ -90,25 +97,32 @@
                           (assoc :shape (dissoc shape :exports))
                           (assoc :name (:name shape))
                           (cond-> share-id (assoc :share-id share-id))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports) :origin "viewer"})))))) #_TODO
+        (rx/of (modal/show :export-shapes {:exports (vec exports)
+                                           :origin "viewer"
+                                           :name name})))))) #_TODO
 
 (defn show-workspace-export-frames-dialog
   [frames]
   (ptk/reify ::show-workspace-export-frames-dialog
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id  (:current-file-id state)
-            page-id  (:current-page-id state)
-            exports  (for [frame  frames]
-                       {:enabled true
-                        :page-id page-id
-                        :file-id file-id
-                        :object-id (:id frame)
-                        :shape frame
-                        :name (:name frame)})]
+      (let [file-id   (:current-file-id state)
+            page-id   (:current-page-id state)
+            page      (dsh/lookup-page state)
+            page-name (:name page)
+            exports   (mapv (fn [frame]
+                              {:enabled true
+                               :page-id page-id
+                               :file-id file-id
+                               :object-id (:id frame)
+                               :shape frame
+                               :name (:name frame)})
+                            frames)]
 
         (rx/of (modal/show :export-frames
-                           {:exports (vec exports) :origin "workspace:menu"}))))))
+                           {:exports exports
+                            :origin "workspace:menu"
+                            :name page-name}))))))
 
 (defn- initialize-export-status
   [exports cmd resource]
@@ -127,7 +141,7 @@
                             :cmd cmd}))))
 
 (defn- update-export-status
-  [{:keys [done status resource-id filename] :as data}]
+  [{:keys [done status resource-uri filename mtype] :as data}]
   (ptk/reify ::update-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -146,47 +160,62 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id resource-id})
-             (rx/delay 500)
-             (rx/map #(dom/trigger-download filename %)))))))
+        (dom/trigger-download-uri filename mtype resource-uri)))))
+
+;; TODO: Remove once we support WASM SVG export
+(def ^:private wasm-export-types #{:jpeg :webp :png :pdf})
+
+(defn- wasm-export-enabled?
+  "WASM export is available: the flag is set AND render-wasm is active for the
+  current file. When render-wasm is inactive its shape tree isn't loaded, so a
+  client-side WASM render would crash."
+  [state]
+  (and (contains? cf/flags :wasm-export)
+       (features/active-feature? state "render-wasm/v1")))
+
+(defn- use-wasm-export?
+  "Whether to take the client-side WASM export path for `export`."
+  [state export]
+  (and (wasm-export-enabled? state)
+       (contains? wasm-export-types (:type export))))
 
 (defn request-simple-export
   [{:keys [export]}]
   (ptk/reify ::request-simple-export
     ptk/UpdateEvent
     (update [_ state]
-      (update state :export assoc :in-progress true :id uuid/zero))
+      (cond-> state
+        (not (use-wasm-export? state export))
+        (update :export assoc :in-progress true :id uuid/zero)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [profile-id (:profile-id state)
-            params     {:exports [export]
-                        :profile-id profile-id
-                        :cmd :export-shapes
-                        :wait true}]
-        (rx/concat
-         (rx/of ::dwp/force-persist)
+      (if (use-wasm-export? state export)
+        (do
+          (case (:type export)
+            :pdf (wasm.exports/export-pdf export)
+            (wasm.exports/export-image export))
+          (rx/empty))
+        (let [profile-id (:profile-id state)
+              params     {:exports [export]
+                          :profile-id profile-id
+                          :cmd :export-shapes
+                          :wait true
+                          :is-wasm (wasm-export-enabled? state)}]
+          (rx/concat
+           (dwp/force-persist-and-wait 400)
 
-         ;; Wait the persist to be succesfull
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/first)
-              (rx/timeout 400 (rx/empty)))
-
-         (->> (rp/cmd! :export params)
-              (rx/mapcat (fn [{:keys [id filename]}]
-                           (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
-                                (rx/map (fn [data]
-                                          (dom/trigger-download filename data)
-                                          (clear-export-state uuid/zero))))))
-              (rx/catch (fn [cause]
-                          (rx/concat
-                           (rx/of (clear-export-state uuid/zero))
-                           (rx/throw cause))))))))))
-
+           (->> (rp/cmd! :export params)
+                (rx/map (fn [{:keys [filename mtype uri]}]
+                          (dom/trigger-download-uri filename mtype uri)
+                          (clear-export-state uuid/zero)))
+                (rx/catch (fn [cause]
+                            (rx/concat
+                             (rx/of (clear-export-state uuid/zero))
+                             (rx/throw cause)))))))))))
 
 (defn request-multiple-export
-  [{:keys [exports cmd]
+  [{:keys [exports cmd name]
     :or {cmd :export-shapes}
     :as params}]
   (ptk/reify ::request-multiple-export
@@ -195,10 +224,14 @@
       (let [resource-id (volatile! nil)
             profile-id  (:profile-id state)
             ws-conn     (:ws-conn state)
-            params      {:exports exports
-                         :cmd cmd
-                         :profile-id profile-id
-                         :wait false}
+            params      (cond->
+                         {:exports exports
+                          :cmd cmd
+                          :profile-id profile-id
+                          :force-multiple true
+                          :is-wasm (wasm-export-enabled? state)}
+                          (some? name)
+                          (assoc :name name))
 
             progress-stream
             (->> (ws/get-rcv-stream ws-conn)
@@ -270,8 +303,7 @@
                           counts))
                       {:png 0, :jpeg 0, :webp 0, :pdf 0, :svg 0}
                       exports)]
-    (ptk/event
-     ::ev/event (merge types
-                       {::ev/name "export-shapes"
-                        ::ev/origin origin
-                        :num-shapes (count exports)}))))
+    (ev/event (merge types
+                     {::ev/name "export-shapes"
+                      ::ev/origin origin
+                      :num-shapes (count exports)}))))

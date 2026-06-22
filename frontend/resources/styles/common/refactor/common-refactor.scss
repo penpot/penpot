@@ -2,19 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
-//#################################################
+// #################################################
 // MAIN STYLES
-//#################################################
+// #################################################
 
-@forward "./fonts.scss";
-@forward "./spacing.scss";
-@forward "./borders.scss";
-@forward "./opacity.scss";
-@forward "./shadows.scss";
-@forward "./z-index.scss";
-@forward "./mixins.scss";
-@forward "./focus.scss";
-@forward "./animations.scss";
-@forward "./basic-rules.scss";
+@forward "./fonts";
+@forward "./spacing";
+@forward "./borders";
+@forward "./opacity";
+@forward "./shadows";
+@forward "./z-index";
+@forward "./mixins";
+@forward "./focus";
+@forward "./animations";
+@forward "./basic-rules";

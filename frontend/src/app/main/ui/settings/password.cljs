@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.password
   (:require-macros [app.main.style :as stl])
@@ -18,16 +18,18 @@
 
 (defn- on-error
   [form error]
-  (case (:code (ex-data error))
-    :old-password-not-match
-    (swap! form assoc-in [:errors :password-old]
-           {:message (tr "errors.wrong-old-password")})
-    :email-as-password
-    (swap! form assoc-in [:errors :password-1]
-           {:message (tr "errors.email-as-password")})
+  (let [data (ex-data error)]
+    (case (:code data)
+      :old-password-not-match
+      (swap! form assoc-in [:extra-errors :password-old]
+             {:message (tr "errors.wrong-old-password")})
 
-    (let [msg (tr "generic.error")]
-      (st/emit! (ntf/error msg)))))
+      :email-as-password
+      (swap! form assoc-in [:extra-errors :password-1]
+             {:message (tr "errors.email-as-password")})
+
+      (let [msg (tr "generic.error")]
+        (st/emit! (ntf/error msg))))))
 
 (defn- on-success
   [form]
@@ -57,7 +59,7 @@
     (fn [{:keys [password-1 password-2]}]
       (= password-1 password-2))]])
 
-(mf/defc password-form
+(mf/defc password-form*
   []
   (let [initial (mf/with-memo []
                   {:password-old ""
@@ -97,7 +99,7 @@
 
 ;; --- Password Page
 
-(mf/defc password-page
+(mf/defc password-page*
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.password")))
@@ -105,4 +107,4 @@
   [:section {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "dashboard.password-change")]
-    [:& password-form]]])
+    [:> password-form*]]])

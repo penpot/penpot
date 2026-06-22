@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.grid-cell
   (:require-macros [app.main.style :as stl])
@@ -10,6 +10,7 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -18,6 +19,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -52,36 +54,46 @@
                         :name (dm/str "flex-align-items-" type)}
       [:& radio-button {:value "start"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-left
-                                 deprecated-icon/align-self-column-top)
+                                 i/align-self-row-left
+                                 i/align-self-column-top)
                         :title "Align self start"
                         :id     (dm/str "align-self-start-" type)}]
 
       [:& radio-button {:value "center"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-center
-                                 deprecated-icon/align-self-column-center)
+                                 i/align-self-row-center
+                                 i/align-self-column-center)
                         :title "Align self center"
                         :id     (dm/str "align-self-center-" type)}]
 
       [:& radio-button {:value "end"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-right
-                                 deprecated-icon/align-self-column-bottom)
+                                 i/align-self-row-right
+                                 i/align-self-column-bottom)
                         :title "Align self end"
                         :id     (dm/str "align-self-end-" type)}]
 
       [:& radio-button {:value "stretch"
                         :icon  (if is-col?
-                                 deprecated-icon/align-self-row-stretch
-                                 deprecated-icon/align-self-column-stretch)
+                                 i/align-self-row-stretch
+                                 i/align-self-column-stretch)
                         :title "Align self stretch"
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
-(mf/defc options
-  {::mf/wrap [mf/memo]}
-  [{:keys [shape cell cells] :as props}]
+(defn- check-options-props
+  [old-props new-props]
+  (and (identical? (unchecked-get old-props "shapeId")
+                   (unchecked-get new-props "shapeId"))
+       (identical? (unchecked-get old-props "cell")
+                   (unchecked-get new-props "cell"))
+       (identical? (unchecked-get old-props "cells")
+                   (unchecked-get new-props "cells"))))
+
+;;TODO: Review this component only recieve cells prop ib this file app.main.ui.workspace.sidebar.options
+(mf/defc options*
+  {::mf/wrap [#(mf/memo' % check-options-props)]}
+  [{:keys [shape-id cell cells] :as props}]
 
   (let [state* (mf/use-state {:open true})
         open?  (:open @state*)
@@ -113,26 +125,29 @@
 
         set-alignment
         (mf/use-callback
-         (mf/deps align-self (:id shape) cell-ids)
+         (mf/deps align-self shape-id cell-ids)
          (fn [value]
            (if (= align-self value)
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self nil}))
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:align-self value})))))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:align-self nil}))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:align-self value})))))
 
         set-justify-self
         (mf/use-callback
-         (mf/deps justify-self (:id shape) cell-ids)
+         (mf/deps justify-self shape-id cell-ids)
          (fn [value]
            (if (= justify-self value)
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self nil}))
-             (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:justify-self value})))))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:justify-self nil}))
+             (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:justify-self value})))))
 
         on-grid-coordinates
         (mf/use-callback
-         (mf/deps column row (:id shape) (:id cell))
+         (mf/deps column row shape-id (:id cell))
          (fn [field type value]
            (when-not multiple?
-             (let [[property value]
+             (let [value  (mth/round value)
+                   column (mth/round column)
+                   row    (mth/round row)
+                   [property value]
                    (cond
                      (and (= type :column) (or (= field :all) (= field :start)))
                      [:column value]
@@ -146,30 +161,30 @@
                      (and (= type :row) (= field :end))
                      [:row-span (max 1 (- value row))])]
 
-               (st/emit! (dwsl/update-grid-cell-position (:id shape) (:id cell) {property value}))))))
+               (st/emit! (dwsl/update-grid-cell-position shape-id (:id cell) {property value}))))))
 
         on-area-name-change
         (mf/use-callback
-         (mf/deps (:id shape) cell-ids)
+         (mf/deps shape-id cell-ids)
          (fn [event]
            (let [value (dom/get-value (dom/get-target event))]
              (if (= value "")
-               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name nil}))
-               (st/emit! (dwsl/update-grid-cells (:id shape) cell-ids {:area-name value}))))))
+               (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:area-name nil}))
+               (st/emit! (dwsl/update-grid-cells shape-id cell-ids {:area-name value}))))))
 
         set-cell-mode
         (mf/use-callback
-         (mf/deps (:id shape) cell-ids)
+         (mf/deps shape-id cell-ids)
          (fn [mode]
            (let [mode (-> mode keyword)]
-             (st/emit! (dwsl/change-cells-mode (:id shape) cell-ids mode)))))
+             (st/emit! (dwsl/change-cells-mode shape-id cell-ids mode)))))
 
         toggle-edit-mode
         (mf/use-fn
-         (mf/deps (:id shape))
+         (mf/deps shape-id)
          (fn []
-           (st/emit! (dw/start-edition-mode (:id shape))
-                     (dwge/clear-selection (:id shape)))))]
+           (st/emit! (dw/start-edition-mode shape-id)
+                     (dwge/clear-selection shape-id))))]
 
 
     [:div {:class (stl/css :grid-cell-menu)}
@@ -215,6 +230,7 @@
                :title "Column"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :column)
+               :integer true
                :value column}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -225,6 +241,7 @@
                :title "Row"
                :on-click #(dom/select-target %)
                :on-change (partial on-grid-coordinates :all :row)
+               :integer true
                :value row}]]]])
 
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
@@ -236,12 +253,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :column)
+               :integer true
                :value column}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :column)
+               :integer true
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
@@ -251,12 +270,14 @@
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :start :row)
+               :integer true
                :value row}]]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
                :on-pointer-down #(dom/select-target %)
                :on-change (partial on-grid-coordinates :end :row)
+               :integer true
                :value row-end}]]]])
 
         [:div {:class (stl/css :row)}
@@ -270,6 +291,6 @@
         [:div {:class (stl/css :row)}
          [:button
           {:class (stl/css :edit-grid-btn)
-           :alt    (tr "workspace.layout_grid.editor.options.edit-grid")
+           :alt    (tr "workspace.layout-grid.editor.options.edit-grid")
            :on-click toggle-edit-mode}
-          (tr "workspace.layout_grid.editor.options.edit-grid")]]])]))
+          (tr "workspace.layout-grid.editor.options.edit-grid")]]])]))

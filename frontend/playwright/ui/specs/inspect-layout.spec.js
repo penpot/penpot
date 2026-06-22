@@ -1,15 +1,58 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
+});
+
+// Fix for https://tree.taiga.io/project/penpot/issue/8593
+test("Bug 8593 - Grid layout three dots button visible on hover in grid editor", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-fragment-9042.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "af2494d0-39ba-8184-8005-230696f6df5c",
+    pageId: "af2494d0-39ba-8184-8005-230696f6df5d",
+  });
+  await workspacePage.clickLeafLayer("Board");
+  await workspacePage.expectSelectedLayer("Board");
+
+  // Zoom in so tracks are wide enough (>= 110px) for the three-dots button to render.
+  // Board is 200x200 with 2 columns (100px each); zoom 2x makes them 200px.
+  await workspacePage.page.keyboard.press("Control+=");
+  await workspacePage.page.keyboard.press("Control+=");
+  await workspacePage.page.waitForTimeout(200);
+
+  // Enter grid editing mode
+  const layoutContainer = workspacePage.page.getByTestId("inspect-layout");
+  await layoutContainer.getByRole("button", { name: "Edit grid" }).click();
+  await workspacePage.page.waitForTimeout(500);
+
+  // The three-dots button should always exist in the DOM when track is large enough.
+  // Previously it was only rendered when JS hover state was true (broken in WebKit/Safari).
+  // Now it is always rendered and shown/hidden via CSS :hover.
+  const gridEditorButton = workspacePage.page.getByTestId("grid-track-options-btn").first();
+  await expect(gridEditorButton).toBeAttached();
+
+  // Hover over the track wrapper; CSS :hover should make the button visible.
+  // This approach works in all browsers including WebKit/Safari.
+  const gridEditorWrapper = workspacePage.page.getByTestId("grid-track-editor-wrapper").first();
+  await gridEditorWrapper.hover();
+  await expect(gridEditorButton).toBeVisible();
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9042
 test("Bug 9042 - Measurement unit dropdowns for columns are cut off in grid layout edit mode", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9042.json");
   await workspacePage.mockRPC(
@@ -37,7 +80,7 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
   page,
   context,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.goToWorkspace();
 
@@ -50,6 +93,7 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
   });
   await inspectButton.click();
 
+  // Open color space selector combobox and change to RGBA format
   const colorDropdown = workspacePage.page
     .getByRole("combobox")
     .getByText("HEX");
@@ -59,6 +103,17 @@ test("[Taiga #9116] Copy CSS background color in the selected format in the INSP
     name: "RGBA",
   });
   await rgbaFormatButton.click();
+
+  // Open info tab selector and select the computed tab
+  const infoTabSelector = workspacePage.page
+    .getByRole("combobox")
+    .getByText("Styles");
+  await infoTabSelector.click();
+
+  const infoTabSelectorButton = workspacePage.page.getByRole("option", {
+    name: "Computed",
+  });
+  await infoTabSelectorButton.click();
 
   const copyColorButton = workspacePage.page.getByRole("button", {
     name: "Copy color",
@@ -75,7 +130,7 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
   page,
   context,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
   await workspacePage.goToWorkspace();
   await workspacePage.mockRPC(
@@ -117,6 +172,17 @@ test("[Taiga #10630] [INSPECT] Style assets not being displayed on info tab", as
     name: "Inspect",
   });
   await inspectButton.click();
+
+  // Open info tab selector and select the computed tab
+  const infoTabSelector = workspacePage.page
+    .getByRole("combobox")
+    .getByText("Styles");
+  await infoTabSelector.click();
+
+  const infoTabSelectorButton = workspacePage.page.getByRole("option", {
+    name: "Computed",
+  });
+  await infoTabSelectorButton.click();
 
   const colorLibraryName = workspacePage.page.getByTestId("color-library-name");
 

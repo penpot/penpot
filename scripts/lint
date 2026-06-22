@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -ex
+
+clj-kondo --parallel=true --lint common/src;
+clj-kondo --parallel=true --lint frontend/src;
+clj-kondo --parallel=true --lint backend/src;
+clj-kondo --parallel=true --lint exporter/src/;
+clj-kondo --parallel=true --lint library/src;

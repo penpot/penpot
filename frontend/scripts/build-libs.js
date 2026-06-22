@@ -1,6 +1,23 @@
 import * as esbuild from "esbuild";
 import { readFile } from "node:fs/promises";
 
+/**
+ * esbuild plugin to watch a directory recursively
+ */
+const watchExtraDirPlugin = {
+  name: "watch-extra-dir",
+  setup(build) {
+    build.onLoad(
+      { filter: /target\/index.js/, namespace: "file" },
+      async (args) => {
+        return {
+          watchDirs: ["packages/ui/dist"],
+        };
+      },
+    );
+  },
+};
+
 const filter =
   /react-virtualized[/\\]dist[/\\]es[/\\]WindowScroller[/\\]utils[/\\]onScroll\.js$/;
 
@@ -31,12 +48,12 @@ const rebuildNotify = {
 const config = {
   entryPoints: ["target/index.js"],
   bundle: true,
-  format: "iife",
+  format: "esm",
   banner: {
-    js: '"use strict";',
+    js: '"use strict";\nvar global = globalThis;',
   },
   outfile: "resources/public/js/libs.js",
-  plugins: [fixReactVirtualized, rebuildNotify],
+  plugins: [fixReactVirtualized, rebuildNotify, watchExtraDirPlugin],
 };
 
 async function watch() {

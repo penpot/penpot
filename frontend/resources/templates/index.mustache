@@ -3,37 +3,40 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>Penpot - Design Freedom for Teams</title>
+    <title>Penpot | Full-stack design</title>
 
-    <meta name="description" content="The open-source solution for design and prototyping.">
+    <meta name="description" content="Penpot is the open-source design platform for teams that build digital products at scale.">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="Penpot | Design Freedom for Teams">
-    <meta property="og:description" content="The open-source solution for design and prototyping">
-    <meta property="og:image" content="https://penpot.app/images/workspace-ui.jpg">
-    <meta name="twitter:title" content="Penpot | Design Freedom for Teams">
+    <meta property="og:title" content="Penpot | Full-stack design">
+    <meta property="og:description" content="Penpot is the open-source design platform for teams that build digital products at scale.">
+    <meta property="og:image" content="/images/penpot-link-preview.png">
+    <meta name="twitter:title" content="Penpot | Full-stack design">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:description" content="The open-source solution for design and prototyping">
-    <meta name="twitter:image" content="https://penpot.app/images/workspace-ui.jpg">
+    <meta name="twitter:description" content="Penpot is the open-source design platform for teams that build digital products at scale.">
+    <meta name="twitter:image" content="/images/penpot-link-preview.png">
     <meta name="twitter:site" content="@penpotapp">
     <meta name="twitter:creator" content="@penpotapp">
     <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-    <link id="theme" href="css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link id="theme" href="css/main.css?version={{& version_tag}}" rel="stylesheet" type="text/css" />
     {{#isDebug}}
-    <link href="css/debug.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link href="css/debug.css?version={{& version_tag}}" rel="stylesheet" type="text/css" />
     {{/isDebug}}
 
-    <link rel="icon" href="images/favicon.png" />
+    <link rel="icon" href="images/favicon.png?version={{& version_tag }}" />
+
+    <script type="importmap">{{& manifest.importmap }}</script>
+
+    <script type="module">
+      globalThis.penpotVersion = "{{& version}}";
+      globalThis.penpotVersionTag = "{{& version_tag}}";
+      globalThis.penpotBuildDate = "{{& build_date}}";
+    </script>
+
     {{# manifest}}
-    <script>window.penpotWorkerURI="{{& worker_main}}"</script>
-    <script defer src="{{& config}}"></script>
-    <script defer src="{{& polyfills}}"></script>
+    <script src="{{& config}}"></script>
+    <script src="{{& polyfills}}"></script>
     {{/manifest}}
 
-    <script>
-      window.penpotTranslations = JSON.parse({{& translations}});
-      window.penpotVersion = "%version%";
-      window.penpotBuildDate = "%buildDate%";
-    </script>
     <!--cookie-consent-->
   </head>
   <body>
@@ -44,9 +47,13 @@
     <section id="modal"></section>
 
     {{# manifest}}
-    <script defer src="js/libs.js?ts={{& ts}}"></script>
-    <script defer src="{{& shared}}"></script>
-    <script defer src="{{& main}}"></script>
+    <script type="module" src="{{& libs}}"></script>
+    <script type="module">
+      import { init } from "{{& app_main}}";
+      import defaultTranslations from "{{& default_translations}}";
+
+      init({defaultTranslations});
+    </script>
     {{/manifest}}
   </body>
 </html>

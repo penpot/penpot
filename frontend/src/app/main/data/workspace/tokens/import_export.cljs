@@ -2,22 +2,29 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.tokens.import-export
   (:require
    [app.common.json :as json]
+   [app.common.logging :as l]
    [app.common.path-names :as cpn]
-   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.store :as st]
-   [app.util.i18n :refer [tr]]
+   [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
+
+(defn- extract-error-with-code
+  "Return the error if it has an error code generated from Penpot code"
+  [err]
+  (when (contains? (ex-data err) :error/code)
+    (wte/error-ex-info (:error/code (ex-data err)) (ex-message err) err)))
 
 (defn- extract-reference-errors
   "Extracts reference errors from errors produced by StyleDictionary."
@@ -44,10 +51,20 @@
 
 (defn- show-unknown-types-warning [unknown-tokens]
   (let [type->tokens (group-by-value unknown-tokens)]
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
-               :detail (->> (for [[token-type tokens] type->tokens]
-                              (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
-                            (str/join "<br>"))
+    (l/wrn :hint "unsupported token types found during import"
+           :tokens (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-tokens)))
+    (ntf/show {:content (i18n/tr "workspace.tokens.unknown-token-type-message")
+               :detail (->> (for [[token-type token-paths] type->tokens]
+                              (str (i18n/tr "workspace.tokens.unknown-token-type-section"
+                                            token-type
+                                            (i18n/tr "labels.warning-count" (i18n/c (count token-paths))))
+                                   "<ul>"
+                                   (->> token-paths
+                                        (sort)
+                                        (map #(str "<li>" % "</li>"))
+                                        (str/join ""))
+                                   "</ul>"))
+                            (str/join ""))
                :type :toast
                :level :info})))
 
@@ -62,19 +79,10 @@
   [decoded-json file-name]
   (try
     {:tokens-lib (ctob/parse-decoded-json decoded-json file-name)
-     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json
-                                                      ;; Filter out FF token-types
-                                                      {:process-token-type
-                                                       (fn [dtcg-token-type]
-                                                         (if (or
-                                                              (and (not (contains? cf/flags :token-units))
-                                                                   (= dtcg-token-type "number"))
-                                                              (and (not (contains? cf/flags :token-typography-types))
-                                                                   (contains? ctt/ff-typography-keys dtcg-token-type)))
-                                                           nil
-                                                           dtcg-token-type))})}
+     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json {})}
     (catch js/Error e
-      (let [err (or (extract-name-error e)
+      (let [err (or (extract-error-with-code e)
+                    (extract-name-error e)
                     (wte/error-ex-info :error.import/invalid-json-data decoded-json e))]
         (throw err)))))
 
@@ -85,15 +93,18 @@
   (when unknown-tokens
     (st/emit! (show-unknown-types-warning unknown-tokens)))
   (try
-    (->> (ctob/get-all-tokens tokens-lib)
-         (sd/resolve-tokens-with-verbose-errors)
-         (rx/map (fn [_]
-                   tokens-lib))
-         (rx/catch (fn [sd-error]
-                     (let [reference-errors (extract-reference-errors sd-error)]
-                       (if reference-errors
-                         (rx/of tokens-lib)
-                         (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error)))))))
+    (let [tokens-tree     (ctob/get-all-tokens-map tokens-lib)
+          resolved-tokens (if (contains? cf/flags :tokenscript)
+                            (rx/of (ts/resolve-tokens tokens-tree))
+                            (sd/resolve-tokens-with-verbose-errors tokens-tree))]
+      (->> resolved-tokens
+           (rx/map (fn [_]
+                     tokens-lib))
+           (rx/catch (fn [sd-error]
+                       (let [reference-errors (extract-reference-errors sd-error)]
+                         (if reference-errors
+                           (rx/of tokens-lib)
+                           (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error sd-error sd-error))))))))
     (catch js/Error e
       (throw (wte/error-ex-info :error.import/style-dictionary-unknown-error "" e)))))
 

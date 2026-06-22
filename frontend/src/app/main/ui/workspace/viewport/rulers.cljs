@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.rulers
   (:require
@@ -12,7 +12,6 @@
    [app.common.math :as mth]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (def rulers-pos 15)
@@ -142,7 +141,7 @@
 
    "Z"))
 
-(mf/defc rulers-text
+(mf/defc rulers-text*
   "Draws the text for the rulers in a specific axis"
   [{:keys [vbox step offset axis zoom-inverse]}]
   (let [clip-id (str "clip-ruler-" (d/name axis))
@@ -186,13 +185,13 @@
                   :style {:stroke font-color
                           :stroke-width rulers-width}}]]))]))
 
-(mf/defc viewport-frame
-  [{:keys [show-rulers? zoom zoom-inverse vbox offset-x offset-y]}]
-
+(mf/defc viewport-frame*
+  {::mf/private true}
+  [{:keys [show-rulers zoom zoom-inverse vbox offset-x offset-y]}]
   (let [{:keys [width height] x1 :x y1 :y} vbox
         x2 (+ x1 width)
         y2 (+ y1 height)
-        bw (if show-rulers? (* ruler-area-size zoom-inverse) 0)
+        bw (if show-rulers (* ruler-area-size zoom-inverse) 0)
         br (/ canvas-border-radius zoom)
         bs (* 4 zoom-inverse)]
     [:*
@@ -214,13 +213,13 @@
               :fill-rule "evenodd"
               :fill rulers-background}]]
 
-     (when show-rulers?
+     (when show-rulers
        (let [step (calculate-step-size zoom)]
          [:g.viewport-frame-rulers
-          [:& rulers-text {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
-          [:& rulers-text {:vbox vbox :offset offset-y :step step :zoom-inverse zoom-inverse :axis :y}]]))]))
+          [:> rulers-text* {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
+          [:> rulers-text* {:vbox vbox :offset offset-y :step step :zoom-inverse zoom-inverse :axis :y}]]))]))
 
-(mf/defc selection-area
+(mf/defc selection-area*
   [{:keys [vbox zoom-inverse selection-rect offset-x offset-y]}]
   ;; When using the format-number callls we consider if the guide is associated to a frame and we show the position relative to it with the offset
   [:g.selection-area
@@ -311,37 +310,28 @@
                       :fill selection-area-color}}
        (fmt/format-number (- (:y1 selection-rect) offset-y))]])])
 
-(mf/defc rulers
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes" "show-rulers?"]))]}
-  [props]
-  (let [zoom            (obj/get props "zoom")
-        zoom-inverse    (obj/get props "zoom-inverse")
-        vbox            (obj/get props "vbox")
-        offset-x        (obj/get props "offset-x")
-        offset-y        (obj/get props "offset-y")
-        selected-shapes (-> (obj/get props "selected-shapes")
-                            (hooks/use-equal-memo))
-        show-rulers?    (obj/get props "show-rulers?")
+(mf/defc rulers*
+  [{:keys [zoom zoom-inverse vbox offset-x offset-y selected-shapes show-rulers]}]
+  (let [selected-shapes
+        (hooks/use-equal-memo selected-shapes)
 
         selection-rect
-        (mf/use-memo
-         (mf/deps selected-shapes)
-         #(when (d/not-empty? selected-shapes)
+        (mf/with-memo [selected-shapes]
+          (when (d/not-empty? selected-shapes)
             (gsh/shapes->rect selected-shapes)))]
 
     (when (some? vbox)
       [:g.viewport-frame {:pointer-events "none"}
-       [:& viewport-frame
-        {:show-rulers? show-rulers?
+       [:> viewport-frame*
+        {:show-rulers show-rulers
          :zoom zoom
          :zoom-inverse zoom-inverse
          :vbox vbox
          :offset-x offset-x
          :offset-y offset-y}]
 
-       (when (and show-rulers? (some? selection-rect))
-         [:& selection-area
+       (when (and show-rulers (some? selection-rect))
+         [:> selection-area*
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox

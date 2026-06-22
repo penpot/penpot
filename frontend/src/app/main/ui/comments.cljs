@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.comments
   (:require-macros [app.main.style :as stl])
@@ -45,20 +45,34 @@
 (def mentions-context (mf/create-context nil))
 (def r-mentions-split #"@\[[^\]]*\]\([^\)]*\)")
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+(def r-url-split #"https?://[^\s\)\]]+[^\s\)\]\.,;:!?]")
 (def zero-width-space \u200B)
 
-(defn- parse-comment
-  "Parse a comment into its elements (texts and mentions)"
-  [comment]
-  (d/interleave-all
-   (->> (str/split comment r-mentions-split)
-        (map #(hash-map :type :text :content %)))
+(defn- parse-urls
+  "Split a text element into text and url sub-elements"
+  [element]
+  (if (= (:type element) :text)
+    (let [text (:content element)
+          parts (str/split text r-url-split)
+          urls (re-seq r-url-split text)]
+      (d/interleave-all
+       (map #(hash-map :type :text :content %) parts)
+       (map #(hash-map :type :url :content %) urls)))
+    [element]))
 
-   (->> (re-seq r-mentions comment)
-        (map (fn [[_ user id]]
-               {:type :mention
-                :content user
-                :data {:id id}})))))
+(defn- parse-comment
+  "Parse a comment into its elements (texts, mentions and urls)"
+  [comment]
+  (->> (d/interleave-all
+        (->> (str/split comment r-mentions-split)
+             (map #(hash-map :type :text :content %)))
+
+        (->> (re-seq r-mentions comment)
+             (map (fn [[_ user id]]
+                    {:type :mention
+                     :content user
+                     :data {:id id}}))))
+       (mapcat parse-urls)))
 
 (defn- parse-nodes
   "Parse the nodes to format a comment"
@@ -81,7 +95,7 @@
   ([text]
    (-> (dom/create-element "span")
        (dom/set-data! "type" "text")
-       (dom/set-html! (if (empty? text) zero-width-space text)))))
+       (dom/set-html! (if (empty? text) zero-width-space (dom/escape-html text))))))
 
 (defn- create-mention-node
   "Creates a mention node"
@@ -146,7 +160,13 @@
   [{:keys [content]}]
   (let [comment-elements (mf/use-memo (mf/deps content) #(parse-comment content))]
     (for [[idx {:keys [type content]}] (d/enumerate comment-elements)]
-      (case type
+      (if (= type :url)
+        [:a {:key idx
+             :href content
+             :target "_blank"
+             :rel "noopener noreferrer"
+             :class (stl/css :comment-link)}
+         content]
         [:span
          {:key idx
           :class (stl/css-case
@@ -177,6 +197,7 @@
              (doseq [{:keys [type content data]} (parse-comment value)]
                (case type
                  :text     (dom/append-child! node (create-text-node content))
+                 :url      (dom/append-child! node (create-text-node content))
                  :mention  (dom/append-child! node (create-mention-node (:id data) content))
                  nil)))))
 
@@ -313,7 +334,7 @@
                      after-span (create-text-node (dm/str " " suffix))
                      sel (wapi/get-selection)]
 
-                 (dom/set-html! span-node (if (empty? prefix) zero-width-space prefix))
+                 (dom/set-html! span-node (if (empty? prefix) zero-width-space (dom/escape-html prefix)))
                  (dom/insert-after! node span-node mention-span)
                  (dom/insert-after! node mention-span after-span)
                  (wapi/set-cursor-after! after-span)
@@ -330,7 +351,7 @@
                (let [node-text (dom/get-text span-node)
                      at-symbol (if (blank-content? node-text) "@" " @")]
 
-                 (dom/set-html! span-node (str/concat node-text at-symbol))
+                 (dom/set-html! span-node (str/concat (dom/escape-html node-text) at-symbol))
                  (wapi/set-cursor-after! span-node))))))
 
         handle-key-down
@@ -378,7 +399,7 @@
 
                      (when span-node
                        (let [txt (.-textContent span-node)]
-                         (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n" zero-width-space (subs txt offset)))
+                         (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
                          (wapi/set-cursor! span-node (inc offset))
                          (handle-input)))))
 
@@ -541,8 +562,7 @@
             [:div {:class (stl/css :comments-mentions-email)} email]]))])))
 
 (mf/defc mentions-button*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   []
   (let [mentions-s        (mf/use-ctx mentions-context)
         display-mentions* (mf/use-state false)
@@ -647,8 +667,7 @@
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.replies.new"))]))])]])
 
 (mf/defc comment-form-buttons*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-submit on-cancel is-disabled]}]
   (let [handle-cancel
         (mf/use-fn
@@ -684,8 +703,7 @@
   (> (count content) 750))
 
 (mf/defc comment-reply-form*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-submit]}]
   (let [content       (mf/use-state "")
 
@@ -762,7 +780,7 @@
         h (:height viewport)
 
         comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
-                          ;; We should probably do this in a different way.
+        ;; We should probably do this in a different way.
 
         orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
         orientation-top?  (>= base-y (/ h 2))

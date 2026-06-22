@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.routes
   (:require
@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.team :as dtm]
    [app.main.errors :as errors]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -30,13 +31,16 @@
     ["/recovery"          :auth-recovery]
     ["/verify-token"      :auth-verify-token]]
 
+   (when (contains? cf/flags :nitrate)
+     ["/subscribe-nitrate" :nitrate-entry])
+
    ["/settings"
     ["/profile"       :settings-profile]
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
     ["/subscriptions" :settings-subscription]
-    ["/access-tokens" :settings-access-tokens]
+    ["/integrations"  :settings-integrations]
     ["/notifications" :settings-notifications]]
 
    ["/frame-preview" :frame-preview]
@@ -47,6 +51,9 @@
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
+
+   (when *assert*
+     ["/debug/playground" :debug-playground])
 
    ;; Used for export
    ["/render-sprite/:file-id" :render-sprite]
@@ -61,7 +68,8 @@
     ["/fonts"                :dashboard-fonts]
     ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
-    ["/files"                :dashboard-files]]
+    ["/files"                :dashboard-files]
+    ["/deleted" :dashboard-deleted]]
 
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-legacy-team-members]
@@ -89,6 +97,31 @@
       (swap! storage/session assoc
              :plugin-url plugin))))
 
+(defn- check-sso-and-navigate
+  "Authorization filter for dashboard and workspace routes.
+  Checks if the team being navigated to has an organization with SSO
+  active. If so, calls :check-nitrate-sso and either proceeds with navigation
+  or redirects to the SSO provider URL."
+  [match send-event-info? url]
+  (let [route-name     (name (get-in match [:data :name]))
+        relevant?      (and (contains? cf/flags :nitrate)
+                            (or (str/starts-with? route-name "dashboard")
+                                (str/starts-with? route-name "workspace")))
+        team-id-str    (when relevant?
+                         (or (get-in match [:query-params :team-id])
+                             (get-in match [:params :path :team-id])))
+        team-id        (some-> team-id-str uuid/parse*)]
+    (if (some? team-id)
+      (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+           (rx/subs!
+            (fn [{:keys [authorized redirect-uri]}]
+              (if authorized
+                (st/emit! (rt/navigated match send-event-info?))
+                (when redirect-uri (st/emit! (rt/nav-raw :uri (str redirect-uri))))))
+            (fn [cause]
+              (errors/on-error cause))))
+      (st/emit! (rt/navigated match send-event-info?)))))
+
 (defn on-navigate
   [router path send-event-info?]
   (let [location        (.-location js/document)
@@ -104,7 +137,7 @@
       (st/emit! (rt/assign-exception {:type :not-found}))
 
       (some? match)
-      (st/emit! (rt/navigated match send-event-info?))
+      (check-sso-and-navigate match send-event-info? (rt/get-current-href))
 
       :else
       ;; We just recheck with an additional profile request; this
@@ -140,6 +173,14 @@
   []
   (ptk/reify ::init-routes
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (rt/initialize-router routes)
-             (rt/initialize-history on-navigate)))))
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (rt/initialize-router routes)
+              (rt/initialize-history on-navigate))
+       (->> stream
+            (rx/filter (ptk/type? ::rt/navigated))
+            (rx/map deref)
+            (rx/map #(dm/get-in % [:query-params :wasm]))
+            (rx/buffer 2 1)
+            (rx/filter (fn [[v1 v2]] (not= v1 v2)))
+            (rx/map features/recompute-features))))))

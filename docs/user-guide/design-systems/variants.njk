@@ -107,6 +107,25 @@ desc: Streamline your design workflow with Penpot's Components guide! Learn to c
   <li>Select the variant copy, press right-click, and select the menu option <strong>Restore variant</strong> (will show if the main component still exists).</li>
 </ul>
 
+<h3 id="component-variants-toggle">Toggle for boolean variants</h3>
+<p>When a variant property represents a boolean state, Penpot can display it as a toggle instead of a dropdown. This offers a quicker and more visual way to switch between two opposite values when working with copies.</p>
+<p>The toggle appears in place of the property values dropdown, <strong>only when a copy is selected</strong>.</p>
+<figure>
+  <img src="/img/variants/07-variants-boolean.webp" alt="Boolean variant option" />
+</figure>
+<h4>Accepted value pairs</h4>
+<p>For Penpot to recognize the property as a boolean and display the toggle, the property must be defined with exactly two opposing values. These can be any of the following pairs:</p>
+<ul>
+  <li><code>true</code> / <code>false</code></li>
+  <li><code>on</code> / <code>off</code></li>
+  <li><code>yes</code> / <code>no</code></li>
+</ul>
+<p>The order of the values does not matter. Penpot automatically maps them to ON and OFF states:</p>
+<ul>
+  <li><strong>ON state:</strong> <code>true</code>, <code>yes</code>, <code>on</code></li>
+  <li><strong>OFF state:</strong> <code>false</code>, <code>no</code>, <code>off</code></li>
+</ul>
+
 <h3 id="component-use-variants">Use variants</h3>
 <p>Once you have created your variants, you can place a copy of a component with variants into your design and then switch between its different versions.</p>
 

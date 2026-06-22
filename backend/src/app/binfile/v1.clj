@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.binfile.v1
   "A custom, perfromance and efficiency focused binfile format impl"
@@ -40,8 +40,8 @@
    [promesa.util :as pu]
    [yetti.adapter :as yt])
   (:import
-   com.github.luben.zstd.ZstdIOException
    com.github.luben.zstd.ZstdInputStream
+   com.github.luben.zstd.ZstdIOException
    com.github.luben.zstd.ZstdOutputStream
    java.io.DataInputStream
    java.io.DataOutputStream
@@ -573,7 +573,6 @@
     ;; Insert all file relations
     (doseq [{:keys [library-file-id] :as rel} rels]
       (let [rel (-> rel
-                    (assoc :synced-at timestamp)
                     (update :file-id bfc/lookup-index)
                     (update :library-file-id bfc/lookup-index))]
 
@@ -583,7 +582,12 @@
                    :file-id (:file-id rel)
                    :lib-id (:library-file-id rel)
                    ::l/sync? true)
-            (db/insert! conn :file-library-rel rel))
+            (let [rel-params (dissoc rel :synced-at)]
+              (db/insert! conn :file-library-rel rel-params)
+              (bfc/upsert-file-library-sync! conn {:file-id (:file-id rel-params)
+                                                   :library-file-id (:library-file-id rel-params)
+                                                   :synced-at (or (:synced-at rel)
+                                                                  timestamp)})))
 
           (l/warn :hint "ignoring file library link"
                   :file-id (:file-id rel)

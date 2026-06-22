@@ -8,6 +8,7 @@
 .text-editor-container {
   height: 100%;
   position: relative;
+  cursor: text;
 }
 
 .text-editor-selection-imposter {
@@ -16,34 +17,48 @@
 
 .text-editor-content {
   height: 100%;
-  font-family: sourcesanspro;
-
+  font-family: "sourcesanspro", sans-serif;
   outline: none;
   user-select: text;
   white-space: pre-wrap;
   overflow-wrap: break-word;
-
   caret-color: var(--text-editor-caret-color);
-
   color: transparent;
+
+  // Match Skia's text layout precision: prevent browser text-size
+  // adjustments and ensure consistent kerning across browsers.
+  text-size-adjust: none;
+  font-kerning: normal;
+
+  &::selection,
+  *::selection {
+    color: transparent;
+    -webkit-text-fill-color: transparent; // WebKit/Safari
+  }
+
+  &::selection,
+  *::selection {
+    color: transparent;
+  }
 
   [data-itype="paragraph"] {
     line-height: inherit;
     user-select: text;
-    margin: 0px;
-    font-size: 0px;
+    margin: 0;
+    font-size: 0;
   }
 
-  [data-itype="inline"] {
+  // Text spans emitted by @penpot/text-editor use `data-itype="span"`.
+  // Keep whitespace rules attached to the real node type so trailing spaces
+  // are handled consistently while editing.
+  [data-itype="span"] {
     box-sizing: content-box;
     display: inline;
     line-height: inherit;
     caret-color: var(--text-editor-caret-color);
-    white-space-collapse: pre;
     word-break: normal;
     overflow-wrap: break-word;
     tab-size: 2;
-    -o-tab-size: 2;
   }
 
   [data-itype="root"] {
@@ -54,13 +69,13 @@
 }
 
 .grow-type-auto-width {
-  [data-itype="inline"],
+  [data-itype="span"],
   [data-itype="paragraph"] {
-    white-space: nowrap;
-  }
-
-  [data-itype="inline"] {
-    white-space-collapse: preserve;
+    // Keep auto-width editing on a single preformatted line so trailing
+    // spaces are part of caret geometry and browser selection math.
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: keep-all;
   }
 }
 

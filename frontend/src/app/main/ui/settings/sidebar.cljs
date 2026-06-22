@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.sidebar
   (:require-macros [app.main.style :as stl])
@@ -18,7 +18,6 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -43,8 +42,8 @@
 (def ^:private go-settings-subscription
   #(st/emit! (rt/nav :settings-subscription)))
 
-(def ^:private go-settings-access-tokens
-  #(st/emit! (rt/nav :settings-access-tokens)))
+(def ^:private go-settings-integrations
+  #(st/emit! (rt/nav :settings-integrations)))
 
 (def ^:private go-settings-notifications
   #(st/emit! (rt/nav :settings-notifications)))
@@ -52,21 +51,20 @@
 (defn- show-release-notes
   [event]
   (let [version (:main cf/version)]
-    (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+    (st/emit! (ev/event {::ev/name "show-release-notes" :version version}))
 
     (if (and (kbd/alt? event) (kbd/mod? event))
       (st/emit! (modal/show {:type :onboarding}))
       (st/emit! (modal/show {:type :release-notes :version version})))))
 
-(mf/defc sidebar-content
-  {::mf/props :obj}
+(mf/defc sidebar-content*
   [{:keys [profile section]}]
   (let [profile?       (= section :settings-profile)
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         subscription?  (= section :settings-subscription)
-        access-tokens? (= section :settings-access-tokens)
+        integrations?  (= section :settings-integrations)
         notifications? (= section :settings-notifications)
         team-id        (or (dtm/get-last-team-id)
                            (:default-team-id profile))
@@ -115,12 +113,13 @@
                :data-testid "settings-subscription"}
           [:span {:class (stl/css :element-title)} (tr "subscription.labels")]])
 
-       (when (contains? cf/flags :access-tokens)
-         [:li {:class (stl/css-case :current access-tokens?
+       (when (or (contains? cf/flags :access-tokens)
+                 (contains? cf/flags :mcp))
+         [:li {:class (stl/css-case :current integrations?
                                     :settings-item true)
-               :on-click go-settings-access-tokens
-               :data-testid "settings-access-tokens"}
-          [:span {:class (stl/css :element-title)} (tr "labels.access-tokens")]])
+               :on-click go-settings-integrations
+               :data-testid "settings-integrations"}
+          [:span {:class (stl/css :element-title)} (tr "labels.integrations")]])
 
        [:hr {:class (stl/css :sidebar-separator)}]
 
@@ -135,12 +134,10 @@
           feedback-icon
           [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
-(mf/defc sidebar
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc sidebar*
+  {::mf/wrap [mf/memo]}
   [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
-   [:& sidebar-content {:profile profile
-                        :section section}]
+   [:> sidebar-content* {:profile profile
+                         :section section}]
    [:> profile-section* {:profile profile}]])
-

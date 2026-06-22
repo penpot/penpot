@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -15,21 +16,12 @@
   grid-template-rows: auto auto 1fr;
 }
 
-.versions-entry-empty {
-  align-items: center;
-  color: var(--color-foreground-secondary);
+.versions-empty {
   display: flex;
   flex-direction: column;
-  font-size: deprecated.$fs-12;
-  gap: deprecated.$s-8;
-  padding: deprecated.$s-16;
-}
-
-.versions-entry-empty-icon {
-  background: var(--color-background-tertiary);
-  border-radius: 50%;
-  padding: deprecated.$s-8;
-  display: flex;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
 }
 
 .version-save-version {
@@ -140,15 +132,17 @@
 }
 
 .version-options-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   position: absolute;
   width: fit-content;
   max-width: deprecated.$s-200;
   right: 0;
   left: unset;
   top: var(--offset);
+
   .menu-option {
-    @extend .dropdown-element-base;
+    @extend %dropdown-element-base;
   }
 }
 
@@ -172,6 +166,7 @@
 
   &:hover {
     color: var(--color-accent-primary);
+
     .icon-arrow {
       stroke: var(--color-accent-primary);
     }
@@ -222,6 +217,7 @@
 
   &:active {
     color: var(--color-accent-primary);
+
     :global(.icon-pin) {
       visibility: initial;
       fill: var(--color-accent-primary);
@@ -235,6 +231,7 @@
 
 .cta {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
 
   a {

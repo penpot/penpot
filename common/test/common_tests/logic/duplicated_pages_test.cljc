@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.duplicated-pages-test
   (:require
@@ -64,9 +64,8 @@
 
           (reset-all-overrides [file]
             (-> file
-                (tho/reset-overrides-in-first-child :frame-board-1 :page-label :page-1)
-                (tho/reset-overrides-in-first-child :copy-board-1 :page-label :page-2)
-                (propagate-all-component-changes)))
+                (tho/reset-overrides-in-first-child :frame-board-1 :page-label :page-1 :propagate-fn propagate-all-component-changes)
+                (tho/reset-overrides-in-first-child :copy-board-1 :page-label :page-2 :propagate-fn propagate-all-component-changes)))
 
           (fill-colors [file]
             [(tho/bottom-fill-color file :frame-ellipse-1 :page-label :page-1)

@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.templates
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
@@ -22,7 +23,6 @@
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -39,10 +39,10 @@
   (letfn [(on-finish []
             (st/emit!
              (dd/fetch-recent-files team-id)
-             (ptk/event ::ev/event {::ev/name "import-template-finish"
-                                    ::ev/origin "dashboard"
-                                    :template (:name template)
-                                    :section section})
+             (ev/event {::ev/name "import-template-finish"
+                        ::ev/origin "dashboard"
+                        :template (:name template)
+                        :section section})
 
              (when-not (some? project-id)
                (dcm/go-to-dashboard-recent
@@ -50,10 +50,10 @@
                 :project-id default-project-id))))]
 
     (st/emit!
-     (ptk/event ::ev/event {::ev/name "import-template-launch"
-                            ::ev/origin "dashboard"
-                            :template (:name template)
-                            :section section})
+     (ev/event {::ev/name "import-template-launch"
+                ::ev/origin "dashboard"
+                :template (:name template)
+                :section section})
 
      (modal/show
       {:type :import
@@ -63,8 +63,7 @@
        :on-finish-import on-finish}))))
 
 (mf/defc title*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [on-click is-collapsed]}]
   (let [on-key-down
         (mf/use-fn
@@ -92,11 +91,10 @@
          [:span {:class (stl/css :title-icon)}
           arrow-icon]])]]))
 
-(mf/defc card-item
-  {::mf/wrap-props false}
+(mf/defc card-item*
   [{:keys [item index is-visible collapsed on-import]}]
-  (let [id  (dm/str "card-container-" index)
-        thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
+  (let [id     (dm/str "card-container-" index)
+        href   (u/join cf/public-uri (dm/str "images/thumbnails/template-" (:id item) ".jpg"))
         hover? (mf/use-state false)
 
         on-click
@@ -124,7 +122,7 @@
           :on-mouse-leave #(reset! hover? false)
           :on-key-down on-key-down}
       [:div {:class (stl/css :img-container)}
-       [:img {:src (dm/str thb)
+       [:img {:src (dm/str href)
               :alt (:name item)
               :loading "lazy"
               :decoding "async"}]]
@@ -135,8 +133,7 @@
           (:name item))]
        download-icon]]]))
 
-(mf/defc card-item-link
-  {::mf/wrap-props false}
+(mf/defc card-item-link*
   [{:keys [total is-visible collapsed section]}]
   (let [id (dm/str "card-container-" total)
 
@@ -144,9 +141,9 @@
         (mf/use-fn
          (mf/deps section)
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section section}))))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section section}))))
 
         on-key-down
         (mf/use-fn
@@ -170,7 +167,6 @@
          [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
 (mf/defc templates-section*
-  {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates   (mf/deref builtin-templates)
         templates   (mf/with-memo [templates]
@@ -272,7 +268,7 @@
             :ref content-ref}
 
       (for [index (range (count templates))]
-        [:& card-item
+        [:> card-item*
          {:on-import on-import-template
           :item (nth templates index)
           :index index
@@ -280,7 +276,7 @@
           :is-visible true
           :collapsed collapsed}])
 
-      [:& card-item-link
+      [:> card-item-link*
        {:is-visible true
         :collapsed collapsed
         :section section

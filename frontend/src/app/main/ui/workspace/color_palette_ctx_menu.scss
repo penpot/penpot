@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -27,37 +27,50 @@
     padding: deprecated.$s-8;
     border-radius: deprecated.$br-8;
     margin-bottom: deprecated.$s-4;
+
     &:last-child {
       margin-bottom: 0;
     }
+
     .option-wrapper {
       width: 100%;
+
       .library-name {
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
+
         color: var(--context-menu-foreground-color);
         display: grid;
         grid-template-columns: 1fr deprecated.$s-24;
+
         .lib-name-wrapper {
           display: flex;
           max-width: deprecated.$s-400;
+
           .lib-name {
-            @include deprecated.textEllipsis;
+            @include deprecated.text-ellipsis;
+
             max-width: deprecated.$s-380;
           }
+
           .lib-num {
             margin-left: deprecated.$s-4;
           }
         }
+
         .icon-wrapper {
           margin-left: deprecated.$s-4;
-          @include deprecated.flexCenter;
+
+          @include deprecated.flex-center;
+
           svg {
-            @extend .button-icon-small;
-            @include deprecated.flexCenter;
+            @extend %button-icon-small;
+            @include deprecated.flex-center;
+
             stroke: var(--icon-foreground);
           }
         }
       }
+
       .color-sample {
         display: flex;
         flex-direction: row;
@@ -70,11 +83,14 @@
     &:hover {
       .option-wrapper .library-name {
         color: var(--context-menu-foreground-color-selected);
+
         .icon-wrapper {
-          @include deprecated.flexCenter;
+          @include deprecated.flex-center;
+
           svg {
-            @include deprecated.flexCenter;
-            @extend .button-icon-small;
+            @include deprecated.flex-center;
+            @extend %button-icon-small;
+
             stroke: var(--context-menu-foreground-color-selected);
           }
         }

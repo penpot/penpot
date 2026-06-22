@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.debug
   (:require
@@ -15,7 +15,6 @@
    [app.common.types.path :as path]
    [app.common.types.path.bool :as path.bool]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.common.types.path.subpath :as path.subpath]
    [app.main.refs :as refs]
    [app.util.color :as uc]
@@ -24,7 +23,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc debug-bounding-boxes
+(mf/defc debug-bounding-boxes*
   [{:keys [shape]}]
   (let [points (->> (:points shape)
                     (map #(dm/fmt "%,%" (dm/get-prop % :x) (dm/get-prop % :y)))
@@ -48,11 +47,9 @@
                 :stroke-width 1
                 :stroke color}]]))
 
-(mf/defc debug-text-bounds
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        zoom (mf/deref refs/selected-zoom)
+(mf/defc debug-text-bounds*
+  [{:keys [shape]}]
+  (let [zoom (mf/deref refs/selected-zoom)
         bounding-box (gst/shape->rect shape)
         ctx (js* "document.createElement(\"canvas\").getContext(\"2d\")")]
     [:g {:transform (gsh/transform-str shape)}
@@ -92,8 +89,7 @@
                   :style {:stroke "green"
                           :stroke-width (/ 2 zoom)}}]]))]))
 
-(mf/defc debug-bool-shape
-  {::mf/wrap-props false}
+(mf/defc debug-bool-shape*
   [{:keys [shape]}]
 
   (let [objects (mf/deref refs/workspace-page-objects)
@@ -124,8 +120,8 @@
                       (path.bool/add-previous))
 
 
-        sr-a (path.segment/content->selrect content-a)
-        sr-b (path.segment/content->selrect content-b)
+        sr-a (path/calc-selrect content-a)
+        sr-b (path/calc-selrect content-b)
 
         [content-a-split content-b-split] (path.bool/content-intersect-split content-a content-b sr-a sr-b)
 
@@ -173,17 +169,17 @@
           (when hp
             [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "green"}])]))]))
 
-(mf/defc shape-debug
+(mf/defc shape-debug*
   [{:keys [shape]}]
   [:*
    (when ^boolean (dbg/enabled? :bounding-boxes)
-     [:& debug-bounding-boxes {:shape shape}])
+     [:> debug-bounding-boxes* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :bool-shapes)
               ^boolean (cfh/bool-shape? shape))
-     [:& debug-bool-shape {:shape shape}])
+     [:> debug-bool-shape* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :text-outline)
               ^boolean (cfh/text-shape? shape)
               ^boolean (seq (:position-data shape)))
-     [:& debug-text-bounds {:shape shape}])])
+     [:> debug-text-bounds* {:shape shape}])])

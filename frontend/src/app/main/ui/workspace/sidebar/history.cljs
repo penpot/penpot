@@ -2,16 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.history
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -151,7 +154,7 @@
     :page deprecated-icon/document
     :shape deprecated-icon/svg
     :rect deprecated-icon/rectangle
-    :circle deprecated-icon/elipse
+    :circle deprecated-icon/ellipse
     :text deprecated-icon/text
     :path deprecated-icon/path
     :frame deprecated-icon/board
@@ -169,6 +172,17 @@
 (defn parse-entry [{:keys [redo-changes]}]
   (->> redo-changes
        (map parse-change)))
+
+(defn- short-id
+  "Build a short git-like label for an undo entry. Derives it from the
+  entry's `:undo-group` uuid (which the undo subsystem already generates
+  for every action). Issue #7660."
+  [entry]
+  (when-let [group (:undo-group entry)]
+    (let [s (str group)]
+      (-> s
+          (str/replace #"[^0-9a-f]" "")
+          (subs 0 (min 7 (count s)))))))
 
 (defn safe-name [maybe-keyword]
   (if (keyword? maybe-keyword)
@@ -251,12 +265,19 @@
     (assoc selected-entry :detail detail)))
 
 (defn parse-entries [entries objects]
-  (->> entries
-       (map parse-entry)
-       (map (resolve-shape-types entries objects))
-       (mapv select-entry)))
+  ;; Propagate per-entry metadata (timestamp, undo-group, author) onto
+  ;; the summarized result so the UI can show when the action happened,
+  ;; a short stable identifier, and who made the change. Issue #7660.
+  (mapv (fn [raw-entry]
+          (-> (parse-entry raw-entry)
+              ((resolve-shape-types entries objects))
+              (select-entry)
+              (assoc :timestamp  (:timestamp  raw-entry)
+                     :undo-group (:undo-group raw-entry)
+                     :by         (:by         raw-entry))))
+        entries))
 
-(mf/defc history-entry-details [{:keys [entry]}]
+(mf/defc history-entry-details* [{:keys [entry]}]
   (let [{entries :items} (mf/deref workspace-undo)
         objects (mf/deref refs/workspace-page-objects)]
 
@@ -282,11 +303,16 @@
 
        nil)]))
 
-(mf/defc history-entry
+(mf/defc history-entry*
   {::mf/props :obj}
-  [{:keys [entry idx-entry disabled? current?]}]
+  [{:keys [entry idx-entry is-disabled is-current]}]
   (let [hover?         (mf/use-state false)
         show-detail?   (mf/use-state false)
+
+        relative-time  (ct/timeago (:timestamp entry))
+        label          (short-id entry)
+        author         (:by entry)
+
         toggle-show-detail
         (mf/use-fn
          (fn [event]
@@ -297,8 +323,8 @@
              (when has-entry?
                (swap! show-detail? not)))))]
     [:div {:class (stl/css-case :history-entry true
-                                :disabled disabled?
-                                :current current?
+                                :disabled is-disabled
+                                :current is-current
                                 :hover @hover?
                                 :show-detail @show-detail?)
            :on-pointer-enter #(reset! hover? true)
@@ -308,7 +334,28 @@
      [:div {:class (stl/css :history-entry-summary)}
       [:div {:class (stl/css :history-entry-summary-icon)}
        (entry->icon entry)]
-      [:div {:class (stl/css :history-entry-summary-text)}  (entry->message entry)]
+      [:div {:class (stl/css :history-entry-summary-text)}
+       [:div {:class (stl/css :history-entry-title)}
+        (entry->message entry)]
+       ;; Metadata row: short identifier, relative timestamp, and
+       ;; author. Rendered as plain inline text so the natural word
+       ;; spacing between tokens ("17bc430 · just now by <Name>") is
+       ;; preserved without relying on flex gap. Issue #7660.
+       (when (or label relative-time author)
+         [:div {:class (stl/css :history-entry-meta)}
+          (when label
+            [:span {:class (stl/css :history-entry-hash)
+                    :title (dm/str (:undo-group entry))}
+             label])
+          (when (and label relative-time)
+            [:span {:class (stl/css :history-entry-meta-sep)} " · "])
+          (when relative-time
+            [:span {:class (stl/css :history-entry-time)}
+             relative-time])
+          (when (and (or label relative-time) author) " ")
+          (when author
+            [:span {:class (stl/css :history-entry-author)}
+             (tr "workspace.undo.entry.by" author)])])]
       (when (:detail entry)
         [:div {:class (stl/css-case :history-entry-summary-button true
                                     :button-opened @show-detail?)
@@ -317,7 +364,7 @@
          deprecated-icon/arrow])]
 
      (when @show-detail?
-       [:& history-entry-details {:entry entry}])]))
+       [:> history-entry-details* {:entry entry}])]))
 
 (mf/defc history-toolbox*
   []
@@ -327,15 +374,15 @@
     [:div {:class (stl/css :history-toolbox)}
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
-        [:div {:class (stl/css :history-entry-empty-icon)} deprecated-icon/history]
-        [:div {:class (stl/css :history-entry-empty-msg)} (tr "workspace.undo.empty")]]
+        [:> empty-state* {:icon i/history
+                          :text (tr "workspace.undo.empty")}]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
-             [:& history-entry {:key (str "entry-" idx-entry)
-                                :entry entry
-                                :idx-entry idx-entry
-                                :current? (= idx-entry index)
-                                :disabled? (> idx-entry index)}])])]))
+             [:> history-entry* {:key (str "entry-" idx-entry)
+                                 :entry entry
+                                 :idx-entry idx-entry
+                                 :is-current (= idx-entry index)
+                                 :is-disabled (> idx-entry index)}])])]))
 
 
 

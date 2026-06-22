@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as clr]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.common.types.token :as tk]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -27,6 +26,7 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -68,48 +68,51 @@
 
 (mf/defc color-token-row*
   {::mf/private true}
-  [{:keys [active-tokens color-token color on-swatch-click-token detach-token open-modal-from-token]}]
+  [{:keys [active-tokens applied-token-name color on-swatch-click-token detach-token open-modal-from-token]}]
   (let [;; `active-tokens` may be provided as a `delay` (lazy computation).
         ;; In that case we must deref it (`@active-tokens`) to force evaluation
-        ;; and obtain the actual value. If it’s already realized (not a delay),
+        ;; and obtain the actual value. If it's already realized (not a delay),
         ;; we just use it directly.
         active-tokens (if (delay? active-tokens)
                         @active-tokens
                         active-tokens)
 
-        color-tokens (:color active-tokens)
 
-        token (some #(when (= (:name %) color-token) %) color-tokens)
+        active-color-tokens (:color active-tokens)
+
+        token (some #(when (= (:name %) applied-token-name) %) active-color-tokens)
 
         on-detach-token
         (mf/use-fn
-         (mf/deps detach-token token color-token)
+         (mf/deps detach-token token applied-token-name)
          (fn []
-           (let [token (or token color-token)]
-             (detach-token token))))
+           (let [token-name (or (:name token) applied-token-name)]
+             (detach-token token-name))))
 
         has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (and (some? active-tokens) (nil? token))
+        not-active (or (empty? active-tokens)
+                       (nil? token))
         id (dm/str (:id token) "-name")
+        token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "ds.inputs.token-field.no-active-token-option")
+                                 (tr "options.deleted-token")
                                  has-errors
-                                 (tr "color-row.token-color-row.deleted-token")
+                                 (tr "not-active-token.no-name")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "ds.inputs.token-field.no-active-token-option")
+                               (tr "options.deleted-token")
                                has-errors
-                               (tr "color-row.token-color-row.deleted-token")
+                               (tr "not-active-token.no-name")
                                :else
                                #(mf/html
                                  [:div
                                   [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-                                  [:span {:class (stl/css :token-name-tooltip)} color-token]]))]
+                                  [:span {:class (stl/css :token-name-tooltip)} applied-token-name]]))]
 
     [:div {:class (stl/css :color-info)}
      [:div {:class (stl/css-case :token-color-wrapper true
@@ -125,14 +128,17 @@
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id
+                    :aria-label (str (tr "workspace.tokens.token-name") ": " applied-token-name)
+                    :trigger-ref token-name-ref
                     :class (stl/css :token-tooltip)}
        [:div {:class (stl/css :token-name)
+              :ref token-name-ref
               :aria-labelledby id}
-        (or token-name color-token)]]
+        (or token-name applied-token-name)]]
       [:div {:class (stl/css :token-actions)}
        [:> icon-button*
         {:variant "action"
-         :aria-label (tr "ds.inputs.token-field.detach-token")
+         :aria-label (tr "token-actions.detach-token")
          :on-click on-detach-token
          :icon i/detach}]
        [:> icon-button*
@@ -171,12 +177,8 @@
 
         active-tokens*    (mf/use-ctx ctx/active-tokens-by-type)
 
-        tokens            (mf/with-memo [active-tokens* origin]
-                            (let [origin (if (= :color-selection origin) :fill origin)]
-                              (delay
-                                (-> (deref active-tokens*)
-                                    (select-keys (get tk/tokens-by-input origin))
-                                    (not-empty)))))
+        tokens (mf/with-memo [active-tokens* origin]
+                 (csu/filter-tokens-for-input active-tokens* origin))
 
         on-focus'
         (mf/use-fn
@@ -201,10 +203,10 @@
 
         detach-value
         (mf/use-fn
-         (mf/deps on-detach index)
+         (mf/deps on-detach index color)
          (fn [_]
            (when on-detach
-             (on-detach index))))
+             (on-detach index color))))
 
         handle-select
         (mf/use-fn
@@ -239,7 +241,16 @@
 
         open-modal
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens index)
+         (mf/deps disable-gradient
+                  disable-opacity
+                  disable-image
+                  disable-picker
+                  on-change
+                  on-close
+                  on-open
+                  tokens
+                  index
+                  applied-token)
          (fn [color pos tab]
            (let [color (cond
                          ^boolean has-multiple-colors
@@ -263,6 +274,7 @@
                                     (when on-close
                                       (on-close value opacity id file-id)))
                         :active-tokens tokens
+                        :applied-token applied-token
                         :color-origin origin
                         :tab tab
                         :origin :sidebar
@@ -308,7 +320,7 @@
 
         on-remove'
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index on-remove)
          (fn [_]
            (when on-remove
              (on-remove index))))
@@ -344,6 +356,10 @@
       (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
+    (mf/with-effect [applied-token disable-picker]
+      (when (not disable-picker)
+        (modal/update-props! :colorpicker {:applied-token applied-token})))
+
     [:div {:class [class row-class]}
      ;; Drag handler
      (when (some? on-reorder)
@@ -351,7 +367,7 @@
      (cond
        (and token-color applied-token)
        [:> color-token-row* {:active-tokens tokens
-                             :color-token applied-token
+                             :applied-token-name applied-token
                              :color (dissoc color :ref-id :ref-file)
                              :on-swatch-click-token  on-swatch-click-token
                              :detach-token detach-token
@@ -435,4 +451,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
+                         :tooltip-placement "top-left"
                          :icon i/move}])]))

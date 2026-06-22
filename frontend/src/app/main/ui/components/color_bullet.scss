@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -16,9 +16,11 @@
   min-height: var(--bullet-size, deprecated.$s-24);
   border: deprecated.$s-2 solid var(--color-bullet-border-color);
   border-radius: deprecated.$br-circle;
+
   &.grid-area {
     grid-area: color;
   }
+
   &.mini {
     width: var(--bullet-size, deprecated.$s-16);
     height: var(--bullet-size, deprecated.$s-16);
@@ -31,24 +33,29 @@
   &.is-not-library-color {
     overflow: hidden;
     border-radius: deprecated.$br-8;
+
     & .color-bullet-wrapper {
       clip-path: none;
     }
+
     &.mini {
       border-radius: deprecated.$br-4;
     }
   }
+
   &.is-gradient {
     background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAExJREFUSIljvHnz5n8GLEBNTQ2bMMOtW7ewiuNSz4RVlIpg1IKBt4Dx////WFMRqakFl/qhH0SjFhAELNRKLaNl0Qi2YLQsGrWAcgAA0gAgQPhT2rAAAAAASUVORK5CYII=")
       left center;
     background-color: var(--color-bullet-background-color);
     transform: rotate(-90deg);
   }
+
   &.is-transparent {
     background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAExJREFUSIljvHnz5n8GLEBNTQ2bMMOtW7ewiuNSz4RVlIpg1IKBt4Dx////WFMRqakFl/qhH0SjFhAELNRKLaNl0Qi2YLQsGrWAcgAA0gAgQPhT2rAAAAAASUVORK5CYII=")
       left center;
     background-color: var(--color-bullet-background-color);
   }
+
   .color-bullet-wrapper {
     display: flex;
     flex-direction: row;
@@ -59,33 +66,39 @@
     background-repeat: no-repeat;
     background-position: center;
   }
+
   .color-bullet-wrapper > * {
     width: 100%;
     height: 100%;
     background-color: var(--color-bullet-background-color);
   }
+
   &:hover:not(.read-only) {
     border: deprecated.$s-2 solid var(--color-bullet-border-color-selected);
   }
 }
 
 .color-text {
-  @include deprecated.twoLineTextEllipsis;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.two-line-text-ellipsis;
+  @include deprecated.body-small-typography;
+
   width: deprecated.$s-80;
   text-align: center;
   margin-top: deprecated.$s-2;
   max-height: deprecated.$s-28;
   color: var(--palette-text-color);
+
   &.small-text {
-    @include deprecated.textEllipsis;
+    @include deprecated.text-ellipsis;
+
     max-height: deprecated.$s-16;
   }
 }
 
 .big-text {
-  @include deprecated.inspectValue;
-  @include deprecated.twoLineTextEllipsis;
+  @include deprecated.inspect-value;
+  @include deprecated.two-line-text-ellipsis;
+
   line-height: 1;
   color: var(--palette-text-color);
   text-align: center;

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.redis
   "The msgbus abstraction implemented using redis as underlying backend."
@@ -24,28 +24,27 @@
    [integrant.core :as ig])
   (:import
    clojure.lang.MapEntry
-   io.lettuce.core.KeyValue
-   io.lettuce.core.RedisClient
-   io.lettuce.core.RedisCommandInterruptedException
-   io.lettuce.core.RedisCommandTimeoutException
-   io.lettuce.core.RedisException
-   io.lettuce.core.RedisURI
-   io.lettuce.core.ScriptOutputType
-   io.lettuce.core.SetArgs
    io.lettuce.core.api.StatefulRedisConnection
    io.lettuce.core.api.sync.RedisCommands
    io.lettuce.core.api.sync.RedisScriptingCommands
    io.lettuce.core.codec.RedisCodec
    io.lettuce.core.codec.StringCodec
+   io.lettuce.core.KeyValue
+   io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    io.lettuce.core.pubsub.RedisPubSubListener
    io.lettuce.core.pubsub.StatefulRedisPubSubConnection
-   io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
+   io.lettuce.core.RedisClient
+   io.lettuce.core.RedisCommandInterruptedException
+   io.lettuce.core.RedisCommandTimeoutException
+   io.lettuce.core.RedisException
+   io.lettuce.core.RedisURI
    io.lettuce.core.resource.ClientResources
    io.lettuce.core.resource.DefaultClientResources
+   io.lettuce.core.ScriptOutputType
+   io.lettuce.core.SetArgs
    io.netty.channel.nio.NioEventLoopGroup
    io.netty.util.HashedWheelTimer
    io.netty.util.Timer
-   io.netty.util.concurrent.EventExecutorGroup
    java.lang.AutoCloseable
    java.time.Duration))
 
@@ -527,7 +526,6 @@
 (def ^:private schema:client-params
   [:map {:title "redis-params"}
    ::wrk/netty-io-executor
-   ::wrk/netty-executor
    [::uri ::sm/uri]
    [::timeout ::ct/duration]])
 
@@ -539,7 +537,7 @@
   (check-client-params params))
 
 (defmethod ig/init-key ::client
-  [_ {:keys [::uri ::wrk/netty-io-executor ::wrk/netty-executor] :as params}]
+  [_ {:keys [::uri ::wrk/netty-io-executor] :as params}]
 
   (l/inf :hint "initialize redis client" :uri (str uri))
 
@@ -547,7 +545,6 @@
         cache     (atom {})
 
         resources (.. (DefaultClientResources/builder)
-                      (eventExecutorGroup ^EventExecutorGroup netty-executor)
 
                       ;; We provide lettuce with a shared event loop
                       ;; group instance instead of letting lettuce to

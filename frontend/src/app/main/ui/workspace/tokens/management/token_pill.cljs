@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.token-pill
   (:require-macros
@@ -10,11 +10,13 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.tokens :as cft]
+   [app.common.files.tokens :as cfo]
    [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
+   [app.config :as cf]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
+   [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
@@ -100,7 +102,7 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
+  [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set is-name-collision errors]
   (let [{:keys [name type resolved-value value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
@@ -126,6 +128,9 @@
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
       (tr "workspace.tokens.ref-not-valid")
+
+      is-name-collision
+      (wte/resolve-error-message (first errors))
 
       no-valid-value
       (tr "workspace.tokens.value-not-valid")
@@ -156,9 +161,9 @@
 
 (defn- applied-all-attributes?
   [token selected-shapes attributes]
-  (let [ids-by-attributes (cft/shapes-ids-by-applied-attributes token selected-shapes attributes)
+  (let [ids-by-attributes (cfo/shapes-ids-by-applied-attributes token selected-shapes attributes)
         shape-ids         (into #{} xf:map-id selected-shapes)]
-    (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+    (cfo/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (defn attributes-match-selection?
   [selected-shapes attrs & {:keys [selected-inside-layout?]}]
@@ -166,7 +171,7 @@
    ;; Edge-case for allowing margin attribute on shapes inside layout parent
    (and selected-inside-layout? (set/subset? ctt/spacing-margin-keys attrs))
    (some (fn [shape]
-           (ctt/any-appliable-attr? attrs (:type shape) (:layout shape)))
+           (ctt/any-appliable-attr-for-shape? attrs (:type shape) (:layout shape)))
          selected-shapes)))
 
 (def token-types-with-status-icon
@@ -175,10 +180,12 @@
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
-  (let [{:keys [name value errors type]} token
+  (let [{:keys [name value type]} token
+        resolved-token (get active-theme-tokens (:name token))
+        errors         (:errors resolved-token)
 
         has-selected?  (pos? (count selected-shapes))
-        is-reference?  (cft/is-reference? token)
+        is-reference?  (cfo/is-reference? token)
         contains-path? (str/includes? name ".")
 
         attributes (as-> (get dwta/token-properties type) $
@@ -191,7 +198,7 @@
 
         applied?
         (if has-selected?
-          (cft/shapes-token-applied? token selected-shapes attributes)
+          (cfo/shapes-token-applied? token selected-shapes attributes)
           false)
 
         half-applied?
@@ -209,20 +216,27 @@
         is-viewer? (not can-edit?)
 
         ref-not-in-active-set
-        (and is-reference?
-             (not (contains-reference-value? value active-theme-tokens)))
+        (if (contains? cf/flags :tokenscript)
+          (seq (:errors resolved-token))
+          (and is-reference?
+               (not (contains-reference-value? value active-theme-tokens))))
+
+        name-collision (->> errors
+                            (first)
+                            (:error/code)
+                            (= :error.token/name-collision))
 
         no-valid-value (seq errors)
 
         errors?
         (or ref-not-in-active-set
-            no-valid-value)
+            no-valid-value
+            name-collision)
 
         color
-        (when (cft/color-token? token)
-          (let [theme-token (get active-theme-tokens name)]
-            (or (dwtc/resolved-token-bullet-color theme-token)
-                (dwtc/resolved-token-bullet-color token))))
+        (when (cfo/color-token? token)
+          (or (dwtc/resolved-token-bullet-color resolved-token)
+              (dwtc/resolved-token-bullet-color token)))
 
         status-icon? (contains? token-types-with-status-icon type)
 
@@ -261,12 +275,12 @@
 
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set)
+         (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set name-collision errors)
          (fn [event]
            (let [node  (dom/get-current-target event)
                  theme-token (get active-theme-tokens name)
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
-                                         half-applied? no-valid-value ref-not-in-active-set)]
+                                         half-applied? no-valid-value ref-not-in-active-set name-collision errors)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case
@@ -284,6 +298,7 @@
                                                       errors?)
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
+              :id (str "token-pill-" (:id token))
               :type "button"
               :on-focus on-hover
 
@@ -295,7 +310,10 @@
        errors?
        [:> icon*
         {:icon-id i/broken-link
-         :class (stl/css :token-pill-icon)}]
+         :class (stl/css :token-pill-icon)
+         :aria-label (if name-collision
+                       (wte/resolve-error-message (first errors))
+                       (tr "workspace.tokens.missing-reference"))}]
 
        color
        [:> swatch* {:background color
@@ -307,10 +325,9 @@
          :class (stl/css :token-pill-icon)}])
 
      (if contains-path?
-       (let [[first-part last-part] (cpn/split-by-last-period name)]
+       (let [[_ last-part] (cpn/split-by-last-period name)]
          [:span {:class (stl/css :divided-name-wrapper)
                  :aria-label name}
-          [:span {:class (stl/css :first-name-wrapper)} first-part]
           [:span {:class (stl/css :last-name-wrapper)} last-part]])
        [:span {:class (stl/css :name-wrapper)
                :aria-label name}

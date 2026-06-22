@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.comp-creation-test
   (:require
@@ -303,6 +303,62 @@
     (t/is (some? child2'))
     (t/is (= (thi/id :main1-child) (:id child1')))
     (t/is (not= (thi/id :main1-child) (:id child2')))))
+
+(t/deftest test-duplicate-component-rewrites-component-file-to-destination
+  ;; Regression test for Issue #8144. When a component is duplicated
+  ;; into a different file via `:apply-changes-local-library? true`
+  ;; and `:new-component-file` is provided, the returned main-instance
+  ;; shape must carry `:component-file` equal to the destination file
+  ;; id so the referential-integrity validator
+  ;; (:component-main-external) is satisfied.
+  (let [;; ==== Setup
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-simple-component :component1
+                                             :main1-root
+                                             :main1-child))
+
+        component          (thc/get-component file :component1)
+        new-component-file (uuid/next)
+
+        ;; ==== Action
+        [new-shape _]
+        (cll/generate-duplicate-component (pcb/empty-changes)
+                                          file
+                                          (:id component)
+                                          (uuid/next)
+                                          {:apply-changes-local-library? true
+                                           :new-component-file new-component-file})]
+
+    ;; ==== Check
+    (t/is (some? new-shape))
+    (t/is (ctk/main-instance? new-shape))
+    (t/is (= new-component-file (:component-file new-shape)))))
+
+(t/deftest test-duplicate-component-keeps-component-file-without-dest
+  ;; Baseline: when no `:new-component-file` is passed (same-file
+  ;; duplication), the main-instance's `:component-file` is left
+  ;; untouched, matching pre-existing behavior.
+  (let [;; ==== Setup
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-simple-component :component1
+                                             :main1-root
+                                             :main1-child))
+
+        component       (thc/get-component file :component1)
+        original-source (:component-file
+                         (ths/get-shape-by-id file (:main-instance-id component)))
+
+        ;; ==== Action
+        [new-shape _]
+        (cll/generate-duplicate-component (pcb/empty-changes)
+                                          file
+                                          (:id component)
+                                          (uuid/next)
+                                          {:apply-changes-local-library? true})]
+
+    ;; ==== Check
+    (t/is (some? new-shape))
+    (t/is (= original-source (:component-file new-shape)))))
 
 (t/deftest test-delete-component
   (let [;; ==== Setup

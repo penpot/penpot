@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.register
   (:require
@@ -10,11 +10,32 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.types.plugins :as ctp]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [promesa.core :as p]))
+
+;; Needs to be here because moving it to `app.main.data.workspace.mcp` will
+;; cause a circular dependency
+(def mcp-plugin-id "96dfa740-005d-8020-8007-55ede24a2bae")
+
+;; Promise that resolves when plugins runtime is initialized.
+;; Lives here to avoid circular dependency: workspace.mcp -> app.plugins -> app.plugins.api -> workspace
+(defonce ^:private runtime-ready-promise (p/deferred))
+
+(defn wait-for-runtime
+  "Returns a promise that resolves when plugins runtime is initialized."
+  []
+  runtime-ready-promise)
+
+(defn signal-runtime-ready
+  "Signals that plugins runtime has been initialized. Called by app.plugins/init-plugins-runtime."
+  []
+  (when (p/pending? runtime-ready-promise)
+    (p/resolve! runtime-ready-promise true)))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))
@@ -37,6 +58,7 @@
         desc (obj/get manifest "description")
         code (obj/get manifest "code")
         icon (obj/get manifest "icon")
+        vers (d/nilv (obj/get manifest "version") 1)
 
         permissions (into #{} (obj/get manifest "permissions" []))
         permissions
@@ -48,9 +70,22 @@
           (conj "library:read")
 
           (contains? permissions "comment:write")
-          (conj "comment:read"))
+          (conj "comment:read")
 
-        origin (obj/get (js/URL. plugin-url) "origin")
+          (contains? permissions "clipboard:write")
+          (conj "clipboard:read"))
+
+        plugin-url
+        (u/uri plugin-url)
+
+        origin
+        (if (= vers 1)
+          (-> plugin-url
+              (assoc :path "")
+              (str))
+          (-> plugin-url
+              (u/join ".")
+              (str)))
 
         prev-plugin
         (->> (:data @registry)
@@ -59,12 +94,14 @@
                        (and (= name (:name plugin))
                             (= origin (:host plugin))))))
 
-        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
+        plugin-id
+        (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
 
         manifest
         (d/without-nils
          {:plugin-id plugin-id
-          :url plugin-url
+          :url (str plugin-url)
+          :version vers
           :name name
           :description desc
           :host origin
@@ -113,6 +150,11 @@
 
 (defn check-permission
   [plugin-id permission]
-  (or (= plugin-id "TEST")
+  (or (= plugin-id "00000000-0000-0000-0000-000000000000")
+      (= plugin-id mcp-plugin-id)
       (let [{:keys [permissions]} (dm/get-in @registry [:data plugin-id])]
         (contains? permissions permission))))
+
+(defn get-plugin-data
+  [state plugin-id]
+  (get-in state [:profile :props :plugins :data plugin-id]))

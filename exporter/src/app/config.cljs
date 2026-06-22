@@ -2,18 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
   (:require
-   ["process" :as process]
+   ["node:buffer" :as buffer]
+   ["node:crypto" :as crypto]
+   ["node:process" :as process]
    [app.common.data :as d]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.version :as v]
    [cljs.core :as c]
    [cuerdas.core :as str]))
+
+(l/set-level! :info)
 
 (def ^:private defaults
   {:public-uri "http://localhost:3449"
@@ -21,13 +26,14 @@
    :host "localhost"
    :http-server-port 6061
    :http-server-host "0.0.0.0"
-   :tempdir "/tmp/penpot-exporter"
+   :tempdir "/tmp/penpot"
    :redis-uri "redis://redis/0"})
 
-(def ^:private
-  schema:config
+(def ^:private schema:config
   [:map {:title "config"}
+   [:secret-key :string]
    [:public-uri {:optional true} ::sm/uri]
+   [:exporter-shared-key {:optional true} :string]
    [:host {:optional true} :string]
    [:tenant {:optional true} :string]
    [:flags {:optional true} [::sm/set :keyword]]
@@ -93,3 +99,12 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(def management-key
+  (let [key (or (c/get config :exporter-shared-key)
+                (let [secret-key  (c/get config :secret-key)
+                      derived-key (crypto/hkdfSync "blake2b512" secret-key, "exporter" "" 32)]
+                  (-> (.from buffer/Buffer derived-key)
+                      (.toString "base64url"))))]
+    (l/inf :hint "exporter key initialized" :key (d/obfuscate-string key))
+    key))

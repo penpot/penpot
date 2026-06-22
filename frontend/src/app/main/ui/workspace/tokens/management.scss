@@ -2,15 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as *;
 
 .sets-header-container {
   @include use-typography("headline-small");
+
   padding: var(--sp-s);
   color: var(--title-foreground-color);
-  word-break: break-word;
+  overflow-wrap: break-word;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -24,6 +25,7 @@
 
 .sets-header-status {
   @include use-typography("body-small");
+
   text-transform: none;
   color: var(--color-foreground-secondary);
   display: flex;

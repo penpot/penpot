@@ -2,11 +2,19 @@
 
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh;
 
-export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
+export JAVA_OPTS="-Djava.net.preferIPv4Stack=true"
+export PATH="/home/penpot/.cargo/bin:/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 export CARGO_HOME="/home/penpot/.cargo"
 
+export PENPOT_MCP_PLUGIN_SERVER_HOST=0.0.0.0
+export PENPOT_MCP_SERVER_HOST=0.0.0.0
+
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
+
 alias l='ls --color -GFlh'
-alias rm='rm -r'
+alias ll='ls --color -GFlh'
+alias rm='rm -rf'
 alias ls='ls --color -F'
 alias lsd='ls -d *(/)'
 alias lsf='ls -h *(.)'

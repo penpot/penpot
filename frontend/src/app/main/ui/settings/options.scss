@@ -2,6 +2,64 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "./profile" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.dashboard-settings {
+  display: grid;
+}
+
+.form-container {
+  --menu-max-height-up: #{px2rem(180)};
+
+  &:first-child {
+    margin-block-end: var(--sp-xxxl);
+  }
+}
+
+/* Copied from profile.scss .form-container, but without included nested
+   rules, since we want custom styles for it */
+.webgl-container {
+  display: grid;
+  grid-auto-rows: auto;
+  gap: var(--sp-s);
+  width: $sz-500;
+  padding-block-start: var(--sp-xxxl);
+  margin: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
+}
+
+.webgl-header {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--sp-m);
+}
+
+.description {
+  color: var(--color-foreground-secondary);
+}
+
+.beta {
+  color: var(--color-accent-primary);
+  padding: var(--sp-xxs) var(--sp-s);
+  border: $b-1 solid var(--color-accent-primary);
+  border-radius: $br-4;
+}
+
+.title {
+  color: var(--color-foreground-primary);
+}
+
+.link {
+  color: var(--color-accent-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}

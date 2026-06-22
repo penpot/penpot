@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.shapes.multiple
   (:require-macros [app.main.style :as stl])
@@ -20,18 +20,18 @@
    [app.common.types.token :as tt]
    [app.common.weak :as weak]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [rumext.v2 :as mf]))
 
@@ -48,6 +48,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :children
     :exports          :shape
@@ -61,6 +62,7 @@
     :fill             :children
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :children
     :text             :children
     :exports          :shape
@@ -74,6 +76,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -87,6 +90,7 @@
     :fill             :text
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :text
     :exports          :shape
@@ -100,6 +104,7 @@
     :fill             :ignore
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :ignore
     :text             :ignore
     :exports          :shape
@@ -113,6 +118,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -126,6 +132,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -139,6 +146,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -152,6 +160,7 @@
     :fill             :shape
     :shadow           :shape
     :blur             :shape
+    :background-blur  :shape
     :stroke           :shape
     :text             :ignore
     :exports          :shape
@@ -236,10 +245,8 @@
         (fn [acc shape-attrs applied-tokens]
           "Merges token values across all shape attributes.
            For each shape attribute, its corresponding token attributes are merged
-           into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
-          (if (seq applied-tokens)
-            (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs)
-            acc))
+           into the accumulator."
+          (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
@@ -257,6 +264,9 @@
                                   (cond
                                     (= attr-group :measure) (select-measure-keys shape)
                                     :else (select-keys shape editable-attrs)))
+                    shape-values (cond-> shape-values
+                                   (= attr-group :layer)
+                                   (update :hidden #(if (nil? %) false %)))
                     new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
                  (merge-attrs values shape-values)
@@ -273,7 +283,7 @@
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc content-attrs applied-tokens)]
+                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])
@@ -328,6 +338,9 @@
   (let [shape-ids
         (mf/with-memo [shapes]
           (into #{} d/xf:map-id shapes))
+
+        typographies
+        (mf/deref refs/workspace-file-typography)
 
         is-layout-child-ref
         (mf/with-memo [shape-ids]
@@ -384,10 +397,10 @@
                        objects
                        objects)))
 
-        [layer-ids layer-values]
+        [layer-ids layer-values layer-tokens]
         (get-attrs shapes objects :layer)
 
-        [text-ids text-values]
+        [text-ids text-values text-tokens]
         (get-attrs shapes objects :text)
 
         [constraint-ids constraint-values]
@@ -408,10 +421,10 @@
         [exports-ids exports-values]
         (get-attrs shapes objects :exports)
 
-        [layout-container-ids layout-container-values layout-contianer-tokens]
+        [layout-container-ids layout-container-values layout-container-tokens]
         (get-attrs shapes objects :layout-container)
 
-        [layout-item-ids layout-item-values {}]
+        [layout-item-ids layout-item-values layout-item-tokens]
         (get-attrs shapes objects :layout-item)
 
         components
@@ -444,6 +457,7 @@
      (when-not (empty? layer-ids)
        [:> layer-menu* {:type type
                         :ids layer-ids
+                        :applied-tokens layer-tokens
                         :values layer-values}])
 
      (when-not (empty? measure-ids)
@@ -457,28 +471,36 @@
      (when (some? components)
        [:> component-menu* {:shapes components}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type type
        :ids layout-container-ids
        :values layout-container-values
-       :applied-tokens layout-contianer-tokens
+       :applied-tokens layout-container-tokens
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
-       [:& layout-item-menu
+       [:> layout-item-menu*
         {:type type
          :ids layout-item-ids
-         :is-layout-child? all-layout-child?
-         :is-layout-container? all-flex-layout-container?
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
+         :is-layout-child all-layout-child?
+         :is-layout-container all-flex-layout-container?
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
+         :applied-tokens layout-item-tokens
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+       [:> constraints-menu* {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:> ot/text-menu*
+        {:type type
+         :ids text-ids
+         :values text-values
+         :applied-tokens text-tokens
+         :libraries libraries
+         :file-id file-id
+         :typographies typographies}])
 
      (when-not (empty? fill-ids)
        [:> fill/fill-menu* {:type type
@@ -487,12 +509,12 @@
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type
-                        :ids stroke-ids
-                        :show-caps show-caps?
-                        :values stroke-values
-                        :disable-stroke-style has-text?
-                        :applied-tokens stroke-tokens}])
+       [:> stroke-menu* {:type type
+                         :ids stroke-ids
+                         :show-caps show-caps?
+                         :values stroke-values
+                         :disable-stroke-style has-text?
+                         :applied-tokens stroke-tokens}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
@@ -507,7 +529,7 @@
                          :values (get shadow-values :shadow)}])
 
      (when-not (empty? blur-ids)
-       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
+       [:> blur-menu* {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? exports-ids)
        [:> exports-menu* {:type type

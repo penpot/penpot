@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.viewport-ref
   (:require
@@ -65,6 +65,14 @@
         (-> (gpt/subtract pt brect)
             (gpt/divide zoom)
             (gpt/add box))))))
+
+(defn point->viewport-relative
+  "Convert client coordinates to viewport-relative coordinates.
+   Unlike point->viewport, this does NOT convert to canvas coordinates -
+   it just subtracts the viewport's bounding rect offset."
+  [pt]
+  (when (some? @viewport-brect)
+    (gpt/subtract pt @viewport-brect)))
 
 (defn inside-viewport?
   [target]

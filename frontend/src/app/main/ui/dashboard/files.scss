@@ -2,10 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
@@ -13,10 +15,12 @@
   overflow-y: auto;
   width: 100%;
   border-top: deprecated.$s-1 solid var(--color-background-quaternary);
+  padding-block-end: var(--sp-xxxl);
 
   &.dashboard-projects {
     user-select: none;
   }
+
   &.dashboard-shared {
     width: calc(100vw - deprecated.$s-320);
     margin-right: deprecated.$s-52;
@@ -32,7 +36,8 @@
 }
 
 .menu-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 

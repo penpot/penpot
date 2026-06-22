@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.text.content.from-dom
   (:require
    [app.common.data :as d]
    [app.common.types.text :as txt]
+   [app.util.dom :as dom]
    [app.util.text.content.styles :as styles]))
 
 (defn is-text-node
@@ -23,60 +24,77 @@
   [node]
   (is-element node "br"))
 
-(defn is-inline-child
+(defn is-text-span-child
   [node]
   (or (is-line-break node)
       (is-text-node node)))
 
-(defn get-inline-text
+(defn get-text-span-text
   [element]
-  (when-not (is-inline-child (.-firstChild element))
-    (throw (js/TypeError. "Invalid inline child")))
+  (when-not (is-text-span-child (.-firstChild element))
+    (throw (js/TypeError. "Invalid text span child")))
   (if (is-line-break (.-firstChild element))
     ""
     (.-textContent element)))
 
 (defn get-attrs-from-styles
-  [element attrs]
-  (reduce (fn [acc key]
-            (let [style (.-style element)]
-              (if (contains? styles/mapping key)
-                (let [style-name (styles/get-style-name-as-css-variable key)
-                      [_ style-decode] (get styles/mapping key)
-                      value (style-decode (.getPropertyValue style style-name))]
-                  (assoc acc key value))
-                (let [style-name (styles/get-style-name key)]
-                  (assoc acc key (styles/normalize-attr-value key (.getPropertyValue style style-name))))))) {} attrs))
+  [element attrs defaults]
+  (let [attrs (or attrs [])
+        value-empty? (fn [v]
+                       (or (nil? v)
+                           (and (string? v) (empty? v))
+                           (and (coll? v) (empty? v))))]
+    (reduce (fn [acc key]
+              (let [style (.-style element)
+                    value (if (contains? styles/mapping key)
+                            (let [style-name (styles/get-style-name-as-css-variable key)
+                                  [_ style-decode] (get styles/mapping key)]
+                              (style-decode (.getPropertyValue style style-name)))
+                            (let [style-name (styles/get-style-name key)]
+                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
+                (assoc acc key (if (value-empty? value) (get defaults key) value))))
+            {} attrs)))
 
-(defn get-inline-styles
+(defn get-text-span-styles
   [element]
-  (get-attrs-from-styles element txt/text-node-attrs))
+  (get-attrs-from-styles element txt/text-node-attrs (txt/get-default-text-attrs)))
 
 (defn get-paragraph-styles
   [element]
-  (get-attrs-from-styles element (d/concat-set txt/paragraph-attrs txt/text-node-attrs)))
+  (let [styles (get-attrs-from-styles element
+                                      (d/concat-set txt/paragraph-attrs txt/text-node-attrs)
+                                      (d/merge txt/default-paragraph-attrs txt/default-text-attrs))
+        ;; Recover real font-size from data attribute, which to_dom/get-paragraph-styles may have
+        ;; changed to "0" ("0" trick to avoid it interfering with height calculation in the browser).
+        saved-font-size (dom/get-data element "saved-font-size")
+        saved-font-size (when (and (string? saved-font-size) (not (empty? saved-font-size)))
+                          saved-font-size)]
+    (cond-> styles
+      (some? saved-font-size)
+      (assoc :font-size saved-font-size))))
 
 (defn get-root-styles
   [element]
-  (get-attrs-from-styles element txt/root-attrs))
+  (get-attrs-from-styles element txt/root-attrs txt/default-root-attrs))
 
-(defn create-inline
+(defn create-text-span
   [element]
-  (d/merge {:text (get-inline-text element)
-            :key (.-id element)}
-           (get-inline-styles element)))
+  (let [text (get-text-span-text element)]
+    (d/merge {:text text
+              :key (.-id element)}
+             (get-text-span-styles element))))
 
 (defn create-paragraph
   [element]
   (d/merge {:type "paragraph"
             :key (.-id element)
-            :children (mapv create-inline (.-children element))}
+            :children (mapv create-text-span (.-children element))}
            (get-paragraph-styles element)))
 
 (defn create-root
   [element]
   (let [root-styles (get-root-styles element)]
-    (d/merge {:type "root",
+    (d/merge {:type "root"
               :key (.-id element)
               :children [{:type "paragraph-set"
                           :children (mapv create-paragraph (.-children element))}]}

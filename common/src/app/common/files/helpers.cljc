@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.helpers
   (:require
@@ -72,9 +72,11 @@
        (= :bool (dm/get-prop shape :type))))
 
 (defn text-shape?
-  [shape]
-  (and (some? shape)
-       (= :text (dm/get-prop shape :type))))
+  ([shape]
+   (and (some? shape)
+        (= :text (dm/get-prop shape :type))))
+  ([objects id]
+   (text-shape? (get objects id))))
 
 (defn rect-shape?
   [shape]
@@ -353,7 +355,8 @@
         prt (get objects pid)
         shapes (:shapes prt)
         pos (d/index-of shapes id)]
-    (if (= 0 pos) nil (nth shapes (dec pos)))))
+    (when (and (some? pos) (pos? pos))
+      (nth shapes (dec pos)))))
 
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children
@@ -524,20 +527,25 @@
           ids))
 
 (defn clean-loops
-  "Clean a list of ids from circular references."
+  "Clean a list of ids from circular references. Optimized fast-path for single selections."
   [objects ids]
-  (let [parent-selected?
-        (fn [id]
-          (let [parents (get-parent-ids objects id)]
-            (some ids parents)))
+  (if (<= (count ids) 1)
+    ;; For single selection, there can't be circularity; return as ordered-set.
+    (into (d/ordered-set) ids)
+    (let [ids-set (if (set? ids) ids (set ids))
+          parent-selected?
+          (fn [id]
+            ;; Stop early as soon as we find any selected parent
+            (let [parents (get-parent-ids objects id)]
+              (some #(contains? ids-set %) parents)))
 
-        add-element
-        (fn [result id]
-          (cond-> result
-            (not (parent-selected? id))
-            (conj id)))]
+          add-element
+          (fn [result id]
+            (cond-> result
+              (not (parent-selected? id))
+              (conj id)))]
 
-    (reduce add-element (d/ordered-set) ids)))
+      (reduce add-element (d/ordered-set) ids))))
 
 (defn- indexed-shapes
   "Retrieves a vector with the indexes for each element in the layer

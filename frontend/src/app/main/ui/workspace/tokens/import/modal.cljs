@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.import.modal
   (:require-macros [app.main.style :as stl])
@@ -27,7 +27,6 @@
    [app.util.zip :as uz]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- on-stream-imported
@@ -35,7 +34,7 @@
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
-     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens" :type type})
+     (st/emit! (ev/event {::ev/name "import-tokens" :type type})
                (dwtl/import-tokens-lib lib))
      (modal/hide!))
    (fn [err]
@@ -268,9 +267,9 @@
                    :on-click modal/hide!}
        (tr "labels.cancel")]
       [:> import-type-dropdown*
-       {:options [{:label (tr "workspace.tokens.import-menu-zip-option") :value :zip}
-                  {:label (tr "workspace.tokens.import-menu-json-option") :value :file}
+       {:options [{:label (tr "workspace.tokens.import-menu-json-option") :value :file}
+                  {:label (tr "workspace.tokens.import-menu-zip-option") :value :zip}
                   {:label (tr "workspace.tokens.import-menu-folder-option") :value :folder}]
         :on-click handle-import-action
         :text-render render-button-text
-        :default :zip}]]]))
+        :default :file}]]]))

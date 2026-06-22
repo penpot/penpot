@@ -2,6 +2,8 @@ use crate::math::Rect as MathRect;
 use crate::shapes::ImageFill;
 use crate::uuid::Uuid;
 
+use crate::error::Result;
+use crate::get_gpu_state;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize};
 use std::collections::HashMap;
@@ -70,7 +72,7 @@ fn create_image_from_gl_texture(
     texture_id: u32,
     width: i32,
     height: i32,
-) -> Result<Image, String> {
+) -> Result<Image> {
     use skia_safe::gpu;
     use skia_safe::gpu::gl::TextureInfo;
 
@@ -99,7 +101,9 @@ fn create_image_from_gl_texture(
         skia::AlphaType::Premul,
         None,
     )
-    .ok_or("Failed to create Skia image from GL texture")?;
+    .ok_or(crate::error::Error::CriticalError(
+        "Failed to create Skia image from GL texture".to_string(),
+    ))?;
 
     Ok(image)
 }
@@ -140,18 +144,25 @@ fn decode_image(context: &mut Box<DirectContext>, raw_data: &[u8]) -> Option<Ima
 }
 
 impl ImageStore {
-    pub fn new(context: DirectContext) -> Self {
+    pub fn new() -> Self {
+        let gpu_state = get_gpu_state();
+        let context = &gpu_state.context;
         Self {
             images: HashMap::with_capacity(2048),
-            context: Box::new(context),
+            context: Box::new(context.clone()),
         }
     }
 
-    pub fn add(&mut self, id: Uuid, is_thumbnail: bool, image_data: &[u8]) -> Result<(), String> {
+    pub fn add(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        image_data: &[u8],
+    ) -> crate::error::Result<()> {
         let key = (id, is_thumbnail);
 
         if self.images.contains_key(&key) {
-            return Err("Image already exists".to_string());
+            return Ok(());
         }
 
         let raw_data = image_data.to_vec();
@@ -174,11 +185,11 @@ impl ImageStore {
         texture_id: u32,
         width: i32,
         height: i32,
-    ) -> Result<(), String> {
+    ) -> Result<()> {
         let key = (id, is_thumbnail);
 
         if self.images.contains_key(&key) {
-            return Err("Image already exists".to_string());
+            return Ok(());
         }
 
         // Create a Skia image from the existing GL texture
@@ -200,6 +211,11 @@ impl ImageStore {
         } else {
             self.get_internal(id, true)
         }
+    }
+
+    pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
+        let gpu_image = self.get(id)?.clone();
+        gpu_image.make_non_texture_image(self.context.as_mut())
     }
 
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {

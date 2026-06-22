@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.broadcast
   "BroadcastChannel API."
@@ -57,5 +57,6 @@
   [type data]
   (ptk/reify ::event
     ptk/EffectEvent
-    (effect [_ _ _]
-      (emit! type data))))
+    (effect [_ state _]
+      (let [session-id (get state :session-id)]
+        (emit! session-id type data)))))

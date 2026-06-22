@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.tokens
   "Tokens generation API."
@@ -15,19 +15,25 @@
    [buddy.sign.jwe :as jwe]))
 
 (defn generate
-  [{:keys [::setup/props] :as cfg} claims]
-  (assert (contains? cfg ::setup/props))
+  ([cfg claims] (generate cfg claims nil))
+  ([{:keys [::setup/props] :as cfg} claims header]
+   (assert (contains? props :tokens-key) "expect props to have tokens-key")
 
-  (let [tokens-key
-        (get props :tokens-key)
+   (let [tokens-key
+         (get props :tokens-key)
 
-        payload
-        (-> claims
-            (update :iat (fn [v] (or v (ct/now))))
-            (d/without-nils)
-            (t/encode))]
+         payload
+         (-> claims
+             (update :iat (fn [v] (or v (ct/now))))
+             (d/without-nils)
+             (t/encode))]
 
-    (jwe/encrypt payload tokens-key {:alg :a256kw :enc :a256gcm})))
+     (jwe/encrypt payload tokens-key {:alg :a256kw :enc :a256gcm :header header}))))
+
+(defn decode-header
+  [token]
+  (ex/ignoring
+   (jwe/decode-header token)))
 
 (defn decode
   [{:keys [::setup/props] :as cfg} token]

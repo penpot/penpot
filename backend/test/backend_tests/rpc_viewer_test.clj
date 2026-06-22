@@ -2,19 +2,42 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-viewer-test
   (:require
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.viewer :as viewer]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(t/deftest obfuscate-email-happy-path
+  (t/is (= "a****@****.com" (viewer/obfuscate-email "alice@example.com")))
+  (t/is (= "a****@****.example.com" (viewer/obfuscate-email "alice@sub.example.com")))
+  (t/is (= "****@****.com" (viewer/obfuscate-email "bob@bar.com"))))
+
+(t/deftest obfuscate-email-handles-domain-without-dot
+  ;; `localhost`-style domains have no `.`; the previous implementation produced
+  ;; a dangling-dot output like "a****@****." — now the trailing `.` is only
+  ;; emitted when there actually is a TLD segment to append.
+  (t/is (= "a****@****" (viewer/obfuscate-email "alice@localhost")))
+  (t/is (= "****@****" (viewer/obfuscate-email "x@y"))))
+
+(t/deftest obfuscate-email-handles-malformed-input
+  ;; These shapes must not throw — `obfuscate-email` runs while building the
+  ;; view-only bundle for share-link viewers and an NPE here aborts the whole
+  ;; RPC response. The previous implementation called `clojure.string/split`
+  ;; on `nil` for the `no-@` case, raising NullPointerException.
+  (t/is (= "****@****" (viewer/obfuscate-email nil)))
+  (t/is (= "****@****" (viewer/obfuscate-email "")))
+  (t/is (= "r***@****" (viewer/obfuscate-email "root")))       ; no `@`, count > 3
+  (t/is (= "****@****" (viewer/obfuscate-email "bob"))))       ; no `@`, count <= 3
 
 (t/deftest retrieve-bundle
   (let [prof     (th/create-profile* 1 {:is-active true})

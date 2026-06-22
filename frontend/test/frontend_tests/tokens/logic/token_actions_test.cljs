@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.tokens.logic.token-actions-test
   (:require
@@ -13,15 +13,21 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.wasm-text :as dwwt]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
    [frontend-tests.tokens.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
-  {:before thp/reset-idmap!})
+  {:before (fn []
+             (thp/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after  thw/teardown-wasm-mocks!})
 
 (defn setup-file []
   (cthf/sample-file :file-1 :page-label :page-1))
@@ -54,8 +60,58 @@
                     (ctob/add-token (cthi/id :set-a)
                                     (ctob/make-token reference-border-radius-token))))))
 
+(def debounce-text-stop
+  (tohs/stop-on ::dwwt/resize-wasm-text-debounce-commit))
+
+;; Regression coverage for issue #10070 (set-creation activation).
+;;
+;; Newly created token sets are inactive by default — only active sets
+;; affect shapes and reference resolution. The Plugin API's
+;; `addSet({ name, active })` creates an already-active set by emitting
+;; `create-token-set` followed by `set-enabled-token-set`. These tests
+;; pin that the create-then-enable sequence the proxy relies on actually
+;; ends with the set active (enabling only adds the set name to the hidden
+;; theme, so it does not depend on the create event having propagated).
+
+(defn setup-file-with-empty-lib []
+  (-> (setup-file)
+      (assoc-in [:data :tokens-lib] (ctob/make-tokens-lib))))
+
+(t/deftest test-create-token-set-inactive-by-default
+  (t/testing "a newly created set is not active unless explicitly enabled"
+    (t/async
+      done
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            set    (ctob/make-token-set :name "primitives")
+            events [(dwtl/create-token-set set)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 lib   (get-in file' [:data :tokens-lib])]
+             (t/is (some? (ctob/get-set lib (ctob/get-id set))))
+             (t/is (false? (ctob/token-set-active? lib "primitives"))))))))))
+
+(t/deftest test-create-then-enable-token-set
+  (t/testing "create followed by set-enabled (as the plugin addSet does) yields an active set"
+    (t/async
+      done
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            set    (ctob/make-token-set :name "primitives")
+            events [(dwtl/create-token-set set)
+                    (dwtl/set-enabled-token-set "primitives" true)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 lib   (get-in file' [:data :tokens-lib])]
+             (t/is (some? (ctob/get-set lib (ctob/get-id set))))
+             (t/is (true? (ctob/token-set-active? lib "primitives"))))))))))
+
 (t/deftest test-apply-token
-  (t/testing "applies token to shape and updates shape attributes to resolved value"
+  (t/testing "applies token to shape and updates shape   attributes to resolved value"
     (t/async
       done
       (let [file   (setup-file-with-tokens)
@@ -64,7 +120,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -89,11 +145,11 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius-all})
+                                       :on-update-shape dwta/update-shape-radius})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -117,14 +173,14 @@
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius-all})
-                   ;; Apply single `:r1` attribute to same shape
-                   ;; while removing other attributes from the border-radius set
-                   ;; but keep `:r4` for testing purposes
+                                       :on-update-shape dwta/update-shape-radius})
+                    ;; Apply single `:r1` attribute to same shape
+                    ;; while removing other attributes from the border-radius set
+                    ;; but keep `:r4` for testing purposes
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
                                        :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -153,7 +209,7 @@
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius-all})]]
+                                       :on-update-shape dwta/update-shape-radius})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -260,7 +316,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "dimensions.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -333,7 +389,7 @@
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
                                        :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/update-shape-dimensions})]]
+                                       :on-update-shape dwta/apply-dimensions-token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -474,8 +530,8 @@
     (t/async
       done
       (let [shadow-token {:name "shadow.sm"
-                          :value [{:offsetX 10
-                                   :offsetY 10
+                          :value [{:offset-x 10
+                                   :offset-y 10
                                    :blur 10
                                    :spread 10
                                    :color "rgba(0,0,0,0.5)"
@@ -540,7 +596,11 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:font-size (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:font-size style-text-blocks) "24")))))))))
+             (t/is (= (:font-size style-text-blocks) "24"))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-line-height
   (t/testing "applies line-height token and updates the text line-height"
@@ -575,7 +635,11 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:line-height (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:line-height style-text-blocks) 1.5)))))))))
+             (t/is (= (:line-height style-text-blocks) 1.5))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-letter-spacing
   (t/testing "applies letter-spacing token and updates the text letter-spacing"
@@ -610,7 +674,11 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
+             (t/is (= (:letter-spacing style-text-blocks) "2"))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-font-family
   (t/testing "applies font-family token and updates the text font-family"
@@ -645,7 +713,11 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs))))))))))
+             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs)))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-text-case
   (t/testing "applies text-case token and updates the text transform"
@@ -750,7 +822,11 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:font-weight (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:font-weight style-text-blocks) "400")))))))))
+             (t/is (= (:font-weight style-text-blocks) "400"))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
@@ -762,7 +838,7 @@
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/toggle-token {:shape-ids [(:id rect-1) (:id rect-2)]
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
-                                                           :on-update-shape dwta/update-shape-radius-all}
+                                                           :on-update-shape dwta/update-shape-radius}
                                         :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
@@ -973,7 +1049,11 @@
              (t/is (= (:font-family style-text-blocks) "sourcesanspro"))
              (t/is (= (:letter-spacing style-text-blocks) "2"))
              (t/is (= (:text-transform style-text-blocks) "uppercase"))
-             (t/is (= (:text-decoration style-text-blocks) "underline")))))))))
+             (t/is (= (:text-decoration style-text-blocks) "underline"))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-apply-reference-typography-token
   (t/testing "applies typography (composite) tokens with references"
@@ -1018,7 +1098,11 @@
              (t/is (= (:typography (:applied-tokens text-1')) "typography"))
 
              (t/is (= (:font-size style-text-blocks) "100"))
-             (t/is (= (:font-family style-text-blocks) "Arial")))))))))
+             (t/is (= (:font-family style-text-blocks) "Arial"))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))
 
 (t/deftest test-unapply-atomic-tokens-on-composite-apply
   (t/testing "unapplies atomic typography tokens when applying composite token"
@@ -1172,4 +1256,8 @@
              (t/is (nil? (:typography-ref-id paragraph-3)))
              (t/is (nil? (:typography-ref-file paragraph-3)))
              (t/is (nil? (:typography-ref-id text-node-3)))
-             (t/is (nil? (:typography-ref-file text-node-3))))))))))
+             (t/is (nil? (:typography-ref-file text-node-3)))
+             (t/testing "WASM text mocks were exercised"
+               (t/is (pos? (thw/call-count :set-shape-text-content)))
+               (t/is (pos? (thw/call-count :get-text-dimensions))))))
+         debounce-text-stop)))))

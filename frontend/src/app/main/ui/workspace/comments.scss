@@ -2,8 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
+@use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .comments-section {
@@ -17,30 +18,14 @@
   padding: 0 deprecated.$s-8;
 }
 
-.comments-section-title {
-  @include deprecated.flexCenter;
-  @include deprecated.uppercaseTitleTipography;
-  position: relative;
-  height: deprecated.$s-32;
-  min-height: deprecated.$s-32;
-  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
-  border-radius: deprecated.$br-8;
-  background-color: var(--panel-title-background-color);
-  span {
-    @include deprecated.flexCenter;
-    flex-grow: 1;
-    color: var(--title-foreground-color-hover);
-  }
-}
-
-.viewer-title {
-  margin: 0;
-  margin-block-start: deprecated.$s-8;
+.comments-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
 }
 
 .mode-dropdown-wrapper {
-  @include deprecated.buttonStyle;
-  @extend .asset-element;
+  @include deprecated.button-style;
+  @extend %asset-element;
+
   background-color: var(--color-background-tertiary);
   display: flex;
   width: 100%;
@@ -61,18 +46,22 @@
 }
 
 .arrow-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: deprecated.$s-24;
   width: deprecated.$s-24;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     transform: rotate(90deg);
     stroke: var(--icon-foreground);
   }
 }
 
 .comment-mode-dropdown {
-  @extend .dropdown-wrapper;
+  @extend %dropdown-wrapper;
+
   top: deprecated.$s-92;
   left: deprecated.$s-12;
   max-width: deprecated.$s-256;
@@ -84,29 +73,38 @@
 }
 
 .dropdown-item {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   justify-content: space-between;
+
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
+
     height: deprecated.$s-24;
     width: deprecated.$s-24;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: transparent;
     }
   }
+
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
   }
+
   &:hover {
     .icon svg {
       stroke: transparent;
     }
   }
+
   &.selected {
     .label {
       color: var(--menu-foreground-color);
     }
+
     .icon svg {
       stroke: var(--icon-foreground-hover);
     }
@@ -128,29 +126,9 @@
 }
 
 .thread-group-placeholder {
-  @include deprecated.flexColumn;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: deprecated.$s-36;
-}
-
-.placeholder-icon {
-  @include deprecated.flexCenter;
-  height: deprecated.$s-48;
-  width: deprecated.$s-48;
-  border-radius: deprecated.$br-circle;
-  background-color: var(--empty-message-background-color);
-  svg {
-    @extend .button-icon;
-    height: deprecated.$s-28;
-    width: deprecated.$s-28;
-    stroke: var(--empty-message-foreground-color);
-  }
-}
-
-.placeholder-label {
-  @include deprecated.bodySmallTypography;
-  text-align: center;
-  width: deprecated.$s-184;
-  color: var(--empty-message-foreground-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) auto;
+  inline-size: $sz-200;
 }

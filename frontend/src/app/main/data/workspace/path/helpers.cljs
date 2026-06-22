@@ -2,22 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.path.helpers
   (:require
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.types.path :as path]
-   [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]))
+   [app.common.types.path.helpers :as path.helpers]))
 
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
-  (let [segment (path.segment/next-node (:content shape) position prev-point prev-handler)]
+  (let [segment (path/next-node (:content shape) position prev-point prev-handler)]
     (-> shape
-        (update :content path.segment/append-segment segment)
+        (update :content path/append-segment segment)
         (path/update-geometry))))
 
 (defn angle-points [common p1 p2]
@@ -61,11 +60,11 @@
   [content index prefix match-distance? match-angle? dx dy]
 
   (let [[cx cy] (path.helpers/prefix->coords prefix)
-        [op-idx op-prefix] (path.segment/opposite-index content index prefix)
+        [op-idx op-prefix] (path/opposite-index content index prefix)
 
-        node (path.segment/handler->node content index prefix)
-        handler (path.segment/get-handler-point content index prefix)
-        opposite (path.segment/get-handler-point content op-idx op-prefix)
+        node (path/handler->node content index prefix)
+        handler (path/get-handler-point content index prefix)
+        opposite (path/get-handler-point content op-idx op-prefix)
 
         [ocx ocy] (path.helpers/prefix->coords op-prefix)
         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)

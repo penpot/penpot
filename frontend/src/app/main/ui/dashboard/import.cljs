@@ -2,19 +2,19 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.import
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.errors :as errors]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.ds.product.loader :refer [loader*]]
@@ -27,7 +27,6 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/set-level! :debug)
@@ -51,10 +50,8 @@
                      :entries entries
                      :on-finish-import on-finish-import})))))))
 
-(mf/defc import-form
-  {::mf/forward-ref true
-   ::mf/props :obj}
-
+(mf/defc import-form*
+  {::mf/forward-ref true}
   [{:keys [project-id on-finish-import]} external-ref]
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file {:aria-hidden "true"}
@@ -171,14 +168,14 @@
          (rx/subs!
           (fn [message]
             (when (some? (:error message))
-              (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files-error"
-                                                    :error (:error message)})))
+              (st/emit! (ev/event {::ev/name "import-files-error"
+                                   :error (:error message)})))
             (swap! state update-with-analyze-result message))))))
 
 (defn- import-files
   [state project-id entries]
-  (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files"
-                                        :num-files (count entries)}))
+  (st/emit! (ev/event {::ev/name "import-files"
+                       :num-files (count entries)}))
 
   (let [features (get @st/state :features)]
     (->> (mw/ask-many!
@@ -192,16 +189,16 @@
             (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
-  {::mf/props :obj
-   ::mf/memo true
+  {::mf/memo true
    ::mf/private true}
-  [{:keys [entries entry edition can-be-deleted on-edit on-change on-delete]}]
+  [{:keys [entries entry edition can-be-deleted importing? on-edit on-change on-delete]}]
   (let [status          (:status entry)
         ;; FIXME: rename to format
         format          (:type entry)
 
         loading?        (or (= :analyze status)
-                            (= :import-progress status))
+                            (= :import-progress status)
+                            (and importing? (= :import-ready status)))
         analyze-error?  (= :analyze-error status)
         import-success? (= :import-success status)
         import-error?   (= :import-error status)
@@ -294,7 +291,9 @@
 
        import-error?
        [:div {:class (stl/css :error-message)}
-        (tr "labels.error")]
+        (if (some? (:error entry))
+          (tr (:error entry))
+          (tr "labels.error"))]
 
        (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
@@ -360,7 +359,7 @@
                  on-error
                  (fn [cause]
                    (reset! status* :error)
-                   (errors/print-error! cause)
+                   (ex/print-throwable cause)
                    (rx/of (modal/hide)
                           (ntf/error (tr "dashboard.libraries-and-templates.import-error"))))
 
@@ -490,7 +489,27 @@
           [:ul {:class (stl/css :import-error-list)}
            (for [entry entries]
              (when (contains? #{:import-error :analyze-error} (:status entry))
-               [:li {:class (stl/css :import-error-list-enry)} (:name entry)]))]
+               [:li {:class (stl/css :import-error-list-enry)
+                     :key (dm/str (or (:file-id entry) (:uri entry) (:name entry)))}
+                [:div (:name entry)]
+                (when-let [err (:error entry)]
+                  [:div {:class (stl/css :import-error-detail)}
+                   ;; Temporary frontend-side error translations to provide more meaningful
+                   ;; messages until backend error handling is improved and standardized.
+                   ;; These mappings are only a short-term workaround and should be removed
+                   ;; once the error handling enhancement is implemented.
+                   ;; https://github.com/penpot/penpot/issues/9884
+                   (cond
+                     (and (string? err)
+                          (str/includes? (str/lower err) "check error"))
+                     (tr "dashboard.import.import-error.check-error")
+
+                     (and (string? err)
+                          (str/includes? (str/lower err) "corrupt"))
+                     (tr "dashboard.import.import-error.corrupt-file")
+
+                     :else
+                     (tr "dashboard.import.import-error.unknown-error"))])]))]
           [:div (tr "dashboard.import.import-error.message2")]]
 
          (for [entry entries]
@@ -498,6 +517,7 @@
                               :key (dm/str (:uri entry) "/" (:file-id entry))
                               :entry entry
                               :entries entries
+                              :importing? (= :import-progress status)
                               :on-edit on-edit
                               :on-change on-entry-change
                               :on-delete on-entry-delete
@@ -505,7 +525,13 @@
 
        (when (some? template)
          [:> import-entry* {:entry (assoc template :status status)
-                            :can-be-deleted false}])]
+                            :can-be-deleted false}])
+
+       (when (= :import-progress status)
+         [:div {:class (stl/css :status-message)
+                :role "status"
+                :aria-live "polite"}
+          (tr "labels.uploading-file")])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}

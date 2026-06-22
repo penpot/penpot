@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.inspect.annotation :refer [annotation]]
+   [app.main.ui.inspect.annotation :refer [annotation*]]
    [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
    [app.main.ui.inspect.attributes.fill :refer [fill-panel*]]
    [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
@@ -36,7 +36,7 @@
    :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
-(mf/defc attributes
+(mf/defc attributes*
   [{:keys [page-id file-id shapes frame from libraries share-id objects color-space]}]
   (let [shapes             (hooks/use-equal-memo shapes)
         first-shape        (first shapes)
@@ -81,7 +81,7 @@
          :libraries libraries
          :file-id file-id}])
      (when annotation-content
-       [:& annotation {:content annotation-content}])
+       [:> annotation* {:content annotation-content}])
      [:& exports
       {:shapes shapes
        :type type

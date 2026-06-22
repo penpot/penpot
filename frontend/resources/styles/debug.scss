@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 // NOTE: This CSS only gets included when the NODE_ENV env var
 //       is *not* set to `production`.
@@ -10,9 +10,9 @@
 //       debugging.
 
 body {
-  color: yellow;
+  color: rgb(255 255 0);
 }
 
 .deprecated-icon {
-  fill: red !important;
+  fill: rgb(255 0 0) !important;
 }

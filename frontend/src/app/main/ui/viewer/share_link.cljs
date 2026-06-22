@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer.share-link
   (:require-macros [app.main.style :as stl])
@@ -21,10 +21,9 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.webapi :as wapi]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
@@ -126,20 +125,20 @@
           (let [params (prepare-params options)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params)
-                      (ptk/event ::ev/event {::ev/name "create-share-link"
-                                             ::ev/origin "viewer"
-                                             :can-comment (:who-comment params)
-                                             :can-inspect-code (:who-inspect params)}))))
+                      (ev/event {::ev/name "create-share-link"
+                                 ::ev/origin "viewer"
+                                 :can-comment (:who-comment params)
+                                 :can-inspect-code (:who-inspect params)}))))
 
         copy-link
         (fn [_]
-          (wapi/write-to-clipboard current-link)
+          (clipboard/to-clipboard current-link)
           (st/emit! (ntf/show {:level :info
                                :type :toast
                                :content (tr "common.share-link.link-copied-success")
                                :timeout 1000})
-                    (ptk/event ::ev/event {::ev/name "copy-share-link"
-                                           ::ev/origin "viewer"})))
+                    (ev/event {::ev/name "copy-share-link"
+                               ::ev/origin "viewer"})))
 
         try-delete-link
         (fn [_]

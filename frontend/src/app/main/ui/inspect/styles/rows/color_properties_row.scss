@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -50,6 +50,7 @@
 
 .color-image-preview-wrapper {
   --image-background: var(--color-background-secondary);
+
   background: var(--image-background);
 }
 
@@ -69,11 +70,13 @@
 
 .tooltip-token-title {
   @include use-typography("body-small");
+
   color: var(--title-color);
 }
 
 .tooltip-token-value {
   @include use-typography("body-small");
+
   color: var(--title-value);
 }
 

@@ -2,11 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
-   ["draft-js" :as draft]
+   ["@penpot/draft-js" :as draft]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -221,12 +221,13 @@
 
         handle-pasted-text
         (fn [text _ _]
-          (let [current-block-styles (ted/get-editor-current-block-data state)
-                inline-styles        (ted/get-editor-current-inline-styles state)
-                style                (merge current-block-styles inline-styles)
-                state                (-> (ted/insert-text state text style)
-                                         (handle-change))]
-            (st/emit! (dwt/update-editor-state shape state)))
+          (when (seq text)
+            (let [current-block-styles (ted/get-editor-current-block-data state)
+                  inline-styles        (ted/get-editor-current-inline-styles state)
+                  style                (merge current-block-styles inline-styles)
+                  state                (-> (ted/insert-text state text style)
+                                           (handle-change))]
+              (st/emit! (dwt/update-editor-state shape state))))
           "handled")]
 
     (mf/use-layout-effect on-mount)

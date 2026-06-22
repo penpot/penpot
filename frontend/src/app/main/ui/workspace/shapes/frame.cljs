@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
@@ -47,7 +47,7 @@
         [:& shape-container {:shape shape :ref ref}
          [:& frame-shape {:shape shape :childs childs}]
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
+           [:> wsd/shape-debug* {:shape shape}])]))))
 
 (defn check-props
   [new-props old-props]
@@ -191,7 +191,7 @@
            :key "frame-container"
            :opacity (when ^boolean hidden? 0)}
 
-           ;; When there is no thumbnail, we generate a empty rect.
+          ;; When there is no thumbnail, we generate a empty rect.
           (when (and (not ^boolean content-visible?) (not @imposter-loaded))
             [:g.frame-placeholder
              [:rect {:x x
@@ -230,5 +230,5 @@
              [:& frame-shape {:shape shape :ref content-ref}]])]
 
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
+           [:> wsd/shape-debug* {:shape shape}])]))))
 

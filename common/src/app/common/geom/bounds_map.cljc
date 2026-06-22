@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.bounds-map
   (:require
@@ -79,10 +79,10 @@
              (loop [new-ids
                     (->> (cfh/get-parent-seq objects cid)
                          (take-while #(and (cfh/group-like-shape? %)
-                                           (not (.has ids %))))
+                                           (not (.has ids (:id %)))))
                          (seq))]
                (when (some? new-ids)
-                 (.add ids (first new-ids))
+                 (.add ids (:id (first new-ids)))
                  (recur (next new-ids))))
              (recur (next base-ids)))))
        ids)))

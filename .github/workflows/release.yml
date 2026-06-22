@@ -19,7 +19,6 @@ permissions:
 
 jobs:
   release:
-    environment: release-admins
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.vars.outputs.gh_ref }}
@@ -31,7 +30,7 @@ jobs:
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
@@ -63,17 +62,18 @@ jobs:
 
           echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
 
-          IMAGES=("frontend" "backend" "exporter" "storybook")
+          IMAGES=("frontend" "backend" "exporter" "mcp" "storybook")
+          SHORT_TAG=${TAG%.*}
 
           for image in "${IMAGES[@]}"; do
             skopeo copy --all \
               docker://$DOCKER_REGISTRY/$image:$TAG \
-              docker://docker.io/$PUB_DOCKER_USERNAME/$image:$TAG
+              docker://docker.io/penpotapp/$image:$TAG
 
-            for alias in main latest; do
+            for alias in main latest "$SHORT_TAG"; do
               skopeo copy --all \
                 docker://$DOCKER_REGISTRY/$image:$TAG \
-                docker://docker.io/$PUB_DOCKER_USERNAME/$image:$alias
+                docker://docker.io/penpotapp/$image:$alias
             done
           done
 
@@ -93,7 +93,7 @@ jobs:
 
       # --- Create GitHub release ---
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

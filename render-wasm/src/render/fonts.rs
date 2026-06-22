@@ -1,12 +1,14 @@
 use skia_safe::{self as skia, textlayout, Font, FontMgr};
 use std::collections::HashSet;
 
+use crate::error::{Error, Result};
 use crate::shapes::{FontFamily, FontStyle};
 use crate::uuid::Uuid;
 
 pub static DEFAULT_EMOJI_FONT: &str = "noto-color-emoji";
 
 const DEFAULT_FONT_BYTES: &[u8] = include_bytes!("../fonts/sourcesanspro-regular.ttf");
+const UI_FONT_BYTES: &[u8] = include_bytes!("../fonts/WorkSans-Numeric.ttf");
 
 pub fn default_font() -> String {
     let family = FontFamily::new(default_font_uuid(), 400, FontStyle::Normal);
@@ -22,11 +24,12 @@ pub struct FontStore {
     font_provider: textlayout::TypefaceFontProvider,
     font_collection: textlayout::FontCollection,
     debug_font: Font,
+    ui_font: Font,
     fallback_fonts: HashSet<String>,
 }
 
 impl FontStore {
-    pub fn new() -> Self {
+    pub fn try_new() -> Result<Self> {
         let font_mgr = FontMgr::new();
         let font_provider = load_default_provider(&font_mgr);
         let mut font_collection = skia::textlayout::FontCollection::new();
@@ -34,21 +37,29 @@ impl FontStore {
 
         let debug_typeface = font_provider
             .match_family_style(default_font().as_str(), skia::FontStyle::default())
-            .unwrap();
+            .ok_or(Error::CriticalError(
+                "Failed to match default font".to_string(),
+            ))?;
 
-        let debug_font = skia::Font::new(debug_typeface, 10.0);
+        let debug_font = skia::Font::new(debug_typeface, 12.0);
 
-        Self {
+        let ui_typeface = font_mgr
+            .new_from_data(UI_FONT_BYTES, None)
+            .ok_or(Error::CriticalError("Failed to load UI font".to_string()))?;
+        let ui_font = skia::Font::new(ui_typeface, 12.0);
+
+        Ok(Self {
             font_mgr,
             font_provider,
             font_collection,
             debug_font,
+            ui_font,
             fallback_fonts: HashSet::new(),
-        }
+        })
     }
 
     pub fn set_scale_debug_font(&mut self, dpr: f32) {
-        let debug_font = skia::Font::new(self.debug_font.typeface(), 10.0 * dpr);
+        let debug_font = skia::Font::new(self.debug_font.typeface(), 12.0 * dpr);
         self.debug_font = debug_font;
     }
 
@@ -64,13 +75,17 @@ impl FontStore {
         &self.debug_font
     }
 
+    pub fn ui_font(&self) -> &Font {
+        &self.ui_font
+    }
+
     pub fn add(
         &mut self,
         family: FontFamily,
         font_data: &[u8],
         is_emoji: bool,
         is_fallback: bool,
-    ) -> Result<(), String> {
+    ) -> Result<()> {
         if self.has_family(&family, is_emoji) {
             return Ok(());
         }
@@ -78,7 +93,9 @@ impl FontStore {
         let typeface = self
             .font_mgr
             .new_from_data(font_data, None)
-            .ok_or("Failed to create typeface")?;
+            .ok_or(Error::CriticalError(
+                "Failed to create typeface".to_string(),
+            ))?;
 
         let alias = format!("{}", family);
         let font_name = if is_emoji {

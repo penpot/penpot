@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.debug-shape-info
   (:require-macros [app.main.style :as stl])
@@ -13,7 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [debug :as dbg]
    [rumext.v2 :as mf]))
 
@@ -125,11 +125,9 @@
                       (map (d/getf objects)))]
 
     [:div {:class (stl/css :shape-info)}
-     [:div {:class (stl/css :shape-info-title)}
-      [:span "Debug"]
-      [:div {:class (stl/css :close-button)
-             :on-click #(dbg/disable! :shape-panel)}
-       deprecated-icon/close]]
+     [:> panel-title* {:class (stl/css :shape-info-title)
+                       :text "Debug"
+                       :on-close #(dbg/disable! :shape-panel)}]
 
      (if (empty? selected)
        [:div {:class (stl/css :attrs-container)} "No shapes selected"]

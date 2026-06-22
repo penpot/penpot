@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.profile
   (:require
@@ -21,3 +21,10 @@
    ;; Only present on resolved profile objects, the resolve process
    ;; takes the photo-id or geneates an image from the name
    [:photo-url {:optional true} :string]])
+
+
+(def schema:basic-profile
+  [:map {:title "Basic profile"}
+   [:id ::sm/uuid]
+   [:name {:optional true} :string]
+   [:email {:optional true} :string]])

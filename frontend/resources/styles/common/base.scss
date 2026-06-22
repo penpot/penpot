@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 // TODO: Legacy sass vars. We should use DS tokens.
 $color-gray-50: #303236;
@@ -113,16 +113,15 @@ hr {
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
 input[type="number"] {
-  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 [contenteditable] {
-  -webkit-user-select: text;
   user-select: text;
 }
 
@@ -132,15 +131,12 @@ select {
   font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs14;
   margin-bottom: $size-4;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  appearance: none;
 }
 
 [draggable] {
-  -moz-user-select: none;
-  -khtml-user-select: none;
-  -webkit-user-select: none;
   user-select: none;
+
   /* Required to make elements draggable in old WebKit */
   -khtml-user-drag: element;
   -webkit-user-drag: element;

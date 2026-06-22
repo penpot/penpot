@@ -2,13 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys select-keys])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   #?(:clj [malli.dev.pretty :as mdp])
+   #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
@@ -19,8 +22,6 @@
    [clojure.core :as c]
    [cuerdas.core :as str]
    [malli.core :as m]
-   [malli.dev.pretty :as mdp]
-   [malli.dev.virhe :as v]
    [malli.error :as me]
    [malli.generator :as mg]
    [malli.registry :as mr]
@@ -92,6 +93,36 @@
   [& items]
   (apply mu/merge (map schema items)))
 
+(defn select-keys
+  [s keys & {:as opts}]
+  (let [s (schema s)]
+    (mu/select-keys s keys opts)))
+
+(defn assoc-key
+  "Add a key & value to a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and add the key there."
+  ([s k v]
+   (assoc-key s k {} v))
+  ([s k opts v]  ;; change order of opts and v to match static schema defintions (e.g. [:something {:optional true} ::sm/integer])
+   (let [s (schema s)
+         v (schema v)]
+     (if (= (m/type s) :map)
+       (mu/assoc s k v opts)
+       (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+         (mu/assoc-in s (conj path k) v opts)
+         s)))))
+
+(defn dissoc-key
+  "Remove a key from a schema of type [:map]. If the first level node of the schema
+   is not a map, will do a depth search to find the first map node and remove the key there."
+  [s k]
+  (let [s (schema s)]
+    (if (= (m/type s) :map)
+      (mu/dissoc s k)
+      (if-let [path (mu/find-first s (fn [s' path _] (when (= (m/type s') :map) path)))]
+        (mu/update-in s path mu/dissoc k)
+        s))))
+
 (defn ref?
   [s]
   (m/-ref-schema? s))
@@ -112,10 +143,10 @@
    (mu/optional-keys schema keys default-options)))
 
 (defn required-keys
-  ([schema]
-   (mu/required-keys schema nil default-options))
-  ([schema keys]
-   (mu/required-keys schema keys default-options)))
+  ([s]
+   (mu/required-keys (schema s) nil default-options))
+  ([s keys]
+   (mu/required-keys (schema s) keys default-options)))
 
 (defn transformer
   [& transformers]
@@ -245,27 +276,37 @@
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
 
-(defmethod v/-format ::schemaless-explain
-  [_ explanation printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::schemaless-explain
+     [_ explanation printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]}))
 
-(defmethod v/-format ::explain
-  [_ {:keys [schema] :as explanation} printer]
-  {:body [:group
-          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
-          (v/-block "Schema" (v/-visit schema printer) printer)]})
+#?(:clj
+   (defmethod v/-format ::explain
+     [_ {:keys [schema] :as explanation} printer]
+     {:body [:group
+             (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+             (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+             (v/-block "Schema" (v/-visit schema printer) printer)]}))
 
-(defn pretty-explain
-  "A helper that allows print a console-friendly output for the
-  explain; should not be used for other purposes"
-  [explain & {:keys [variant message]
-              :or {variant ::explain
-                   message "Validation Error"}}]
-  (let [explain (fn [] (me/with-error-messages explain))]
-    ((mdp/prettifier variant message explain default-options))))
+#?(:clj
+   (defn pretty-explain
+     "A helper that allows print a console-friendly output for the explain;
+  should not be used for other purposes"
+     [explain & {:keys [variant message]
+                 :or {variant ::explain
+                      message "Validation Error"}}]
+     (let [explain (fn [] (me/with-error-messages explain))]
+       ((mdp/prettifier variant message explain default-options)))))
+
+(defn validation-errors
+  "Checks a value against a schema. If valid, returns nil. If not, returns a list
+   of english error messages."
+  [value schema]
+  (let [explainer (explainer schema)]
+    (-> value explainer simplify not-empty)))
 
 (defmacro ignoring
   [expr]
@@ -281,7 +322,20 @@
 (defn check-fn
   "Create a predefined check function"
   [s & {:keys [hint type code]}]
-  (let [s          (schema s)
+  (let [s          #?(:clj
+                      (schema s)
+                      :cljs
+                      (try
+                        (schema s)
+                        (catch :default cause
+                          (let [data (ex-data cause)]
+                            (if (= :malli.core/invalid-schema (:type data))
+                              (throw (ex-info
+                                      (str "Invalid schema\n"
+                                           (pp/pprint-str (:data data)))
+                                      {}))
+                              (throw cause))))))
+
         validator* (delay (m/validator s))
         explainer* (delay (m/explainer s))
         hint       (or ^boolean hint "check error")
@@ -298,6 +352,13 @@
                                   :hint hint
                                   ::explain explain}))))
         value))))
+
+(defn coercer
+  [schema & {:as opts}]
+  (let [decode-fn (lazy-decoder schema json-transformer)
+        check-fn  (check-fn schema opts)]
+    (fn [data]
+      (-> data decode-fn check-fn))))
 
 (defn check
   "A helper intended to be used on assertions for validate/check the
@@ -387,18 +448,22 @@
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
-(def email-re #"[a-zA-Z0-9_.+-\\\\]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+;; Strict email regex aligned with app.common.spec/email-re.
+;; Local part: valid RFC chars, no leading/trailing dot, no consecutive dots.
+;; Domain: labels can't start/end with hyphen, no empty labels.
+;; TLD: at least 2 alphabetic chars.
+(def email-re
+  #"[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,63}")
 
 (defn parse-email
   [s]
-  (if (string? s)
-    (first (re-seq email-re s))
-    nil))
+  (when (and (string? s) (re-matches email-re s))
+    s))
 
 (defn email-string?
   [s]
   (and (string? s)
-       (re-seq email-re s)))
+       (some? (re-matches email-re s))))
 
 (register!
  {:type ::email
@@ -590,7 +655,7 @@
        {:title "set"
         :description "Set of Strings"
         :error/message "should be a set of strings"
-        :gen/gen (-> kind sg/generator sg/set)
+        :gen/gen (sg/mcat (fn [_] (sg/generator kind)) sg/int)
         :decode/string decode
         :decode/json decode
         :encode/string encode-string
@@ -807,7 +872,7 @@
 (defn parse-boolean
   [v]
   (if (string? v)
-    (case v
+    (case (str/lower v)
       ("true" "t" "1") true
       ("false" "f" "0") false
       v)
@@ -827,6 +892,32 @@
    :encode/string str
    ::oapi/type "boolean"}})
 
+(defn parse-keyword
+  [v]
+  (if (string? v)
+    (-> v (json/read-kebab-key) (keyword))
+    v))
+
+(defn format-keyword
+  [v]
+  (if (keyword? v)
+    (-> v (name) (json/write-camel-key))
+    v))
+
+(register!
+ {:type ::keyword
+  :pred keyword?
+  :type-properties
+  {:title "keyword"
+   :description "keyword"
+   :error/message "expected keyword"
+   :error/code "errors.invalid-keyword"
+   :gen/gen sg/keyword
+   :decode/string parse-keyword
+   :decode/json parse-keyword
+   :encode/string format-keyword
+   ::oapi/type "string"}})
+
 (register!
  {:type ::contains-any
   :min 1
@@ -842,38 +933,6 @@
                                     choices))]
                {:pred pred}))})
 
-;; (register!
-;;  {:type ::inst
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int :min 0 :max 100000)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-
-;;    :decode/string tm/parse-inst
-;;    :encode/string tm/format-inst
-;;    :decode/json tm/parse-inst
-;;    :encode/json tm/format-inst
-;;    ::oapi/type "string"
-;;    ::oapi/format "iso"}})
-
-;; (register!
-;;  {:type ::timestamp
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol, the same as ::inst but encodes to epoch"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-;;    :decode/string tm/parse-inst
-;;    :encode/string inst-ms
-;;    :decode/json tm/parse-inst
-;;    :encode/json inst-ms
-;;    ::oapi/type "string"
-;;    ::oapi/format "number"}})
 
 #?(:clj
    (register!
@@ -951,7 +1010,7 @@
   :pred #(and (string? %) (not (str/blank? %)))
   :property-pred
   (fn [{:keys [min max] :as props}]
-    (if (seq props)
+    (if (or min max)
       (fn [value]
         (let [size (count value)]
           (cond
@@ -1018,12 +1077,24 @@
      {:title "agent"
       :description "instance of clojure agent"}}))
 
+#?(:clj
+   (register!
+    {:type ::bytes
+     :pred bytes?
+     :type-properties
+     {:title "bytes"
+      :description "bytes array"}}))
+
+
 (register! ::any (mu/update-properties :any assoc :gen/gen sg/any))
 
 ;; ---- PREDICATES
 
 (def valid-safe-number?
   (lazy-validator ::safe-number))
+
+(def valid-safe-int?
+  (lazy-validator ::safe-int))
 
 (def valid-text?
   (validator ::text))

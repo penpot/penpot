@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.services
   "A helpers and macros for define rpc like registry based services."
@@ -27,7 +27,7 @@
       (throw (IllegalArgumentException. "Missing arguments on `defmethod` macro.")))
 
     (let [mdata (assoc mdata
-                       ::docstring (some-> docs str/<<-)
+                       ::docstring (some-> docs str/unindent)
                        ::spec sname
                        ::name (name sname))
 

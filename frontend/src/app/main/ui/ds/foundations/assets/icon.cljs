@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.foundations.assets.icon
   (:refer-clojure :exclude [mask drop filter remove])
@@ -54,6 +54,7 @@
 (def ^:icon-id arrow-left "arrow-left")
 (def ^:icon-id arrow-right "arrow-right")
 (def ^:icon-id arrow-up "arrow-up")
+(def ^:icon-id arrow-up-right "arrow-up-right")
 (def ^:icon-id asc-sort "asc-sort")
 (def ^:icon-id at "at")
 (def ^:icon-id board "board")
@@ -132,7 +133,7 @@
 (def ^:icon-id easing-ease-out "easing-ease-out")
 (def ^:icon-id easing-linear "easing-linear")
 (def ^:icon-id effects "effects")
-(def ^:icon-id elipse "elipse")
+(def ^:icon-id ellipse "ellipse")
 (def ^:icon-id exit "exit")
 (def ^:icon-id expand "expand")
 (def ^:icon-id external-link "external-link")
@@ -244,12 +245,19 @@
 (def ^:icon-id status-update "status-update")
 (def ^:icon-id status-wrong "status-wrong")
 (def ^:icon-id stroke-arrow "stroke-arrow")
+(def ^:icon-id stroke-center "stroke-center")
 (def ^:icon-id stroke-circle "stroke-circle")
+(def ^:icon-id stroke-dashed "stroke-dashed")
 (def ^:icon-id stroke-diamond "stroke-diamond")
+(def ^:icon-id stroke-dotted "stroke-dotted")
+(def ^:icon-id stroke-inside "stroke-inside")
+(def ^:icon-id stroke-mixed "stroke-mixed")
+(def ^:icon-id stroke-outside "stroke-outside")
 (def ^:icon-id stroke-rectangle "stroke-rectangle")
 (def ^:icon-id stroke-rounded "stroke-rounded")
 (def ^:icon-id stroke-size "stroke-size")
 (def ^:icon-id stroke-squared "stroke-squared")
+(def ^:icon-id stroke-solid "stroke-solid")
 (def ^:icon-id stroke-triangle "stroke-triangle")
 (def ^:icon-id svg "svg")
 (def ^:icon-id swatches "swatches")
@@ -300,6 +308,7 @@
   "A collection of all icons"
   (collect-icons))
 
+(def ^:private ^:const icon-size-l 32)
 (def ^:private ^:const icon-size-m 16)
 (def ^:private ^:const icon-size-s 12)
 
@@ -308,23 +317,24 @@
    [:class {:optional true} [:maybe :string]]
    [:icon-id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
-    [:maybe [:enum "s" "m"]]]])
+    [:maybe [:enum "s" "m" "l"]]]])
 
 (mf/defc icon*
   {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
-  (let [props   (mf/spread-props props
+  (let [size-px (cond (= size "l") icon-size-l
+                      (= size "s") icon-size-s
+                      :else        icon-size-m)
+        offset  (if (or (= size "s") (= size "m"))
+                  (/ (- icon-size-m size-px) 2)
+                  0)
+        props   (mf/spread-props props
                                  {:class [class (stl/css :icon)]
-                                  :width icon-size-m
-                                  :height icon-size-m})
-        size-px (if (= size "s")
-                  icon-size-s
-                  icon-size-m)
-        offset  (/ (- icon-size-m size-px) 2)]
-
+                                  :width (max icon-size-m size-px)
+                                  :height (max icon-size-m size-px)})]
     [:> :svg props
      [:use {:href (dm/str "#icon-" icon-id)
-            :width size-px
-            :height size-px
             :x offset
-            :y offset}]]))
+            :y offset
+            :width size-px
+            :height size-px}]]))

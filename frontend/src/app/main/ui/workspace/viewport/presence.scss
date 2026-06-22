@@ -2,13 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .profile-name {
   width: fit-content;
-  font-family: worksans;
+  font-family: "worksans", "vazirmatn", sans-serif;
   padding: 2px 12px;
   border-radius: deprecated.$br-4;
   display: flex;

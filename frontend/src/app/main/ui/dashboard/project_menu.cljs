@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.project-menu
   (:require
@@ -77,7 +77,7 @@
         (mf/use-ref nil)
 
         on-import-files
-        (fn [] (dom/click! (mf/ref-val file-input)))
+        (fn [] (dom/click (mf/ref-val file-input)))
 
         on-finish-import
         (mf/use-fn
@@ -137,8 +137,7 @@
        :top top
        :left left
        :options options}]
-     [:& udi/import-form {:ref file-input
-                          :project-id (:id project)
-                          :on-finish-import on-finish-import}]]))
-
+     [:> udi/import-form* {:ref file-input
+                           :project-id (:id project)
+                           :on-finish-import on-finish-import}]]))
 

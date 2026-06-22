@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets.components
   (:require-macros [app.main.style :as stl])
@@ -17,6 +17,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
    [app.main.refs :as refs]
@@ -28,15 +29,13 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def drag-data* (atom {:is-local false}))
@@ -192,7 +191,7 @@
 
 (mf/defc components-group*
   [{:keys [file-id prefix groups open-groups is-force-open renaming is-listing-thumbs selected on-asset-click
-           on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
+           on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-delete-group on-context-menu
            selected-full is-local count-variants on-group-combine-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
@@ -247,6 +246,7 @@
        :is-can-combine can-combine?
        :on-rename on-rename-group
        :on-ungroup on-ungroup
+       :on-delete-group on-delete-group
        :on-group-combine-variants on-group-combine-variants}]
 
      (when group-open?
@@ -304,6 +304,7 @@
                                    :cancel-rename cancel-rename
                                    :on-rename-group on-rename-group
                                    :on-ungroup on-ungroup
+                                   :on-delete-group on-delete-group
                                    :on-context-menu on-context-menu
                                    :on-group-combine-variants on-group-combine-variants
                                    :selected-full selected-full
@@ -374,8 +375,8 @@
            (let [params {:file-id file-id
                          :blobs (seq blobs)}]
              (st/emit! (dwm/upload-media-components params)
-                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "components"})))))
+                       (ev/event {::ev/name "add-asset-to-library"
+                                  :asset-type "components"})))))
 
         on-duplicate
         (mf/use-fn
@@ -494,6 +495,33 @@
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-delete-group
+        (mf/with-memo [components on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets components
+            :on-clear-selection on-clear-selection
+            :path-filter cpn/inside-path?
+            ;; Variants are handled via their variant container
+            ;; (matching the per-item delete dispatch in
+            ;; file_library.cljs); sibling variants sharing a
+            ;; container are deduplicated so we delete each container
+            ;; only once.
+            :delete-events
+            (fn [matching]
+              (let [{variants true non-variants false}
+                    (group-by (comp boolean ctc/is-variant?) matching)
+
+                    variant-containers
+                    (->> variants
+                         (group-by :variant-id)
+                         (map (fn [[_ comps]] (first comps))))]
+                (concat
+                 (map #(dwsh/delete-shapes (:main-instance-page %)
+                                           #{(:variant-id %)})
+                      variant-containers)
+                 (map #(dwl/delete-component {:id (:id %)})
+                      non-variants))))}))
+
         on-group-combine-variants
         (mf/use-fn
          (mf/deps components on-clear-selection)
@@ -567,11 +595,11 @@
          [:& radio-buttons {:selected (if is-listing-thumbs "grid" "list")
                             :on-change toggle-list-style
                             :name "listing-style"}
-          [:& radio-button {:icon deprecated-icon/view-as-list
+          [:& radio-button {:icon i/view-as-list
                             :value "list"
                             :title (tr "workspace.assets.list-view")
                             :id "opt-list"}]
-          [:& radio-button {:icon deprecated-icon/flex-grid
+          [:& radio-button {:icon i/flex-grid
                             :value "grid"
                             :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
@@ -603,6 +631,7 @@
                                :on-rename-group on-rename-group
                                :on-group on-group
                                :on-ungroup on-ungroup
+                               :on-delete-group on-delete-group
                                :on-group-combine-variants on-group-combine-variants
                                :on-context-menu on-context-menu
                                :selected-full selected-full

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.text-palette
   (:require-macros [app.main.style :as stl])
@@ -19,11 +19,11 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc typography-item
-  [{:keys [file-id selected-ids typography name-only? size current-file-id]}]
+(mf/defc typography-item*
+  {::mf/private true}
+  [{:keys [file-id selected-ids typography size current-file-id]}]
   (let [font-data (f/get-font-data (:font-id typography))
         font-variant-id (:font-variant-id typography)
         variant-data (->> font-data :variants (d/seek #(= (:id %) font-variant-id)))
@@ -38,8 +38,7 @@
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
 
-             (st/emit! (ptk/event
-                        ::ev/event
+             (st/emit! (ev/event
                         {::ev/name "use-library-typography"
                          ::ev/origin "text-palette"
                          :external-library (not= file-id current-file-id)}))
@@ -60,14 +59,12 @@
                :font-weight (:font-weight typography)
                :font-style (:font-style typography)}}
       (:name typography)]
-     (when-not name-only?
-       [:*
-        [:div {:class (stl/css :typography-font)}
-         (:name font-data)]
-        [:div {:class (stl/css :typography-data)}
-         (str (:font-size typography) "px | " (:name variant-data))]])]))
+     [:div {:class (stl/css :typography-font)}
+      (:name font-data)]
+     [:div {:class (stl/css :typography-data)}
+      (str (:font-size typography) "px | " (or (:name variant-data) "--"))]]))
 
-(mf/defc palette
+(mf/defc palette*
   [{:keys [selected selected-ids current-file-id file-typographies libraries size width]}]
   (let [file-id
         (case selected
@@ -165,7 +162,7 @@
                   :max-width (str width "px")
                   :right (str (* offset-step offset) "px")}}
          (for [[idx item] (map-indexed vector current-typographies)]
-           [:& typography-item
+           [:> typography-item*
             {:key idx
              :file-id file-id
              :current-file-id current-file-id
@@ -178,7 +175,7 @@
                  :disabled (= offset max-offset)
                  :on-click on-right-arrow-click} deprecated-icon/arrow])]))
 
-(mf/defc text-palette
+(mf/defc text-palette*
   {::mf/wrap [mf/memo]}
   [{:keys [size width selected] :as props}]
   (let [selected-ids      (mf/deref refs/selected-shapes)
@@ -189,10 +186,10 @@
         file-typographies (mf/deref refs/workspace-file-typography)
         libraries         (mf/deref refs/files)
         current-file-id   (mf/use-ctx ctx/current-file-id)]
-    [:& palette {:current-file-id current-file-id
-                 :selected-ids selected-ids
-                 :file-typographies file-typographies
-                 :libraries libraries
-                 :width width
-                 :selected selected
-                 :size size}]))
+    [:> palette* {:current-file-id current-file-id
+                  :selected-ids selected-ids
+                  :file-typographies file-typographies
+                  :libraries libraries
+                  :width width
+                  :selected selected
+                  :size size}]))

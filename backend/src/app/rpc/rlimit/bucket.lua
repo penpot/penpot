@@ -25,9 +25,9 @@ local allowed = filled >= requested
 local newTokens = filled
 if allowed then
   newTokens = filled - requested
+  redis.call("hset", tokensKey, "tokens", newTokens, "timestamp", timestamp)
 end
 
-redis.call("hset", tokensKey, "tokens", newTokens, "timestamp", timestamp)
 redis.call("expire", tokensKey, ttl)
 
 return { allowed, newTokens }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.refs
   "A collection of derived refs."
@@ -17,6 +17,8 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
+   [app.main.streams :as ms]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -29,6 +31,9 @@
 
 (def profile
   (l/derived (l/key :profile) st/state))
+
+(def current-page-id
+  (l/derived (l/key :current-page-id) st/state))
 
 (def team
   (l/derived (fn [state]
@@ -105,7 +110,7 @@
 ;; DEPRECATED and all new code should not use it and old code should
 ;; be gradually migrated to more efficient approach
 (def libraries
-  "A derived state that contanins the currently loaded shared
+  "A derived state that contains the currently loaded shared
   libraries with all its content; including the current file"
   (l/derived (fn [state]
                (let [files   (get state :files)
@@ -147,12 +152,20 @@
 (def workspace-global
   (l/derived :workspace-global st/state))
 
+(def mcp
+  (l/derived :mcp st/state))
+
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
 (def workspace-tokens
   "All tokens related ephimeral state"
   (l/derived :workspace-tokens st/state))
+
+(def workspace-selrect
+  (let [a (atom nil)]
+    (rx/sub! ms/workspace-selrect #(reset! a %))
+    a))
 
 ;; WARNING: Don't use directly from components, this is a proxy to
 ;; improve performance of selected-shapes and
@@ -176,9 +189,6 @@
 (defn make-selected-ref
   [id]
   (l/derived #(contains? % id) selected-shapes))
-
-(def highlighted-shapes
-  (l/derived :highlighted workspace-local))
 
 (def export-in-progress?
   (l/derived :export-in-progress? export))
@@ -227,6 +237,9 @@
 
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
+
+(def workspace-vport
+  (l/derived :vport workspace-local))
 
 (def vbox
   (l/derived :vbox workspace-local))
@@ -294,12 +307,15 @@
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
+(def workspace-page-guides
+  (l/derived :guides workspace-page))
+
 (defn workspace-page-object-by-id
   [page-id shape-id]
   (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
 (def workspace-page-objects
-  (l/derived dsh/lookup-page-objects st/state))
+  (l/derived dsh/lookup-page-objects st/state identical?))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
@@ -368,6 +384,14 @@
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state))
+
+(def workspace-wasm-editor-styles
+  (l/derived :workspace-wasm-editor-styles st/state))
+
+(def workspace-wasm-modifiers
+  (let [a (atom nil)]
+    (rx/sub! ms/wasm-modifiers #(reset! a %))
+    a))
 
 (def ^:private workspace-modifiers-with-objects
   (l/derived
@@ -474,6 +498,9 @@
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
 
+(def workspace-all-tokens-map
+  (l/derived (d/nilf ctob/get-all-tokens-map) tokens-lib))
+
 (defn token-sets-at-path-all-active
   [group-path]
   (l/derived
@@ -561,6 +588,12 @@
              (cf/resolve-media)))
    st/state))
 
+(defn workspace-thumbnail-rendered-at
+  [object-id]
+  (l/derived
+   #(dm/get-in % [:thumbnails-meta object-id :rendered-at])
+   st/state))
+
 (def workspace-text-modifier
   (l/derived :workspace-text-modifier st/state))
 
@@ -627,3 +660,12 @@
 
 (def persistence-state
   (l/derived (comp :status :persistence) st/state))
+
+(def progress
+  (l/derived :progress st/state))
+
+(def access-tokens
+  (l/derived :access-tokens st/state))
+
+(def access-token-created
+  (l/derived :access-token-created st/state))

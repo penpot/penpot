@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-project-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -29,7 +30,7 @@
                 :team-id (:id team)
                 :name "test project"}
           out  (th/command! data)]
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
 
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -92,7 +93,7 @@
                 :id project-id}
           out  (th/command! data)]
 
-        ;; (th/print-result! out)
+      ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out))))
 
@@ -226,8 +227,9 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 1 (:processed result))))
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 1 (:processed result)))))
 
     ;; query the list of files of a after hard deletion
     (let [data {::th/type :get-project-files

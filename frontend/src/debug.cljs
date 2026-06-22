@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns debug
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
@@ -30,11 +31,12 @@
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.render-wasm.helpers :as wasm.h]
+   [app.render-wasm.mem :as wasm.mem]
+   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.object :as obj]
-   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
@@ -116,6 +118,90 @@
    (js/console.log str (json/->js val))
    val))
 
+(defn- wasm-read-len-prefixed-utf8
+  "Reads a `[u32 byte_len][utf8 bytes...]` buffer returned by WASM and frees it.
+   Returns a JS string (possibly empty)."
+  [ptr]
+  (when (and ptr (not (zero? ptr)))
+    (let [heap-u8  (wasm.mem/get-heap-u8)
+          heap-u32 (wasm.mem/get-heap-u32)
+          len      (aget heap-u32 (wasm.mem/->offset-32 ptr))
+          start    (+ ptr 4)
+          end      (+ start len)
+          decoder  (js/TextDecoder. "utf-8")
+          text     (.decode decoder (.subarray heap-u8 start end))]
+      (wasm.mem/free)
+      text)))
+
+(defn ^:export wasmCaptureFrames
+  [amount]
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_capture_frames"))]
+    (if (fn? f)
+      (wasm.h/call module "_capture_frames" amount)
+      (js/console.warn "[debug] render-wasm module not ready or missing _render_stats"))))
+
+(defn ^:export wasmRenderStats
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_render_stats"))]
+    (if (fn? f)
+      (wasm.h/call module "_render_stats")
+      (js/console.warn "[debug] render-wasm module not ready or missing _render_stats"))))
+
+(defn ^:export wasmAtlasConsole
+  "Logs the current render-wasm atlas as an image in the JS console (if present)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_atlas_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_atlas_console")
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_console"))))
+
+(defn ^:export wasmAtlasBase64
+  "Returns the atlas PNG base64 (empty string if missing/empty)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_atlas_base64"))]
+    (if (fn? f)
+      (let [ptr (wasm.h/call module "_debug_atlas_base64")
+            s   (or (wasm-read-len-prefixed-utf8 ptr) "")]
+        s)
+      (do
+        (js/console.warn "[debug] render-wasm module not ready or missing _debug_atlas_base64")
+        ""))))
+
+(defn ^:export wasmSurfaceConsole
+  "Logs the render-wasm surface id as an image in the JS console."
+  [id]
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_surface_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_surface_console" id)
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_surface_console"))))
+
+(defn ^:export wasmCacheConsole
+  "Logs the current render-wasm cache surface as an image in the JS console."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_cache_console"))]
+    (if (fn? f)
+      (wasm.h/call module "_debug_cache_console")
+      (js/console.warn "[debug] render-wasm module not ready or missing _debug_cache_console"))))
+
+(defn ^:export wasmCacheBase64
+  "Returns the cache surface PNG base64 (empty string if missing/empty)."
+  []
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_debug_cache_base64"))]
+    (if (fn? f)
+      (let [ptr (wasm.h/call module "_debug_cache_base64")
+            s   (or (wasm-read-len-prefixed-utf8 ptr) "")]
+        s)
+      (do
+        (js/console.warn "[debug] render-wasm module not ready or missing _debug_cache_base64")
+        ""))))
+
 (when (exists? js/window)
   (set! (.-dbg ^js js/window) json/->js)
   (set! (.-pp ^js js/window) pprint))
@@ -132,31 +218,6 @@
   z-index: 99999;
   opacity: 0.5;
 ")
-
-(defn ^:export fps
-  "Adds a widget to keep track of the average FPS's"
-  []
-  (let [last (volatile! (.now js/performance))
-        avg  (volatile! 0)
-        node (-> (.createElement js/document "div")
-                 (obj/set! "id" "fps")
-                 (obj/set! "style" widget-style))
-        body (obj/get js/document "body")
-
-        do-thing (fn do-thing []
-                   (timers/raf
-                    (fn []
-                      (let [cur (.now js/performance)
-                            ts (/ 1000 (* (- cur @last)))
-                            val (+ @avg (* (- ts @avg) 0.1))]
-
-                        (obj/set! node "innerText" val)
-                        (vreset! last cur)
-                        (vreset! avg val)
-                        (do-thing)))))]
-
-    (.appendChild body node)
-    (do-thing)))
 
 (defn ^:export dump-state []
   (logjs "state" @st/state)
@@ -390,7 +451,7 @@
             (group-by :code)
             (clj->js))
        (catch :default cause
-         (errors/print-error! cause))))))
+         (ex/print-throwable cause))))))
 
 (defn ^:export validate-schema
   []
@@ -398,7 +459,7 @@
     (let [file (dsh/lookup-file @st/state)]
       (cfv/validate-file-schema! file))
     (catch :default cause
-      (errors/print-error! cause))))
+      (ex/print-throwable cause))))
 
 (defn ^:export repair
   [reload?]
@@ -430,7 +491,7 @@
                           (when reload?
                             (dom/reload-current-window)))
                         (fn [cause]
-                          (errors/print-error! cause)))))))))
+                          (ex/print-throwable cause)))))))))
 
 (defn ^:export fix-orphan-shapes
   []
@@ -456,3 +517,14 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+
+(defn print-last-exception
+  []
+  (some-> errors/last-exception ex/print-throwable))
+
+
+(defn ^:export dbg
+  [o]
+  (app.common.pprint/pprint o {:level 100 :length 100}))
+

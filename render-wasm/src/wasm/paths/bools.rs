@@ -1,12 +1,15 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use super::RawSegmentData;
 use crate::math;
 use crate::shapes::BoolType;
 use crate::uuid::Uuid;
 use crate::{mem, SerializableResult};
-use crate::{with_current_shape_mut, with_state, STATE};
+use crate::{with_current_shape_mut, with_state};
 use std::mem::size_of;
+
+#[allow(unused_imports)]
+use crate::error::{Error, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 #[repr(u8)]
@@ -15,7 +18,7 @@ pub enum RawBoolType {
     Union = 0,
     Difference = 1,
     Intersection = 2,
-    Exclusion = 3,
+    Exclude = 3,
 }
 
 impl From<u8> for RawBoolType {
@@ -30,7 +33,7 @@ impl From<RawBoolType> for BoolType {
             RawBoolType::Union => BoolType::Union,
             RawBoolType::Difference => BoolType::Difference,
             RawBoolType::Intersection => BoolType::Intersection,
-            RawBoolType::Exclusion => BoolType::Exclusion,
+            RawBoolType::Exclude => BoolType::Exclusion,
         }
     }
 }
@@ -43,15 +46,19 @@ pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
 }
 
 #[no_mangle]
-pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
+#[wasm_error]
+pub extern "C" fn calculate_bool(raw_bool_type: u8) -> Result<*mut u8> {
     let bytes = mem::bytes_or_empty();
 
     let entries: Vec<Uuid> = bytes
         .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
-        .collect();
+        .map(|data| {
+            // FIXME: Review if this should be an critical or a recoverable error.
+            Uuid::try_from(data).map_err(|_| Error::RecoverableError("Invalid UUID".to_string()))
+        })
+        .collect::<Result<Vec<Uuid>>>()?;
 
-    mem::free_bytes();
+    mem::free_bytes()?;
 
     let bool_type = RawBoolType::from(raw_bool_type).into();
     let result;
@@ -64,5 +71,5 @@ pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
             .map(RawSegmentData::from_segment)
             .collect();
     });
-    mem::write_vec(result)
+    Ok(mem::write_vec(result))
 }

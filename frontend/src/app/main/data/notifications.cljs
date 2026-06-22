@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.notifications
   (:require
@@ -76,6 +76,7 @@
               (rx/filter #(not= route-id (:id %)))
               (rx/map hide)
               (rx/take-until stopper)))
+
        (when (:timeout data)
          (let [stopper (rx/filter (ptk/type? ::show) stream)]
            (->> (rx/of (hide))

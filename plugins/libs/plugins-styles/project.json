@@ -1,0 +1,7 @@
+{
+  "name": "plugins-styles",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plugins-styles/src",
+  "projectType": "library",
+  "targets": {}
+}

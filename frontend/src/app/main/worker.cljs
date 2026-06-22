@@ -2,21 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.worker
   "Interface to communicate with the web worker"
   (:require
    [app.config :as cf]
-   [app.main.errors :as errors]
    [app.util.worker :as uw]
    [beicon.v2.core :as rx]))
+
+;; Injected from `app.main.errors` to remove circular dependency
+(defonce on-error nil)
 
 (defonce instance nil)
 
 (defn init!
   []
-  (let [worker (uw/init cf/worker-uri errors/on-error)]
+  (let [worker (uw/init cf/worker-uri on-error)]
     (uw/ask! worker {:cmd :configure
                      :config {:public-uri cf/public-uri
                               :build-data cf/build-date

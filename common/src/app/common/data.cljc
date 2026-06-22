@@ -2,14 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.data
-  "A collection if helpers for working with data structures and other
+  "A collection of helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid max min regexp? array?])
+                            parse-uuid max min regexp? array? empty?])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -143,7 +143,7 @@
     (oassoc-in o (cons k ks) v)))
 
 (defn vec2
-  "Creates a optimized vector compatible type of length 2 backed
+  "Creates an optimized vector compatible type of length 2 backed
   internally with MapEntry impl because it has faster access method
   for its fields."
   [o1 o2]
@@ -175,9 +175,17 @@
        (.isArray (class o))
        false)))
 
+(defn empty?
+  [val]
+  (if (or (coll? val) (string? val))
+    (clojure.core/empty? val)
+    (nil? val)))
+
 (defn not-empty?
-  [coll]
-  (boolean (seq coll)))
+  [val]
+  (if (or (coll? val) (string? val))
+    (boolean (seq val))
+    (some? val)))
 
 (defn editable-collection?
   [m]
@@ -252,13 +260,13 @@
   ([items] (enumerate items 0))
   ([items start]
    (loop [idx   start
-          items items
+          items (seq items)
           res   (transient [])]
-     (if (empty? items)
-       (persistent! res)
+     (if items
        (recur (inc idx)
-              (rest items)
-              (conj! res [idx (first items)]))))))
+              (next items)
+              (conj! res [idx (first items)]))
+       (persistent! res)))))
 
 (defn group-by
   ([kf coll] (group-by kf identity [] coll))
@@ -291,15 +299,12 @@
 
 (defn index-of-pred
   [coll pred]
-  (loop [c    (first coll)
-         coll (rest coll)
+  (loop [s     (seq coll)
          index 0]
-    (if (nil? c)
-      nil
-      (if (pred c)
+    (when s
+      (if (pred (first s))
         index
-        (recur (first coll)
-               (rest coll)
+        (recur (next s)
                (inc index))))))
 
 (defn index-of
@@ -377,12 +382,12 @@
                (assoc object key nil)
 
                (nil? value)
-               (dissoc object key value)
+               (dissoc object key)
 
                :else
                (assoc object key value)))
            object))
-     changes)))
+     (without-nils changes))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
@@ -396,7 +401,7 @@
               (subvec v (inc index))))
 
 (defn without-obj
-  "Clear collection from specified obj and without nil values."
+  "Return a vector with all elements equal to `o` removed."
   [coll o]
   (into [] (filter #(not= % o)) coll))
 
@@ -404,7 +409,7 @@
   (map vector col1 col2))
 
 (defn zip-all
-  "Return a zip of both collections, extended to the lenght of the longest one,
+  "Return a zip of both collections, extended to the length of the longest one,
    and padding the shorter one with nils as needed."
   [col1 col2]
   (let [diff (- (count col1) (count col2))]
@@ -423,9 +428,9 @@
               coll)))
 
 (defn removev
-  "Returns a vector of the items in coll for which (fn item) returns logical false"
-  [fn coll]
-  (filterv (comp not fn) coll))
+  "Returns a vector of the items in coll for which (pred item) returns logical false"
+  [pred coll]
+  (filterv (comp not pred) coll))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"
@@ -443,7 +448,7 @@
 
   Optional parameters:
   `pred?`   A predicate that if not satisfied won't process the pair
-  `target?` A collection that will be used as seed to be stored
+  `target`  A collection that will be used as seed to be stored
 
   Example:
   (map-perm vector [1 2 3 4]) => [[1 2] [1 3] [1 4] [2 3] [2 4] [3 4]]"
@@ -602,12 +607,9 @@
   (let [do-map
         (fn [entry]
           (let [[k v] (mfn entry)]
-            (cond
-              (or (vector? v) (map? v))
+            (if (or (vector? v) (map? v))
               [k (deep-mapm mfn v)]
-
-              :else
-              (mfn [k v]))))]
+              [k v])))]
     (cond
       (map? m)
       (into {} (map do-map) m)
@@ -724,7 +726,7 @@
 (defn nan?
   [v]
   #?(:cljs (js/isNaN v)
-     :clj  (not= v v)))
+     :clj  (and (number? v) (Double/isNaN v))))
 
 (defn- impl-parse-integer
   [v]
@@ -760,6 +762,21 @@
        default
        v))))
 
+(defn percent?
+  [v]
+  (str/numeric? (str/rtrim v "%")))
+
+(defn parse-percent
+  ([v]
+   (parse-percent v nil))
+  ([v default]
+   (if (str/ends-with? v "%")
+     (let [v (impl-parse-double (str/trim v "%"))]
+       (if (or (nil? v) (nan? v))
+         default
+         (/ v 100)))
+     (parse-double v default))))
+
 (defn parse-uuid
   [v]
   (try
@@ -773,7 +790,8 @@
                 (not (js/isNaN v))
                 (not (js/isNaN (parse-double v))))
 
-     :clj  (not= (parse-double v :nan) :nan)))
+     :clj  (and (string? v)
+                (not= (parse-double v :nan) :nan))))
 
 (defn read-string
   [v]
@@ -943,7 +961,7 @@
               (assoc diff key (map-diff v1 v2))
 
               :else
-              (assoc diff key [(get m1 key) (get m2 key)]))))]
+              (assoc diff key [v1 v2]))))]
 
     (->> keys
          (reduce diff-attr {}))))
@@ -1024,6 +1042,26 @@
       :clj
       (sort comp-fn items))))
 
+(defn obfuscate-string
+  "Obfuscates potentially sensitive values.
+
+  - One-arg arity:
+    * For strings shorter than 10 characters, all characters are replaced by `*`.
+    * For longer strings, the first 5 characters are preserved and the rest obfuscated.
+  - Two-arg arity accepts a boolean `full?` that, when true, replaces the whole value
+    by `*`, preserving only the length."
+  ([v]
+   (obfuscate-string v false))
+  ([v full?]
+   (let [s (str v)
+         n (count s)]
+     (cond
+       (zero? n) s
+       full? (apply str (repeat n "*"))
+       (< n 10) (apply str (repeat n "*"))
+       :else (str (subs s 0 5)
+                  (apply str (repeat (- n 5) "*")))))))
+
 (defn reorder
   "Reorder a vector by moving one of their items from some position to some space between positions.
    It clamps the position numbers to a valid range."
@@ -1072,9 +1110,9 @@
   (if (number? num)
     (try
       (let [num-str (mth/to-fixed num precision)
-               ;; Remove all trailing zeros after the comma 100.00000
+            ;; Remove all trailing zeros after the comma 100.00000
             num-str (str/replace num-str trail-zeros-regex-1 "")]
-           ;; Remove trailing zeros after a decimal number: 0.001|00|
+        ;; Remove trailing zeros after a decimal number: 0.001|00|
         (if-let [m (re-find trail-zeros-regex-2 num-str)]
           (str/replace num-str (first m) (second m))
           num-str))
@@ -1088,8 +1126,72 @@
   ([value {:keys [precision] :or {precision 2}}]
    (let [value (if (string? value) (parse-double value) value)]
      (when (num? value)
-       (let [value (format-precision value precision)]
-         (str value))))))
+       (format-precision value precision)))))
+
+(defn- natural-sort-key
+  "Splits a string into a sequence of alternating string and number segments,
+   converting numeric segments to longs/ints so they compare by value rather
+   than lexicographically. e.g. \"size10b\" => (\"size\" 10 \"b\")"
+  [s]
+  (map (fn [part]
+         (if (re-matches #"\d+" part)
+           #?(:clj (Long/parseLong part)
+              :cljs (js/parseInt part))
+           part))
+       (re-seq #"\d+|\D+" s)))
+
+(defn- natural-compare
+  "Comparator that orders strings naturally, sorting numeric segments by value
+   rather than lexicographically. Returns a negative number, zero, or positive
+   number when a is before, equal to, or after b respectively.
+   e.g. \"size2\" < \"size10\" instead of \"size10\" < \"size2\"."
+  [a b]
+  (loop [ka (natural-sort-key a)
+         kb (natural-sort-key b)]
+    (cond
+      (and (empty? ka) (empty? kb)) 0
+      (empty? ka) -1
+      (empty? kb)  1
+      :else
+      (let [pa (first ka)
+            pb (first kb)
+            result (cond
+                     (and (number? pa) (number? pb)) (compare pa pb)
+                     (and (string? pa) (string? pb)) (compare pa pb)
+                     (number? pa) -1
+                     :else 1)]
+        (if (zero? result)
+          (recur (rest ka) (rest kb))
+          result)))))
+
+(defn natural-sort-by
+  "Sorts coll by extracting a string key with keyfn and ordering elements
+   using natural sort order, where embedded numbers are compared by value
+   rather than lexicographically.
+   e.g. (natural-sort-by :name [{:name \"size10\"} {:name \"size2\"}])
+        => [{:name \"size2\"} {:name \"size10\"}]"
+  [key coll]
+  (sort-by key natural-compare coll))
+
+(defn sanitize-string [s]
+  (if s
+    (-> s
+        str
+        str/trim
+        (str/replace #"[^\w\s\-_()]+" "")
+        (str/replace #"\s+" " ")
+        str/trim)
+    ""))
+
+(defn get-initials
+  "Returns up to two uppercase initials extracted from a string.
+  Non-letter prefixes in each token are ignored."
+  [name]
+  (->> (str/split (str/trim (or name "")) #"\s+")
+       (keep #(first (re-seq #"[a-zA-Z]" %)))
+       (take 2)
+       (map str/upper)
+       (apply str)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
@@ -1117,16 +1219,53 @@
   "Wrapper around subvec so it doesn't throw an exception but returns nil instead"
   ([v start]
    (when (and (some? v)
-              (> start 0) (< start (count v)))
+              (>= start 0) (< start (count v)))
      (subvec v start)))
   ([v start end]
-   (let [size (count v)]
-     (when (and (some? v)
-                (>= start 0) (< start size)
-                (>= end 0) (<= start end) (<= end size))
-       (subvec v start end)))))
+   (when (some? v)
+     (let [size (count v)]
+       (when (and (>= start 0) (< start size)
+                  (>= end 0) (<= start end) (<= end size))
+         (subvec v start end))))))
 
 (defn append-class
   [class current-class]
-  (str (if (some? class) (str class " ") "")
-       current-class))
+  (if (seq class)
+    (str class " " current-class)
+    current-class))
+
+(defn nth-index-of*
+  "Finds the nth occurrence of `char` in `string`, searching either forward or backward.
+   `dir` must be :forward (left to right) or :backward (right to left).
+   Returns the absolute index of the match, or nil if fewer than n occurrences exist."
+  [string char n dir]
+  (loop [s string
+         offset 0
+         cnt 1]
+    (let [index (case dir
+                  :forward  (str/index-of s char)
+                  :backward (str/last-index-of s char))]
+      (cond
+        (nil? index) nil
+        (= cnt n)   (case dir
+                      :forward  (+ index offset)
+                      :backward index)
+        :else       (case dir
+                      :forward  (recur (str/slice s (inc index))
+                                       (+ offset index 1)
+                                       (inc cnt))
+                      :backward (recur (str/slice s 0 index)
+                                       offset
+                                       (inc cnt)))))))
+
+(defn nth-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching left to right.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :forward))
+
+(defn nth-last-index-of
+  "Returns the index of the nth occurrence of `char` in `string`, searching right to left.
+   Returns nil if fewer than n occurrences exist."
+  [string char n]
+  (nth-index-of* string char n :backward))

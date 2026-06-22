@@ -7,7 +7,7 @@
 To start the development environment run:
 
 ```sh
-yarn run dev
+pnpm run dev
 ```
 
 ### Testing
@@ -15,14 +15,14 @@ yarn run dev
 For running unit tests and running coverage:
 
 ```sh
-yarn run test
-yarn run coverage
+pnpm run test
+pnpm run coverage
 ```
 
 > If you want, you can run the [vitest](https://vitest.dev/) UI by running:
 
 ```sh
-yarn run test:ui
+pnpm run test:ui
 ```
 
 ## How to build it
@@ -30,14 +30,14 @@ yarn run test:ui
 The editor can be built and updated inside Penpot using the following command:
 
 ```sh
-PENPOT_SOURCE_PATH=/path/to/penpot/repository yarn build:update
+PENPOT_SOURCE_PATH=/path/to/penpot/repository pnpm build:update
 ```
 
 This command is going to search for the file located in `frontend/src/app/main/ui/workspace/shapes/text/new_editor/TextEditor.js` and update it.
 
 ## How it works?
 
-The text editor divides the content in three elements: `root`, `paragraph` and `inline`. An `inline` in terms of content is a styled element that it is displayed in a line inside a block and an `inline` only can have one child (a Text node). A `paragraph` is a **block** element that can contain multiple `inline`s (**inline** elements).
+The text editor divides the content in three elements: `root`, `paragraph` and `textSpan`. In terms of content, a `textSpan` is a styled element displayed on a line within a block. A `textSpan` can only have one child (a Text node). A `paragraph` is a **block** element that can contain multiple `textSpan`s (**textSpan** elements).
 
 ```html
 <div data-itype="root">
@@ -53,10 +53,10 @@ This way we only need to deal with a structure like this, where circular nodes a
 ```mermaid
 flowchart TB
   root((root)) --> paragraph((paragraph))
-  paragraph --> inline_1((inline))
-  paragraph --> inline_2((inline))
-  inline_1 --> text_1[Hello, ]
-  inline_2 --> text_2[World!]
+  paragraph --> text_span_1((textSpan))
+  paragraph --> text_span_2((textSpan))
+  text_span_1 --> text_1[Hello, ]
+  text_span_2 --> text_2[World!]
 ```
 
 This is compatible with the way Penpot stores text content.
@@ -67,6 +67,46 @@ flowchart TB
   paragraph-set --> paragraph((paragraph))
   paragraph --> text((text))
 ```
+
+## How the TextEditor works?
+
+```mermaid
+flowchart TB
+  TextEditor -->|handles `selectionchange` events| SelectionController
+  TextEditor -->|handles how the editor dispatches changes| ChangeController
+```
+
+The `TextEditor` contains a series of references to DOM elements, one of them is a `contenteditable` element that keeps the sub-elements explained before (root, paragraphs and textspans).
+
+`SelectionController` listens to the `document` event called `selectionchange`. This event is triggered everytime the focus/selection of the browser changes.
+
+`ChangeController` is called by the `TextEditor` instance everytime a change is performed on the content of the `contenteditable` element.
+
+### Best practices
+
+#### Use `isType` functions
+
+Instead of handling elements by their properties like this:
+
+```javascript
+if (element.tagName === "SPAN") {
+  ...
+}
+```
+
+Use functions like `isParagraph`, `isTextSpan` or `isLineBreak`:
+
+```javascript
+if (isTextSpan(element)) {
+  ...
+}
+```
+
+### Events
+
+- `change`: This event is dispatched every time a change is made in the editor. All changes are debounced to prevent dispatching too many change events. This event is also dispatched when there are pending change events and the user blurs the textarea element.
+
+- `stylechange`: This event is dispatched every time the `currentStyle` changes. This normally happens when the user changes the caret position or the selection and the `currentStyle` is re-computed.
 
 ## How the code is organized?
 

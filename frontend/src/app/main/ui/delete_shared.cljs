@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.delete-shared
   (:require-macros [app.main.style :as stl])
@@ -106,14 +106,14 @@
        (when (not= 0 count-libraries)
          (if (pos? (count references))
            [:*
-            [:div
-             (when (and (string? scd-msg) (not= scd-msg ""))
-               [:h3 {:class (stl/css :modal-scd-msg)} scd-msg])
-             [:ul {:class (stl/css :element-list)}
-              (for [[file-id file-name] references]
-                [:li {:class (stl/css :list-item)
-                      :key (dm/str file-id)}
-                 [:span "- " file-name]])]]
+            (when (and (string? scd-msg) (not= scd-msg ""))
+              [:p {:class (stl/css :modal-scd-msg)} scd-msg])
+
+            [:ul {:class (stl/css :element-list)}
+             (for [[file-id file-name] references]
+               [:li {:class (stl/css :list-item)
+                     :key (dm/str file-id)}
+                [:span "- " file-name]])]
             (when (and (string? hint) (not= hint ""))
               [:> context-notification* {:level :info
                                          :appearance :ghost}

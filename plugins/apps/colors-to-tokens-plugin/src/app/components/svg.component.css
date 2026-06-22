@@ -1,0 +1,14 @@
+:host {
+  display: block;
+
+  --svg-stroke-color: transparent;
+  --svg-fill-color: transparent;
+
+  inline-size: var(--spacing-16);
+  block-size: var(--spacing-16);
+}
+
+svg {
+  stroke: var(--svg-stroke-color);
+  fill: var(--svg-fill-color);
+}

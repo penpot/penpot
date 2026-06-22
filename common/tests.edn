@@ -1,4 +1,4 @@
 #kaocha/v1
- {:tests [{:id :unit
-           :test-paths ["test"]}]
-  :kaocha/reporter [kaocha.report/dots]}
+{:tests [{:id :unit
+          :test-paths ["test"]}]
+ :kaocha/reporter [kaocha.report/dots]}

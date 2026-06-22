@@ -11,12 +11,13 @@ License: none (public domain)
 div {
   vertical-align: top;
 }
+
 img {
   display: block;
 }
 
 // #Reset & Basics (Inspired by E. Meyers)
-//==================================================
+// ==================================================
 a,
 abbr,
 acronym,
@@ -100,7 +101,9 @@ var,
 video {
   border: 0;
   font: inherit;
+  /* stylelint-disable-next-line declaration-property-unit-allowed-list */
   font-size: 100%;
+
   // TODO: Changing line-height to 1 (as it should be) makes the visual tests
   //       fail with a max pixel diff ratio of 0.005.
   //       We should tackle this later.
@@ -124,6 +127,7 @@ nav,
 section {
   display: block;
 }
+
 body {
   line-height: 1;
 }
@@ -138,10 +142,10 @@ q {
   quotes: none;
 }
 
-blockquote:before,
-blockquote:after,
-q:before,
-q:after {
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
   content: "";
 }
 
@@ -151,5 +155,5 @@ table {
 }
 
 select {
-  -webkit-appearance: none;
+  appearance: none;
 }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.sse
   (:require
@@ -17,22 +17,30 @@
 
 (defn read-stream
   [^js/ReadableStream stream decode-fn]
-  (letfn [(read-items [^js reader]
-            (->> (rx/from (.read reader))
-                 (rx/mapcat (fn [result]
-                              (if (.-done result)
-                                (rx/empty)
-                                (rx/concat
-                                 (rx/of (.-value result))
-                                 (read-items reader)))))))]
-    (->> (read-items (.getReader stream))
-         (rx/mapcat (fn [^js event]
-                      (let [type (.-event event)
-                            data (.-data event)
-                            data (decode-fn data)]
-                        (if (= "error" type)
-                          (rx/throw (ex-info "stream exception" data))
-                          (rx/of #js {:type type :data data}))))))))
+  (->> (rx/create
+        (fn [subs]
+          (let [reader (.getReader stream)]
+            (letfn [(pump []
+                      (-> (.read reader)
+                          (.then (fn [result]
+                                   (if (.-done result)
+                                     (rx/end! subs)
+                                     (do
+                                       (rx/push! subs (.-value result))
+                                       (pump)))))
+                          (.catch (fn [cause]
+                                    (rx/error! subs cause)))))]
+              (pump)
+              ;; teardown: cancel the reader when unsubscribed
+              (fn [] (.cancel reader))))))
+       (rx/mapcat (fn [^js event]
+                    (let [type (.-event event)
+                          data (.-data event)
+                          data (decode-fn data)]
+                      (if (= "error" type)
+                        (rx/throw (ex-info "stream exception" data))
+                        (rx/of #js {:type type :data data})))))))
+
 
 (defn get-type
   [event]
@@ -45,6 +53,10 @@
 (defn end-of-stream?
   [event]
   (= "end" (get-type event)))
+
+(defn progress?
+  [event]
+  (= "progress" (get-type event)))
 
 (defn event?
   [event]

@@ -82,13 +82,13 @@ export class Shape {
   }
 
   get rotation() {
-    return this.#rotation
+    return this.#rotation;
   }
 
   set rotation(newRotation) {
     if (!Number.isFinite(newRotation)) {
-      throw new TypeError('Invalid rotation')
+      throw new TypeError("Invalid rotation");
     }
-    this.#rotation = newRotation
+    this.#rotation = newRotation;
   }
 }

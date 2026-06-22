@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.common
   "A general purpose events."
@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.team :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -198,8 +199,10 @@
 
   (ptk/reify ::change-team-role
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (ntf/info (get-change-role-msg role))))
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)]
+        (when (= team-id current-team-id)
+          (rx/of (ntf/info (get-change-role-msg role))))))
 
     ptk/UpdateEvent
     (update [_ state]
@@ -228,6 +231,91 @@
            (->> (rx/of (ntf/info message))
                 ;; Delay so the navigation can finish
                 (rx/delay 250))))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROGRESS EVENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def noop-fn
+  (constantly nil))
+
+(def ^:private schema:progress-params
+  [:map {:title "Progress"}
+   [:key {:optional true} ::sm/text]
+   [:index {:optional true} ::sm/int]
+   [:total ::sm/int]
+   [:hints
+    [:map-of :keyword fn?]]
+   [:slow-progress-threshold {:optional true} ::sm/int]])
+
+(def ^:private check-progress-params
+  (sm/check-fn schema:progress-params))
+
+(defn initialize-progress
+  [& {:keys [key index total hints slow-progress-threshold] :as params}]
+
+  (assert (check-progress-params params))
+
+  (ptk/reify ::initialize-progress
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :progress
+              (fn [_]
+                (let [hint ((:normal hints noop-fn) params)]
+                  {:threshold (or slow-progress-threshold 5000)
+                   :key key
+                   :last-update (ct/now)
+                   :healthy true
+                   :visible true
+                   :hints hints
+                   :progress (d/nilv index 0)
+                   :total total
+                   :hint hint}))))))
+
+(defn update-progress
+  [{:keys [index total] :as params}]
+
+  (assert (check-progress-params params))
+
+  (ptk/reify ::update-progress
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :progress
+              (fn [state]
+                (let [last-update (get state :last-update)
+                      hints       (get state :hints)
+                      threshold   (get state :slow-progress-threshold)
+
+                      time-diff   (ct/diff-ms last-update (ct/now))
+                      healthy?    (< time-diff threshold)
+
+                      hint        (if healthy?
+                                    ((:normal hints noop-fn) params)
+                                    ((:slow hints noop-fn) params))]
+
+                  (-> state
+                      (assoc :progress index)
+                      (assoc :total total)
+                      (assoc :last-update (ct/now))
+                      (assoc :healthy healthy?)
+                      (assoc :hint hint))))))))
+
+(defn toggle-progress-visibility
+  []
+  (ptk/reify ::toggle-progress-visibility
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :progress
+              (fn [state]
+                (update state :visible not))))))
+
+(defn clear-progress
+  []
+  (ptk/reify ::clear-progress
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :progress))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; NAVEGATION EVENTS
@@ -373,6 +461,17 @@
       (let [page-id (or page-id (:current-page-id state))
             file-id (or file-id (:current-file-id state))
             section (or section :interactions)
+            selected (get-in state [:workspace-local :selected])
+            objects  (dsh/lookup-page-objects state file-id page-id)
+            frame-id (or frame-id
+                         (reduce
+                          (fn [_ id]
+                            (let [obj (get objects id)]
+                              (when (and obj
+                                         (= :frame (:type obj)))
+                                (reduced (:id obj)))))
+                          nil
+                          selected))
             params  {:file-id file-id
                      :page-id page-id
                      :section section
@@ -386,3 +485,21 @@
         (rx/of ::dps/force-persist
                (rt/nav :viewer params options))))))
 
+(defn go-to-dashboard-deleted
+  [& {:keys [team-id] :as options}]
+  (ptk/reify ::go-to-dashboard-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (get state :profile)
+            team-id (cond
+                      (= :default team-id)
+                      (:default-team-id profile)
+
+                      (uuid? team-id)
+                      team-id
+
+                      :else
+                      (:current-team-id state))
+            params  {:team-id team-id}]
+        (rx/of (modal/hide)
+               (rt/nav :dashboard-deleted params options))))))

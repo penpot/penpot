@@ -111,7 +111,7 @@
   "Check if any ancestor of a shape (between base-parent-id and shape) was swapped"
   [shape objects base-parent-id]
   (let [ancestors (->> (ctn/get-parent-heads objects shape)
-                        ;; Ignore ancestors ahead of base-parent
+                       ;; Ignore ancestors ahead of base-parent
                        (drop-while #(not= base-parent-id (:id %)))
                        seq)
         num-ancestors (count ancestors)

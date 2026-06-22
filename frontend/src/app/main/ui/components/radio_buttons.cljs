@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.components.radio-buttons
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -46,7 +47,7 @@
                      :disabled disabled)}
 
      (if (some? icon)
-       [:span {:class icon-class} icon]
+       [:> icon* {:icon-id icon :class icon-class :aria-hidden true}]
        [:span {:class (stl/css :title-name)} value])
 
      [:input {:id id

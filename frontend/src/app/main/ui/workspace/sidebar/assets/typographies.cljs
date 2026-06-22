@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets.typographies
   (:require-macros [app.main.style :as stl])
@@ -23,12 +23,11 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry*]]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def lens:typography-section-state
@@ -97,10 +96,10 @@
          (mf/deps typography on-asset-click read-only? local?)
          (fn [event]
            (when-not read-only?
-             (st/emit! (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-typography"
-                                        ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+             (st/emit! (ev/event
+                        {::ev/name "use-library-typography"
+                         ::ev/origin "sidebar"
+                         :external-library (not local?)}))
              (when-not (on-asset-click event (:id typography))
                (st/emit! (dwt/apply-typography typography file-id))))))]
 
@@ -113,18 +112,19 @@
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
 
-     [:& typography-entry
+     [:> typography-entry*
       {:file-id file-id
        :typography typography
-       :local? local?
-       :selected? (contains? selected typography-id)
+       :is-local local?
+       :is-selected (contains? selected typography-id)
        :on-click on-asset-click
        :on-change handle-change
        :on-context-menu on-context-menu
-       :editing? editing?
-       :renaming? renaming?
-       :focus-name? rename?
-       :external-open* open*}]
+       :is-editing editing?
+       :is-renaming renaming?
+       :is-focus-name rename?
+       :external-open* open*
+       :is-asset? true}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
@@ -132,7 +132,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change on-rename-group
-           on-ungroup on-context-menu selected-full]}]
+           on-ungroup on-delete-group on-context-menu selected-full is-read-only]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
                          (get open-groups prefix true))
@@ -163,7 +163,14 @@
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths selected-full move-typography)
          (fn [event]
-           (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full move-typography)))]
+           (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full move-typography)))
+
+        add-typography-to-group
+        (mf/use-fn
+         (mf/deps file-id prefix)
+         (fn [_]
+           (st/emit! (dw/set-assets-section-open file-id :typographies true)
+                     (dwt/add-typography file-id prefix))))]
 
     [:div {:class (stl/css :typographies-group)
            :on-drag-enter on-drag-enter
@@ -175,7 +182,10 @@
                                  :path prefix
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
-                                 :on-ungroup on-ungroup}]
+                                 :on-ungroup on-ungroup
+                                 :on-delete-group on-delete-group
+                                 :on-add (when (and local? (not is-read-only))
+                                           add-typography-to-group)}]
 
      (when group-open?
        [:*
@@ -227,8 +237,10 @@
                                     :handle-change handle-change
                                     :on-rename-group on-rename-group
                                     :on-ungroup on-ungroup
+                                    :on-delete-group on-delete-group
                                     :on-context-menu on-context-menu
-                                    :selected-full selected-full}]))])]))
+                                    :selected-full selected-full
+                                    :is-read-only is-read-only}]))])]))
 
 (mf/defc typographies-section*
   [{:keys [file file-id typographies open-status-ref selected
@@ -340,6 +352,13 @@
                                 (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-delete-group
+        (mf/with-memo [typographies on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets typographies
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [t] (dwl/delete-typography (:id t))) %)}))
+
         on-context-menu
         (mf/use-fn
          (mf/deps selected on-clear-selection read-only?)
@@ -376,6 +395,12 @@
                          (dwl/delete-typography (:id @state))
                          (dwl/sync-file file-id file-id :typographies (:id @state))
                          (dwu/commit-undo-transaction undo-id))))))
+
+        handle-duplicate-typography
+        (mf/use-fn
+         (mf/deps file-id @state)
+         (fn []
+           (st/emit! (dwl/duplicate-typography file-id (:id @state)))))
 
         editing-id (:edit-typography local-data)
 
@@ -423,8 +448,10 @@
                                :handle-change handle-change
                                :on-rename-group on-rename-group
                                :on-ungroup on-ungroup
+                               :on-delete-group on-delete-group
                                :on-context-menu on-context-menu
-                               :selected-full selected-full}]
+                               :selected-full selected-full
+                               :is-read-only read-only?}]
 
        (if is-local
          [:> cmm/assets-context-menu*
@@ -439,6 +466,11 @@
                        {:name    (tr "workspace.assets.edit")
                         :id      "assets-edit-typography"
                         :handler handle-edit-typography-clicked})
+
+                     (when-not (or multi-typographies? multi-assets?)
+                       {:name    (tr "workspace.assets.duplicate")
+                        :id      "assets-duplicate-typography"
+                        :handler handle-duplicate-typography})
 
                      {:name    (tr "workspace.assets.delete")
                       :id      "assets-delete-typography"

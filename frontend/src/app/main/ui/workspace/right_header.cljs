@@ -2,15 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
-   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
+   [app.main.data.team :as dtm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
    [app.main.data.workspace.history :as dwh]
@@ -22,10 +22,10 @@
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.exports.assets :refer [export-progress-widget]]
+   [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.presence :refer [active-sessions]]
+   [app.main.ui.workspace.presence :refer [active-sessions*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -111,10 +111,8 @@
 ;; --- Header Component
 
 (mf/defc right-header*
-  [{:keys [file layout page-id]}]
-  (let [file-id           (:id file)
-
-        threads-map       (mf/deref refs/comment-threads)
+  [{:keys [file-id layout page-id]}]
+  (let [threads-map       (mf/deref refs/comment-threads)
 
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
@@ -188,9 +186,8 @@
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :workspace}))))]
+           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+                                                    :origin :workspace}))))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
@@ -198,9 +195,9 @@
 
     [:div {:class (stl/css :workspace-header-right)}
      [:div {:class (stl/css :users-section)}
-      [:& active-sessions]]
+      [:> active-sessions*]]
 
-     [:& export-progress-widget]
+     [:& progress-widget]
 
      [:div {:class (stl/css :separator)}]
 

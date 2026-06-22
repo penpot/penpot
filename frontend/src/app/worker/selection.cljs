@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.worker.selection
   (:require
@@ -105,7 +105,7 @@
         index         (reduce-kv #(index-shape objects parents-index clip-index %1 %3)
                                  (qdt/create (clj->js bounds))
                                  (dissoc objects uuid/zero))]
-    {:index index :bounds bounds}))
+    {:index index :bounds bounds :parents-index parents-index :clip-index clip-index}))
 
 ;; FIXME: optimize
 (defn- update-index
@@ -140,6 +140,12 @@
                 (qdt/remove-all index changed-ids)
                 shapes)]
 
+    (assoc data :index index :parents-index parents-index :clip-index clip-index)))
+
+(defn update-index-single
+  [{index :index parents-index :parents-index clip-index :clip-index :as data} objects shape]
+  (let [index (qdt/remove-all index [(:id shape)])
+        index (index-shape objects parents-index clip-index index shape)]
     (assoc data :index index)))
 
 (defn- query-index
@@ -151,8 +157,6 @@
         match-criteria?
         (fn [shape]
           (and (not (:hidden shape))
-               (or (cfh/frame-shape? shape) ;; We return frames even if blocked
-                   (not (:blocked shape)))
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
                  :frame   include-frames?
@@ -251,7 +255,7 @@
                 (filter (if clip-children?
                           (comp overlaps-parent? :clip-parents)
                           (constantly true)))
-                (map :id))
+                (keep :id))
           result)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

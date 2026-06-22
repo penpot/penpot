@@ -2,17 +2,18 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.ruler-guides
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.store :as st]
    [app.plugins.format :as format]
    [app.plugins.register :as r]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -24,7 +25,7 @@
 
 (defn ruler-guide-proxy
   [plugin-id file-id page-id id]
-  (obj/reify {:name "RuleGuideProxy"}
+  (obj/reify {:name "RulerGuideProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file {:enumerable false :get (constantly file-id)}
     :$page {:enumerable false :get (constantly page-id)}
@@ -44,18 +45,22 @@
        (let [shape (u/locate-shape file-id page-id (obj/get value "$id"))]
          (cond
            (not (shape-proxy? value))
-           (u/display-not-valid :board "The board is not a shape proxy")
+           (u/not-valid plugin-id :board "The board is not a shape proxy")
 
            (not (cfh/frame-shape? shape))
-           (u/display-not-valid :board "The shape is not a board")
+           (u/not-valid plugin-id :board "The shape is not a board")
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :board "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :board "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :board "Cannot modify a page that is not currently active")
 
            :else
            (let [board-id (when value (obj/get value "$id"))
                  guide    (-> self u/proxy->ruler-guide)]
-             (st/emit! (dwgu/update-guides (assoc guide :frame-id board-id)))))))}
+             (st/emit! (-> (dwgu/update-guides (assoc guide :frame-id board-id))
+                           (se/add-event plugin-id)))))))}
 
     :orientation
     {:this true
@@ -77,11 +82,14 @@
      :set
      (fn [self value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :position "Not valid position")
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :position "Not valid position")
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :position "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :position "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
 
          :else
          (let [guide (u/proxy->ruler-guide self)
@@ -92,9 +100,35 @@
                    (+ board-pos value))
 
                  value)]
-           (st/emit! (dwgu/update-guides (assoc guide :position position))))))}
+           (st/emit! (-> (dwgu/update-guides (assoc guide :position position))
+                         (se/add-event plugin-id))))))}
+
+    :color
+    {:this true
+     :get
+     (fn [self]
+       (-> self u/proxy->ruler-guide :color))
+
+     :set
+     (fn [self value]
+       (cond
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :color "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :color "Cannot modify a page that is not currently active")
+
+         :else
+         (let [guide (u/proxy->ruler-guide self)]
+           (st/emit! (dwgu/update-guides (assoc guide :color value))))))}
 
     :remove
     (fn []
-      (let [guide (u/locate-ruler-guide file-id page-id id)]
-        (st/emit! (dwgu/remove-guide guide))))))
+      (cond
+        (not (u/page-active? page-id))
+        (u/not-valid plugin-id :remove "Cannot modify a page that is not currently active")
+
+        :else
+        (let [guide (u/locate-ruler-guide file-id page-id id)]
+          (st/emit! (-> (dwgu/remove-guide guide)
+                        (se/add-event plugin-id))))))))

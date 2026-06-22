@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.http
   "A http client with rx streams interface."
@@ -104,10 +104,16 @@
               (.next ^js subscriber response)
               (.complete ^js subscriber)))
            (p/catch
-            (fn [err]
+            (fn [cause]
               (vreset! abortable? false)
-              (when-not @unsubscribed?
-                (.error ^js subscriber err))))
+              (when-not (or @unsubscribed? (= (.-name ^js cause) "AbortError"))
+                (let [error (ex-info (ex-message cause)
+                                     {:type :network
+                                      :hint "unable to perform fetch operation"
+                                      :uri uri
+                                      :headers headers}
+                                     cause)]
+                  (.error ^js subscriber error)))))
            (p/finally
              (fn []
                (let [{:keys [count average] :or {count 0 average 0}} (get @network-averages (:path uri))
@@ -116,9 +122,20 @@
                                 (/ current-time (inc count)))
                      count (inc count)]
                  (swap! network-averages assoc (:path uri) {:count count :average average})))))
+
        (fn []
          (vreset! unsubscribed? true)
          (when @abortable?
+           ;; Do NOT pass a custom reason to .abort(): browsers that support
+           ;; AbortController reason (Chrome 98+, Firefox 97+) would reject
+           ;; the fetch promise with the supplied value directly.  When that
+           ;; value is a ClojureScript ExceptionInfo its `.name` property is
+           ;; "Error", not "AbortError", which defeats every existing guard
+           ;; that checks `(= (.-name cause) "AbortError")`.  Calling .abort
+           ;; without a reason always produces a native DOMException whose
+           ;; `.name` is "AbortError", which is correctly recognised and
+           ;; suppressed by both the p/catch handler and the global
+           ;; unhandled-exception filter.
            (.abort ^js controller)))))))
 
 (defn response->map
@@ -189,6 +206,11 @@
 (defn client-error?
   [{:keys [status]}]
   (<= 400 status 499))
+
+(defn blob?
+  [^js v]
+  (when (some? v)
+    (instance? js/Blob v)))
 
 (defn as-promise
   [observable]

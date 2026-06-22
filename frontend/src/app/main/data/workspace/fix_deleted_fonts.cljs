@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.fix-deleted-fonts
   (:require
@@ -102,7 +102,8 @@
                   {:origin it
                    :redo-changes changes
                    :undo-changes []
-                   :save-undo? false})))))))
+                   :save-undo? false
+                   :ignore-wasm? true})))))))
 
 ;; FIXME: would be nice to not execute this code twice per page in the
 ;; same working session, maybe some local memoization can improve that
@@ -119,4 +120,5 @@
                   {:origin it
                    :redo-changes changes
                    :undo-changes []
-                   :save-undo? false})))))))
+                   :save-undo? false
+                   :ignore-wasm? true})))))))

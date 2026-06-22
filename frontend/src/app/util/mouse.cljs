@@ -2,14 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.mouse
   (:require
    [beicon.v2.core :as rx]))
 
 (defrecord MouseEvent [type ctrl shift alt meta])
-(defrecord PointerEvent [source pt ctrl shift alt meta])
+;; `movement` — optional delta (client/window space) for the same tick as `pt`.
+;; Used so viewport `pointermove` can emit once (`source` :viewport) while pan/zoom
+;; still observe displacement without a second Potok emit.
+(defrecord PointerEvent [source pt ctrl shift alt meta movement])
 (defrecord ScrollEvent [point])
 (defrecord BlurEvent [])
 
@@ -52,6 +55,10 @@
 (defn get-pointer-position
   [^PointerEvent ev]
   (.-pt ev))
+
+(defn get-pointer-movement
+  [^PointerEvent ev]
+  (.-movement ev))
 
 (defn get-pointer-ctrl-mod
   [^PointerEvent ev]

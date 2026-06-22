@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.shadow
   (:require-macros [app.main.style :as stl])
@@ -48,7 +48,17 @@
   (map-indexed (fn [index shadow]
                  (assoc shadow ::index index))))
 
+(defn- check-shadow-menu-props
+  [old-props new-props]
+  (and (identical? (unchecked-get old-props "ids")
+                   (unchecked-get new-props "ids"))
+       (identical? (unchecked-get old-props "type")
+                   (unchecked-get new-props "type"))
+       (identical? (unchecked-get old-props "values")
+                   (unchecked-get new-props "values"))))
+
 (mf/defc shadow-menu*
+  {::mf/wrap [#(mf/memo' % check-shadow-menu-props)]}
   [{:keys [ids type values] :as props}]
   (let [shadows        (mf/with-memo [values]
                          (if (= :multiple values)
@@ -127,7 +137,8 @@
                                                           (-> shadow
                                                               (assoc attr value)
                                                               (ctss/check-shadow))))))))))]
-    [:div {:class (stl/css :shadow-section)}
+    [:div {:data-testid "shadow-section"
+           :class (stl/css :shadow-section)}
      [:div {:class (stl/css :shadow-title)}
       [:> title-bar* {:collapsable  has-shadows?
                       :collapsed    (not show-content?)

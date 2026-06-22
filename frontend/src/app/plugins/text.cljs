@@ -2,20 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.text
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.text :as gst]
    [app.common.record :as crc]
    [app.common.schema :as sm]
-   [app.common.types.shape :as cts]
+   [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.wasm-text :as dwwt]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.plugins.fills :as fills]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
@@ -118,10 +122,13 @@
              variant (fonts/get-default-variant font)]
          (cond
            (not font)
-           (u/display-not-valid :fontId value)
+           (u/not-valid plugin-id :fontId value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontId "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontId "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
@@ -140,10 +147,13 @@
              variant (fonts/get-default-variant font)]
          (cond
            (not (string? value))
-           (u/display-not-valid :fontFamily value)
+           (u/not-valid plugin-id :fontFamily value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontFamily "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontFamily "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
@@ -161,10 +171,13 @@
              variant (fonts/get-variant font value)]
          (cond
            (not (string? value))
-           (u/display-not-valid :fontVariantId value)
+           (u/not-valid plugin-id :fontVariantId value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontVariantId "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontVariantId "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
@@ -181,10 +194,13 @@
        (let [value (str/trim (dm/str value))]
          (cond
            (or (empty? value) (not (re-matches font-size-re value)))
-           (u/display-not-valid :fontSize value)
+           (u/not-valid plugin-id :fontSize value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontSize "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontSize "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end {:font-size value})))))}
@@ -208,10 +224,13 @@
               (fonts/find-variant font {:weight weight}))]
          (cond
            (nil? variant)
-           (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+           (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontWeight "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
@@ -234,10 +253,13 @@
               (fonts/find-variant font {:style style}))]
          (cond
            (nil? variant)
-           (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
+           (u/not-valid plugin-id :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fontStyle "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fontStyle "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
@@ -254,10 +276,13 @@
        (let [value (str/trim (dm/str value))]
          (cond
            (or (empty? value) (not (re-matches line-height-re value)))
-           (u/display-not-valid :lineHeight value)
+           (u/not-valid plugin-id :lineHeight value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :lineHeight "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :lineHeight "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end {:line-height value})))))}
@@ -273,11 +298,14 @@
      (fn [_ value]
        (let [value (str/trim (dm/str value))]
          (cond
-           (or (empty? value) (re-matches letter-spacing-re value))
-           (u/display-not-valid :letterSpacing value)
+           (or (not (string? value)) (not (re-matches letter-spacing-re value)))
+           (u/not-valid plugin-id :letterSpacing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :letterSpacing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :letterSpacing "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))))}
@@ -293,10 +321,13 @@
      (fn [_ value]
        (cond
          (and (string? value) (not (re-matches text-transform-re value)))
-         (u/display-not-valid :textTransform value)
+         (u/not-valid plugin-id :textTransform value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :textTransform "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :textTransform "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwt/update-text-range id start end {:text-transform value}))))}
@@ -311,11 +342,14 @@
      :set
      (fn [_ value]
        (cond
-         (and (string? value) (re-matches text-decoration-re value))
-         (u/display-not-valid :textDecoration value)
+         (or (not (string? value)) (not (re-matches text-decoration-re value)))
+         (u/not-valid plugin-id :textDecoration value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :textDecoration "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :textDecoration "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
@@ -330,11 +364,14 @@
      :set
      (fn [_ value]
        (cond
-         (and (string? value) (re-matches text-direction-re value))
-         (u/display-not-valid :direction value)
+         (or (not (string? value)) (not (re-matches text-direction-re value)))
+         (u/not-valid plugin-id :direction value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :direction "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :direction "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :direction "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwt/update-text-range id start end {:direction value}))))}
@@ -349,11 +386,14 @@
      :set
      (fn [_ value]
        (cond
-         (and (string? value) (re-matches text-align-re value))
-         (u/display-not-valid :align value)
+         (or (not (string? value)) (not (re-matches text-align-re value)))
+         (u/not-valid plugin-id :align value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :align "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :align "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwt/update-text-range id start end {:text-align value}))))}
@@ -364,16 +404,19 @@
      (fn [self]
        (let [range-data
              (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (->> range-data (map :fills) u/mixed-value format/format-fills)))
+         (->> range-data (map :fills) u/mixed-value fills/format-fills)))
      :set
      (fn [_ value]
        (let [value (parser/parse-fills value)]
          (cond
-           (not (sm/validate [:vector ::cts/fill] value))
-           (u/display-not-valid :fills value)
+           (not (sm/validate [:vector types.fills/schema:fill] value))
+           (u/not-valid plugin-id :fills value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :fills "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :fills "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwt/update-text-range id start end {:fills value})))))}
@@ -389,266 +432,320 @@
 
 (defn add-text-props
   [shape-proxy plugin-id]
-  (crc/add-properties!
-   shape-proxy
-   {:name "characters"
-    :get #(-> % u/proxy->shape :content txt/content->text)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        ;; The user is currently editing the text. We need to update the
-        ;; editor as well
-        (cond
-          (or (not (string? value)) (empty? value))
-          (u/display-not-valid :characters value)
+  (let [page-id (obj/get shape-proxy "$page")]
+    (crc/add-properties!
+     shape-proxy
+     {:name "characters"
+      :get #(-> % u/proxy->shape :content txt/content->text)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          ;; The user is currently editing the text. We need to update the
+          ;; editor as well
+          (cond
+            (or (not (string? value)) (empty? value))
+            (u/not-valid plugin-id :characters value)
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :characters "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :characters "Plugin doesn't have 'content:write' permission")
 
-          (contains? (:workspace-editor-state @st/state) id)
-          (let [shape (u/proxy->shape self)
-                editor
-                (-> shape
-                    (get :content)
-                    (txt/change-text value)
-                    ted/import-content
-                    ted/create-editor-state)]
-            (st/emit! (dwt/update-editor-state shape editor)))
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :characters "Cannot modify a page that is not currently active")
 
-          :else
-          (st/emit! (dwsh/update-shapes [id]
-                                        #(update % :content txt/change-text value))))))}
+            (contains? (:workspace-editor-state @st/state) id)
+            (let [shape (u/proxy->shape self)
+                  editor
+                  (-> shape
+                      (get :content)
+                      (txt/change-text value)
+                      ted/import-content
+                      ted/create-editor-state)]
+              (st/emit! (dwt/update-editor-state shape editor)))
 
-   {:name "growType"
-    :get #(-> % u/proxy->shape :grow-type d/name)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            value (keyword value)]
-        (cond
-          (not (contains? #{:auto-width :auto-height :fixed} value))
-          (u/display-not-valid :growType value)
+            :else
+            (do
+              (st/emit! (dwsh/update-shapes [id] #(update % :content txt/change-text value)))
+              (when (features/active-feature? @st/state "render-wasm/v1")
+                (st/emit! (dwwt/resize-wasm-text-debounce id)))))))}
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :growType "Plugin doesn't have 'content:write' permission")
+     {:name "growType"
+      :get #(-> % u/proxy->shape :grow-type d/name)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              value (keyword value)]
+          (cond
+            (not (contains? #{:auto-width :auto-height :fixed} value))
+            (u/not-valid plugin-id :growType value)
 
-          :else
-          (st/emit! (dwsh/update-shapes [id] #(assoc % :grow-type value))))))}
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :growType "Plugin doesn't have 'content:write' permission")
 
-   {:name "fontId"
-    :get #(-> % u/proxy->shape text-props :font-id format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            font (when (string? value) (fonts/get-font-data value))
-            variant (fonts/get-default-variant font)]
-        (cond
-          (not font)
-          (u/display-not-valid :fontId value)
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :growType "Cannot modify a page that is not currently active")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
+            :else
+            (st/emit!
+             (dwsh/update-shapes [id] #(assoc % :grow-type value))
+             (when (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwwt/resize-wasm-text-debounce id)))))))}
 
-          :else
-          (st/emit! (dwt/update-attrs id (font-data font variant))))))}
+     {:name "fontId"
+      :get #(-> % u/proxy->shape text-props :font-id format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              font (when (string? value) (fonts/get-font-data value))
+              variant (fonts/get-default-variant font)]
+          (cond
+            (not font)
+            (u/not-valid plugin-id :fontId value)
 
-   {:name "fontFamily"
-    :get #(-> % u/proxy->shape text-props :font-family format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            font (fonts/find-font-data {:family value})
-            variant (fonts/get-default-variant font)]
-        (cond
-          (not font)
-          (u/display-not-valid :fontFamily value)
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontId "Plugin doesn't have 'content:write' permission")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontId "Cannot modify a page that is not currently active")
 
-          :else
-          (st/emit! (dwt/update-attrs id (font-data font variant))))))}
+            :else
+            (st/emit! (dwt/update-attrs id (font-data font variant))))))}
 
-   {:name "fontVariantId"
-    :get #(-> % u/proxy->shape text-props :font-variant-id format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id      (obj/get self "$id")
-            font    (fonts/get-font-data (obj/get self "fontId"))
-            variant (fonts/get-variant font value)]
-        (cond
-          (not variant)
-          (u/display-not-valid :fontVariantId value)
+     {:name "fontFamily"
+      :get #(-> % u/proxy->shape text-props :font-family format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              font (fonts/find-font-data {:family value})
+              variant (fonts/get-default-variant font)]
+          (cond
+            (not font)
+            (u/not-valid plugin-id :fontFamily value)
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontFamily "Plugin doesn't have 'content:write' permission")
 
-          :else
-          (st/emit! (dwt/update-attrs id (variant-data variant))))))}
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontFamily "Cannot modify a page that is not currently active")
 
-   {:name "fontSize"
-    :get #(-> % u/proxy->shape text-props :font-size format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            value (str/trim (dm/str value))]
-        (cond
-          (or (empty? value) (not (re-matches font-size-re value)))
-          (u/display-not-valid :fontSize value)
+            :else
+            (st/emit! (dwt/update-attrs id (font-data font variant))))))}
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
+     {:name "fontVariantId"
+      :get #(-> % u/proxy->shape text-props :font-variant-id format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id      (obj/get self "$id")
+              font    (fonts/get-font-data (obj/get self "fontId"))
+              variant (fonts/get-variant font value)]
+          (cond
+            (not variant)
+            (u/not-valid plugin-id :fontVariantId value)
 
-          :else
-          (st/emit! (dwt/update-attrs id {:font-size value})))))}
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontVariantId "Plugin doesn't have 'content:write' permission")
 
-   {:name "fontWeight"
-    :get #(-> % u/proxy->shape text-props :font-weight format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            font    (fonts/get-font-data (obj/get self "fontId"))
-            weight  (dm/str value)
-            style   (obj/get self "fontStyle")
-            variant
-            (or
-             (fonts/find-variant font {:style style :weight weight})
-             (fonts/find-variant font {:weight weight}))]
-        (cond
-          (nil? variant)
-          (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontVariantId "Cannot modify a page that is not currently active")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
+            :else
+            (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
-          :else
-          (st/emit! (dwt/update-attrs id (variant-data variant))))))}
+     {:name "fontSize"
+      :get #(-> % u/proxy->shape text-props :font-size format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              value (str/trim (dm/str value))]
+          (cond
+            (or (empty? value) (not (re-matches font-size-re value)))
+            (u/not-valid plugin-id :fontSize value)
 
-   {:name "fontStyle"
-    :get #(-> % u/proxy->shape text-props :font-style format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            font    (fonts/get-font-data (obj/get self "fontId"))
-            style   (dm/str value)
-            weight  (obj/get self "fontWeight")
-            variant
-            (or
-             (fonts/find-variant font {:weight weight :style style})
-             (fonts/find-variant font {:style style}))]
-        (cond
-          (nil? variant)
-          (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontSize "Plugin doesn't have 'content:write' permission")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontSize "Cannot modify a page that is not currently active")
 
-          :else
-          (st/emit! (dwt/update-attrs id (variant-data variant))))))}
+            :else
+            (st/emit! (dwt/update-attrs id {:font-size value})))))}
 
-   {:name "lineHeight"
-    :get #(-> % u/proxy->shape text-props :line-height format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            value (str/trim (dm/str value))]
-        (cond
-          (or (empty? value) (not (re-matches line-height-re value)))
-          (u/display-not-valid :lineHeight value)
+     {:name "fontWeight"
+      :get #(-> % u/proxy->shape text-props :font-weight format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              font    (fonts/get-font-data (obj/get self "fontId"))
+              weight  (dm/str value)
+              style   (obj/get self "fontStyle")
+              variant
+              (or
+               (fonts/find-variant font {:style style :weight weight})
+               (fonts/find-variant font {:weight weight}))]
+          (cond
+            (nil? variant)
+            (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")
 
-          :else
-          (st/emit! (dwt/update-attrs id {:line-height value})))))}
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontWeight "Cannot modify a page that is not currently active")
 
-   {:name "letterSpacing"
-    :get #(-> % u/proxy->shape text-props :letter-spacing format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")
-            value (str/trim (dm/str value))]
-        (cond
-          (or (not (string? value)) (not (re-matches letter-spacing-re value)))
-          (u/display-not-valid :letterSpacing value)
+            :else
+            (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
+     {:name "fontStyle"
+      :get #(-> % u/proxy->shape text-props :font-style format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              font    (fonts/get-font-data (obj/get self "fontId"))
+              style   (dm/str value)
+              weight  (obj/get self "fontWeight")
+              variant
+              (or
+               (fonts/find-variant font {:weight weight :style style})
+               (fonts/find-variant font {:style style}))]
+          (cond
+            (nil? variant)
+            (u/not-valid plugin-id :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
 
-          :else
-          (st/emit! (dwt/update-attrs id {:letter-spacing value})))))}
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :fontStyle "Plugin doesn't have 'content:write' permission")
 
-   {:name "textTransform"
-    :get #(-> % u/proxy->shape text-props :text-transform format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        (cond
-          (or (not (string? value)) (not (re-matches text-transform-re value)))
-          (u/display-not-valid :textTransform value)
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :fontStyle "Cannot modify a page that is not currently active")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
+            :else
+            (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
-          :else
-          (st/emit! (dwt/update-attrs id {:text-transform value})))))}
+     {:name "lineHeight"
+      :get #(-> % u/proxy->shape text-props :line-height format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              value (str/trim (dm/str value))]
+          (cond
+            (or (empty? value) (not (re-matches line-height-re value)))
+            (u/not-valid plugin-id :lineHeight value)
 
-   {:name "textDecoration"
-    :get #(-> % u/proxy->shape text-props :text-decoration format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        (cond
-          (or (not (string? value)) (not (re-matches text-decoration-re value)))
-          (u/display-not-valid :textDecoration value)
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :lineHeight "Plugin doesn't have 'content:write' permission")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :lineHeight "Cannot modify a page that is not currently active")
 
-          :else
-          (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
+            :else
+            (st/emit! (dwt/update-attrs id {:line-height value})))))}
 
-   {:name "direction"
-    :get #(-> % u/proxy->shape text-props :text-direction format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        (cond
-          (or (not (string? value)) (not (re-matches text-direction-re value)))
-          (u/display-not-valid :textDirection value)
+     {:name "letterSpacing"
+      :get #(-> % u/proxy->shape text-props :letter-spacing format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")
+              value (str/trim (dm/str value))]
+          (cond
+            (or (not (string? value)) (not (re-matches letter-spacing-re value)))
+            (u/not-valid plugin-id :letterSpacing value)
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :textDirection "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :letterSpacing "Plugin doesn't have 'content:write' permission")
 
-          :else
-          (st/emit! (dwt/update-attrs id {:text-direction value})))))}
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :letterSpacing "Cannot modify a page that is not currently active")
 
-   {:name "align"
-    :get #(-> % u/proxy->shape text-props :text-align format/format-mixed)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        (cond
-          (or (not (string? value)) (not (re-matches text-align-re value)))
-          (u/display-not-valid :align value)
+            :else
+            (st/emit! (dwt/update-attrs id {:letter-spacing value})))))}
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
+     {:name "textTransform"
+      :get #(-> % u/proxy->shape text-props :text-transform format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (or (not (string? value)) (not (re-matches text-transform-re value)))
+            (u/not-valid plugin-id :textTransform value)
 
-          :else
-          (st/emit! (dwt/update-attrs id {:text-align value})))))}
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :textTransform "Plugin doesn't have 'content:write' permission")
 
-   {:name "verticalAlign"
-    :get #(-> % u/proxy->shape text-props :vertical-align)
-    :set
-    (fn [self value]
-      (let [id (obj/get self "$id")]
-        (cond
-          (or (not (string? value)) (not (re-matches vertical-align-re value)))
-          (u/display-not-valid :verticalAlign value)
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :textTransform "Cannot modify a page that is not currently active")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :verticalAlign "Plugin doesn't have 'content:write' permission")
+            :else
+            (st/emit! (dwt/update-attrs id {:text-transform value})))))}
 
-          :else
-          (st/emit! (dwt/update-attrs id {:vertical-align value})))))}))
+     {:name "textDecoration"
+      :get #(-> % u/proxy->shape text-props :text-decoration format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (or (not (string? value)) (not (re-matches text-decoration-re value)))
+            (u/not-valid plugin-id :textDecoration value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :textDecoration "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :textDecoration "Cannot modify a page that is not currently active")
+
+            :else
+            (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
+
+     {:name "direction"
+      :get #(-> % u/proxy->shape text-props :text-direction format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (or (not (string? value)) (not (re-matches text-direction-re value)))
+            (u/not-valid plugin-id :textDirection value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :textDirection "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :textDirection "Cannot modify a page that is not currently active")
+
+            :else
+            (st/emit! (dwt/update-attrs id {:text-direction value})))))}
+
+     {:name "align"
+      :get #(-> % u/proxy->shape text-props :text-align format/format-mixed)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (or (not (string? value)) (not (re-matches text-align-re value)))
+            (u/not-valid plugin-id :align value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :align "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :align "Cannot modify a page that is not currently active")
+
+            :else
+            (st/emit! (dwt/update-attrs id {:text-align value})))))}
+
+     {:name "verticalAlign"
+      :get #(-> % u/proxy->shape text-props :vertical-align)
+      :set
+      (fn [self value]
+        (let [id (obj/get self "$id")]
+          (cond
+            (or (not (string? value)) (not (re-matches vertical-align-re value)))
+            (u/not-valid plugin-id :verticalAlign value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/not-valid plugin-id :verticalAlign "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? page-id))
+            (u/not-valid plugin-id :verticalAlign "Cannot modify a page that is not currently active")
+
+            :else
+            (st/emit! (dwt/update-attrs id {:vertical-align value})))))}
+
+     {:name "textBounds"
+      :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)})))

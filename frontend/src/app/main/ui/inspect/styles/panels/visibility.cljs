@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.styles.panels.visibility
   (:require-macros [app.main.style :as stl])
@@ -32,7 +32,7 @@
   [{:keys [shapes objects resolved-tokens]}]
   [:div {:class (stl/css :visibility-panel)}
    (for [shape shapes]
-     [:div {:key (:id shape) :class "visibility-shape"}
+     [:div {:key (:id shape) :class (stl/css :visibility-shape)}
       (for [property properties]
         (when-let [value (css/get-css-value objects shape property)]
           (let [property-name (cmm/get-css-rule-humanized property)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.storage.tmp
   "Temporal files service all created files will be tried to clean after
@@ -79,14 +79,17 @@
 ;; API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn tempfile
-  [& {:keys [suffix prefix min-age]
+(defn tempfile*
+  [& {:keys [suffix prefix]
       :or {prefix "penpot."
            suffix ".tmp"}}]
   (let [attrs (fs/make-permissions "rw-r--r--")
-        path  (fs/join default-tmp-dir (str prefix (uuid/next) suffix))
-        path  (Files/createFile path attrs)]
-    (fs/delete-on-exit! path)
+        path  (fs/join default-tmp-dir (str prefix (uuid/next) suffix))]
+    (Files/createFile path attrs)))
+
+(defn tempfile
+  [& {:keys [min-age] :as opts}]
+  (let [path (tempfile* opts)]
     (sp/offer! queue [path (some-> min-age ct/duration)])
     path))
 

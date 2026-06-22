@@ -6,6 +6,7 @@ pub type Rect = skia::Rect;
 pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
 pub type Point = skia::Point;
+pub type Size = skia::Size;
 
 const THRESHOLD: f32 = 0.001;
 
@@ -47,6 +48,13 @@ pub fn identitish(m: &Matrix) -> bool {
         && is_close_to(m.scale_y(), 1.0)
         && is_close_to(m.translate_x(), 0.0)
         && is_close_to(m.translate_y(), 0.0)
+        && is_close_to(m.skew_x(), 0.0)
+        && is_close_to(m.skew_y(), 0.0)
+}
+
+pub fn is_move_only_matrix(m: &Matrix) -> bool {
+    is_close_to(m.scale_x(), 1.0)
+        && is_close_to(m.scale_y(), 1.0)
         && is_close_to(m.skew_x(), 0.0)
         && is_close_to(m.skew_y(), 0.0)
 }
@@ -349,7 +357,7 @@ impl Bounds {
     }
 
     pub fn from_rect(r: &Rect) -> Self {
-        let [nw, ne, se, sw] = r.to_quad();
+        let [nw, ne, se, sw] = r.to_quad(None);
         Self::new(nw, ne, se, sw)
     }
 
@@ -428,8 +436,17 @@ pub fn resize_matrix(
     new_height: f32,
 ) -> Matrix {
     let mut result = Matrix::default();
-    let scale_width = new_width / child_bounds.width();
-    let scale_height = new_height / child_bounds.height();
+
+    let safe_scale = |value: f32, base: f32| -> f32 {
+        if !value.is_finite() || !base.is_finite() || is_close_to(base, 0.0) {
+            1.0
+        } else {
+            value / base
+        }
+    };
+
+    let scale_width = safe_scale(new_width, child_bounds.width());
+    let scale_height = safe_scale(new_height, child_bounds.height());
 
     let center = child_bounds.center();
     let mut parent_transform = parent_bounds.transform_matrix().unwrap_or_default();

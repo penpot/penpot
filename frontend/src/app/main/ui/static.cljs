@@ -2,32 +2,32 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
   (:require
    ["rxjs" :as rxjs]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.auth.login :refer [login-methods]]
+   [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
@@ -36,17 +36,22 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
 (def TimeoutError rxjs/TimeoutError)
 
 (mf/defc error-container*
-  {::mf/props :obj}
   [{:keys [children]}]
-  (let [profile-id  (:profile-id @st/state)
-        on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
+  (let [profile     (mf/deref refs/profile)
+        profile-id  (:id profile)
+        on-nav-root (mf/use-fn
+                     (mf/deps profile-id profile)
+                     (fn []
+                       (if (and profile-id (some? (:default-team-id profile)))
+                         (st/emit! (dcm/go-to-dashboard-recent
+                                    :team-id (:default-team-id profile)))
+                         (st/emit! (rt/nav-root)))))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -70,12 +75,29 @@
       [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
-  []
+  [{:keys [reason]}]
+  ;; Map the specific failure reason to actionable copy. Falls back to
+  ;; the generic invitation-invalid message when the reason is missing
+  ;; or unknown so the UX never regresses for unhandled cases.
+  ;;
+  ;; The branches use `tr` with literal keys (instead of `(tr key-var)`)
+  ;; so the i18n usage scanner can statically track every key.
   [:> error-container* {}
-   [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
-   [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
+   (case reason
+     :email-mismatch
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-email-mismatch")]]
 
-(mf/defc login-dialog*
+     :token-expired
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-expired")]]
+
+     [:*
+      [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
+      [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])])
+
+(mf/defc login-modal*
+  {::mf/private true}
   []
   (let [current-section  (mf/use-state :login)
         user-email       (mf/use-state "")
@@ -136,9 +158,9 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "labels.login")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.free")]
-          [:& login-methods {:on-recovery-request set-section-recovery
+          [:> login-dialog* {:on-recovery-request set-section-recovery
                              :on-success-callback success-login
-                             :params {:save-login-redirect true}}]
+                             :handle-redirect true}]
           [:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
@@ -151,7 +173,7 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "not-found.login.signup-free")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.start-using")]
-          [:& register/register-methods {:on-success-callback success-register :hide-separator true}]
+          [:> register/register-methods* {:on-success-callback success-register :hide-separator true}]
           #_[:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
@@ -161,11 +183,11 @@
                 :on-click set-section} (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
-           [:& register/terms-register]]]
+           [:> register/terms-register*]]]
 
          :register-validate
          [:div {:class (stl/css :form-container)}
-          [:& register/register-form
+          [:> register/register-form*
            {:params {:token @register-token}
             :on-success-callback register-email-sent}]
           [:div {:class (stl/css :links)}
@@ -176,7 +198,7 @@
 
          :register-email-sent
          [:div {:class (stl/css :form-container)}
-          [:& register/register-success-page {:params {:email @user-email :hide-logo true}}]]
+          [:> register/register-success-page* {:params {:email @user-email :hide-logo true}}]]
 
          :recovery-request
          [:& recovery-request-page {:go-back-callback set-section-login
@@ -187,7 +209,6 @@
           [:& recovery-sent-page {:email @user-email}]])]]]))
 
 (mf/defc request-dialog*
-  {::mf/props :obj}
   [{:keys [title content button-text on-button-click cancel-text on-close]}]
   (let [on-click (or on-button-click on-close)]
     [:div {:class (stl/css :overlay)}
@@ -306,6 +327,26 @@
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
+
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
+
+(mf/defc webgl-context-lost*
+  []
+  (let [on-reload (mf/use-fn #(js/location.reload))]
+    [:> error-container* {}
+     [:div {:class (stl/css :main-message)} (tr "errors.webgl-context-lost.main-message")]
+     [:div {:class (stl/css :desc-message)} (tr "errors.webgl-context-lost.desc-message")]
+     [:div {:class (stl/css :buttons-container)}
+      [:> button* {:variant "primary" :on-click on-reload}
+       (tr "labels.reload-page")]]]))
 
 (defn- generate-report
   [data]
@@ -438,22 +479,22 @@
 
 (mf/defc exception-section*
   {::mf/private true}
-  [{:keys [data route] :as props}]
+  [{:keys [data] :as props}]
   (let [type   (get data :type)
-        report (mf/with-memo [data]
-                 (generate-report data))
+        cause  (get data ::errors/instance)
+
+        report (mf/with-memo [cause]
+                 (when (ex/exception? cause)
+                   (errors/generate-report cause)))
+
         props  (mf/spread-props props {:report report})]
 
-    (mf/with-effect [data route report]
-      (let [params (:query-params route)
-            params (u/map->query-string params)]
-        (st/emit! (ptk/data-event ::ev/event
-                                  {::ev/name "exception-page"
-                                   :type (get data :type :unknown)
-                                   :hint (get data :hint)
-                                   :path (get route :path)
-                                   :report report
-                                   :params params}))))
+    (mf/with-effect [report type cause]
+      (when (and (ex/exception? cause)
+                 (not (contains? #{:not-found :authentication} type)))
+        (errors/submit-report :event-name "exception-page"
+                              :report report
+                              :hint (ex/get-hint cause))))
 
     (case type
       :not-found
@@ -467,6 +508,9 @@
 
       :service-unavailable
       [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 
@@ -516,7 +560,6 @@
    children])
 
 (mf/defc exception-page*
-  {::mf/props :obj}
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
@@ -536,8 +579,10 @@
         auth-error? (= type :authentication)
         not-found?  (= type :not-found)
 
-        authenticated?
-        (is-authenticated? profile)
+        authenticated? (is-authenticated? profile)
+
+        ;; Keeps whether the user was authenticated when this component first mounted.
+        initial-authenticated? (mf/with-memo [] authenticated?)
 
         request-access?
         (and
@@ -553,13 +598,23 @@
 
 
     (if (or auth-error? not-found?)
-      (if (not authenticated?)
+      (cond
+        (not authenticated?)
         [:> context-wrapper*
          {:is-workspace workspace?
           :is-dashboard dashboard?
           :is-viewer view?
           :profile profile}
-         [:> login-dialog* {}]]
+         [:> login-modal* {}]]
+
+        ;; The user was not authenticated when exception-page first
+        ;; mounted, but they have just logged in via the login modal.
+        ;; Show a loading indicator to prevent briefly flashing the
+        ;; "no permission" dialog.
+        (not initial-authenticated?)
+        [:> loader* {:title (tr "labels.loading") :overlay true}]
+
+        :else
         (when (get info :loaded false)
           (if request-access?
             [:> context-wrapper* {:is-workspace workspace?

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.releases.v2-7
   (:require-macros [app.main.style :as stl])
@@ -71,7 +71,7 @@
            "The highlight: you can now duplicate token sets directly from a menu item. A huge time-saver, especially when working from existing sets. We’ve also made it easier to create themes by letting you select their set right away, and we’ve polished some info indicators to make everything a bit clearer. Plus, we’ve fixed a bunch of early-stage bugs to keep things running smoothly."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -101,7 +101,7 @@
            "This update gives editors and viewers the same ability to configure, create, copy, and delete sharing links. A capability that, until now, was limited to owners and admins."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]
@@ -132,7 +132,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 3}]

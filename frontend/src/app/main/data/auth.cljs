@@ -2,13 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.auth
   "Auth related data events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -62,25 +61,29 @@
                     (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))]
 
     (ptk/reify ::logged-in
-      ev/Event
-      (-data [_]
-        {::ev/name "signin"
-         ::ev/type "identify"
-         :email (:email profile)
-         :auth-backend (:auth-backend profile)
-         :fullname (:fullname profile)
-         :is-muted (:is-muted profile)
-         :default-team-id (:default-team-id profile)
-         :default-project-id (:default-project-id profile)})
-
       ptk/WatchEvent
       (watch [_ _ stream]
         (cf/initialize-external-context-info)
+
 
         (->> (rx/merge
               (rx/of (dp/set-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
+
+              ;; We schedule this event to be executed a bit later,
+              ;; when the profile is already set
+              (->> (rx/of (ev/event {::ev/name "signin"
+                                     ::ev/type "identify"
+                                     :id (:id profile)
+                                     :email (:email profile)
+                                     :auth-backend (:auth-backend profile)
+                                     :fullname (:fullname profile)
+                                     :is-muted (:is-muted profile)
+                                     :default-team-id (:default-team-id profile)
+                                     :default-project-id (:default-project-id profile)}))
+                   (rx/observe-on :async))
+
 
               (->> stream
                    (rx/filter (ptk/type? ::dtm/teams-fetched))
@@ -148,9 +151,7 @@
 (defn login-with-ldap
   [params]
 
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:login-with-ldap params))
+  (assert (sm/check schema:login-with-ldap params))
 
   (ptk/reify ::login-with-ldap
     ptk/WatchEvent
@@ -166,16 +167,47 @@
                            (logged-in))))
              (rx/catch on-error))))))
 
+(def ^:private schema:login-with-sso
+  [:map {:title "login-with-sso"}
+   [:provider [:or :string ::sm/uuid]]])
+
+(defn login-with-sso
+  "Start the SSO flow"
+  [params]
+  (assert (sm/check schema:login-with-sso params))
+  (ptk/reify ::login-with-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :login-with-oidc params)
+           (rx/map (fn [{:keys [redirect-uri] :as rsp}]
+                     (if redirect-uri
+                       (rt/nav-raw :uri redirect-uri)
+                       (ex/raise :type :assertion
+                                 :code :unexpected-response
+                                 :hint "unexpected response from OIDC method"
+                                 :resp (pr-str rsp)))))
+           (rx/catch (fn [cause]
+                       (let [{:keys [type code] :as error} (ex-data cause)]
+                         (if (and (= type :restriction)
+                                  (= code :provider-not-configured))
+                           (rx/of (ntf/error (tr "errors.auth-provider-not-configured")))
+                           (rx/throw cause)))))))))
+
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile] :as tdata}]
+  [{:keys [profile invitation-token] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
-           ;; NOTE: we need this to be asynchronous because the effect
-           ;; should be called before proceed with the login process
-           (rx/observe-on :async)))))
+      (->> (dp/on-fetch-profile-success profile)
+           (rx/map (fn [profile]
+                     (let [profile (cond-> profile
+                                     invitation-token
+                                     (assoc :invitation-token invitation-token)
+
+                                     :always
+                                     (with-meta {::ev/source "login-with-token"}))]
+                       (logged-in profile))))))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
@@ -201,7 +233,7 @@
 ;; --- EVENT: logout
 
 (defn logged-out
-  []
+  [{:keys [redirect-uri]}]
   (ptk/reify ::logged-out
     ptk/UpdateEvent
     (update [_ state]
@@ -209,12 +241,16 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       ;; NOTE: We need the `effect` of the current event to be
-       ;; executed before the redirect.
-       (->> (rx/of (rt/nav :auth-login))
-            (rx/observe-on :async))
-       (rx/of (ws/finalize))))
+      (if redirect-uri
+        (->> (rx/of (rt/nav-raw :uri (str redirect-uri)))
+             (rx/observe-on :async))
+
+        (rx/merge
+         ;; NOTE: We need the `effect` of the current event to be
+         ;; executed before the redirect.
+         (->> (rx/of (rt/nav :auth-login))
+              (rx/observe-on :async))
+         (rx/of (ws/finalize)))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -235,7 +271,7 @@
              (rx/mapcat (fn [_]
                           (->> (rp/cmd! :logout {:profile-id profile-id})
                                (rx/delay-at-least 300)
-                               (rx/catch (constantly (rx/of 1))))))
+                               (rx/catch (constantly (rx/of nil))))))
              (rx/map logged-out))))))
 
 ;; --- Update Profile
@@ -248,9 +284,7 @@
 (defn request-profile-recovery
   [data]
 
-  (dm/assert!
-   "expected valid parameters"
-   (sm/check schema:request-profile-recovery data))
+  (assert (sm/check schema:request-profile-recovery data))
 
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
@@ -273,9 +307,7 @@
 
 (defn recover-profile
   [data]
-  (dm/assert!
-   "expected valid arguments"
-   (sm/check schema:recover-profile data))
+  (assert (sm/check schema:recover-profile data))
 
   (ptk/reify ::recover-profile
     ptk/WatchEvent

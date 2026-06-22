@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.bool
   (:require-macros [app.main.style :as stl])
@@ -16,6 +16,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -38,30 +39,18 @@
         (features/use-feature "render-wasm/v1")
 
         has-invalid-shapes?
-        (if render-wasm-enabled?
-          false
-          (some (fn [shape]
-                  (or (cfh/frame-shape? shape)
-                      (cfh/text-shape? shape)))
-                shapes-with-children))
+        (some (if render-wasm-enabled?
+                cfh/frame-shape?
+                #(or (cfh/frame-shape? %) (cfh/text-shape? %)))
+              shapes-with-children)
 
         head-not-group-like?
         (and (= 1 total-selected)
              (not is-group?)
              (not is-bool?))
 
-        disabled-bool-btns
-        (if render-wasm-enabled?
-          false
-          (or (zero? total-selected)
-              has-invalid-shapes?
-              head-not-group-like?))
-
-        disabled-flatten
-        (if render-wasm-enabled?
-          false
-          (or (zero? total-selected)
-              has-invalid-shapes?))
+        disabled-bool-btns (or (zero? total-selected) has-invalid-shapes? head-not-group-like?)
+        disabled-flatten   (or (zero? total-selected) has-invalid-shapes?)
 
         on-change
         (mf/use-fn
@@ -90,22 +79,22 @@
                            :class (stl/css :boolean-radio-btn)
                            :on-change on-change
                            :name "bool-options"}
-         [:& radio-button {:icon deprecated-icon/boolean-union
+         [:& radio-button {:icon i/boolean-union
                            :value "union"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
                            :id "bool-opt-union"}]
-         [:& radio-button {:icon deprecated-icon/boolean-difference
+         [:& radio-button {:icon i/boolean-difference
                            :value "difference"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
                            :id "bool-opt-differente"}]
-         [:& radio-button {:icon deprecated-icon/boolean-intersection
+         [:& radio-button {:icon i/boolean-intersection
                            :value "intersection"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.intersection") " (" (sc/get-tooltip :bool-intersection) ")")
                            :id "bool-opt-intersection"}]
-         [:& radio-button {:icon deprecated-icon/boolean-exclude
+         [:& radio-button {:icon i/boolean-exclude
                            :value "exclude"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.exclude") " (" (sc/get-tooltip :bool-exclude) ")")

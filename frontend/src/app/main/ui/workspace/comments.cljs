@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.comments
   (:require-macros [app.main.style :as stl])
@@ -16,8 +16,9 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -120,15 +121,12 @@
              (st/emit! (with-meta (dcmt/open-thread thread) {::ev/origin "viewer"}))
              (st/emit! (dwcm/navigate-to-comment thread)))))]
 
-    [:div  {:class (stl/css-case :comments-section true
-                                 :from-viewer  from-viewer)}
-     [:div {:class (stl/css-case :comments-section-title true
-                                 :viewer-title from-viewer)}
-      [:span (tr "labels.comments")]
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "labels.close")
-                        :on-click close-section
-                        :icon i/close}]]
+    [:div {:class (stl/css-case :comments-section true
+                                :from-viewer from-viewer)}
+
+     [:> panel-title* {:class (stl/css :comments-title)
+                       :text (tr "labels.comments")
+                       :on-close close-section}]
 
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}
@@ -160,6 +158,5 @@
              :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}
-         [:span {:class (stl/css :placeholder-icon)} deprecated-icon/comments]
-         [:span {:class (stl/css :placeholder-label)}
-          (tr "labels.no-comments-available")]])]]))
+         [:> empty-state* {:icon i/comments
+                           :text (tr "labels.no-comments-available")}]])]]))

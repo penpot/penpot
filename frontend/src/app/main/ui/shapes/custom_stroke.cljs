@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
@@ -171,8 +171,8 @@
                  :fillOpacity opacity}
         [:path {:d "M 3 0 L 6 3 L 3 6 L 0 3 z"}]])
 
-      ;; If the user wants line caps but different in each end,
-      ;; simulate it with markers.
+     ;; If the user wants line caps but different in each end,
+     ;; simulate it with markers.
      (when (and (or (= cap-start :round)
                     (= cap-end :round))
                 (not= cap-start cap-end))
@@ -480,7 +480,8 @@
 
         stroke-id     (dm/str (dm/fmt "strokes-%-%" prefix shape-id))
 
-        shape-blur    (get shape :blur)
+        shape-blur   (get shape :blur)
+
         shape-fills   (get shape :fills)
         shape-shadow  (get shape :shadow)
         shape-strokes (not-empty strokes)
@@ -498,6 +499,7 @@
 
         open-path?    (and ^boolean (cfh/path-shape? shape)
                            ^boolean (path/shape-with-open-path? shape))]
+
     (when-not ^boolean (cfh/frame-shape? shape)
       (when (and (some? shape-blur)
                  (not ^boolean (:hidden shape-blur)))
@@ -509,7 +511,8 @@
 
     (when (some? shape-strokes)
       [:> :g props
-       (for [[index value] (reverse (d/enumerate shape-strokes))]
+       (for [[index value] (reverse (d/enumerate shape-strokes))
+             :when (not (:hidden value))]
          [:& shape-custom-stroke {:shape shape
                                   :stroke value
                                   :index index

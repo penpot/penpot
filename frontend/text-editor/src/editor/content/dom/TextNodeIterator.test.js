@@ -70,4 +70,29 @@ describe("TextNodeIterator", () => {
     textNodeIterator.nextNode();
     expect(textNodeIterator.currentNode.nodeValue).toBe("Whatever");
   });
+
+  test("collectFrom includes the end node (iterateFrom must yield end inclusive)", () => {
+    const rootNode = createRoot([
+      createParagraph([createTextSpan(new Text("Hello"))]),
+      createParagraph([createTextSpan(createLineBreak())]),
+    ]);
+    const firstText = rootNode.firstChild.firstChild.firstChild;
+    const br = rootNode.lastChild.firstChild.firstChild;
+    const textNodeIterator = new TextNodeIterator(rootNode);
+    const nodes = textNodeIterator.collectFrom(firstText, br);
+    expect(nodes.length).toBe(2);
+    expect(nodes[0]).toBe(firstText);
+    expect(nodes[1]).toBe(br);
+  });
+
+  test("collectFrom with identical start and end returns one node", () => {
+    const rootNode = createRoot([
+      createParagraph([createTextSpan(new Text("Hi"))]),
+    ]);
+    const text = rootNode.firstChild.firstChild.firstChild;
+    const textNodeIterator = new TextNodeIterator(rootNode);
+    const nodes = textNodeIterator.collectFrom(text, text);
+    expect(nodes.length).toBe(1);
+    expect(nodes[0]).toBe(text);
+  });
 });

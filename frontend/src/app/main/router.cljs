@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.router
   (:refer-clojure :exclude [resolve])
@@ -76,8 +76,7 @@
       (when send-event-info?
         (let [route  (dm/get-in match [:data :name])
               params (get match :query-params)]
-          (rx/of (ptk/event
-                  ::ev/event
+          (rx/of (ev/event
                   (assoc params
                          ::ev/name "navigate"
                          :route (name route)))))))
@@ -135,6 +134,16 @@
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))
+
+(defn get-query-param
+  "Safely extracts a scalar value for a query param key from a params
+  map. When the same key appears multiple times in a URL,
+  query-string->map returns a vector for that key; this function
+  always returns a single (last) element in that case, so downstream
+  consumers such as parse-long always receive a plain string or nil."
+  [params k]
+  (let [v (get params k)]
+    (if (sequential? v) (peek v) v)))
 
 (defn nav-back
   []

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.history
   (:require
@@ -24,7 +24,7 @@
     (fn []
       (cond
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :resize "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
         :else
         (let [id (js/Symbol)]
@@ -35,10 +35,10 @@
     (fn [block-id]
       (cond
         (not (r/check-permission plugin-id "content:write"))
-        (u/display-not-valid :resize "Plugin doesn't have 'content:write' permission")
+        (u/not-valid plugin-id :resize "Plugin doesn't have 'content:write' permission")
 
         (not block-id)
-        (u/display-not-valid :undoBlockFinish block-id)
+        (u/not-valid plugin-id :undoBlockFinish block-id)
 
         :else
         (st/emit! (dwu/commit-undo-transaction block-id))))))

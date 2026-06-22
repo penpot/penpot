@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
@@ -10,20 +10,20 @@
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu* component-variant-main*]]
-   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
-   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -100,6 +100,7 @@
     [:*
      [:> layer-menu* {:ids ids
                       :type shape-type
+                      :applied-tokens applied-tokens
                       :values layer-values}]
      [:> measures-menu* {:ids ids
                          :applied-tokens applied-tokens
@@ -112,7 +113,7 @@
      (when is-variant?
        [:> component-variant-main* {:shapes shapes}])
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type shape-type
        :ids ids
        :applied-tokens applied-tokens
@@ -120,26 +121,28 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
+       [:> grid-cell/options*
+        {:shape-id (-> (first parents)
+                       :id)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when (or is-layout-child? is-layout-container?)
-       [:& layout-item-menu
+       [:> layout-item-menu*
         {:ids ids
          :type shape-type
          :values layout-item-values
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
-         :is-flex-layout? is-flex-layout?
-         :is-grid-layout? is-grid-layout?
-         :is-layout-child? is-layout-child?
-         :is-layout-container? is-layout-container?
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
+         :is-flex-layout is-flex-layout?
+         :is-grid-layout is-grid-layout?
+         :is-layout-child is-layout-child?
+         :applied-tokens applied-tokens
+         :is-layout-container is-layout-container?
          :shape shape}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
+       [:> constraints-menu* {:ids ids
+                              :values constraint-values}])
 
      [:> fill/fill-menu*
       {:ids ids
@@ -147,19 +150,22 @@
        :values shape
        :applied-tokens applied-tokens}]
 
-     [:& stroke-menu {:ids ids
-                      :type shape-type
-                      :values stroke-values
-                      :applied-tokens applied-tokens}]
+     [:> stroke-menu* {:ids ids
+                       :type shape-type
+                       :values stroke-values
+                       :applied-tokens applied-tokens}]
      [:> color-selection-menu* {:type shape-type
                                 :shapes shapes-with-children
                                 :file-id file-id
                                 :libraries libraries}]
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]
-     [:> exports-menu* {:type type
+     [:> blur-menu* {:ids ids
+                     :values (select-keys shape [:blur :background-blur])}]
+     [:> frame-grid* {:grids (:grids shape)
+                      :id (:id shape)
+                      :frame-width (:width shape)
+                      :frame-height (:height shape)}]
+     [:> exports-menu* {:type shape-type
                         :ids ids
                         :shapes shapes
                         :values (select-keys shape exports-attrs)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.dom
   (:require
@@ -23,7 +23,7 @@
 
 (extend-type BrowserEvent
   cljs.core/IDeref
-  (-deref [it] (.getBrowserEvent it)))
+  (-deref [it] (.getBrowserEvent ^js it)))
 
 (declare get-window-size)
 
@@ -106,18 +106,29 @@
 
 (defn stop-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopPropagation event)))
     (.stopPropagation event)))
 
 (defn stop-immediate-propagation
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-stopImmediatePropagation event)))
     (.stopImmediatePropagation event)))
 
 (defn prevent-default
   [^js event]
-  (when event
+  (when (and (some? event)
+             (fn? (.-preventDefault event)))
     (.preventDefault event)))
+
+(defn prevent-default-context-menu
+  [^js event]
+  (let [target (some-> event .-target)
+        tag    (some-> target .-tagName .toLowerCase)]
+    (when-not (or (#{"input" "textarea"} tag)
+                  (some-> target .-isContentEditable))
+      (.preventDefault event))))
 
 (defn get-target
   "Extract the target from event instance."
@@ -167,8 +178,17 @@
   [^js node name]
   (let [name (str/camel name)]
     (loop [current node]
-      (if (or (nil? current) (obj/in? (.-dataset current) name))
+      (cond
+        (nil? current)
+        nil
+
+        (not= (.-nodeType current) js/Node.ELEMENT_NODE)
+        (recur (.-parentElement current))
+
+        (obj/in? (.-dataset current) name)
         current
+
+        :else
         (recur (.-parentElement current))))))
 
 (defn get-parent-with-selector
@@ -227,12 +247,6 @@
 
 (def get-target-scroll (comp get-scroll-position get-target))
 
-(defn click
-  "Click a node"
-  [^js node]
-  (when (some? node)
-    (.click node)))
-
 (defn get-files
   "Extract the files from dom node."
   [^js node]
@@ -280,6 +294,21 @@
   (when (and (some? node) (some? (unchecked-get node "select")))
     (.select ^js node)))
 
+(defn selection-start
+  [^js node]
+  (when (some? node)
+    (.-selectionStart node)))
+
+(defn selection-end
+  [^js node]
+  (when (some? node)
+    (.-selectionEnd node)))
+
+(defn set-selection-range!
+  [^js node start end]
+  (when (some? node)
+    (.setSelectionRange node start end)))
+
 (defn ^boolean equals?
   [^js node-a ^js node-b]
 
@@ -306,6 +335,18 @@
    (create-text globals/document text))
   ([document ^js text]
    (.createTextNode document text)))
+
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
 
 (defn set-html!
   [^js el html]
@@ -359,6 +400,10 @@
   [^js el]
   (when (some? el)
     (.-innerText el)))
+
+(defn is-content-editable?
+  [^js el]
+  (.-isContentEditable ^js el))
 
 (defn query
   ([^string selector]
@@ -469,7 +514,7 @@
   (when (some? node)
     (.focus node)))
 
-(defn click!
+(defn click
   [^js node]
   (when (some? node)
     (.click node)))
@@ -741,7 +786,11 @@
 
 (defn trigger-download
   [filename blob]
-  (trigger-download-uri filename (.-type ^js blob) (wapi/create-uri blob)))
+  (let [uri (wapi/create-uri blob)]
+    (try
+      (trigger-download-uri filename (.-type ^js blob) uri)
+      (finally
+        (wapi/revoke-uri uri)))))
 
 (defn event
   "Create an instance of DOM Event"
@@ -798,9 +847,11 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (let [new-window (.open js/window (str uri) name features)]
-     (when (not= name "_blank")
-       (.reload (.-location new-window))))))
+   (when (exists? js/window)
+     (when-let [new-window (.open js/window (str uri) name features)]
+       (when (not= name "_blank")
+         (when-let [location (.-location new-window)]
+           (.reload location)))))))
 
 (defn browser-back
   []

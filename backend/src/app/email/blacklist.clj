@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.email.blacklist
   "Email blacklist provider"
@@ -36,10 +36,18 @@
                :cause cause)))))
 
 (defn contains?
-  "Check if email is in the blacklist."
+  "Check if email is in the blacklist. Also matches subdomains: if
+  'somedomain.com' is blacklisted, 'xxx@foo.somedomain.com' will also
+  be rejected."
   [{:keys [::email/blacklist]} email]
-  (let [[_ domain] (str/split email "@" 2)]
-    (c/contains? blacklist (str/lower domain))))
+  (let [[_ domain] (str/split email "@" 2)
+        parts      (str/split (str/lower domain) #"\.")]
+    (loop [parts parts]
+      (if (empty? parts)
+        false
+        (if (c/contains? blacklist (str/join "." parts))
+          true
+          (recur (rest parts)))))))
 
 (defn enabled?
   "Check if the blacklist is enabled"

@@ -10,7 +10,7 @@ all the necessary data to import them into a Penpot application).
 ### How to install
 
 ```bash
-yarn add @penpot/library
+pnpm add @penpot/library
 ```
 
 ### Example of use
@@ -58,14 +58,14 @@ Build the library:
 Login on npm:
 
 ```bash
-yarn npm login
+npm login
 ```
 
 Publish on npm:
 
 
 ```bash
-yarn npm publish --access public
+npm publish --access public
 ```
 
 ## License
@@ -75,6 +75,6 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) KALEIDOS INC
+Copyright (c) KALEIDOS INC Sucursal en España SL
 ```
 

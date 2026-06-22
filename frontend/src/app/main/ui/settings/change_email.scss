@@ -2,16 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   min-width: deprecated.$s-408;
 }
 
@@ -20,37 +21,41 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
-  @include deprecated.flexColumn;
-  @include deprecated.bodySmallTypography;
+  @include deprecated.flex-column;
+  @include deprecated.body-small-typography;
+
   gap: deprecated.$s-24;
   margin-bottom: deprecated.$s-24;
 }
 
 .fields-row {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
 }
 
 .select-title {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
+
   button {
-    @extend .modal-accept-btn;
+    @extend %modal-accept-btn;
   }
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }

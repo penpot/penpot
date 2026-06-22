@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.persistence
   (:require
@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -23,6 +24,28 @@
 (def running (atom false))
 (def revn-data (atom {}))
 (def queue-conj (fnil conj #queue []))
+
+(def force-persist? #(= % ::force-persist))
+
+(defn wait-persisted
+  "Returns an observable that emits the first terminal persistence status
+   (nil | :saved) and completes. With a timeout-ms, if persistence doesn't
+   settle in time the observable completes silently without emitting."
+  ([] (wait-persisted nil))
+  ([timeout-ms]
+   (let [base (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+                   (rx/filter #(or (nil? %) (= :saved %)))
+                   (rx/take 1))]
+     (if timeout-ms
+       (->> base (rx/timeout timeout-ms (rx/empty)))
+       base))))
+
+(defn force-persist-and-wait
+  "Convenience that emits the force-persist event and then waits for
+   persistence to settle. Returns the combined observable."
+  ([] (force-persist-and-wait nil))
+  ([timeout-ms]
+   (rx/concat (rx/of ::force-persist) (wait-persisted timeout-ms))))
 
 (defn- update-status
   [status]
@@ -119,8 +142,10 @@
                         :features features}
               permissions (:permissions state)]
 
-          ;; Prevent commit changes by a team member without edition permission
-          (when (:can-edit permissions)
+          ;; Prevent saving changes when in version preview (read-only) mode
+          ;; or when the user does not have edition permission.
+          (when (and (:can-edit permissions)
+                     (not (get-in state [:workspace-global :read-only?])))
             (->> (rp/cmd! :update-file params)
                  (rx/mapcat (fn [{:keys [revn lagged] :as response}]
                               (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))

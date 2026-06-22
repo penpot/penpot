@@ -1,22 +1,26 @@
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
+   [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.cta :refer [cta*]]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [lambdaisland.uri :as u]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-subscription-type
@@ -48,7 +52,10 @@
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
        [:span {:class (stl/css :cta-text) :data-testid "subscription-name"} top-description]]
-      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow])]
+      (when has-dropdown
+        [:> icon* {:icon-id (if (and has-dropdown show-data) i/arrow-up i/arrow-down)
+                   :class (stl/css :icon-dropdown)
+                   :size "s"}])]
 
      (when (and has-dropdown show-data)
        [:div {:class (stl/css :cta-bottom-section)}
@@ -112,6 +119,139 @@
           :has-dropdown false
           :is-highlighted false}]))))
 
+(mf/defc nitrate-sidebar*
+  [{:keys [profile teams]}]
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        manual-license?       (:manual nitrate-license)
+        subscription-warning* (mf/use-state nil)
+        subscription-warning  (deref subscription-warning*)
+        route                 (mf/deref refs/route)
+        route-name            (get-in route [:data :name])
+
+        days-until-expiry
+        (or (:days-until-expiry subscription-warning)
+            (:daysUntilExpiry subscription-warning)
+            (:days-from-expiry subscription-warning)
+            (:daysFromExpiry subscription-warning))
+
+        expiration-date
+        (or (:expiration-date subscription-warning)
+            (:expirationDate subscription-warning))
+        expiration-date-text
+        (when expiration-date
+          (ct/format-inst expiration-date "MMMM d"))
+
+        show-subscription-warning?
+        (and nitrate?
+             manual-license?
+             (not= route-name :settings-subscription)
+             (some? days-until-expiry)
+             (some? expiration-date-text))
+
+        subscription-type
+        (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
+
+        teams-loaded? (seq teams)
+
+        no-orgs-created? (mf/with-memo [teams]
+                           (and (seq teams)
+                                (->> teams
+                                     vals
+                                     (not-any? :organization))))
+
+        handle-click
+        (mf/use-fn
+         (mf/deps nitrate-license subscription-type)
+         (fn []
+           (if (= subscription-type "unlimited")
+             (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
+             (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
+
+        handle-go-to-cc
+        (mf/use-fn dnt/go-to-nitrate-ac-create-org)
+
+        handle-open-renew-modal
+        (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]
+
+    (mf/with-effect [manual-license?]
+      (if manual-license?
+        (->> (dnt/fetch-subscription-warning)
+             (rx/subs! #(reset! subscription-warning* %)))
+        (reset! subscription-warning* nil)))
+
+    [:*
+     ;; TODO add translations for this texts when we have the definitive ones
+     (if (and nitrate? teams-loaded? no-orgs-created? (not show-subscription-warning?))
+       ;; Banner for users with active nitrate license but no organizations created
+       [:div {:class (stl/css :nitrate-banner :highlighted)}
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-title)} (tr "subscription.banner.see-enterprise")]]
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-info)} (tr "subscription.banner.create-org-info")]
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :nitrate-bottom-button)
+                      :on-click handle-go-to-cc} (tr "nitrate.activation-success.create-org")]]]
+
+       ;; Banner for users without nitrate license
+       (when (not nitrate?)
+         [:div {:class (stl/css :nitrate-banner :highlighted)}
+          [:div {:class (stl/css :nitrate-content)}
+           [:span {:class (stl/css :nitrate-title)} (tr "subscription.dashboard.banner.unlock-features")]]
+          [:div {:class (stl/css :nitrate-content)}
+           [:span {:class (stl/css :nitrate-info)} (tr "subscription.dashboard.banner.unlock-features-description")]
+           [:> button* {:variant "primary"
+                        :type "button"
+                        :class (stl/css :nitrate-bottom-button)
+                        :on-click handle-click} (if (:subscription profile)
+                                                  (tr "subscription.dashboard.banner.upgrade-nitrate")
+                                                  (tr "nitrate.form.try-free"))]]]))
+
+     ;; Banner for users with nitrate license almost expired or expired
+     (when show-subscription-warning?
+       [:div {:class (stl/css :nitrate-banner :highlighted)}
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-title)}
+          (tr "subscription.dashboard.banner.renew-subscription")]]
+        [:div {:class (stl/css :nitrate-content)}
+         [:span {:class (stl/css :nitrate-info)}
+          (if (neg? days-until-expiry)
+            (tr "subscription.dashboard.banner.subscription-expired"
+                expiration-date-text)
+            (tr "subscription.dashboard.banner.subscription-expire-days"
+                days-until-expiry
+                expiration-date-text))]
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :nitrate-bottom-button)
+                      :on-click handle-open-renew-modal}
+          (tr "subscription.dashboard.banner.renew")]]])]))
+
+(mf/defc nitrate-current-plan*
+  [{:keys [profile]}]
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        subscription          (-> profile :props :subscription)
+        subscription-type     (if nitrate? (:type nitrate-license) (get-subscription-type subscription))
+        subscription-is-trial (= "trialing" (:status (if nitrate? nitrate-license subscription)))
+        go-to-subscription    (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
+    [:div {:class (stl/css :nitrate-current-plan)}
+     [:div {:class (stl/css :nitrate-current-plan-label)}
+      (tr "subscription.current-plan.title")]
+     [:button {:class (stl/css :nitrate-current-plan-text)
+               :type "button"
+               :on-click go-to-subscription}
+      (case subscription-type
+        "professional" (tr "subscription.current-plan.professional")
+        "unlimited" (if subscription-is-trial
+                      (tr "subscription.current-plan.unlimited-trial")
+                      (tr "subscription.current-plan.unlimited"))
+        "nitrate" (if subscription-is-trial
+                    (tr "subscription.current-plan.nitrate-trial")
+                    (tr "subscription.current-plan.nitrate"))
+        "enterprise" (tr "subscription.current-plan.enterprise"))]]))
+
 (mf/defc team*
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
@@ -121,9 +261,9 @@
         go-to-manage-subscription
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                            ::ev/origin "dashboard"
-                                            :section "team-settings"}))
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "dashboard"
+                                :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))
                  href (str "payments/subscriptions/show?returnUrl=" href)]
@@ -148,14 +288,16 @@
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]
-  [:span {:class (stl/css :subscription-icon)
-          :title (if (= subscription-type "unlimited")
-                   (tr "subscription.dashboard.power-up.unlimited-plan")
-                   (tr "subscription.dashboard.power-up.enterprise-plan"))
-          :data-testid "subscription-icon"}
-   (case subscription-type
-     "unlimited" deprecated-icon/character-u
-     "enterprise" deprecated-icon/character-e)])
+  [:span {:class (stl/css :subscription-icon-wrapper)}
+   [:> icon* {:icon-id (case subscription-type
+                         "unlimited" i/character-u
+                         "enterprise" i/character-e)
+              :class (stl/css :subscription-icon)
+              :size "s"
+              :title (if (= subscription-type "unlimited")
+                       (tr "subscription.dashboard.power-up.unlimited-plan")
+                       (tr "subscription.dashboard.power-up.enterprise-plan"))
+              :data-testid "subscription-icon"}]])
 
 (mf/defc main-menu-power-up*
   [{:keys [close-sub-menu]}]
@@ -220,10 +362,10 @@
      (and
       (= subscription-type "unlimited")
       (or
-     ;; common: seats < 25 and diff >= 4
+       ;; common: seats < 25 and diff >= 4
        (and (< seats 25)
             (>= (- editors seats) 4))
-     ;; special: reached 25+ editors, seats < 25 and there is overuse
+       ;; special: reached 25+ editors, seats < 25 and there is overuse
        (and (< seats 25)
             (>= editors 25)
             (> editors seats)))))))

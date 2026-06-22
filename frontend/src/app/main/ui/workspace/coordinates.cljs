@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.coordinates
   (:require-macros [app.main.style :as stl])
@@ -11,10 +11,10 @@
    [app.main.ui.hooks :as hooks]
    [rumext.v2 :as mf]))
 
-(mf/defc coordinates
-  [{:keys [colorpalette?]}]
+(mf/defc coordinates*
+  [{:keys [is-colorpalette]}]
   (let [coords (hooks/use-rxsub ms/mouse-position)]
-    [:div {:class (stl/css-case :container-color-palette-open colorpalette?
+    [:div {:class (stl/css-case :container-color-palette-open is-colorpalette
                                 :container true)}
      [:span {:alt "x" :class (stl/css :coordinate)}
       (str "X: " (:x coords "-"))]

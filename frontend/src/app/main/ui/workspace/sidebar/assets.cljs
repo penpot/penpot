@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets
   (:require-macros [app.main.style :as stl])
@@ -29,7 +29,6 @@
 
 (mf/defc assets-libraries*
   {::mf/wrap [mf/memo]
-   ::mf/props :obj
    ::mf/private true}
   [{:keys [filters]}]
   (let [file-id   (mf/use-ctx ctx/current-file-id)
@@ -37,7 +36,6 @@
         libraries (mf/with-memo [files file-id]
                     (->> (refs/select-libraries files file-id)
                          (vals)
-                         (remove :is-indirect)
                          (remove #(= file-id (:id %)))
                          (map (fn [file]
                                 (update file :data dissoc :pages-index)))
@@ -56,9 +54,8 @@
                (update file :data dissoc :pages-index))
              refs/file))
 
-(mf/defc assets-local-library
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc assets-local-library*
+  {::mf/private true}
   [{:keys [filters]}]
   (let [file (mf/deref ref:local-library)]
     [:> file-library*
@@ -68,19 +65,27 @@
       :filters filters}]))
 
 (defn- toggle-values
-  [v [a b]]
+  [v a b]
   (if (= v a) b a))
+
+;; Per-file, session-scoped (in-memory only) so the search term and section
+;; filter survive switching between the Layers and Assets sidebar tabs without
+;; leaking across files or persisting across reloads.
+(defonce ^:private session-filters*
+  (atom {}))
 
 (mf/defc assets-toolbox*
   {::mf/wrap [mf/memo]}
   [{:keys [size file-id]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
-                        {:term ""
-                         :section "all"
-                         :ordering (dwa/get-current-assets-ordering)
-                         :list-style (dwa/get-current-assets-list-style)
-                         :open-menu false})
+                        (fn []
+                          (-> (or (get @session-filters* file-id)
+                                  {:term ""
+                                   :section "all"})
+                              (assoc :ordering (dwa/get-current-assets-ordering)
+                                     :list-style (dwa/get-current-assets-list-style)
+                                     :open-menu false))))
         filters        (deref filters*)
         term           (:term filters)
         list-style     (:list-style filters)
@@ -91,13 +96,14 @@
         libs           (mf/deref refs/libraries)
         num-libs       (count libs)
         file           (get libs file-id)
+        shared?        (:is-shared file)
         components     (mf/with-memo [file] (ctkl/components (:data file)))
 
         toggle-ordering
         (mf/use-fn
          (mf/deps ordering)
          (fn []
-           (let [new-value (toggle-values ordering [:asc :desc])]
+           (let [new-value (toggle-values ordering :asc :desc)]
              (swap! filters* assoc :ordering new-value)
              (dwa/set-current-assets-ordering! new-value))))
 
@@ -105,7 +111,7 @@
         (mf/use-fn
          (mf/deps list-style)
          (fn []
-           (let [new-value (toggle-values list-style [:thumbs :list])]
+           (let [new-value (toggle-values list-style :thumbs :list)]
              (swap! filters* assoc :list-style new-value)
              (dwa/set-current-assets-list-style! new-value))))
 
@@ -162,10 +168,13 @@
             :id      "typographies"
             :handler on-section-filter-change}])]
 
+    (mf/with-effect [file-id term section]
+      (swap! session-filters* assoc file-id {:term term :section section}))
+
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (if (and (= num-libs 1) (empty? components))
+        (if (and (= num-libs 1) (empty? components) (not shared?))
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
@@ -209,5 +218,5 @@
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
         [:*
-         [:& assets-local-library {:filters filters}]
+         [:> assets-local-library* {:filters filters}]
          [:> assets-libraries* {:filters filters}]]]]]]))

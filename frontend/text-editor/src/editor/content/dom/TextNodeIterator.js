@@ -3,8 +3,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC
+ * Copyright (c) KALEIDOS INC Sucursal en España SL
  */
+
+import { SafeGuard } from "../../controllers/SafeGuard.js";
 
 /**
  * Iterator direction.
@@ -27,6 +29,7 @@ export class TextNodeIterator {
    * @returns {boolean}
    */
   static isTextNode(node) {
+    if (node === null) debugger;
     return (
       node.nodeType === Node.TEXT_NODE ||
       (node.nodeType === Node.ELEMENT_NODE && node.nodeName === "BR")
@@ -56,7 +59,7 @@ export class TextNodeIterator {
     startNode,
     rootNode,
     skipNodes = new Set(),
-    direction = TextNodeIteratorDirection.FORWARD
+    direction = TextNodeIteratorDirection.FORWARD,
   ) {
     if (startNode === rootNode) {
       return TextNodeIterator.findDown(
@@ -65,7 +68,7 @@ export class TextNodeIterator {
           : startNode.lastChild,
         rootNode,
         skipNodes,
-        direction
+        direction,
       );
     }
 
@@ -93,7 +96,7 @@ export class TextNodeIterator {
             : currentNode.lastChild,
           rootNode,
           skipNodes,
-          direction
+          direction,
         );
       }
       currentNode =
@@ -117,7 +120,7 @@ export class TextNodeIterator {
     startNode,
     rootNode,
     backTrack = new Set(),
-    direction = TextNodeIteratorDirection.FORWARD
+    direction = TextNodeIteratorDirection.FORWARD,
   ) {
     backTrack.add(startNode);
     if (TextNodeIterator.isTextNode(startNode)) {
@@ -125,14 +128,14 @@ export class TextNodeIterator {
         startNode.parentNode,
         rootNode,
         backTrack,
-        direction
+        direction,
       );
     } else if (TextNodeIterator.isContainerNode(startNode)) {
       const found = TextNodeIterator.findDown(
         startNode,
         rootNode,
         backTrack,
-        direction
+        direction,
       );
       if (found) {
         return found;
@@ -142,7 +145,7 @@ export class TextNodeIterator {
           startNode.parentNode,
           rootNode,
           backTrack,
-          direction
+          direction,
         );
       }
     }
@@ -212,7 +215,7 @@ export class TextNodeIterator {
       this.#currentNode,
       this.#rootNode,
       new Set(),
-      TextNodeIteratorDirection.FORWARD
+      TextNodeIteratorDirection.FORWARD,
     );
 
     if (!nextNode) {
@@ -235,7 +238,7 @@ export class TextNodeIterator {
       this.#currentNode,
       this.#rootNode,
       new Set(),
-      TextNodeIteratorDirection.BACKWARD
+      TextNodeIteratorDirection.BACKWARD,
     );
 
     if (!previousNode) {
@@ -244,6 +247,57 @@ export class TextNodeIterator {
 
     this.#currentNode = previousNode;
     return this.#currentNode;
+  }
+
+  /**
+   * Returns an array of text nodes.
+   *
+   * @param {TextNode} startNode
+   * @param {TextNode} endNode
+   * @returns {Array<TextNode>}
+   */
+  collectFrom(startNode, endNode) {
+    const nodes = [];
+    for (const node of this.iterateFrom(startNode, endNode)) {
+      nodes.push(node);
+    }
+    return nodes;
+  }
+
+  /**
+   * Iterates over a list of nodes.
+   *
+   * @param {TextNode} startNode
+   * @param {TextNode} endNode
+   * @yields {TextNode}
+   */
+  *iterateFrom(startNode, endNode) {
+    const comparedPosition = startNode.compareDocumentPosition(endNode);
+    this.#currentNode = startNode;
+    const safeGuard = new SafeGuard("TextNodeIterator");
+    safeGuard.start();
+    while (this.#currentNode !== endNode) {
+      yield this.#currentNode;
+      safeGuard.update();
+      if (comparedPosition === Node.DOCUMENT_POSITION_PRECEDING) {
+        if (!this.previousNode()) {
+          break;
+        }
+      } else if (comparedPosition === Node.DOCUMENT_POSITION_FOLLOWING) {
+        if (!this.nextNode()) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    // The loop exits when currentNode === endNode without yielding endNode.
+    // Callers (e.g. selection style merge) must visit every text/BR node in the
+    // range, including the last one, or the final span is omitted (e.g. empty
+    // paragraph with only <br>) and the sidebar shows "mixed" incorrectly.
+    if (this.#currentNode === endNode) {
+      yield this.#currentNode;
+    }
   }
 }
 

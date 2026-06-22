@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.storage-test
   (:require
@@ -48,24 +48,35 @@
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
 
+(t/deftest tempfile-objects-are-not-deduplicated
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/in-future {:minutes 10})
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/in-future {:minutes 10})
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          ::sto/expired-at (ct/in-future {:seconds 1})
+                                          ::sto/expired-at (ct/in-future {:hours 1})
                                           :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (ct/inst? (:expired-at object)))
     (t/is (ct/is-after? (:expired-at object) (ct/now)))
-    (t/is (= object (sto/get-object storage (:id object))))
-
-    (th/sleep 1000)
-    (t/is (nil? (sto/get-object storage (:id object))))
-    (t/is (nil? (sto/get-object-data storage object)))
-    (t/is (nil? (sto/get-object-url storage object)))
-    (t/is (nil? (sto/get-object-path storage object)))))
+    (t/is (nil? (sto/get-object storage (:id object))))))
 
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -98,20 +109,25 @@
                                            ::sto/expired-at (ct/now)
                                            :content-type "text/plain"})
         object2  (sto/put-object! storage {::sto/content content2
-                                           ::sto/expired-at (ct/in-past {:hours 2})
+                                           ::sto/expired-at (ct/in-future {:hours 2})
                                            :content-type "text/plain"})
         object3  (sto/put-object! storage {::sto/content content3
-                                           ::sto/expired-at (ct/in-past {:hours 1})
+                                           ::sto/expired-at (ct/in-future {:hours 1})
                                            :content-type "text/plain"})]
 
-
-    (th/sleep 200)
-
-    (let [res (th/run-task! :storage-gc-deleted {})]
-      (t/is (= 1 (:deleted res))))
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 0}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 1 (:deleted res)))))
 
     (let [res (th/db-exec-one! ["select count(*) from storage_object;"])]
-      (t/is (= 2 (:count res))))))
+      (t/is (= 2 (:count res))))
+
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:minutes 61}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 1 (:deleted res)))))
+
+    (let [res (th/db-exec-one! ["select count(*) from storage_object;"])]
+      (t/is (= 1 (:count res))))))
 
 (t/deftest touched-gc-task-1
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -158,7 +174,7 @@
                      {:id (:id result-1)})
 
       ;; run the objects gc task for permanent deletion
-      (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (let [res (th/run-task! :objects-gc {})]
         (t/is (= 1 (:processed res))))
 
       ;; check that we still have all the storage objects
@@ -170,7 +186,8 @@
         (t/is (= 2 (:count res))))
 
       ;; run the touched gc task
-      (let [res (th/run-task! :storage-gc-touched {})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -181,7 +198,6 @@
       ;; now check that all objects are marked to be deleted
       (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
         (t/is (= 0 (:count res)))))))
-
 
 (t/deftest touched-gc-task-2
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -231,7 +247,8 @@
     (t/is (nil? (:error out2)))
 
     ;; run the touched gc task
-    (let [res (th/run-task! :storage-gc-touched {})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 5 (:freeze res)))
       (t/is (= 0 (:delete res)))
 
@@ -243,14 +260,16 @@
                        {:id (:id result-2)})
 
         ;; run the objects gc task for permanent deletion
-        (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (let [res (th/run-task! :objects-gc {})]
           (t/is (= 1 (:processed res))))
 
         ;; revert touched state to all storage objects
-        (th/db-exec-one! ["update storage_object set touched_at=now()"])
+
+        (th/db-exec-one! ["update storage_object set touched_at=?" (ct/now)])
 
         ;; Run the task again
-        (let [res (th/run-task! :storage-gc-touched {})]
+        (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                    (th/run-task! :storage-gc-touched {}))]
           (t/is (= 2 (:freeze res)))
           (t/is (= 3 (:delete res))))
 
@@ -293,10 +312,11 @@
           result-2 (:result out2)]
 
       ;; now we proceed to manually mark all storage objects touched
-      (th/db-exec! ["update storage_object set touched_at=now()"])
+      (th/db-exec! ["update storage_object set touched_at=?" (ct/now)])
 
       ;; run the touched gc task
-      (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -305,16 +325,49 @@
         (t/is (= 2 (count rows)))))
 
     ;; now we proceed to manually delete all file_media_object
-    (th/db-exec! ["update file_media_object set deleted_at = now()"])
+    (th/db-exec! ["update file_media_object set deleted_at = ?" (ct/now)])
 
-    (let [res (th/run-task! "objects-gc" {:min-age 0})]
+    (let [res (th/run-task! :objects-gc {})]
       (t/is (= 2 (:processed res))))
 
     ;; run the touched gc task
-    (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 
     ;; check that we have all no objects
     (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
       (t/is (= 0 (count rows))))))
+
+(t/deftest tempfile-bucket-test
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content1 (sto/content "content1")
+        now      (ct/now)
+
+        object1  (sto/put-object! storage {::sto/content content1
+                                           ::sto/touched-at (ct/plus now {:minutes 1})
+                                           :bucket "tempfile"
+                                           :content-type "text/plain"})]
+
+
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+
+
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 3}))]
+      (let [res (th/run-task! :storage-gc-touched {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+
+
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 1}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))
+
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now {:hours 2}))]
+      (let [res (th/run-task! :storage-gc-deleted {})]
+        (t/is (= 0 (:deleted res)))))))

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
@@ -45,11 +45,13 @@
 
 .block-label {
   @include t.use-typography("headline-small");
+
   color: var(--color-foreground-secondary);
 }
 
 .block-text {
   color: var(--color-foreground-primary);
+  text-wrap: nowrap;
 }
 
 .block-content {
@@ -82,6 +84,7 @@
 
 .team-icon {
   --update-button-opacity: 0;
+
   position: relative;
   height: $sz-120;
   width: $sz-120;
@@ -162,6 +165,7 @@
 
 .table-header {
   @include t.use-typography("headline-small");
+
   display: grid;
   align-items: center;
   grid-template-columns: 43% 1fr px2rem(108) var(--sp-m);
@@ -245,12 +249,13 @@
 
 .member-name,
 .member-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
 }
 
 .member-email {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
 }
 
@@ -262,6 +267,7 @@
 // ROL INFO
 .rol-selector {
   @include t.use-typography("body-medium");
+
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -303,6 +309,7 @@
 
 .rol-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -311,6 +318,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -337,7 +345,8 @@
 
 .input-checkbox {
   // TODO: remove this extended class.
-  @extend .input-checkbox;
+  @extend %input-checkbox;
+
   cursor: pointer;
 }
 
@@ -363,6 +372,7 @@
 
 .action-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -371,6 +381,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -399,6 +410,7 @@
 
 .invitations-actions {
   @include t.use-typography("body-medium");
+
   display: flex;
   justify-content: end;
   align-items: center;
@@ -418,21 +430,29 @@
 }
 
 .empty-invitations {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  height: px2rem(156);
-  max-width: $sz-1000;
   width: 100%;
   margin-top: var(--sp-l);
   border: $b-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
   color: var(--color-foreground-secondary);
+  padding: var(--sp-xxxl);
+  text-align: center;
+}
+
+.empty-invitations-buttons {
+  width: fit-content;
+  margin: auto;
+}
+
+.no-permission-text {
+  max-width: $sz-512;
+  margin: auto;
 }
 
 .btn-empty-invitations {
   // TODO: Remove this extend add DS component
-  @extend .button-primary;
+  @extend %button-primary;
+
   margin-block-start: var(--sp-l);
   padding-inline: var(--sp-m);
 }
@@ -451,8 +471,9 @@
 }
 
 .field-email {
-  @include textEllipsis;
+  @include text-ellipsis;
   @include t.use-typography("body-large");
+
   display: flex;
   gap: var(--sp-l);
   align-items: center;
@@ -499,10 +520,10 @@
 
 .webhooks-hero {
   @include t.use-typography("body-medium");
+
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: var(--sp-xxxl);
-  margin-top: var(--sp-xxxl);
   margin: 0;
   padding: var(--sp-xxxl);
   padding: 0;
@@ -511,19 +532,22 @@
 
 .hero-title {
   @include t.use-typography("title-large");
+
   color: var(--color-foreground-primary);
 }
 
 .hero-desc {
   @include t.use-typography("body-large");
+
   color: var(--color-foreground-secondary);
   margin-bottom: 0;
   max-width: $sz-512;
 }
 
 .hero-btn {
-  //TODO: Remove this extended class using a DS component
-  @extend .button-primary;
+  // TODO: Remove this extended class using a DS component
+  @extend %button-primary;
+
   height: $sz-32;
   max-width: $sz-512;
 }
@@ -572,6 +596,7 @@
 
 .webhook-dropdown-item {
   @include t.use-typography("body-small");
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -580,6 +605,7 @@
   padding: px2rem(6);
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--color-background-quaternary);
   }
@@ -611,10 +637,7 @@
 
 // INVITE MEMBERS MODAL
 .modal-team-container {
-  position: relative;
-  padding: var(--sp-xxxl);
   border-radius: $br-8;
-  background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
   min-width: $sz-364;
   min-height: $sz-192;
@@ -628,6 +651,7 @@
   width: $sz-400;
   padding: var(--sp-xxxl);
   background-color: var(--color-background-primary);
+  z-index: var(--z-index-set);
 
   &.hero {
     top: px2rem(216);
@@ -642,6 +666,7 @@
 
 .modal-title {
   @include t.use-typography("headline-medium");
+
   height: $sz-32;
   color: var(--color-foreground-primary);
 }
@@ -668,12 +693,14 @@
 
 .invite-team-member-text {
   @include t.use-typography("body-large");
+
   margin: 0 0 var(--sp-l) 0;
   color: var(--color-foreground-primary);
 }
 
 .role-title {
   @include t.use-typography("body-large");
+
   margin: 0;
   color: var(--color-foreground-primary);
 }
@@ -690,7 +717,7 @@
 
 .accept-btn {
   // TODO: remove this extend class creating a modal component
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
 }
 
 // WEBHOOKS MODAL
@@ -726,16 +753,18 @@
 
 .modal-title {
   @include t.use-typography("title-small");
+
   color: var(--color-foreground-primary);
 }
 
 .modal-close-btn {
   // TODO remove extended class creating a modal component
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
   @include t.use-typography("body-small");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xxl);
@@ -750,6 +779,7 @@
 
 .select-title {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-primary);
 }
 
@@ -763,28 +793,31 @@
 
 // TODO: Remove this extended classes creating a modal component
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 
   button {
-    @extend .modal-accept-btn;
+    @extend %modal-accept-btn;
   }
 
   .cancel-button {
-    @extend .modal-cancel-btn;
+    @extend %modal-cancel-btn;
   }
 }
 
 // TODO: Remove this extended class using input component
 .email-input {
   @include t.use-typography("body-small");
-  @extend .input-base;
+  @extend %input-base;
+
   height: auto;
 }
+
 // FIXME: This does not conform to our CSS Guidelines. Need to unnest and to use
 // custom properties to handle state changes.
 .input-wrapper {
   display: flex;
   align-items: center;
+
   @include t.use-typography("body-large");
 
   label {
@@ -800,6 +833,7 @@
         border-color: var(--color-accent-primary);
       }
     }
+
     &:hover {
       span {
         border-color: var(--color-accent-primary-muted);
@@ -808,13 +842,17 @@
   }
 
   span {
-    @extend .checkbox-icon;
+    @extend %checkbox-icon;
     @include t.use-typography("body-small");
+
     color: var(--color-foreground-secondary);
   }
+
   input {
     margin: 0;
+
     @include t.use-typography("body-small");
+
     color: var(--color-foreground-secondary);
   }
 }
@@ -827,8 +865,21 @@
   flex-direction: column;
 }
 
+.modal-invitation-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-invitation-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--color-foreground-primary);
+}
+
 .modal-invitation-content {
+  @include t.use-typography("body-medium");
+
   overflow: auto;
+  color: var(--color-foreground-secondary);
 }
 
 .invitation-list p {
@@ -838,4 +889,207 @@
 .modal-invitation-action-buttons {
   margin-block-start: var(--sp-xxxl);
   gap: var(--sp-s);
+}
+
+// INVITE RESTRICTED MEMBERS MODAL
+
+.modal-restricted-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-restricted-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-restricted-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-restricted-content {
+  @include t.use-typography("body-medium");
+
+  margin-block-end: 0;
+}
+
+.restricted-warning {
+  margin-block: var(--sp-xxl);
+}
+
+.restricted-email-summary {
+  color: var(--color-accent-primary);
+}
+
+.restricted-emails-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.restricted-emails-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.restricted-emails-arrow {
+  color: var(--color-accent-primary);
+  transition: transform 0.15s ease;
+}
+
+.restricted-emails-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.restricted-email-list {
+  list-style: none;
+  margin: var(--sp-s) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+// SELECT ORGANIZATION MODAL
+
+.modal-select-org-container {
+  display: flex;
+  flex-direction: column;
+  width: $sz-512;
+}
+
+.modal-select-org-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-select-org-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.modal-select-org-warning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+}
+
+.modal-select-org-content {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+}
+
+.modal-select-org-info {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+}
+
+.modal-select-org-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-select-org-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+}
+
+.external-invitations-warning {
+  margin: 0;
+}
+
+// ORGANIZATIONS SETTINGS
+
+.org-block-content {
+  display: grid;
+  grid-template-columns: var(--sp-xxxl) 1fr var(--sp-xxxl);
+  align-items: center;
+  gap: var(--sp-m);
+  width: max-content;
+}
+
+.org-options-btn {
+  padding: 0;
+  justify-content: center;
+
+  --stroke-color: var(--color-foreground-primary);
+
+  &:hover {
+    --stroke-color: var(--color-accent-primary);
+  }
+}
+
+.org-options-btn-open {
+  padding: 0;
+  justify-content: center;
+
+  --stroke-color: var(--color-accent-primary);
+
+  background-color: var(--color-background-tertiary);
+  position: relative;
+}
+
+.org-menu-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
+  stroke: var(--stroke-color);
+}
+
+.org-dropdown {
+  box-shadow: var(--el-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-tertiary);
+  border: $b-2 solid var(--color-background-quaternary);
+  margin: 0;
+  top: var(--sp-xxxl);
+  width: fit-content;
+  min-width: $sz-160;
+}
+
+.org-dropdown-item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $sz-28;
+  width: 100%;
+  padding: px2rem(6);
+  border-radius: $br-8;
+  cursor: pointer;
+  text-transform: none;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+a {
+  color: var(--modal-link-foreground-color);
 }

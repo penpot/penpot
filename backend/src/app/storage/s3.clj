@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.storage.s3
   "S3 Storage backend implementation."
@@ -30,20 +30,18 @@
    java.nio.file.Path
    java.time.Duration
    java.util.Collection
-   java.util.Optional
    java.util.concurrent.atomic.AtomicLong
+   java.util.Optional
    org.reactivestreams.Subscriber
-   software.amazon.awssdk.core.ResponseBytes
+   software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
+   software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
-   software.amazon.awssdk.services.s3.S3AsyncClient
-   software.amazon.awssdk.services.s3.S3AsyncClientBuilder
-   software.amazon.awssdk.services.s3.S3Configuration
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.DeleteObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -53,9 +51,12 @@
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
    software.amazon.awssdk.services.s3.model.S3Error
-   software.amazon.awssdk.services.s3.presigner.S3Presigner
    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
-   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
+   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest
+   software.amazon.awssdk.services.s3.presigner.S3Presigner
+   software.amazon.awssdk.services.s3.S3AsyncClient
+   software.amazon.awssdk.services.s3.S3AsyncClientBuilder
+   software.amazon.awssdk.services.s3.S3Configuration))
 
 (def ^:private max-retries
   "A maximum number of retries on internal operations"
@@ -199,7 +200,8 @@
 
 (defn- build-s3-client
   [{:keys [::region ::endpoint ::wrk/netty-io-executor]}]
-  (let [aconfig  (-> (ClientAsyncConfiguration/builder)
+  (let [creds-provider (DefaultCredentialsProvider/create)
+        aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.build))
 
         sconfig  (-> (S3Configuration/builder)
@@ -221,6 +223,7 @@
                        builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
                        builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
                        builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
+                       builder (.credentialsProvider ^S3AsyncClientBuilder builder creds-provider)
                        builder (cond-> ^S3AsyncClientBuilder builder
                                  (some? endpoint)
                                  (.endpointOverride (URI. (str endpoint))))]
@@ -237,7 +240,8 @@
 
 (defn- build-s3-presigner
   [{:keys [::region ::endpoint]}]
-  (let [config (-> (S3Configuration/builder)
+  (let [creds-provider (DefaultCredentialsProvider/create)
+        config (-> (S3Configuration/builder)
                    (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
                    (.build))]
 
@@ -245,6 +249,7 @@
         (cond-> (some? endpoint) (.endpointOverride (URI. (str endpoint))))
         (.region (lookup-region region))
         (.serviceConfiguration ^S3Configuration config)
+        (.credentialsProvider creds-provider)
         (.build))))
 
 (defn- write-input-stream

@@ -2,28 +2,36 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/colors.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .custom-select {
-  --border-color: var(--menu-background-color);
-  --bg-color: var(--menu-background-color);
-  --icon-color: var(--icon-foreground);
-  --text-color: var(--menu-foreground-color);
-  @extend .new-scrollbar;
-  @include deprecated.bodySmallTypography;
+  @include custom-scrollbar;
+  @include use-typography("body-small");
+
+  --border-color: var(--color-background-tertiary);
+  --bg-color: var(--color-background-tertiary);
+  --icon-color: var(--color-foreground-secondary);
+  --text-color: var(--color-foreground-primary);
+
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: deprecated.$s-32;
-  width: 100%;
+  block-size: $sz-32;
+  inline-size: 100%;
   margin: 0;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
+  padding: var(--sp-s);
+  border-radius: $br-8;
   background-color: var(--bg-color);
-  border: deprecated.$s-1 solid var(--border-color);
+  border: $b-1 solid var(--border-color);
   color: var(--text-color);
   cursor: pointer;
 
@@ -32,99 +40,270 @@
   }
 
   &:hover {
-    --bg-color: var(--menu-background-color-hover);
-    --border-color: var(--menu-background-color);
-    --icon-color: var(--menu-foreground-color-hover);
+    --bg-color: var(--color-background-quaternary);
+    --border-color: var(--color-background-tertiary);
+    --icon-color: var(--color-foreground-primary);
   }
 
-  &:focus {
-    --bg-color: var(--menu-background-color-focus);
-    --border-color: var(--menu-background-focus);
+  &:has(*:focus-visible) {
+    --bg-color: var(--color-background-tertiary);
+    --border-color: var(--color-accent-primary);
+  }
+}
+
+.searchable-select {
+  --searchable-select-bg-color: var(--color-background-tertiary);
+  --searchable-select-icon-color: var(--color-foreground-secondary);
+  --searchable-select-outline-color: none;
+
+  background: var(--searchable-select-bg-color);
+  outline: $b-1 solid var(--searchable-select-outline-color);
+
+  &:hover {
+    --searchable-select-bg-color: var(--color-background-quaternary);
+  }
+
+  &:has(*:focus-visible) {
+    --searchable-select-bg-color: var(--color-background-primary);
+    --searchable-select-outline-color: var(--color-accent-primary);
+  }
+
+  &:has(*:disabled) {
+    --searchable-select-bg-color: var(--color-background-primary);
+    --searchable-select-outline-color: var(--color-background-quaternary);
+  }
+
+  &[data-option-focused="true"]:has(*:focus-visible) {
+    --searchable-select-bg-color: var(--color-background-tertiary);
+    --searchable-select-outline-color: none;
   }
 }
 
 .disabled {
-  --bg-color: var(--menu-background-color-disabled);
-  --border-color: var(--menu-border-color-disabled);
-  --icon-color: var(--menu-foreground-color-disabled);
-  --text-color: var(--menu-foreground-color-disabled);
+  --bg-color: var(--color-background-primary);
+  --border-color: var(--color-background-quaternary);
+  --icon-color: var(--color-foreground-secondary);
+  --text-color: var(--color-foreground-secondary);
+
   pointer-events: none;
   cursor: default;
 }
 
 .dropdown-button {
-  @include deprecated.flexCenter;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-inline-end: var(--sp-xxs);
+
   svg {
-    @extend .button-icon-small;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xxs);
+    color: transparent;
+    fill: none;
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke-width: 1.33px;
+    stroke: var(--color-foreground-secondary);
     transform: rotate(90deg);
-    stroke: var(--icon-color);
   }
 }
 
 .current-icon {
-  @include deprecated.flexCenter;
-  width: deprecated.$s-24;
-  padding-right: deprecated.$s-4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-24;
+  padding-inline-end: var(--sp-xs);
+
   svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xxs);
+    color: transparent;
+    fill: none;
+    block-size: $sz-12;
+    inline-size: $sz-12;
+    stroke-width: 1.33px;
+    visibility: hidden;
+    stroke: var(--color-foreground-secondary);
   }
 }
 
 .custom-select-dropdown {
-  @extend .dropdown-wrapper;
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  position: absolute;
+  top: $sz-32;
+  left: 0;
+  inline-size: 100%;
+  max-block-size: var(--menu-max-height, px2rem(300));
+  padding: var(--sp-xxs);
+  margin: 0;
+  margin-block-start: 1px;
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  overflow: hidden auto;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+
   .separator {
     margin: 0;
-    height: deprecated.$s-12;
-    border-block-start: deprecated.$s-1 solid var(--dropdown-separator-color);
+    block-size: $sz-12;
+    border-block-start: $b-1 solid var(--color-background-primary);
+  }
+
+  &[data-direction="up"] {
+    bottom: $sz-32;
+    top: auto;
+    max-block-size: var(--menu-max-height-up, px2rem(300));
   }
 }
 
+.current-label-input {
+  @include text-ellipsis;
+
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  cursor: pointer;
+
+  &::placeholder {
+    color: inherit;
+    opacity: 1;
+  }
+
+  &:focus {
+    cursor: text;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.custom-select-no-matches {
+  @include use-typography("body-small");
+
+  padding: var(--sp-s) var(--sp-m);
+  color: var(--color-foreground-secondary);
+  text-align: center;
+  pointer-events: none;
+}
+
 .custom-select-dropdown[data-direction="up"] {
-  bottom: deprecated.$s-32;
+  bottom: $sz-32;
   top: auto;
 }
 
 .checked-element {
-  @extend .dropdown-element-base;
-  .icon {
-    @include deprecated.flexCenter;
-    height: deprecated.$s-24;
-    width: deprecated.$s-24;
-    padding-right: deprecated.$s-4;
+  @include use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  block-size: $sz-32;
+  padding: 0 var(--sp-s);
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+    color: var(--color-foreground-primary);
+
     svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
+      stroke: var(--color-foreground-primary);
+    }
+  }
+
+  span {
+    @include text-ellipsis;
+
+    display: flex;
+    align-items: center;
+
+    svg {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-xxs);
+      color: transparent;
+      fill: none;
+      block-size: $sz-12;
+      inline-size: $sz-12;
+      stroke-width: 1.33px;
+      visibility: hidden;
+      stroke: var(--color-foreground-secondary);
+    }
+  }
+
+  .icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    block-size: $sz-24;
+    inline-size: $sz-24;
+    padding-inline-end: var(--sp-xs);
+
+    svg {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-xxs);
+      color: transparent;
+      fill: none;
+      block-size: $sz-16;
+      width: $sz-16;
+      stroke-width: px2rem(1);
+      visibility: hidden;
+      stroke: var(--color-foreground-secondary);
     }
   }
 
   .label {
     flex-grow: 1;
-    width: 100%;
+    inline-size: 100%;
   }
 
   .check-icon {
-    @include deprecated.flexCenter;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     svg {
-      @extend .button-icon-small;
+      display: flex;
+      align-items: center;
+      gap: var(--sp-xxs);
+      color: transparent;
+      fill: none;
+      block-size: $sz-12;
+      inline-size: $sz-12;
+      stroke-width: 1.33px;
       visibility: hidden;
-      stroke: var(--icon-foreground);
+      stroke: var(--color-foreground-secondary);
     }
   }
 
   &.is-selected {
-    color: var(--menu-foreground-color);
+    color: var(--color-accent-primary);
+    background-color: var(--color-background-quaternary);
+
     .check-icon svg {
-      stroke: var(--menu-foreground-color);
+      stroke: var(--color-foreground-primary);
       visibility: visible;
     }
   }
+
   &.disabled {
     display: none;
   }
 }
 
 .current-label {
-  @include deprecated.textEllipsis;
+  @include text-ellipsis;
 }

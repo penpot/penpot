@@ -1,0 +1,822 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "variants/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/objects-map",
+      "render-wasm/v1",
+      "text-editor-wasm/v1",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~u6bd7c17d-4f59-815e-8006-5c1f6882469a",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "svg_path_evenodd",
+  "~:revn": 18,
+  "~:modified-at": "~m1776843383797",
+  "~:vern": 0,
+  "~:id": "~u3e84615b-5628-818c-8007-e7563bb081fb",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content-v2",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content-v2",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0008-fix-library-colors-v4",
+      "0009-clean-library-colors",
+      "0009-add-partial-text-touched-flags",
+      "0010-fix-swap-slots-pointing-non-existent-shapes",
+      "0011-fix-invalid-text-touched-flags",
+      "0012-fix-position-data",
+      "0013-fix-component-path",
+      "0013-clear-invalid-strokes-and-fills",
+      "0014-fix-tokens-lib-duplicate-ids",
+      "0014-clear-components-nil-objects",
+      "0015-fix-text-attrs-blank-strings",
+      "0015-clean-shadow-color",
+      "0016-copy-fills-from-position-data-to-text-node",
+      "0017-fix-layout-flex-dir"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~u6bd7c17d-4f59-815e-8006-5c1f68846e43",
+  "~:created-at": "~m1776779037378",
+  "~:backend": "legacy-db",
+  "~:data": {
+    "~:pages": ["~u3e84615b-5628-818c-8007-e7563bb081fc"],
+    "~:pages-index": {
+      "~u3e84615b-5628-818c-8007-e7563bb081fc": {
+        "~:objects": {
+          "~#penpot/objects-map/v2": {
+            "~u00000000-0000-0000-0000-000000000000": "[\"~#shape\",[\"^ \",\"~:y\",0,\"~:hide-fill-on-export\",false,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"Root Frame\",\"~:width\",0.01,\"~:type\",\"~:frame\",\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",0.0,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.0]],[\"^:\",[\"^ \",\"~:x\",0.01,\"~:y\",0.01]],[\"^:\",[\"^ \",\"~:x\",0.0,\"~:y\",0.01]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^3\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",0,\"~:proportion\",1.0,\"~:r4\",0,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^6\",0.01,\"~:height\",0.01,\"~:x1\",0,\"~:y1\",0,\"~:x2\",0.01,\"~:y2\",0.01]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#FFFFFF\",\"~:fill-opacity\",1]],\"~:flip-x\",null,\"^H\",0.01,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b7399e693\",\"~ud0a635f7-639e-80f3-8007-e84b73ad74f4\",\"~ud0a635f7-639e-80f3-8007-e84b73bdd7da\",\"~ud0a635f7-639e-80f3-8007-e84b73ce5ead\",\"~ud0a635f7-639e-80f3-8007-e84b73d4a494\"]]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73ce5ead": "[\"~#shape\",[\"^ \",\"~:y\",-840.999998986721,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"04-venn-circles\",\"~:width\",99.99999761581421,\"~:type\",\"~:group\",\"~:svg-attrs\",[\"^ \",\"^5\",\"120\",\"~:height\",\"120\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-840.999998986721]],[\"^;\",[\"^ \",\"~:x\",188.9999984701475,\"~:y\",-840.999998986721]],[\"^;\",[\"^ \",\"~:x\",188.9999984701475,\"~:y\",-741.0000013709068]],[\"^;\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-741.0000013709068]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73ce5ead\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",89.00000085433328,\"~:proportion\",1,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-840.999998986721,\"^5\",99.99999761581421,\"^9\",99.99999761581421,\"~:x1\",89.00000085433328,\"~:y1\",-840.999998986721,\"~:x2\",188.9999984701475,\"~:y2\",-741.0000013709068]],\"~:fills\",[],\"~:flip-x\",null,\"^9\",99.99999761581421,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b73ce9306\",\"~ud0a635f7-639e-80f3-8007-e84b73cf1ec2\"]]]",
+            "~ud0a635f7-639e-80f3-8007-e84b739a1146": "[\"~#shape\",[\"^ \",\"~:y\",-725.9999912977219,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"base-background\",\"~:width\",100,\"~:type\",\"~:rect\",\"~:svg-attrs\",[\"^ \",\"~:fill\",\"none\",\"~:id\",\"base-background\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-725.9999912977219]],[\"^<\",[\"^ \",\"~:x\",357.9999885559082,\"~:y\",-725.9999912977219]],[\"^<\",[\"^ \",\"~:x\",357.9999885559082,\"~:y\",-625.9999912977219]],[\"^<\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-625.9999912977219]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:hidden\",true,\"^:\",\"~ud0a635f7-639e-80f3-8007-e84b739a1146\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b7399e693\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^5\",100,\"~:height\",100,\"~:x1\",0,\"~:y1\",0,\"~:x2\",100,\"~:y2\",100]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",257.9999885559082,\"~:proportion\",1,\"~:r4\",0,\"~:selrect\",[\"^E\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-725.9999912977219,\"^5\",100,\"^F\",100,\"^G\",257.9999885559082,\"^H\",-725.9999912977219,\"^I\",357.9999885559082,\"^J\",-625.9999912977219]],\"~:fills\",[],\"~:flip-x\",null,\"^F\",100,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73ce9306": "[\"~#shape\",[\"^ \",\"~:y\",-840.999998986721,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"base-background\",\"~:width\",99.99999761581421,\"~:type\",\"~:rect\",\"~:svg-attrs\",[\"^ \",\"~:fill\",\"none\",\"~:id\",\"base-background\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-840.999998986721]],[\"^<\",[\"^ \",\"~:x\",188.9999984701475,\"~:y\",-840.999998986721]],[\"^<\",[\"^ \",\"~:x\",188.9999984701475,\"~:y\",-741.0000013709068]],[\"^<\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-741.0000013709068]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:hidden\",true,\"^:\",\"~ud0a635f7-639e-80f3-8007-e84b73ce9306\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73ce5ead\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^5\",120,\"~:height\",120,\"~:x1\",0,\"~:y1\",0,\"~:x2\",120,\"~:y2\",120]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",89.00000085433328,\"~:proportion\",1,\"~:r4\",0,\"~:selrect\",[\"^E\",[\"^ \",\"~:x\",89.00000085433328,\"~:y\",-840.999998986721,\"^5\",99.99999761581421,\"^F\",99.99999761581421,\"^G\",89.00000085433328,\"^H\",-840.999998986721,\"^I\",188.9999984701475,\"^J\",-741.0000013709068]],\"~:fills\",[],\"~:flip-x\",null,\"^F\",99.99999761581421,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73be6505": "[\"~#shape\",[\"^ \",\"~:y\",-841,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"base-background\",\"~:width\",99.99998211860657,\"~:type\",\"~:rect\",\"~:svg-attrs\",[\"^ \",\"~:fill\",\"none\",\"~:id\",\"base-background\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-841]],[\"^<\",[\"^ \",\"~:x\",288.99998104572296,\"~:y\",-841]],[\"^<\",[\"^ \",\"~:x\",288.99998104572296,\"~:y\",-741]],[\"^<\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-741]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:hidden\",true,\"^:\",\"~ud0a635f7-639e-80f3-8007-e84b73be6505\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73bdd7da\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^5\",100,\"~:height\",100,\"~:x1\",0,\"~:y1\",0,\"~:x2\",100,\"~:y2\",100]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",188.9999989271164,\"~:proportion\",1,\"~:r4\",0,\"~:selrect\",[\"^E\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-841,\"^5\",99.99998211860657,\"^F\",100,\"^G\",188.9999989271164,\"^H\",-841,\"^I\",288.99998104572296,\"^J\",-741]],\"~:fills\",[],\"~:flip-x\",null,\"^F\",100,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73ae0f65": "[\"~#shape\",[\"^ \",\"~:y\",null,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:content\",[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAgJpDAMBPxAIAAAAAAAAAAAAAAAAAAAAAAAAAAIDCQwDAT8QCAAAAAAAAAAAAAAAAAAAAAAAAAACAwkMAwDvEAgAAAAAAAAAAAAAAAAAAAAAAAAAAgJpDAMA7xAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAokMAAEzEAgAAAAAAAAAAAAAAAAAAAAAAAAAAALtDAABMxAIAAAAAAAAAAAAAAAAAAAAAAAAAAAC7QwCAP8QCAAAAAAAAAAAAAAAAAAAAAAAAAAAAokMAgD/EBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAICpQwBASMQCAAAAAAAAAAAAAAAAAAAAAAAAAACAs0MAQEjEAgAAAAAAAAAAAAAAAAAAAAAAAAAAgLNDAEBDxAIAAAAAAAAAAAAAAAAAAAAAAAAAAICpQwBAQ8QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"],\"~:name\",\"svg-path\",\"~:width\",null,\"~:type\",\"~:path\",\"~:svg-attrs\",[\"^ \",\"~:fillRule\",\"evenodd\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",309,\"~:y\",-831]],[\"^=\",[\"^ \",\"~:x\",389,\"~:y\",-831]],[\"^=\",[\"^ \",\"~:x\",389,\"~:y\",-751]],[\"^=\",[\"^ \",\"~:x\",309,\"~:y\",-751]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:svg-transform\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73ae0f65\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73ad74f4\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",10,\"~:y\",10,\"^7\",80,\"~:height\",80,\"~:x1\",10,\"~:y1\",10,\"~:x2\",90,\"~:y2\",90]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[[\"^ \",\"~:stroke-color\",\"#1a6a3a\",\"~:stroke-opacity\",1,\"~:stroke-width\",3]],\"~:x\",null,\"~:proportion\",1,\"~:selrect\",[\"^D\",[\"^ \",\"~:x\",309,\"~:y\",-831,\"^7\",80,\"^E\",80,\"^F\",309,\"^G\",-831,\"^H\",389,\"^I\",-751]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#4ae290\"]],\"~:flip-x\",null,\"^E\",null,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73d53705": "[\"~#shape\",[\"^ \",\"~:y\",null,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:content\",[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAAAAAAAAAAAAAABACpDq2ozxAMAAAD2/BJDq2ozxFVVAEPDwC7EVVUAQwAAKcQDAAAAVVUAQz4/I8T2/BJDVpUexAEAKkNWlR7EAwAAAAoDQUNWlR7EqqpTQz4/I8SqqlNDAAApxAMAAACqqlNDw8AuxAoDQUOrajPEAQAqQ6tqM8QCAAAAAAAAAAAAAAAAAAAAAAAAAAEAKkOrajPEAQAAAAAAAAAAAAAAAAAAAAAAAAABACpDAEAvxAMAAAAmeiRDAEAvxAEAIEN3IS7EAQAgQwDALMQDAAAAAQAgQ4leK8QmeiRDAEAqxAEAKkMAQCrEAwAAANuFL0MAQCrEAQA0Q4leK8QBADRDAMAsxAMAAAABADRDdyEuxNuFL0MAQC/EAQAqQwBAL8QCAAAAAAAAAAAAAAAAAAAAAAAAAAEAKkMAQC/EAQAAAAAAAAAAAAAAAAAAAAAAAABWVRRDrKogxAMAAABWVRRDrGokxKuqHEOr6ibEAQAqQ6vqJsQDAAAAVVU3Q6vqJsSqqj9DrGokxKqqP0OsqiDEAwAAAKqqP0MBQCDE//89Q1bVH8RVVTxDVtUfxAIAAAAAAAAAAAAAAAAAAAAAAAAAq6oXQ1bVH8QDAAAAAQAWQ1bVH8RWVRRDAUAgxFZVFEOsqiDEAgAAAAAAAAAAAAAAAAAAAAAAAABWVRRDrKogxA==\"],\"~:name\",\"svg-path\",\"~:width\",null,\"~:type\",\"~:path\",\"~:svg-attrs\",[\"^ \",\"~:fillRule\",\"evenodd\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",128.33333949247913,\"~:y\",-717.6666545867935]],[\"^=\",[\"^ \",\"~:x\",211.6666658719356,\"~:y\",-717.6666545867935]],[\"^=\",[\"^ \",\"~:x\",211.6666658719356,\"~:y\",-634.3333282073353]],[\"^=\",[\"^ \",\"~:x\",128.33333949247913,\"~:y\",-634.3333282073353]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:svg-transform\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73d53705\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73d4a494\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",5,\"~:y\",5,\"^7\",50,\"~:height\",50,\"~:x1\",5,\"~:y1\",5,\"~:x2\",55,\"~:y2\",55]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[[\"^ \",\"~:stroke-color\",\"#6a4a1a\",\"~:stroke-opacity\",1,\"~:stroke-width\",2]],\"~:x\",null,\"~:proportion\",1,\"~:selrect\",[\"^D\",[\"^ \",\"~:x\",128.33333949247913,\"~:y\",-717.6666545867935,\"^7\",83.33332637945648,\"^E\",83.33332637945819,\"^F\",128.33333949247913,\"^G\",-717.6666545867935,\"^H\",211.6666658719356,\"^I\",-634.3333282073353]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#e2a04a\"]],\"~:flip-x\",null,\"^E\",null,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73cf1ec2": "[\"~#shape\",[\"^ \",\"~:y\",null,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:content\",[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAAMtCAOBIxAMAAAAAAMtCnv9FxKKn3UKqqkPEqqr0QqqqQ8QDAAAA29YFQ6qqQ8SrKg9Dnv9FxKsqD0MA4EjEAwAAAKsqD0NhwEvE29YFQ1UVTsSqqvRCVRVOxAMAAACip91CVRVOxAAAy0JhwEvEAADLQgDgSMQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAABV1QZDAOBIxAMAAABV1QZDnv9FxCUpEEOqqkPEqqobQ6qqQ8QDAAAAMCwnQ6qqQ8QAgDBDnv9FxACAMEMA4EjEAwAAAACAMENhwEvEMCwnQ1UVTsSqqhtDVRVOxAMAAAAlKRBDVRVOxFXVBkNhwEvEVdUGQwDgSMQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAABWVexCVZVBxAMAAABWVexC9LQ+xPb8/kIAYDzEAAALQwBgPMQDAAAAhYEWQwBgPMRV1R9D9LQ+xFXVH0NVlUHEAwAAAFXVH0O2dUTEhYEWQ6rKRsQAAAtDqspGxAMAAAD2/P5CqspGxFZV7EK2dUTEVlXsQlWVQcQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"],\"~:name\",\"svg-path\",\"~:width\",null,\"~:type\",\"~:path\",\"~:svg-attrs\",[\"^ \",\"~:fillRule\",\"evenodd\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",101.50000055631006,\"~:y\",-824.3333327174187]],[\"^=\",[\"^ \",\"~:x\",176.4999987681707,\"~:y\",-824.3333327174187]],[\"^=\",[\"^ \",\"~:x\",176.4999987681707,\"~:y\",-753.5000010728836]],[\"^=\",[\"^ \",\"~:x\",101.50000055631006,\"~:y\",-753.5000010728836]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:svg-transform\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73cf1ec2\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73ce5ead\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",15,\"~:y\",20,\"^7\",90,\"~:height\",85,\"~:x1\",15,\"~:y1\",20,\"~:x2\",105,\"~:y2\",105]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[[\"^ \",\"~:stroke-color\",\"#3a1a6a\",\"~:stroke-opacity\",1,\"~:stroke-width\",3]],\"~:x\",null,\"~:proportion\",1,\"~:selrect\",[\"^D\",[\"^ \",\"~:x\",101.50000055631006,\"~:y\",-824.3333327174187,\"^7\",74.99999821186066,\"^E\",70.83333164453506,\"^F\",101.50000055631006,\"^G\",-824.3333327174187,\"^H\",176.4999987681707,\"^I\",-753.5000010728836]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#9a4ae2\"]],\"~:flip-x\",null,\"^E\",null,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73bea73d": "[\"~#shape\",[\"^ \",\"~:y\",null,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:content\",[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAAAAAAAAAAAAAD//25DAABRxAIAAAAAAAAAAAAAAAAAAAAAAAAAAABVQwDAPMQCAAAAAAAAAAAAAAAAAAAAAAAAAP//jEMAQEnEAgAAAAAAAAAAAAAAAAAAAAAAAAAAAERDAEBJxAIAAAAAAAAAAAAAAAAAAAAAAAAAAICEQwDAPMQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"],\"~:name\",\"svg-path\",\"~:width\",null,\"~:type\",\"~:path\",\"~:svg-attrs\",[\"^ \",\"~:fillRule\",\"evenodd\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",195.99999767541885,\"~:y\",-836]],[\"^=\",[\"^ \",\"~:x\",281.9999822974205,\"~:y\",-836]],[\"^=\",[\"^ \",\"~:x\",281.9999822974205,\"~:y\",-755]],[\"^=\",[\"^ \",\"~:x\",195.99999767541885,\"~:y\",-755]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:svg-transform\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73bea73d\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73bdd7da\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",7,\"~:y\",5,\"^7\",86,\"~:height\",81,\"~:x1\",7,\"~:y1\",5,\"~:x2\",93,\"~:y2\",86]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[[\"^ \",\"~:stroke-color\",\"#6a1a1a\",\"~:stroke-opacity\",1,\"~:stroke-width\",3]],\"~:x\",null,\"~:proportion\",1,\"~:selrect\",[\"^D\",[\"^ \",\"~:x\",195.99999767541885,\"~:y\",-836,\"^7\",85.99998462200165,\"^E\",81,\"^F\",195.99999767541885,\"^G\",-836,\"^H\",281.9999822974205,\"^I\",-755]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#e24a4a\"]],\"~:flip-x\",null,\"^E\",null,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73d4e3fc": "[\"~#shape\",[\"^ \",\"~:y\",-725.9999872247394,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"base-background\",\"~:width\",99.99999165534774,\"~:type\",\"~:rect\",\"~:svg-attrs\",[\"^ \",\"~:fill\",\"none\",\"~:id\",\"base-background\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-725.9999872247394]],[\"^<\",[\"^ \",\"~:x\",219.99999850988124,\"~:y\",-725.9999872247394]],[\"^<\",[\"^ \",\"~:x\",219.99999850988124,\"~:y\",-625.9999955693894]],[\"^<\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-625.9999955693894]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:hidden\",true,\"^:\",\"~ud0a635f7-639e-80f3-8007-e84b73d4e3fc\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73d4a494\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^5\",60,\"~:height\",60,\"~:x1\",0,\"~:y1\",0,\"~:x2\",60,\"~:y2\",60]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",120.0000068545335,\"~:proportion\",1,\"~:r4\",0,\"~:selrect\",[\"^E\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-725.9999872247394,\"^5\",99.99999165534774,\"^F\",99.99999165534996,\"^G\",120.0000068545335,\"^H\",-725.9999872247394,\"^I\",219.99999850988124,\"^J\",-625.9999955693894]],\"~:fills\",[],\"~:flip-x\",null,\"^F\",99.99999165534996,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73ada09b": "[\"~#shape\",[\"^ \",\"~:y\",-841,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"base-background\",\"~:width\",100,\"~:type\",\"~:rect\",\"~:svg-attrs\",[\"^ \",\"~:fill\",\"none\",\"~:id\",\"base-background\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",299,\"~:y\",-841]],[\"^<\",[\"^ \",\"~:x\",399,\"~:y\",-841]],[\"^<\",[\"^ \",\"~:x\",399,\"~:y\",-741]],[\"^<\",[\"^ \",\"~:x\",299,\"~:y\",-741]]],\"~:r2\",0,\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:r3\",0,\"~:r1\",0,\"~:hidden\",true,\"^:\",\"~ud0a635f7-639e-80f3-8007-e84b73ada09b\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b73ad74f4\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",0,\"~:y\",0,\"^5\",100,\"~:height\",100,\"~:x1\",0,\"~:y1\",0,\"~:x2\",100,\"~:y2\",100]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",299,\"~:proportion\",1,\"~:r4\",0,\"~:selrect\",[\"^E\",[\"^ \",\"~:x\",299,\"~:y\",-841,\"^5\",100,\"^F\",100,\"^G\",299,\"^H\",-841,\"^I\",399,\"^J\",-741]],\"~:fills\",[],\"~:flip-x\",null,\"^F\",100,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73bdd7da": "[\"~#shape\",[\"^ \",\"~:y\",-841,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"03-pentagram\",\"~:width\",99.99998211860657,\"~:type\",\"~:group\",\"~:svg-attrs\",[\"^ \",\"^5\",\"100\",\"~:height\",\"100\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-841]],[\"^;\",[\"^ \",\"~:x\",288.99998104572296,\"~:y\",-841]],[\"^;\",[\"^ \",\"~:x\",288.99998104572296,\"~:y\",-741]],[\"^;\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-741]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73bdd7da\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",188.9999989271164,\"~:proportion\",1,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",188.9999989271164,\"~:y\",-841,\"^5\",99.99998211860657,\"^9\",100,\"~:x1\",188.9999989271164,\"~:y1\",-841,\"~:x2\",288.99998104572296,\"~:y2\",-741]],\"~:fills\",[],\"~:flip-x\",null,\"^9\",100,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b73be6505\",\"~ud0a635f7-639e-80f3-8007-e84b73bea73d\"]]]",
+            "~ud0a635f7-639e-80f3-8007-e84b739aa576": "[\"~#shape\",[\"^ \",\"~:y\",null,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:content\",[\"~#penpot/path-data\",\"~bAQAAAAAAAAAAAAAAAAAAAAAAAAAAAJpDAAAzxAMAAABN9I5DAAAzxAAAhkPZhS7EAACGQwAAKcQDAAAAAACGQyd6I8RN9I5DAAAfxAAAmkMAAB/EAwAAALMLpUMAAB/EAACuQyd6I8QAAK5DAAApxAMAAAAAAK5D2YUuxLMLpUMAADPEAACaQwAAM8QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAJpDAAAuxAMAAAAnepRDAAAuxAAAkEPtwivEAACQQwAAKcQDAAAAAACQQxM9JsQnepRDAAAkxAAAmkMAACTEAwAAANmFn0MAACTEAACkQxM9JsQAAKRDAAApxAMAAAAAAKRD7cIrxNmFn0MAAC7EAACaQwAALsQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"],\"~:name\",\"svg-path\",\"~:width\",null,\"~:type\",\"~:path\",\"~:svg-attrs\",[\"^ \",\"~:fillRule\",\"evenodd\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",267.9999885559082,\"~:y\",-715.9999912977219]],[\"^=\",[\"^ \",\"~:x\",347.9999885559082,\"~:y\",-715.9999912977219]],[\"^=\",[\"^ \",\"~:x\",347.9999885559082,\"~:y\",-635.9999912977219]],[\"^=\",[\"^ \",\"~:x\",267.9999885559082,\"~:y\",-635.9999912977219]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:svg-transform\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b739aa576\",\"~:parent-id\",\"~ud0a635f7-639e-80f3-8007-e84b7399e693\",\"~:svg-viewbox\",[\"~#rect\",[\"^ \",\"~:x\",10,\"~:y\",10,\"^7\",80,\"~:height\",80,\"~:x1\",10,\"~:y1\",10,\"~:x2\",90,\"~:y2\",90]],\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[[\"^ \",\"~:stroke-color\",\"#1a3a6a\",\"~:stroke-opacity\",1,\"~:stroke-width\",3]],\"~:x\",null,\"~:proportion\",1,\"~:selrect\",[\"^D\",[\"^ \",\"~:x\",267.9999885559082,\"~:y\",-715.9999912977219,\"^7\",80,\"^E\",80,\"^F\",267.9999885559082,\"^G\",-715.9999912977219,\"^H\",347.9999885559082,\"^I\",-635.9999912977219]],\"~:fills\",[[\"^ \",\"~:fill-color\",\"#4a90e2\"]],\"~:flip-x\",null,\"^E\",null,\"~:flip-y\",null]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73ad74f4": "[\"~#shape\",[\"^ \",\"~:y\",-841,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"02-nested-squares\",\"~:width\",100,\"~:type\",\"~:group\",\"~:svg-attrs\",[\"^ \",\"^5\",\"100\",\"~:height\",\"100\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",299,\"~:y\",-841]],[\"^;\",[\"^ \",\"~:x\",399,\"~:y\",-841]],[\"^;\",[\"^ \",\"~:x\",399,\"~:y\",-741]],[\"^;\",[\"^ \",\"~:x\",299,\"~:y\",-741]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73ad74f4\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",299,\"~:proportion\",1,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",299,\"~:y\",-841,\"^5\",100,\"^9\",100,\"~:x1\",299,\"~:y1\",-841,\"~:x2\",399,\"~:y2\",-741]],\"~:fills\",[],\"~:flip-x\",null,\"^9\",100,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b73ada09b\",\"~ud0a635f7-639e-80f3-8007-e84b73ae0f65\"]]]",
+            "~ud0a635f7-639e-80f3-8007-e84b73d4a494": "[\"~#shape\",[\"^ \",\"~:y\",-725.9999872247394,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"05-person-icon\",\"~:width\",99.99999165534774,\"~:type\",\"~:group\",\"~:svg-attrs\",[\"^ \",\"^5\",\"60\",\"~:height\",\"60\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-725.9999872247394]],[\"^;\",[\"^ \",\"~:x\",219.99999850988124,\"~:y\",-725.9999872247394]],[\"^;\",[\"^ \",\"~:x\",219.99999850988124,\"~:y\",-625.9999955693894]],[\"^;\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-625.9999955693894]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b73d4a494\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",120.0000068545335,\"~:proportion\",1,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",120.0000068545335,\"~:y\",-725.9999872247394,\"^5\",99.99999165534774,\"^9\",99.99999165534996,\"~:x1\",120.0000068545335,\"~:y1\",-725.9999872247394,\"~:x2\",219.99999850988124,\"~:y2\",-625.9999955693894]],\"~:fills\",[],\"~:flip-x\",null,\"^9\",99.99999165534996,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b73d4e3fc\",\"~ud0a635f7-639e-80f3-8007-e84b73d53705\"]]]",
+            "~ud0a635f7-639e-80f3-8007-e84b7399e693": "[\"~#shape\",[\"^ \",\"~:y\",-725.9999912977219,\"~:transform\",[\"~#matrix\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:rotation\",0,\"~:name\",\"01-ring\",\"~:width\",100,\"~:type\",\"~:group\",\"~:svg-attrs\",[\"^ \",\"^5\",\"100\",\"~:height\",\"100\"],\"~:points\",[[\"~#point\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-725.9999912977219]],[\"^;\",[\"^ \",\"~:x\",357.9999885559082,\"~:y\",-725.9999912977219]],[\"^;\",[\"^ \",\"~:x\",357.9999885559082,\"~:y\",-625.9999912977219]],[\"^;\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-625.9999912977219]]],\"~:proportion-lock\",false,\"~:transform-inverse\",[\"^2\",[\"^ \",\"~:a\",1.0,\"~:b\",0.0,\"~:c\",0.0,\"~:d\",1.0,\"~:e\",0.0,\"~:f\",0.0]],\"~:id\",\"~ud0a635f7-639e-80f3-8007-e84b7399e693\",\"~:parent-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:svg-defs\",[\"^ \"],\"~:frame-id\",\"~u00000000-0000-0000-0000-000000000000\",\"~:strokes\",[],\"~:x\",257.9999885559082,\"~:proportion\",1,\"~:selrect\",[\"~#rect\",[\"^ \",\"~:x\",257.9999885559082,\"~:y\",-725.9999912977219,\"^5\",100,\"^9\",100,\"~:x1\",257.9999885559082,\"~:y1\",-725.9999912977219,\"~:x2\",357.9999885559082,\"~:y2\",-625.9999912977219]],\"~:fills\",[],\"~:flip-x\",null,\"^9\",100,\"~:flip-y\",null,\"~:shapes\",[\"~ud0a635f7-639e-80f3-8007-e84b739a1146\",\"~ud0a635f7-639e-80f3-8007-e84b739aa576\"]]]"
+          }
+        },
+        "~:id": "~u3e84615b-5628-818c-8007-e7563bb081fc",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~u3e84615b-5628-818c-8007-e7563bb081fb",
+    "~:options": { "~:components-v2": true, "~:base-font-size": "16px" },
+    "~:components": {
+      "~u7c8614ca-087a-80b1-8007-e75c161f105c": {
+        "~:path": "Icons / 16",
+        "~:deleted": true,
+        "~:main-instance-id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+        "~:objects": {
+          "~u7c8614ca-087a-80b1-8007-e75c161ef12f": {
+            "~#shape": {
+              "~:y": -622.2015816167936,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:hide-in-viewer": true,
+              "~:name": "Icons / 16 / profile",
+              "~:width": 16,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 185.68057966317429,
+                    "~:y": -622.2015816167936
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 201.68057966317429,
+                    "~:y": -622.2015816167936
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 201.68057966317429,
+                    "~:y": -606.2015816167934
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 185.68057966317429,
+                    "~:y": -606.2015816167934
+                  }
+                }
+              ],
+              "~:component-root": true,
+              "~:show-content": true,
+              "~:proportion-lock": true,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:applied-tokens": {
+                "~:width": "xx.alias.icon.size.s",
+                "~:height": "xx.alias.icon.size.s"
+              },
+              "~:component-id": "~u7c8614ca-087a-80b1-8007-e75c161f105c",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 185.68057966317429,
+              "~:main-instance": true,
+              "~:proportion": 0.999999999999981,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 185.68057966317429,
+                  "~:y": -622.2015816167936,
+                  "~:width": 16,
+                  "~:height": 16.000000000000227,
+                  "~:x1": 185.68057966317429,
+                  "~:y1": -622.2015816167936,
+                  "~:x2": 201.68057966317429,
+                  "~:y2": -606.2015816167934
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 16.000000000000227,
+              "~:component-file": "~u3e84615b-5628-818c-8007-e7563bb081fb",
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u7c8614ca-087a-80b1-8007-e75c161ef130",
+                "~u7c8614ca-087a-80b1-8007-e75c161ef131"
+              ]
+            }
+          },
+          "~u7c8614ca-087a-80b1-8007-e75c161ef130": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAADmWERD5wwaxAMAAADmWERDpa4ZxD4nQ0M9YhnEOq5BQz1iGcQDAAAAMjVAQz1iGcSOAz9Dpa4ZxI4DP0PnDBrEAwAAAI4DP0MpaxrEMjVAQ5G3GsQ6rkFDkbcaxAMAAAA+J0NDkbcaxOZYREMpaxrE5lhEQ+cMGsQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAACOA0ND5wwaxAMAAACOA0NDxd0ZxL5qQkORtxnEOq5BQ5G3GcQDAAAAtvFAQ5G3GcTmWEBDxd0ZxOZYQEPnDBrEAwAAAOZYQEMHPBrEtvFAQz1iGsQ6rkFDPWIaxAMAAAC+akJDPWIaxI4DQ0MHPBrEjgNDQ+cMGsQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill-rule": "evenodd",
+                "~:clip-rule": "evenodd"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 191.01391299650777,
+                    "~:y": -618.8682482834602
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 196.34724632984125,
+                    "~:y": -618.8682482834602
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 196.34724632984125,
+                    "~:y": -613.5349149501269
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 191.01391299650777,
+                    "~:y": -613.5349149501269
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:constraints-v": "~:scale",
+              "~:svg-transform": {
+                "~:a": 1,
+                "~:b": 0,
+                "~:c": 0,
+                "~:d": 1,
+                "~:e": 0,
+                "~:f": 0
+              },
+              "~:constraints-h": "~:scale",
+              "~:id": "~u7c8614ca-087a-80b1-8007-e75c161ef130",
+              "~:parent-id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+              "~:svg-viewbox": {
+                "~:y": 5,
+                "~:y1": 5,
+                "~:width": 8,
+                "~:x": 8,
+                "~:x1": 8,
+                "~:y2": 13,
+                "~:x2": 16,
+                "~:height": 8
+              },
+              "~:applied-tokens": {},
+              "~:svg-defs": {},
+              "~:frame-id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#121270",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 191.01391299650777,
+                  "~:y": -618.8682482834604,
+                  "~:width": 5.333333333333485,
+                  "~:height": 5.3333333333332575,
+                  "~:x1": 191.01391299650777,
+                  "~:y1": -618.8682482834604,
+                  "~:x2": 196.34724632984125,
+                  "~:y2": -613.5349149501271
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u7c8614ca-087a-80b1-8007-e75c161ef131": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAA6rkFDPWIbxAMAAABmoT1DPWIbxOZYOkMbkBrE5lg6Q+eMGcQDAAAA5lg6Q7OJGMRmoT1DkbcXxDquQUORtxfEAwAAAAq7RUORtxfEjgNJQ7OJGMSOA0lD54wZxAMAAACOA0lDG5AaxAq7RUM9YhvEOq5BQz1iG8QCAAAAAAAAAAAAAAAAAAAAAAAAADquQUM9YhvEAQAAAAAAAAAAAAAAAAAAAAAAAAA6rjtD54wZxAMAAAA6rjtDuTMZxNYnPEOj4RjE2vM8Q3WgGMQDAAAAggw+Q0/8GMQyxz9DkTcZxD65QUORNxnEAwAAAM6kQ0ORNxnEdlpFQ9f9GMSac0ZDA6QYxAMAAAD6OEdDneQYxDquR0NVNRnEOq5HQ+eMGcQDAAAAOq5HQ/tgGsSK/kRD5wwbxDquQUPnDBvEAwAAAOpdPkPnDBvEOq47Q/tgGsQ6rjtD54wZxAIAAAAAAAAAAAAAAAAAAAAAAAAAOq47Q+eMGcQBAAAAAAAAAAAAAAAAAAAAAAAAADquQUPnDBjEAwAAAEI/QEPnDBjEVu4+QxMtGMQm5j1DwWIYxAMAAAAuvj5D168YxCokQEM94hjEPrlBQz3iGMQDAAAAQklDQz3iGMRiq0RDFbEYxDaERUOdZRjEAwAAAP55REM5LhjEqiNDQ+cMGMQ6rkFD5wwYxAIAAAAAAAAAAAAAAAAAAAAAAAAAOq5BQ+cMGMQ="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill-rule": "evenodd",
+                "~:clip-rule": "evenodd"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 186.34724632984103,
+                    "~:y": -621.5349149501271
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 201.01391299650777,
+                    "~:y": -621.5349149501271
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 201.01391299650777,
+                    "~:y": -606.8682482834602
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 186.34724632984103,
+                    "~:y": -606.8682482834602
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:constraints-v": "~:scale",
+              "~:svg-transform": {
+                "~:a": 1,
+                "~:b": 0,
+                "~:c": 0,
+                "~:d": 1,
+                "~:e": 0,
+                "~:f": 0
+              },
+              "~:constraints-h": "~:scale",
+              "~:id": "~u7c8614ca-087a-80b1-8007-e75c161ef131",
+              "~:parent-id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+              "~:svg-viewbox": {
+                "~:y": 1,
+                "~:y1": 1,
+                "~:width": 22,
+                "~:x": 1,
+                "~:x1": 1,
+                "~:y2": 23,
+                "~:x2": 23,
+                "~:height": 22
+              },
+              "~:applied-tokens": {},
+              "~:svg-defs": {},
+              "~:frame-id": "~u7c8614ca-087a-80b1-8007-e75c161ef12f",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#121270",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 186.3472463298408,
+                  "~:y": -621.5349149501271,
+                  "~:width": 14.666666666666742,
+                  "~:height": 14.66666666666697,
+                  "~:x1": 186.3472463298408,
+                  "~:y1": -621.5349149501271,
+                  "~:x2": 201.01391299650754,
+                  "~:y2": -606.8682482834602
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:name": "profile",
+        "~:modified-at": "~m1776843284702",
+        "~:main-instance-page": "~u3e84615b-5628-818c-8007-e7563bb081fc",
+        "~:id": "~u7c8614ca-087a-80b1-8007-e75c161f105c"
+      },
+      "~u2094e2d4-1854-804d-8007-e761fd29d15c": {
+        "~:path": "Icons / 16",
+        "~:deleted": true,
+        "~:main-instance-id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+        "~:objects": {
+          "~u2094e2d4-1854-804d-8007-e761fd24f93e": {
+            "~#shape": {
+              "~:y": -623.0000079548252,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:hide-in-viewer": true,
+              "~:name": "Icons / 16 / profile",
+              "~:width": 16,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 214.0000008841555,
+                    "~:y": -623.0000079548252
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 230.0000008841555,
+                    "~:y": -623.0000079548252
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 230.0000008841555,
+                    "~:y": -607.0000079548249
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 214.0000008841555,
+                    "~:y": -607.0000079548249
+                  }
+                }
+              ],
+              "~:component-root": true,
+              "~:show-content": true,
+              "~:proportion-lock": true,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:applied-tokens": {
+                "~:width": "xx.alias.icon.size.s",
+                "~:height": "xx.alias.icon.size.s"
+              },
+              "~:component-id": "~u2094e2d4-1854-804d-8007-e761fd29d15c",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 214.0000008841555,
+              "~:main-instance": true,
+              "~:proportion": 0.999999999999981,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 214.0000008841555,
+                  "~:y": -623.0000079548252,
+                  "~:width": 16,
+                  "~:height": 16.000000000000227,
+                  "~:x1": 214.0000008841555,
+                  "~:y1": -623.0000079548252,
+                  "~:x2": 230.0000008841555,
+                  "~:y2": -607.0000079548249
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 16.000000000000227,
+              "~:component-file": "~u3e84615b-5628-818c-8007-e7563bb081fb",
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u2094e2d4-1854-804d-8007-e761fd24f93f",
+                "~u2094e2d4-1854-804d-8007-e761fd24f940"
+              ]
+            }
+          },
+          "~u2094e2d4-1854-804d-8007-e761fd24f93f": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAACrqmBDAEAaxAMAAACrqmBDvuEZxAN5X0NWlRnE//9dQ1aVGcQDAAAA94ZcQ1aVGcRTVVtDvuEZxFNVW0MAQBrEAwAAAFNVW0NCnhrE94ZcQ6rqGsT//11DquoaxAMAAAADeV9DquoaxKuqYENCnhrEq6pgQwBAGsQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAABTVV9DAEAaxAMAAABTVV9D3hAaxIO8XkOq6hnE//9dQ6rqGcQDAAAAe0NdQ6rqGcSrqlxD3hAaxKuqXEMAQBrEAwAAAKuqXEMgbxrEe0NdQ1aVGsT//11DVpUaxAMAAACDvF5DVpUaxFNVX0MgbxrEU1VfQwBAGsQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill-rule": "evenodd",
+                "~:clip-rule": "evenodd"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 219.33333421748898,
+                    "~:y": -619.6666746214917
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 224.66666755082247,
+                    "~:y": -619.6666746214917
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 224.66666755082247,
+                    "~:y": -614.3333412881584
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 219.33333421748898,
+                    "~:y": -614.3333412881584
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:constraints-v": "~:scale",
+              "~:svg-transform": {
+                "~:a": 1,
+                "~:b": 0,
+                "~:c": 0,
+                "~:d": 1,
+                "~:e": 0,
+                "~:f": 0
+              },
+              "~:constraints-h": "~:scale",
+              "~:id": "~u2094e2d4-1854-804d-8007-e761fd24f93f",
+              "~:parent-id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+              "~:svg-viewbox": {
+                "~:y": 5,
+                "~:y1": 5,
+                "~:width": 8,
+                "~:x": 8,
+                "~:x1": 8,
+                "~:y2": 13,
+                "~:x2": 16,
+                "~:height": 8
+              },
+              "~:applied-tokens": {},
+              "~:svg-defs": {},
+              "~:frame-id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#121270",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 219.33333421748898,
+                  "~:y": -619.6666746214919,
+                  "~:width": 5.333333333333485,
+                  "~:height": 5.3333333333332575,
+                  "~:x1": 219.33333421748898,
+                  "~:y1": -619.6666746214919,
+                  "~:x2": 224.66666755082247,
+                  "~:y2": -614.3333412881586
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          },
+          "~u2094e2d4-1854-804d-8007-e761fd24f940": {
+            "~#shape": {
+              "~:y": null,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:rotation": 0,
+              "~:content": {
+                "~#penpot/path-data": "~bAQAAAAAAAAAAAAAAAAAAAAAAAAD//11DVpUbxAMAAAAr81lDVpUbxKuqVkM0wxrEq6pWQwDAGcQDAAAAq6pWQ8y8GMQr81lDquoXxP//XUOq6hfEAwAAAM8MYkOq6hfEU1VlQ8y8GMRTVWVDAMAZxAMAAABTVWVDNMMaxM8MYkNWlRvE//9dQ1aVG8QCAAAAAAAAAAAAAAAAAAAAAAAAAP//XUNWlRvEAQAAAAAAAAAAAAAAAAAAAAAAAAD//1dDAMAZxAMAAAD//1dD0mYZxJt5WEO8FBnEn0VZQ47TGMQDAAAAR15aQ2gvGcT3GFxDqmoZxAMLXkOqahnEAwAAAJP2X0OqahnEO6xhQ/AwGcRfxWJDHNcYxAMAAAC/imNDthcZxP//Y0NuaBnE//9jQwDAGcQDAAAA//9jQxSUGsRPUGFDAEAbxP//XUMAQBvEAwAAAK+vWkMAQBvE//9XQxSUGsT//1dDAMAZxAIAAAAAAAAAAAAAAAAAAAAAAAAA//9XQwDAGcQBAAAAAAAAAAAAAAAAAAAAAAAAAP//XUMAQBjEAwAAAAeRXEMAQBjEG0BbQyxgGMTrN1pD2pUYxAMAAADzD1tD8OIYxO91XENWFRnEAwteQ1YVGcQDAAAAB5tfQ1YVGcQn/WBDLuQYxPvVYUO2mBjEAwAAAMPLYENSYRjEb3VfQwBAGMT//11DAEAYxAIAAAAAAAAAAAAAAAAAAAAAAAAA//9dQwBAGMQ="
+              },
+              "~:name": "svg-path",
+              "~:width": null,
+              "~:type": "~:path",
+              "~:svg-attrs": {
+                "~:fill-rule": "evenodd",
+                "~:clip-rule": "evenodd"
+              },
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 214.66666755082224,
+                    "~:y": -622.3333412881586
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 229.33333421748898,
+                    "~:y": -622.3333412881586
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 229.33333421748898,
+                    "~:y": -607.6666746214917
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 214.66666755082224,
+                    "~:y": -607.6666746214917
+                  }
+                }
+              ],
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1.0,
+                  "~:b": 0.0,
+                  "~:c": 0.0,
+                  "~:d": 1.0,
+                  "~:e": 0.0,
+                  "~:f": 0.0
+                }
+              },
+              "~:page-id": "~u34c33767-b561-80aa-8007-e7024082d3b1",
+              "~:constraints-v": "~:scale",
+              "~:svg-transform": {
+                "~:a": 1,
+                "~:b": 0,
+                "~:c": 0,
+                "~:d": 1,
+                "~:e": 0,
+                "~:f": 0
+              },
+              "~:constraints-h": "~:scale",
+              "~:id": "~u2094e2d4-1854-804d-8007-e761fd24f940",
+              "~:parent-id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+              "~:svg-viewbox": {
+                "~:y": 1,
+                "~:y1": 1,
+                "~:width": 22,
+                "~:x": 1,
+                "~:x1": 1,
+                "~:y2": 23,
+                "~:x2": 23,
+                "~:height": 22
+              },
+              "~:applied-tokens": {},
+              "~:svg-defs": {},
+              "~:frame-id": "~u2094e2d4-1854-804d-8007-e761fd24f93e",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 1,
+                  "~:stroke-color": "#121270",
+                  "~:stroke-opacity": 1
+                }
+              ],
+              "~:x": null,
+              "~:proportion": 1,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 214.666667550822,
+                  "~:y": -622.3333412881586,
+                  "~:width": 14.666666666666742,
+                  "~:height": 14.66666666666697,
+                  "~:x1": 214.666667550822,
+                  "~:y1": -622.3333412881586,
+                  "~:x2": 229.33333421748875,
+                  "~:y2": -607.6666746214917
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": null,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:name": "profile",
+        "~:modified-at": "~m1776782297854",
+        "~:main-instance-page": "~u3e84615b-5628-818c-8007-e7563bb081fc",
+        "~:id": "~u2094e2d4-1854-804d-8007-e761fd29d15c"
+      }
+    }
+  }
+}

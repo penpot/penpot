@@ -2,30 +2,35 @@
   "name": "common",
   "version": "1.0.0",
   "license": "MPL-2.0",
-  "author": "Kaleidos INC",
+  "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "yarn@4.9.2+sha512.1fc009bc09d13cfd0e19efa44cbfc2b9cf6ca61482725eb35bbc5e257e093ebf4130db6dfe15d604ff4b79efd8e1e8e99b25fa7d0a6197c9f9826358d4d65c3c",
+  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
-    "nodemon": "^3.1.10",
+    "concurrently": "^10.0.3",
+    "nodemon": "^3.1.14",
+    "prettier": "3.8.4",
     "source-map-support": "^0.5.21",
-    "ws": "^8.18.2"
+    "ws": "^8.21.0"
   },
   "dependencies": {
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.4.0"
   },
   "scripts": {
-    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
-    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "lint:clj": "clj-kondo --parallel=true --lint src/",
-    "lint": "yarn run lint:clj",
+    "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
+    "check-fmt:js": "prettier -c src/**/*.js",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "fmt:js": "prettier -c src/**/*.js -w",
+    "lint": "pnpm run lint:clj",
     "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
-    "test": "yarn run build:test && node target/tests/test.js"
+    "test:js": "pnpm run build:test && node target/tests/test.js",
+    "test:quiet": "node ./scripts/test-quiet.js",
+    "test:jvm": "clojure -M:dev:test"
   }
 }

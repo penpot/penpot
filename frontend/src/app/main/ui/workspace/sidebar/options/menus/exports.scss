@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
@@ -22,16 +22,21 @@
 
 .element-set-content {
   @include sidebar.option-grid-structure;
+
+  gap: var(--sp-xs);
 }
 
 .multiple-exports {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
+
   grid-column: 1 / span 9;
+
   .label {
-    @extend .mixed-bar;
+    @extend %mixed-bar;
   }
+
   .actions {
-    @include deprecated.flexRow;
+    @include deprecated.flex-row;
   }
 }
 
@@ -61,6 +66,7 @@
 .size-select {
   grid-column: span 2;
   padding: 0;
+
   .dropdown-upwards {
     bottom: deprecated.$s-36;
     top: unset;
@@ -70,13 +76,15 @@
 
 .suffix-input {
   grid-column: span 3;
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+
+  @extend %input-element;
+  @include deprecated.body-small-typography;
 }
 
 .export-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @extend %button-secondary;
+  @include deprecated.uppercase-title-typography;
+
   grid-column: 1 / span 9;
   height: deprecated.$s-32;
 }

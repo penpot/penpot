@@ -2,12 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
-   [app.common.types.fills :refer [schema:fill]]))
+   [app.common.types.fills :refer [schema:fills]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -32,8 +32,7 @@
           [:type [:= "paragraph"]]
           [:key {:optional true} :string]
           [:fills {:optional true}
-           [:maybe
-            [:vector {:gen/max 2}  schema:fill]]]
+           [:maybe schema:fills]]
           [:font-family {:optional true} ::sm/text]
           [:font-size {:optional true} ::sm/text]
           [:font-style {:optional true} ::sm/text]
@@ -49,8 +48,7 @@
              [:text :string]
              [:key {:optional true} :string]
              [:fills {:optional true}
-              [:maybe
-               [:vector {:gen/max 2} schema:fill]]]
+              [:maybe schema:fills]]
              [:font-family {:optional true} ::sm/text]
              [:font-size {:optional true} ::sm/text]
              [:font-style {:optional true} ::sm/text]
@@ -71,7 +69,7 @@
     [:y ::sm/safe-number]
     [:width ::sm/safe-number]
     [:height ::sm/safe-number]
-    [:fills [:vector {:gen/max 2} schema:fill]]
+    [:fills schema:fills]
     [:font-family {:optional true} ::sm/text]
     [:font-size {:optional true} ::sm/text]
     [:font-style {:optional true} ::sm/text]

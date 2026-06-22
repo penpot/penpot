@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.mem
   (:require
@@ -60,6 +60,16 @@
 (defn free
   []
   (h/call wasm/internal-module "_free_bytes"))
+
+(defn read-string
+  "Read a UTF-8 string from WASM memory given a byte pointer/offset.
+   Uses Emscripten's UTF8ToString to decode the string."
+  ([ptr max-bytes ignore-null]
+   (h/call wasm/internal-module "UTF8ToString" ptr max-bytes ignore-null))
+  ([ptr max-bytes]
+   (h/call wasm/internal-module "UTF8ToString" ptr max-bytes))
+  ([ptr]
+   (h/call wasm/internal-module "UTF8ToString" ptr)))
 
 (defn slice
   "Returns a copy of a portion of a typed array into a new typed array

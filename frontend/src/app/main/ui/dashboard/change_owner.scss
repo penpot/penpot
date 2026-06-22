@@ -2,16 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
+
+  z-index: var(--z-index-notifications);
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
 }
 
 .modal-header {
@@ -19,39 +24,85 @@
 }
 
 .modal-title {
-  @include deprecated.uppercaseTitleTipography;
+  @include deprecated.uppercase-title-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
-  @extend .input-with-label;
-  @include deprecated.bodySmallTypography;
+  @extend %input-with-label;
+  @include deprecated.body-small-typography;
 }
 
 .action-buttons {
-  @extend .modal-action-btns;
+  @extend %modal-action-btns;
 }
 
 .cancel-button {
-  @extend .modal-cancel-btn;
+  @extend %modal-cancel-btn;
 }
 
 .accept-btn {
-  @extend .modal-accept-btn;
+  @extend %modal-accept-btn;
+
   &.danger {
-    @extend .modal-danger-btn;
+    @extend %modal-danger-btn;
   }
 }
 
 .modal-msg {
   color: var(--modal-text-foreground-color);
+}
+
+.teams-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  margin: var(--sp-xxxl) 0;
+}
+
+.team-select-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-org-container {
+  @extend %modal-container-base;
+
+  overflow-y: auto;
+  max-height: $sz-512;
+}
+
+.modal-org-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-org-msg {
+  @include t.use-typography("body-large");
+
+  color: var(--modal-text-foreground-color);
+}
+
+.team-name {
+  @include t.use-typography("body-medium");
+
+  color: var(--modal-text-foreground-color);
+}
+
+.team-member {
+  @include t.use-typography("body-medium");
 }

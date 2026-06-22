@@ -51,10 +51,10 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        skia::shader::Shader::linear_gradient(
+        skia::gradient_shader::linear(
             (start, end),
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             None,
@@ -83,11 +83,11 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        skia::shader::Shader::radial_gradient(
+        skia::gradient_shader::radial(
             center,
             distance,
             self.colors.as_slice(),
-            self.offsets.as_slice(),
+            Some(self.offsets.as_slice()),
             skia::TileMode::Clamp,
             None,
             Some(&transform),
@@ -140,6 +140,38 @@ pub enum Fill {
 }
 
 impl Fill {
+    pub fn opacity(&self) -> f32 {
+        match self {
+            Fill::Solid(SolidColor(color)) => color.a() as f32 / 255.0,
+            Fill::LinearGradient(g) => g.opacity as f32 / 255.0,
+            Fill::RadialGradient(g) => g.opacity as f32 / 255.0,
+            Fill::Image(i) => i.opacity as f32 / 255.0,
+        }
+    }
+
+    pub fn with_full_opacity(&self) -> Fill {
+        match self {
+            Fill::Solid(SolidColor(color)) => Fill::Solid(SolidColor(skia::Color::from_argb(
+                255,
+                color.r(),
+                color.g(),
+                color.b(),
+            ))),
+            Fill::LinearGradient(g) => Fill::LinearGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::RadialGradient(g) => Fill::RadialGradient(Gradient {
+                opacity: 255,
+                ..g.clone()
+            }),
+            Fill::Image(i) => Fill::Image(ImageFill {
+                opacity: 255,
+                ..i.clone()
+            }),
+        }
+    }
+
     pub fn to_paint(&self, rect: &Rect, anti_alias: bool) -> skia::Paint {
         match self {
             Self::Solid(SolidColor(color)) => {
@@ -227,31 +259,41 @@ pub fn get_fill_shader(fill: &Fill, bounding_box: &Rect) -> Option<skia::Shader>
 }
 
 pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
-    let mut combined_shader: Option<skia::Shader> = None;
     let mut fills_paint = skia::Paint::default();
 
     if fills.is_empty() {
-        combined_shader = Some(skia::shaders::color(skia::Color::TRANSPARENT));
-        fills_paint.set_shader(combined_shader);
+        fills_paint.set_color(skia::Color::TRANSPARENT);
         return fills_paint;
     }
 
+    if fills.len() == 1 {
+        if let Fill::Solid(SolidColor(color)) = &fills[0] {
+            fills_paint.set_color(*color);
+            return fills_paint;
+        }
+    }
+
+    let mut combined_shader: Option<skia::Shader> = None;
     for fill in fills {
         let shader = get_fill_shader(fill, &bounding_box);
 
         if let Some(shader) = shader {
             combined_shader = match combined_shader {
+                // Use SrcOver and treat the newly encountered fill as the source (top),
+                // overlaying it over the previously composed shader (destination/bottom).
+                // This avoids edge bleed from underlying fills when anti-aliasing causes
+                // fractional coverage at shape boundaries.
                 Some(existing_shader) => Some(skia::shaders::blend(
-                    skia::Blender::mode(skia::BlendMode::DstOver),
-                    existing_shader,
+                    skia::Blender::mode(skia::BlendMode::SrcOver),
                     shader,
+                    existing_shader,
                 )),
                 None => Some(shader),
             };
         }
     }
 
-    fills_paint.set_shader(combined_shader.clone());
+    fills_paint.set_shader(combined_shader);
     fills_paint
 }
 

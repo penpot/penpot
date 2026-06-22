@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -6,7 +7,8 @@ use crate::shapes::{
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
-use std::collections::{HashMap, VecDeque};
+
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use super::common::GetBounds;
 
@@ -191,7 +193,7 @@ fn set_auto_multi_span(
     // Sort descendant order of prop-span
     selected_cells.sort_by(|a, b| {
         if column {
-            b.column_span.cmp(&a.row_span)
+            b.column_span.cmp(&a.column_span)
         } else {
             b.row_span.cmp(&a.row_span)
         }
@@ -266,7 +268,7 @@ fn set_flex_multi_span(
     // Sort descendant order of prop-span
     selected_cells.sort_by(|a, b| {
         if column {
-            b.column_span.cmp(&a.row_span)
+            b.column_span.cmp(&a.column_span)
         } else {
             b.row_span.cmp(&a.row_span)
         }
@@ -537,7 +539,7 @@ fn cell_bounds(
 
 pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
-    children: &[Uuid],
+    children: &HashSet<Uuid>,
     shapes: ShapesPoolRef<'a>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
@@ -614,7 +616,7 @@ pub fn grid_cell_data<'a>(
 
     let bounds = &mut HashMap::<Uuid, Bounds>::new();
     let layout_bounds = shape.bounds();
-    let children = shape.children_ids(false);
+    let children: HashSet<Uuid> = shape.children_ids_iter(false).copied().collect();
 
     let column_tracks = calculate_tracks(
         true,
@@ -649,6 +651,37 @@ pub fn grid_cell_data<'a>(
     )
 }
 
+// Returns `(h_min, v_min, h_size, v_size)` — the child's bounding box expressed in the
+// layout frame's own coordinate system (projected onto its `hv`/`vv` unit vectors).
+//
+// Using the frame axes rather than screen x/y is necessary when the parent grid frame
+// is itself rotated: in that case `max_x - min_x` is the screen-AABB width, which
+// differs from the width measured along the frame's horizontal axis.
+fn child_frame_aabb(child_bounds: &Bounds, hv: Vector, vv: Vector) -> (f32, f32, f32, f32) {
+    let corners = child_bounds.points();
+    let mut h_min = f32::INFINITY;
+    let mut h_max = f32::NEG_INFINITY;
+    let mut v_min = f32::INFINITY;
+    let mut v_max = f32::NEG_INFINITY;
+    for p in &corners {
+        let h = hv.x * p.x + hv.y * p.y;
+        let v = vv.x * p.x + vv.y * p.y;
+        if h < h_min {
+            h_min = h;
+        }
+        if h > h_max {
+            h_max = h;
+        }
+        if v < v_min {
+            v_min = v;
+        }
+        if v > v_max {
+            v_max = v;
+        }
+    }
+    (h_min, v_min, h_max - h_min, v_max - v_min)
+}
+
 fn child_position(
     child: &Shape,
     layout_bounds: &Bounds,
@@ -665,12 +698,17 @@ fn child_position(
     let margin_right = layout_item.map(|i| i.margin_right).unwrap_or(0.0);
     let margin_bottom = layout_item.map(|i| i.margin_bottom).unwrap_or(0.0);
 
+    // Project corners onto the frame's own axes so that both a rotated child *and* a
+    // rotated parent frame are handled correctly.  For an axis-aligned frame this
+    // reduces to max_x-min_x / max_y-min_y, so non-rotated layouts are unaffected.
+    let (_, _, child_width, child_height) = child_frame_aabb(child_bounds, hv, vv);
+
     let vpos = match (cell.align_self, layout_data.align_items) {
         (Some(AlignSelf::Start), _) => margin_top,
-        (Some(AlignSelf::Center), _) => (cell.height - child_bounds.height()) / 2.0,
-        (Some(AlignSelf::End), _) => margin_bottom + cell.height - child_bounds.height(),
-        (_, AlignItems::Center) => (cell.height - child_bounds.height()) / 2.0,
-        (_, AlignItems::End) => margin_bottom + cell.height - child_bounds.height(),
+        (Some(AlignSelf::Center), _) => (cell.height - child_height) / 2.0,
+        (Some(AlignSelf::End), _) => margin_bottom + cell.height - child_height,
+        (_, AlignItems::Center) => (cell.height - child_height) / 2.0,
+        (_, AlignItems::End) => margin_bottom + cell.height - child_height,
         _ => margin_top,
     };
 
@@ -682,10 +720,10 @@ fn child_position(
 
     let hpos = match (cell.justify_self, layout_data.justify_items) {
         (Some(JustifySelf::Start), _) => margin_left,
-        (Some(JustifySelf::Center), _) => (cell.width - child_bounds.width()) / 2.0,
-        (Some(JustifySelf::End), _) => margin_right + cell.width - child_bounds.width(),
-        (_, JustifyItems::Center) => (cell.width - child_bounds.width()) / 2.0,
-        (_, JustifyItems::End) => margin_right + cell.width - child_bounds.width(),
+        (Some(JustifySelf::Center), _) => (cell.width - child_width) / 2.0,
+        (Some(JustifySelf::End), _) => margin_right + cell.width - child_width,
+        (_, JustifyItems::Center) => (cell.width - child_width) / 2.0,
+        (_, JustifyItems::End) => margin_right + cell.width - child_width,
         _ => margin_left,
     };
 
@@ -704,10 +742,10 @@ pub fn reflow_grid_layout(
     grid_data: &GridData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-) -> VecDeque<Modifier> {
+) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
-    let children = shape.children_ids(true);
+    let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
 
     let column_tracks = calculate_tracks(
         true,
@@ -745,10 +783,27 @@ pub fn reflow_grid_layout(
         let Some(child) = cell.shape else { continue };
         let child_bounds = bounds.find(child);
 
+        // Compute frame-axis projections once; used for both sizing and positioning.
+        let hv = layout_bounds.hv(1.0);
+        let vv = layout_bounds.vv(1.0);
+        let (h_min, v_min, child_frame_w, child_frame_h) = child_frame_aabb(&child_bounds, hv, vv);
+
+        // resize_matrix scales the child in the parent's local frame coordinate system
+        // by (new_width / child_bounds.width()) in the h-axis and
+        // (new_height / child_bounds.height()) in the v-axis.  For a rotated child the
+        // frame-projected extent differs from the intrinsic bounds dimensions, so we
+        // back-calculate the intrinsic target that will produce the desired
+        // frame-projected extent.
         let mut new_width = child_bounds.width();
         if child.is_layout_horizontal_fill() {
             let margin_left = child.layout_item.map(|i| i.margin_left).unwrap_or(0.0);
-            new_width = cell.width - margin_left;
+            let margin_right = child.layout_item.map(|i| i.margin_right).unwrap_or(0.0);
+            let target_frame_w = cell.width - margin_left - margin_right;
+            new_width = if child_frame_w > MIN_SIZE {
+                target_frame_w * child_bounds.width() / child_frame_w
+            } else {
+                target_frame_w
+            };
             let min_width = child.layout_item.and_then(|i| i.min_w).unwrap_or(MIN_SIZE);
             let max_width = child.layout_item.and_then(|i| i.max_w).unwrap_or(MAX_SIZE);
             new_width = new_width.clamp(min_width, max_width);
@@ -757,7 +812,13 @@ pub fn reflow_grid_layout(
         let mut new_height = child_bounds.height();
         if child.is_layout_vertical_fill() {
             let margin_top = child.layout_item.map(|i| i.margin_top).unwrap_or(0.0);
-            new_height = cell.height - margin_top;
+            let margin_bottom = child.layout_item.map(|i| i.margin_bottom).unwrap_or(0.0);
+            let target_frame_h = cell.height - margin_top - margin_bottom;
+            new_height = if child_frame_h > MIN_SIZE {
+                target_frame_h * child_bounds.height() / child_frame_h
+            } else {
+                target_frame_h
+            };
             let min_height = child.layout_item.and_then(|i| i.min_h).unwrap_or(MIN_SIZE);
             let max_height = child.layout_item.and_then(|i| i.max_h).unwrap_or(MAX_SIZE);
             new_height = new_height.clamp(min_height, max_height);
@@ -765,9 +826,12 @@ pub fn reflow_grid_layout(
 
         let mut transform = Matrix::default();
 
+        let mut force_reflow = false;
         if (new_width - child_bounds.width()).abs() > MIN_SIZE
             || (new_height - child_bounds.height()).abs() > MIN_SIZE
         {
+            // When the child is a fill it needs to be reflown
+            force_reflow = true;
             transform.post_concat(&math::resize_matrix(
                 &layout_bounds,
                 &child_bounds,
@@ -785,13 +849,45 @@ pub fn reflow_grid_layout(
             cell,
         );
 
-        let delta_v = Vector::new_points(&child_bounds.nw, &position);
+        // Compute the child's reference point in the frame's coordinate system.
+        // For a rotated parent frame, (min_x, min_y) is wrong because it is the
+        // screen-AABB corner, not the frame-axis-aligned corner.
+        // child_ref = h_min * hv + v_min * vv gives the world-space point whose
+        // projections onto hv/vv are the child's minima along those axes —
+        // the "top-left in frame coordinates".
+        //
+        // For fill axes, resize_matrix scales local-x/y by (new_w / child_bounds.width())
+        // anchored at nw. This shifts h_min/v_min: the post-resize minimum is
+        //   h_min_new = nw_h + (h_min - nw_h) * scale_w
+        // We must translate FROM this post-resize minimum, not the pre-resize one.
+        let nw_h = hv.x * child_bounds.nw.x + hv.y * child_bounds.nw.y;
+        let nw_v = vv.x * child_bounds.nw.x + vv.y * child_bounds.nw.y;
+        let h_anchor = if child.is_layout_horizontal_fill() && child_bounds.width() > MIN_SIZE {
+            let scale_w = new_width / child_bounds.width();
+            nw_h + (h_min - nw_h) * scale_w
+        } else {
+            h_min
+        };
+        let v_anchor = if child.is_layout_vertical_fill() && child_bounds.height() > MIN_SIZE {
+            let scale_h = new_height / child_bounds.height();
+            nw_v + (v_min - nw_v) * scale_h
+        } else {
+            v_min
+        };
+        let child_ref = Point::new(
+            h_anchor * hv.x + v_anchor * vv.x,
+            h_anchor * hv.y + v_anchor * vv.y,
+        );
+        let delta_v = Vector::new_points(&child_ref, &position);
 
         if delta_v.x.abs() > MIN_SIZE || delta_v.y.abs() > MIN_SIZE {
             transform.post_concat(&Matrix::translate(delta_v));
         }
 
-        result.push_back(Modifier::transform(child.id, transform));
+        result.push_back(Modifier::transform_propagate(child.id, transform));
+        if child.has_layout() {
+            result.push_back(Modifier::reflow(child.id, force_reflow));
+        }
     }
 
     if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
@@ -805,7 +901,7 @@ pub fn reflow_grid_layout(
             let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
                 + layout_data.padding_left
                 + layout_data.padding_right
-                + (column_tracks.len() - 1) as f32 * layout_data.column_gap;
+                + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
             scale_width = auto_width / width;
         }
 
@@ -813,13 +909,15 @@ pub fn reflow_grid_layout(
             let auto_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
                 + layout_data.padding_top
                 + layout_data.padding_bottom
-                + (row_tracks.len() - 1) as f32 * layout_data.row_gap;
+                + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
             scale_height = auto_height / height;
         }
 
         let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
 
-        let parent_transform_inv = &parent_transform.invert().unwrap();
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
         let origin = parent_transform_inv.map_point(layout_bounds.nw);
 
         let mut scale = Matrix::scale((scale_width, scale_height));
@@ -833,5 +931,5 @@ pub fn reflow_grid_layout(
         bounds.insert(shape.id, layout_bounds_after);
     }
 
-    result
+    Ok(result)
 }

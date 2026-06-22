@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.code
   (:require-macros [app.main.style :as stl])
@@ -17,21 +17,20 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.code-block :refer [code-block]]
+   [app.main.ui.components.code-block :refer [code-block*]]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
+   [app.util.clipboard :as clipboard]
    [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def embed-images? true)
@@ -88,25 +87,27 @@
    value map))
 
 (defn gen-all-code
-  [style-code markup-code images-data]
+  [style-code markup-code images-data fonts-data]
   (let [markup-code (cond-> markup-code
                       embed-images? (replace-map images-data))
 
         style-code (cond-> style-code
-                     embed-images? (replace-map images-data))]
+                     embed-images? (replace-map (merge images-data fonts-data)))]
     (str/format page-template style-code markup-code)))
 
-(mf/defc code
+(mf/defc code*
   [{:keys [shapes frame on-expand from]}]
   (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")
         fontfaces-css* (mf/use-state nil)
         images-data*   (mf/use-state nil)
+        fonts-data*    (mf/use-state nil)
 
         style-type     (deref style-type*)
         markup-type    (deref markup-type*)
         fontfaces-css  (deref fontfaces-css*)
         images-data    (deref images-data*)
+        fonts-data     (deref fonts-data*)
 
         collapsed*        (mf/use-state #{})
         collapsed-css?    (contains? @collapsed* :css)
@@ -158,10 +159,10 @@
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-code"
-                                   ::ev/origin origin
-                                   :type markup-type})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-code"
+                         ::ev/origin origin
+                         :type markup-type})))))
 
         on-style-copied
         (mf/use-fn
@@ -170,10 +171,10 @@
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-style"
-                                   ::ev/origin origin
-                                   :type style-type})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-style"
+                         ::ev/origin origin
+                         :type style-type})))))
 
         {on-markup-pointer-down :on-pointer-down
          on-markup-lost-pointer-capture :on-lost-pointer-capture
@@ -200,16 +201,16 @@
 
         handle-copy-all-code
         (mf/use-fn
-         (mf/deps style-code markup-code images-data)
+         (mf/deps style-code markup-code images-data fonts-data)
          (fn []
-           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))
+           (clipboard/to-clipboard (gen-all-code style-code markup-code images-data fonts-data))
            (let [origin (if (= :workspace from)
                           "workspace"
                           "viewer")]
-             (st/emit! (ptk/event ::ev/event
-                                  {::ev/name "copy-inspect-code"
-                                   ::ev/origin origin
-                                   :type "all"})))))
+             (st/emit! (ev/event
+                        {::ev/name "copy-inspect-code"
+                         ::ev/origin origin
+                         :type "all"})))))
 
         ;;handle-open-review
         ;;(mf/use-fn
@@ -229,8 +230,8 @@
                         (conj collapsed panel-type)))))))
         copy-css-fn
         (mf/use-fn
-         (mf/deps style-code images-data)
-         #(replace-map style-code images-data))
+         (mf/deps style-code images-data fonts-data)
+         #(replace-map style-code (merge images-data fonts-data)))
 
         copy-html-fn
         (mf/use-fn
@@ -238,24 +239,41 @@
          #(replace-map markup-code images-data))]
 
     (mf/with-effect [fonts]
-      (->> (rx/from fonts)
-           (rx/merge-map fonts/fetch-font-css)
-           (rx/reduce conj [])
-           (rx/subs!
-            (fn [result]
-              (let [css (str/join "\n" result)]
-                (reset! fontfaces-css* css))))))
+      (let [sub (->> (rx/from fonts)
+                     (rx/merge-map fonts/fetch-font-css)
+                     (rx/reduce conj [])
+                     (rx/subs!
+                      (fn [result]
+                        (let [css (str/join "\n" result)]
+                          (reset! fontfaces-css* css)))))]
+        #(rx/dispose! sub)))
+
+    ;; Resolve the font URLs to data URIs. The inspect view keeps the original
+    ;; URLs (more readable), but copying embeds the fonts so the styles render
+    ;; outside of Penpot, where the original URLs require auth/CORS.
+    (mf/with-effect [fontfaces-css]
+      (let [sub (->> (rx/from (fonts/extract-fontface-urls (or fontfaces-css "")))
+                     (rx/merge-map
+                      (fn [uri]
+                        (->> (http/fetch-data-uri uri true)
+                             (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
+                     (rx/reduce conj {})
+                     (rx/subs!
+                      (fn [result]
+                        (reset! fonts-data* result))))]
+        #(rx/dispose! sub)))
 
     (mf/with-effect [images-urls]
-      (->> (rx/from images-urls)
-           (rx/merge-map
-            (fn [[_ uri]]
-              (->> (http/fetch-data-uri uri true)
-                   (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
-           (rx/reduce conj {})
-           (rx/subs!
-            (fn [result]
-              (reset! images-data* result)))))
+      (let [sub (->> (rx/from images-urls)
+                     (rx/merge-map
+                      (fn [[_ uri]]
+                        (->> (http/fetch-data-uri uri true)
+                             (rx/catch (fn [_] (rx/of (hash-map uri uri)))))))
+                     (rx/reduce conj {})
+                     (rx/subs!
+                      (fn [result]
+                        (reset! images-data* result))))]
+        #(rx/dispose! sub)))
 
     [:div {:class (stl/css-case :element-options true
                                 :viewer-code-block (= :viewer from))}
@@ -299,8 +317,8 @@
       (when-not collapsed-css?
         [:div {:class (stl/css :code-row-display)
                :style {:--code-height (dm/str (or style-size 400) "px")}}
-         [:& code-block {:type style-type
-                         :code style-code}]])
+         [:> code-block* {:type style-type
+                          :code style-code}]])
 
       [:div {:class (stl/css :resize-area)
              :on-pointer-down on-style-pointer-down
@@ -340,8 +358,8 @@
       (when-not collapsed-markup?
         [:div {:class (stl/css :code-row-display)
                :style {:--code-height (dm/str (or markup-size 400) "px")}}
-         [:& code-block {:type markup-type
-                         :code markup-code}]])
+         [:> code-block* {:type markup-type
+                          :code markup-code}]])
 
       [:div {:class (stl/css :resize-area)
              :on-pointer-down on-markup-pointer-down

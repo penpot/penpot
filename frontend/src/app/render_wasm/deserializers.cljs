@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns app.render-wasm.deserializers
   (:require
    [app.common.data :as d]
@@ -45,4 +45,33 @@
      :center (gpt/point cx cy)
      :transform (gmt/matrix a b c d e f)}))
 
+(defn read-image-bytes
+  [heap offset length]
+  (.slice ^js heap offset (+ offset length)))
 
+(defn read-position-data-entry
+  [heapu32 heapf32 offset]
+  (let [paragraph (aget heapu32 (+ offset 0))
+        span      (aget heapu32 (+ offset 1))
+        start-pos (aget heapu32 (+ offset 2))
+        end-pos   (aget heapu32 (+ offset 3))
+        x         (aget heapf32 (+ offset 4))
+        y         (aget heapf32 (+ offset 5))
+        width     (aget heapf32 (+ offset 6))
+        height    (aget heapf32 (+ offset 7))
+        direction (aget heapu32 (+ offset 8))]
+    {:paragraph paragraph
+     :span      span
+     :start-pos start-pos
+     :end-pos   end-pos
+     :x         x
+     :y         y
+     :width     width
+     :height    height
+     :direction direction}))
+
+(defn translate-direction
+  [direction]
+  (case direction
+    0 "rtl"
+    "ltr"))

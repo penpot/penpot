@@ -2,13 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.timers
   (:require
    [app.common.data :as d]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 (defn schedule
   ([func]
@@ -30,8 +29,8 @@
 
 (defn asap
   [f]
-  (-> (p/resolved nil)
-      (p/then (fn [_] (f)))))
+  (-> (js/Promise.resolve nil)
+      (.then (fn [_] (f)))))
 
 (defn interval
   [ms func]
@@ -66,11 +65,20 @@
     #(.requestAnimationFrame js/globalThis %)
     #(js/setTimeout % 16)))
 
+(def ^:private cancel-animation-frame
+  (if (and (exists? js/globalThis)
+           (exists? (.-cancelAnimationFrame js/globalThis)))
+    #(.cancelAnimationFrame js/globalThis %)
+    #(js/clearTimeout %)))
+
 (defn raf
   [f]
   (^function request-animation-frame f))
 
+(defn cancel-af!
+  [frame-id]
+  (^function cancel-animation-frame frame-id))
+
 (defn idle-then-raf
   [f]
   (schedule-on-idle #(^function raf f)))
-

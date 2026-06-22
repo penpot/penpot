@@ -1,0 +1,60 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
+
+.modal-overlay {
+  @extend %modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend %modal-container-base;
+
+  color: var(--color-foreground-secondary);
+  display: grid;
+  gap: var(--sp-s);
+  padding: px2rem(72); // FIXME: This should be a token
+  max-width: px2rem(682); // FIXME: This should be a token
+}
+
+.modal-header {
+  color: var(--color-foreground-primary);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: px2rem(38); // FIXME: This should be a token
+  right: px2rem(38); // FIXME: This should be a token
+}
+
+.modal-content {
+  display: grid;
+  grid-template-rows: auto;
+  gap: var(--sp-s);
+
+  & > * {
+    margin: 0; // FIXME: This should be in reset styles
+  }
+}
+
+.modal-divider {
+  border: $b-1 solid var(--color-background-quaternary);
+  margin: var(--sp-xs) 0;
+}
+
+.modal-footer {
+  margin-block-start: var(--sp-l);
+  justify-self: end;
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-s);
+}
+
+.link {
+  color: var(--color-accent-primary);
+}

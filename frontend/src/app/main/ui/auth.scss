@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -18,7 +18,7 @@
   width: 100%;
   overflow: auto;
 
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: flex;
     justify-content: center;
   }
@@ -50,15 +50,10 @@
   justify-content: center;
   grid-column: 1 / 4;
   width: 40vw;
+  height: auto;
   justify-self: center;
 
-  svg {
-    width: 100%;
-    fill: var(--color-foreground-primary);
-    height: auto;
-  }
-
-  @media (max-width: 992px) {
+  @media (width <= 992px) {
     display: none;
   }
 }

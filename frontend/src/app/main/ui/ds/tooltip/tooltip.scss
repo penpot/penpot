@@ -2,21 +2,23 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/z-index.scss" as *;
 @use "ds/typography.scss" as t;
 
 $arrow-side: 12px;
 
 .tooltip {
-  position: absolute;
+  position: fixed;
   max-inline-size: $sz-352;
   background-color: transparent;
   overflow: hidden;
   inline-size: fit-content;
   block-size: fit-content;
+  z-index: var(--z-index-notifications);
 }
 
 .tooltip-content-wrapper {
@@ -53,6 +55,7 @@ $arrow-side: 12px;
     "arrow"
     "content";
 }
+
 .tooltip-bottom .tooltip-arrow {
   justify-self: center;
   border-radius: var(--sp-xs) 0;
@@ -109,7 +112,7 @@ $arrow-side: 12px;
 }
 
 .tooltip-bottom-right .tooltip-arrow {
-  margin: 0px var(--sp-s);
+  margin: 0 var(--sp-s);
   transform: rotate(45deg) translateX(var(--sp-s));
   border-radius: var(--sp-xs) 0;
   border-block-start: $b-1 solid var(--color-accent-primary-muted);
@@ -121,6 +124,7 @@ $arrow-side: 12px;
     "arrow"
     "content";
 }
+
 .tooltip-bottom-left .tooltip-arrow {
   justify-self: end;
   margin: 0 var(--sp-s);
@@ -135,6 +139,7 @@ $arrow-side: 12px;
     "content"
     "arrow";
 }
+
 .tooltip-top-left .tooltip-arrow {
   margin: 0 var(--sp-s);
   justify-self: end;
@@ -146,6 +151,7 @@ $arrow-side: 12px;
 
 .tooltip-content {
   @include t.use-typography("body-small");
+
   background-color: var(--color-background-primary);
   color: var(--color-foreground-secondary);
   border-radius: var(--sp-xs);
@@ -159,4 +165,6 @@ $arrow-side: 12px;
   block-size: fit-content;
   inline-size: fit-content;
   line-height: 0;
+  display: grid;
+  max-width: 100%;
 }

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.notifications.toast
   (:require-macros
@@ -21,13 +21,11 @@
    [:level {:optional true} [:maybe [:enum :default :info :warning :error :success]]]
    [:appearance {:optional true} [:enum :neutral :ghost]]
    [:is-html {:optional true} :boolean]
-   [:show-detail {:optional true} [:maybe :boolean]]
-   [:on-close {:optional true} fn?]
-   [:on-toggle-detail {:optional true} [:maybe fn?]]])
+   [:on-close {:optional true} fn?]])
 
 (mf/defc toast*
   {::mf/schema schema:toast}
-  [{:keys [class level appearance type is-html children detail show-detail on-close on-toggle-detail] :rest props}]
+  [{:keys [class level appearance type is-html children detail on-close] :rest props}]
   (let [class (dm/str class " " (stl/css :toast))
         level (if (string? level)
                 (keyword level)
@@ -47,9 +45,7 @@
                              :type type
                              :is-html is-html
                              :appearance appearance
-                             :detail detail
-                             :show-detail show-detail
-                             :on-toggle-detail on-toggle-detail} children]
+                             :detail detail} children]
 
 
      ;; TODO: this should be a buttom from the DS, but this variant is not designed yet.

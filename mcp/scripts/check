@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -ex;
+
+pnpm run fmt:check;
+pnpm -r run build;
+pnpm -r run types:check;

@@ -2,11 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .option-list {
   --options-dropdown-icon-fg-color: var(--color-foreground-secondary);
@@ -15,47 +16,33 @@
   --options-dropdown-border-color: var(--color-background-quaternary);
 
   position: absolute;
-  top: $sz-36;
-  width: var(--dropdown-width, 100%);
+  inset-block: var(--dropdown-start, $sz-36) var(--dropdown-end, auto);
+  inline-size: var(--dropdown-width, 100%);
   transform: translateX(var(--dropdown-translate-distance, 0));
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--options-dropdown-border-color);
   padding-block: var(--sp-xs);
   margin-block-end: 0;
-  max-height: $sz-400;
-  overflow-y: auto;
-  overflow-x: hidden;
+  max-block-size: $sz-400;
+  overflow: hidden auto;
   z-index: var(--z-index-dropdown);
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .left-align {
-  left: 0;
+  inset-inline-start: var(--dropdown-offset, 0);
 }
 
 .right-align {
-  right: 0;
+  inset-inline-end: var(--dropdown-offset, 0);
 }
 
 .option-separator {
   border: $b-1 solid var(--options-dropdown-border-color);
-  margin-top: var(--sp-xs);
-  margin-bottom: var(--sp-xs);
-}
-
-.group-option,
-.option-empty {
-  @include use-typography("body-small");
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-  color: var(--color-foreground-secondary);
-  padding-inline: var(--sp-s);
-  height: var(--sp-xxxl);
-}
-
-.option-empty {
-  justify-content: center;
-  text-align: center;
-  padding: 0 40px;
+  margin-block: var(--sp-xs) var(--sp-xs);
 }

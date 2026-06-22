@@ -214,10 +214,11 @@
    (mf/use-effect
     deps
     (fn []
-      (let [sub (->> stream (rx/subs! on-subscribe))]
-        #(do
-           (rx/dispose! sub)
-           (when on-dispose (on-dispose))))))))
+      (when stream
+        (let [sub (->> stream (rx/subs! on-subscribe))]
+          #(do
+             (rx/dispose! sub)
+             (when on-dispose (on-dispose)))))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 ;; FIXME: replace with rumext
@@ -378,6 +379,36 @@
           (rx/dispose! subs))))
 
     state))
+
+(defn- get-or-create-portal-container
+  "Returns the singleton container div for the given category, creating
+  and appending it to document.body on first access."
+  [category]
+  (let [body (dom/get-body)
+        id   (str "portal-container-" category)]
+    (or (dom/query body (str "#" id))
+        (let [container (dom/create-element "div")]
+          (dom/set-attribute! container "id" id)
+          (dom/append-child! body container)
+          container))))
+
+(defn use-portal-container
+  "Returns a shared singleton container div for React portals, identified
+  by a logical category. Available categories:
+
+    :modal    — modal dialogs
+    :popup    — popups, dropdowns, context menus
+    :tooltip  — tooltips
+    :default  — general portal use (default)
+
+  All portals in the same category share one <div> on document.body,
+  keeping the DOM clean and avoiding removeChild race conditions."
+  ([]
+   (use-portal-container :default))
+  ([category]
+   (let [category (name category)]
+     (mf/with-memo [category]
+       (get-or-create-portal-container category)))))
 
 (defn use-dynamic-grid-item-width
   ([] (use-dynamic-grid-item-width nil))

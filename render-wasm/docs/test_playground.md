@@ -68,7 +68,7 @@ The Text Editor Playground provides an isolated environment to test the new rend
 
 2. Start the development server:
    ```sh
-   yarn dev
+   pnpm run dev
    ```
 
 3. Open your browser and go to:  
@@ -78,14 +78,14 @@ This will launch the playground interface where you can interactively test text 
 
 ### Updating the WASM Renderer
 
-To update the `render_wasm.wasm` and `render_wasm.js` files used by the playground:
+To update the `render-wasm.wasm` and `render-wasm.js` files used by the playground:
 
 1. Make sure you have the latest compiled WASM files in `frontend/resources/public/js/`.
 
 2. From the `frontend/text-editor` directory, run:
 
    ```sh
-   yarn wasm:update
+   pnpm run wasm:update
    ```
 
    This script will copy the latest `render_wasm.wasm` and `render_wasm.js` into the playground’s `src/wasm/` directory, ensuring the playground uses the most recent build.

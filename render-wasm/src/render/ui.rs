@@ -1,30 +1,83 @@
 use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
-use crate::render::grid_layout;
+use crate::globals::get_ui_state;
+use crate::render::{grid_layout, rulers};
+use crate::shapes::{Layout, Type};
+pub mod guides;
 
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
+    let viewbox = render_state.viewbox;
+    let zoom = viewbox.zoom * render_state.options.dpr;
+    let show_grid_id = render_state.show_grid;
 
     canvas.clear(Color4f::new(0.0, 0.0, 0.0, 0.0));
     canvas.save();
-
-    let viewbox = render_state.viewbox;
-    let zoom = viewbox.zoom * render_state.options.dpr();
-
     canvas.scale((zoom, zoom));
-
     canvas.translate((-viewbox.area.left, -viewbox.area.top));
 
-    let canvas = render_state.surfaces.canvas(SurfaceId::UI);
-
-    if let Some(id) = render_state.show_grid {
+    if let Some(id) = show_grid_id {
         if let Some(shape) = shapes.get(&id) {
-            grid_layout::render_overlay(zoom, canvas, shape, shapes);
+            grid_layout::render_overlay(
+                zoom,
+                render_state.options.antialias_threshold,
+                canvas,
+                shape,
+                shapes,
+            );
         }
     }
 
+    // Render overlays for empty grid frames
+    for shape in shapes.iter() {
+        if shape.id.is_nil() || !shape.children.is_empty() {
+            continue;
+        }
+
+        if show_grid_id == Some(shape.id) {
+            continue;
+        }
+
+        let Type::Frame(frame) = &shape.shape_type else {
+            continue;
+        };
+
+        if !matches!(frame.layout, Some(Layout::GridLayout(_, _))) {
+            continue;
+        }
+
+        if shape.deleted() {
+            continue;
+        }
+
+        if let Some(shape) = shapes.get(&shape.id) {
+            grid_layout::render_overlay(
+                zoom,
+                render_state.options.antialias_threshold,
+                canvas,
+                shape,
+                shapes,
+            );
+        }
+    }
+
+    let viewbox = render_state.viewbox;
+    let ruler_state = render_state.rulers;
+    rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
+    // TODO: pass guides data here
+    let (horizontal, vertical) = get_ui_state().guides();
+    guides::render(
+        canvas,
+        zoom,
+        render_state.options.dpr,
+        viewbox.area,
+        horizontal,
+        vertical,
+    );
+
     canvas.restore();
+
     render_state.surfaces.draw_into(
         SurfaceId::UI,
         SurfaceId::Target,

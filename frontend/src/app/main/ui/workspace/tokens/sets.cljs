@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.sets
   (:require
@@ -16,7 +16,8 @@
    [rumext.v2 :as mf]))
 
 (defn- on-select-token-set-click [id]
-  (st/emit! (dwtl/set-selected-token-set-id id)))
+  (st/emit! (dwtl/clear-tokens-paths)
+            (dwtl/set-selected-token-set-id id)))
 
 (defn- on-toggle-token-set-click [name]
   (st/emit! (dwtl/toggle-token-set name)))
@@ -33,15 +34,12 @@
         can-edit?
         (mf/use-ctx ctx/can-edit?)
 
-        active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
-
         token-set-active?
         (mf/use-fn
-         (mf/deps active-token-sets-names)
+         (mf/deps tokens-lib)
          (fn [name]
-           (contains? active-token-sets-names name)))
+           (when tokens-lib
+             (ctob/token-set-active? tokens-lib name))))
 
         token-set-group-active?
         (mf/use-fn
@@ -65,7 +63,8 @@
              (st/emit! (dwtl/start-token-set-edition id)))))]
 
     [:> controlled-sets-list*
-     {:token-sets token-sets
+     {:tokens-lib tokens-lib
+      :token-sets token-sets
 
       :is-token-set-active token-set-active?
       :is-token-set-group-active token-set-group-active?
@@ -82,6 +81,6 @@
 
       :on-toggle-token-set on-toggle-token-set-click
       :on-toggle-token-set-group on-toggle-token-set-group-click
-      :on-update-token-set sets-helpers/on-update-token-set
+      :on-update-token-set (partial sets-helpers/on-update-token-set tokens-lib)
       :on-update-token-set-group sets-helpers/on-update-token-set-group
       :on-create-token-set sets-helpers/on-create-token-set}]))

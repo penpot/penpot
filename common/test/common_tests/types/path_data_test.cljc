@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.types.path-data-test
   (:require
@@ -10,14 +10,17 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.transit :as trans]
    [app.common.types.path :as path]
    [app.common.types.path.bool :as path.bool]
    [app.common.types.path.helpers :as path.helpers]
    [app.common.types.path.impl :as path.impl]
    [app.common.types.path.segment :as path.segment]
+   [app.common.types.path.subpath :as path.subpath]
    [clojure.test :as t]))
 
 (def sample-content
@@ -270,6 +273,21 @@
     (t/is (= result1 result2))
     (t/is (= result2 result3))))
 
+(t/deftest path-get-points-nil-safe
+  (t/testing "path/get-points returns empty for nil content without throwing"
+    (t/is (empty? (path/get-points nil))))
+  (t/testing "path/get-points returns correct points for valid content"
+    (let [content (path/content sample-content)
+          points  (path/get-points content)]
+      (t/is (some? points))
+      (t/is (= 3 (count points))))))
+
+(t/deftest path-get-points-plain-vector-safe
+  (t/testing "path/get-points does not throw for plain vector content"
+    (let [points (path/get-points sample-content)]
+      (t/is (some? points))
+      (t/is (= 3 (count points))))))
+
 (defn calculate-extremities
   "Calculate extremities for the provided content.
   A legacy implementation used mainly as reference for testing"
@@ -308,18 +326,12 @@
   (let [pdata   (path/content sample-content)
         result1 (calculate-extremities sample-content)
         result2 (calculate-extremities pdata)
-        result3 (path.segment/calculate-extremities sample-content)
-        result4 (path.segment/calculate-extremities pdata)
         expect  #{(gpt/point 480.0 839.0)
                   (gpt/point 439.0 802.0)
-                  (gpt/point 264.0 634.0)}
-        n-iter  100000]
+                  (gpt/point 264.0 634.0)}]
 
-    (t/is (= result1 result3))
     (t/is (= result1 expect))
-    (t/is (= result2 expect))
-    (t/is (= result3 expect))
-    (t/is (= result4 expect))))
+    (t/is (= result2 expect))))
 
 (def sample-content-2
   [{:command :move-to, :params {:x 480.0, :y 839.0}}
@@ -329,21 +341,17 @@
    {:command :close-path :params {}}])
 
 (t/deftest extremities-2
-  (let [result1 (path.segment/calculate-extremities sample-content-2)
-        result2 (calculate-extremities sample-content-2)]
-    (t/is (= result1 result2))))
+  (let [result1 (calculate-extremities sample-content-2)]
+    (t/is (some? result1))))
 
 (t/deftest extremities-3
   (let [segments [{:command :move-to, :params {:x -310.5355224609375, :y 452.62115478515625}}]
         content  (path/content segments)
         result1  (calculate-extremities segments)
-        result2  (path.segment/calculate-extremities segments)
-        result3  (path.segment/calculate-extremities content)
+        result2  (calculate-extremities content)
         expect   #{}]
     (t/is (= result1 expect))
-    (t/is (= result1 expect))
-    (t/is (= result2 expect))
-    (t/is (= result3 expect))))
+    (t/is (= result2 expect))))
 
 (t/deftest points-to-content
   (let [initial  [(gpt/point 0.0 0.0)
@@ -522,3 +530,1056 @@
 (t/deftest calculate-bool-content
   (let [result (path.bool/calculate-content :union contents-for-bool)]
     (t/is (= result bool-result))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SUBPATH TESTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest subpath-pt=
+  (t/testing "pt= returns true for nearby points"
+    (t/is (path.subpath/pt= (gpt/point 0 0) (gpt/point 0.05 0.05))))
+  (t/testing "pt= returns false for distant points"
+    (t/is (not (path.subpath/pt= (gpt/point 0 0) (gpt/point 1 0))))))
+
+(t/deftest subpath-make-subpath
+  (t/testing "make-subpath from a single move-to command"
+    (let [cmd {:command :move-to :params {:x 5.0 :y 10.0}}
+          sp  (path.subpath/make-subpath cmd)]
+      (t/is (= (gpt/point 5.0 10.0) (:from sp)))
+      (t/is (= (gpt/point 5.0 10.0) (:to sp)))
+      (t/is (= [cmd] (:data sp)))))
+  (t/testing "make-subpath from explicit from/to/data"
+    (let [from (gpt/point 0 0)
+          to   (gpt/point 10 10)
+          data [{:command :move-to :params {:x 0 :y 0}}
+                {:command :line-to :params {:x 10 :y 10}}]
+          sp   (path.subpath/make-subpath from to data)]
+      (t/is (= from (:from sp)))
+      (t/is (= to   (:to sp)))
+      (t/is (= data (:data sp))))))
+
+(t/deftest subpath-add-subpath-command
+  (t/testing "adding a line-to command extends the subpath"
+    (let [cmd0 {:command :move-to :params {:x 0.0 :y 0.0}}
+          cmd1 {:command :line-to :params {:x 5.0 :y 5.0}}
+          sp   (-> (path.subpath/make-subpath cmd0)
+                   (path.subpath/add-subpath-command cmd1))]
+      (t/is (= (gpt/point 5.0 5.0) (:to sp)))
+      (t/is (= 2 (count (:data sp))))))
+  (t/testing "adding a close-path is replaced by a line-to at from"
+    (let [cmd0 {:command :move-to :params {:x 1.0 :y 2.0}}
+          sp   (path.subpath/make-subpath cmd0)
+          sp2  (path.subpath/add-subpath-command sp {:command :close-path :params {}})]
+      ;; The close-path gets replaced by a line-to back to :from
+      (t/is (= (gpt/point 1.0 2.0) (:to sp2))))))
+
+(t/deftest subpath-reverse-command
+  (let [prev {:command :move-to :params {:x 0.0 :y 0.0}}
+        cmd  {:command :line-to :params {:x 5.0 :y 3.0}}
+        rev  (path.subpath/reverse-command cmd prev)]
+    (t/is (= :line-to (:command rev)))
+    (t/is (= 0.0 (get-in rev [:params :x])))
+    (t/is (= 0.0 (get-in rev [:params :y])))))
+
+(t/deftest subpath-reverse-command-curve
+  (let [prev {:command :move-to :params {:x 0.0 :y 0.0}}
+        cmd  {:command :curve-to
+              :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 5.0}}
+        rev  (path.subpath/reverse-command cmd prev)]
+    ;; end-point should be previous point coords
+    (t/is (= 0.0 (get-in rev [:params :x])))
+    (t/is (= 0.0 (get-in rev [:params :y])))
+    ;; handlers are swapped
+    (t/is (= 7.0 (get-in rev [:params :c1x])))
+    (t/is (= 5.0 (get-in rev [:params :c1y])))
+    (t/is (= 3.0 (get-in rev [:params :c2x])))
+    (t/is (= 5.0 (get-in rev [:params :c2y])))))
+
+(def ^:private simple-open-content
+  [{:command :move-to  :params {:x 0.0  :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 10.0}}])
+
+(def ^:private simple-closed-content
+  [{:command :move-to  :params {:x 0.0  :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 10.0}}
+   {:command :line-to  :params {:x 0.0  :y 0.0}}])
+
+(t/deftest subpath-get-subpaths
+  (t/testing "open path produces one subpath"
+    (let [sps (path.subpath/get-subpaths simple-open-content)]
+      (t/is (= 1 (count sps)))
+      (t/is (= (gpt/point 0.0 0.0) (get-in sps [0 :from])))))
+  (t/testing "content with two move-to produces two subpaths"
+    (let [content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                   {:command :line-to :params {:x 5.0 :y 0.0}}
+                   {:command :move-to :params {:x 10.0 :y 0.0}}
+                   {:command :line-to :params {:x 15.0 :y 0.0}}]
+          sps (path.subpath/get-subpaths content)]
+      (t/is (= 2 (count sps))))))
+
+(t/deftest subpath-is-closed?
+  (t/testing "subpath with same from/to is closed"
+    (let [sp (path.subpath/make-subpath (gpt/point 0 0) (gpt/point 0 0) [])]
+      (t/is (path.subpath/is-closed? sp))))
+  (t/testing "subpath with different from/to is not closed"
+    (let [sp (path.subpath/make-subpath (gpt/point 0 0) (gpt/point 10 10) [])]
+      (t/is (not (path.subpath/is-closed? sp))))))
+
+(t/deftest subpath-reverse-subpath
+  (let [content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                 {:command :line-to :params {:x 10.0 :y 0.0}}
+                 {:command :line-to :params {:x 10.0 :y 10.0}}]
+        sps (path.subpath/get-subpaths content)
+        sp  (first sps)
+        rev (path.subpath/reverse-subpath sp)]
+    (t/is (= (:to sp) (:from rev)))
+    (t/is (= (:from sp) (:to rev)))
+    ;; reversed data starts with a move-to at old :to
+    (t/is (= :move-to (get-in rev [:data 0 :command])))))
+
+(t/deftest subpath-subpaths-join
+  (let [sp1 (path.subpath/make-subpath (gpt/point 0 0) (gpt/point 5 0)
+                                       [{:command :move-to :params {:x 0 :y 0}}
+                                        {:command :line-to :params {:x 5 :y 0}}])
+        sp2 (path.subpath/make-subpath (gpt/point 5 0) (gpt/point 10 0)
+                                       [{:command :move-to :params {:x 5 :y 0}}
+                                        {:command :line-to :params {:x 10 :y 0}}])
+        joined (path.subpath/subpaths-join sp1 sp2)]
+    (t/is (= (gpt/point 0 0) (:from joined)))
+    (t/is (= (gpt/point 10 0) (:to joined)))
+    ;; data has move-to from sp1 + line-to from sp1 + line-to from sp2 (rest of sp2)
+    (t/is (= 3 (count (:data joined))))))
+
+(t/deftest subpath-close-subpaths
+  (t/testing "content that is already a closed triangle stays closed"
+    (let [result (path.subpath/close-subpaths simple-closed-content)]
+      (t/is (seq result))))
+  (t/testing "two open fragments that form a closed loop get merged"
+    ;; fragment A: 0,0 → 5,0
+    ;; fragment B: 10,0 → 5,0 (reversed, connects to A's end)
+    ;; After close-subpaths the result should have segments
+    (let [content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                   {:command :line-to :params {:x 5.0 :y 0.0}}
+                   {:command :move-to :params {:x 10.0 :y 0.0}}
+                   {:command :line-to :params {:x 5.0 :y 0.0}}]
+          result (path.subpath/close-subpaths content)]
+      (t/is (seq result)))))
+
+(t/deftest subpath-merge-touching-subpaths
+  (t/testing "adjacent subpaths sharing an endpoint collapse into one chain"
+    ;; Heroicons-style fragment: continuous polyline split as M-L M-L M-L
+    ;; with the second/third subpath starting at the first's endpoint.
+    (let [content [{:command :move-to :params {:x 0.0  :y 10.0}}
+                   {:command :line-to :params {:x 10.0 :y 10.0}}
+                   {:command :move-to :params {:x 10.0 :y 10.0}}
+                   {:command :line-to :params {:x 5.0  :y 0.0}}
+                   {:command :move-to :params {:x 10.0 :y 10.0}}
+                   {:command :line-to :params {:x 5.0  :y 20.0}}]
+          result  (path.subpath/merge-touching-subpaths content)
+          moves   (filter #(= :move-to (:command %)) result)]
+      ;; Subpaths 1+2 share (10,10) → merged. Subpath 3 also starts at (10,10),
+      ;; but the merged chain now ends at (5,0), so it does NOT match and
+      ;; is preserved as its own subpath. Two move-tos in the final result.
+      (t/is (= 2 (count moves)))
+      (t/is (= 5 (count result)))))
+  (t/testing "non-touching subpaths are left untouched"
+    (let [content [{:command :move-to :params {:x 0.0  :y 0.0}}
+                   {:command :line-to :params {:x 5.0  :y 0.0}}
+                   {:command :move-to :params {:x 50.0 :y 50.0}}
+                   {:command :line-to :params {:x 60.0 :y 60.0}}]
+          result  (path.subpath/merge-touching-subpaths content)]
+      (t/is (= content (vec result)))))
+  (t/testing "closed subpath is not absorbed into a neighbour"
+    (let [content [{:command :move-to   :params {:x 0.0 :y 0.0}}
+                   {:command :line-to   :params {:x 5.0 :y 0.0}}
+                   {:command :line-to   :params {:x 5.0 :y 5.0}}
+                   {:command :line-to   :params {:x 0.0 :y 0.0}}
+                   {:command :move-to   :params {:x 0.0 :y 0.0}}
+                   {:command :line-to   :params {:x 1.0 :y 1.0}}]
+          result  (path.subpath/merge-touching-subpaths content)
+          moves   (filter #(= :move-to (:command %)) result)]
+      (t/is (= 2 (count moves))))))
+
+(t/deftest subpath-reverse-content
+  (let [result (path.subpath/reverse-content simple-open-content)]
+    (t/is (= (count simple-open-content) (count result)))
+    ;; First command of reversed content is a move-to at old end
+    (t/is (= :move-to (:command (first result))))
+    (t/is (mth/close? 10.0 (get-in (first result) [:params :x])))
+    (t/is (mth/close? 10.0 (get-in (first result) [:params :y])))))
+
+(t/deftest subpath-clockwise?
+  (t/testing "square drawn clockwise is detected as clockwise"
+    ;; A square drawn clockwise: top-left → top-right → bottom-right → bottom-left
+    (let [cw-content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                      {:command :line-to :params {:x 10.0 :y 0.0}}
+                      {:command :line-to :params {:x 10.0 :y 10.0}}
+                      {:command :line-to :params {:x 0.0 :y 10.0}}
+                      {:command :line-to :params {:x 0.0 :y 0.0}}]]
+      (t/is (path.subpath/clockwise? cw-content))))
+  (t/testing "counter-clockwise square is not clockwise"
+    (let [ccw-content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                       {:command :line-to :params {:x 0.0 :y 10.0}}
+                       {:command :line-to :params {:x 10.0 :y 10.0}}
+                       {:command :line-to :params {:x 10.0 :y 0.0}}
+                       {:command :line-to :params {:x 0.0 :y 0.0}}]]
+      (t/is (not (path.subpath/clockwise? ccw-content))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS TESTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest helpers-s=
+  (t/is (path.helpers/s= 0.0 0.0))
+  (t/is (path.helpers/s= 1.0 1.0000000001))
+  (t/is (not (path.helpers/s= 0.0 1.0))))
+
+(t/deftest helpers-make-move-to
+  (let [pt  (gpt/point 3.0 7.0)
+        cmd (path.helpers/make-move-to pt)]
+    (t/is (= :move-to (:command cmd)))
+    (t/is (= 3.0 (get-in cmd [:params :x])))
+    (t/is (= 7.0 (get-in cmd [:params :y])))))
+
+(t/deftest helpers-make-line-to
+  (let [pt  (gpt/point 4.0 8.0)
+        cmd (path.helpers/make-line-to pt)]
+    (t/is (= :line-to (:command cmd)))
+    (t/is (= 4.0 (get-in cmd [:params :x])))
+    (t/is (= 8.0 (get-in cmd [:params :y])))))
+
+(t/deftest helpers-make-curve-params
+  (t/testing "single point form — point and handlers coincide"
+    (let [p (gpt/point 5.0 5.0)
+          params (path.helpers/make-curve-params p)]
+      (t/is (mth/close? 5.0 (:x params)))
+      (t/is (mth/close? 5.0 (:c1x params)))
+      (t/is (mth/close? 5.0 (:c2x params)))))
+  (t/testing "two-arg form — handler specified"
+    (let [p (gpt/point 10.0 0.0)
+          h (gpt/point 5.0 5.0)
+          params (path.helpers/make-curve-params p h)]
+      (t/is (mth/close? 10.0 (:x params)))
+      (t/is (mth/close? 5.0  (:c1x params)))
+      ;; c2 defaults to point
+      (t/is (mth/close? 10.0 (:c2x params))))))
+
+(t/deftest helpers-make-curve-to
+  (let [to (gpt/point 10.0 0.0)
+        h1 (gpt/point 3.0 5.0)
+        h2 (gpt/point 7.0 5.0)
+        cmd (path.helpers/make-curve-to to h1 h2)]
+    (t/is (= :curve-to (:command cmd)))
+    (t/is (= 10.0 (get-in cmd [:params :x])))
+    (t/is (= 3.0  (get-in cmd [:params :c1x])))
+    (t/is (= 7.0  (get-in cmd [:params :c2x])))))
+
+(t/deftest helpers-update-curve-to
+  (let [base {:command :line-to :params {:x 10.0 :y 0.0}}
+        h1   (gpt/point 3.0 5.0)
+        h2   (gpt/point 7.0 5.0)
+        cmd  (path.helpers/update-curve-to base h1 h2)]
+    (t/is (= :curve-to (:command cmd)))
+    (t/is (= 3.0 (get-in cmd [:params :c1x])))
+    (t/is (= 7.0 (get-in cmd [:params :c2x])))))
+
+(t/deftest helpers-prefix->coords
+  (t/is (= [:c1x :c1y] (path.helpers/prefix->coords :c1)))
+  (t/is (= [:c2x :c2y] (path.helpers/prefix->coords :c2)))
+  (t/is (nil? (path.helpers/prefix->coords nil))))
+
+(t/deftest helpers-position-fixed-angle
+  (t/testing "returns point unchanged when from-point is nil"
+    (let [pt (gpt/point 5.0 3.0)]
+      (t/is (= pt (path.helpers/position-fixed-angle pt nil)))))
+  (t/testing "snaps to nearest 45-degree angle"
+    (let [from (gpt/point 0 0)
+          ;; Angle ~30° from from, should snap to 45°
+          to   (gpt/point 10 6)
+          snapped (path.helpers/position-fixed-angle to from)]
+      ;; result should have same distance
+      (let [d-orig    (gpt/distance to from)
+            d-snapped (gpt/distance snapped from)]
+        (t/is (mth/close? d-orig d-snapped 0.01))))))
+
+(t/deftest helpers-command->line
+  (let [prev {:command :move-to :params {:x 0.0 :y 0.0}}
+        cmd  {:command :line-to :params {:x 5.0 :y 3.0} :prev (gpt/point 0 0)}
+        [from to] (path.helpers/command->line cmd (path.helpers/segment->point prev))]
+    (t/is (= (gpt/point 0.0 0.0) from))
+    (t/is (= (gpt/point 5.0 3.0) to))))
+
+(t/deftest helpers-command->bezier
+  (let [prev {:command :move-to :params {:x 0.0 :y 0.0}}
+        cmd  {:command :curve-to
+              :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 5.0}}
+        [from to h1 h2] (path.helpers/command->bezier cmd (path.helpers/segment->point prev))]
+    (t/is (= (gpt/point 0.0 0.0) from))
+    (t/is (= (gpt/point 10.0 0.0) to))
+    (t/is (= (gpt/point 3.0 5.0) h1))
+    (t/is (= (gpt/point 7.0 5.0) h2))))
+
+(t/deftest helpers-line-values
+  (let [from (gpt/point 0.0 0.0)
+        to   (gpt/point 10.0 0.0)
+        mid  (path.helpers/line-values [from to] 0.5)]
+    (t/is (mth/close? 5.0 (:x mid)))
+    (t/is (mth/close? 0.0 (:y mid)))))
+
+(t/deftest helpers-curve-split
+  (let [start (gpt/point 0.0 0.0)
+        end   (gpt/point 10.0 0.0)
+        h1    (gpt/point 3.0 5.0)
+        h2    (gpt/point 7.0 5.0)
+        [[s1 e1 _ _] [s2 e2 _ _]] (path.helpers/curve-split start end h1 h2 0.5)]
+    ;; First sub-curve starts at start and ends near midpoint
+    (t/is (mth/close? 0.0  (:x s1) 0.01))
+    (t/is (mth/close? 10.0 (:x e2) 0.01))
+    ;; The split point (e1 / s2) should be the same
+    (t/is (mth/close? (:x e1) (:x s2) 0.01))
+    (t/is (mth/close? (:y e1) (:y s2) 0.01))))
+
+(t/deftest helpers-split-line-to
+  (let [from (gpt/point 0.0 0.0)
+        seg  {:command :line-to :params {:x 10.0 :y 0.0}}
+        [s1 s2] (path.helpers/split-line-to from seg 0.5)]
+    (t/is (= :line-to (:command s1)))
+    (t/is (mth/close? 5.0 (get-in s1 [:params :x])))
+    (t/is (= s2 seg))))
+
+(t/deftest helpers-split-curve-to
+  (let [from (gpt/point 0.0 0.0)
+        seg  {:command :curve-to
+              :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 5.0}}
+        [s1 s2] (path.helpers/split-curve-to from seg 0.5)]
+    (t/is (= :curve-to (:command s1)))
+    (t/is (= :curve-to (:command s2)))
+    ;; s2 ends at original endpoint
+    (t/is (mth/close? 10.0 (get-in s2 [:params :x]) 0.01))
+    (t/is (mth/close? 0.0  (get-in s2 [:params :y]) 0.01))))
+
+(t/deftest helpers-split-line-to-ranges
+  (t/testing "no split values returns original segment"
+    (let [from (gpt/point 0.0 0.0)
+          seg  {:command :line-to :params {:x 10.0 :y 0.0}}
+          result (path.helpers/split-line-to-ranges from seg [])]
+      (t/is (= [seg] result))))
+  (t/testing "splits at 0.25 and 0.75 produces 3 segments"
+    (let [from (gpt/point 0.0 0.0)
+          seg  {:command :line-to :params {:x 10.0 :y 0.0}}
+          result (path.helpers/split-line-to-ranges from seg [0.25 0.75])]
+      (t/is (= 3 (count result))))))
+
+(t/deftest helpers-split-curve-to-ranges
+  (t/testing "no split values returns original segment"
+    (let [from (gpt/point 0.0 0.0)
+          seg  {:command :curve-to
+                :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 5.0}}
+          result (path.helpers/split-curve-to-ranges from seg [])]
+      (t/is (= [seg] result))))
+  (t/testing "split at 0.5 produces 2 segments"
+    (let [from (gpt/point 0.0 0.0)
+          seg  {:command :curve-to
+                :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 5.0}}
+          result (path.helpers/split-curve-to-ranges from seg [0.5])]
+      (t/is (= 2 (count result))))))
+
+(t/deftest helpers-line-has-point?
+  (let [from (gpt/point 0.0 0.0)
+        to   (gpt/point 10.0 0.0)]
+    (t/is (path.helpers/line-has-point? (gpt/point 5.0 0.0) [from to]))
+    (t/is (not (path.helpers/line-has-point? (gpt/point 5.0 1.0) [from to])))))
+
+(t/deftest helpers-segment-has-point?
+  (let [from (gpt/point 0.0 0.0)
+        to   (gpt/point 10.0 0.0)]
+    (t/is (path.helpers/segment-has-point? (gpt/point 5.0 0.0) [from to]))
+    ;; Outside segment bounds even though on same infinite line
+    (t/is (not (path.helpers/segment-has-point? (gpt/point 15.0 0.0) [from to])))))
+
+(t/deftest helpers-curve-has-point?
+  (let [start (gpt/point 0.0 0.0)
+        end   (gpt/point 10.0 0.0)
+        h1    (gpt/point 0.0 0.0)
+        h2    (gpt/point 10.0 0.0)
+        ;; degenerate curve (same as line) — midpoint should be on it
+        curve [start end h1 h2]]
+    (t/is (path.helpers/curve-has-point? (gpt/point 5.0 0.0) curve))
+    (t/is (not (path.helpers/curve-has-point? (gpt/point 5.0 100.0) curve)))))
+
+(t/deftest helpers-curve-tangent
+  (let [start   (gpt/point 0.0 0.0)
+        end     (gpt/point 10.0 0.0)
+        h1      (gpt/point 3.0 0.0)
+        h2      (gpt/point 7.0 0.0)
+        tangent (path.helpers/curve-tangent [start end h1 h2] 0.5)]
+    ;; For a nearly-horizontal curve, the tangent y-component is small
+    (t/is (mth/close? 1.0 (:x tangent) 0.01))
+    (t/is (mth/close? 0.0 (:y tangent) 0.01))))
+
+(t/deftest helpers-curve->lines
+  (let [start (gpt/point 0.0 0.0)
+        end   (gpt/point 10.0 0.0)
+        h1    (gpt/point 3.0 5.0)
+        h2    (gpt/point 7.0 5.0)
+        lines (path.helpers/curve->lines start end h1 h2)]
+    ;; curve->lines produces num-segments lines (10 by default, closed [0..1] => 11 pairs)
+    (t/is (pos? (count lines)))
+    (t/is (= 2 (count (first lines))))))
+
+(t/deftest helpers-line-line-intersect
+  (t/testing "perpendicular lines intersect"
+    (let [l1 [(gpt/point 5.0 0.0) (gpt/point 5.0 10.0)]
+          l2 [(gpt/point 0.0 5.0) (gpt/point 10.0 5.0)]
+          result (path.helpers/line-line-intersect l1 l2)]
+      (t/is (some? result))))
+  (t/testing "parallel lines do not intersect"
+    (let [l1 [(gpt/point 0.0 0.0) (gpt/point 10.0 0.0)]
+          l2 [(gpt/point 0.0 5.0) (gpt/point 10.0 5.0)]
+          result (path.helpers/line-line-intersect l1 l2)]
+      (t/is (nil? result)))))
+
+(t/deftest helpers-subcurve-range
+  (let [start (gpt/point 0.0 0.0)
+        end   (gpt/point 10.0 0.0)
+        h1    (gpt/point 3.0 5.0)
+        h2    (gpt/point 7.0 5.0)
+        [s e _ _] (path.helpers/subcurve-range start end h1 h2 0.25 0.75)]
+    ;; sub-curve should start near t=0.25 and end near t=0.75
+    (t/is (some? s))
+    (t/is (some? e))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SEGMENT FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest segment-get-handler
+  (let [cmd {:command :curve-to
+             :params {:x 10.0 :y 0.0 :c1x 3.0 :c1y 5.0 :c2x 7.0 :c2y 2.0}}]
+    (t/is (= (gpt/point 3.0 5.0) (path.segment/get-handler cmd :c1)))
+    (t/is (= (gpt/point 7.0 2.0) (path.segment/get-handler cmd :c2)))
+    (t/is (nil? (path.segment/get-handler {:command :line-to :params {:x 1 :y 2}} :c1)))))
+
+(t/deftest segment-handler->node
+  (let [content (path/content sample-content-2)]
+    ;; For :c1 prefix, the node is the previous segment
+    (let [node (path.segment/handler->node (vec content) 2 :c1)]
+      (t/is (some? node)))
+    ;; For :c2 prefix, the node is the current segment's endpoint
+    (let [node (path.segment/handler->node (vec content) 2 :c2)]
+      (t/is (some? node)))))
+
+(t/deftest segment-calculate-opposite-handler
+  (let [pt  (gpt/point 5.0 5.0)
+        h   (gpt/point 8.0 5.0)
+        opp (path.segment/calculate-opposite-handler pt h)]
+    (t/is (mth/close? 2.0 (:x opp)))
+    (t/is (mth/close? 5.0 (:y opp)))))
+
+(t/deftest segment-point-indices
+  (let [content (path/content sample-content-2)
+        pt      (gpt/point 480.0 839.0)
+        idxs    (path.segment/point-indices content pt)]
+    (t/is (= [0] (vec idxs)))))
+
+(t/deftest segment-opposite-index
+  (let [content (path/content sample-content-2)]
+    ;; Index 2 with :c2 prefix — the node is the current point of index 2
+    (let [result (path.segment/opposite-index content 2 :c2)]
+      ;; result is either nil or [index prefix]
+      (t/is (or (nil? result) (vector? result))))))
+
+(t/deftest segment-split-segments
+  (let [content (path/content sample-content-square)
+        points  #{(gpt/point 10.0 0.0)
+                  (gpt/point 0.0 0.0)}
+        result  (path.segment/split-segments content points 0.5)]
+    ;; result should have more segments than original (splits added)
+    (t/is (> (count result) (count sample-content-square)))))
+
+;; Regression test for issue #8301: clicking a hover point on a path segment
+;; must insert exactly one node. The bug caused two actions to fire together —
+;; create-node-at-position (correct) and add-node (extra) — so the midpoint M
+;; was appended again as a tail endpoint, giving [M A L M L B L M] instead of
+;; the correct [M A L M L B]. The stroke markerEnd then landed in the middle.
+;; The invariant: split-segments on a 2-command open path produces exactly 3
+;; commands and does not repeat the inserted midpoint at the tail.
+(t/deftest segment-split-segments-no-duplicate-endpoint
+  (let [;; Simple open path: A=(0,0) → B=(100,0)
+        segments [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 100.0 :y 0.0}}]
+        from-p   (gpt/point 0.0 0.0)
+        to-p     (gpt/point 100.0 0.0)
+        content  (path/content segments)
+        result   (path.segment/split-segments content #{from-p to-p} 0.5)
+        cmds     (mapv :command result)]
+
+    ;; Must be exactly 3 commands: move-to A, line-to M, line-to B
+    (t/is (= 3 (count result)))
+    (t/is (= [:move-to :line-to :line-to] cmds))
+
+    ;; Midpoint M must be at (50, 0)
+    (t/is (mth/close? 50.0 (get-in result [1 :params :x])))
+    (t/is (mth/close? 0.0  (get-in result [1 :params :y])))
+
+    ;; Original endpoint B must still be at (100, 0) — not shadowed by a duplicate M
+    (t/is (mth/close? 100.0 (get-in result [2 :params :x])))
+    (t/is (mth/close? 0.0   (get-in result [2 :params :y])))))
+
+(t/deftest segment-content->selrect
+  (let [content (path/content sample-content-square)
+        rect    (path.segment/content->selrect content)]
+    (t/is (some? rect))
+    (t/is (mth/close? 0.0  (:x1 rect) 0.1))
+    (t/is (mth/close? 0.0  (:y1 rect) 0.1))
+    (t/is (mth/close? 10.0 (:x2 rect) 0.1))
+    (t/is (mth/close? 10.0 (:y2 rect) 0.1))))
+
+(t/deftest segment-content->selrect-multi-line
+  ;; Regression: calculate-extremities used move-p instead of from-p in
+  ;; the :line-to branch. For a subpath with multiple consecutive line-to
+  ;; commands, the selrect must still match the reference implementation.
+  (let [;; A subpath that starts away from the origin and has three
+        ;; line-to segments so that move-p diverges from from-p for the
+        ;; later segments.
+        segments [{:command :move-to :params {:x 5.0  :y 5.0}}
+                  {:command :line-to :params {:x 15.0 :y 0.0}}
+                  {:command :line-to :params {:x 20.0 :y 8.0}}
+                  {:command :line-to :params {:x 10.0 :y 12.0}}]
+        content  (path/content segments)
+        rect     (path.segment/content->selrect content)
+        ref-pts  (calculate-extremities segments)]
+
+    ;; Bounding box must enclose all four vertices exactly.
+    (t/is (some? rect))
+    (t/is (mth/close?  5.0 (:x1 rect) 0.1))
+    (t/is (mth/close?  0.0 (:y1 rect) 0.1))
+    (t/is (mth/close? 20.0 (:x2 rect) 0.1))
+    (t/is (mth/close? 12.0 (:y2 rect) 0.1))
+
+    ;; Must agree with the reference implementation.
+    (t/is (= ref-pts (calculate-extremities content)))))
+
+(t/deftest segment-content-center
+  (let [content (path/content sample-content-square)
+        center  (path.segment/content-center content)]
+    (t/is (some? center))
+    (t/is (mth/close? 5.0 (:x center) 0.1))
+    (t/is (mth/close? 5.0 (:y center) 0.1))))
+
+(t/deftest segment-move-content
+  (let [content   (path/content sample-content-square)
+        move-vec  (gpt/point 5.0 5.0)
+        result    (path.segment/move-content content move-vec)
+        first-seg (first (vec result))]
+    (t/is (= :move-to (:command first-seg)))
+    (t/is (mth/close? 5.0 (get-in first-seg [:params :x])))))
+
+(t/deftest segment-is-curve?
+  (let [content (path/content sample-content-2)]
+    ;; point at index 0 is 480,839 — no handler offset, not a curve
+    (let [pt (gpt/point 480.0 839.0)]
+      ;; is-curve? can return nil (falsy) or boolean — just check it doesn't throw
+      (t/is (not (path.segment/is-curve? content pt))))
+    ;; A point that is reached by a curve-to command should be detectable
+    (let [curve-pt (gpt/point 4.0 4.0)]
+      (t/is (or (nil? (path.segment/is-curve? content curve-pt))
+                (boolean? (path.segment/is-curve? content curve-pt)))))))
+
+(t/deftest segment-append-segment
+  (let [content (path/content sample-content)
+        seg     {:command :line-to :params {:x 100.0 :y 100.0}}
+        result  (path.segment/append-segment content seg)]
+    (t/is (= (inc (count (vec content))) (count result)))))
+
+(t/deftest segment-remove-nodes
+  (let [content (path/content simple-open-content)
+        ;; remove the midpoint
+        pt      (gpt/point 10.0 0.0)
+        result  (path.segment/remove-nodes content #{pt})]
+    ;; should have fewer segments
+    (t/is (< (count result) (count simple-open-content)))))
+
+(t/deftest segment-join-nodes
+  (let [content (path/content simple-open-content)
+        pt1     (gpt/point 0.0 0.0)
+        pt2     (gpt/point 10.0 10.0)
+        result  (path.segment/join-nodes content #{pt1 pt2})]
+    ;; join-nodes adds new segments connecting the given points
+    (t/is (>= (count result) (count simple-open-content)))))
+
+(t/deftest segment-separate-nodes
+  (let [content (path/content simple-open-content)
+        pt      (gpt/point 10.0 0.0)
+        result  (path.segment/separate-nodes content #{pt})]
+    ;; separate-nodes should return a collection (vector or seq)
+    (t/is (coll? result))))
+
+(t/deftest segment-make-corner-point
+  (let [content (path/content sample-content-2)
+        ;; Take a curve point and make it a corner
+        pt      (gpt/point 439.0 802.0)
+        result  (path.segment/make-corner-point content pt)]
+    ;; Result is a PathData instance
+    (t/is (some? result))))
+
+(t/deftest segment-next-node
+  (t/testing "no prev-point returns move-to"
+    (let [content  (path/content sample-content)
+          position (gpt/point 100.0 100.0)
+          result   (path.segment/next-node content position nil nil)]
+      (t/is (= :move-to (:command result)))))
+  (t/testing "with prev-point and no handler and last command is not close-path"
+    ;; Use a content that does NOT end with :close-path
+    (let [content  (path/content simple-open-content)
+          position (gpt/point 100.0 100.0)
+          prev     (gpt/point 50.0 50.0)
+          result   (path.segment/next-node content position prev nil)]
+      (t/is (= :line-to (:command result))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PATH TOP-LEVEL UNTESTED FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest path-from-plain
+  (let [result (path/from-plain sample-content)]
+    (t/is (path/content? result))
+    (t/is (= (count sample-content) (count (vec result))))))
+
+(t/deftest path-calc-selrect
+  (let [content (path/content sample-content-square)
+        rect    (path/calc-selrect content)]
+    (t/is (some? rect))
+    (t/is (mth/close? 0.0 (:x1 rect) 0.1))
+    (t/is (mth/close? 0.0 (:y1 rect) 0.1))))
+
+(t/deftest path-close-subpaths
+  (let [content [{:command :move-to :params {:x 0.0 :y 0.0}}
+                 {:command :line-to :params {:x 10.0 :y 0.0}}
+                 {:command :move-to :params {:x 10.0 :y 5.0}}
+                 {:command :line-to :params {:x 0.0 :y 0.0}}]
+        result  (path/close-subpaths content)]
+    (t/is (path/content? result))
+    (t/is (seq (vec result)))))
+
+(t/deftest path-merge-touching-subpaths
+  (t/testing "regression for #5283 — heroicons arrow path serialises as a single chain"
+    ;; SVG `d` originally split a continuous polyline by inserting a
+    ;; redundant moveto at the elbow. Importing it must collapse the
+    ;; first two subpaths so that stroke-linejoin renders the rounded tip.
+    (let [content (path/from-string
+                   (str "M350.5,1846 L365.5,1846"
+                        " M365.5,1846 L358.75,1839.25"
+                        " M365.5,1846 L358.75,1852.75"))
+          merged   (path/merge-touching-subpaths content)
+          rendered (str merged)]
+      (t/is (path/content? merged))
+      ;; First two subpaths fold into M ... L ... L ... ; third stays
+      ;; separate (its start point matches the original M, not the merged
+      ;; chain's tail), so exactly two M commands remain.
+      (t/is (= 2 (count (re-seq #"M" rendered))))
+      (t/is (= 3 (count (re-seq #"L" rendered)))))))
+
+(t/deftest path-move-content
+  (let [content  (path/content sample-content-square)
+        move-vec (gpt/point 3.0 4.0)
+        result   (path/move-content content move-vec)
+        first-r  (first (vec result))]
+    (t/is (= :move-to (:command first-r)))
+    (t/is (mth/close? 3.0 (get-in first-r [:params :x])))
+    (t/is (mth/close? 4.0 (get-in first-r [:params :y])))))
+
+(t/deftest path-move-content-zero-vec
+  (t/testing "moving by zero returns same content"
+    (let [content  (path/content sample-content-square)
+          result   (path/move-content content (gpt/point 0 0))]
+      ;; should return same object (identity) when zero vector
+      (t/is (= (vec content) (vec result))))))
+
+(t/deftest path-shape-with-open-path?
+  (t/testing "path shape with open content is open"
+    (let [shape {:type :path
+                 :content (path/content simple-open-content)}]
+      (t/is (path/shape-with-open-path? shape))))
+  (t/testing "path shape with closed content is not open"
+    (let [shape {:type :path
+                 :content (path/content simple-closed-content)}]
+      (t/is (not (path/shape-with-open-path? shape))))))
+
+(t/deftest path-get-byte-size
+  (let [content (path/content sample-content)
+        size    (path/get-byte-size content)]
+    (t/is (pos? size))))
+
+(t/deftest path-apply-content-modifiers
+  (let [content   (path/content sample-content)
+        ;; shift the first point by x=5, y=3
+        modifiers {0 {:x 5.0 :y 3.0}}
+        result    (path/apply-content-modifiers content modifiers)
+        first-seg (first (vec result))]
+    (t/is (mth/close? (+ 480.0 5.0) (get-in first-seg [:params :x])))
+    (t/is (mth/close? (+ 839.0 3.0) (get-in first-seg [:params :y])))))
+
+(t/deftest path-handler-indices
+  (t/testing "handler-indices returns expected handlers for a curve point"
+    (let [content (path/content sample-content-2)
+          ;; point at index 2 is (4.0, 4.0), which is a curve-to endpoint
+          pt      (gpt/point 4.0 4.0)
+          result  (path/handler-indices content pt)]
+      ;; The :c2 handler of index 2 belongs to point (4.0, 4.0)
+      ;; The :c1 handler of index 3 also belongs to point (4.0, 4.0)
+      (t/is (some? result))
+      (t/is (pos? (count result)))
+      (t/is (every? (fn [[idx prefix]]
+                      (and (number? idx)
+                           (#{:c1 :c2} prefix)))
+                    result))))
+  (t/testing "handler-indices returns empty for a point with no associated handlers"
+    (let [content (path/content sample-content-2)
+          ;; (480.0, 839.0) is the move-to at index 0; since index 1
+          ;; is a line-to (not a curve-to), there is no :c1 handler
+          ;; for this point.
+          pt      (gpt/point 480.0 839.0)
+          result  (path/handler-indices content pt)]
+      (t/is (empty? result))))
+  (t/testing "handler-indices with nil content returns empty"
+    (let [result (path/handler-indices nil (gpt/point 0 0))]
+      (t/is (empty? result)))))
+
+(t/deftest path-closest-point
+  (t/testing "closest-point on a line segment"
+    (let [content (path/content simple-open-content)
+          ;; simple-open-content: (0,0)->(10,0)->(10,10)
+          ;; Query a point near the first segment
+          pos     (gpt/point 5.0 1.0)
+          result  (path/closest-point content pos 0.01)]
+      (t/is (some? result))
+      ;; Closest point on line (0,0)->(10,0) to (5,1) should be near (5,0)
+      (t/is (mth/close? 5.0 (:x result) 0.5))
+      (t/is (mth/close? 0.0 (:y result) 0.5))))
+  (t/testing "closest-point on nil content returns nil"
+    (let [result (path/closest-point nil (gpt/point 5.0 5.0) 0.01)]
+      (t/is (nil? result)))))
+
+(t/deftest path-make-curve-point
+  (t/testing "make-curve-point converts a line-to point into a curve"
+    (let [content (path/content simple-open-content)
+          ;; The midpoint (10,0) is reached via :line-to
+          pt      (gpt/point 10.0 0.0)
+          result  (path/make-curve-point content pt)
+          segs    (vec result)]
+      (t/is (some? result))
+      ;; After making (10,0) a curve, we expect at least one :curve-to
+      (t/is (some #(= :curve-to (:command %)) segs)))))
+
+(t/deftest path-merge-nodes
+  (t/testing "merge-nodes reduces segments at contiguous points"
+    (let [content (path/content simple-open-content)
+          ;; Merge the midpoint (10,0) — should reduce segment count
+          pts     #{(gpt/point 10.0 0.0)}
+          result  (path/merge-nodes content pts)]
+      (t/is (some? result))
+      (t/is (<= (count result) (count simple-open-content)))))
+  (t/testing "merge-nodes with empty points returns same content"
+    (let [content (path/content simple-open-content)
+          result  (path/merge-nodes content #{})]
+      (t/is (= (count result) (count simple-open-content)))))
+  (t/testing "merge-nodes with nil content does not throw"
+    (let [result (path/merge-nodes nil #{(gpt/point 0 0)})]
+      (t/is (some? result)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; BOOL OPERATIONS — INTERSECTION / DIFFERENCE / EXCLUSION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Two non-overlapping rectangles for bool tests
+(def ^:private rect-a
+  [{:command :move-to  :params {:x 0.0  :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 0.0}}
+   {:command :line-to  :params {:x 10.0 :y 10.0}}
+   {:command :line-to  :params {:x 0.0  :y 10.0}}
+   {:command :line-to  :params {:x 0.0  :y 0.0}}
+   {:command :close-path :params {}}])
+
+(def ^:private rect-b
+  [{:command :move-to  :params {:x 5.0  :y 5.0}}
+   {:command :line-to  :params {:x 15.0 :y 5.0}}
+   {:command :line-to  :params {:x 15.0 :y 15.0}}
+   {:command :line-to  :params {:x 5.0  :y 15.0}}
+   {:command :line-to  :params {:x 5.0  :y 5.0}}
+   {:command :close-path :params {}}])
+
+(def ^:private rect-c
+  [{:command :move-to  :params {:x 20.0 :y 20.0}}
+   {:command :line-to  :params {:x 30.0 :y 20.0}}
+   {:command :line-to  :params {:x 30.0 :y 30.0}}
+   {:command :line-to  :params {:x 20.0 :y 30.0}}
+   {:command :line-to  :params {:x 20.0 :y 20.0}}
+   {:command :close-path :params {}}])
+
+(t/deftest bool-difference
+  (let [result (path.bool/calculate-content :difference [rect-a rect-b])]
+    ;; difference result must be a sequence (possibly empty for degenerate cases)
+    (t/is (or (nil? result) (sequential? result)))))
+
+(t/deftest bool-intersection
+  (let [result (path.bool/calculate-content :intersection [rect-a rect-b])]
+    (t/is (or (nil? result) (sequential? result)))))
+
+(t/deftest bool-exclusion
+  (let [result (path.bool/calculate-content :exclude [rect-a rect-b])]
+    (t/is (or (nil? result) (sequential? result)))))
+
+(t/deftest bool-union-non-overlapping
+  (let [result (path.bool/calculate-content :union [rect-a rect-c])]
+    ;; non-overlapping union should contain both shapes' segments
+    (t/is (seq result))
+    (t/is (> (count result) (count rect-a)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SHAPE-TO-PATH TESTS (via path/convert-to-path)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- make-selrect [x y w h]
+  (grc/make-rect x y w h))
+
+(t/deftest shape-to-path-rect-simple
+  (let [shape  {:type :rect :x 0.0 :y 0.0 :width 100.0 :height 50.0
+                :selrect (make-selrect 0.0 0.0 100.0 50.0)}
+        result (path/convert-to-path shape {})]
+    (t/is (= :path (:type result)))
+    (t/is (path/content? (:content result)))
+    ;; A simple rect (no radius) produces an empty path in the current impl
+    ;; so we just check it doesn't throw and returns a :path type
+    (t/is (some? (:content result)))))
+
+(t/deftest shape-to-path-circle
+  (let [shape  {:type :circle :x 0.0 :y 0.0 :width 100.0 :height 100.0
+                :selrect (make-selrect 0.0 0.0 100.0 100.0)}
+        result (path/convert-to-path shape {})]
+    (t/is (= :path (:type result)))
+    (t/is (path/content? (:content result)))
+    ;; A circle converts to bezier curves — should have multiple segments
+    (t/is (> (count (vec (:content result))) 1))))
+
+(t/deftest shape-to-path-path
+  (let [shape  {:type :path :content (path/content sample-content)}
+        result (path/convert-to-path shape {})]
+    ;; A path shape stays a path shape unchanged
+    (t/is (= :path (:type result)))))
+
+(t/deftest shape-to-path-rect-with-radius
+  (let [shape  {:type :rect :x 0.0 :y 0.0 :width 100.0 :height 100.0
+                :r1 10.0 :r2 10.0 :r3 10.0 :r4 10.0
+                :selrect (make-selrect 0.0 0.0 100.0 100.0)}
+        result (path/convert-to-path shape {})]
+    (t/is (= :path (:type result)))
+    ;; rounded rect should have curve-to segments
+    (let [segs (vec (:content result))
+          curve-segs (filter #(= :curve-to (:command %)) segs)]
+      (t/is (pos? (count curve-segs))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPE CODE CONSISTENCY TESTS (regression for move-to/line-to swap bug)
+;;
+;; These tests ensure that all binary reader code paths agree on the
+;; mapping: 1=move-to, 2=line-to, 3=curve-to, 4=close-path.
+;;
+;; The bug was that `impl-walk`, `impl-reduce`, and `impl-lookup` had
+;; type codes 1 and 2 swapped (1→:line-to, 2→:move-to) while
+;; `read-segment`, `from-plain`, and `to-string-segment*` had the
+;; correct mapping. This caused subtle mismatches in operations like
+;; `get-subpaths`, `get-points`, `get-handlers`, etc.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest type-code-walk-consistency
+  (t/testing "impl-walk produces same command types as read-segment (via vec)"
+    (let [pdata      (path/content sample-content)
+          ;; read-segment path: produces {:command :keyword ...} maps
+          seq-types  (mapv :command (vec pdata))
+          ;; impl-walk path: collects type keywords
+          walk-types (path.impl/-walk pdata
+                                      (fn [type _ _ _ _ _ _] type)
+                                      [])]
+      ;; Both paths must agree on the command types
+      (t/is (= seq-types walk-types))
+      ;; Verify the actual expected types
+      (t/is (= [:move-to :line-to :curve-to :close-path] seq-types))
+      (t/is (= [:move-to :line-to :curve-to :close-path] walk-types)))))
+
+(t/deftest type-code-reduce-consistency
+  (t/testing "impl-reduce produces same command types as read-segment (via vec)"
+    (let [pdata      (path/content sample-content)
+          ;; read-segment path
+          seq-types  (mapv :command (vec pdata))
+          ;; impl-reduce path: collects [index type] pairs
+          reduce-types (path.impl/-reduce
+                        pdata
+                        (fn [acc index type _ _ _ _ _ _]
+                          (conj acc type))
+                        [])]
+      (t/is (= seq-types reduce-types))
+      (t/is (= [:move-to :line-to :curve-to :close-path] reduce-types)))))
+
+(t/deftest type-code-lookup-consistency
+  (t/testing "impl-lookup produces same command types as read-segment for each index"
+    (let [pdata     (path/content sample-content)
+          seg-count (count pdata)]
+      (doseq [i (range seg-count)]
+        (let [;; read-segment path
+              seg-type    (:command (nth pdata i))
+              ;; impl-lookup path
+              lookup-type (path.impl/-lookup
+                           pdata i
+                           (fn [type _ _ _ _ _ _] type))]
+          (t/is (= seg-type lookup-type)
+                (str "Mismatch at index " i
+                     ": read-segment=" seg-type
+                     " lookup=" lookup-type)))))))
+
+(t/deftest type-code-get-points-uses-walk
+  (t/testing "get-points (via impl-walk) excludes close-path and includes move-to/line-to/curve-to"
+    (let [pdata  (path/content sample-content)
+          points (path.segment/get-points pdata)
+          ;; Manually extract points from read-segment (via vec),
+          ;; skipping close-path
+          expected-points (->> (vec pdata)
+                               (remove #(= :close-path (:command %)))
+                               (mapv #(gpt/point
+                                       (get-in % [:params :x])
+                                       (get-in % [:params :y]))))]
+      (t/is (= expected-points points))
+      ;; Specifically: 3 points (move-to, line-to, curve-to)
+      (t/is (= 3 (count points))))))
+
+(t/deftest type-code-get-subpaths-uses-reduce
+  (t/testing "get-subpaths (via reduce) correctly identifies move-to to start subpaths"
+    (let [;; Content with two subpaths: move-to + line-to + close-path, then move-to + line-to
+          two-subpath-content
+          [{:command :move-to  :params {:x 0.0 :y 0.0}}
+           {:command :line-to  :params {:x 10.0 :y 0.0}}
+           {:command :close-path :params {}}
+           {:command :move-to  :params {:x 20.0 :y 20.0}}
+           {:command :line-to  :params {:x 30.0 :y 30.0}}]
+          pdata    (path/content two-subpath-content)
+          subpaths (path.subpath/get-subpaths pdata)]
+      ;; Must produce exactly 2 subpaths (one per move-to)
+      (t/is (= 2 (count subpaths)))
+      ;; First subpath starts at (0,0)
+      (t/is (= (gpt/point 0.0 0.0) (:from (first subpaths))))
+      ;; Second subpath starts at (20,20)
+      (t/is (= (gpt/point 20.0 20.0) (:from (second subpaths)))))))
+
+(t/deftest type-code-get-handlers-uses-reduce
+  (t/testing "get-handlers (via impl-reduce) correctly identifies curve-to segments"
+    (let [pdata    (path/content sample-content)
+          handlers (path.segment/get-handlers pdata)]
+      ;; sample-content has one curve-to at index 2
+      ;; The curve-to's :c1 handler belongs to the previous point (line-to endpoint)
+      ;; The curve-to's :c2 handler belongs to the curve-to endpoint
+      (t/is (some? handlers))
+      (let [line-to-point  (gpt/point 439.0 802.0)
+            curve-to-point (gpt/point 264.0 634.0)]
+        ;; line-to endpoint should have [2 :c1] handler
+        (t/is (some #(= [2 :c1] %) (get handlers line-to-point)))
+        ;; curve-to endpoint should have [2 :c2] handler
+        (t/is (some #(= [2 :c2] %) (get handlers curve-to-point)))))))
+
+(t/deftest type-code-handler-point-uses-lookup
+  (t/testing "get-handler-point (via impl-lookup) returns correct values"
+    (let [pdata (path/content sample-content)]
+      ;; Index 0 is move-to (480, 839) — not a curve, so any prefix
+      ;; returns the segment point itself
+      (let [pt (path.segment/get-handler-point pdata 0 :c1)]
+        (t/is (= (gpt/point 480.0 839.0) pt)))
+      ;; Index 2 is curve-to with c1=(368,737), c2=(310,681), point=(264,634)
+      (let [c1-pt (path.segment/get-handler-point pdata 2 :c1)
+            c2-pt (path.segment/get-handler-point pdata 2 :c2)]
+        (t/is (= (gpt/point 368.0 737.0) c1-pt))
+        (t/is (= (gpt/point 310.0 681.0) c2-pt))))))
+
+(t/deftest type-code-all-readers-agree-large-content
+  (t/testing "all binary readers agree on types for a large multi-segment path"
+    (let [pdata      (path/content sample-content-large)
+          seg-count  (count pdata)
+          ;; Collect types from all four code paths
+          seq-types    (mapv :command (vec pdata))
+          walk-types   (path.impl/-walk pdata
+                                        (fn [type _ _ _ _ _ _] type)
+                                        [])
+          reduce-types (path.impl/-reduce
+                        pdata
+                        (fn [acc _ type _ _ _ _ _ _]
+                          (conj acc type))
+                        [])
+          lookup-types (mapv (fn [i]
+                               (path.impl/-lookup
+                                pdata i
+                                (fn [type _ _ _ _ _ _] type)))
+                             (range seg-count))]
+      ;; All four must be identical
+      (t/is (= seq-types walk-types))
+      (t/is (= seq-types reduce-types))
+      (t/is (= seq-types lookup-types))
+      ;; Verify first and last entries specifically
+      (t/is (= :move-to (first seq-types)))
+      (t/is (= :close-path (last seq-types))))))
+
+(t/deftest path-data-read-normalizes-out-of-bounds-coordinates
+  (let [max-safe (double sm/max-safe-int)
+        min-safe (double sm/min-safe-int)
+        ;; Create content with values exceeding safe bounds
+        content-with-out-of-bounds
+        [{:command :move-to :params {:x (+ max-safe 1000.0) :y (- min-safe 1000.0)}}
+         {:command :line-to :params {:x (- min-safe 500.0) :y (+ max-safe 500.0)}}
+         {:command :curve-to :params
+          {:c1x (+ max-safe 200.0) :c1y (- min-safe 200.0)
+           :c2x (+ max-safe 300.0) :c2y (- min-safe 300.0)
+           :x (+ max-safe 400.0) :y (- min-safe 400.0)}}
+         {:command :close-path :params {}}]
+
+        ;; Create PathData from the content
+        pdata (path/content content-with-out-of-bounds)
+
+        ;; Read it back
+        result (vec pdata)]
+
+    (t/testing "Coordinates exceeding max-safe-int are clamped to max-safe-int"
+      (let [move-to (first result)
+            line-to (second result)]
+        (t/is (= max-safe (:x (:params move-to))) "x in move-to should be clamped to max-safe-int")
+        (t/is (= min-safe (:y (:params move-to))) "y in move-to should be clamped to min-safe-int")
+        (t/is (= min-safe (:x (:params line-to))) "x in line-to should be clamped to min-safe-int")
+        (t/is (= max-safe (:y (:params line-to))) "y in line-to should be clamped to max-safe-int")))
+
+    (t/testing "Curve-to coordinates are clamped"
+      (let [curve-to (nth result 2)]
+        (t/is (= max-safe (:c1x (:params curve-to))) "c1x should be clamped")
+        (t/is (= min-safe (:c1y (:params curve-to))) "c1y should be clamped")
+        (t/is (= max-safe (:c2x (:params curve-to))) "c2x should be clamped")
+        (t/is (= min-safe (:c2y (:params curve-to))) "c2y should be clamped")
+        (t/is (= max-safe (:x (:params curve-to))) "x should be clamped")
+        (t/is (= min-safe (:y (:params curve-to))) "y should be clamped")))
+
+    (t/testing "-lookup normalizes coordinates"
+      (let [move-to (path.impl/-lookup pdata 0 (fn [_ _ _ _ _ x y] {:x x :y y}))]
+        (t/is (= max-safe (:x move-to)) "lookup x should be clamped")
+        (t/is (= min-safe (:y move-to)) "lookup y should be clamped")))
+
+    (t/testing "-walk normalizes coordinates"
+      (let [coords (path.impl/-walk pdata
+                                    (fn [_ _ _ _ _ x y]
+                                      (when (and x y) {:x x :y y}))
+                                    [])]
+        (t/is (= max-safe (:x (first coords))) "walk first x should be clamped")
+        (t/is (= min-safe (:y (first coords))) "walk first y should be clamped")))
+
+    (t/testing "-reduce normalizes coordinates"
+      (let [[move-res] (path.impl/-reduce pdata
+                                          (fn [acc _ _ _ _ _ _ x y]
+                                            (if (and x y) (conj acc {:x x :y y}) acc))
+                                          [])]
+        (t/is (= max-safe (:x move-res)) "reduce first x should be clamped")
+        (t/is (= min-safe (:y move-res)) "reduce first y should be clamped")))))

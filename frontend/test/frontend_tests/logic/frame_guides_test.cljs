@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.frame-guides-test
   (:require
    [app.common.test-helpers.compositions :as ctho]
@@ -13,7 +13,8 @@
    [app.main.data.workspace.guides :as-alias dwg]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -22,35 +23,46 @@
 (t/deftest test-remove-swap-slot-copy-paste-blue1-to-root
   (t/async
     done
-    (let [;; ==== Setup
-          file     (-> (cthf/sample-file :file1)
-                       (ctho/add-frame :frame1))
-          store    (ths/setup-store file)
-          frame1   (cths/get-shape file :frame1)
+    (thw/with-wasm-mocks*
+      (fn []
+        (let [;; ==== Setup
+              file     (-> (cthf/sample-file :file1)
+                           (ctho/add-frame :frame1))
+              store    (ths/setup-store file)
+              frame1   (cths/get-shape file :frame1)
 
-          guide {:axis :x
-                 :frame-id (:id frame1)
-                 :id (uuid/next)
-                 :position 0}
+              guide {:axis :x
+                     :frame-id (:id frame1)
+                     :id (uuid/next)
+                     :position 0}
 
-         ;; ==== Action
-          events
-          [(dw/update-guides guide)
-           (dw/update-position (:id frame1) {:x 100})]]
+              ;; ==== Action
+              events
+              [(dw/update-guides guide)
+               (dw/update-position (:id frame1) {:x 100})]]
 
-      (ths/run-store
-       store done events
-       (fn [new-state]
-         (let [;; ==== Get
-               file'         (ths/get-file-from-state new-state)
-               page'         (cthf/current-page file')
+          (ths/run-store
+           store done events
+           (fn [new-state]
+             (let [;; ==== Get
+                   file'         (ths/get-file-from-state new-state)
+                   page'         (cthf/current-page file')
 
-               guide'        (-> page'
-                                 :guides
-                                 (vals)
-                                 (first))]
-           ;; ==== Check
-           ;; guide has moved
-           (t/is (= (:position guide') 100))))))))
+                   guide'        (-> page'
+                                     :guides
+                                     (vals)
+                                     (first))]
+               ;; ==== Check
+               ;; guide has moved
+               (t/is (= (:position guide') 100))
+
+               ;; WASM bridge was exercised. `dw/update-position`
+               ;; routes through `apply-wasm-modifiers`, which for
+               ;; translation-only updates calls only `clean-modifiers`
+               ;; and computes the per-descendant transforms in CLJS
+               ;; (skipping `set-structure-modifiers` and
+               ;; `propagate-modifiers`).
+               (t/is (pos? (thw/call-count :clean-modifiers)))))))))))
+
 
 

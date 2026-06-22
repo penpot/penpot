@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings
   (:require-macros [app.main.style :as stl])
@@ -13,20 +13,20 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.modal :refer [modal-container*]]
-   [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page*]]
+   [app.main.ui.settings.integrations :refer [integrations-page*]]
    [app.main.ui.settings.notifications :refer [notifications-page*]]
-   [app.main.ui.settings.options :refer [options-page]]
-   [app.main.ui.settings.password :refer [password-page]]
-   [app.main.ui.settings.profile :refer [profile-page]]
-   [app.main.ui.settings.sidebar :refer [sidebar]]
+   [app.main.ui.settings.options :refer [options-page*]]
+   [app.main.ui.settings.password :refer [password-page*]]
+   [app.main.ui.settings.profile :refer [profile-page*]]
+   [app.main.ui.settings.sidebar :refer [sidebar*]]
    [app.main.ui.settings.subscription :refer [subscription-page*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc header
+(mf/defc header*
   {::mf/wrap [mf/memo]}
   []
   [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
@@ -49,15 +49,15 @@
      [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
 
 
-      [:& sidebar {:profile profile
-                   :section section}]
+      [:> sidebar* {:profile profile
+                    :section section}]
 
       [:div {:class (stl/css :dashboard-content)}
-       [:& header]
+       [:> header*]
        [:section {:class (stl/css :dashboard-container)}
         (case section
           :settings-profile
-          [:& profile-page]
+          [:> profile-page*]
 
           :settings-feedback
           [:> feedback-page* {:type type
@@ -65,16 +65,21 @@
                               :error-href error-href}]
 
           :settings-password
-          [:& password-page]
+          [:> password-page*]
 
           :settings-options
-          [:& options-page]
+          [:> options-page*]
 
           :settings-subscription
           [:> subscription-page* {:profile profile}]
 
-          :settings-access-tokens
-          [:& access-tokens-page]
+          :settings-integrations
+          [:> integrations-page*]
 
           :settings-notifications
-          [:& notifications-page* {:profile profile}])]]]]))
+          [:> notifications-page* {:profile profile}])]]]]))
+
+(mf/defc settings-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> settings* props])

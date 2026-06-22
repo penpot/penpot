@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.tokens.logic.token-data-test
   (:require
@@ -36,7 +36,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dwtl/create-token-set "Set B")]]
+          events [(dwtl/create-token-set (ctob/make-token-set :name "Set B"))]]
 
       (tohs/run-store-async
        store done events
@@ -57,8 +57,7 @@
           store      (ths/setup-store file)
           tokens-lib (toht/get-tokens-lib file)
           set-a      (ctob/get-set-by-name tokens-lib "Set A")
-          events     [(dwtl/update-token-set (ctob/rename set-a "Set A updated")
-                                             "Set A updated")]]
+          events     [(dwtl/rename-token-set set-a "Set A updated")]]
 
       (tohs/run-store-async
        store done events

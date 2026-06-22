@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.constraints
   (:require
@@ -234,7 +234,7 @@
         after-side-vector (side-vector axis parent-points-after)]
     (ctm/move-modifiers (displacement center-before center-after before-side-vector after-side-vector))))
 
-(defmethod constraint-modifier :default [_ _ _ _ _]
+(defmethod constraint-modifier :default [_ _ _ _ _ _]
   [])
 
 (def const->type+axis
@@ -264,7 +264,7 @@
       :scale)))
 
 (defn normalize-modifiers
-  "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
+  "Before applying constraints we need to remove the deformation caused by the resizing of the parent"
   [constraints-h constraints-v modifiers
    child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds]
 

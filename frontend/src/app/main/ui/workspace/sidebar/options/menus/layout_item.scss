@@ -2,25 +2,30 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .element-set {
   margin: 0;
 }
 
 .title-spacing-layout-element {
-  margin: 0 0 deprecated.$s-4 0;
+  margin: 0 0 var(--sp-xs) 0;
 }
 
 .title-spacing-empty {
-  padding-left: deprecated.$s-2;
+  padding-inline-start: var(--sp-xxs);
 }
 
 .flex-element-menu {
   @include sidebar.option-grid-structure;
+
   gap: var(--sp-xs);
 }
 
@@ -37,8 +42,9 @@
 }
 
 .z-index-wrapper {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @include use-typography("body-small");
+  @extend %input-element;
+
   grid-column: 6 / span 3;
 }
 
@@ -57,7 +63,7 @@
 }
 
 .position-options {
-  width: 100%;
+  inline-size: 100%;
   grid-column: 1 / span 5;
 }
 
@@ -67,18 +73,22 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
 }
 
 .margin-mode {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   grid-column: 3;
   height: deprecated.$s-32;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
+
   &.selected {
-    @extend .button-icon-selected;
+    @extend %button-icon-selected;
   }
 }
 
@@ -86,17 +96,28 @@
   display: grid;
   gap: var(--sp-xs);
   grid-template-columns: subgrid;
+
   .vertical-margin,
   .horizontal-margin {
-    @extend .input-element;
-    @include deprecated.bodySmallTypography;
+    @extend %input-element;
+    @include use-typography("body-small");
   }
+
   .vertical-margin {
     grid-column: 1;
   }
+
   .horizontal-margin {
     grid-column: 2;
   }
+}
+
+.vertical-margin-wrapper {
+  grid-column: 1;
+}
+
+.horizontal-margin-wrapper {
+  grid-column: 2;
 }
 
 .margin-multiple {
@@ -109,26 +130,30 @@
 .bottom-margin,
 .left-margin,
 .right-margin {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @extend %input-element;
+  @include use-typography("body-small");
 }
 
-.top-margin {
+.top-margin,
+.top-margin-wrapper {
   grid-column: 1;
   grid-row: 1;
 }
 
-.bottom-margin {
+.bottom-margin,
+.bottom-margin-wrapper {
   grid-column: 2;
   grid-row: 1;
 }
 
-.left-margin {
+.left-margin,
+.left-margin-wrapper {
   grid-column: 1;
   grid-row: 2;
 }
 
-.right-margin {
+.right-margin,
+.right-margin-wrapper {
   grid-column: 2;
   grid-row: 2;
 }
@@ -139,6 +164,7 @@
     var(--grid-exception-input-width) /* first input block */
     var(--grid-exception-input-width) /* second input block */
     var(--sp-xxxl); /* action button */
+
   gap: var(--sp-xs);
 }
 
@@ -153,15 +179,20 @@
 .layout-item-min-h,
 .layout-item-max-w,
 .layout-item-max-h {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @extend %input-element;
+  @include use-typography("body-small");
+
   .icon-text {
     justify-content: flex-start;
-    width: deprecated.$s-80;
-    padding-top: deprecated.$s-2;
+    inline-size: px2rem(80);
+    padding-block-start: var(--sp-xxs);
   }
 }
 
 .inputs-wrapper {
   grid-column: 1 / span 2;
+}
+
+.tooltip-wrapper {
+  inline-size: 100%;
 }

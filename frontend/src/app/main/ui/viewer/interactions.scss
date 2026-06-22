@@ -2,12 +2,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .view-options {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   display: flex;
   align-items: center;
   position: relative;
@@ -18,8 +19,10 @@
   padding: deprecated.$s-8;
   cursor: pointer;
 }
+
 .dropdown-title {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -30,7 +33,8 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
   width: deprecated.$s-272;
@@ -40,17 +44,23 @@
 }
 
 .dropdown-element {
-  @extend .dropdown-element-base;
+  @extend %dropdown-element-base;
+
   min-height: deprecated.$s-32;
+
   .icon {
-    @include deprecated.flexCenter;
+    @include deprecated.flex-center;
+
     height: 100%;
     width: deprecated.$s-16;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover .label {
     color: var(--input-foreground-color-active);
   }
@@ -60,6 +70,7 @@
   .label {
     color: var(--input-foreground-color-active);
   }
+
   .icon svg {
     stroke: var(--input-foreground-color);
   }
@@ -67,11 +78,14 @@
 
 .icon,
 .icon-dropdown {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: 100%;
   width: deprecated.$s-16;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
   }
 }

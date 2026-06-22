@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.binfile.v3
   "A ZIP based binary file exportation"
@@ -255,6 +255,8 @@
 
         (write-entry! output path params)
 
+        (events/tap :progress {:section :storage-object :id id})
+
         (with-open [input (sto/get-object-data storage sobject)]
           (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
           (io/copy input output :size (:size sobject))
@@ -279,6 +281,8 @@
 
         thumbnails   (bfc/get-file-object-thumbnails cfg file-id)]
 
+    (events/tap :progress {:section :file :id file-id :name (:name file)})
+
     (vswap! bfc/*state* update :files assoc file-id
             {:id file-id
              :name (:name file)
@@ -297,6 +301,7 @@
       (write-entry! output path file))
 
     (doseq [[index page-id] (d/enumerate pages)]
+
       (let [path    (str "files/" file-id "/pages/" page-id ".json")
             page    (get pages-index page-id)
             objects (:objects page)
@@ -306,6 +311,8 @@
             page    (encode-page page)]
 
         (write-entry! output path page)
+
+        (events/tap :progress {:section :page :id page-id :name (:name page) :file-id file-id})
 
         (doseq [[shape-id shape] objects]
           (let [path  (str "files/" file-id "/pages/" page-id "/" shape-id ".json")
@@ -319,6 +326,8 @@
     (doseq [{:keys [id] :as media} media]
       (let [path  (str "files/" file-id "/media/" id ".json")
             media (encode-media media)]
+
+        (events/tap :progress {:section :media :id id  :file-id file-id})
         (write-entry! output path media)))
 
     (doseq [thumbnail thumbnails]
@@ -328,11 +337,13 @@
             data (-> data
                      (assoc :media-id (:media-id thumbnail))
                      (encode-file-thumbnail))]
+        (events/tap :progress {:section :thumbnails :id (:object-id thumbnail) :file-id file-id})
         (write-entry! output path data)))
 
     (doseq [[id component] components]
       (let [path      (str "files/" file-id "/components/" id ".json")
             component (encode-component component)]
+        (events/tap :progress {:section :component :id id :file-id file-id})
         (write-entry! output path component)))
 
     (doseq [[id color] colors]
@@ -343,17 +354,20 @@
                     (and (contains? color :path)
                          (str/empty? (:path color)))
                     (dissoc :path))]
+        (events/tap :progress {:section :color :id id :file-id file-id})
         (write-entry! output path color)))
 
     (doseq [[id object] typographies]
       (let [path       (str "files/" file-id "/typographies/" id ".json")
             typography (encode-typography object)]
+        (events/tap :progress {:section :typography :id id :file-id file-id})
         (write-entry! output path typography)))
 
     (when (and tokens-lib
                (not (ctob/empty-lib? tokens-lib)))
       (let [path           (str "files/" file-id "/tokens.json")
             encoded-tokens (encode-tokens-lib tokens-lib)]
+        (events/tap :progress {:section :tokens-lib :file-id file-id})
         (write-entry! output path encoded-tokens)))))
 
 (defn- export-files
@@ -596,6 +610,7 @@
                  (let [object (->> (read-entry input entry)
                                    (decode-color)
                                    (validate-color))]
+                   (events/tap :progress {:section :color :id id :file-id file-id})
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -627,6 +642,7 @@
                                      (clean-component-pre-decode)
                                      (decode-component)
                                      (clean-component-post-decode))]
+                     (events/tap :progress {:section :component :id id :file-id file-id})
                      (if (= id (:id object))
                        (assoc result id object)
                        result)))
@@ -640,6 +656,7 @@
                  (let [object (->> (read-entry input entry)
                                    (decode-typography)
                                    (validate-typography))]
+                   (events/tap :progress {:section :typography :id id :file-id file-id})
                    (if (= id (:id object))
                      (assoc result id object)
                      result)))
@@ -649,6 +666,7 @@
 (defn- read-file-tokens-lib
   [{:keys [::bfc/input ::entries]} file-id]
   (when-let [entry (d/seek (match-tokens-lib-entry-fn file-id) entries)]
+    (events/tap :progress {:section :tokens-lib :file-id file-id})
     (->> (read-plain-entry input entry)
          (decode-tokens-lib)
          (validate-tokens-lib))))
@@ -674,6 +692,7 @@
                (let [page (->> (read-entry input entry)
                                (decode-page))
                      page (dissoc page :options)]
+                 (events/tap :progress {:section :page :id id :file-id file-id})
                  (when (= id (:id page))
                    (let [objects (read-file-shapes cfg file-id id)]
                      (assoc page :objects objects))))))
@@ -689,6 +708,7 @@
                  (let [object (->> (read-entry input entry)
                                    (decode-file-thumbnail)
                                    (validate-file-thumbnail))]
+
                    (if (and (= frame-id (:frame-id object))
                             (= page-id (:page-id object))
                             (= tag (:tag object)))
@@ -729,14 +749,14 @@
 
     (vswap! bfc/*state* update :index bfc/update-index media :id)
 
-    (events/tap :progress {:section :media :file-id file-id})
-
     (doseq [item media]
       (let [params (-> item
                        (update :id bfc/lookup-index)
                        (assoc :file-id file-id')
                        (d/update-when :media-id bfc/lookup-index)
                        (d/update-when :thumbnail-id bfc/lookup-index))]
+
+        (events/tap :progress {:section :media :id (:id params) :file-id file-id})
 
         (l/dbg :hint "inserting media object"
                :file-id (str file-id')
@@ -748,8 +768,6 @@
 
         (db/insert! conn :file-media-object params
                     ::db/on-conflict-do-nothing? (::bfc/overwrite cfg))))
-
-    (events/tap :progress {:section :thumbnails :file-id file-id})
 
     (doseq [item thumbnails]
       (let [media-id  (bfc/lookup-index (:media-id item))
@@ -764,6 +782,8 @@
                :file-id (str file-id')
                :media-id (str media-id)
                ::l/sync? true)
+
+        (events/tap :progress {:section :thumbnail :file-id file-id :object-id object-id})
 
         (db/insert! conn :file-tagged-object-thumbnail params
                     ::db/on-conflict-do-nothing? true)))
@@ -804,10 +824,10 @@
                :file-id (str file-id)
                :lib-id (str libr-id)
                ::l/sync? true)
-        (db/insert! conn :file-library-rel
-                    {:synced-at timestamp
-                     :file-id file-id
-                     :library-file-id libr-id})))))
+        (let [rel-params {:file-id file-id
+                          :library-file-id libr-id}]
+          (db/insert! conn :file-library-rel rel-params)
+          (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
@@ -817,9 +837,10 @@
         entries (keep (match-storage-entry-fn) entries)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object  (->> (read-entry input entry)
-                         (decode-storage-object)
-                         (validate-storage-object))
+      (let [object  (-> (read-entry input entry)
+                        (decode-storage-object)
+                        (update :bucket d/nilv sto/default-bucket)
+                        (validate-storage-object))
 
             ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)
@@ -868,11 +889,8 @@
   (import-storage-objects cfg)
 
   (let [files  (get manifest :files)
-        result (reduce (fn [result {:keys [id] :as file}]
+        result (reduce (fn [result file]
                          (let [name' (get file :name)
-                               name' (if (map? name)
-                                       (get name id)
-                                       name')
                                file (assoc file :name name')]
                            (conj result (import-file cfg file))))
                        []

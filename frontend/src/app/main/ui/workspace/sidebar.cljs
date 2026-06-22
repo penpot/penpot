@@ -2,17 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.constants :refer [right-sidebar-default-width right-sidebar-default-max-width left-sidebar-default-max-width left-sidebar-default-width]]
+   [app.config :as cf]
+   [app.main.constants :refer [left-sidebar-default-max-width
+                               left-sidebar-default-width
+                               right-sidebar-default-max-width
+                               right-sidebar-default-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.style-dictionary :as sd]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -27,7 +32,6 @@
    [app.main.ui.workspace.left-header :refer [left-header*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
-   [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
    [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -38,24 +42,39 @@
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
 
-(defn- on-collapse-left-sidebar
-  []
-  (st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
+(def ^:private toggle-collapse-left-sidebar
+  (partial st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
 (mf/defc collapse-button*
+  {::mf/private true}
   []
   ;; NOTE: This custom button may be replace by an action button when this variant is designed
   [:button {:class (stl/css :collapse-sidebar-button)
-            :on-click on-collapse-left-sidebar}
+            :on-click toggle-collapse-left-sidebar}
    [:> icon* {:icon-id i/arrow
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
+
+(mf/defc collapsed-button*
+  {::mf/memo true
+   ::mf/private true}
+  []
+  [:div {:id "left-sidebar-aside"
+         :data-width "0"
+         :class (stl/css :collapsed-sidebar)}
+   [:div {:class (stl/css :collapsed-title)}
+    [:button {:class (stl/css :collapsed-button)
+              :title (tr "workspace.sidebar.expand")
+              :on-click toggle-collapse-left-sidebar}
+     [:> icon* {:icon-id i/arrow
+                :size "s"
+                :aria-label (tr "workspace.sidebar.expand")}]]]])
 
 (mf/defc layers-content*
   {::mf/private true
@@ -97,9 +116,10 @@
 
      [:> layers-toolbox* {:size-parent width}]]))
 
+
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file page-id tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib active-tokens resolved-active-tokens]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -126,7 +146,7 @@
          (fn [id]
            (st/emit! (dcm/go-to-workspace :layout (keyword id)))
            (when (= id "tokens")
-             (st/emit! (ptk/event ::ev/event {::ev/name "open-tokens-tab"})))))
+             (st/emit! (ev/event {::ev/name "open-tokens-tab"})))))
 
         tabs
         (mf/with-memo [mode-inspect? design-tokens?]
@@ -161,16 +181,15 @@
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
               :data-testid "left-sidebar"
-              :data-left-sidebar-width (str width)
+              :data-width (str width)
               :class aside-class
+              :on-context-menu dom/prevent-default-context-menu
               :style {:--left-sidebar-width (dm/str width "px")}}
 
-      [:> left-header*
-       {:file file
-        :layout layout
-        :project project
-        :page-id page-id
-        :class (stl/css :left-header)}]
+      [:> left-header* {:file file
+                        :layout layout
+                        :project project
+                        :class (stl/css :left-header)}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
@@ -262,7 +281,7 @@
         [:> history-toolbox*]])]))
 
 (mf/defc right-sidebar*
-  [{:keys [layout section file page-id drawing-tool active-tokens] :as props}]
+  [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
@@ -311,6 +330,7 @@
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
+        :on-context-menu dom/prevent-default-context-menu
         :style {:--right-sidebar-width (if can-be-expanded?
                                          (dm/str width "px")
                                          (dm/str right-sidebar-default-width "px"))}}
@@ -322,7 +342,7 @@
                 :on-pointer-move on-pointer-move}])
 
        [:> right-header*
-        {:file file
+        {:file-id file-id
          :layout layout
          :page-id page-id}]
 
@@ -354,8 +374,30 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
 
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
+
+        active-tokens-force-set
+        (mf/with-memo [tokens-lib selected-token-set-id]
+          (if (and tokens-lib selected-token-set-id)
+            (ctob/get-tokens-in-active-sets-force tokens-lib selected-token-set-id)
+            {}))
+
+        tokenscript? (contains? cf/flags :tokenscript)
+
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)]
+        (sd/use-resolved-tokens* active-tokens)
+
+        tokenscript-resolved-active-tokens
+        (mf/with-memo [active-tokens tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens)))
+
+        tokenscript-resolved-active-tokens-force-set
+        (mf/with-memo [active-tokens-force-set tokenscript?]
+          (when tokenscript? (ts/resolve-tokens active-tokens-force-set)))
+
+        resolved-active-tokens-force-set
+        (sd/use-resolved-tokens* active-tokens-force-set)]
 
     [:*
      (if (:collapse-left-sidebar layout)
@@ -364,8 +406,10 @@
                           :file file
                           :page-id page-id
                           :tokens-lib tokens-lib
-                          :active-tokens active-tokens
-                          :resolved-active-tokens resolved-active-tokens}])
+                          :active-tokens active-tokens-force-set
+                          :resolved-active-tokens (if tokenscript?
+                                                    tokenscript-resolved-active-tokens-force-set
+                                                    resolved-active-tokens-force-set)}])
      [:> right-sidebar* {:section section
                          :selected selected
                          :drawing-tool drawing-tool
@@ -374,4 +418,6 @@
                          :file-id file-id
                          :page-id page-id
                          :tokens-lib tokens-lib
-                         :active-tokens resolved-active-tokens}]]))
+                         :active-tokens (if tokenscript?
+                                          tokenscript-resolved-active-tokens
+                                          resolved-active-tokens)}]]))

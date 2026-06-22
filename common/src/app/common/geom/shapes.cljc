@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes
   (:require
@@ -162,6 +162,7 @@
 (dm/export gtr/inverse-transform-matrix)
 (dm/export gtr/transform-rect)
 (dm/export gtr/calculate-geometry)
+(dm/export gtr/calculate-selrect)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
 (dm/export gtr/apply-transform)

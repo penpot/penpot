@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.stroke
   (:require-macros [app.main.style :as stl])
@@ -31,8 +31,7 @@
 
 ;; DEPRECATED, use stroke-block-styles* instead.
 ;; This component is kept for backward compatibility
-(mf/defc stroke-block
-  {::mf/wrap-props false}
+(mf/defc stroke-block*
   [{:keys [objects shape stroke]}]
   (let [format*   (mf/use-state :hex)
         format    (deref format*)
@@ -88,7 +87,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.stroke")
-         :class (stl/css :title-spacing-stroke)}]
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :stroke-attr-title)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
@@ -99,6 +99,6 @@
                                         :shape shape
                                         :color-space color-space
                                         :stroke stroke}]
-              [:& stroke-block {:key (str "stroke-color-" (:id shape) stroke)
-                                :shape shape
-                                :stroke stroke}])))]])))
+              [:> stroke-block* {:key (str "stroke-color-" (:id shape) stroke)
+                                 :shape shape
+                                 :stroke stroke}])))]])))

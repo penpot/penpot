@@ -2,17 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.generic-pool
   (:refer-clojure :exclude [get])
   (:import
    java.lang.AutoCloseable
+   org.apache.commons.pool2.impl.DefaultPooledObject
+   org.apache.commons.pool2.impl.SoftReferenceObjectPool
    org.apache.commons.pool2.ObjectPool
    org.apache.commons.pool2.PooledObject
-   org.apache.commons.pool2.PooledObjectFactory
-   org.apache.commons.pool2.impl.DefaultPooledObject
-   org.apache.commons.pool2.impl.SoftReferenceObjectPool))
+   org.apache.commons.pool2.PooledObjectFactory))
 
 (defn pool?
   [o]

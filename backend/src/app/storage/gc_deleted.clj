@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.storage.gc-deleted
   "A task responsible to permanently delete already marked as deleted
@@ -36,7 +36,6 @@
     (->> (db/exec! conn [sql:lock-sobjects ids])
          (into #{} (map :id))
          (not-empty))))
-
 
 (def ^:private sql:delete-sobjects
   "DELETE FROM storage_object
@@ -77,47 +76,37 @@
   (d/group-by (comp keyword :backend) :id #{} items))
 
 (def ^:private sql:get-deleted-sobjects
-  "SELECT s.* FROM storage_object AS s
+  "SELECT s.*
+     FROM storage_object AS s
     WHERE s.deleted_at IS NOT NULL
-      AND s.deleted_at < now() - ?::interval
+      AND s.deleted_at <= ?
     ORDER BY s.deleted_at ASC")
 
 (defn- get-buckets
-  [conn min-age]
-  (let [age (db/interval min-age)]
+  [conn]
+  (let [now (ct/now)]
     (sequence
      (comp (partition-all 25)
            (mapcat group-by-backend))
-     (db/cursor conn [sql:get-deleted-sobjects age]))))
-
+     (db/cursor conn [sql:get-deleted-sobjects now]))))
 
 (defn- clean-deleted!
-  [{:keys [::db/conn ::min-age] :as cfg}]
+  [{:keys [::db/conn] :as cfg}]
   (reduce (fn [total [backend-id ids]]
             (let [deleted (delete-in-bulk! cfg backend-id ids)]
               (+ total (or deleted 0))))
           0
-          (get-buckets conn min-age)))
+          (get-buckets conn)))
 
 (defmethod ig/assert-key ::handler
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
   (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
-(defmethod ig/expand-key ::handler
-  [k v]
-  {k (assoc v ::min-age (ct/duration {:hours 2}))})
-
 (defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props] :as task}]
-    (let [min-age (ct/duration (or (:min-age props) min-age))]
-      (db/tx-run! cfg (fn [cfg]
-                        (let [cfg   (assoc cfg ::min-age min-age)
-                              total (clean-deleted! cfg)]
-
-                          (l/inf :hint "task finished"
-                                 :min-age (ct/format-duration min-age)
-                                 :total total)
-
-                          {:deleted total}))))))
+  [_ cfg]
+  (fn [_]
+    (db/tx-run! cfg (fn [cfg]
+                      (let [total (clean-deleted! cfg)]
+                        (l/inf :hint "task finished" :total total)
+                        {:deleted total})))))

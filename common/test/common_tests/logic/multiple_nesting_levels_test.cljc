@@ -2,24 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.multiple-nesting-levels-test
   (:require
-   [app.common.files.changes :as ch]
-   [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
-   [app.common.logic.shapes :as cls]
-   [app.common.pprint :as pp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
-   [app.common.types.file :as  ctf]
-   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -56,10 +47,9 @@
 
           (reset-all-overrides [file]
             (-> file
-                (tho/reset-overrides (ths/get-shape file :copy-simple-1))
-                (tho/reset-overrides (ths/get-shape file :copy-frame-composed-1))
-                (tho/reset-overrides (ths/get-shape file :composed-1-composed-2-copy))
-                (propagate-all-component-changes)))
+                (tho/reset-overrides (ths/get-shape file :copy-simple-1) :propagate-fn propagate-all-component-changes)
+                (tho/reset-overrides (ths/get-shape file :copy-frame-composed-1) :propagate-fn propagate-all-component-changes)
+                (tho/reset-overrides (ths/get-shape file :composed-1-composed-2-copy) :propagate-fn propagate-all-component-changes)))
 
           (fill-colors [file]
             [(tho/bottom-fill-color file :frame-simple-1)

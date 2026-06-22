@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.public-utils
   "Utilities that will be exposed to plugins developers"
@@ -14,10 +14,10 @@
    [app.plugins.utils :as u]))
 
 (defn ^:export centerShapes
-  [shapes]
+  [plugin-id shapes]
   (cond
     (not (every? shape/shape-proxy? shapes))
-    (u/display-not-valid :centerShapes shapes)
+    (u/not-valid plugin-id :centerShapes shapes)
 
     :else
     (let [shapes (->> shapes (map u/proxy->shape))]

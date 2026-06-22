@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.file
   (:require
@@ -204,7 +204,8 @@
 
 (defn update-file-data
   [file f]
-  (update file :data f))
+  (when file
+    (update file :data f)))
 
 (defn containers-seq
   "Generate a sequence of all pages and all components, wrapped as containers"
@@ -224,6 +225,85 @@
   (if (ctn/page? container)
     (ctpl/update-page file-data (:id container) f)
     (ctkl/update-component file-data (:id container) f)))
+
+(defn update-pages
+  "Update all pages inside the file"
+  [file-data f]
+  (update file-data :pages-index d/update-vals
+          (fn [page]
+            (-> page
+                (ctn/make-container :page)
+                (f)
+                (ctn/unmake-container)))))
+
+(defn update-components
+  "Update all components inside the file"
+  [file-data f]
+  (d/update-when file-data :components d/update-vals
+                 (fn [component]
+                   (-> component
+                       (ctn/make-container :component)
+                       (f)
+                       (ctn/unmake-container)))))
+
+(defn update-containers
+  "Update all pages and components inside the file"
+  [file-data f]
+  (-> file-data
+      (update-pages f)
+      (update-components f)))
+
+(defn update-objects-tree
+  "Do a depth-first traversal of the shapes in a container, doing different kinds of updates.
+   The function f receives a shape with a context metadata with the container.
+   It must return a map with the following keys:
+   - :result -> :keep, :update or :remove
+   - :updated-shape -> the updated shape if result is :update"
+  [container f]
+  (letfn [(update-shape-recursive
+            [container shape-id]
+            (let [shape (ctst/get-shape container shape-id)]
+              (when (not shape)
+                (throw (ex-info "Shape not found" {:shape-id shape-id})))
+              (let [shape (with-meta shape {:container container})
+
+                    {:keys [result updated-shape]} (f shape)
+
+                    container'
+                    (case result
+                      :keep
+                      container
+
+                      :update
+                      (ctst/set-shape container updated-shape)
+
+                      :remove
+                      (ctst/delete-shape container shape-id true)
+
+                      (throw (ex-info "Invalid result from update function" {:result result})))]
+
+                (if (= result :remove)
+                  container'
+                  (reduce update-shape-recursive
+                          container'
+                          (:shapes shape))))))]
+
+    (let [root-id (if (ctn/page? container)
+                    uuid/zero
+                    (:main-instance-id container))]
+
+      (if-not (empty? (:objects container))
+        (update-shape-recursive container root-id)
+        container))))
+
+(defn update-all-shapes
+  "Update all shapes in the file data, using the update-objects-tree function for each container"
+  [file-data f]
+  (when file-data
+    (update-containers
+     file-data
+     (fn [container]
+       (update-objects-tree container f)))))
 
 ;; Asset helpers
 (defn find-component-file
@@ -328,6 +408,27 @@
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
+(defn find-near-match
+  "Locate the shape that occupies the same position in the near main component.
+  This will be the ref-shape except if the shape is a copy subhead that has been
+  swapped. In this case, the near match will be the ref-shape that was before
+  the swap."
+  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
+  (let  [parent-shape     (ctst/get-shape container (:parent-id shape))
+         parent-ref-shape (when parent-shape
+                            (find-ref-shape file container libraries parent-shape :include-deleted? include-deleted? :with-context? true))
+         ref-container    (when parent-ref-shape
+                            (:container (meta parent-ref-shape)))
+         shape-index      (when parent-shape
+                            (d/index-of (:shapes parent-shape) (:id shape)))
+         near-match-id    (when (and parent-ref-shape shape-index)
+                            (get (:shapes parent-ref-shape) shape-index))
+         near-match       (when near-match-id
+                            (cond-> (ctst/get-shape ref-container near-match-id)
+                              with-context?
+                              (with-meta (meta parent-ref-shape))))]
+    near-match))
+
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
@@ -362,24 +463,24 @@
         component           (ctkl/get-component component-file (:component-id top-instance) true)
         remote-shape        (get-ref-shape component-file component shape)
         component-container (get-component-container component-file component)
-        [remote-shape component-container]
+        [remote-shape component-container component-file]
         (if (some? remote-shape)
-          [remote-shape component-container]
+          [remote-shape component-container component-file]
           ;; If not found, try the case of this being a fostered or swapped children
-          (let [head-instance       (ctn/get-head-shape (:objects container) shape)
-                component-file      (get-in libraries [(:component-file head-instance) :data])
-                head-component      (ctkl/get-component component-file (:component-id head-instance) true)
-                remote-shape'       (get-ref-shape component-file head-component shape)
-                component-container (get-component-container component-file component)]
-            [remote-shape' component-container]))]
+          (let [head-instance        (ctn/get-head-shape (:objects container) shape)
+                component-file       (get-in libraries [(:component-file head-instance) :data])
+                head-component       (ctkl/get-component component-file (:component-id head-instance) true)
+                remote-shape'        (get-ref-shape component-file head-component shape)
+                component-container' (get-component-container component-file head-component)]
+            [remote-shape' component-container' component-file]))]
 
     (if (nil? remote-shape)
       nil
       (if (nil? (:shape-ref remote-shape))
         (cond-> remote-shape
           (and remote-shape with-context?)
-          (with-meta {:file {:id (:id file-data)
-                             :data file-data}
+          (with-meta {:file {:id (:id component-file)
+                             :data component-file}
                       :container component-container}))
         (find-remote-shape component-container libraries remote-shape :with-context? with-context?)))))
 
@@ -775,9 +876,9 @@
         file-data         (cond-> file-data
                             (d/not-empty? used-components)
                             (absorb-components used-components library-data))
-                            ;; Note that absorbed components may also be using colors
-                            ;; and typographies. This is the reason of doing this first
-                            ;; and accumulating file data for the next ones.
+        ;; Note that absorbed components may also be using colors
+        ;; and typographies. This is the reason of doing this first
+        ;; and accumulating file data for the next ones.
 
         used-colors       (find-asset-type-usages file-data library-data :color)
         file-data         (cond-> file-data
@@ -1017,7 +1118,7 @@
                                           libs-to-show
                                           (-> libs-to-show
                                               (add-component library-id component-id))))))
-                                              ;; (find-used-components-cumulative page root)
+                                  ;; (find-used-components-cumulative page root)
 
                                   libs-to-show
                                   components))
@@ -1082,33 +1183,35 @@
 
         detach-shape
         (fn [objects shape]
-          (l/debug :hint "detach-shape"
-                   :file-id file-id
-                   :component-ref-file (get-component-ref-file objects shape)
-                   ::l/sync? true)
-          (cond-> shape
-            (not= file-id (:fill-color-ref-file shape))
-            (dissoc :fill-color-ref-id :fill-color-ref-file)
+          (let [shape' (cond-> shape
+                         (not= file-id (:fill-color-ref-file shape))
+                         (dissoc :fill-color-ref-id :fill-color-ref-file)
 
-            (not= file-id (:stroke-color-ref-file shape))
-            (dissoc :stroke-color-ref-id :stroke-color-ref-file)
+                         (not= file-id (:stroke-color-ref-file shape))
+                         (dissoc :stroke-color-ref-id :stroke-color-ref-file)
 
-            (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root)
+                         (not= file-id (get-component-ref-file objects shape))
+                         (dissoc :component-id :component-file :shape-ref :component-root)
 
-            (= :text (:type shape))
-            (update :content detach-text)))
+                         (= :text (:type shape))
+                         (update :content detach-text))]
+
+            (when (not= shape shape')
+              (l/dbg :hint "detach shape"
+                     :file-id (str file-id)
+                     :shape-id (str (:id shape))))
+
+            shape'))
 
         detach-objects
         (fn [objects]
-          (update-vals objects #(detach-shape objects %)))
+          (d/update-vals objects #(detach-shape objects %)))
 
         detach-pages
         (fn [pages-index]
-          (update-vals pages-index #(update % :objects detach-objects)))]
+          (d/update-vals pages-index #(update % :objects detach-objects)))]
 
-    (-> file
-        (update-in [:data :pages-index] detach-pages))))
+    (update-in file [:data :pages-index] detach-pages)))
 
 ;; Base font size
 

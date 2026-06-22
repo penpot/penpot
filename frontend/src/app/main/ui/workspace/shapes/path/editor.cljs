@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
@@ -11,7 +11,6 @@
    [app.common.geom.point :as gpt]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
-   [app.common.types.path.segment :as path.segment]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -65,34 +64,38 @@
 
         on-pointer-down
         (fn [event]
-          (dom/stop-propagation event)
-          (dom/prevent-default event)
+          (when (dom/left-mouse? event)
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
 
-          ;; FIXME: revisit this, using meta here breaks equality checks
-          (when (and is-new (some? (meta position)))
-            (st/emit! (drp/create-node-at-position (meta position))))
+            ;; When clicking on a hover point that lies on a segment (has metadata with
+            ;; split params), only insert the node — don't also run draw-mode actions which
+            ;; would add the same position as an extra endpoint, corrupting the path order
+            ;; and misplacing stroke caps.
+            ;; FIXME: revisit this, using meta here breaks equality checks
+            (if (and is-new (some? (meta position)))
+              (st/emit! (drp/create-node-at-position (meta position)))
+              (let [is-shift (kbd/shift? event)
+                    is-mod   (kbd/mod? event)]
+                (cond
+                  is-last
+                  (st/emit! (drp/reset-last-handler))
 
-          (let [is-shift (kbd/shift? event)
-                is-mod   (kbd/mod? event)]
-            (cond
-              is-last
-              (st/emit! (drp/reset-last-handler))
+                  (and is-move is-mod (not is-curve))
+                  (st/emit! (drp/make-curve position))
 
-              (and is-move is-mod (not is-curve))
-              (st/emit! (drp/make-curve position))
+                  (and is-move is-mod is-curve)
+                  (st/emit! (drp/make-corner position))
 
-              (and is-move is-mod is-curve)
-              (st/emit! (drp/make-corner position))
+                  is-move
+                  ;; If we're dragging a selected item we don't change the selection
+                  (st/emit! (drp/start-move-path-point position is-shift))
 
-              is-move
-              ;; If we're dragging a selected item we don't change the selection
-              (st/emit! (drp/start-move-path-point position is-shift))
+                  (and is-draw is-start-path)
+                  (st/emit! (drp/start-path-from-point position))
 
-              (and is-draw is-start-path)
-              (st/emit! (drp/start-path-from-point position))
-
-              (and is-draw (not is-start-path))
-              (st/emit! (drp/close-path-drag-start position)))))]
+                  (and is-draw (not is-start-path))
+                  (st/emit! (drp/close-path-drag-start position)))))))]
 
     [:g.path-point
      [:circle.path-point
@@ -147,11 +150,12 @@
         (mf/use-fn
          (mf/deps index prefix is-move)
          (fn [event]
-           (dom/stop-propagation event)
-           (dom/prevent-default event)
+           (when (dom/left-mouse? event)
+             (dom/stop-propagation event)
+             (dom/prevent-default event)
 
-           (when ^boolean is-move
-             (st/emit! (drp/start-move-handler index prefix)))))]
+             (when ^boolean is-move
+               (st/emit! (drp/start-move-handler index prefix))))))]
 
     [:g.handler {:pointer-events (if ^boolean is-draw "none" "visible")}
      [:line
@@ -249,8 +253,8 @@
 (defn- matching-handler? [content node handlers]
   (when (= 2 (count handlers))
     (let [[[i1 p1] [i2 p2]] handlers
-          p1 (path.segment/get-handler-point content i1 p1)
-          p2 (path.segment/get-handler-point content i2 p2)
+          p1 (path/get-handler-point content i1 p1)
+          p2 (path/get-handler-point content i2 p2)
 
           v1 (gpt/to-vec node p1)
           v2 (gpt/to-vec node p2)
@@ -307,7 +311,7 @@
 
         handlers
         (mf/with-memo [content]
-          (path.segment/get-handlers content))
+          (path/get-handlers content))
 
         is-path-start
         (not (some? last-point))
@@ -329,7 +333,7 @@
      ms/mouse-position
      (mf/deps base-content zoom)
      (fn [position]
-       (when-let [point (path.segment/closest-point base-content position (/ 0.01 zoom))]
+       (when-let [point (path/closest-point base-content position (/ 0.01 zoom))]
          (reset! hover-point (when (< (gpt/distance position point) (/ 10 zoom)) point)))))
 
     [:g.path-editor {:ref editor-ref}
@@ -365,7 +369,7 @@
              (fn [[index prefix]]
                ;; FIXME: get-handler-point is executed twice for each
                ;; render, this can be optimized
-               (let [handler-position (path.segment/get-handler-point content index prefix)]
+               (let [handler-position (path/get-handler-point content index prefix)]
                  (not= position handler-position)))
 
              position-handlers
@@ -388,7 +392,7 @@
          [:g.path-node {:key (dm/str pos-x "-" pos-y)}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[hindex prefix] position-handlers]
-             (let [handler-position  (path.segment/get-handler-point content hindex prefix)
+             (let [handler-position  (path/get-handler-point content hindex prefix)
                    handler-hover?    (contains? hover-handlers [hindex prefix])
                    moving-handler?   (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position position-handlers)]

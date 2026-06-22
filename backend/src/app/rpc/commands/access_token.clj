@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.access-token
   (:require
@@ -22,8 +22,14 @@
   [row]
   (dissoc row :perms))
 
+(def ^:private sql:clean-old-mcp-tokens
+  "DELETE FROM access_token
+    WHERE profile_id = ?
+      AND id != ?
+      AND type = 'mcp'")
+
 (defn create-access-token
-  [{:keys [::db/conn] :as cfg} profile-id name expiration]
+  [{:keys [::db/conn] :as cfg} profile-id name expiration type]
   (let [token-id   (uuid/next)
         expires-at (some-> expiration (ct/in-future))
         created-at (ct/now)
@@ -36,11 +42,19 @@
                                {:id token-id
                                 :name name
                                 :token token
+                                :type type
                                 :profile-id profile-id
                                 :created-at created-at
                                 :updated-at created-at
                                 :expires-at expires-at
                                 :perms (db/create-array conn "text" [])})]
+
+    ;; If the created token is of mcp type, we should proceed to
+    ;; delete all other mcp tokens on the table for the current
+    ;; profile.
+    (when (= type "mcp")
+      (db/exec! conn [sql:clean-old-mcp-tokens profile-id (:id token)]))
+
     (decode-row token)))
 
 (defn repl:create-access-token
@@ -50,17 +64,18 @@
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}
    [:name [:string {:max 250 :min 1}]]
-   [:expiration {:optional true} ::ct/duration]])
+   [:expiration {:optional true} ::ct/duration]
+   [:type {:optional true} :string]])
 
 (sv/defmethod ::create-access-token
   {::doc/added "1.18"
    ::sm/params schema:create-access-token}
-  [cfg {:keys [::rpc/profile-id name expiration]}]
+  [cfg {:keys [::rpc/profile-id name expiration type]}]
 
   (quotes/check! cfg {::quotes/id ::quotes/access-tokens-per-profile
                       ::quotes/profile-id profile-id})
 
-  (db/tx-run! cfg create-access-token profile-id name expiration))
+  (db/tx-run! cfg create-access-token profile-id name expiration type))
 
 (def ^:private schema:delete-access-token
   [:map {:title "delete-access-token"}
@@ -83,5 +98,28 @@
   (->> (db/query pool :access-token
                  {:profile-id profile-id}
                  {:order-by [[:expires-at :asc] [:created-at :asc]]
-                  :columns [:id :name :perms :created-at :updated-at :expires-at]})
-       (mapv decode-row)))
+                  :columns [:id :name :perms :type :created-at :updated-at :expires-at :token]})
+       (map decode-row)
+       (map (fn [{:keys [type] :as row}]
+              (if (not= type "mcp")
+                (dissoc row :token)
+                row)))
+       (vec)))
+
+(def ^:private schema:get-current-mcp-token
+  [:map {:title "get-current-mcp-token"}])
+
+(sv/defmethod ::get-current-mcp-token
+  {::doc/added "2.15"
+   ::doc/deprecated true
+   ::sm/params schema:get-current-mcp-token}
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id ::rpc/request-at]}]
+  (->> (db/query pool :access-token
+                 {:profile-id profile-id
+                  :type "mcp"}
+                 {:order-by [[:expires-at :asc] [:created-at :asc]]
+                  :columns [:token :expires-at]})
+       (remove #(and (some? (:expires-at %))
+                     (ct/is-after? request-at (:expires-at %))))
+       (map decode-row)
+       (first)))

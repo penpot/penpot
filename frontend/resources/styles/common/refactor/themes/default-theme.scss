@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "sass:meta";
 
@@ -10,6 +10,5 @@
   --color-background-disabled: var(--df-secondary);
   --color-foreground-disabled: var(--df-secondary-40);
   --color-accent-tertiary-muted: var(--da-tertiary-10); // selection rect
-
   --overlay-color: var(--db-primary-60);
 }

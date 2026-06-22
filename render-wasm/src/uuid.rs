@@ -49,10 +49,8 @@ impl fmt::Display for Uuid {
     }
 }
 
-impl SerializableResult for Uuid {
-    type BytesType = [u8; 16];
-
-    fn from_bytes(bytes: Self::BytesType) -> Self {
+impl From<[u8; 16]> for Uuid {
+    fn from(bytes: [u8; 16]) -> Self {
         Self(*uuid_from_u32_quartet(
             u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
             u32::from_le_bytes([bytes[4], bytes[5], bytes[6], bytes[7]]),
@@ -60,10 +58,22 @@ impl SerializableResult for Uuid {
             u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
         ))
     }
+}
 
-    fn as_bytes(&self) -> Self::BytesType {
-        let mut result: Self::BytesType = [0; 16];
-        let (a, b, c, d) = uuid_to_u32_quartet(self);
+impl TryFrom<&[u8]> for Uuid {
+    type Error = String;
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let bytes: [u8; 16] = bytes
+            .try_into()
+            .map_err(|_| "Invalid UUID bytes".to_string())?;
+        Ok(Self::from(bytes))
+    }
+}
+
+impl From<Uuid> for [u8; 16] {
+    fn from(value: Uuid) -> Self {
+        let mut result = [0; 16];
+        let (a, b, c, d) = uuid_to_u32_quartet(&value);
         result[0..4].clone_from_slice(&a.to_le_bytes());
         result[4..8].clone_from_slice(&b.to_le_bytes());
         result[8..12].clone_from_slice(&c.to_le_bytes());
@@ -71,10 +81,15 @@ impl SerializableResult for Uuid {
 
         result
     }
+}
+
+impl SerializableResult for Uuid {
+    type BytesType = [u8; 16];
 
     // The generic trait doesn't know the size of the array. This is why the
     // clone needs to be here even if it could be generic.
     fn clone_to_slice(&self, slice: &mut [u8]) {
-        slice.clone_from_slice(&self.as_bytes());
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
     }
 }

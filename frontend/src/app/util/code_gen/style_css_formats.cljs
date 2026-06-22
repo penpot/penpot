@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.code-gen.style-css-formats
   (:require
@@ -38,6 +38,7 @@
    :border-color              :border-color
    :box-shadow                :shadows
    :filter                    :blur
+   :backdrop-filter           :background-blur
    :gap                       :size-array
    :row-gap                   :size-array
    :column-gap                :size-array
@@ -199,7 +200,8 @@
       :string-or-size-array (format-string-or-size-array value)
       :keyword (format-keyword value)
       :tracks (format-tracks value)
-      :shadow (format-shadow value options)
+      :shadows (format-shadow value options)
       :blur (format-blur value)
+      :background-blur (format-blur value)
       :matrix (format-matrix value)
       (if (keyword? value) (d/name value) value))))

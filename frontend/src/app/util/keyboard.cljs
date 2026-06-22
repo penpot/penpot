@@ -2,20 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.keyboard
   (:require
    [app.config :as cfg]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]))
 
 (defrecord KeyboardEvent [type key shift ctrl alt meta mod editing native-event]
   Object
   (preventDefault [_]
-    (.preventDefault native-event))
+    (dom/prevent-default native-event))
 
   (stopPropagation [_]
-    (.stopPropagation native-event)))
+    (dom/stop-propagation native-event)))
 
 (defn keyboard-event?
   [o]

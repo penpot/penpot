@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.metrics
   (:refer-clojure :exclude [run!])
@@ -15,16 +15,16 @@
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child
+   io.prometheus.client.exporter.common.TextFormat
    io.prometheus.client.Gauge
    io.prometheus.client.Gauge$Child
    io.prometheus.client.Histogram
    io.prometheus.client.Histogram$Child
+   io.prometheus.client.hotspot.DefaultExports
    io.prometheus.client.SimpleCollector
    io.prometheus.client.Summary
    io.prometheus.client.Summary$Builder
    io.prometheus.client.Summary$Child
-   io.prometheus.client.exporter.common.TextFormat
-   io.prometheus.client.hotspot.DefaultExports
    java.io.StringWriter))
 
 (set! *warn-on-reflection* true)

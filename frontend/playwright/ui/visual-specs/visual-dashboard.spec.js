@@ -3,17 +3,13 @@ import DashboardPage from "../pages/DashboardPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
-  await DashboardPage.mockRPC(
-    page,
-    "get-profile",
-    "logged-in-user/get-profile-logged-in-no-onboarding.json",
-  );
 });
 
 test("User goes to an empty dashboard", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();
+  await expect(dashboardPage.page).toHaveURL(/dashboard/);
 
   await expect(dashboardPage.mainHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
@@ -127,9 +123,7 @@ test("User goes to a full search page", async ({ page }) => {
   await dashboardPage.searchInput.fill("3");
 
   await expect(dashboardPage.mainHeading).toHaveText("Search results");
-  await expect(
-    dashboardPage.page.getByRole("button", { name: "New File 3" }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "New File 3" })).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -207,6 +201,10 @@ test("User opens teams selector with more than one team", async ({ page }) => {
 test("User goes to second team", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
+  await dashboardPage.mockRPC(
+    `get-projects?team-id=${DashboardPage.secondTeamId}`,
+    "dashboard/get-projects-second-team.json",
+  );
   await dashboardPage.goToDashboard();
 
   await dashboardPage.teamDropdown.click();
@@ -221,6 +219,10 @@ test("User goes to second team", async ({ page }) => {
 test("User opens team management dropdown", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
+  await dashboardPage.mockRPC(
+    `get-projects?team-id=${DashboardPage.secondTeamId}`,
+    "dashboard/get-projects-second-team.json",
+  );
 
   await dashboardPage.goToSecondTeamDashboard();
   await expect(page.getByText("Team Up")).toBeVisible();

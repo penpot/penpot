@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.rect
   (:require
@@ -119,12 +119,14 @@
 (defn update-rect
   [rect type]
   (case type
-    :size
+    (:size :position)
     (let [x (dm/get-prop rect :x)
           y (dm/get-prop rect :y)
           w (dm/get-prop rect :width)
           h (dm/get-prop rect :height)]
       (assoc rect
+             :x1 x
+             :y1 y
              :x2 (+ x w)
              :y2 (+ y h)))
 
@@ -137,19 +139,7 @@
              :x (mth/min x1 x2)
              :y (mth/min y1 y2)
              :width (mth/abs (- x2 x1))
-             :height (mth/abs (- y2 y1))))
-
-    ;; FIXME: looks unused
-    :position
-    (let [x (dm/get-prop rect :x)
-          y (dm/get-prop rect :y)
-          w (dm/get-prop rect :width)
-          h (dm/get-prop rect :height)]
-      (assoc rect
-             :x1 x
-             :y1 y
-             :x2 (+ x w)
-             :y2 (+ y h)))))
+             :height (mth/abs (- y2 y1))))))
 
 (defn update-rect!
   [rect type]
@@ -382,8 +372,8 @@
   ([xp1 yp1 xp2 yp2]
    (make-rect (mth/min xp1 xp2)
               (mth/min yp1 yp2)
-              (abs (- xp1 xp2))
-              (abs (- yp1 yp2)))))
+              (mth/abs (- xp1 xp2))
+              (mth/abs (- yp1 yp2)))))
 
 (defn clip-rect
   [selrect bounds]

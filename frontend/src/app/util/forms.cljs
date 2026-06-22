@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.forms
   (:refer-clojure :exclude [uuid])
@@ -10,78 +10,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.common.schema.messages :as csm]
    [cuerdas.core :as str]
-   [malli.core :as m]
    [rumext.v2 :as mf]))
-
-;; --- Handlers Helpers
-
-(defn- translate-code
-  [code]
-  (if (vector? code)
-    (tr (nth code 0) (i18n/c (nth code 1)))
-    (tr code)))
-
-(defn- handle-error-fn
-  [props problem]
-  (let [v-fn   (:error/fn props)
-        result (v-fn problem)]
-    (if (string? result)
-      {:message result}
-      {:message (or (some-> (get result :code)
-                            (translate-code))
-                    (get result :message)
-                    (tr "errors.invalid-data"))})))
-
-(defn- handle-error-message
-  [props]
-  {:message (get props :error/message)})
-
-(defn- handle-error-code
-  [props]
-  (let [code (get props :error/code)]
-    {:message (translate-code code)}))
-
-(defn- interpret-schema-problem
-  [acc {:keys [schema in value type] :as problem}]
-  (let [props  (m/properties schema)
-        tprops (m/type-properties schema)
-        field  (or (first in)
-                   (:error/field props))]
-
-    (if (contains? acc field)
-      acc
-      (cond
-        (nil? field)
-        acc
-
-        (or (= type :malli.core/missing-key)
-            (nil? value))
-        (assoc acc field {:message (tr "errors.field-missing")})
-
-        ;; --- CHECK on schema props
-        (contains? props :error/fn)
-        (assoc acc field (handle-error-fn props problem))
-
-        (contains? props :error/message)
-        (assoc acc field (handle-error-message props))
-
-        (contains? props :error/code)
-        (assoc acc field (handle-error-code props))
-
-        ;; --- CHECK on type props
-        (contains? tprops :error/fn)
-        (assoc acc field (handle-error-fn tprops problem))
-
-        (contains? tprops :error/message)
-        (assoc acc field (handle-error-message tprops))
-
-        (contains? tprops :error/code)
-        (assoc acc field (handle-error-code tprops))
-
-        :else
-        (assoc acc field {:message (tr "errors.invalid-data")})))))
 
 (defn- use-rerender-fn
   []
@@ -92,42 +23,42 @@
      (fn []
        (render-fn inc)))))
 
-(defn- apply-validators
-  [validators state errors]
-  (reduce (fn [errors validator-fn]
-            (merge errors (validator-fn errors (:data state))))
-          errors
-          validators))
-
-(defn- collect-schema-errors
-  [schema validators state]
-  (let [explain (sm/explain schema (:data state))
-        errors  (->> (reduce interpret-schema-problem {} (:errors explain))
-                     (apply-validators validators state))]
-
-    (-> (:errors state)
-        (merge errors)
-        (d/without-nils)
-        (not-empty))))
-
 (defn- wrap-update-schema-fn
   [f {:keys [schema validators]}]
   (fn [& args]
     (let [state   (apply f args)
-          cleaned (sm/decode schema (:data state) sm/string-transformer)
+          cleaned (sm/decode schema (:data state) sm/json-transformer)
           valid?  (sm/validate schema cleaned)
-          errors  (when-not valid?
-                    (collect-schema-errors schema validators state))]
+
+          errors
+          (when-not valid?
+            (csm/collect-schema-errors schema validators state))
+
+          extra-errors
+          (not-empty (:extra-errors state))]
 
       (assoc state
              :errors errors
              :clean-data (when valid? cleaned)
-             :valid (and (not errors) valid?)))))
+             :valid (and (not errors)
+                         (not extra-errors)
+                         valid?)))))
+
+(defn- make-initial-state
+  [initial-data initial-errors]
+  (let [initial (if (fn? initial-data) (initial-data) initial-data)
+        initial (d/nilv initial {})
+        initial-errors (if (fn? initial-errors) (initial-errors) initial-errors)
+        initial-errors (d/nilv initial-errors {})]
+    {:initial initial
+     :initial-errors initial-errors
+     :data initial
+     :extra-errors initial-errors
+     :errors {}
+     :touched {}}))
 
 (defn- create-form-mutator
-  [internal-state rerender-fn wrap-update-fn initial opts]
-  (mf/set-ref-val! internal-state initial)
-
+  [internal-state rerender-fn wrap-update-fn opts]
   (reify
     IDeref
     (-deref [_]
@@ -136,7 +67,12 @@
     IReset
     (-reset! [_ new-value]
       (if (nil? new-value)
-        (mf/set-ref-val! internal-state (if (fn? initial) (initial) initial))
+        (let [initial (-> (mf/ref-val internal-state)
+                          (get :initial))
+              initial-errors (-> (mf/ref-val internal-state)
+                                 (get :initial-errors))
+              state (make-initial-state initial initial-errors)]
+          (mf/set-ref-val! internal-state state))
         (mf/set-ref-val! internal-state new-value))
       (rerender-fn))
 
@@ -162,24 +98,25 @@
         (rerender-fn)))))
 
 (defn use-form
-  [& {:keys [initial] :as opts}]
+  [& {:keys [initial initial-errors schema validators] :as opts}]
   (let [rerender-fn (use-rerender-fn)
 
         initial
-        (mf/with-memo [initial]
-          {:data (if (fn? initial) (initial) initial)
-           :errors {}
-           :touched {}})
+        (mf/with-memo [initial initial-errors]
+          (make-initial-state initial initial-errors))
 
         internal-state
-        (mf/use-ref nil)
+        (mf/use-ref initial)
 
         form-mutator
-        (mf/with-memo [initial]
-          (create-form-mutator internal-state rerender-fn wrap-update-schema-fn initial opts))]
+        (mf/with-memo [schema validators]
+          (let [mutator (create-form-mutator internal-state rerender-fn wrap-update-schema-fn
+                                             (select-keys opts [:schema :validators]))]
+            (swap! mutator identity)
+            mutator))]
 
     ;; Initialize internal state once
-    (mf/with-layout-effect []
+    (mf/with-effect []
       (mf/set-ref-val! internal-state initial))
 
     (mf/with-effect [initial]
@@ -191,17 +128,25 @@
   ([form field value]
    (on-input-change form field value false))
   ([form field value trim?]
-   (swap! form (fn [state]
-                 (-> state
-                     (assoc-in [:data field] (if trim? (str/trim value) value))
-                     (update :errors dissoc field))))))
+   (letfn [(clean-errors [errors]
+             (-> errors
+                 (dissoc field)
+                 (not-empty)))]
+     (swap! form (fn [state]
+                   (-> state
+                       (assoc-in [:touched field] true)
+                       (assoc-in [:data field] (if trim? (str/trim value) value))
+                       (update :errors clean-errors)
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (defn update-input-value!
   [form field value]
   (swap! form (fn [state]
                 (-> state
                     (assoc-in [:data field] value)
-                    (update :errors dissoc field)))))
+                    (update :errors dissoc field)
+                    (update :extra-errors dissoc "")))))
 
 (defn on-input-blur
   [form field]

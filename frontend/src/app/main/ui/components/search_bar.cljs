@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.components.search-bar
   (:require-macros [app.main.style :as stl])
@@ -13,7 +13,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc search-bar*
-  [{:keys [id class value placeholder icon-id auto-focus on-change on-clear children]}]
+  [{:keys [id class value placeholder icon-id auto-focus input-ref
+           on-change on-clear on-submit on-key-down children]}]
   (let [handle-change
         (mf/use-fn
          (mf/deps on-change)
@@ -31,12 +32,22 @@
 
         handle-key-down
         (mf/use-fn
+         (mf/deps on-submit on-key-down)
          (fn [event]
+           (when (fn? on-key-down)
+             (on-key-down event))
+
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
                  node   (dom/get-target event)]
-             (when ^boolean enter? (dom/blur! node))
+             (when ^boolean enter?
+               (dom/blur! node)
+               (when (fn? on-submit)
+                 (let [value (dom/get-target-val event)]
+                   (on-submit value event))))
+
              (when ^boolean esc? (dom/blur! node)))))]
+
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}
      children
@@ -46,6 +57,7 @@
                    :size "s"
                    :class (stl/css :icon)}])
       [:input {:id id
+               :ref input-ref
                :class (stl/css :search-input)
                :on-change handle-change
                :value value

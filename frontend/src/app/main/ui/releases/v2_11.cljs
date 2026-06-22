@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.releases.v2-11
   (:require-macros [app.main.style :as stl])
@@ -74,7 +74,7 @@
            "The Typography token also marks a big step forward for Penpot: it’s our first composite token! Composite tokens are special because they can hold multiple properties within one token. Shadow token will be the next composite token coming your way."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -110,7 +110,7 @@
            "- Reorder your component properties by drag & drop: Because organization matters, now you can arrange your properties however makes the most sense to you, so you can keep the ones you use most often right where you want them."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -148,7 +148,7 @@
            "Invited users will also get clearer emails, including a reminder sent one day before the invite expires (after seven days). Simple, clean, and much more efficient."]]
 
          [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]
@@ -179,7 +179,7 @@
 
          [:div {:class (stl/css :navigation)}
 
-          [:& c/navigation-bullets
+          [:> c/navigation-bullets*
            {:slide slide
             :navigate navigate
             :total 4}]

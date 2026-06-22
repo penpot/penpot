@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.http.middleware
   (:require
@@ -12,8 +12,9 @@
    [app.common.schema :as-alias sm]
    [app.common.transit :as t]
    [app.config :as cf]
-   [app.http.auth :as-alias auth]
+   [app.http :as-alias http]
    [app.http.errors :as errors]
+   [app.tokens :as tokens]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.adapter :as yt]
@@ -207,28 +208,40 @@
    :compile (constantly wrap-errors)})
 
 (defn- with-cors-headers
-  [headers origin]
-  (-> headers
-      (assoc "access-control-allow-origin" origin)
-      (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
-      (assoc "access-control-allow-credentials" "true")
-      (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
-      (assoc "access-control-allow-headers" "x-frontend-version, content-type, accept, x-requested-width")))
+  "Build CORS response headers. Only emits permissive headers when the
+  request `origin` is present on the configured `allowed` allowlist;
+  otherwise returns the headers unchanged except for `Vary: Origin` so
+  shared caches don't leak per-origin responses."
+  [headers origin allowed]
+  (cond-> (assoc headers "vary" "Origin")
+    (and (some? origin) (contains? allowed origin))
+    (-> (assoc "access-control-allow-origin" origin)
+        (assoc "access-control-allow-credentials" "true")
+        (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
+        (assoc "access-control-expose-headers" "content-type")
+        (assoc "access-control-allow-headers" "x-frontend-version, x-client, content-type, accept"))))
 
 (defn wrap-cors
-  [handler]
+  [handler allowed]
   (fn [request]
     (let [response (if (= (yreq/method request) :options)
-                     {::yres/status 200}
+                     {::yres/status 204}
                      (handler request))
           origin   (yreq/get-header request "origin")]
-      (update response ::yres/headers with-cors-headers origin))))
+      (update response ::yres/headers with-cors-headers origin allowed))))
 
 (def cors
   {:name ::cors
    :compile (fn [& _]
               (when (contains? cf/flags :cors)
-                wrap-cors))})
+                (let [allowed (not-empty (cf/get :allowed-origins))]
+                  (if allowed
+                    (fn [handler] (wrap-cors handler allowed))
+                    (do
+                      (l/wrn :hint (str "cors flag is enabled but :allowed-origins is empty; "
+                                        "CORS middleware disabled (fail-closed). "
+                                        "Configure PENPOT_ALLOWED_ORIGINS with a comma-separated list of trusted origins."))
+                      nil)))))})
 
 (def restrict-methods
   {:name ::restrict-methods
@@ -252,30 +265,43 @@
           (when-let [[_ token-type token] (some->> (yreq/get-header request "authorization")
                                                    (re-matches token-re))]
             (if (= "token" (str/lower token-type))
-              [:token token]
-              [:bearer token])))
+              {:type :token
+               :token token}
+              {:type :bearer
+               :token token})))
 
         get-token-from-cookie
         (fn [request]
           (let [cname (cf/get :auth-token-cookie-name)
                 token (some-> (yreq/get-cookie request cname) :value)]
             (when-not (str/empty? token)
-              [:cookie token])))
+              {:type :cookie
+               :token token})))
 
         get-token
         (some-fn get-token-from-cookie get-token-from-authorization)
 
         process-request
         (fn [request]
-          (if-let [[token-type token] (get-token request)]
-            (let [request (-> request
-                              (assoc ::auth/token token)
-                              (assoc ::auth/token-type token-type))
-                  decoder (get decoders token-type)]
+          (if-let [{:keys [type token] :as auth} (get-token request)]
+            (let [decode-fn (get decoders type)]
+              (if (or (= type :cookie) (= type :bearer))
+                (let [metadata (tokens/decode-header token)]
+                  ;; NOTE: we only proceed to decode claims on new
+                  ;; cookie tokens. The old cookies dont need to be
+                  ;; decoded because they use the token string as ID
+                  (if (and (= (:kid metadata) 1)
+                           (= (:ver metadata) 1)
+                           (some? decode-fn))
+                    (assoc request ::http/auth-data (assoc auth
+                                                           :claims (decode-fn token)
+                                                           :metadata metadata))
+                    (assoc request ::http/auth-data (assoc auth :metadata {:ver 0}))))
 
-              (if (fn? decoder)
-                (assoc request ::auth/claims (delay (decoder token)))
-                request))
+                (if decode-fn
+                  (assoc request ::http/auth-data (assoc auth :claims (decode-fn token)))
+                  (assoc request ::http/auth-data auth))))
+
             request))]
 
     (fn [request]
@@ -286,13 +312,20 @@
    :compile (constantly wrap-auth)})
 
 (defn- wrap-shared-key-auth
-  [handler shared-key]
-  (if shared-key
+  [handler keys]
+  (if (seq keys)
     (fn [request]
-      (let [key (yreq/get-header request "x-shared-key")]
-        (if (= key shared-key)
-          (handler request)
-          {::yres/status 403})))
+      (if-let [[key-id key] (some-> (yreq/get-header request "x-shared-key")
+                                    (str/split #"\s+" 2))]
+        (let [key-id (-> key-id str/lower keyword)]
+          (if (and (string? key)
+                   (contains? keys key-id)
+                   (= key (get keys key-id)))
+            (-> request
+                (assoc ::http/auth-key-id key-id)
+                (handler))
+            {::yres/status 403}))
+        {::yres/status 403}))
     (fn [_ _]
       {::yres/status 403})))
 

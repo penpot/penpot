@@ -1,0 +1,124 @@
+.wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-tabs {
+  background-color: var(--background-secondary);
+  border-radius: var(--spacing-8);
+  display: flex;
+  margin-block-start: var(--spacing-24);
+
+  & .tab {
+    background-color: var(--background-secondary);
+    border: 2px solid transparent;
+    color: var(--foreground-secondary);
+    font-size: var(--font-size-s);
+    padding-inline: var(--spacing-8);
+
+    &.active {
+      background-color: var(--db-quaternary);
+      border: 2px solid var(--background-secondary);
+      color: var(--accent-primary);
+    }
+  }
+}
+
+.explanation {
+  margin-block-end: var(--spacing-8);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding-block-start: var(--spacing-8);
+}
+
+.form-group {
+  margin-block-end: var(--spacing-8);
+}
+
+.input,
+button {
+  inline-size: 100%;
+}
+
+[data-appearance='primary'].btn-feedback {
+  background-color: var(--accent-tertiary);
+  border: 2px solid var(--accent-tertiary);
+}
+
+.icon-btn {
+  margin: auto;
+  .stroke {
+    stroke: var(--db-secondary);
+  }
+}
+
+::placeholder {
+  color: var(--foreground-secondary);
+}
+
+.no-match {
+  border-bottom: 1px solid var(--background-quaternary);
+  padding-block-end: var(--spacing-8);
+}
+
+.preview-list {
+  background-color: var(--background-tertiary);
+  border-radius: var(--spacing-8);
+  block-size: 1px;
+  font-size: var(--font-size-s);
+  margin-block-start: var(--spacing-8);
+  overflow: auto;
+  padding: var(--spacing-8);
+  flex-grow: 1;
+
+  & .preview-item {
+    align-items: center;
+    display: grid;
+    grid-template-columns: 33% 7% 60%;
+  }
+
+  ::ng-deep .highlight {
+    background-color: var(--accent-tertiary);
+    color: var(--foreground-primary);
+    opacity: 70%;
+  }
+
+  & .original,
+  & .result {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .result {
+    margin-inline-start: var(--spacing-4);
+  }
+}
+
+.preview {
+  margin-block-start: var(--spacing-24);
+}
+
+:host[data-theme='light'] {
+  .nav-tabs {
+    background-color: var(--lb-tertiary);
+
+    & .tab {
+      background-color: var(--lb-tertiary);
+
+      &.active {
+        background-color: var(--lb-primary);
+      }
+    }
+  }
+
+  .icon-btn {
+    .stroke {
+      stroke: var(--lb-primary);
+    }
+  }
+}

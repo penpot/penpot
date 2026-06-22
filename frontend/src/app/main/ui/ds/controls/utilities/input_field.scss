@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
@@ -22,7 +22,6 @@
   align-items: center;
   position: relative;
   inline-size: 100%;
-
   background: var(--input-bg-color);
   border-radius: $br-8;
   padding: 0 var(--input-padding-size, var(--sp-s));
@@ -40,6 +39,12 @@
   &:has(*:disabled) {
     --input-bg-color: var(--color-background-primary);
     --input-outline-color: var(--color-background-quaternary);
+    --input-fg-color: var(--color-foreground-secondary);
+  }
+
+  &[data-option-focused="true"]:has(*:focus-visible) {
+    --input-bg-color: var(--color-background-tertiary);
+    --input-outline-color: none;
   }
 }
 
@@ -80,12 +85,10 @@
   border: none;
   background: none;
   inline-size: 100%;
-
   font-family: inherit;
   font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
-
   color: var(--input-fg-color);
 
   &:focus-visible {
@@ -102,7 +105,6 @@
 
   &:is(:autofill, :autofill:hover, :autofill:focus, :autofill:active) {
     -webkit-text-fill-color: var(--input-fg-color);
-    -webkit-background-clip: text;
     background-clip: text;
     caret-color: var(--input-bg-color);
   }
@@ -118,4 +120,18 @@
 
 .icon {
   color: var(--color-foreground-secondary);
+  min-inline-size: var(--sp-l);
+}
+
+.tooltip-wrapper {
+  inline-size: 100%;
+}
+
+.text-icon {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  inline-size: fit-content;
+  min-inline-size: px2rem(46);
+  padding-inline-start: var(--sp-xs);
 }

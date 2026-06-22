@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.1-47
+ARG IMAGEMAGICK_VERSION=7.1.2-24
 
 RUN set -e; \
     apt-get -qq update; \
@@ -24,6 +24,7 @@ RUN set -e; \
         libltdl-dev \
         liblzma-dev \
         libopenexr-dev \
+        libxml2-dev \
         libpng-dev \
         librsvg2-dev \
         libtiff-dev \
@@ -52,6 +53,7 @@ RUN set -e; \
         libfftw3-dev \
         libheif-dev \
         libjpeg-dev \
+        libxml2-dev \
         liblcms2-dev \
         libltdl-dev \
         liblzma-dev \
@@ -81,8 +83,8 @@ RUN set -e; \
         libwebp7 \
         libwebpdemux2 \
         libwebpmux3 \
-        libxml2 \
-        libzip4t64 \
+        libxml2-16 \
+        libzip5 \
         libzstd1 \
     ;\
     apt-get -qqy clean; \

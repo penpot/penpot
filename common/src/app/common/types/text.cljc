@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
  (ns app.common.types.text
    (:require
@@ -78,6 +78,10 @@
    text-transform-attrs
    text-fills))
 
+(defn text-node-attr?
+  [attr]
+  (d/index-of text-node-attrs attr))
+
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
 (def text-style-attrs
@@ -90,8 +94,14 @@
   [{:fill-color clr/black
     :fill-opacity 1}])
 
+(def default-paragraph-attrs
+  {:text-align "left"
+   :text-direction "ltr"})
+
 (def default-text-attrs
-  {:font-id "sourcesanspro"
+  {:typography-ref-file nil
+   :typography-ref-id nil
+   :font-id "sourcesanspro"
    :font-family "sourcesanspro"
    :font-variant-id "regular"
    :font-size "14"
@@ -195,6 +205,27 @@
   [text]
   (subs text 0 (min 280 (count text))))
 
+(defn- compare-text-attr
+  "Compare two attribute values and return true if they are different.
+   Take into account the following:
+    - Only process keys that belong to text node attrs (ignore deprecated
+      attributes or other things that may be attached).
+    - Consider nil values, empty strings or empty lists all equal.
+    - Normalize numeric values (legacy) into strings.
+    - No value is equal than the default value."
+  [key value1 value2]
+  (when (text-node-attr? key)
+    (let [default-value (get default-text-attrs key)
+          normalize-value (fn [value]
+                            (as-> value $
+                              (if (number? $) (str $) $)
+                              (if (or (d/empty? $) (= $ default-value))
+                                nil
+                                $)))
+          value1' (normalize-value value1)
+          value2' (normalize-value value2)]
+      (not= value1' value2'))))
+
 (defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the differences info.
@@ -236,8 +267,10 @@
                acc)
 
              :else
-             ;; If the key is not :text, and they are different, it is an attribute differece
-             (if (not= v1 v2)
+             ;; If the key is not :text, and they are different, it is an attribute difference.
+             ;; Take into account that some processes remove empty attributes, so in some
+             ;; cases we will compare [] with nil, and this is not a difference.
+             (if (compare-text-attr k v1 v2)
                (attribute-cb acc k)
                acc))))
        #{}
@@ -350,6 +383,32 @@
             [k (get attrs k v)]))))
 
 
+(defn content-has-text?
+  [content search]
+  (let [search-lower (str/lower search)]
+    (->> (node-seq is-text-node? content)
+         (some #(str/includes? (str/lower (:text %)) search-lower))
+         (boolean))))
+
+(defn replace-all-case-insensitive
+  [text search replacement]
+  (let [text-lower   (str/lower text)
+        search-lower (str/lower search)
+        search-len   (count search)]
+    (loop [result "" idx 0]
+      (let [found (str/index-of text-lower search-lower idx)]
+        (if (nil? found)
+          (str result (subs text idx))
+          (recur (str result (subs text idx found) replacement)
+                 (+ found search-len)))))))
+
+(defn replace-text-in-content
+  [content search replacement]
+  (transform-nodes
+   is-text-node?
+   (fn [node] (update node :text replace-all-case-insensitive search replacement))
+   content))
+
 (defn content->text
   "Given a root node of a text content extracts the texts with its associated styles"
   [content]
@@ -389,7 +448,7 @@
               :else
               (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
 
-               ;; We add an end-of-line when finish a paragraph
+            ;; We add an end-of-line when finish a paragraph
             new-acc
             (if (= (:type node) "paragraph")
               (let [[hs ht] (first new-acc)]
@@ -403,17 +462,19 @@
 (defn change-text
   "Changes the content of the text shape to use the text as argument. Will use the styles of the
    first paragraph and text that is present in the shape (and override the rest)"
-  [content text]
+  [content text & {:as styles}]
   (let [root-styles (select-keys content root-attrs)
 
         paragraph-style
         (merge
          default-text-attrs
+         styles
          (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
 
         text-style
         (merge
          default-text-attrs
+         styles
          (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
 
         paragraph-texts

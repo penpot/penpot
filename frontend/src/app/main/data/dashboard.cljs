@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.dashboard
   (:require
@@ -13,14 +13,22 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.organization :as co]
+   [app.common.types.project :refer [valid-project?]]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.main.constants :as mconst]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
+   [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -76,7 +84,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (reduce (fn [state {:keys [id] :as project}]
-                (update-in state [:projects id] merge project))
+                ;; Replace completely instead of merge to ensure deleted-at is removed
+                (assoc-in state [:projects id] project))
               state
               projects))))
 
@@ -151,6 +160,34 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-builtin-templates)
            (rx/map builtin-templates-fetched)))))
+
+;; --- EVENT: deleted-files
+
+(defn- deleted-files-fetched
+  [files]
+  (ptk/reify ::deleted-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [now (ct/now)
+            filtered-files (filterv (fn [file]
+                                      (let [will-be-deleted-at (:will-be-deleted-at file)]
+                                        (or (nil? will-be-deleted-at)
+                                            (ct/is-after? will-be-deleted-at now))))
+                                    files)
+            files (d/index-by :id filtered-files)]
+        (-> state
+            (assoc :deleted-files files)
+            (update :files d/merge files))))))
+
+(defn fetch-deleted-files
+  ([] (fetch-deleted-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-deleted-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-deleted-files {:team-id team-id})
+              (rx/map deleted-files-fetched)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection
@@ -328,7 +365,7 @@
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects id :is-pinned] (not is-pinned)))
+      (d/update-in-when state [:projects id] assoc :is-pinned (not is-pinned)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -345,7 +382,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:projects id :name] (constantly name))
+          (d/update-in-when [:projects id] assoc :name name)
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
@@ -375,7 +412,7 @@
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:projects project-id :count] dec))))
+      (d/update-in-when state [:projects project-id :count] dec))))
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
@@ -445,7 +482,7 @@
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -460,6 +497,7 @@
         (-> state
             (d/update-in-when [:files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-in-when [:recent-files file-id] assoc :thumbnail-id thumbnail-id)
+            (d/update-in-when [:deleted-files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
@@ -479,7 +517,7 @@
         (-> state
             (assoc-in [:files id] file)
             (assoc-in [:recent-files id] file)
-            (update-in [:projects project-id :count] inc))))))
+            (d/update-in-when [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
@@ -649,10 +687,351 @@
       (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
+(defn handle-change-team-org
+  [{:keys [team notification]}]
+  (ptk/reify ::handle-change-team-org
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [current-team-id (:current-team-id state)
+            organization (:organization team)]
+        (when (and (contains? cf/flags :nitrate)
+                   notification
+                   (= (:id team) current-team-id))
+          (rx/of (ntf/show {:content (tr notification (:name organization))
+                            :type :toast
+                            :level :info
+                            :timeout nil})))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (contains? cf/flags :nitrate)
+        (let [team-id      (:id team)
+              team-name    (:name team)
+              organization (:organization team)]
+          (d/update-in-when state [:teams team-id]
+                            (fn [team]
+                              (cond-> (co/apply-organization team organization)
+                                team-name (assoc :name team-name)))))
+        state))))
+
+(defn- handle-user-org-change
+  [{:keys [organization-id organization-name notification]}]
+  (ptk/reify ::handle-user-org-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (and notification (contains? cf/flags :nitrate))
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])]
+          (rx/of (ntf/show {:content (tr notification organization-name)
+                            :type :toast
+                            :level :info
+                            :timeout nil})
+                 (dtm/fetch-teams)
+                 ;; When the user is currently on a team of the org
+                 (when (= organization-id (dm/get-in team [:organization :id]))
+                   (dcm/go-to-dashboard-recent {:team-id :default}))))))))
+
+
+(defn- handle-organization-deleted
+  [{:keys [organization-id organization-name teams deleted-teams]}]
+  (ptk/reify ::handle-organization-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :nitrate)
+        (let [team-id        (:current-team-id state)
+              current-team   (dm/get-in state [:teams team-id])
+              current-org-id (dm/get-in current-team [:organization :id])
+              teams-set      (set teams)
+              notify?        (contains? teams-set team-id)
+              fetch?         (some (:teams state) teams)
+              go-to-default? (or (some #{team-id} deleted-teams)
+                                 (= organization-id current-org-id))]
+          (rx/concat
+           (when go-to-default? ;; If the user is currently on one of the deleted teams
+             (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
+
+           (when notify? ;; If the user is currently on one of the org teams
+             (rx/of (ntf/show {:content (tr "dashboard.org-deleted" organization-name)
+                               :type :toast
+                               :level :info
+                               :timeout nil})))
+           (when fetch? ;; If the user belonged to the org
+             (rx/of (dtm/fetch-teams)))))))))
+
+(defn- handle-nitrate-change-sso
+  [{:keys [organization-id]}]
+  (ptk/reify ::handle-nitrate-change-sso
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :nitrate)
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])
+              org-id  (dm/get-in team [:organization :id])]
+          (when (= organization-id org-id)
+            (let [url (rt/get-current-href)]
+              (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+                   (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
+                                (if authorized
+                                  (rx/empty)
+                                  (if redirect-uri
+                                    (rx/of (rt/nav-raw :uri (str redirect-uri)))
+                                    (rx/empty)))))))))))))
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :notification           (dcm/handle-notification msg)
-    :team-role-change       (handle-change-team-role msg)
-    :team-membership-change (dcm/team-membership-change msg)
+    :notification            (dcm/handle-notification msg)
+    :team-role-change        (handle-change-team-role msg)
+    :team-membership-change  (dcm/team-membership-change msg)
+    :team-org-change         (handle-change-team-org msg)
+    :user-org-change         (handle-user-org-change msg)
+    :organization-deleted    (handle-organization-deleted msg)
+    :organization-change-sso (handle-nitrate-change-sso msg)
     nil))
+
+
+;; --- Delete files immediately
+
+(defn- delete-files
+  [{:keys [team-id ids on-success on-error]}]
+  (assert (uuid? team-id))
+  (assert (set? ids))
+  (assert (every? uuid? ids))
+  (assert (fn? on-success))
+  (assert (fn? on-error))
+
+  (ptk/reify ::delete-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [progress-hint #(tr "dashboard.progress-notification.deleting-files")
+            slow-hint     #(tr "dashboard.progress-notification.slow-delete")
+            stream        (->> (rp/cmd! ::sse/permanently-delete-team-files {:team-id team-id :ids ids})
+                               (rx/share))]
+        (rx/merge
+         (rx/of (dcm/initialize-progress
+                 {:slow-progress-threshold
+                  mconst/default-slow-progress-threshold
+                  :total (count ids)
+                  :hints {:progress progress-hint
+                          :slow slow-hint}}))
+
+         (->> stream
+              (rx/filter sse/progress?)
+              (rx/mapcat (fn [event]
+                           (if-let [payload (sse/get-payload event)]
+                             (let [{:keys [index total]} payload]
+                               (if (and index total)
+                                 (rx/of (dcm/update-progress {:index index :total total}))
+                                 (rx/empty)))
+                             (rx/empty))))
+              (rx/catch rx/empty))
+
+         (->> stream
+              (rx/filter sse/end-of-stream?)
+              (rx/map sse/get-payload)
+              (rx/merge-map (fn [_]
+                              (rx/concat
+                               (rx/of (dcm/clear-progress)
+                                      (fetch-projects team-id)
+                                      (fetch-deleted-files team-id)
+                                      (fetch-projects team-id))
+                               (on-success))))
+
+              (rx/catch (fn [error]
+                          (rx/concat
+                           (rx/of (dcm/clear-progress))
+                           (on-error error))))))))))
+
+(defn delete-files-immediately
+  [{:keys [team-id ids] :as params}]
+  (assert (uuid? team-id))
+  (assert (set? ids))
+  (assert (every? uuid? ids))
+
+  (ptk/reify ::delete-files-immediately
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [deleted-files
+            (get state :deleted-files)
+
+            on-success
+            (fn []
+              (if (= 1 (count ids))
+                (let [fname (get-in deleted-files [(first ids) :name])]
+                  (rx/of (ntf/success (tr "dashboard.delete-success-notification" fname))))
+                (rx/of (ntf/success (tr "dashboard.delete-files-success-notification" (count ids))))))
+
+            on-error
+            #(rx/of (ntf/error (tr "dashboard.errors.error-on-delete-files")))]
+
+        (rx/of (ev/event
+                {::ev/name "delete-files"
+                 ::ev/origin "dashboard:trash"
+                 :team-id team-id
+                 :num-files (count ids)})
+               (delete-files
+                {:team-id team-id
+                 :ids ids
+                 :on-success on-success
+                 :on-error on-error}))))))
+
+
+(defn delete-project-immediately
+  [{:keys [team-id id name] :as project}]
+  (assert (valid-project? project))
+
+  (ptk/reify ::delete-project-immediately
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids
+            (reduce-kv (fn [acc file-id file]
+                         (if (= (:project-id file) id)
+                           (conj acc file-id)
+                           acc))
+                       #{}
+                       (get state :deleted-files))
+
+            on-success
+            #(rx/of (ntf/success (tr "dashboard.delete-success-notification" name)))
+
+            on-error
+            #(rx/of (ntf/error (tr "dashboard.errors.error-on-delete-project" name)))]
+
+        (rx/of (ev/event
+                {::ev/name "delete-files"
+                 ::ev/origin "dashboard:trash"
+                 :team-id team-id
+                 :project-id id
+                 :num-files (count ids)})
+               (delete-files
+                {:team-id team-id
+                 :ids ids
+                 :on-success on-success
+                 :on-error on-error}))))))
+
+
+;; --- Restore deleted files immediately
+
+
+(defn- restore-files
+  [{:keys [team-id ids on-success on-error]}]
+  (assert (uuid? team-id))
+  (assert (set? ids))
+  (assert (every? uuid? ids))
+  (assert (fn? on-success))
+  (assert (fn? on-error))
+
+  (ptk/reify ::restore-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [progress-hint #(tr "dashboard.progress-notification.restoring-files")
+            slow-hint     #(tr "dashboard.progress-notification.slow-restore")]
+
+        (rx/merge
+         (rx/of (dcm/initialize-progress
+                 {:slow-progress-threshold
+                  mconst/default-slow-progress-threshold
+                  :total (count ids)
+                  :hints {:progress progress-hint
+                          :slow slow-hint}}))
+
+         (let [stream (->> (rp/cmd! ::sse/restore-deleted-team-files {:team-id team-id :ids ids})
+                           (rx/share))]
+
+           (rx/merge
+            (->> stream
+                 (rx/filter sse/progress?)
+                 (rx/mapcat (fn [event]
+                              (if-let [payload (sse/get-payload event)]
+                                (let [{:keys [index total]} payload]
+                                  (if (and index total)
+                                    (rx/of (dcm/update-progress {:index index :total total}))
+                                    (rx/empty)))
+                                (rx/empty))))
+                 (rx/catch rx/empty))
+
+            (->> stream
+                 (rx/filter sse/end-of-stream?)
+                 (rx/map sse/get-payload)
+                 (rx/mapcat (fn [_]
+                              (rx/concat
+                               (rx/of (dcm/clear-progress)
+                                      ;; (ntf/success (tr "dashboard.restore-success-notification"))
+                                      (fetch-projects team-id)
+                                      (fetch-deleted-files team-id)
+                                      (fetch-projects team-id))
+                               (on-success))))
+                 (rx/catch (fn [error]
+                             (rx/concat
+                              (rx/of (dcm/clear-progress))
+                              (on-error error))))))))))))
+
+
+
+(defn restore-files-immediately
+  [{:keys [team-id ids]}]
+  (assert (uuid? team-id))
+  (assert (set? ids))
+
+  (ptk/reify ::restore-files-immediately
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [deleted-files
+            (get state :deleted-files)
+
+            on-success
+            (fn []
+              (if (= 1 (count ids))
+                (let [fname (get-in deleted-files [(first ids) :name])]
+                  (rx/of (ntf/success (tr "dashboard.restore-success-notification" fname))))
+                (rx/of (ntf/success (tr "dashboard.restore-files-success-notification" (count ids))))))
+
+            on-error
+            (fn [_cause]
+              (if (= 1 (count ids))
+                (let [fname (get-in deleted-files [(first ids) :name])]
+                  (rx/of (ntf/error (tr "dashboard.errors.error-on-restore-file" fname))))
+                (rx/of (ntf/error (tr "dashboard.errors.error-on-restore-files")))))]
+
+        (rx/of (ev/event
+                {::ev/name "restore-files"
+                 ::ev/origin "dashboard:trash"
+                 :team-id team-id
+                 :num-files (count ids)})
+               (restore-files
+                {:team-id team-id
+                 :ids ids
+                 :on-success on-success
+                 :on-error on-error}))))))
+
+(defn restore-project-immediately
+  [{:keys [team-id id name] :as project}]
+  (assert (valid-project? project))
+
+  (ptk/reify ::restore-project-immediately
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids
+            (reduce-kv (fn [acc file-id file]
+                         (if (= (:project-id file) id)
+                           (conj acc file-id)
+                           acc))
+                       #{}
+                       (get state :deleted-files))
+
+            on-success
+            #(st/emit! (ntf/success (tr "dashboard.restore-success-notification" name)))
+
+            on-error
+            #(st/emit! (ntf/error (tr "dashboard.errors.error-on-restoring-project" name)))]
+
+        (rx/of (ev/event
+                {::ev/name "restore-files"
+                 ::ev/origin "dashboard:trash"
+                 :team-id team-id
+                 :project-id id
+                 :num-files (count ids)})
+               (restore-files
+                {:team-id team-id
+                 :ids ids
+                 :on-success on-success
+                 :on-error on-error}))))))

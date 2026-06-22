@@ -2,16 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-dialog {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   display: grid;
   grid-template-rows: auto 1fr auto;
   max-height: initial;
@@ -41,16 +42,18 @@
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .close-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
+
   margin-block-end: deprecated.$s-32;
   color: var(--modal-title-foreground-color);
   display: flex;
@@ -82,8 +85,9 @@
 }
 
 .primary-button {
-  @extend .button-primary;
-  @include deprecated.headlineSmallTypography;
+  @extend %button-primary;
+  @include deprecated.headline-small-typography;
+
   padding: deprecated.$s-0 deprecated.$s-16;
 }
 
@@ -93,18 +97,21 @@
 }
 
 .cancel-button {
-  @extend .button-secondary;
-  @include deprecated.headlineSmallTypography;
+  @extend %button-secondary;
+  @include deprecated.headline-small-typography;
+
   padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .search-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-20;
   padding: 0 0 0 deprecated.$s-8;
 
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -126,8 +133,7 @@
 
 .plugins-list {
   padding-top: deprecated.$s-20;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -157,12 +163,14 @@
 }
 
 .plugin-title {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
+
   color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-secondary);
 }
 
@@ -194,7 +202,8 @@
 }
 
 .plugins-empty-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-primary);
 }
 
@@ -203,7 +212,8 @@ div.input-error {
 }
 
 .info {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   margin-top: deprecated.$s-4;
 
   &.error {
@@ -231,9 +241,6 @@ div.input-error {
   }
 }
 
-.plugin-permissions {
-}
-
 .permissions-list {
   display: flex;
   flex-direction: column;
@@ -255,13 +262,15 @@ div.input-error {
 }
 
 .permissions-list-text {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   margin: 0;
   color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   padding: deprecated.$s-16;
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
@@ -274,7 +283,8 @@ div.input-error {
 }
 
 .discover {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--color-foreground-secondary);
   margin-top: deprecated.$s-24;
 

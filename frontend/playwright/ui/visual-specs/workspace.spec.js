@@ -158,7 +158,9 @@ test.describe("Palette", () => {
       .getByRole("button", { name: "Color Palette" })
       .click();
     await expect(
-      workspace.palette.getByRole("button", { name: "#7798ff" }),
+      workspace.palette.getByText(
+        "There are no color styles in your library yet",
+      ),
     ).toBeVisible();
   });
 });

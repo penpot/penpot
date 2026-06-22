@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.files
   (:require-macros [app.main.style :as stl])
@@ -31,8 +31,7 @@
   (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [project create-fn can-edit]}]
   (let [project-id (:id project)
 
@@ -133,7 +132,6 @@
                            :on-import on-import}])]]))
 
 (mf/defc files-section*
-  {::mf/props :obj}
   [{:keys [project team]}]
   (let [files            (mf/deref refs/files)
         project-id       (get project :id)

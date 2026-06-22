@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.exports
   (:require-macros [app.main.style :as stl])
@@ -101,9 +101,8 @@
                                   :name sname
                                   :object-id (:id (first shapes-with-exports))}
                      full-export (merge export defaults)]
-                 (st/emit!
-                  (de/request-simple-export {:export full-export})
-                  (de/export-shapes-event [full-export] "workspace:sidebar")))
+                 (st/emit! (de/request-simple-export {:export full-export})
+                           (de/export-shapes-event [full-export] "workspace:sidebar")))
                (st/emit!
                 (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
 

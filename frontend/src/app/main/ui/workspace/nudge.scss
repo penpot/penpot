@@ -2,16 +2,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
-  @extend .modal-container-base;
+  @extend %modal-container-base;
+
   min-width: deprecated.$s-408;
 }
 
@@ -20,30 +21,37 @@
 }
 
 .modal-title {
-  @include deprecated.headlineMediumTypography;
+  @include deprecated.headline-medium-typography;
+
   color: var(--modal-title-foreground-color);
 }
+
 .modal-close-btn {
-  @extend .modal-close-btn-base;
+  @extend %modal-close-btn-base;
 }
 
 .modal-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
+
   gap: deprecated.$s-24;
-  @include deprecated.bodyLargeTypography;
+
+  @include deprecated.body-large-typography;
+
   margin-bottom: deprecated.$s-24;
 }
 
 .input-wrapper {
-  @extend .input-with-label;
-  @include deprecated.bodySmallTypography;
+  @extend %input-with-label;
+  @include deprecated.body-small-typography;
+
   label {
     text-transform: none;
   }
 }
 
 .modal-msg {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
+
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }

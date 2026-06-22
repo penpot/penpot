@@ -2,44 +2,36 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.path-names :as cpn]
    [app.common.types.shape.layout :as ctsl]
-   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.style-dictionary :as sd]
+   [app.main.data.helpers :as dh]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.tokens.remapping :as remap]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
+   [app.main.ui.workspace.tokens.management.node-context-menu :refer [token-node-context-menu*]]
    [app.util.array :as array]
    [app.util.i18n :refer [tr]]
-   [okulary.core :as l]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ref:token-type-open-status
-  (l/derived (l/key :open-status-by-type) refs/workspace-tokens))
-
-(defn- remove-keys [m ks]
-  (d/removem (comp ks key) m))
 
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
-  tokens exist for that type. Sort each group alphabetically (by their type).
-  If `:token-units` is not in cf/flags, number tokens are excluded."
+  tokens exist for that type. Sort each group alphabetically (by their type)."
   [tokens-by-type]
-  (let [token-units? (contains? cf/flags :token-units)
-        token-typography-composite-types? (contains? cf/flags :token-typography-composite)
-        token-typography-types? (contains? cf/flags :token-typography-types)
-        token-shadow? (contains? cf/flags :token-shadow)
+  (let [token-shadow? (contains? cf/flags :token-shadow)
         all-types (cond-> dwta/token-properties
-                    (not token-shadow?) (dissoc :shadow)
-                    (not token-units?) (dissoc :number)
-                    (not token-typography-composite-types?) (remove-keys ctt/typography-token-keys)
-                    (not token-typography-types?) (remove-keys ctt/ff-typography-keys))
+                    (not token-shadow?) (dissoc :shadow))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []
@@ -55,12 +47,46 @@
         [(seq (array/sort! empty))
          (seq (array/sort! filled))]))))
 
+(mf/defc selected-set-info*
+  {::mf/private true}
+  [{:keys [tokens-lib selected-token-set-id]}]
+  (let [selected-token-set
+        (mf/with-memo [tokens-lib selected-token-set-id]
+          (when selected-token-set-id
+            (some-> tokens-lib (ctob/get-set selected-token-set-id))))
+
+        active-token-sets-names
+        (mf/with-memo [tokens-lib]
+          (some-> tokens-lib (ctob/get-active-themes-set-names)))
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps active-token-sets-names)
+         (fn [name]
+           (contains? active-token-sets-names name)))]
+    [:div {:class (stl/css :sets-header-container)}
+     [:> text* {:as "span"
+                :typography "headline-small"
+                :class (stl/css :sets-header)
+                :data-testid "active-token-set-title"}
+      (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
+     (when (and (some? selected-token-set-id)
+                (not (token-set-active? (ctob/get-name selected-token-set))))
+       [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
+        ;; NOTE: when no set in tokens-lib, the selected-token-set-id
+        ;; will be `nil`, so for properly hide the inactive message we
+        ;; check that at least `selected-token-set-id` has a value
+
+        [:*
+         [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
+         [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
+          (tr "workspace.tokens.inactive-set")]]])]))
+
 (mf/defc tokens-section*
   {::mf/private true}
   [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
-        open-status     (mf/deref ref:token-type-open-status)
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -73,12 +99,7 @@
         ;; This only checks for the currently explicitly selected set
         ;; id, it is ephimeral and can be nil
         ;; FIXME: this is a repeated deref for the same `:workspace-tokens` state
-        selected-token-set-id
-        (mf/deref refs/selected-token-set-id)
-
-        selected-token-set
-        (when selected-token-set-id
-          (some-> tokens-lib (ctob/get-set selected-token-set-id)))
+        selected-token-set-id  (mf/deref refs/selected-token-set-id)
 
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
@@ -90,9 +111,7 @@
         (mf/with-memo [active-tokens selected-token-set-tokens]
           (merge active-tokens selected-token-set-tokens))
 
-        tokens
-        (sd/use-resolved-tokens* tokens)
-
+        ;; Group tokens by their type
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]
           (let [tokens (reduce-kv (fn [tokens k _]
@@ -103,19 +122,171 @@
                                   tokens)]
             (ctob/group-by-type tokens)))
 
-        active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
-
-        token-set-active?
-        (mf/use-fn
-         (mf/deps active-token-sets-names)
-         (fn [name]
-           (contains? active-token-sets-names name)))
-
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
-          (get-sorted-token-groups tokens-by-type))]
+          (get-sorted-token-groups tokens-by-type))
+
+        ;; Filter tokens by their path and return the tokens
+        filter-tokens-by-path
+        (mf/use-fn
+         (fn [tokens-filtered-by-type node]
+           (->> tokens-filtered-by-type
+                (filter (fn [token]
+                          (let [token-path (cpn/split-path (:name token) :separator ".")]
+                            (and (> (count token-path) 0)
+                                 (str/starts-with? (:name token) (str (:path node) ".")))))))))
+
+        ;; Filter tokens by their path and return their ids
+        filter-tokens-by-path-ids
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens)
+         (fn [type path]
+           (->> selected-token-set-tokens
+                (filter (fn [token]
+                          (let [[_ token-value] token]
+                            (and (= (:type token-value) type) (str/starts-with? (:name token-value) (str path "."))))))
+                (mapv (fn [token]
+                        (let [[_ token-value] token]
+                          (:id token-value)))))))
+
+        remaining-tokens-of-type-in-set?
+        (mf/use-fn
+         (fn [selected-token-set-tokens tokens-in-path-ids]
+           (let [token-ids (set tokens-in-path-ids)
+                 remaining-tokens (filter (fn [token]
+                                            (not (contains? token-ids (:id token))))
+                                          selected-token-set-tokens)]
+             (seq remaining-tokens))))
+
+        delete-token
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+          (fn [token]
+            (let [id (:id token)
+                  type (:type token)
+                  path (:name token)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type [id])]
+              (st/emit! (dwtl/delete-token selected-token-set-id id))
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/close-token-type type))))))
+
+        delete-node
+        (mf/with-memo [selected-token-set-tokens selected-token-set-id]
+          (fn [node type]
+            (let [path (:path node)
+                  tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                  tokens-filtered-by-type (get tokens-by-type type)
+                  tokens-in-path-ids (filter-tokens-by-path-ids type path)
+                  remaining-tokens? (remaining-tokens-of-type-in-set? tokens-filtered-by-type tokens-in-path-ids)]
+              ;; Delete tokens in path
+              (st/emit! (dwtl/bulk-delete-tokens selected-token-set-id tokens-in-path-ids))
+              ;; Remove from unfolded tree path
+              (if remaining-tokens?
+                (st/emit! (dwtl/toggle-token-path (str (name type) "." path)))
+                (st/emit! (dwtl/close-token-type type))))))
+
+
+
+        bulk-rename-tokens-in-path
+        ;; Rename tokens in bulk affected by a node rename.
+        (mf/use-fn
+         (mf/deps filter-tokens-by-path-ids selected-token-set-id)
+         (fn [node type new-node-name]
+           (let [old-path (:path node)
+                 new-path (ctob/rename-path node new-node-name)
+                 tokens-in-path-ids (filter-tokens-by-path-ids type old-path)]
+             (st/emit!
+              (modal/hide)
+              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-path)))))
+
+        bulk-remap-tokens-in-path
+        ;; Remap tokens in bulk affected by a node rename.
+        ;; It will update the token names and propagate the changes to the workspace.
+        (mf/use-fn
+         (mf/deps filter-tokens-by-path filter-tokens-by-path-ids selected-token-set-tokens selected-token-set-id)
+         (fn [node type new-node-name]
+           (let [old-path (:path node)
+                 ;; Get tokens in path to remap their names after remapping the node
+                 tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                 tokens-filtered-by-type (get tokens-by-type type)
+                 tokens-in-path (filter-tokens-by-path tokens-filtered-by-type node)
+                 tokens-in-path-ids (filter-tokens-by-path-ids type old-path)
+                 new-node-path (ctob/rename-path node new-node-name)
+                 new-tokens (map (fn [token]
+                                   (let [new-token-path (ctob/rename-path node token new-node-name)]
+                                     (assoc token :name new-token-path)))
+                                 tokens-in-path)
+                 undo-group (uuid/next)]
+             (st/emit!
+              (dwtl/bulk-update-tokens selected-token-set-id tokens-in-path-ids type old-path new-node-path :undo-group undo-group)
+              (remap/bulk-remap-tokens tokens-in-path new-tokens :undo-group undo-group)
+              (dwtp/propagate-workspace-tokens)
+              (modal/hide)))))
+
+        on-remap-node-warning
+        ;; If there are tokens that will be affected by the node rename, we show the remap modal
+        (mf/use-fn
+         (mf/deps bulk-remap-tokens-in-path bulk-rename-tokens-in-path)
+         (fn [node type new-node-name]
+           (let [remap-data {:new-name new-node-name
+                             :old-name (:name node)
+                             :type "node"}
+                 remap-handler #(bulk-remap-tokens-in-path node type new-node-name)
+                 rename-handler #(bulk-rename-tokens-in-path node type new-node-name)]
+             (st/emit!
+              (modal/hide)
+              (modal/show :tokens/remapping-confirmation {:remap-data remap-data
+                                                          :on-remap remap-handler
+                                                          :on-rename rename-handler})))))
+
+        on-rename-node
+        ;; When user renames a node, we need to check if there are tokens that will be affected by this change.
+        ;; If there are, we display the remap modal, otherwise, we rename the tokens directly.
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens filter-tokens-by-path on-remap-node-warning bulk-rename-tokens-in-path)
+         (fn [node type new-node-name]
+           (let [state @st/state
+                 file-data (dh/lookup-file-data state)
+                 tokens-by-type (ctob/group-by-type selected-token-set-tokens)
+                 tokens-filtered-by-type (get tokens-by-type type)
+                 tokens-in-current-path (filter-tokens-by-path tokens-filtered-by-type node)
+                 token-references-count (reduce (fn [count token]
+                                                  (+ count (remap/count-token-references file-data (:name token))))
+                                                0
+                                                tokens-in-current-path)]
+             (if (> token-references-count 0)
+               (on-remap-node-warning node type new-node-name)
+               (bulk-rename-tokens-in-path node type new-node-name)))))
+
+        on-duplicate-node
+        (fn [node type new-node-name]
+          (let [tokens-in-path-ids (filter-tokens-by-path-ids type (:path node))]
+            (st/emit!
+             (modal/hide)
+             (dwtl/bulk-create-tokens selected-token-set-id tokens-in-path-ids type node new-node-name))))
+
+        open-rename-node-modal
+        ;; When user renames a node, we display a form modal
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens on-rename-node)
+         (fn [node type]
+           (let [on-rename-node-handler #(on-rename-node node type %)]
+             (st/emit! (modal/show :tokens/rename-node {:node node
+                                                        :tokens-in-active-set selected-token-set-tokens
+                                                        :on-rename on-rename-node-handler})))))
+
+        open-duplicate-node-modal
+        (mf/use-fn
+         (mf/deps selected-token-set-tokens on-duplicate-node)
+         (fn [node type]
+           (let [on-duplicate-node-handler #(on-duplicate-node node type %)]
+             (st/emit! (modal/show :tokens/rename-node {:new-node-name (str (:name node) "-copy")
+                                                        :node node
+                                                        :variant "duplicate"
+                                                        :tokens-in-active-set selected-token-set-tokens
+                                                        :on-rename on-duplicate-node-handler})))))]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -128,35 +299,30 @@
             (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
-     [:& token-context-menu]
-     [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" (ctob/get-name selected-token-set))]
-      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
-       ;; NOTE: when no set in tokens-lib, the selected-token-set-id
-       ;; will be `nil`, so for properly hide the inactive message we
-       ;; check that at least `selected-token-set-id` has a value
-       (when (and (some? selected-token-set-id)
-                  (not (token-set-active? (ctob/get-name selected-token-set))))
-         [:*
-          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
-          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
-           (tr "workspace.tokens.inactive-set")]])]]
+     [:& token-context-menu {:on-delete-token delete-token}]
+     [:> token-node-context-menu* {:on-rename-node open-rename-node-modal
+                                   :on-duplicate-node open-duplicate-node-modal
+                                   :on-delete-node delete-node}]
+
+     [:> selected-set-info* {:tokens-lib tokens-lib
+                             :selected-token-set-id selected-token-set-id}]
 
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
          [:> token-group* {:key (name type)
-                           :is-open (get open-status type false)
+                           :tokens tokens
                            :type type
                            :selected-ids selected
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens
-                           :tokens tokens}]))
+                           :tokens-lib tokens-lib
+                           :selected-token-set-id selected-token-set-id}]))
 
      (for [type empty-group]
        [:> token-group* {:key (name type)
+                         :tokens []
                          :type type
                          :selected-shapes selected-shapes
-                         :is-selected-inside-layout :is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens
-                         :tokens []}])]))
+                         :is-selected-inside-layout is-selected-inside-layout
+                         :active-theme-tokens resolved-active-tokens}])]))

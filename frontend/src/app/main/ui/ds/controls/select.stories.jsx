@@ -2,17 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 import * as React from "react";
 import Components from "@target/components";
 
 const { Select } = Components;
 
-const variants = [
-  "default",
-  "ghost",
-];
+const variants = ["default", "ghost", "icon-only"];
 
 const options = [
   { id: "option-code", label: "Code" },
@@ -76,5 +73,12 @@ export const WithIcons = {
 export const EmptyToEnd = {
   args: {
     emptyToEnd: true,
+  },
+};
+
+export const OnlyWithIcons = {
+  args: {
+    options: optionsWithIcons,
+    variant: variants[2],
   },
 };

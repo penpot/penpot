@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-file-snapshot-test
   (:require
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -132,9 +133,10 @@
         ;; this will run pending task triggered by deleting user snapshot
         (th/run-pending-tasks!)
 
-        (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-          ;; delete 2 snapshots and 2 file data entries
-          (t/is (= 4 (:processed res))))))))
+        (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
+          (let [res (th/run-task! :objects-gc {})]
+            ;; delete 2 snapshots and 2 file data entries
+            (t/is (= 4 (:processed res)))))))))
 
 (t/deftest snapshots-locking
   (let [profile-1 (th/create-profile* 1 {:is-active true})

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.path.subpath
   (:require
@@ -127,6 +127,36 @@
 
 (def ^:private xf-mapcat-data
   (mapcat :data))
+
+(defn- join-adjacent
+  "Fold neighbouring subpaths into the accumulator only when the
+  current accumulator's end-point matches the next subpath's start-point.
+  Unlike `merge-paths` this does not reverse subpaths nor reorder them;
+  the original draw order is preserved so stroke-dasharray and animation
+  semantics stay intact."
+  [acc subpath]
+  (if-let [prev (peek acc)]
+    (if (and (not (is-closed? prev))
+             (not (is-closed? subpath))
+             (pt= (:to prev) (:from subpath)))
+      (conj (pop acc) (subpaths-join prev subpath))
+      (conj acc subpath))
+    (conj acc subpath)))
+
+(defn merge-touching-subpaths
+  "Merge consecutive subpaths whose endpoints coincide into a single
+  continuous subpath, preserving the original drawing order.
+
+  This is a conservative variant of `close-subpaths`: it never reverses
+  a subpath and only merges immediate neighbours, so closed regions and
+  fill semantics are left untouched. The intent is to recover the
+  `stroke-linejoin` rendering for SVG paths whose authoring tools split
+  a continuous polyline into adjacent `M..L M..L` subpaths (e.g. the
+  `m0 0` markers Figma emits when exporting Heroicons-like icons)."
+  [content]
+  (let [subpaths (get-subpaths content)
+        merged   (reduce join-adjacent [] subpaths)]
+    (into [] xf-mapcat-data merged)))
 
 (defn close-subpaths
   "Searches a path for possible subpaths that can create closed loops and merge them"

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.logging
   "A lightweight and multiplaform (clj & cljs) asynchronous by default
@@ -43,8 +43,6 @@
   "
   #?(:cljs (:require-macros [app.common.logging :as l]))
   (:require
-   #?(:clj  [clojure.edn :as edn]
-      :cljs [cljs.reader :as edn])
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
@@ -130,7 +128,9 @@
     :warn  "#f5871f"
     :info  "#4271ae"
     :debug "#969896"
-    :trace "#8e908c"))
+    :trace "#8e908c"
+    (let [hint (str "invalid level provided to `level->color` function: " (pr-str level))]
+      (throw (ex-info hint {:level level})))))
 
 (defn- level->name
   [level]
@@ -139,7 +139,9 @@
     :trace "TRC"
     :info  "INF"
     :warn   "WRN"
-    :error "ERR"))
+    :error "ERR"
+    (let [hint (str "invalid level provided to `level->name` function: " (pr-str level))]
+      (throw (ex-info hint {:level level})))))
 
 (defn level->int
   [level]
@@ -148,7 +150,9 @@
     :debug 20
     :info 30
     :warn 40
-    :error 50))
+    :error 50
+    (let [hint (str "invalid level provided to `level->int` function: " (pr-str level))]
+      (throw (ex-info hint {:level level})))))
 
 (defn build-message
   [props]

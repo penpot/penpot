@@ -22,7 +22,7 @@ export default {
   },
 
   parameters: {
-    controls: { exclude: ["children", "theme", "style"] }
+    controls: { exclude: ["children", "theme", "style"] },
   },
 
   args: {
@@ -40,9 +40,9 @@ export default {
 
   globals: {
     backgrounds: {
-      value: "light"
-    }
-  }
+      value: "light",
+    },
+  },
 };
 
 export const AnyHeading = {

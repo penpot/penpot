@@ -2,20 +2,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .token-option {
   --token-options-fg-color: var(--color-foreground-primary);
   --token-options-bg-color: unset;
   --token-options-empty: var(--color-canvas);
+
   @include use-typography("body-small");
+
   display: grid;
-  align-items: center;
-  justify-items: start;
+  place-items: center start;
   grid-template-columns: 1fr auto;
   gap: $sz-6;
   width: 100%;
@@ -26,10 +28,10 @@
   outline-offset: calc(-1 * $b-1);
   background-color: var(--token-options-bg-color);
   color: var(--token-options-fg-color);
-  overflow: hidden;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
   &:hover,
   &[aria-selected="true"] {
     --token-options-bg-color: var(--color-background-quaternary);
@@ -51,11 +53,13 @@
 
 .option-current {
   --token-options-outline-color: var(--color-accent-primary);
+
   outline: $b-1 solid var(--token-options-outline-color);
 }
 
 .option-pill {
   @include use-typography("code-font");
+
   color: var(--color-foreground-secondary);
   background-color: var(--color-background-primary);
   border-radius: $br-6;
@@ -74,4 +78,12 @@
 .option-check {
   color: var(--token-options-icon-fg-color);
   min-width: var(--sp-l);
+}
+
+.option-name {
+  @include text-ellipsis;
+}
+
+.token-name-tooltip {
+  color: var(--color-foreground-primary);
 }

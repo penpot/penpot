@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.text.content.to-dom
   (:require
@@ -54,8 +54,8 @@
                     (assoc acc key (get node key default-value)))) {} attrs)
         fills
         (cond
-           ;; DEPRECATED: still here for backward compatibility with
-           ;; old penpot files that still has a single color.
+          ;; DEPRECATED: still here for backward compatibility with
+          ;; old penpot files that still has a single color.
           (or (some? (:fill-color node))
               (some? (:fill-opacity node))
               (some? (:fill-color-gradient node)))
@@ -92,7 +92,7 @@
   [root]
   (get-styles-from-attrs root txt/root-attrs txt/default-text-attrs))
 
-(defn get-inline-styles
+(defn get-text-span-styles
   [inline paragraph]
   (let [node (if (= "" (:text inline)) paragraph inline)
         styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
@@ -104,7 +104,7 @@
   (when text
     (.replace text (js/RegExp "/" "g") "/\u200B")))
 
-(defn get-inline-children
+(defn get-text-span-children
   [inline paragraph]
   [(if (and (= "" (:text inline))
             (= 1 (count (:children paragraph))))
@@ -119,30 +119,27 @@
   [paragraph]
   (some #(not= "" (:text % "")) (:children paragraph)))
 
-(defn should-filter-empty-paragraph?
-  [paragraphs index]
-  (and (not (has-content? (nth paragraphs index)))
-       (< index (count paragraphs))
-       (some has-content? (drop (inc index) paragraphs))
-       (every? #(not (has-content? %)) (take (inc index) paragraphs))))
-
-(defn create-inline
+(defn create-text-span
   [inline paragraph]
   (create-element
    "span"
    {:id (or (:key inline) (create-random-key))
-    :data {:itype "inline"}
-    :style (get-inline-styles inline paragraph)}
-   (get-inline-children inline paragraph)))
+    :data {:itype "span"}
+    :style (get-text-span-styles inline paragraph)}
+   (get-text-span-children inline paragraph)))
 
 (defn create-paragraph
   [paragraph]
   (create-element
    "div"
    {:id (or (:key paragraph) (create-random-key))
-    :data {:itype "paragraph"}
+    :data {:itype "paragraph"
+           ;; Save the real font size to be restored later in from-dom/get-paragraph-styles,
+           ;; because the function get-paragraph-styles here sets it to "0" in the css properties, 
+           ;; to avoid the browser affecting the height calculation.
+           :saved-font-size (:font-size paragraph)}
     :style (get-paragraph-styles paragraph)}
-   (mapv #(create-inline % paragraph) (:children paragraph))))
+   (mapv #(create-text-span % paragraph) (:children paragraph))))
 
 (defn create-root
   [root]
@@ -150,7 +147,6 @@
         paragraphs (get-in root [:children 0 :children])
         filtered-paragraphs (->> paragraphs
                                  (map-indexed vector)
-                                 (remove (fn [[index _]] (should-filter-empty-paragraph? paragraphs index)))
                                  (mapv second))]
     (create-element
      "div"

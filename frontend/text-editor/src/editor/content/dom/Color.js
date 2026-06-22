@@ -24,7 +24,7 @@ function getContext() {
   if (!context) {
     context = canvas.getContext("2d");
   }
-  return context
+  return context;
 }
 
 /**
@@ -76,3 +76,4 @@ export function getFills(fillStyle) {
   const [color, opacity] = getColor(fillStyle);
   return `[["^ ","~:fill-color","${color}","~:fill-opacity",${opacity}]]`;
 }
+

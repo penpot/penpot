@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.variant-test
   (:require
@@ -163,9 +163,11 @@
 
 (t/deftest find-boolean-pair
   (t/testing "find-boolean-pair"
-    (t/is (= (ctv/find-boolean-pair ["off" "on"]) {"on" true "off" false}))
-    (t/is (= (ctv/find-boolean-pair ["on" "off"]) {"on" true "off" false}))
+    (t/is (= (ctv/find-boolean-pair ["off" "on"])         {"on" true "off" false}))
+    (t/is (= (ctv/find-boolean-pair ["OfF" "oN"])         {"oN" true "OfF" false}))
+    (t/is (= (ctv/find-boolean-pair [" ofF" "oN "])       {"oN " true " ofF" false}))
+    (t/is (= (ctv/find-boolean-pair ["on" "off"])         {"on" true "off" false}))
+    (t/is (= (ctv/find-boolean-pair ["yes" "no"])         {"yes" true "no" false}))
+    (t/is (= (ctv/find-boolean-pair ["false" "true"])     {"true" true "false" false}))
     (t/is (= (ctv/find-boolean-pair ["off" "on" "other"]) nil))
-    (t/is (= (ctv/find-boolean-pair ["yes" "no"]) {"yes" true "no" false}))
-    (t/is (= (ctv/find-boolean-pair ["false" "true"]) {"true" true "false" false}))
-    (t/is (= (ctv/find-boolean-pair ["hello" "bye"]) nil))))
+    (t/is (= (ctv/find-boolean-pair ["hello" "bye"])      nil))))

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
 @use "ds/_sizes.scss" as *;
@@ -62,13 +62,10 @@
 .file-name {
   display: block;
   max-width: 99%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
   @include t.use-typography("body-medium");
+
   flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
   padding: var(--sp-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -90,14 +87,14 @@
   border-radius: $br-8;
   margin: 0;
   max-height: var(--container-max-height);
-  overflow-y: auto;
-  overflow-x: auto;
-  word-wrap: normal;
+  overflow: auto;
+  overflow-wrap: normal;
   white-space: pre;
 }
 
 .disabled-message {
   @include t.use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   display: flex;
   align-items: center;

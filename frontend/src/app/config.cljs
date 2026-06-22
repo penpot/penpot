@@ -2,19 +2,25 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.flags :as flags]
+   [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
    [app.util.extends]
    [app.util.globals :refer [global location]]
    [app.util.navigator :as nav]
    [app.util.object :as obj]
+   [app.util.storage :as sto]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]))
 
 (set! *assert* js/goog.DEBUG)
@@ -22,7 +28,7 @@
 ;; --- Auxiliar Functions
 
 (def valid-browsers
-  #{:chrome :firefox :safari :safari-16 :safari-17 :edge :other})
+  #{:chrome :firefox :safari :safari-16 :safari-17 :safari-18 :safari-26 :edge :other})
 
 (def valid-platforms
   #{:windows :linux :macos :other})
@@ -35,15 +41,19 @@
         check-edge? (fn [] (str/includes? user-agent "edg"))
         check-safari? (fn [] (str/includes? user-agent "safari"))
         check-safari-16? (fn [] (and (check-safari?) (str/includes? user-agent "version/16")))
-        check-safari-17? (fn [] (and (check-safari?) (str/includes? user-agent "version/17")))]
+        check-safari-17? (fn [] (and (check-safari?) (str/includes? user-agent "version/17")))
+        check-safari-18? (fn [] (and (check-safari?) (str/includes? user-agent "version/18")))
+        check-safari-26? (fn [] (and (check-safari?) (str/includes? user-agent "version/26")))]
     (cond
       ^boolean (check-edge?)      :edge
       ^boolean (check-chrome?)    :chrome
       ^boolean (check-firefox?)   :firefox
       ^boolean (check-safari-16?) :safari-16
       ^boolean (check-safari-17?) :safari-17
+      ^boolean (check-safari-18?) :safari-18
+      ^boolean (check-safari-26?) :safari-26
       ^boolean (check-safari?)    :safari
-      :else              :other)))
+      :else                       :unknown)))
 
 (defn- parse-platform
   []
@@ -81,29 +91,81 @@
       "unknown"
       date)))
 
+;; --- Compile-time version tag
+;;
+;; This value is baked into the compiled JS at build time via closure-defines,
+;; so it travels with the JS bundle. In contrast, `version-tag` (below) is read
+;; at runtime from globalThis.penpotVersionTag which is set by the always-fresh
+;; index.html. Comparing the two lets us detect when the browser has loaded
+;; stale cached JS files.
+
+(goog-define compiled-version-tag "develop")
+
 ;; --- Global Config Vars
 
 (def default-theme  "default")
 (def default-language "en")
 
-(def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
 
 (def build-date           (parse-build-date global))
 (def flags                (parse-flags global))
-(def version              (parse-version global))
 (def target               (parse-target global))
 (def browser              (parse-browser))
 (def platform             (parse-platform))
+(def session-id           (uuid/next))
 
+(def version              (parse-version global))
+(def version-tag          (obj/get global "penpotVersionTag"))
+
+
+(defn stale-build?
+  "Returns true when the compiled JS was built with a different version
+  tag than the one present in the current index.html. This indicates
+  the browser has cached JS from a previous deployment."
+  ^boolean
+  []
+  (not= compiled-version-tag version-tag))
+
+;; --- Throttled reload
+;;
+;; A generic reload mechanism with loop protection via sessionStorage.
+;; Used by both the boot-time stale-build check and the runtime
+;; stale-asset error handler.
+
+(def ^:private reload-storage-key "penpot-last-reload-timestamp")
+(def ^:private reload-cooldown-ms 30000)
+
+(defn throttled-reload
+  "Force a hard page reload unless one was already triggered within the
+  last 30 seconds (tracked in sessionStorage). Returns true when a
+  reload is initiated, false when suppressed."
+  [& {:keys [reason]}]
+  (let [now     (ct/now)
+        prev-ts (-> (sto/get-item sto/session-storage reload-storage-key)
+                    (d/parse-integer))]
+    (if (and (some? prev-ts)
+             (< (- now prev-ts) reload-cooldown-ms))
+      (do
+        (log/wrn :hint "reload suppressed (cooldown active)"
+                 :reason reason)
+        false)
+      (do
+        (log/wrn :hint "forcing page reload" :reason reason)
+        (sto/set-item sto/session-storage reload-storage-key (str now))
+        (ts/asap #(.reload ^js location true))
+        true))))
+
+(def saas?                (obj/get global "penpotIsSaas" false))
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI"))
+(def oidc-name            (obj/get global "penpotOIDCName"))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
-(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
+(def plugins-list-uri     (obj/get global "penpotPluginsListURI" "https://penpot.app/penpothub/plugins"))
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
-(def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
-
+(def templates-uri        (obj/get global "penpotTemplatesURI" "https://penpot.github.io/penpot-files/"))
+(def upload-chunk-size    (obj/get global "penpotUploadChunkSize" (* 1024 1024 25))) ;; 25 MiB
 
 ;; We set the current parsed flags under common for make
 ;; it available for common code without the need to pass
@@ -112,23 +174,27 @@
 
 (defn- normalize-uri
   [uri-str]
-  (let [uri (u/uri uri-str)]
-    ;; Ensure that the path always ends with "/"; this ensures that
-    ;; all path join operations works as expected.
-    (cond-> uri
-      (not (str/ends-with? (:path uri) "/"))
-      (update :path #(str % "/")))))
+  ;; Ensure that the path always ends with "/"; this ensures that
+  ;; all path join operations works as expected.
+  (u/ensure-path-slash uri-str))
 
 (def public-uri
   (normalize-uri (or (obj/get global "penpotPublicURI")
                      (obj/get location "origin"))))
+
+(def mcp-ws-uri
+  (or (some-> (obj/get global "penpotMcpServerURI") u/uri)
+      (u/join public-uri "mcp/ws")))
 
 (def rasterizer-uri
   (or (some-> (obj/get global "penpotRasterizerURI") normalize-uri)
       public-uri))
 
 (def worker-uri
-  (obj/get global "penpotWorkerURI" "/js/worker.js"))
+  (-> public-uri
+      (u/join "js/worker/main.js")
+      (get :path)
+      (str "?version=" version-tag)))
 
 (defn external-feature-flag
   [flag value]
@@ -146,17 +212,25 @@
   (let [f (obj/get global "externalContextInfo")]
     (when (fn? f) (f))))
 
+(defn external-notify-register-success
+  [profile-id]
+  (let [f (obj/get global "externalNotifyRegisterSuccess")]
+    (when (fn? f) (f (str profile-id)))))
+
 (defn initialize-external-context-info
   []
   (let [f (obj/get global "initializeExternalConfigInfo")]
     (when (fn? f) (f))))
+
+(def mcp-server-url (-> public-uri u/ensure-path-slash (u/join "mcp/stream") str))
+(def mcp-help-center-uri "https://help.penpot.app/mcp/")
 
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
   (if (= candidate :safari)
-    (contains? #{:safari :safari-16 :safari-17} browser)
+    (contains? #{:safari :safari-16 :safari-17 :safari-18 :safari-26} browser)
     (= candidate browser)))
 
 (defn ^boolean check-platform? [candidate]
@@ -183,14 +257,16 @@
   ([media]
    (resolve-file-media media false))
   ([{:keys [id data-uri] :as media} thumbnail?]
-   (if data-uri
-     data-uri
-     (dm/str
-      (cond-> (u/join public-uri "assets/by-file-media-id/")
-        (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
-        (false? thumbnail?) (u/join (dm/str id)))))))
+   (or data-uri
+       (dm/str
+        (cond-> (u/join public-uri "assets/by-file-media-id/")
+          (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
+          (false? thumbnail?) (u/join (dm/str id)))))))
 
-(defn resolve-static-asset
-  [path]
-  (let [uri (u/join public-uri path)]
-    (assoc uri :query (dm/str "version=" (:full version)))))
+(defn resolve-href
+  [resource]
+  (let [href (-> public-uri
+                 (u/ensure-path-slash)
+                 (u/join resource)
+                 (get :path))]
+    (str href "?version=" version-tag)))

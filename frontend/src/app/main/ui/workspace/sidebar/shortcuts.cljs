@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.shortcuts
   (:require-macros [app.main.style :as stl])
@@ -18,8 +18,8 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
+   [app.main.ui.ds.product.panel-title :refer [panel-title*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
@@ -111,6 +111,8 @@
     (tr "shortcuts.duplicate")
     (tr "shortcuts.escape")
     (tr "shortcuts.export-shapes")
+    (tr "shortcuts.find")
+    (tr "shortcuts.find-and-replace")
     (tr "shortcuts.fit-all")
     (tr "shortcuts.flip-horizontal")
     (tr "shortcuts.flip-vertical")
@@ -160,6 +162,7 @@
     (tr "shortcuts.open-viewer")
     (tr "shortcuts.open-workspace")
     (tr "shortcuts.paste")
+    (tr "shortcuts.paste-replace")
     (tr "shortcuts.prev-frame")
     (tr "shortcuts.redo")
     (tr "shortcuts.rename")
@@ -483,24 +486,18 @@
            (reset! open-sections [[1]])
            (reset! filter-term "")))]
 
-    (mf/with-effect []
-      (dom/focus! (dom/get-element "shortcut-search")))
-
     [:div {:class (dm/str class " " (stl/css :shortcuts))}
-     [:div {:class (stl/css :shortcuts-header)}
-      [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
-      [:> icon-button* {:variant "ghost"
-                        :icon i/close
-                        :class (stl/css :shortcuts-close-button)
-                        :on-click close-fn
-                        :aria-label (tr "labels.close")}]]
+     [:> panel-title* {:class (stl/css :shortcuts-title)
+                       :text (tr "shortcuts.title")
+                       :on-close close-fn}]
 
      [:div {:class (stl/css :search-field)}
       [:> search-bar* {:on-change on-search-term-change-2
                        :on-clear on-search-clear-click
                        :value @filter-term
                        :placeholder (tr "shortcuts.title")
-                       :icon-id i/search}]]
+                       :icon-id i/search
+                       :auto-focus true}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}

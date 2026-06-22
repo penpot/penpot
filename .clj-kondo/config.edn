@@ -45,6 +45,15 @@
   :potok/reify-type
   {:level :error}
 
+  :redundant-primitive-coercion
+  {:level :off}
+
+  :unused-excluded-var
+  {:level :off}
+
+  :unresolved-excluded-var
+  {:level :off}
+
   :missing-protocol-method
   {:level :off}
 

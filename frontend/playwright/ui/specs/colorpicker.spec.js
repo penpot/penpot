@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { WorkspacePage } from "../pages/WorkspacePage";
+import { WasmWorkspacePage } from "../pages/WasmWorkspacePage";
 
 test.beforeEach(async ({ page }) => {
-  await WorkspacePage.init(page);
+  await WasmWorkspacePage.init(page);
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/7549
 test("Bug 7549 - User clicks on color swatch to display the color picker next to it", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
@@ -25,7 +25,7 @@ test("Bug 7549 - User clicks on color swatch to display the color picker next to
 });
 
 test("Create a LINEAR gradient", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -85,21 +85,11 @@ test("Create a LINEAR gradient", async ({ page }) => {
     .last();
   await inputOpacity2.fill("40");
 
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
-
-  await expect(
-    workspacePage.page.getByText("Linear gradient").nth(1),
-  ).toBeVisible();
+  await expect(workspacePage.page.getByText("Linear gradient")).toBeVisible();
 });
 
 test("Create a RADIAL gradient", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -169,21 +159,11 @@ test("Create a RADIAL gradient", async ({ page }) => {
     .last();
   await inputOpacity2.fill("100");
 
-  const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
-    "opacity-global-input",
-  );
-  await inputOpacityGlobal.fill("50");
-  await inputOpacityGlobal.press("Enter");
-  await expect(inputOpacityGlobal).toHaveValue("50");
-  await expect(inputOpacityGlobal).toBeVisible();
-
-  await expect(
-    workspacePage.page.getByText("Radial gradient").nth(1),
-  ).toBeVisible();
+  await expect(workspacePage.page.getByText("Radial gradient")).toBeVisible();
 });
 
 test("Gradient stops limit", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.mockConfigFlags(["enable-feature-render-wasm"]);
   await workspacePage.setupEmptyFile(page);
 
@@ -212,10 +192,10 @@ test("Gradient stops limit", async ({ page }) => {
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/9900
-test("Bug 9900 - Color picker has no inputs for HSV values", async ({
+test("Bug 9900 - Color picker has no inputs for HSB values", async ({
   page,
 }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
   await workspacePage.goToWorkspace();
@@ -223,16 +203,16 @@ test("Bug 9900 - Color picker has no inputs for HSV values", async ({
   const swatch = workspacePage.page.getByRole("button", { name: "E8E9EA" });
   await swatch.click();
 
-  const HSVA = await workspacePage.page.getByLabel("HSVA");
-  await HSVA.click();
+  const HSBA = await workspacePage.page.getByLabel("HSBA");
+  await HSBA.click();
 
   await workspacePage.page.getByLabel("H", { exact: true }).isVisible();
   await workspacePage.page.getByLabel("S", { exact: true }).isVisible();
-  await workspacePage.page.getByLabel("V", { exact: true }).isVisible();
+  await workspacePage.page.getByLabel("B(V)", { exact: true }).isVisible();
 });
 
 test("Bug 10089 - Cannot change alpha", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
+  const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     /get\-file\?/,
@@ -252,11 +232,104 @@ test("Bug 10089 - Cannot change alpha", async ({ page }) => {
   const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
   await swatch.click();
 
-  const alpha = workspacePage.page.getByLabel("A", { exact: true });
+  const alpha = workspacePage.page.getByRole("spinbutton", { name: "Alpha" });
   await expect(alpha).toHaveValue("100");
 
   const alphaSlider = workspacePage.page.getByTestId("slider-opacity");
   await alphaSlider.click();
 
   await expect(alpha).toHaveValue("50");
+});
+
+test("Color picker color list", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  await page.getByRole("tab", { name: "Assets" }).click();
+  await page.getByRole("button", { name: "Add color" }).click();
+
+  const rampSelector = page.getByTestId("value-saturation-selector");
+  await expect(rampSelector).toBeVisible();
+  await rampSelector.click({ position: { x: 50, y: 50 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("first color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("button", { name: "Add color" }).click();
+  await rampSelector.click({ position: { x: 40, y: 40 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("second color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("button", { name: "Add color" }).click();
+  await rampSelector.click({ position: { x: 60, y: 60 } });
+  await page.getByRole("button", { name: "Save color style" }).click();
+  await page
+    .getByTestId("left-sidebar")
+    .locator('input[type="text"]')
+    .fill("third  color");
+  await workspacePage.page.keyboard.press("Enter");
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  await swatch.click();
+
+  const colorpicker = workspacePage.page.getByTestId("colorpicker");
+  await expect(colorpicker).toBeVisible();
+
+  const colorItems = colorpicker.getByRole("listitem");
+
+  const colorButtons = colorItems.getByRole("button");
+  await expect(colorButtons).toHaveCount(3);
+
+  const toggleButton = colorpicker.getByRole("button", { name: "List view" });
+  await toggleButton.click();
+
+  await expect(
+    colorpicker.getByRole("listitem", { name: "#708191" }),
+  ).toBeVisible();
+  await colorpicker
+    .getByRole("combobox")
+    .filter({ hasText: "Recent colors" })
+    .click();
+  await colorpicker.getByRole("option", { name: "File library" }).click();
+
+  await expect(
+    colorpicker.getByRole("listitem", { name: "First color" }),
+  ).toBeVisible();
+
+  //test show and hide color palette
+  const paletteToggle = workspacePage.page.getByRole('button', { name: 'Toggle color palette' });
+  await paletteToggle.click();
+  const paletteBar = workspacePage.page.getByRole('region', { name: 'Palette bar' });
+  await expect(paletteBar).toBeVisible();
+
+  // Check that color palette is open by checking the presence of a color swatch in the palette
+  const paletteSwatch = paletteBar.getByRole('button', { name: 'first color' });
+  await expect(paletteSwatch).toBeVisible();
+
+  // Close the color palette
+  await paletteToggle.click();
+  await expect(paletteSwatch).not.toBeVisible();
 });

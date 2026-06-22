@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.geometry
   (:require-macros [app.main.style :as stl])
@@ -44,7 +44,8 @@
   [:div {:class (stl/css :attributes-block)}
    [:> inspect-title-bar*
     {:title (tr "inspect.attributes.size")
-     :class (stl/css :title-spacing-geometry)}
+     :class (stl/css :title-wrapper)
+     :title-class (stl/css :geometry-attr-title)}
 
     (when (= (count shapes) 1)
       [:> copy-button* {:data (css/get-shape-properties-css objects (first shapes) properties)

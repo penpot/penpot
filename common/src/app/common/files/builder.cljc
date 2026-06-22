@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.builder
   "Internal implementation of file builder. Mainly used as base impl
@@ -356,7 +356,7 @@
                 :code :empty-children
                 :hint "expected a group with at least one shape for creating a bool"))
 
-    (let [head  (if (= type :difference)
+    (let [head  (if (= (:bool-type bool-shape) :difference)
                   (first children)
                   (last children))
           fills (if (and (contains? head :svg-attrs) (empty? (:fills head)))
@@ -364,7 +364,7 @@
                   (get head :fills))]
       (-> bool-shape
           (assoc :fills fills)
-          (assoc :stroks (get head :strokes))))))
+          (assoc :strokes (get head :strokes))))))
 
 (defn add-bool
   [state params]
@@ -485,6 +485,13 @@
         (commit-change change1)
         (commit-change change2))))
 
+(defn add-tokens-lib
+  [state tokens-lib]
+  (-> state
+      (commit-change
+       {:type :set-tokens-lib
+        :tokens-lib tokens-lib})))
+
 (defn delete-shape
   [file id]
   (commit-change
@@ -569,7 +576,7 @@
         {:keys [id width height name]}
         (-> params
             (update :id default-uuid)
-            (check-add-file-media params))]
+            (check-add-file-media))]
 
     (-> state
         (update ::blobs assoc media-id blob)

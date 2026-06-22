@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.variant
   (:require-macros [app.main.style :as stl])
@@ -42,7 +42,8 @@
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
       {:title (if is-container? (tr "inspect.attributes.variants") (tr "inspect.attributes.variant"))
-       :class (stl/css :title-spacing-variant)}]
+       :class (stl/css :title-wrapper)
+       :title-class (stl/css :variant-attr-title)}]
 
      (for [[pos property] (map-indexed vector properties)]
        [:> variant-block* {:key (dm/str "variant-property-" pos) :name (:name property) :value (:value property)}])]))

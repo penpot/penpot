@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.layout
   "Workspace layout management events and helpers."
@@ -25,6 +25,8 @@
     :element-options
     :rulers
     :display-guides
+    :display-comments
+    :lock-guides
     :snap-guides
     :scale-text
     :dynamic-alignment
@@ -59,6 +61,7 @@
     :element-options
     :rulers
     :display-guides
+    :display-comments
     :snap-guides
     :dynamic-alignment
     :display-artboard-names
@@ -142,7 +145,8 @@
   {:hide-palettes :app.main.data.workspace/hide-palettes?
    :colorpalette :app.main.data.workspace/show-colorpalette?
    :textpalette :app.main.data.workspace/show-textpalette?
-   :rulers :app.main.data.workspace/show-rulers?})
+   :rulers :app.main.data.workspace/show-rulers?
+   :display-comments :app.main.data.workspace/show-comments?})
 
 (defn load-layout-flags
   "Given the current layout flags, and updates them with the data

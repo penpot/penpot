@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.media
   (:require
@@ -49,13 +49,14 @@
 (defn notify-start-loading
   []
   (st/emit! (ntf/show {:content (tr "media.loading")
+                       :tag ::media-upload
                        :type :toast
                        :level :info
                        :timeout nil})))
 
 (defn notify-finished-loading
   []
-  (st/emit! (ntf/hide)))
+  (st/emit! (ntf/hide :tag ::media-upload)))
 
 (defn process-error
   [error]

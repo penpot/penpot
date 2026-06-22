@@ -1,39 +1,82 @@
 import { expect } from "@playwright/test";
 import { WorkspacePage } from "./WorkspacePage";
 
+export const WASM_PROFILE = "logged-in-user/get-profile-wasm-renderer.json";
+
 export const WASM_FLAGS = [
   "enable-feature-render-wasm",
   "enable-render-wasm-dpr",
+  "enable-feature-text-editor-v2",
+  // Default flags enable render-wasm-info; keep screenshots stable in e2e.
+  "disable-render-wasm-info",
 ];
 
 export class WasmWorkspacePage extends WorkspacePage {
   static async init(page) {
     await super.init(page);
-    await WorkspacePage.mockConfigFlags(page, WASM_FLAGS);
+    await WasmWorkspacePage.mockConfigFlags(page, WASM_FLAGS);
+    await WasmWorkspacePage.mockRPC(page, "get-profile", WASM_PROFILE);
 
     await page.addInitScript(() => {
-      document.addEventListener("wasm:set-objects-finished", () => {
+      document.addEventListener("penpot:wasm:loaded", () => {
+        window.wasmModuleLoaded = true;
+      });
+
+      document.addEventListener("penpot:wasm:render", () => {
+        window.wasmRenderCount = (window.wasmRenderCount || 0) + 1;
+      });
+
+      document.addEventListener("penpot:wasm:set-objects", () => {
         window.wasmSetObjectsFinished = true;
       });
     });
   }
 
-  constructor(page) {
-    super(page);
+  static async mockConfigFlags(page, flags) {
+    await super.mockConfigFlags(page, [...WASM_FLAGS, ...flags]);
+  }
+
+  async mockConfigFlags(flags) {
+    return WasmWorkspacePage.mockConfigFlags(this.page, flags);
+  }
+
+  constructor(page, options) {
+    super(page, options);
     this.canvas = page.getByTestId("canvas-wasm-shapes");
   }
 
-  async waitForFirstRender(config = {}) {
-    const options = { hideUI: true, ...config };
+  async waitForIdle(options) {
+    return this.page.evaluate(
+      (options) => new Promise((resolve) => globalThis.requestIdleCallback(resolve, options)),
+      options
+    );
+  }
 
-    await expect(this.pageName).toHaveText("Page 1");
-    if (options.hideUI) {
-      await this.hideUI();
-    }
-    await this.canvas.waitFor({ state: "visible" });
+  async waitForFirstRender() {
+    await this.pageName.waitFor();
+    await this.canvas.waitFor();
     await this.page.waitForFunction(() => {
+      console.log("RAF:", window.wasmSetObjectsFinished);
       return window.wasmSetObjectsFinished;
     });
+  }
+
+  async waitForFirstRenderWithoutUI() {
+    await this.waitForFirstRender();
+    await this.hideUI();
+  }
+
+  async getRenderCount() {
+    return this.page.evaluate(() => window.wasmRenderCount || 0);
+  }
+
+  async waitForNextRender(previousCount = null) {
+    const baseCount =
+      previousCount === null ? await this.getRenderCount() : previousCount;
+    await this.page.waitForFunction(
+      (count) => (window.wasmRenderCount || 0) > count,
+      baseCount,
+    );
   }
 
   async hideUI() {
@@ -60,5 +103,10 @@ export class WasmWorkspacePage extends WorkspacePage {
       assetFilename,
       options,
     );
+  }
+
+  async setupEmptyFile() {
+    await super.setupEmptyFile();
+    await this.mockRPC("get-profile", WASM_PROFILE);
   }
 }

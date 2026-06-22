@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.auth.ldap
   (:require
@@ -111,7 +111,7 @@
    [:host {:optional true} :string]
    [:port {:optional true} ::sm/int]
    [:bind-dn {:optional true} :string]
-   [:bind-passwor {:optional true} :string]
+   [:bind-password {:optional true} :string]
    [:query {:optional true} :string]
    [:base-dn {:optional true} :string]
    [:attrs-email {:optional true} :string]

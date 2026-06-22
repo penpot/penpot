@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -33,22 +33,26 @@
 }
 
 .counter {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--viewer-thumbnails-control-foreground-color);
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
+
   width: deprecated.$s-60;
 }
 
 .expand-btn,
 .close-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
@@ -72,8 +76,9 @@
 
 .right-scroll-handler,
 .left-scroll-handler {
-  @extend .button-tertiary;
-  @include deprecated.flexCenter;
+  @extend %button-tertiary;
+  @include deprecated.flex-center;
+
   grid-column: 3 / span 1;
   grid-row: 1 / span 1;
   width: deprecated.$s-32;
@@ -81,11 +86,14 @@
   margin: auto 0;
   z-index: deprecated.$z-index-10;
   opacity: 0;
+
   &:hover {
     opacity: 1;
   }
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
@@ -93,6 +101,7 @@
 .left-scroll-handler {
   grid-column: 1 / span 1;
   grid-row: 1 / span 1;
+
   svg {
     transform: rotate(180deg);
   }
@@ -112,14 +121,16 @@
 }
 
 .thumbnail-item {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   display: flex;
   flex-direction: column;
   padding: deprecated.$s-16;
 }
 
 .thumbnail-preview {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-132;
   min-height: deprecated.$s-132;
   height: deprecated.$s-132;
@@ -142,8 +153,9 @@
 }
 
 .thumbnail-info {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.textEllipsis;
+  @include deprecated.body-small-typography;
+  @include deprecated.text-ellipsis;
+
   text-align: center;
   color: var(--viewer-thumbnails-control-foreground-color);
   padding: deprecated.$s-8 0;

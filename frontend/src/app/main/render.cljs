@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.render
   "Rendering utilities and components for penpot SVG.
@@ -30,6 +30,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.config :as cfg]
    [app.main.fonts :as fonts]
+   [app.main.render-viewer-wasm :as rwv]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
@@ -45,6 +46,7 @@
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.strings :as ust]
@@ -53,6 +55,7 @@
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
@@ -67,7 +70,7 @@
     :height (:height vbox)
     :fill color}])
 
-(defn- calculate-dimensions
+(defn calculate-dimensions
   [objects aspect-ratio]
   (let [root-objects (ctst/get-root-objects objects)]
     (if (empty? root-objects)
@@ -133,7 +136,7 @@
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
-                ;;  tspan shouldn't be contained in a group or have svg defs
+                 ;;  tspan shouldn't be contained in a group or have svg defs
                  (not= :tspan (get-in shape [:content :tag]))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))
@@ -171,6 +174,8 @@
             ;; Don't wrap svg elements inside a <g> otherwise some can break
             [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
 
+(set! wasm.api/shape-wrapper-factory shape-wrapper-factory)
+
 (defn format-viewbox
   "Format a viewbox given a rectangle"
   [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
@@ -196,7 +201,7 @@
         ;; Replace the previous object with the new one
         objects  (assoc objects object-id object)
 
-        vector (-> (gpt/point (:x object) (:y object))
+        vector (-> (gpt/point (-> object :selrect :x) (-> object :selrect :y))
                    (gpt/negate))
 
         mod-ids  (cons object-id (cfh/get-children-ids objects object-id))
@@ -234,13 +239,13 @@
               :fill "none"}
 
         (when include-metadata
-          [:& export/export-page {:page data}])
+          [:> export/export-page* {:page data}])
 
         (let [shapes (->> shapes
                           (remove cfh/frame-shape?)
                           (mapcat #(cfh/get-children-with-self objects (:id %))))
               fonts (ff/shapes->fonts shapes)]
-          [:& ff/fontfaces-style {:fonts fonts}])
+          [:> ff/fontfaces-style* {:fonts fonts}])
 
         (for [item shapes]
           [:& shape-wrapper {:shape item
@@ -276,7 +281,7 @@
                    (grc/fix-aspect-ratio aspect-ratio))
 
         ;; Bounds without shadows/blur will be the bounds of the thumbnail
-        bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur))
+        bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur :background-blur))
 
         delta-bounds (gpt/point (:x bounds) (:y bounds))
         vector (gpt/negate delta-bounds)
@@ -477,8 +482,79 @@
              :style {:-webkit-print-color-adjust :exact}
              :fill "none"}
 
-       [:& ff/fontfaces-style {:fonts fonts}]
+       [:> ff/fontfaces-style* {:fonts fonts}]
        [:& shape-wrapper {:shape object}]]]]))
+
+(mf/defc objects-svg
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object-ids embed] :or {embed false} :as props}]
+  (let [shapes
+        (->> object-ids
+             (keep #(get objects %))
+             (mapv (fn [object]
+                     (cond-> object
+                       (:hide-fill-on-export object)
+                       (assoc :fills [])))))
+
+        bounds
+        (->> shapes
+             (map #(gsb/get-object-bounds objects % {:ignore-margin? false}))
+             (grc/join-rects))
+
+        {:keys [width height]} bounds
+        vbox  (format-viewbox bounds)
+        fonts (->> shapes
+                   (mapcat #(ff/shape->fonts % objects))
+                   (distinct))
+
+        shape-wrapper
+        (mf/with-memo [objects]
+          (shape-wrapper-factory objects))]
+
+    [:& (mf/provider export/include-metadata-ctx) {:value false}
+     [:& (mf/provider embed/context) {:value embed}
+      [:svg {:view-box vbox
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :style {:-webkit-print-color-adjust :exact}
+             :fill "none"}
+       [:> ff/fontfaces-style* {:fonts fonts}]
+       (for [shape shapes]
+         [:& shape-wrapper {:key (dm/str (:id shape)) :shape shape}])]]]))
+
+(mf/defc object-wasm
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects object-id skip-children scale on-render] :as props}]
+  (let [object  (get objects object-id)
+        object (cond-> object
+                 (:hide-fill-on-export object)
+                 (assoc :fills [])
+
+                 skip-children
+                 (assoc :shapes []))
+
+        {:keys [width height] :as bounds}
+        (gsb/get-object-bounds objects object {:ignore-margin? false})
+
+        scale (or scale 1)
+        canvas-ref (mf/use-ref nil)]
+
+    (mf/use-effect
+     (fn []
+       (let [canvas (mf/ref-val canvas-ref)]
+         (->> @wasm.api/module
+              (p/fmap
+               (fn [ready?]
+                 (when ready?
+                   (rwv/render-to-canvas objects canvas bounds scale object-id on-render))))))))
+
+    [:canvas {:ref canvas-ref
+              :width (* scale width)
+              :height (* scale height)
+              :style {:background "transparent"}}]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

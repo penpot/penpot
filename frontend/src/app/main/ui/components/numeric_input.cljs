@@ -2,11 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.components.numeric-input
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -43,6 +44,7 @@
         step-value  (d/parse-double step-value 1)
         default     (d/parse-double default (when-not nillable? 0))
 
+        integer?         (unchecked-get props "integer")
         select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
 
         ;; We need a ref pointing to the input dom element, but the user
@@ -63,7 +65,7 @@
 
         parse-value
         (mf/use-fn
-         (mf/deps min-value max-value value nillable? default)
+         (mf/deps min-value max-value value nillable? default integer?)
          (fn []
            (when-let [node (mf/ref-val ref)]
              (let [new-value (-> (dom/get-value node)
@@ -72,6 +74,7 @@
                (cond
                  (d/num? new-value)
                  (-> new-value
+                     (cond-> integer? mth/round)
                      (d/max (/ sm/min-safe-int 2))
                      (d/min (/ sm/max-safe-int 2))
                      (cond-> (d/num? min-value)
@@ -146,7 +149,8 @@
                                  (and (d/num? max-value) (> new-value max-value))
                                  max-value
 
-                                 :else new-value)]
+                                 :else new-value)
+                     new-value (if integer? (mth/round new-value) new-value)]
 
                  (apply-value event new-value))))))
 
@@ -210,7 +214,7 @@
                (dom/blur! node)))))
 
         handle-focus
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-focus select-on-focus?)
          (fn [event]
            (reset! last-value* (parse-value))
@@ -218,7 +222,6 @@
              (when on-focus
                (mf/set-ref-val! dirty-ref true)
                (on-focus event))
-
              (when select-on-focus?
                (dom/select-text! target)
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
@@ -227,6 +230,7 @@
         props (-> (obj/clone props)
                   (obj/unset! "selectOnFocus")
                   (obj/unset! "nillable")
+                  (obj/unset! "integer")
                   (obj/set! "value" mf/undefined)
                   (obj/set! "onChange" handle-change)
                   (obj/set! "className" class)

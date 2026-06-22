@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.text
   "Legacy editor helpers (draftjs).
@@ -37,7 +37,9 @@
 (defn attrs-to-styles
   [attrs]
   (reduce-kv (fn [res k v]
-               (conj res (encode-style k v)))
+               (if (some? v)
+                 (conj res (encode-style k v))
+                 res))
              #{}
              attrs))
 
@@ -222,7 +224,7 @@
               :else
               (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
 
-               ;; We add an end-of-line when finish a paragraph
+            ;; We add an end-of-line when finish a paragraph
             new-acc
             (if (= (:type node) "paragraph")
               (let [[hs ht] (first new-acc)]

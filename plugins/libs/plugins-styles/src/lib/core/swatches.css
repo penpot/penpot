@@ -1,0 +1,71 @@
+:root {
+  /*BACKGROUND*/
+
+  /*dark*/
+  --db-primary: #18181a;
+  --db-secondary: #000000;
+  --db-tertiary: #212426;
+  --db-quaternary: #2e3434;
+
+  /*light*/
+  --lb-primary: #ffffff;
+  --lb-secondary: #e8eaee;
+  --lb-tertiary: #f3f4f6;
+  --lb-quaternary: #eef0f2;
+
+  /*FOREGROUND*/
+
+  /*dark*/
+
+  --df-primary: #ffffff;
+  --df-secondary: #8f9da3;
+
+  /*light*/
+  --lf-primary: #000000;
+  --lf-secondary: #495e74;
+
+  /*ACCENT*/
+
+  /*dark*/
+  --da-primary: #7efff5;
+  --da-primary-muted: #426158;
+  --da-secondary: #bb97d8;
+  --da-tertiary: #00d1b8;
+  --da-quaternary: #ff6fe0;
+
+  /*light*/
+  --la-primary: #6911d4;
+  --la-primary-muted: #e1d2f5;
+  --la-secondary: #1345aa;
+  --la-tertiary: #8c33eb;
+  --la-quaternary: #ff6fe0;
+
+  /*STATUS COLOR*/
+  --success-50: #f0f8ff;
+  --success-500: #2d9f8f;
+  --success-950: #0a2927;
+  --warning-50: #fff4ed;
+  --warning-500: #fe4811;
+  --warning-950: #440806;
+  --error-50: #fff0f3;
+  --error-200: #ffcada;
+  --error-500: #ff3277;
+  --error-700: #c80857;
+  --error-950: #500124;
+  --info-50: #f0f8ff;
+  --info-500: #0e9be9;
+  --info-950: #082c49;
+
+  /*APP COLOR*/
+  --app-white: #ffffff;
+  --app-black: #000000;
+  --app-pink: #f49ef7;
+  --app-blue: #75cafc;
+  --app-gold: #fdcd79;
+  --app-indigo: #a9bdfa;
+  --app-red: #faa6b7;
+  --app-yellow: #dee563;
+  --app-purple: #cbaaff;
+  --app-lemon: #b1e96f;
+  --app-orange: #f9b489;
+}

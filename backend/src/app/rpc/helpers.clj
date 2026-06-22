@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.helpers
   "General purpose RPC helpers."
@@ -83,3 +83,16 @@
   "A convenience allias for yetti.response/stream-body"
   [f]
   (yres/stream-body f))
+
+(defn get-request
+  "Get http request from RPC params"
+  [params]
+  (assert (contains? params ::rpc/request-at) "rpc params required")
+  (-> (meta params)
+      (get ::http/request)))
+
+(defn get-auth-data
+  "Get http auth-data from RPC params"
+  [params]
+  (-> (get-request params)
+      (get ::http/auth-data)))

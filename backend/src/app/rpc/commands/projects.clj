@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.projects
   (:require
@@ -157,6 +157,7 @@
 
 (sv/defmethod ::get-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:get-project}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
   (dm/with-open [conn (db/open pool)]
@@ -169,12 +170,19 @@
 ;; --- MUTATION: Create Project
 
 (defn- create-project
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
-  (let [project (teams/create-project conn params)]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at profile-id team-id] :as params}]
+  (assert (ct/inst? request-at) "expect request-at assigned")
+  (let [params    (-> params
+                      (assoc :created-at request-at)
+                      (assoc :modified-at request-at))
+        project   (teams/create-project conn params)
+        timestamp (::rpc/request-at params)]
     (teams/create-project-role conn profile-id (:id project) :owner)
     (db/insert! conn :team-project-profile-rel
                 {:project-id (:id project)
                  :profile-id profile-id
+                 :created-at timestamp
+                 :modified-at timestamp
                  :team-id team-id
                  :is-pinned false})
     (assoc project :is-pinned false)))
@@ -216,6 +224,7 @@
 
 (sv/defmethod ::update-project-pin
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:update-project-pin
    ::webhooks/batch-timeout (ct/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -237,6 +246,7 @@
 
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:rename-project
    ::webhooks/event? true
    ::db/transaction true}
@@ -279,6 +289,7 @@
 
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:delete-project
    ::webhooks/event? true
    ::db/transaction true}

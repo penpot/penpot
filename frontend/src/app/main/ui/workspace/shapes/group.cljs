@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.group
   (:require
@@ -18,11 +18,9 @@
   [shape-wrapper]
   (let [group-shape (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      {::mf/wrap [#(mf/memo' % check-shape-props)]
-       ::mf/wrap-props false}
-      [props]
-      (let [shape    (unchecked-get props "shape")
-            shape-id (dm/get-prop shape :id)
+      {::mf/wrap [#(mf/memo' % check-shape-props)]}
+      [{:keys [shape]}]
+      (let [shape-id (dm/get-prop shape :id)
 
             childs*  (mf/with-memo [shape-id]
                        (refs/children-objects shape-id))
@@ -33,5 +31,4 @@
           {:shape shape
            :childs childs}]
          (when *assert*
-           [:& wsd/shape-debug {:shape shape}])]))))
-
+           [:> wsd/shape-debug* {:shape shape}])]))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.fill
   (:require-macros [app.main.style :as stl])
@@ -27,8 +27,7 @@
 
 ;; DEPRECATED, use fill-block-styles* instead.
 ;; This component is kept for backward compatibility
-(mf/defc fill-block
-  {::mf/wrap-props false}
+(mf/defc fill-block*
   [{:keys [objects shape]}]
   (let [format*   (mf/use-state :hex)
         format    (deref format*)
@@ -68,7 +67,8 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "inspect.attributes.fill")
-         :class (stl/css :title-spacing-fill)}]
+         :class (stl/css :title-wrapper)
+         :class-title (stl/css :fill-attr-title)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
@@ -83,7 +83,7 @@
                                       :shape shape}])
             (if (seq (:fills shape))
               (for [value (:fills shape [])]
-                [:& fill-block {:key (str "fill-block-" (:id shape) value)
-                                :shape value}])
-              [:& fill-block {:key (str "fill-block-only" (:id shape))
-                              :shape shape}])))]])))
+                [:> fill-block* {:key (str "fill-block-" (:id shape) value)
+                                 :shape value}])
+              [:> fill-block* {:key (str "fill-block-only" (:id shape))
+                               :shape shape}])))]])))

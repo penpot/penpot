@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files-update
   (:require
@@ -101,6 +101,17 @@
     :mod-typography
     :del-typography})
 
+(def ^:private token-change-types
+  #{:set-tokens-lib
+    :set-token
+    :set-token-set
+    :set-token-theme
+    :set-active-token-themes
+    :rename-token-set-group
+    :move-token-set
+    :move-token-set-group
+    :set-base-font-size})
+
 (def ^:private file-change-types
   #{:add-obj
     :mod-obj
@@ -111,6 +122,7 @@
 (defn- library-change?
   [{:keys [type] :as change}]
   (or (contains? library-change-types type)
+      (contains? token-change-types type)
       (contains? file-change-types type)))
 
 ;; If features are specified from params and the final feature
@@ -118,7 +130,8 @@
 ;; database.
 
 (sv/defmethod ::update-file
-  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+  {::rpc/id-type :file
+   ::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
 
    ::webhooks/event? true
@@ -367,19 +380,16 @@
       (l/error :hint "file schema validation error" :cause cause))))
 
 (defn- soft-validate-file!
-  [file libs]
+  [file libs changes]
   (try
-    (val/validate-file! file libs)
+    (val/validate-file-affected! file libs changes)
     (catch Throwable cause
       (l/error :hint "file validation error"
                :cause cause))))
 
-
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
-  (let [;; WARNING: this ruins performance; maybe we need to find
-        ;; some other way to do general validation
-        libs
+  (let [libs
         (when (and (or (contains? cf/flags :file-validation)
                        (contains? cf/flags :soft-file-validation))
                    (not skip-validate))
@@ -407,14 +417,14 @@
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
-        (soft-validate-file! file libs))
+        (soft-validate-file! file libs changes))
 
       (when (contains? cf/flags :soft-file-schema-validation)
         (soft-validate-file-schema! file))
 
       (when (and (contains? cf/flags :file-validation)
                  (not skip-validate))
-        (val/validate-file! file libs))
+        (val/validate-file-affected! file libs changes))
 
       (when (and (contains? cf/flags :file-schema-validation)
                  (not skip-validate))

@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets.colors
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
@@ -27,16 +28,14 @@
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc color-item
-  {::mf/wrap-props false}
-  [{:keys [color local? file-id selected multi-colors? multi-assets?
+(mf/defc color-item*
+  [{:keys [color is-local file-id selected is-multi-colors is-multi-assets
            on-asset-click on-assets-delete on-clear-selection on-group
            selected-full selected-paths move-color]}]
 
@@ -60,10 +59,16 @@
         menu-state  (mf/use-state cmm/initial-context-menu-state)
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
+        opacity      (:opacity color)
+        alpha-suffix (when (and (number? opacity) (< opacity 1))
+                       (dm/str " " (mth/round (* opacity 100)) "%"))
         default-name (cond
                        (:gradient color) (uc/gradient-type->string (dm/get-in color [:gradient :type]))
                        (:color color)    (:color color)
                        :else             (:value color))
+        display-name (if (and alpha-suffix (not (:gradient color)))
+                       (dm/str default-name alpha-suffix)
+                       default-name)
 
         rename-color
         (mf/use-fn
@@ -83,9 +88,9 @@
 
         delete-color
         (mf/use-fn
-         (mf/deps multi-colors? multi-assets? file-id color-id)
+         (mf/deps is-multi-colors is-multi-assets file-id color-id)
          (fn []
-           (if (or multi-colors? multi-assets?)
+           (if (or is-multi-colors is-multi-assets)
              (on-assets-delete)
              (let [undo-id (js/Symbol)]
                (st/emit! (dwu/start-undo-transaction undo-id)
@@ -93,11 +98,17 @@
                          (dwl/sync-file file-id file-id :colors color-id)
                          (dwu/commit-undo-transaction undo-id))))))
 
+        duplicate-color
+        (mf/use-fn
+         (mf/deps file-id color-id)
+         (fn []
+           (st/emit! (dwl/duplicate-color file-id color-id))))
+
         rename-color-clicked
         (mf/use-fn
-         (mf/deps read-only? local?)
+         (mf/deps read-only? is-local)
          (fn [event]
-           (when (and local? (not read-only?))
+           (when (and is-local (not read-only?))
              (dom/prevent-default event)
              (reset! editing* true))))
 
@@ -138,7 +149,7 @@
          (fn [event]
            (dom/prevent-default event)
            (let [pos (dom/get-client-position event)]
-             (when (and local? (not read-only?))
+             (when (and is-local (not read-only?))
                (when-not (contains? selected color-id)
                  (on-clear-selection))
                (swap! menu-state cmm/open-context-menu pos)))))
@@ -180,10 +191,10 @@
          (mf/deps color on-asset-click read-only? file-id)
          (fn [event]
            (when-not read-only?
-             (st/emit! (ptk/data-event ::ev/event
-                                       {::ev/name "use-library-color"
-                                        ::ev/origin "sidebar"
-                                        :external-library (not local?)}))
+             (st/emit! (ev/event
+                        {::ev/name "use-library-color"
+                         ::ev/origin "sidebar"
+                         :external-library (not is-local)}))
 
              (when-not (on-asset-click event (:id color))
                (st/emit! (dc/apply-color-from-assets file-id color (kbd/alt? event)))))))]
@@ -209,8 +220,8 @@
            :on-drop on-drop}
 
      [:div {:class (stl/css :bullet-block)}
-      [:& cb/color-bullet {:color color
-                           :mini true}]]
+      [:> cb/color-bullet* {:color color
+                            :mini true}]]
 
      (if ^boolean editing?
        [:input
@@ -224,34 +235,37 @@
          :default-value (cpn/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
-                       default-name
-                       (dm/str (:name color) " (" default-name ")"))
+                       display-name
+                       (dm/str (:name color) " (" display-name ")"))
               :class (stl/css :name-block)
               :on-double-click rename-color-clicked}
 
         (if (= (:name color) default-name)
-          [:span  {:class (stl/css :default-name)} default-name]
+          [:span  {:class (stl/css :default-name)} display-name]
           [:*
            (:name color)
-           [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
+           [:span  {:class (stl/css :default-name :default-name-with-color)} display-name]])])
 
-     (when local?
+     (when is-local
        [:> cmm/assets-context-menu*
         {:on-close on-close-menu
          :state @menu-state
-         :options [(when-not (or multi-colors? multi-assets?)
+         :options [(when-not (or is-multi-colors is-multi-assets)
                      {:name    (tr "workspace.assets.rename")
                       :id      "assets-rename-color"
                       :handler rename-color-clicked})
-                   (when-not (or multi-colors? multi-assets?)
+                   (when-not (or is-multi-colors is-multi-assets)
                      {:name    (tr "workspace.assets.edit")
                       :id      "assets-edit-color"
                       :handler edit-color-clicked})
-
+                   (when-not (or is-multi-colors is-multi-assets)
+                     {:name    (tr "workspace.assets.duplicate")
+                      :id      "assets-duplicate-color"
+                      :handler duplicate-color})
                    {:name    (tr "workspace.assets.delete")
                     :id      "assets-delete-color"
                     :handler delete-color}
-                   (when-not multi-assets?
+                   (when-not is-multi-assets
                      {:name   (tr "workspace.assets.group")
                       :id     "assets-group-color"
                       :handler (on-group (:id color))})]}])
@@ -262,7 +276,7 @@
 (mf/defc colors-group
   [{:keys [file-id prefix groups open-groups force-open? local? selected
            multi-colors? multi-assets? on-asset-click on-assets-delete
-           on-clear-selection on-group on-rename-group on-ungroup colors
+           on-clear-selection on-group on-rename-group on-ungroup on-delete-group colors
            selected-full]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -307,7 +321,8 @@
                                  :path prefix
                                  :is-group-open group-open?
                                  :on-rename on-rename-group
-                                 :on-ungroup on-ungroup}]
+                                 :on-ungroup on-ungroup
+                                 :on-delete-group on-delete-group}]
      (when group-open?
        [:*
         (let [colors (get groups "" [])]
@@ -326,21 +341,21 @@
              [:div {:class (stl/css :drop-space)}])
 
            (for [color colors]
-             [:& color-item {:key (dm/str (:id color))
-                             :color color
-                             :file-id file-id
-                             :local? local?
-                             :selected selected
-                             :multi-colors? multi-colors?
-                             :multi-assets? multi-assets?
-                             :on-asset-click on-asset-click
-                             :on-assets-delete on-assets-delete
-                             :on-clear-selection on-clear-selection
-                             :on-group on-group
-                             :colors colors
-                             :selected-full selected-full
-                             :selected-paths selected-paths
-                             :move-color move-color}])])
+             [:> color-item* {:key (dm/str (:id color))
+                              :color color
+                              :file-id file-id
+                              :is-local local?
+                              :selected selected
+                              :is-multi-colors multi-colors?
+                              :is-multi-assets multi-assets?
+                              :on-asset-click on-asset-click
+                              :on-assets-delete on-assets-delete
+                              :on-clear-selection on-clear-selection
+                              :on-group on-group
+                              :colors colors
+                              :selected-full selected-full
+                              :selected-paths selected-paths
+                              :move-color move-color}])])
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -360,6 +375,7 @@
                               :on-group on-group
                               :on-rename-group on-rename-group
                               :on-ungroup on-ungroup
+                              :on-delete-group on-delete-group
                               :colors colors
                               :selected-full selected-full}]))])]))
 
@@ -403,8 +419,8 @@
                  y-position (:top bounds)]
 
              (st/emit! (dw/set-assets-section-open file-id :colors true)
-                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "color"})
+                       (ev/event {::ev/name "add-asset-to-library"
+                                  :asset-type "color"})
                        (modal/show :colorpicker
                                    {:x x-position
                                     :y y-position
@@ -481,6 +497,13 @@
                                 file-id))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-delete-group
+        (mf/with-memo [colors on-clear-selection]
+          (cmm/make-delete-asset-group-fn
+           {:assets colors
+            :on-clear-selection on-clear-selection
+            :delete-events #(map (fn [c] (dwl/delete-color {:id (:id c)})) %)}))
+
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
 
@@ -515,5 +538,6 @@
                         :on-group on-group
                         :on-rename-group on-rename-group
                         :on-ungroup on-ungroup
+                        :on-delete-group on-delete-group
                         :colors colors
                         :selected-full selected-full}]]]))

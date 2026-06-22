@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.presence
   (:require-macros [app.main.style :as stl])
@@ -15,21 +15,21 @@
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
-(mf/defc session-widget
+(mf/defc session-widget*
   {::mf/props :obj
    ::mf/memo true}
   [{:keys [color profile index]}]
   (let [profile       (assoc profile :color color)
         full-name     (:fullname profile)]
     [:li {:class (stl/css :session-icon)
-          :style {:z-index (dm/str (+ 1 (* -1 index)))
+          :style {:z-index (dm/str (+ 2 (* -1 index)))
                   :background-color color}
           :title full-name}
      [:img {:alt full-name
             :style {:background-color color}
             :src (cfg/resolve-profile-photo-url profile)}]]))
 
-(mf/defc active-sessions
+(mf/defc active-sessions*
   {::mf/memo true}
   []
   (let [profiles     (mf/deref refs/profiles)
@@ -37,9 +37,11 @@
 
         sessions     (vals presence)
         num-sessions (count sessions)
+        max-avatar-count 3
+        avatar-count (if (= num-sessions max-avatar-count) max-avatar-count (- max-avatar-count 1))
 
         open*        (mf/use-state false)
-        open?        (and ^boolean (deref open*) (> num-sessions 2))
+        open?        (and ^boolean (deref open*) (> num-sessions max-avatar-count))
         on-open
         (mf/use-fn
          (fn []
@@ -58,7 +60,7 @@
                  :on-blur on-close}
         [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
          (for [session sessions]
-           [:& session-widget
+           [:> session-widget*
             {:color (:color session)
              :index 0
              :profile (get profiles (:profile-id session))
@@ -67,11 +69,11 @@
      [:button {:class (stl/css-case :active-users true)
                :on-click on-open}
       [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
-       (when (> num-sessions 2)
-         [:span {:class (stl/css :users-num)} (dm/str "+" (- num-sessions 2))])
+       (when (> num-sessions max-avatar-count)
+         [:li {:class (stl/css :users-num)} (dm/str "+" (+ 1 (- num-sessions max-avatar-count)))])
 
-       (for [[index session] (d/enumerate (take 2 sessions))]
-         [:& session-widget
+       (for [[index session] (d/enumerate (take avatar-count sessions))]
+         [:> session-widget*
           {:color (:color session)
            :index index
            :profile (get profiles (:profile-id session))

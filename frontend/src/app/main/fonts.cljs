@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.fonts
   "Fonts management and loading logic."
@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.types.text :as txt]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -19,14 +20,13 @@
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [promesa.core :as p]))
 
 (log/set-level! :warn)
 
 (def google-fonts
-  (preload-gfonts "fonts/gfonts.2025.05.19.json"))
+  (preload-gfonts "fonts/gfonts.2025.11.28.json"))
 
 (def local-fonts
   [{:id "sourcesanspro"
@@ -39,6 +39,8 @@
      {:id "300italic" :name "300 Italic"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
      {:id "regular" :name "400" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
      {:id "italic" :name "400 Italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
+     {:id "600" :name "600" :weight "600" :style "normal" :suffix "semibold" :ttf-url "sourcesanspro-semibold.ttf"}
+     {:id "600italic" :name "600 Italic" :weight "600" :style "italic" :suffix "semibolditalic" :ttf-url "sourcesanspro-semibolditalic.ttf"}
      {:id "bold" :name "700" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
      {:id "bolditalic" :name "700 Italic" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
      {:id "black" :name "900" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
@@ -138,20 +140,20 @@
                       "&display=block")]
     (dm/str
      (-> cf/public-uri
-         (assoc :path "/internal/gfonts/css")
+         (u/join "internal/gfonts/css")
          (assoc :query query)))))
 
 (defn- process-gfont-css
   [css]
-  (let [base (dm/str (assoc cf/public-uri :path "/internal/gfonts/font"))]
-    (str/replace css "https://fonts.gstatic.com/s" base)))
+  (let [base (u/join cf/public-uri "internal/gfonts/font")]
+    (str/replace css "https://fonts.gstatic.com/s" (dm/str base))))
 
 (defn- fetch-gfont-css
   [url]
   (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
        (rx/map :body)
        (rx/catch (fn [err]
-                   (.warn js/console "Cannot find the font" (obj/get err "message"))
+                   (log/wrn :hint "cannot find the font" :cause err)
                    (rx/empty)))))
 
 (defmethod load-font :google
@@ -178,7 +180,9 @@
 
 (defn- asset-id->uri
   [asset-id]
-  (str (u/join cf/public-uri "assets/by-id/" asset-id)))
+  (-> cf/public-uri
+      (u/join "assets/by-id/" asset-id)
+      (str)))
 
 (defn generate-custom-font-variant-css
   [family variant]
@@ -212,8 +216,8 @@
   ([font-id variant-id]
    (log/dbg :action "try-ensure-loaded!" :font-id font-id :variant-id variant-id)
    (if-not (exists? js/window)
-    ;; If we are in the worker environment, we just mark it as loaded
-    ;; without really loading it.
+     ;; If we are in the worker environment, we just mark it as loaded
+     ;; without really loading it.
      (do
        (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
        (p/resolved font-id))
@@ -342,8 +346,8 @@
         (fn [result {:keys [font-id] :as node}]
           (let [current-font
                 (if (some? font-id)
-                  (select-keys node [:font-id :font-variant-id])
-                  (select-keys txt/default-typography [:font-id :font-variant-id]))]
+                  (select-keys node [:font-id :font-variant-id :font-weight :font-style])
+                  (select-keys txt/default-typography [:font-id :font-variant-id :font-weight :font-style]))]
             (conj result current-font)))
         #{})))
 
@@ -370,7 +374,7 @@
       :else
       (let [{:keys [weight style suffix]} (get-variant font font-variant-id)
             suffix (or suffix font-variant-id)
-            params {:uri (dm/str cf/public-uri "fonts/" family "-" suffix ".woff")
+            params {:uri (str (u/join cf/public-uri (str "fonts/" family "-" suffix ".woff")))
                     :family family
                     :style style
                     :weight weight}]

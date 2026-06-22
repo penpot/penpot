@@ -1,23 +1,26 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v22.21.1 \
+    NODE_VERSION=v24.16.0 \
     DEBIAN_FRONTEND=noninteractive \
-    PATH=/opt/node/bin:$PATH
+    PATH=/opt/node/bin:/opt/imagick/bin:$PATH \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/penpot/browsers
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
     echo "nameserver 127.0.0.11" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
       curl \
       tzdata \
       locales \
       ca-certificates \
     ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -62,7 +65,24 @@ RUN set -ex; \
       libxfixes3 \
       libxkbcommon0 \
       libxrandr2 \
+      \
+      libgomp1 \
+      libheif1 \
+      libjpeg-turbo8 \
+      liblcms2-2 \
+      libopenexr-3-1-30 \
+      libopenjp2-7 \
+      libpng16-16 \
+      librsvg2-2 \
+      libtiff6 \
+      libwebp7 \
+      libwebpdemux2 \
+      libwebpmux3 \
+      libxml2-16 \
+      libzip5 \
+      libzstd1 \
     ; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -eux; \
@@ -91,14 +111,11 @@ RUN set -eux; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
-RUN set -ex; \
-    corepack install; \
-    yarn install; \
-    yarn run playwright install chromium; \
-    rm -rf /opt/penpot/.yarn
+RUN ./setup
 
 CMD ["node", "app.js"]

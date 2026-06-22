@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files-snapshot
   (:require
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
+   [app.common.features :as-alias cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
@@ -17,6 +18,7 @@
    [app.main :as-alias main]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -35,6 +37,43 @@
                  (files/check-read-permissions! conn profile-id file-id)
                  (fsnap/get-visible-snapshots conn file-id))))
 
+;; --- COMMAND QUERY: get-file-snapshot
+
+(def ^:private schema:get-file-snapshot
+  [:map {:title "get-file-snapshot"}
+   [:file-id ::sm/uuid]
+   [:id ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(sv/defmethod ::get-file-snapshot
+  "Retrieve a file bundle with data from a specific snapshot for
+  read-only preview. Does not modify any database state."
+  {::doc/added "2.16"
+   ::sm/params schema:get-file-snapshot
+   ::sm/result files/schema:file-with-permissions
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
+  (let [perms (bfc/get-file-permissions conn profile-id file-id)]
+    (files/check-read-permissions! perms)
+    (let [snapshot (fsnap/get-snapshot cfg file-id id)]
+      (when-not snapshot
+        (ex/raise :type :not-found
+                  :code :snapshot-not-found
+                  :hint "unable to find snapshot with the provided id"
+                  :snapshot-id id
+                  :file-id file-id))
+      ;; Load current file metadata only (no data decoding) then overlay
+      ;; the snapshot data so the client receives the same shape as a
+      ;; normal get-file response but with historical page/object content.
+      (let [base-file (bfc/get-file cfg file-id :load-data? false)]
+        (-> base-file
+            (assoc :data (:data snapshot))
+            (assoc :version (:version snapshot))
+            (assoc :features (:features snapshot))
+            (assoc :revn (:revn snapshot))
+            (assoc :vern (rand-int 100000))
+            (assoc :permissions perms))))))
+
 (def ^:private schema:create-file-snapshot
   [:map
    [:file-id ::sm/uuid]
@@ -43,9 +82,10 @@
 (sv/defmethod ::create-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:create-file-snapshot
-   ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id label]}]
-  (files/check-edition-permissions! conn profile-id file-id)
+   ::climit/id [[:create-file-snapshot/by-profile ::rpc/profile-id]
+                [:create-file-snapshot/global]]}
+  [cfg {:keys [::rpc/profile-id file-id label]}]
+  (files/check-edition-permissions! cfg profile-id file-id)
   (let [file    (bfc/get-file cfg file-id :realize? true)
         project (db/get-by-id cfg :project (:project-id file))]
 
@@ -57,10 +97,10 @@
         (quotes/check! {::quotes/id ::quotes/snapshots-per-file}
                        {::quotes/id ::quotes/snapshots-per-team}))
 
-    (fsnap/create! cfg file
-                   {:label label
-                    :profile-id profile-id
-                    :created-by "user"})))
+    (db/tx-run! cfg fsnap/create! file
+                {:label label
+                 :profile-id profile-id
+                 :created-by "user"})))
 
 (def ^:private schema:restore-file-snapshot
   [:map {:title "restore-file-snapshot"}
@@ -70,28 +110,43 @@
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot
-   ::db/transaction true}
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
-  (files/check-edition-permissions! conn profile-id file-id)
+   ::climit/id [[:restore-file-snapshot/by-profile ::rpc/profile-id]
+                [:restore-file-snapshot/global]]}
+  [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id file-id id] :as params}]
+
+  ;; Check permissions and read current file state (short-lived, outside restore transaction)
+  (files/check-edition-permissions! pool profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)
-        team  (teams/get-team conn
+        team  (teams/get-team pool
                               :profile-id profile-id
                               :file-id file-id)
-        delay (ldel/get-deletion-delay team)]
+        delay (ldel/get-deletion-delay team)
+        file-revn (:revn file)]
 
+    ;; Create backup snapshot of the current state (committed immediately
+    ;; independently of the restore outcome)
     (fsnap/create! cfg file
                    {:profile-id profile-id
                     :deleted-at (ct/in-future delay)
                     :created-by "system"})
 
-    (let [vern (fsnap/restore! cfg file-id id)]
-      ;; Send to the clients a notification to reload the file
-      (mbus/pub! msgbus
-                 :topic (:id file)
-                 :message {:type :file-restore
-                           :file-id (:id file)
-                           :vern vern})
-      nil)))
+    ;; Restore snapshot inside its own transaction; the revn check
+    ;; ensures no data is lost if the file was edited concurrently
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as cfg}]
+                  (let [current (bfc/get-minimal-file conn file-id {::db/for-update true})]
+                    (when (not= (:revn current) file-revn)
+                      (ex/raise :type :conflict
+                                :code :file-modified
+                                :hint "the file was modified during the restore process, please retry")))
+                  (let [vern (fsnap/restore! cfg file-id id)]
+                    (mbus/pub! msgbus
+                               :topic (:id file)
+                               :message {:type :file-restored
+                                         :session-id session-id
+                                         :file-id (:id file)
+                                         :vern vern})
+                    nil)))))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}

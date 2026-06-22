@@ -2,20 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.i18n
   "A i18n foundation."
   (:require
    [app.common.data :as d]
+   [app.common.i18n]
    [app.common.logging :as log]
    [app.common.time :as ct]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.util.globals :as globals]
+   [app.util.modules :as mod]
    [app.util.storage :as storage]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/set-level! :info)
@@ -28,6 +31,7 @@
    {:label "Dutch (community)" :value "nl"}
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
+   {:label "Français - Canada (community)" :value "fr_ca"}
    {:label "Gallego (Community)" :value "gl"}
    {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}
@@ -48,6 +52,7 @@
    {:label "Føroyskt mál (community)" :value "fo"}
    {:label "Korean (community)" :value "ko"}
    {:label "עִבְרִית (community)" :value "he"}
+   {:label "आधुनिक मानक हिन्दी (community)" :value "hi"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
    {:label "日本語 (Community)" :value "ja_jp"}
@@ -67,6 +72,11 @@
     (-> (.-language globals/navigator)
         (parse-locale))))
 
+;; Set initial translation loading state as globaly stored variable;
+;; this facilitates hot reloading
+(when-not (exists? (unchecked-get globals/global "penpotTranslations"))
+  (unchecked-set globals/global "penpotTranslations" #js {}))
+
 (defn- autodetect
   []
   (let [supported (into #{} (map :value supported-locales))]
@@ -75,42 +85,69 @@
         (if (contains? supported locale)
           locale
           (recur (rest locales)))
-        cfg/default-language))))
+        cf/default-language))))
 
-(defonce translations #js {})
-(defonce locale (l/atom nil))
+(defn get-current
+  "Get the currently memoized locale or execute the autodetection"
+  []
+  (or (get storage/global ::locale) (autodetect)))
 
-(add-watch locale "common.time"
-           (fn [_ _ pv cv]
-             (when (not= pv cv)
-               (ct/set-default-locale! cv))))
+(def ^:dynamic *current-locale*
+  (get-current))
 
-(defn init!
-  "Initialize the i18n module with translations.
+(defonce locale
+  (l/atom *current-locale*))
 
-  The `data` is a javascript object for performance reasons. This code
-  is executed in the critical part (application bootstrap) and used in
-  many parts of the application."
+(defn- get-translations
+  "Get globaly stored mutable object with all loaded translations"
+  []
+  (unchecked-get globals/global "penpotTranslations"))
+
+(defn set-translations
+  "A helper for synchronously set translations data for specified locale"
+  [locale data]
+  (let [translations (get-translations)]
+    (unchecked-set translations locale data)
+    nil))
+
+(defn set-default-translations
   [data]
-  (reset! locale (or (get storage/global ::locale) (autodetect)))
-  (set! translations data))
+  (set-translations cf/default-language data))
 
-(defn set-locale!
+(defn- load
+  [locale]
+  (let [path (str "./translation." locale ".js?version=" cf/version-tag)]
+    (->> (mod/import path)
+         (p/fmap (fn [result] (unchecked-get result "default")))
+         (p/fnly (fn [data cause]
+                   (if cause
+                     (js/console.error "unexpected error on fetching locale" cause)
+                     (set-translations locale data)))))))
+
+(defn init
+  "Initialize the i18n module"
+  []
+  (load *current-locale*)
+  (when-not (= *current-locale* cf/default-language)
+    (load cf/default-language)))
+
+(defn set-locale
   [lname]
-  (if (or (nil? lname)
-          (str/empty? lname))
-    (let [lname (autodetect)]
-      (swap! storage/global dissoc ::locale)
-      (reset! locale lname))
-    (let [supported (into #{} (map :value) supported-locales)
-          lname     (loop [locales (seq (parse-locale lname))]
-                      (if-let [locale (first locales)]
-                        (if (contains? supported locale)
-                          locale
-                          (recur (rest locales)))
-                        cfg/default-language))]
-      (swap! storage/global assoc ::locale lname)
-      (reset! locale lname))))
+  (let [lname (if (or (nil? lname)
+                      (str/empty? lname))
+                (autodetect)
+                (let [supported (into #{} (map :value) supported-locales)]
+                  (loop [locales (seq (parse-locale lname))]
+                    (if-let [locale (first locales)]
+                      (if (contains? supported locale)
+                        locale
+                        (recur (rest locales)))
+                      cf/default-language))))]
+
+    (->> (load lname)
+         (p/fnly (fn [_r _c]
+                   (set! *current-locale* lname)
+                   (reset! locale lname))))))
 
 (deftype C [val]
   IDeref
@@ -135,22 +172,24 @@
 
 (defn t
   ([locale code]
-   (let [code  (name code)
-         value (gobj/getValueByKeys translations code locale)]
+   (let [translations (get-translations)
+         code  (d/name code)
+         value (gobj/getValueByKeys translations locale code)]
      (if (empty-string? value)
-       (if (= cfg/default-language locale)
+       (if (= cf/default-language locale)
          code
-         (t cfg/default-language code))
+         (t cf/default-language code))
        (if (array? value)
          (aget value 0)
          value))))
   ([locale code & args]
-   (let [code   (name code)
-         value  (gobj/getValueByKeys translations code locale)]
+   (let [translations (get-translations)
+         code   (d/name code)
+         value  (gobj/getValueByKeys translations locale code)]
      (if (empty-string? value)
-       (if (= cfg/default-language locale)
+       (if (= cf/default-language locale)
          code
-         (apply t cfg/default-language code args))
+         (apply t cf/default-language code args))
        (let [plural (first (filter c? args))
              value  (if (array? value)
                       (if (= @plural 1) (aget value 0) (aget value 1))
@@ -158,8 +197,8 @@
          (apply str/fmt value (map #(if (c? %) @% %) args)))))))
 
 (defn tr
-  ([code] (t @locale code))
-  ([code & args] (apply t @locale code args)))
+  ([code] (t *current-locale* code))
+  ([code & args] (apply t *current-locale* code args)))
 
 (mf/defc tr-html*
   {::mf/props :obj}
@@ -169,8 +208,15 @@
                   :className class
                   :on-click on-click}]))
 
-;; DEPRECATED
-(defn use-locale
-  []
-  (mf/deref locale))
+(add-watch locale "common.time"
+           (fn [_ _ pv cv]
+             (when (not= pv cv)
+               (ct/set-default-locale cv))))
 
+;; Initialize date-fns locale on startup, the watch above only fires on changes
+(ct/set-default-locale *current-locale*)
+
+;; We set the real translation function in the common i18n namespace,
+;; so that when common code calls (tr ...) it uses this function.
+(set! app.common.i18n/tr tr)
+(set! app.common.i18n/c c)

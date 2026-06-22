@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -23,43 +23,51 @@
 }
 
 .add-export {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   height: deprecated.$s-32;
   width: deprecated.$s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
   }
 }
 
 .element-set-content {
-  @include deprecated.flexColumn;
+  @include deprecated.flex-column;
+
   margin-bottom: deprecated.$s-4;
 }
 
 .multiple-exports {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
+
   grid-column: 1 / span 9;
 }
 
 .label {
-  @extend .mixed-bar;
+  @extend %mixed-bar;
 }
 
 .actions {
-  @include deprecated.flexRow;
+  @include deprecated.flex-row;
 }
 
 .element-group {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   column-gap: deprecated.$s-4;
+
   .action-btn {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
+
     height: deprecated.$s-32;
     width: deprecated.$s-28;
+
     svg {
-      @extend .button-icon;
+      @extend %button-icon;
     }
   }
 }
@@ -84,6 +92,7 @@
 .size-select {
   grid-column: span 2;
   padding: 0;
+
   .dropdown-upwards {
     bottom: deprecated.$s-36;
     top: unset;
@@ -92,14 +101,16 @@
 }
 
 .suffix-input {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @extend %input-element;
+  @include deprecated.body-small-typography;
+
   grid-column: span 3;
 }
 
 .export-btn {
-  @extend .button-secondary;
-  @include deprecated.uppercaseTitleTipography;
+  @extend %button-secondary;
+  @include deprecated.uppercase-title-typography;
+
   height: deprecated.$s-32;
   width: 100%;
 }

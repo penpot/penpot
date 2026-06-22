@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 ;;   Each track has specified minimum and maximum sizing functions (which may be the same)
 ;;   - Fixed
@@ -39,7 +39,7 @@
 ;;
 ;;   5. If any track still has an infinite growth limit set its growth limit to its base size.
 
-;; - Distribute extra space accross spaned tracks
+;; - Distribute extra space across spanned tracks
 ;; - Maximize tracks
 ;;
 ;; - Expand flexible tracks
@@ -55,7 +55,7 @@
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
-;; Setted in app.common.geom.shapes.common-layout
+;; Set in app.common.geom.shapes.common-layout
 ;; We do it this way because circular dependencies
 (def -child-min-width nil)
 
@@ -331,7 +331,7 @@
         ;; Apply the allocations to the tracks
         track-list
         (into []
-              (map-indexed #(update %2 :size max (get allocated %1)))
+              (map-indexed #(update %2 :size max (get allocated %1 0)))
               track-list)]
     track-list))
 
@@ -381,7 +381,7 @@
         ;; Apply the allocations to the tracks
         track-list
         (into []
-              (map-indexed #(update %2 :size max (get allocate-fr-tracks %1)))
+              (map-indexed #(update %2 :size max (get allocate-fr-tracks %1 0)))
               track-list)]
     track-list))
 
@@ -449,7 +449,7 @@
          column-tracks (set-auto-base-size column-tracks children shape-cells bounds objects :column)
          row-tracks    (set-auto-base-size row-tracks children shape-cells bounds objects :row)
 
-         ;; Adjust multi-spaned cells with no flex columns
+         ;; Adjust multi-spanned cells with no flex columns
          column-tracks (set-auto-multi-span parent column-tracks children-map shape-cells bounds objects :column)
          row-tracks (set-auto-multi-span parent row-tracks children-map shape-cells bounds objects :row)
 
@@ -474,8 +474,8 @@
          min-column-fr     (min-fr-value column-tracks)
          min-row-fr        (min-fr-value row-tracks)
 
-         column-fr         (if auto-width? min-column-fr (mth/finite (/ fr-column-space column-frs) 0))
-         row-fr            (if auto-height? min-row-fr (mth/finite (/ fr-row-space row-frs) 0))
+         column-fr         (if auto-width? min-column-fr (if (zero? column-frs) 0 (mth/finite (/ fr-column-space column-frs) 0)))
+         row-fr            (if auto-height? min-row-fr (if (zero? row-frs) 0 (mth/finite (/ fr-row-space row-frs) 0)))
 
          column-tracks     (set-fr-value column-tracks column-fr auto-width?)
          row-tracks        (set-fr-value row-tracks row-fr auto-height?)
@@ -489,8 +489,8 @@
          column-autos      (tracks-total-autos column-tracks)
          row-autos         (tracks-total-autos row-tracks)
 
-         column-add-auto   (/ auto-column-space column-autos)
-         row-add-auto      (/ auto-row-space row-autos)
+         column-add-auto   (if (zero? column-autos) 0 (/ auto-column-space column-autos))
+         row-add-auto      (if (zero? row-autos) 0 (/ auto-row-space row-autos))
 
          column-tracks (cond-> column-tracks
                          (= :stretch (:layout-justify-content parent))
@@ -505,36 +505,38 @@
 
          num-columns (count column-tracks)
          column-gap
-         (case (:layout-justify-content parent)
+         (cond
            auto-width?
            column-gap
 
-           :space-evenly
+           (= :space-evenly (:layout-justify-content parent))
            (max column-gap (/ (- bound-width column-total-size) (inc num-columns)))
 
-           :space-around
+           (= :space-around (:layout-justify-content parent))
            (max column-gap (/ (- bound-width column-total-size) num-columns))
 
-           :space-between
+           (= :space-between (:layout-justify-content parent))
            (max column-gap (if (= num-columns 1) column-gap (/ (- bound-width column-total-size) (dec num-columns))))
 
+           :else
            column-gap)
 
          num-rows (count row-tracks)
          row-gap
-         (case (:layout-align-content parent)
+         (cond
            auto-height?
            row-gap
 
-           :space-evenly
+           (= :space-evenly (:layout-align-content parent))
            (max row-gap (/ (- bound-height row-total-size) (inc num-rows)))
 
-           :space-around
+           (= :space-around (:layout-align-content parent))
            (max row-gap (/ (- bound-height row-total-size) num-rows))
 
-           :space-between
+           (= :space-between (:layout-align-content parent))
            (max row-gap (if (= num-rows 1) row-gap (/ (- bound-height row-total-size) (dec num-rows))))
 
+           :else
            row-gap)
 
          start-p

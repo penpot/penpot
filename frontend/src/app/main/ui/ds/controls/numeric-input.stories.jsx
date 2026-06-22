@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 import * as React from "react";
 import Components from "@target/components";
 
@@ -44,7 +44,7 @@ export default {
     property: "search",
   },
   parameters: {
-    controls: { exclude: ["tokens"] }
+    controls: { exclude: ["tokens"] },
   },
 
   render: ({ ...args }) => <NumericInput {...args} />,
@@ -118,7 +118,7 @@ export const WithTokens = {
       ],
     },
   },
-    parameters: {
+  parameters: {
     controls: { exclude: ["tokens"] },
     docs: {
       story: {

@@ -12,19 +12,31 @@ let sass = null;
 
 async function compileSassAll() {
   const start = process.hrtime();
+  let error = false;
+
   log.info("init: compile styles");
 
-  sass = await h.compileSassAll(worker);
-  let output = await h.concatSass(sass);
-  await fs.writeFile("./resources/public/css/main.css", output);
+  try {
+    sass = await h.compileSassAll(worker);
+    let output = await h.concatSass(sass);
+    await fs.writeFile("./resources/public/css/main.css", output);
 
-  if (isDebug) {
-    let debugCSS = await h.compileSassDebug(worker);
-    await fs.writeFile("./resources/public/css/debug.css", debugCSS);
+    if (isDebug) {
+      let debugCSS = await h.compileSassDebug(worker);
+      await fs.writeFile("./resources/public/css/debug.css", debugCSS);
+    }
+  } catch (cause) {
+    error = cause;
   }
 
   const end = process.hrtime(start);
-  log.info("done: compile styles", `(${ppt(end)})`);
+
+  if (error) {
+    log.error("error: compile styles", `(${ppt(end)})`);
+    console.error(error);
+  } else {
+    log.info("done: compile styles", `(${ppt(end)})`);
+  }
 }
 
 async function compileSass(path) {
@@ -48,10 +60,11 @@ async function compileSass(path) {
   }
 }
 
-await fs.mkdir("./resources/public/css/", { recursive: true });
+await h.ensureDirectories();
 await compileSassAll();
 await h.copyAssets();
 await h.copyWasmPlayground();
+await h.compileTranslations();
 await h.compileSvgSprites();
 await h.compileTemplates();
 await h.compilePolyfills();
@@ -81,7 +94,7 @@ h.watch("resources/templates", null, async function (path) {
 log.info("watch: translations (~)");
 h.watch("translations", null, async function (path) {
   log.info("changed:", path);
-  await h.compileTemplates();
+  await h.compileTranslations();
 });
 
 log.info("watch: assets (~)");

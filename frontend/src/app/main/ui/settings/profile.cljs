@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.profile
   (:require-macros [app.main.style :as stl])
@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -25,19 +26,18 @@
    [:fullname [::sm/text {:max 250}]]
    [:email ::sm/email]])
 
-(defn- on-success
-  [_]
-  (st/emit! (ntf/success (tr "notifications.profile-saved"))))
-
 (defn- on-submit
   [form _event]
-  (let [data  (:clean-data @form)]
+  (let [data       (:clean-data @form)
+        on-success (fn [_]
+                     (swap! form assoc :touched {})
+                     (st/emit! (ntf/success (tr "notifications.profile-saved"))))]
     (st/emit! (du/update-profile data)
               (du/persist-profile {:on-success on-success}))))
 
 ;; --- Profile Form
 
-(mf/defc profile-form
+(mf/defc profile-form*
   {::mf/private true}
   []
   (let [profile (mf/deref refs/profile)
@@ -87,11 +87,12 @@
 
 ;; --- Profile Photo Form
 
-(mf/defc profile-photo-form
+(mf/defc profile-photo-form*
   {::mf/private true}
   []
   (let [input-ref  (mf/use-ref nil)
         profile    (mf/deref refs/profile)
+        has-photo? (some? (:photo-id profile))
 
         photo
         (mf/with-memo [profile]
@@ -103,13 +104,32 @@
 
         on-file-selected
         (fn [file]
-          (st/emit! (du/update-photo file)))]
+          (st/emit! (du/update-photo file)))
+
+        on-delete-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "labels.delete-profile-photo.title")
+                       :message (tr "labels.delete-profile-photo.message")
+                       :accept-label (tr "labels.delete")
+                       :on-accept (fn [_] (st/emit! du/delete-photo))}))))]
 
     [:form {:class (stl/css :avatar-form)}
      [:div {:class (stl/css :image-change-field)}
       [:span {:class (stl/css :update-overlay)
               :on-click on-image-click} (tr "labels.update")]
       [:img {:src photo}]
+      (when has-photo?
+        [:button {:type "button"
+                  :class (stl/css :delete-overlay)
+                  :title (tr "labels.delete")
+                  :aria-label (tr "labels.delete")
+                  :on-click on-delete-click
+                  :data-testid "profile-image-delete"}
+         [:> icon* {:icon-id i/delete :size "m"}]])
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
                          :ref input-ref
@@ -118,7 +138,7 @@
 
 ;; --- Profile Page
 
-(mf/defc profile-page
+(mf/defc profile-page*
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
@@ -126,6 +146,5 @@
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "labels.profile")]
-    [:& profile-photo-form]
-    [:& profile-form]]])
-
+    [:> profile-photo-form*]
+    [:> profile-form*]]])

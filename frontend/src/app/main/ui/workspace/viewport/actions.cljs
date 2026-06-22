@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.actions
   (:require
@@ -46,41 +46,41 @@
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? grid-editing? drawing-path? create-comment? @z? @space?
             panning read-only?)
-   (fn [bevent]
+   (fn [event]
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
-     (let [target  (dom/get-target bevent)
+     (let [target  (dom/get-target event)
            editor  (txu/closest-text-editor-content target)]
        ;; Capture mouse pointer to detect the movements even if cursor
        ;; leaves the viewport or the browser itself
        ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
        (if editor
-         (.setPointerCapture editor (.-pointerId bevent))
-         (.setPointerCapture target (.-pointerId bevent))))
+         (.setPointerCapture editor (.-pointerId event))
+         (.setPointerCapture target (.-pointerId event))))
 
-     (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
-               (dom/class? (dom/get-target bevent) "viewport-selrect")
-               (dom/child? (dom/get-target bevent) (dom/query ".grid-layout-editor")))
+     (when (or (dom/class? (dom/get-target event) "viewport-controls")
+               (dom/class? (dom/get-target event) "viewport-selrect")
+               (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor")))
 
-       (dom/stop-propagation bevent)
+       (dom/stop-propagation event)
 
        (when-not @z?
-         (let [event  (dom/event->native-event bevent)
-               ctrl?  (kbd/ctrl? event)
-               meta?  (kbd/meta? event)
-               shift? (kbd/shift? event)
-               alt?   (kbd/alt? event)
-               mod?   (kbd/mod? event)
+         (let [native-event  (dom/event->native-event event)
+               ctrl?  (kbd/ctrl? native-event)
+               meta?  (kbd/meta? native-event)
+               shift? (kbd/shift? native-event)
+               alt?   (kbd/alt? native-event)
+               mod?   (kbd/mod? native-event)
 
-               left-click?   (and (not panning) (dom/left-mouse? bevent))
-               middle-click? (and (not panning) (dom/middle-mouse? bevent))]
+               left-click?   (and (not panning) (dom/left-mouse? event))
+               middle-click? (and (not panning) (dom/middle-mouse? event))]
 
            (cond
              (or middle-click? (and left-click? @space?))
              (do
-               (dom/prevent-default bevent)
+               (dom/prevent-default event)
                (if mod?
-                 (let [raw-pt   (dom/get-client-position event)
+                 (let [raw-pt   (dom/get-client-position native-event)
                        pt       (uwvv/point->viewport raw-pt)]
                    (st/emit! (dw/start-zooming pt)))
                  (st/emit! (dw/start-panning))))
@@ -177,6 +177,8 @@
              pt     (uwvv/point->viewport raw-pt)]
          (st/emit! (mse/->MouseEvent :click ctrl? shift? alt? meta?))
 
+         ;; FIXME: Maybe we can transform this into a cond instead
+         ;; of multiple (when)s.
          (when (and hovering?
                     (not @space?)
                     (not edition)
@@ -194,10 +196,10 @@
              (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
+  [hover hover-ids selected hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
+   (mf/deps @hover @hover-ids selected @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (when-not @z?
@@ -206,7 +208,16 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
 
-             {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
+             selected-id-under-cursor
+             (->> @hover-ids
+                  (filter selected)
+                  last)
+
+             {:keys [id type] :as shape}
+             (or (when selected-id-under-cursor
+                   (get objects selected-id-under-cursor))
+                 @hover
+                 (get objects (first @hover-ids)))
 
              editable? (contains? #{:text :rect :path :image :circle} type)
 
@@ -223,8 +234,9 @@
             (when (and (not drawing-path?) shape)
               (cond
                 (and editable? (not= id edition) (not read-only?))
-                (st/emit! (dw/select-shape id)
-                          (dw/start-editing-selected))
+                (do
+                  (st/emit! (dw/select-shape id)
+                            (dw/start-editing-selected)))
 
                 (some? selected-shape)
                 (do
@@ -245,7 +257,7 @@
                (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
                (dom/class? (dom/get-target event) "viewport-selrect"))
        (let [position (dom/get-client-position event)]
-           ;; Delayed callback because we need to wait to the previous context menu to be closed
+         ;; Delayed callback because we need to wait to the previous context menu to be closed
          (ts/schedule
           #(st/emit!
             (if (and (not read-only?) (some? @hover))
@@ -266,7 +278,7 @@
          (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids})))))))
 
 (defn on-pointer-up
-  [disable-paste]
+  [disable-paste-ref]
   (mf/use-callback
    (fn [event]
      (dom/stop-propagation event)
@@ -275,37 +287,35 @@
        ;; Release pointer on mouse up
        (.releasePointerCapture target (.-pointerId event)))
 
-     (let [event (dom/event->native-event event)
-           ctrl? (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt? (kbd/alt? event)
-           meta? (kbd/meta? event)
+     (let [native-event (dom/event->native-event event)
+           ctrl? (kbd/ctrl? native-event)
+           shift? (kbd/shift? native-event)
+           alt? (kbd/alt? native-event)
+           meta? (kbd/meta? native-event)
 
-           left-click? (= 1 (.-which event))
-           middle-click? (= 2 (.-which event))]
+           left-click? (= 1 (.-which native-event))
+           middle-click? (= 2 (.-which native-event))]
 
        (when left-click?
          (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?)))
 
        (when middle-click?
-         (dom/prevent-default event)
+         (dom/prevent-default native-event)
 
          ;; We store this so in Firefox the middle button won't do a paste of the content
-         (reset! disable-paste true)
-         (ts/schedule #(reset! disable-paste false)))
+         (mf/set-ref-val! disable-paste-ref true)
+         (ts/schedule #(mf/set-ref-val! disable-paste-ref false)))
 
        (st/emit! (dw/finish-panning)
                  (dw/finish-zooming))))))
 
-(defn on-pointer-enter [in-viewport?]
-  (mf/use-callback
-   (fn []
-     (reset! in-viewport? true))))
+(defn on-pointer-enter
+  [in-viewport-ref]
+  (mf/use-fn #(mf/set-ref-val! in-viewport-ref true)))
 
-(defn on-pointer-leave [in-viewport?]
-  (mf/use-callback
-   (fn []
-     (reset! in-viewport? false))))
+(defn on-pointer-leave
+  [in-viewport-ref]
+  (mf/use-fn #(mf/set-ref-val! in-viewport-ref false)))
 
 (defn on-key-down []
   (mf/use-callback
@@ -359,57 +369,103 @@
 
          (rx/push! move-stream pt)
          (reset! last-position raw-pt)
-         (st/emit! (mse/->PointerEvent :delta delta
-                                       (kbd/ctrl? event)
-                                       (kbd/shift? event)
-                                       (kbd/alt? event)
-                                       (kbd/meta? event)))
+         ;; Single store emit per move: viewport `pt` + `movement` (old :delta `pt`) avoids
+         ;; doubling Potok + `st/stream` work on every pointermove.
          (st/emit! (mse/->PointerEvent :viewport pt
                                        (kbd/ctrl? event)
                                        (kbd/shift? event)
                                        (kbd/alt? event)
-                                       (kbd/meta? event))))))))
+                                       (kbd/meta? event)
+                                       delta)))))))
 
-(defn on-mouse-wheel [zoom]
-  (mf/use-callback
-   (mf/deps zoom)
-   (fn [event]
-     (let [event      (.getBrowserEvent ^js event)
+(defn- schedule-zoom!
+  "Accumulate a compound zoom scale and a cursor point into `state`, scheduling
+  a single requestAnimationFrame flush if one is not already pending.  On the
+  next frame the accumulated scale is applied via `dw/set-zoom` and the state
+  is reset to its idle values."
+  [^js state scale pt]
+  (let [pending? (pos? (.-zoomRafId state))]
+    (set! (.-scale state) (* (.-scale state) scale))
+    (set! (.-zoomPt state) pt)
+    (when-not pending?
+      (set! (.-zoomRafId state)
+            (ts/raf
+             (fn []
+               (let [s  (.-scale state)
+                     zp (.-zoomPt state)]
+                 (set! (.-scale state) 1)
+                 (set! (.-zoomPt state) nil)
+                 (set! (.-zoomRafId state) 0)
+                 (st/emit! (dw/set-zoom zp s)))))))))
 
-           target     (dom/get-target event)
-           mod?       (kbd/mod? event)
-           ctrl?      (kbd/ctrl? event)
+(defn- schedule-scroll!
+  "Accumulate scroll deltas into `state`, scheduling a single
+  requestAnimationFrame flush if one is not already pending.  On the next
+  frame the accumulated dx/dy are applied via `dw/update-viewport-position`
+  and the state is reset to its idle values."
+  [^js state zoom event delta-x delta-y]
+  (let [pending? (pos? (.-rafId state))]
+    (if (and (not (cfg/check-platform? :macos)) (kbd/shift? event))
+      ;; macOS sends delta-x automatically, so on other platforms we
+      ;; remap shift+scroll-y to horizontal panning.
+      (set! (.-dx state) (+ (.-dx state) (/ delta-y zoom)))
+      (do
+        (set! (.-dx state) (+ (.-dx state) (/ delta-x zoom)))
+        (set! (.-dy state) (+ (.-dy state) (/ delta-y zoom)))))
+    (when-not pending?
+      (set! (.-rafId state)
+            (ts/raf
+             (fn []
+               (let [dx (.-dx state)
+                     dy (.-dy state)]
+                 (set! (.-dx state) 0)
+                 (set! (.-dy state) 0)
+                 (set! (.-rafId state) 0)
+                 (st/emit! (dw/update-viewport-position
+                            {:x #(+ % dx)
+                             :y #(+ % dy)})))))))))
 
-           picking-color?   (= "pixel-overlay" (.-id target))
-           comments-layer?  (dom/is-child? (dom/get-element "comments") target)
+(defn on-mouse-wheel [zoom-ref]
+  (let [;; Mutable accumulator for scroll/zoom deltas, throttled to one
+        ;; state update per animation frame. This prevents rapid wheel
+        ;; events from causing cascading synchronous React re-renders
+        ;; that can exceed the maximum update depth.
+        scroll-state (mf/use-ref #js {:dx 0 :dy 0 :rafId 0
+                                      :scale 1 :zoomPt nil :zoomRafId 0})]
+    (mf/use-callback
+     (fn [event]
+       (let [event      (.getBrowserEvent ^js event)
 
-           raw-pt     (dom/get-client-position event)
-           pt         (uwvv/point->viewport raw-pt)
+             target     (dom/get-target event)
+             mod?       (kbd/mod? event)
+             ctrl?      (kbd/ctrl? event)
 
-           norm-event ^js (nw/normalize-wheel event)
+             picking-color?   (= "pixel-overlay" (.-id target))
+             comments-layer?  (dom/is-child? (dom/get-element "comments") target)
 
-           delta-y    (.-pixelY norm-event)
-           delta-x    (.-pixelX norm-event)
-           delta-zoom (+ delta-y delta-x)
+             raw-pt     (dom/get-client-position event)
+             pt         (uwvv/point->viewport raw-pt)
 
-           scale      (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
-           scale      (if (pos? delta-zoom) (/ 1 scale) scale)]
+             norm-event ^js (nw/normalize-wheel event)
 
-       (when (or (uwvv/inside-viewport? target) picking-color?)
-         (dom/prevent-default event)
-         (dom/stop-propagation event)
-         (if (or ctrl? mod?)
-           (st/emit! (dw/set-zoom pt scale))
-           (if (and (not (cfg/check-platform? :macos)) (kbd/shift? event))
-             ;; macos sends delta-x automatically, don't need to do it
-             (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-y zoom))}))
-             (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-x zoom))
-                                                     :y #(+ % (/ delta-y zoom))})))))
+             delta-y    (.-pixelY norm-event)
+             delta-x    (.-pixelX norm-event)
+             delta-zoom (+ delta-y delta-x)
 
-       (when (and comments-layer? (or ctrl? mod?))
-         (dom/prevent-default event)
-         (dom/stop-propagation event)
-         (st/emit! (dw/set-zoom pt scale)))))))
+             scale      (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
+             scale      (if (pos? delta-zoom) (/ 1 scale) scale)]
+
+         (when (or (uwvv/inside-viewport? target) picking-color?)
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (if (or ctrl? mod?)
+             (schedule-zoom! (mf/ref-val scroll-state) scale pt)
+             (schedule-scroll! (mf/ref-val scroll-state) (mf/ref-val zoom-ref) event delta-x delta-y)))
+
+         (when (and comments-layer? (or ctrl? mod?))
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (schedule-zoom! (mf/ref-val scroll-state) scale pt)))))))
 
 (defn on-drag-enter
   [comp-inst-ref]
@@ -524,15 +580,22 @@
                        :blobs (seq files)}]
            (st/emit! (dwm/upload-media-workspace params))))))))
 
+(def ^:private invalid-paste-targets
+  #{"INPUT" "TEXTAREA"})
+
 (defn on-paste
-  [disable-paste in-viewport? read-only?]
+  [disable-paste-ref in-viewport-ref read-only?]
   (mf/use-fn
    (mf/deps read-only?)
    (fn [event]
-     ;; We disable the paste just after mouse-up of a middle button so
-     ;; when panning won't paste the content into the workspace
-     (let [tag-name (-> event dom/get-target dom/get-tag-name)]
-       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name))
-                  (not @disable-paste)
+     ;; We disable the paste when: 1. just after mouse-up of a middle
+     ;; button (so when panning won't paste the content into the
+     ;; workspace); 2. when we paste content in an input on the
+     ;; sidebar
+     (let [tag-name       (-> event dom/get-target dom/get-tag-name)
+           disable-paste? (mf/ref-val disable-paste-ref)
+           in-viewport?   (mf/ref-val in-viewport-ref)]
+       (when (and (not (contains? invalid-paste-targets tag-name))
+                  (not disable-paste?)
                   (not read-only?))
-         (st/emit! (dw/paste-from-event event @in-viewport?)))))))
+         (st/emit! (dw/paste-from-event event in-viewport?)))))))

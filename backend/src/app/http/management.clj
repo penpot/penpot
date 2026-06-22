@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.http.management
   "Internal mangement HTTP API"
@@ -13,13 +13,13 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.middleware :as mw]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
    [integrant.core :as ig]
+   [yetti.request :as yreq]
    [yetti.response :as-alias yres]))
 
 ;; ---- ROUTES
@@ -49,9 +49,25 @@
          (fn [cfg request]
            (db/tx-run! cfg handler request)))))})
 
+(def ^:private shared-key-auth
+  {:name ::shared-key-auth
+   :compile
+   (fn [_ _]
+     (fn [handler key]
+       (if key
+         (fn [request]
+           (if-let [key' (yreq/get-header request "x-shared-key")]
+             (if (= key key')
+               (handler request)
+               {::yres/status 403})
+             {::yres/status 403}))
+         (fn [_ _]
+           {::yres/status 403}))))})
+
 (defmethod ig/init-key ::routes
   [_ cfg]
-  ["" {:middleware [[mw/shared-key-auth (cf/get :management-api-shared-key)]
+
+  ["" {:middleware [[shared-key-auth (cf/get :management-api-key)]
                     [default-system cfg]
                     [transaction]]}
    ["/authenticate"

@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         python3 \
         unzip \
@@ -18,6 +18,7 @@ RUN set -ex; \
         curl \
         bash \
         git \
+        ripgrep \
         \
         curl \
         ca-certificates \
@@ -25,55 +26,13 @@ RUN set -ex; \
         binutils \
         build-essential autoconf libtool pkg-config
 
-
-################################################################################
-## IMAGE MAGICK
-################################################################################
-
-FROM base AS build-imagemagick
-
-ENV IMAGEMAGICK_VERSION=7.1.1-47 \
-    DEBIAN_FRONTEND=noninteractive
-
-RUN set -ex; \
-    apt-get -qq update; \
-    apt-get -qq upgrade; \
-    apt-get -qqy --no-install-recommends install \
-        libltdl-dev \
-        libpng-dev \
-        libjpeg-dev \
-        libtiff-dev \
-        libwebp-dev \
-        libopenexr-dev \
-        libfftw3-dev \
-        libzip-dev \
-        liblcms2-dev \
-        liblzma-dev \
-        libzstd-dev \
-        libheif-dev \
-        librsvg2-dev \
-    ; \
-    rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    curl -LfsSo /tmp/magick.tar.gz https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz; \
-    mkdir -p /tmp/magick; \
-    cd /tmp/magick; \
-    tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure  --prefix=/opt/imagick; \
-    make -j 2; \
-    make install; \
-    rm -rf /opt/imagick/lib/libMagick++*; \
-    rm -rf /opt/imagick/include; \
-    rm -rf /opt/imagick/share;
-
 ################################################################################
 ## NODE SETUP
 ################################################################################
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.21.1 \
+ENV NODE_VERSION=v24.16.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -101,24 +60,57 @@ RUN set -eux; \
     corepack enable; \
     rm -rf /tmp/nodejs.tar.gz;
 
+
+################################################################################
+## CADDYSERVER SETUP
+################################################################################
+
+FROM base AS setup-caddy
+
+ENV CADDY_VERSION=2.11.2
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/caddy.tar.gz ${BINARY_URL}; \
+    mkdir -p /tmp/caddy; \
+    cd /tmp/caddy; \
+    tar -xf /tmp/caddy.tar.gz; \
+    chown -R root /tmp/caddy; \
+    mv /tmp/caddy/caddy /usr/bin/; \
+    rm -rf /tmp/caddy.tar.gz; \
+    rm -rf /tmp/caddy;
+
 ################################################################################
 ## JVM SETUP
 ################################################################################
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.2.1565
+# https://clojure.org/releases/tools
+ENV CLOJURE_VERSION=1.12.4.1618
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='8c5321f16d9f1d8149f83e4e9ff8ca5d9e94320b92d205e6db42a604de3d1140'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_aarch64.tar.gz'; \
+         ESUM='cc1b459dc442d7422b46a3b5fe52acaea54879fa7913e29a05650cef54687f5f'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.30.11-ca-jdk26.0.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='471b3e62bdffaed27e37005d842d8639f10d244ccce1c7cdebf7abce06c8313e'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.30.17-ca-jdk25.0.1-linux_x64.tar.gz'; \
+         ESUM='7d6663ea8d4298df65de065e32f9f449745ff607d30ba5d13777cb92e9d4613d'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.30.11-ca-jdk26.0.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -189,9 +181,16 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2025.07.28 \
+ENV CLJKONDO_VERSION=2026.04.15 \
     BABASHKA_VERSION=1.12.208 \
-    CLJFMT_VERSION=0.13.1
+    CLJFMT_VERSION=0.16.4 \
+    PIXI_VERSION=0.67.2 \
+    GITHUB_CLI_VERSION=2.91.0 \
+    UV_VERSION=0.11.9 \
+    UV_TOOL_DIR=/opt/uv/tools \
+    UV_TOOL_BIN_DIR=/opt/utils/bin \
+    UV_PYTHON_INSTALL_DIR=/opt/uv/python \
+    SERENA_VERSION=1.5.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -238,6 +237,26 @@ RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-aarch64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/prefix-dev/pixi/releases/download/v$PIXI_VERSION/pixi-x86_64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/pixi.tar.gz ${BINARY_URL}; \
+    cd /opt/utils/bin; \
+    tar -xf /tmp/pixi.tar.gz; \
+    rm -rf /tmp/pixi.tar.gz;
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
          BINARY_URL="https://github.com/weavejester/cljfmt/releases/download/${CLJFMT_VERSION}/cljfmt-${CLJFMT_VERSION}-linux-aarch64.tar.gz"; \
          ;; \
        amd64|x86_64) \
@@ -253,6 +272,28 @@ RUN set -ex; \
     cd /opt/utils/bin; \
     tar -xf /tmp/cljfmt.tar.gz; \
     rm -rf /tmp/cljfmt.tar.gz;
+
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/gh.tar.gz ${BINARY_URL}; \
+    mkdir /opt/gh; \
+    cd /opt/gh; \
+    tar -xv --strip-components=1 -f /tmp/gh.tar.gz; \
+    rm -rf /tmp/gh.tar.gz;
 
 # Install minio client
 RUN set -ex; \
@@ -273,6 +314,31 @@ RUN set -ex; \
     mv /tmp/mc /opt/utils/bin/; \
     chmod +x /opt/utils/bin/mc;
 
+# Install uv
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-aarch64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-musl.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/uv.tar.gz ${BINARY_URL}; \
+    cd /opt/utils/bin; \
+    tar -xf /tmp/uv.tar.gz --strip-components=1; \
+    rm -rf /tmp/uv.tar.gz;
+
+# Install uv-managed tools
+RUN set -ex; \
+    /opt/utils/bin/uv tool install -p 3.13 \
+        "serena-agent@${SERENA_VERSION}" \
+        --prerelease=allow;
 
 ################################################################################
 ## DEVENV BASE
@@ -287,6 +353,7 @@ RUN set -ex; \
 
 RUN set -ex; \
     apt-get -qq update; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy install --no-install-recommends \
       redis-tools \
       gnupg2 \
@@ -295,6 +362,8 @@ RUN set -ex; \
       less \
       jq \
       nginx \
+      fd-find \
+      bat \
       \
       fontconfig \
       woff-tools \
@@ -348,7 +417,7 @@ RUN set -ex; \
       libfreetype6 \
       libfontconfig1 \
       libglib2.0-0 \
-      libxml2 \
+      libxml2-16 \
       liblcms2-2 \
       libheif1 \
       libopenjp2-7 \
@@ -357,7 +426,7 @@ RUN set -ex; \
       libgomp1 \
       libwebpmux3 \
       libwebpdemux2 \
-      libzip4t64 \
+      libzip5 \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -367,6 +436,7 @@ RUN set -ex; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-16; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
 
@@ -383,16 +453,24 @@ ENV LANG='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     CARGO_HOME="/opt/cargo" \
     RUSTUP_HOME="/opt/rustup" \
-    PATH="/opt/jdk/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
+    UV_TOOL_DIR="/opt/uv/tools" \
+    UV_TOOL_BIN_DIR="/opt/utils/bin" \
+    UV_PYTHON_INSTALL_DIR="/opt/uv/python" \
+    SERENA_HOME="/home/penpot/.serena" \
+    SERENA_CONTEXT="claude-code" \
+    PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=build-imagemagick /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-24 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
 COPY --from=setup-utils /opt/utils /opt/utils
+COPY --from=setup-utils /opt/gh /opt/gh
+COPY --from=setup-utils /opt/uv /opt/uv
 COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
+COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
@@ -403,8 +481,11 @@ COPY files/vimrc          /root/.vimrc
 COPY files/tmux.conf      /root/.tmux.conf
 COPY files/sudoers        /etc/sudoers
 
+COPY files/Caddyfile           /home/
+COPY files/serena_config.yml   /home/serena_config.yml
+COPY files/selfsigned.crt      /home/
+COPY files/selfsigned.key      /home/
 COPY files/start-tmux.sh       /home/start-tmux.sh
-COPY files/start-tmux-back.sh  /home/start-tmux-back.sh
 COPY files/entrypoint.sh       /home/entrypoint.sh
 COPY files/init.sh             /home/init.sh
 

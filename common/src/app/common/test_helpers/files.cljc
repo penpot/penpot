@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.test-helpers.files
   (:require
@@ -53,13 +53,20 @@
 (defn validate-file!
   ([file] (validate-file! file {}))
   ([file libraries]
-   (cfv/validate-file-schema! file)
-   (cfv/validate-file! file libraries)))
+   (try
+     (cfv/validate-file-schema! file)
+     (cfv/validate-file! file libraries)
+     file
+     (catch #?(:clj Exception :cljs :default) e
+       (println "File validation failed: " (ex-message e))
+       (pprint (ex-data e))
+       (throw e)))))
 
 (defn apply-changes
-  [file changes]
+  [file changes & {:keys [validate?] :or {validate? true}}]
   (let [file' (ctf/update-file-data file #(cfc/process-changes % (:redo-changes changes) true))]
-    (validate-file! file')
+    (when validate?
+      (validate-file! file'))
     file'))
 
 (defn apply-undo-changes

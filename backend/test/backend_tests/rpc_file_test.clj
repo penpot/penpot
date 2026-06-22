@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-file-test
   (:require
@@ -19,7 +19,6 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -313,7 +312,8 @@
       ;; freeze because of the deduplication (we have uploaded 2 times
       ;; the same files).
 
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -372,14 +372,14 @@
       (th/db-exec! ["update file_change set deleted_at = now() where file_id = ? and label is not null" (:id file)])
       (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
 
-      (let [res (th/run-task! :objects-gc {:deletion-threshold 0})]
+      (let [res (th/run-task! :objects-gc {})]
         ;; this will remove the file change and file data entries for two snapshots
         (t/is (= 4 (:processed res))))
 
       ;; Rerun the file-gc and objects-gc
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
-      (let [res (th/run-task! :objects-gc {:deletion-threshold 0})]
+      (let [res (th/run-task! :objects-gc {})]
         ;; this will remove the file media objects marked as deleted
         ;; on prev file-gc
         (t/is (= 2 (:processed res))))
@@ -387,7 +387,8 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -572,7 +573,8 @@
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted.
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -665,7 +667,8 @@
       ;; because of the deduplication (we have uploaded 2 times the
       ;; same files).
 
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
@@ -715,7 +718,8 @@
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! "storage-gc-touched" {}))]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
@@ -750,7 +754,8 @@
 
       ;; Now that file-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:delete res))))
 
       ;; check file media objects
@@ -825,6 +830,49 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
+(t/deftest set-file-shared-idempotent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})]
+
+    ;; Share the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=true again should be a
+    ;; no-op success (idempotent), not an error.
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared true}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (true? (-> out :result :is-shared))))
+
+    ;; Unshare the file
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))
+
+    ;; Calling set-file-shared with is-shared=false again should also
+    ;; be a no-op success (idempotent).
+    (let [data {::th/type :set-file-shared
+                ::rpc/profile-id (:id profile)
+                :id (:id file)
+                :is-shared false}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (false? (-> out :result :is-shared))))))
+
 (t/deftest permissions-checks-link-to-library-1
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)
@@ -842,7 +890,7 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
@@ -864,9 +912,121 @@
         out      (th/command! data)
         error    (:error out)]
 
-      ;; (th/print-result! out)
+    ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-unlink-library
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :unlink-file-from-library
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
+
+(t/deftest permissions-checks-update-file-library-status
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})]
+
+
+    (let [data     {::th/type :update-file-library-sync-status
+                    ::rpc/profile-id (:id profile2)
+                    :file-id (:id file2)
+                    :library-id (:id file1)}
+
+          out      (th/command! data)
+          error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found)))))
+
+(t/deftest link-file-to-library-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :link-file-to-library
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        rel     (th/db-get :file-library-rel {:file-id (:id file2)
+                                              :library-file-id (:id file1)})
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? rel))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
+
+(t/deftest update-file-library-sync-status-updates-sync-row
+  (let [profile  (th/create-profile* 1)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile)
+                                     :profile-id (:id profile)})
+        _        (th/link-file-to-library* {:file-id (:id file2)
+                                            :library-id (:id file1)})
+        before   (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})
+        _        (th/sleep 10)
+        data     {::th/type :update-file-library-sync-status
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file2)
+                  :library-id (:id file1)}
+        out      (th/command! data)
+        after    (th/db-get :file-library-sync {:file-id (:id file2)
+                                                :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? before))
+    (t/is (some? after))
+    (t/is (pos? (compare (:synced-at after) (:synced-at before))))))
+
+(t/deftest update-file-library-sync-status-without-link-creates-sync-row
+  (let [profile (th/create-profile* 1)
+        file1   (th/create-file* 1 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)
+                                    :is-shared true})
+        file2   (th/create-file* 2 {:project-id (:default-project-id profile)
+                                    :profile-id (:id profile)})
+        data    {::th/type :update-file-library-sync-status
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file2)
+                 :library-id (:id file1)}
+        out     (th/command! data)
+        sync    (th/db-get :file-library-sync {:file-id (:id file2)
+                                               :library-file-id (:id file1)})]
+
+    (t/is (nil? (:error out)))
+    (t/is (some? sync))
+    (t/is (some? (:synced-at sync)))))
+
 
 (t/deftest deletion
   (let [profile1 (th/create-profile* 1)
@@ -922,8 +1082,9 @@
       (t/is (= 0 (:processed result))))
 
     ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 3 (:processed result))))
+    (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
+      (let [result (th/run-task! :objects-gc {})]
+        (t/is (= 3 (:processed result)))))
 
     ;; query the list of file libraries of a after hard deletion
     (let [data {::th/type :get-file-libraries
@@ -1134,7 +1295,7 @@
       (th/sleep 300)
 
       ;; run the task
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; check that object thumbnails are still here
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1163,7 +1324,7 @@
         (t/is (= 2 (count rows))))
 
       ;; run the task again
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       ;; check that we have all object thumbnails
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1226,7 +1387,7 @@
         (t/is (= 2 (count rows)))))
 
     (t/testing "gc task"
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 2 (count rows)))
@@ -1261,7 +1422,7 @@
       (t/is (= 1 (count rows)))
       (t/is (every? #(some? (:data %)) rows)))
 
-      ;; Mark the file ellegible again for GC
+    ;; Mark the file ellegible again for GC
     (th/db-update! :file
                    {:has-media-trimmed false}
                    {:id (:id file)})
@@ -1273,7 +1434,8 @@
     ;; The FileGC task will schedule an inner taskq
     (th/run-pending-tasks!)
 
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 2 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
@@ -1318,7 +1480,7 @@
                        {:file-id (:id file)
                         :type "fragment"}
                        {:order-by [:created-at]})]
-        ;; (pp/pprint rows)
+      ;; (pp/pprint rows)
       (t/is (= 2 (count rows)))
       (t/is (nil? (:data row1)))
       (t/is (= "storage" (:backend row1)))
@@ -1367,7 +1529,8 @@
 
     ;; we ensure that once object-gc is passed and marked two storage
     ;; objects to delete
-    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 
@@ -1489,7 +1652,7 @@
         (t/is (some? (not-empty (:objects component))))))
 
     ;; Re-run the file-gc task
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
     (let [row (th/db-get :file {:id (:id file)})]
       (t/is (true? (:has-media-trimmed row))))
 
@@ -1519,7 +1682,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -1610,8 +1773,8 @@
               :component-id c-id})}])
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
 
     ;; Check that component exists
     (let [data {::th/type :get-file
@@ -1684,7 +1847,7 @@
 
     ;; Now, we have deleted the usage of component if we pass file-gc,
     ;; that component should be deleted
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
 
     ;; Check that component is properly removed
     (let [data {::th/type :get-file
@@ -1833,8 +1996,8 @@
         (t/is (not= (:id fill) (:id fmedia)))))
 
     ;; Run the file-gc on file and library
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
-    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:file-id (:id file-2)})))
 
     ;; Now proceed to delete file and absorb it
     (let [data {::th/type :delete-file
@@ -1874,7 +2037,7 @@
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -1920,19 +2083,23 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [result (:result out)]
-          (t/is (= (:ids data) result)))
+          (t/is (fn? result))
+
+          (let [[ev1 ev2 :as events] (th/consume-sse result)]
+            (t/is (= 2 (count events)))
+            (t/is (= (:ids data) (val ev2)))))
 
         (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
           (t/is (= (:deleted-at row) now)))))))
 
-(t/deftest deleted-files-restore
+(t/deftest restore-deleted-files
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
         file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
-    (binding [ct/*clock* (clock/fixed now)]
+    (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
@@ -1988,3 +2155,167 @@
 
       (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
         (t/is (nil? (:deleted-at row)))))))
+
+
+(t/deftest restore-deleted-files-and-projets
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id profile)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [project (th/create-project* 1 {:profile-id (:id profile)
+                                           :team-id team-id})
+            file    (th/create-file* 1 {:profile-id (:id profile)
+                                        :project-id (:id project)})
+
+            data    {::th/type :delete-project
+                     :id (:id project)
+                     ::rpc/profile-id (:id profile)}
+            out     (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+
+        (th/run-pending-tasks!)
+
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id profile)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+        ;; Check if project is deleted
+        (let [[row1 :as rows] (th/db-query :project {:id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z")))
+
+        ;; Restore files
+        (let [data {::th/type :restore-deleted-team-files
+                    ::rpc/profile-id (:id profile)
+                    :team-id team-id
+                    :ids #{(:id file)}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
+            (let [events (th/consume-sse result)]
+              ;; (pp/pprint events)
+              (t/is (= 2 (count events)))
+              (t/is (= :end (first (last events))))
+              (t/is (= (:ids data) (last (last events)))))))
+
+
+        (let [[row1 :as rows] (th/db-query :file {:project-id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (nil? (:deleted-at row1))))
+
+
+        ;; Check if project is restored
+        (let [[row1 :as rows] (th/db-query :project {:id (:id project)})]
+          ;; (pp/pprint rows)
+          (t/is (= 1 (count rows)))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (nil? (:deleted-at row1))))))))
+
+(t/deftest get-file-stats-empty-file
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared  false})
+        out     (th/command! {::th/type :get-file-stats
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+
+    (let [result (:result out)]
+      (t/is (= (:id file) (:file-id result)))
+      (t/is (pos? (:page-count result)))
+      (t/is (zero? (:component-count result)))
+      (t/is (zero? (:deleted-component-count result)))
+      (t/is (zero? (:color-count result)))
+      (t/is (zero? (:typography-count result)))
+      (t/is (zero? (:library-count result)))
+      (t/is (zero? (:referenced-by-count result)))
+      (t/is (contains? result :shape-counts))
+      (t/is (zero? (get-in result [:shape-counts :total])))
+      (t/is (= {} (get-in result [:shape-counts :by-type]))))))
+
+(t/deftest get-file-stats-with-shapes
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared  false})
+        page-id  (-> file :data :pages first)
+        rect-id  (uuid/random)
+        frame-id (uuid/random)]
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id page-id
+       :id frame-id
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id frame-id
+              :name "frame"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame})}
+      {:type :add-obj
+       :page-id page-id
+       :id rect-id
+       :parent-id frame-id
+       :frame-id frame-id
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id rect-id
+              :name "rect"
+              :frame-id frame-id
+              :parent-id frame-id
+              :type :rect})}])
+
+    (let [out    (th/command! {::th/type :get-file-stats
+                               ::rpc/profile-id (:id profile)
+                               :id (:id file)})
+          result (:result out)]
+
+      (t/is (nil? (:error out)))
+      (t/is (= 2 (get-in result [:shape-counts :total])))
+      (t/is (= 1 (get-in result [:shape-counts :by-type :rect])))
+      (t/is (= 1 (get-in result [:shape-counts :by-type :frame]))))))
+
+(t/deftest get-file-stats-forbidden
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)
+                                  :is-shared  false})
+        out   (th/command! {::th/type :get-file-stats
+                            ::rpc/profile-id (:id other)
+                            :id (:id file)})]
+
+    (t/is (not (nil? (:error out))))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :not-found (:type edata))))))

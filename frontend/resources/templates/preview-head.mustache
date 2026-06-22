@@ -1,4 +1,4 @@
-<link href="./css/ds.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+<link href="./css/ds.css?version={{& version}}" rel="stylesheet" type="text/css" />
 
 <style>
   body {
@@ -7,9 +7,11 @@
 
   #storybook-root {
     height: 100%;
+    overflow: auto;
+  }
+
+  #storybook-docs {
+    height: 100%;
+    overflow: auto;
   }
 </style>
-
-<script>
-  window.penpotTranslations = JSON.parse({{& translations}});
-</script>

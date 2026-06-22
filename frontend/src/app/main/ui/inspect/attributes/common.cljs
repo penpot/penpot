@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.common
   (:require-macros [app.main.style :as stl])
@@ -45,8 +45,8 @@
          [:div {:class (stl/css :attributes-color-row)}
           [:div {:class (stl/css :bullet-wrapper)
                  :style #js {"--bullet-size" "16px"}}
-           [:& cb/color-bullet {:color color
-                                :mini true}]]
+           [:> cb/color-bullet* {:color color
+                                 :mini true}]]
 
           [:div {:class (stl/css :format-wrapper)}
            [:div {:class (stl/css :image-format)}
@@ -70,6 +70,7 @@
             [:img {:class (stl/css :resolved-image) :src (cf/resolve-file-media image)}]]
 
            [:> button* {:class (stl/css :download-button)
+                        :type "button"
                         :variant "secondary"
                         :target "_blank"
                         :download name
@@ -79,9 +80,9 @@
       [:div {:class (stl/css :attributes-color-row)}
        [:div {:class (stl/css :bullet-wrapper)
               :style #js {"--bullet-size" "16px"}}
-        [:& cb/color-bullet {:color color
-                             :mini true}]]
-      ;;  REMOVE this conditional when :inspect-styles flag is removed
+        [:> cb/color-bullet* {:color color
+                              :mini true}]]
+       ;;  REMOVE this conditional when :inspect-styles flag is removed
        (if (contains? cf/flags :inspect-styles)
          [:div {:class (stl/css :global/attr-label)} property]
          [:div {:class (stl/css :format-wrapper)}
@@ -106,9 +107,9 @@
           [:span {:class (stl/css-case :color-value-wrapper true
                                        :gradient-name (:gradient color))}
            (if (:gradient color)
-             [:& cb/color-name {:color color :size 90}]
+             [:> cb/color-name* {:color color :size 90}]
              (case format
-               :hex [:& cb/color-name {:color color}]
+               :hex [:> cb/color-name* {:color color}]
                :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))
                            result (cc/format-rgba [r g b a])]
                        [:* result])

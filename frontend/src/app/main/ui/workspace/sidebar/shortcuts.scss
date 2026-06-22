@@ -2,13 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .shortcuts {
   display: grid;
   grid-template-rows: auto auto 1fr;
+
   // TODO: Fix this once we start implementing the DS.
   //       We should not be doign these hardcoded calc's.
   height: calc(100vh - #{deprecated.$s-60});
@@ -18,27 +19,8 @@
   margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
 }
 
-.shortcuts-header {
-  @include deprecated.flexCenter;
-  @include deprecated.uppercaseTitleTipography;
-  position: relative;
-  height: deprecated.$s-32;
-  padding: deprecated.$s-2 deprecated.$s-2 deprecated.$s-2 0;
-  margin: deprecated.$s-4 deprecated.$s-4 0 deprecated.$s-4;
-  border-radius: deprecated.$br-6;
-  background-color: var(--panel-title-background-color);
-
-  .shortcuts-title {
-    @include deprecated.flexCenter;
-    flex-grow: 1;
-    color: var(--title-foreground-color-hover);
-  }
-
-  .shortcuts-close-button {
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
+.shortcuts-title {
+  margin: var(--sp-s) var(--sp-s) 0 var(--sp-s);
 }
 
 .section {
@@ -46,7 +28,8 @@
 }
 
 .not-found {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   color: var(--empty-message-foreground-color);
   margin: deprecated.$s-12;
 }
@@ -62,7 +45,8 @@
 
   .section-title,
   .subsection-title {
-    @include deprecated.uppercaseTitleTipography;
+    @include deprecated.uppercase-title-typography;
+
     display: flex;
     align-items: center;
     margin: 0;
@@ -83,9 +67,11 @@
     text-transform: none;
     padding-left: deprecated.$s-12;
   }
+
   .subsection-menu {
     margin-bottom: deprecated.$s-4;
   }
+
   .sub-menu {
     margin-bottom: deprecated.$s-4;
 
@@ -101,24 +87,29 @@
       background-color: var(--pill-background-color);
 
       .command-name {
-        @include deprecated.bodySmallTypography;
+        @include deprecated.body-small-typography;
+
         margin-left: deprecated.$s-2;
         color: var(--pill-foreground-color);
       }
+
       .keys {
-        @include deprecated.flexCenter;
+        @include deprecated.flex-center;
+
         gap: deprecated.$s-2;
         color: var(--pill-foreground-color);
 
         .key {
-          @include deprecated.bodySmallTypography;
-          @include deprecated.flexCenter;
+          @include deprecated.body-small-typography;
+          @include deprecated.flex-center;
+
           text-transform: capitalize;
           height: deprecated.$s-20;
           padding: deprecated.$s-2 deprecated.$s-6;
           border-radius: deprecated.$s-6;
           background-color: var(--menu-shortcut-background-color);
         }
+
         .space {
           margin: 0 deprecated.$s-2;
         }

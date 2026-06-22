@@ -2,26 +2,36 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
 
 .input-wrapper {
   --input-padding-size: var(--sp-xs);
   --opacity-button: 0;
+
   @include t.use-typography("code-font");
+
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
   inline-size: 100%;
   position: relative;
 
+  &.resizable {
+    &:not(:focus-within) {
+      cursor: ew-resize;
+    }
+  }
+
   &:hover {
     --opacity-button: 1;
   }
+
   &:focus-within {
     --opacity-button: 1;
   }
@@ -29,16 +39,39 @@
 
 .icon {
   color: var(--color-foreground-secondary);
-  min-width: var(--sp-l);
+  min-inline-size: var(--sp-l);
+}
+
+.text-icon {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  inline-size: fit-content;
+  min-inline-size: px2rem(46);
+  padding-inline-start: var(--sp-xs);
 }
 
 .invisible-button {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: 0;
   opacity: var(--opacity-button);
+  background-color: var(--color-background-quaternary);
 
   &:hover {
+    background-color: var(--color-background-quaternary);
+
     --opacity-button: 1;
   }
+
   &:focus {
+    background-color: var(--color-background-quaternary);
+
     --opacity-button: 1;
   }
+}
+
+.button-tooltip {
+  inline-size: $sz-28;
+  block-size: 100%;
 }

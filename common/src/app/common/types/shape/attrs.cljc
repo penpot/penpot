@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape.attrs
   (:require
@@ -32,6 +32,7 @@
             :shadow
 
             :blur
+            :background-blur
 
             :fills
             :fill-color
@@ -45,6 +46,8 @@
             :stroke-style
             :stroke-alignment
             :stroke-width
+            :stroke-dash
+            :stroke-gap
             :stroke-color
             :stroke-color-ref-id
             :stroke-color-ref-file
@@ -106,6 +109,7 @@
             :shadow
 
             :blur
+            :background-blur
 
             :exports
 
@@ -151,6 +155,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -162,6 +168,7 @@
            :shadow
 
            :blur
+           :background-blur
 
            :exports
 
@@ -206,6 +213,8 @@
              :stroke-style
              :stroke-alignment
              :stroke-width
+             :stroke-dash
+             :stroke-gap
              :stroke-color
              :stroke-color-ref-id
              :stroke-color-ref-file
@@ -217,6 +226,7 @@
              :shadow
 
              :blur
+             :background-blur
 
              :exports
 
@@ -261,6 +271,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -272,6 +284,7 @@
            :shadow
 
            :blur
+           :background-blur
 
            :exports
 
@@ -315,6 +328,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -326,6 +341,7 @@
            :shadow
 
            :blur
+           :background-blur
 
            :typography-ref-id
            :typography-ref-file
@@ -388,6 +404,7 @@
             :shadow
 
             :blur
+            :background-blur
 
             :exports
 
@@ -433,6 +450,8 @@
               :stroke-style
               :stroke-alignment
               :stroke-width
+              :stroke-dash
+              :stroke-gap
               :stroke-color
               :stroke-color-ref-id
               :stroke-color-ref-file
@@ -444,6 +463,7 @@
               :shadow
 
               :blur
+              :background-blur
 
               :exports
 
@@ -488,6 +508,8 @@
            :stroke-style
            :stroke-alignment
            :stroke-width
+           :stroke-dash
+           :stroke-gap
            :stroke-color
            :stroke-color-ref-id
            :stroke-color-ref-file
@@ -499,6 +521,7 @@
            :shadow
 
            :blur
+           :background-blur
 
            :exports
 

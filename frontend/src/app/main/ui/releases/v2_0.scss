@@ -2,12 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
-  @extend .modal-overlay-base;
+  @extend %modal-overlay-base;
 }
 
 .modal-container {
@@ -38,8 +38,9 @@
 }
 
 .version-tag {
-  @include deprecated.flexCenter;
-  @include deprecated.headlineSmallTypography;
+  @include deprecated.flex-center;
+  @include deprecated.headline-small-typography;
+
   height: deprecated.$s-32;
   width: deprecated.$s-96;
   background-color: var(--communication-tag-background-color);
@@ -48,7 +49,8 @@
 }
 
 .modal-title {
-  @include deprecated.headlineLargeTypography;
+  @include deprecated.headline-large-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
@@ -66,18 +68,21 @@
 }
 
 .feature-title {
-  @include deprecated.bodyLargeTypography;
+  @include deprecated.body-large-typography;
+
   color: var(--modal-title-foreground-color);
 }
 
 .feature-content {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
+
   margin: 0;
   color: var(--modal-text-foreground-color);
 }
 
 .feature-list {
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.body-medium-typography;
+
   color: var(--modal-text-foreground-color);
   list-style: disc;
   display: grid;
@@ -91,7 +96,8 @@
 }
 
 .next-btn {
-  @extend .button-primary;
+  @extend %button-primary;
+
   width: deprecated.$s-100;
   justify-self: flex-end;
   grid-area: button;

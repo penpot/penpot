@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+TARGET=${1:-app};
+
+set -ex
+
+corepack enable;
+corepack install;
+pnpm install;
+pnpm run watch:$TARGET

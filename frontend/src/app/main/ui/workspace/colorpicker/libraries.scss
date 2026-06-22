@@ -2,35 +2,100 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/colors.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/borders.scss" as *;
 
 .libraries {
-  margin-top: deprecated.$s-8;
-  width: 100%;
+  margin-block-start: var(--sp-s);
+  inline-size: 100%;
 }
 
 .selected-colors {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: deprecated.$s-4;
   justify-content: space-between;
+  gap: var(--sp-xs);
   overflow: auto;
-  margin-top: deprecated.$s-8;
-  max-height: deprecated.$s-168;
+  margin-block-start: var(--sp-s);
+  max-block-size: px2rem(168);
+  padding-inline-start: var(--sp-xxs);
 }
 
-.add-color-btn,
-.palette-btn {
-  @extend .button-secondary;
-  height: deprecated.$s-24;
-  width: deprecated.$s-24;
-  border-radius: deprecated.$br-circle;
-  padding: 0;
-  svg {
-    @extend .button-icon;
+.selected-colors-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  overflow: auto;
+  margin-block-start: var(--sp-s);
+  max-block-size: px2rem(168);
+}
+
+.color-row-colorpicker-label {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  inline-size: calc(var(--colorpicker-width) - #{px2rem(67)});
+  color: var(--color-foreground-primary);
+  text-align: left;
+}
+
+.color-row-colorpicker-gradient-type,
+.color-row-colorpicker-opacity {
+  color: var(--color-foreground-secondary);
+}
+
+.color-row-colorpicker {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-xs);
+  min-block-size: $sz-32;
+  inline-size: calc(var(--colorpicker-width) - #{px2rem(35)});
+  align-items: center;
+  justify-content: start;
+  border-radius: $br-8;
+  padding-block: 0;
+  padding-inline: var(--sp-xs);
+
+  &:hover {
+    background: var(--color-background-quaternary);
   }
+}
+
+.color-group-header {
+  display: flex;
+  align-items: center;
+  min-block-size: $sz-32;
+  gap: var(--sp-xs);
+  padding-block: var(--sp-xs);
+  padding-inline: var(--sp-xs);
+  cursor: pointer;
+  border-radius: $br-8;
+  user-select: none;
+}
+
+.color-group-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.color-group-name {
+  @include t.use-typography("body-small");
+  @include text-ellipsis;
+
+  cursor: pointer;
+  color: var(--color-foreground-secondary);
 }
 
 .selected-colors::after {
@@ -39,5 +104,16 @@
 }
 
 .select-wrapper {
+  --dropdown-start: auto;
+  --dropdown-end: #{$sz-36};
+  --dropdown-width: var(--seven-columns-width);
+
+  display: flex;
+  align-items: center;
   overflow: initial;
+  gap: var(--sp-xs);
+}
+
+.empty-state {
+  margin-block: px2rem(40) px2rem(48);
 }

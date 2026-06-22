@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.interactions
   "Visually show shape interactions in workspace"
@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.embed :as embed]
-   [app.main.ui.workspace.viewport.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline*]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -32,6 +32,10 @@
                                  :move-overlay-to
                                  :move-overlay-index])
              refs/workspace-local =))
+
+(def ^:private outgoing-link-color "var(--color-accent-tertiary)")
+(def ^:private incoming-link-color "var(--color-accent-quaternary)")
+(def ^:private neutral-link-color "var(--df-secondary)")
 
 (defn- on-pointer-down
   [event index {:keys [id] :as shape}]
@@ -96,12 +100,12 @@
     [orig-pos orig-x orig-y dest-pos dest-x dest-y]))
 
 
-(mf/defc interaction-marker
-  [{:keys [x y stroke action-type arrow-dir zoom] :as props}]
+(mf/defc interaction-marker*
+  [{:keys [x y stroke action-type arrow-dir zoom]}]
   (let [icon-pdata (case action-type
                      :navigate (case arrow-dir
-                                 :right "M -6.5 0 l 12 0 l -6 -6 m 6 6 l -6 6"
-                                 :left "M 6.5 0 l -12 0 l 6 -6 m -6 6 l 6 6"
+                                 :right "M -6.5 0 L 5.5 0 M 6.715 0.715 L -0.5 -6.5 M 6.715 -0.715 L -0.365 6.635"
+                                 :left "M 6.5 0 l -12 0 m -0.715 0.715 l 6.5 -6.9 m -6 6 l 6 6.35"
                                  nil)
 
                      :open-overlay "M-5 -5 h7 v7 h-7 z M2 -2 h3.5 v7 h-7 v-2.5"
@@ -138,8 +142,8 @@
                            "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
 
 
-(mf/defc interaction-path
-  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom] :as props}]
+(mf/defc interaction-path*
+  [{:keys [index level orig-shape dest-shape dest-point selected is-selected action-type zoom]}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
@@ -160,66 +164,72 @@
         path ["M" orig-x orig-y "C" (+ orig-x orig-dx) orig-y (+ dest-x dest-dx) dest-y dest-x dest-y]
         pdata (str/join " " path)
 
-        arrow-dir (if (= dest-pos :left) :right :left)]
+        arrow-dir (if (= dest-pos :left) :right :left)
+        incoming? (and (some? dest-shape)
+                       (contains? selected (:id dest-shape)))
+        stroke-color (cond
+                       is-selected outgoing-link-color
+                       incoming? incoming-link-color
+                       :else neutral-link-color)]
 
-    (if-not selected?
+    (if-not is-selected
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--df-secondary)"
+       [:path {:stroke stroke-color
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
                :d pdata}]
        (when (not dest-shape)
-         [:& interaction-marker {:index index
-                                 :x dest-x
-                                 :y dest-y
-                                 :stroke "var(--df-secondary)"
-                                 :action-type action-type
-                                 :arrow-dir arrow-dir
-                                 :zoom zoom}])]
+         [:> interaction-marker* {:index index
+                                  :x dest-x
+                                  :y dest-y
+                                  :stroke stroke-color
+                                  :action-type action-type
+                                  :arrow-dir arrow-dir
+                                  :zoom zoom}])]
 
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-accent-tertiary)"
+       [:path {:stroke stroke-color
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
                :d pdata}]
 
        (when dest-shape
-         [:& outline {:zoom zoom
-                      :shape dest-shape
-                      :color "var(--color-accent-tertiary)"}])
+         [:> outline* {:zoom zoom
+                       :shape dest-shape
+                       :color stroke-color}])
 
-       [:& interaction-marker {:index index
-                               :x orig-x
-                               :y orig-y
-                               :stroke "var(--color-accent-tertiary)"
-                               :zoom zoom}]
-       [:& interaction-marker {:index index
-                               :x dest-x
-                               :y dest-y
-                               :stroke "var(--color-accent-tertiary)"
-                               :action-type action-type
-                               :arrow-dir arrow-dir
-                               :zoom zoom}]])))
+       [:> interaction-marker* {:index index
+                                :x orig-x
+                                :y orig-y
+                                :stroke stroke-color
+                                :zoom zoom}]
+       [:> interaction-marker* {:index index
+                                :x dest-x
+                                :y dest-y
+                                :stroke stroke-color
+                                :action-type action-type
+                                :arrow-dir arrow-dir
+                                :zoom zoom}]])))
 
 
-(mf/defc interaction-handle
-  [{:keys [index shape zoom] :as props}]
+(mf/defc interaction-handle*
+  [{:keys [index shape zoom]}]
   (let [shape-rect (:selrect shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
         handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
     [:g {:on-pointer-down #(on-pointer-down % index shape)}
-     [:& interaction-marker {:x handle-x
-                             :y handle-y
-                             :stroke "var(--color-accent-tertiary)"
-                             :action-type :navigate
-                             :arrow-dir :right
-                             :zoom zoom}]]))
+     [:> interaction-marker* {:x handle-x
+                              :y handle-y
+                              :stroke "var(--color-accent-tertiary)"
+                              :action-type :navigate
+                              :arrow-dir :right
+                              :zoom zoom}]]))
 
 
-(mf/defc overlay-marker
-  [{:keys [page-id index orig-shape dest-shape position objects hover-disabled?] :as props}]
+(mf/defc overlay-marker*
+  [{:keys [page-id index orig-shape dest-shape position objects is-hover-disabled]}]
   (let [start-move-position
         (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
@@ -250,8 +260,8 @@
                          (some? thumbnail-data)
                          (assoc :thumbnail thumbnail-data))]
         [:g {:on-pointer-down start-move-position
-             :on-pointer-enter #(reset! hover-disabled? true)
-             :on-pointer-leave #(reset! hover-disabled? false)}
+             :on-pointer-enter #(reset! is-hover-disabled true)
+             :on-pointer-leave #(reset! is-hover-disabled false)}
          [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y)))}
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}
@@ -273,8 +283,8 @@
                    :r 8
                    :fill "var(--color-accent-tertiary)"}]]))))
 
-(mf/defc interactions
-  [{:keys [current-transform objects zoom selected hover-disabled? page-id] :as props}]
+(mf/defc interactions*
+  [{:keys [current-transform objects zoom selected is-hover-disabled page-id]}]
   (let [active-shapes (into []
                             (comp (filter #(seq (:interactions %))))
                             (vals objects))
@@ -305,26 +315,26 @@
                 selected? (contains? selected (:id shape))
                 level (calc-level index (:interactions shape))]
             (when-not selected?
-              [:& interaction-path {:key (dm/str "non-selected-" (:id shape) "-" index)
-                                    :index index
-                                    :level level
-                                    :orig-shape shape
-                                    :dest-shape dest-shape
-                                    :selected selected
-                                    :selected? false
-                                    :action-type (:action-type interaction)
-                                    :zoom zoom}]))))]
+              [:> interaction-path* {:key (dm/str "non-selected-" (:id shape) "-" index)
+                                     :index index
+                                     :level level
+                                     :orig-shape shape
+                                     :dest-shape dest-shape
+                                     :selected selected
+                                     :is-selected false
+                                     :action-type (:action-type interaction)
+                                     :zoom zoom}]))))]
 
      [:g.selected
       (when (and draw-interaction-to first-selected)
-        [:& interaction-path {:key "interactive"
-                              :index nil
-                              :orig-shape first-selected
-                              :dest-point draw-interaction-to
-                              :dest-shape draw-interaction-to-frame
-                              :selected? true
-                              :action-type :navigate
-                              :zoom zoom}])
+        [:> interaction-path* {:key "interactive"
+                               :index nil
+                               :orig-shape first-selected
+                               :dest-point draw-interaction-to
+                               :dest-shape draw-interaction-to-frame
+                               :is-selected true
+                               :action-type :navigate
+                               :zoom zoom}])
       (for [shape selected-shapes]
         (if (seq (:interactions shape))
           (for [[index interaction] (d/enumerate (:interactions shape))]
@@ -333,38 +343,38 @@
                                  (get objects (:destination interaction)))
                     level (calc-level index (:interactions shape))]
                 [:g {:key (dm/str "interaction-path-" (:id shape) "-" index)}
-                 [:& interaction-path {:index index
-                                       :level level
-                                       :orig-shape shape
-                                       :dest-shape dest-shape
-                                       :selected selected
-                                       :selected? true
-                                       :action-type (:action-type interaction)
-                                       :zoom zoom}]
+                 [:> interaction-path* {:index index
+                                        :level level
+                                        :orig-shape shape
+                                        :dest-shape dest-shape
+                                        :selected selected
+                                        :is-selected true
+                                        :action-type (:action-type interaction)
+                                        :zoom zoom}]
                  (when (and (or (= (:action-type interaction) :open-overlay)
                                 (= (:action-type interaction) :toggle-overlay))
                             (= (:overlay-pos-type interaction) :manual))
                    (if (and (some? move-overlay-to)
                             (= move-overlay-index index))
-                     [:& overlay-marker {:page-id page-id
-                                         :index index
-                                         :orig-shape shape
-                                         :dest-shape dest-shape
-                                         :position move-overlay-to
-                                         :objects objects
-                                         :hover-disabled? hover-disabled?}]
-                     [:& overlay-marker {:page-id page-id
-                                         :index index
-                                         :orig-shape shape
-                                         :dest-shape dest-shape
-                                         :position (:overlay-position interaction)
-                                         :objects objects
-                                         :hover-disabled? hover-disabled?}]))])))
+                     [:> overlay-marker* {:page-id page-id
+                                          :index index
+                                          :orig-shape shape
+                                          :dest-shape dest-shape
+                                          :position move-overlay-to
+                                          :objects objects
+                                          :is-hover-disabled is-hover-disabled}]
+                     [:> overlay-marker* {:page-id page-id
+                                          :index index
+                                          :orig-shape shape
+                                          :dest-shape dest-shape
+                                          :position (:overlay-position interaction)
+                                          :objects objects
+                                          :is-hover-disabled is-hover-disabled}]))])))
           (when (and shape
                      (not (cfh/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))
-            [:& interaction-handle {:key (:id shape)
-                                    :index nil
-                                    :shape shape
-                                    :selected selected
-                                    :zoom zoom}])))]]))
+            [:> interaction-handle* {:key (:id shape)
+                                     :index nil
+                                     :shape shape
+                                     :selected selected
+                                     :zoom zoom}])))]]))

@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.drawing.box
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -19,7 +20,6 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.snap :as snap]
@@ -29,9 +29,9 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn adjust-ratio
+(defn- adjust-ratio
   [point initial]
-  (let [v (gpt/to-vec point initial)
+  (let [v  (gpt/to-vec point initial)
         dx (mth/abs (:x v))
         dy (mth/abs (:y v))
         sx (mth/sign (:x v))
@@ -44,29 +44,44 @@
       (> dy dx)
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
-(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod?]
+(defn- resize-shape
+  [{:keys [x y width height] :as shape} initial point lock? mod? snap-pixel?]
   (if (and (some? x) (some? y) (some? width) (some? height))
-    (let [draw-rect  (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
-          shape-rect (grc/make-rect x y width height)
+    (let [p2
+          (cond-> point lock? (adjust-ratio initial))
 
-          scalev     (gpt/point (/ (:width draw-rect)
-                                   (:width shape-rect))
-                                (/ (:height draw-rect)
-                                   (:height shape-rect)))
+          p1
+          (if mod?
+            (gpt/point (- (* 2 (:x initial)) (:x p2))
+                       (- (* 2 (:y initial)) (:y p2)))
+            initial)
 
-          movev      (gpt/to-vec (gpt/point shape-rect)
-                                 (gpt/point draw-rect))]
+          draw-rect
+          (cond-> (grc/make-rect p1 p2)
+            snap-pixel?
+            (-> (update :width d/max 1)
+                (update :height d/max 1)))
+
+          shape-rect
+          (grc/make-rect x y width height)
+
+          scalev
+          (gpt/point (/ (:width draw-rect) (:width shape-rect))
+                     (/ (:height draw-rect) (:height shape-rect)))
+
+          movev
+          (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
 
       (-> shape
           (assoc :click-draw? false)
-          (vary-meta merge {:mod? mod?})
           (gsh/transform-shape (-> (ctm/empty)
                                    (ctm/resize scalev (gpt/point x y))
                                    (ctm/move movev)))))
     shape))
 
-(defn update-drawing [state initial point lock? mod?]
-  (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod?))
+(defn- update-drawing
+  [state initial point lock? mod? snap-pixel?]
+  (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod? snap-pixel?))
 
 (defn move-drawing
   [{:keys [x y]}]
@@ -83,8 +98,7 @@
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
 
             snap-pixel?  (contains? layout :snap-pixel-grid)
-            snap-prec    (if (>= zoom zoom-half-pixel-precision) 0.5 1)
-            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-prec))
+            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step 1))
 
             page-id      (:current-page-id state)
             objects      (dsh/lookup-page-objects state page-id)
@@ -122,18 +136,18 @@
                     (rx/map move-drawing))
 
                (->> ms/mouse-position
-                    (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
+                    (rx/filter #(> (* (gpt/distance % initial) zoom) 10))
                     ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
                     ;; and its a problem for fast moving drawing
                     (rx/take-until stopper)
-                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
+                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                     (rx/switch-map
                      (fn [[point :as current]]
                        (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
                             (rx/map (partial array/conj current)))))
                     (rx/map
                      (fn [[_ shift? mod? point]]
-                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift? mod?))))))
+                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step 1)) shift? mod? snap-pixel?))))))
 
          (->> (rx/of (common/handle-finish-drawing))
               (rx/delay 100)))))))

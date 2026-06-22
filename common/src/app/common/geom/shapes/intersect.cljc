@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.geom.shapes.intersect
   (:require
@@ -55,16 +55,16 @@
      (and (not= o1 o2) (not= o3 o4))
 
      ;; p1, q1 and p2 colinear and p2 lies on p1q1
-     (and (= o1 :coplanar) ^boolean (on-segment? p2 p1 q1))
+     (and (= o1 ::coplanar) ^boolean (on-segment? p2 p1 q1))
 
      ;; p1, q1 and q2 colinear and q2 lies on p1q1
-     (and (= o2 :coplanar) ^boolean (on-segment? q2 p1 q1))
+     (and (= o2 ::coplanar) ^boolean (on-segment? q2 p1 q1))
 
      ;; p2, q2 and p1 colinear and p1 lies on p2q2
-     (and (= o3 :coplanar) ^boolean (on-segment? p1 p2 q2))
+     (and (= o3 ::coplanar) ^boolean (on-segment? p1 p2 q2))
 
      ;; p2, q2 and p1 colinear and q1 lies on p2q2
-     (and (= o4 :coplanar) ^boolean (on-segment? q1 p2 q2)))))
+     (and (= o4 ::coplanar) ^boolean (on-segment? q1 p2 q2)))))
 
 (defn points->lines
   "Given a set of points for a polygon will return
@@ -369,7 +369,7 @@
 
 
 (defn line-line-intersect
-  "Calculates the interesection point for two lines given by the points a-b and b-c"
+  "Calculates the intersection point for two lines given by the points a-b and b-c"
   [a b c d]
 
   (let [;; Line equation representation: ax + by + c = 0

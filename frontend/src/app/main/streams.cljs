@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.streams
   "User interaction events and streams."
@@ -21,6 +21,16 @@
   [event]
   (or ^boolean (kbd/keyboard-event? event)
       ^boolean (mse/mouse-event? event)))
+
+;; Live preview state for an interactive transform. Pushed by drag
+;; events at the cadence set by upstream `rx/sample` (see
+;; `transforms.cljs`); subscribed via plain atoms in `app.main.refs` so
+;; updates bypass the Redux store and don't re-run unrelated lenses.
+(defonce wasm-modifiers
+  (rx/behavior-subject nil))
+
+(defonce workspace-selrect
+  (rx/behavior-subject nil))
 
 ;; --- Derived streams
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.comments
   (:require
@@ -16,20 +16,35 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
+   [app.util.i18n :refer [tr]]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (declare handle-interrupt)
 (declare handle-comment-layer-click)
+
+(defn toggle-comments-visibility
+  [& {:keys [origin] :as _opts}]
+  (ptk/reify ::toggle-comments-visibility
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [visible? (contains? (:workspace-layout state) :display-comments)]
+        (rx/of (vary-meta (dwlo/toggle-layout-flag :display-comments)
+                          assoc ::ev/origin (or origin "workspace"))
+               (ntf/success (tr (if visible?
+                                  "workspace.toast.comments-hidden"
+                                  "workspace.toast.comments-visible"))))))))
 
 (defn initialize-comments
   [file-id]
@@ -58,12 +73,18 @@
   (ptk/reify ::handle-interrupt
     ptk/WatchEvent
     (watch [_ state _]
-      (let [local (:comments-local state)]
+      (let [local           (:comments-local state)
+            comments-mode?  (= :comments (get-in state [:workspace-drawing :tool]))]
         (cond
           (:draft local) (rx/of (dcmt/close-thread))
           (:open local)  (rx/of (dcmt/close-thread))
-          :else          (rx/of (dwe/clear-edition-mode)
-                                (dws/deselect-all true)))))))
+          ;; Only clear edition / deselect on interrupt while the comments
+          ;; tool is active. When comments are merely visible during design,
+          ;; `select-shape` emits `:interrupt` and this would otherwise wipe
+          ;; the freshly selected shape, breaking click selection.
+          comments-mode? (rx/of (dwe/clear-edition-mode)
+                                (dws/deselect-all true))
+          :else          (rx/empty))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
@@ -74,15 +95,17 @@
   (ptk/reify ::handle-comment-layer-click
     ptk/WatchEvent
     (watch [_ state _]
-      (let [local (:comments-local state)]
-        (if (some? (:open local))
-          (rx/of (dcmt/close-thread))
-          (let [page-id (:current-page-id state)
-                file-id (:current-file-id state)
-                params  {:position position
-                         :page-id page-id
-                         :file-id file-id}]
-            (rx/of (dcmt/create-draft params))))))))
+      (if (not= :comments (get-in state [:workspace-drawing :tool]))
+        (rx/empty)
+        (let [local (:comments-local state)]
+          (if (some? (:open local))
+            (rx/of (dcmt/close-thread))
+            (let [page-id (:current-page-id state)
+                  file-id (:current-file-id state)
+                  params  {:position position
+                           :page-id page-id
+                           :file-id file-id}]
+              (rx/of (dcmt/create-draft params)))))))))
 
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
@@ -126,7 +149,18 @@
              thread-id  (:id thread)]
 
          (rx/concat
-          (rx/of #(update % :comment-threads assoc thread-id thread))
+          (rx/of (fn [state]
+                   (-> state
+                       (update :comment-threads assoc thread-id thread)
+                       ;; Keep the page positions map in sync so subsequent
+                       ;; frame moves compute the relative offset from the
+                       ;; latest position instead of a stale one.
+                       (dsh/update-page page-id
+                                        #(update-in % [:comment-thread-positions thread-id]
+                                                    (fn [pos]
+                                                      (-> pos
+                                                          (assoc :position (:position thread))
+                                                          (assoc :frame-id (:frame-id thread)))))))))
           (->> (rp/cmd! :update-comment-thread-position thread)
                (rx/catch #(rx/throw {:type :update-comment-thread-position}))
                (rx/ignore))))))))
@@ -274,7 +308,8 @@
   (ptk/reify ::navigate-to-comment-id
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (if-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-comment-threads {:file-id file-id})
              (rx/map #(d/seek (fn [{:keys [id]}] (= thread-id id)) %))
-             (rx/map navigate-to-comment))))))
+             (rx/map navigate-to-comment))
+        (rx/empty)))))

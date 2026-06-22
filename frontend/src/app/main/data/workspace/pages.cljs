@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.pages
   (:require
@@ -88,6 +88,7 @@
       (let [page (dsh/lookup-page state file-id page-id)
             uris (into #{} xf:collect-file-media (:objects page))]
         (rx/merge
+         (rx/of (ptk/data-event ::initialized page-id))
          (->> (rx/from uris)
               (rx/map #(http/fetch-data-uri % false))
               (rx/ignore))
@@ -105,9 +106,15 @@
       (if (dsh/lookup-page state file-id page-id)
         (rx/concat
          (rx/of (initialize-page* file-id page-id)
-                (fdf/fix-deleted-fonts-for-page file-id page-id)
-                (dwth/watch-state-changes file-id page-id)
-                (dwl/watch-component-changes))
+                (fdf/fix-deleted-fonts-for-page file-id page-id))
+
+         ;; Disable thumbnail generation in wasm renderer
+         (if (features/active-feature? state "render-wasm/v1")
+           (rx/empty)
+           (rx/of (dwth/watch-state-changes file-id page-id)))
+
+         (rx/of (dwl/watch-component-changes))
+
          (let [profile (:profile state)
                props   (get profile :props)]
            (when (not (:workspace-visited props))
@@ -322,11 +329,31 @@
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [page    (dsh/lookup-page state id)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-page page)
-                        (pcb/mod-page page {:name name}))]
-        (rx/of (dch/commit-changes changes))))))
+      (let [page             (dsh/lookup-page state id)
+            objects          (:objects page)
+            empty-page?       (and (= 1 (count objects))
+                                   (= uuid/zero (first (keys objects))))
+            changes          (-> (pcb/empty-changes it)
+                                 (pcb/with-page page)
+                                 (pcb/mod-page page {:name name}))
+            pages            (-> (dsh/lookup-file-data state) :pages)
+            index            (d/index-of pages id)
+            prev-id          (when (and (some? index) (pos? index))
+                               (nth pages (dec index) nil))
+            next-id          (when (some? index)
+                               (nth pages (inc index) nil))
+            fallback-page-id (or prev-id next-id)
+            separator?       (= "---" (str/trim name))]
+        (rx/concat
+         (rx/of (dch/commit-changes changes))
+         ;; Go to other page only if page is empty (only has the root shape)
+         ;; and the separator page is being renamed, otherwise user can rename
+         ;; any page to separator and be forced to go to another page
+         (when (and separator?
+                    empty-page?
+                    (= id (:current-page-id state))
+                    (some? fallback-page-id))
+           (rx/of (dcm/go-to-workspace :page-id fallback-page-id))))))))
 
 (defn- delete-page-components
   [changes page]
@@ -353,15 +380,18 @@
             pages   (:pages fdata)
 
             index   (d/index-of pages id)
-            page    (get pindex id)
-            page    (assoc page :index index)
-            pages   (filter #(not= % id) pages)
+            page    (get pindex id)]
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data fdata)
-                        (delete-page-components page)
-                        (pcb/del-page page))]
+        (if (nil? page)
+          (rx/empty)
+          (let [page    (assoc page :index index)
+                pages   (filter #(not= % id) pages)
 
-        (rx/of (dch/commit-changes changes)
-               (when (= id (:current-page-id state))
-                 (dcm/go-to-workspace {:page-id (first pages)})))))))
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data fdata)
+                            (delete-page-components page)
+                            (pcb/del-page page))]
+
+            (rx/of (dch/commit-changes changes)
+                   (when (= id (:current-page-id state))
+                     (dcm/go-to-workspace {:page-id (first pages)})))))))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layer
   (:require-macros [app.main.style :as stl])
@@ -11,12 +11,14 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.workspace.sidebar.options.menus.input-wrapper-tokens :refer [numeric-input-wrapper*]]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -39,11 +41,16 @@
 (defn- check-layer-menu-props
   [old-props new-props]
   (let [old-values (unchecked-get old-props "values")
-        new-values (unchecked-get new-props "values")]
+        new-values (unchecked-get new-props "values")
+
+        old-applied-tokens (unchecked-get old-props "appliedTokens")
+        new-applied-tokens (unchecked-get new-props "appliedTokens")]
     (and (identical? (unchecked-get old-props "class")
                      (unchecked-get new-props "class"))
          (identical? (unchecked-get old-props "ids")
                      (unchecked-get new-props "ids"))
+         (identical? old-applied-tokens
+                     new-applied-tokens)
          (identical? (get old-values :opacity)
                      (get new-values :opacity))
          (identical? (get old-values :blend-mode)
@@ -55,9 +62,22 @@
 
 (mf/defc layer-menu*
   {::mf/wrap [#(mf/memo' % check-layer-menu-props)]}
-  [{:keys [ids values]}]
-  (let [hidden?             (get values :hidden)
+  [{:keys [ids values applied-tokens]}]
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        hidden?             (get values :hidden)
         blocked?            (get values :blocked)
+
+        opacity (get values :opacity)
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token-name attr]
+           (st/emit! (dwta/unapply-token {:token-name token-name
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         current-blend-mode  (or (get values :blend-mode) :normal)
         current-opacity     (opacity->string (:opacity values))
@@ -105,9 +125,14 @@
 
         handle-blend-mode-leave
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids current-blend-mode wasm-renderer-enabled?)
          (fn [_value]
            (swap! state* assoc :preview-complete? true)
+           (when wasm-renderer-enabled?
+             (doseq [id ids]
+               (wasm.api/use-shape id)
+               (wasm.api/set-shape-blend-mode current-blend-mode)
+               (wasm.api/request-render "preview-blend-mode")))
            (st/emit! (dw/unset-preview-blend-mode ids))))
 
         handle-opacity-change
@@ -117,6 +142,16 @@
            (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (let [value (/ value 100)]
              (on-change ids :opacity value))))
+
+        on-opacity-change
+        (mf/use-fn
+         (mf/deps handle-opacity-change)
+         (fn [value]
+           (if (or (string? value) (number? value))
+             (handle-opacity-change value)
+             (st/emit! (dwta/apply-token-from-input {:token (first value)
+                                                     :attrs #{:opacity}
+                                                     :shape-ids ids})))))
 
         handle-set-hidden
         (mf/use-fn
@@ -176,52 +211,122 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:div {:class (stl/css-case :element-set-content true
-                                :hidden hidden?)}
-     [:div {:class (stl/css :select)}
-      [:& select
-       {:default-value selected-blend-mode
-        :options options
-        :on-change handle-change-blend-mode
-        :is-open? option-highlighted?
-        :class (stl/css-case :hidden-select hidden?)
-        :on-pointer-enter-option handle-blend-mode-enter
-        :on-pointer-leave-option handle-blend-mode-leave}]]
-     [:div {:class (stl/css :input)
-            :title (tr "workspace.options.opacity")}
-      [:span {:class (stl/css :icon)} "%"]
-      [:> numeric-input*
-       {:value current-opacity
-        :placeholder "--"
-        :on-change handle-opacity-change
-        :min 0
-        :max 100
-        :className (stl/css :numeric-input)}]]
+    ;; NOTE:
+    ;; This code is temporarily duplicated because the UI is changing with a new feature.
+    ;; The new implementation is currently behind a feature/config flag and not yet released.
+    ;; Once the feature is released, the duplicated ClojureScript and SCSS code should be removed.
+    ;; https://tree.taiga.io/project/penpot/task/13704
 
+    (if token-numeric-inputs
+      ;; TODO: When duplicated code is remove rename this class removing the "token" reference from it
+      [:section {:class (stl/css :element-set-content-token)
+                 :aria-label (tr "workspace.options.layer-options.layer-section")}
+       [:& select
+        {:default-value selected-blend-mode
+         :options options
+         :on-change handle-change-blend-mode
+         :is-open? option-highlighted?
+         :class (stl/css-case :hidden-select hidden?)
+         :on-pointer-enter-option handle-blend-mode-enter
+         :on-pointer-leave-option handle-blend-mode-leave}]
 
-     [:div {:class (stl/css :actions)}
-      (cond
-        (or (= :multiple hidden?) (not hidden?))
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                          :on-click handle-set-hidden
-                          :icon i/shown}]
+       [:> numeric-input-wrapper*
+        {:on-change on-opacity-change
+         :on-detach on-detach-token
+         :icon i/percentage
+         :min 0
+         :max 100
+         :attr :opacity
+         :property (tr "workspace.options.opacity")
+         :applied-token (get applied-tokens :opacity)
+         :placeholder (if (or (= :multiple (get applied-tokens :opacity))
+                              (= :multiple (or (get values :opacity) 1)))
+                        (tr "settings.multiple")
+                        "--")
+         :align :right
+         :disabled (if (or (= :multiple hidden?) hidden?) true false)
+         :class (stl/css :numeric-input-wrapper)
+         :value (if (= :multiple opacity)
+                  opacity
+                  (* 100 (d/nilv opacity 1)))}]
 
-        :else
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.options.layer-options.toggle-layer")
-                          :on-click handle-set-visible
-                          :icon i/hide}])
+       (cond
+         (or (= :multiple hidden?) (not hidden?))
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-hidden
+                           :tooltip-placement "top-left"
+                           :icon i/shown}]
 
-      (cond
-        (or (= :multiple blocked?) (not blocked?))
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.shape.menu.lock")
-                          :on-click handle-set-blocked
-                          :icon i/unlock}]
+         :else
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-visible
+                           :tooltip-placement "top-left"
+                           :icon i/hide}])
 
-        :else
-        [:> icon-button* {:variant "ghost"
-                          :aria-label (tr "workspace.shape.menu.unlock")
-                          :on-click handle-set-unblocked
-                          :icon i/lock}])]]))
+       (cond
+         (or (= :multiple blocked?) (not blocked?))
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.lock")
+                           :on-click handle-set-blocked
+                           :tooltip-placement "top-left"
+                           :icon i/unlock}]
+
+         :else
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.unlock")
+                           :on-click handle-set-unblocked
+                           :tooltip-placement "top-left"
+                           :icon i/lock}])]
+
+      [:section {:class (stl/css-case :element-set-content true
+                                      :hidden hidden?)
+                 :aria-label (tr "workspace.options.layer-options.layer-section")}
+       [:div {:class (stl/css :select)}
+        [:& select
+         {:default-value selected-blend-mode
+          :options options
+          :on-change handle-change-blend-mode
+          :is-open? option-highlighted?
+          :class (stl/css-case :hidden-select hidden?)
+          :on-pointer-enter-option handle-blend-mode-enter
+          :on-pointer-leave-option handle-blend-mode-leave}]]
+
+       [:div {:class (stl/css :input)
+              :title (tr "workspace.options.opacity")}
+        [:span {:class (stl/css :icon)} "%"]
+        [:> deprecated-input/numeric-input*
+         {:value current-opacity
+          :placeholder "--"
+          :on-change handle-opacity-change
+          :min 0
+          :max 100
+          :className (stl/css :numeric-input)}]]
+
+       [:div {:class (stl/css :actions)}
+        (cond
+          (or (= :multiple hidden?) (not hidden?))
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                            :on-click handle-set-hidden
+                            :icon i/shown}]
+
+          :else
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                            :on-click handle-set-visible
+                            :icon i/hide}])
+
+        (cond
+          (or (= :multiple blocked?) (not blocked?))
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.lock")
+                            :on-click handle-set-blocked
+                            :icon i/unlock}]
+
+          :else
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.shape.menu.unlock")
+                            :on-click handle-set-unblocked
+                            :icon i/lock}])]])))

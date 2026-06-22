@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.text
   (:require
@@ -28,6 +28,7 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [position-data content] :as shape} (obj/get props "shape")
+        is-render? (mf/use-ctx ctx/is-render?)
         is-component? (mf/use-ctx ctx/is-component?)]
 
     (mf/with-memo [content]
@@ -38,5 +39,8 @@
       (some? position-data)
       [:> svg/text-shape props]
 
-      (or (nil? position-data) is-component?)
-      [:> fo/text-shape props])))
+      ;; Only use this for component preview, otherwise the dashboard thumbnails
+      ;; will give a tainted canvas error because the `foreignObject` cannot be
+      ;; rendered.
+      (and (nil? position-data) (or is-component? is-render?))
+      [:> fo/text-shape* props])))

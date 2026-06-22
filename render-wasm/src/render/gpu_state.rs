@@ -1,5 +1,12 @@
-use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
+use crate::error::{Error, Result};
+use skia_safe::gpu::{
+    self, ganesh::context_options::Enable, gl::FramebufferInfo, gl::TextureInfo, ContextOptions,
+    DirectContext,
+};
 use skia_safe::{self as skia, ISize};
+
+const MIN_MAX_TEXTURE_SIZE: i32 = 512;
+const MAX_MAX_TEXTURE_SIZE: i32 = 4096;
 
 #[derive(Debug, Clone)]
 pub struct GpuState {
@@ -8,27 +15,56 @@ pub struct GpuState {
 }
 
 impl GpuState {
-    pub fn new() -> Self {
-        let interface = gpu::gl::Interface::new_native().unwrap();
-        let context = gpu::direct_contexts::make_gl(interface, None).unwrap();
+    pub fn try_new() -> Result<Self> {
+        let interface = gpu::gl::Interface::new_native().ok_or(Error::CriticalError(
+            "Failed to create GL interface".to_string(),
+        ))?;
+
+        // We tweak some options to enhance performance.
+        let mut context_options = ContextOptions::default();
+        // context_options.reduce_ops_task_splitting = Enable::Yes;
+        context_options.skip_gl_error_checks = Enable::Yes;
+        // context_options.runtime_program_cache_size = 1024;
+        // context_options.allow_multiple_glyph_cache_textures = Enable::Yes;
+        // context_options.allow_path_mask_caching = false;
+
+        let context = gpu::direct_contexts::make_gl(interface, Some(&context_options)).ok_or(
+            Error::CriticalError("Failed to create GL context".to_string()),
+        )?;
+
         let framebuffer_info = {
             let mut fboid: gl::types::GLint = 0;
             unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
 
             FramebufferInfo {
-                fboid: fboid.try_into().unwrap(),
+                fboid: fboid.try_into().map_err(|_| {
+                    Error::CriticalError("Failed to convert GL framebuffer ID to u32".to_string())
+                })?,
                 format: gpu::gl::Format::RGBA8.into(),
                 protected: gpu::Protected::No,
             }
         };
 
-        GpuState {
+        Ok(Self {
             context,
             framebuffer_info,
+        })
+    }
+
+    pub fn max_texture_size(&self) -> i32 {
+        self.context
+            .max_texture_size()
+            .clamp(MIN_MAX_TEXTURE_SIZE, MAX_MAX_TEXTURE_SIZE)
+    }
+
+    fn delete_gl_texture(&mut self, texture_id: gl::types::GLuint) -> bool {
+        unsafe {
+            gl::DeleteTextures(1, &texture_id);
+            gl::GetError() == 0
         }
     }
 
-    fn create_webgl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
+    fn create_gl_texture(&mut self, width: i32, height: i32) -> gl::types::GLuint {
         let mut texture_id: gl::types::GLuint = 0;
 
         unsafe {
@@ -56,7 +92,24 @@ impl GpuState {
         texture_id
     }
 
-    pub fn create_surface_with_isize(&mut self, label: String, size: ISize) -> skia::Surface {
+    pub fn delete_surface(&mut self, surface: &mut skia::Surface) -> bool {
+        let Some(texture) = skia::gpu::surfaces::get_backend_texture(
+            surface,
+            skia_safe::surface::BackendHandleAccess::FlushRead,
+        ) else {
+            return false;
+        };
+        let Some(texture_info) = gpu::backend_textures::get_gl_texture_info(&texture) else {
+            return false;
+        };
+        self.delete_gl_texture(texture_info.id)
+    }
+
+    pub fn create_surface_with_isize(
+        &mut self,
+        label: String,
+        size: ISize,
+    ) -> Result<skia::Surface> {
         self.create_surface_with_dimensions(label, size.width, size.height)
     }
 
@@ -65,9 +118,9 @@ impl GpuState {
         label: String,
         width: i32,
         height: i32,
-    ) -> skia::Surface {
+    ) -> Result<skia::Surface> {
         let backend_texture = unsafe {
-            let texture_id = self.create_webgl_texture(width, height);
+            let texture_id = self.create_gl_texture(width, height);
             let texture_info = TextureInfo {
                 target: gl::TEXTURE_2D,
                 id: texture_id,
@@ -77,7 +130,7 @@ impl GpuState {
             gpu::backend_textures::make_gl((width, height), gpu::Mipmapped::No, texture_info, label)
         };
 
-        gpu::surfaces::wrap_backend_texture(
+        let surface = gpu::surfaces::wrap_backend_texture(
             &mut self.context,
             &backend_texture,
             gpu::SurfaceOrigin::BottomLeft,
@@ -86,18 +139,61 @@ impl GpuState {
             None,
             None,
         )
-        .unwrap()
+        .ok_or(Error::CriticalError(
+            "Failed to create Skia surface".to_string(),
+        ))?;
+
+        Ok(surface)
     }
 
     /// Create a Skia surface that will be used for rendering.
-    pub fn create_target_surface(&mut self, width: i32, height: i32) -> skia::Surface {
+    pub fn create_target_surface(&mut self, width: i32, height: i32) -> Result<skia::Surface> {
         let backend_render_target =
             gpu::backend_render_targets::make_gl((width, height), 1, 8, self.framebuffer_info);
 
-        gpu::surfaces::wrap_backend_render_target(
+        let surface = gpu::surfaces::wrap_backend_render_target(
             &mut self.context,
             &backend_render_target,
             gpu::SurfaceOrigin::BottomLeft,
+            skia::ColorType::RGBA8888,
+            None,
+            None,
+        )
+        .ok_or(Error::CriticalError(
+            "Failed to create Skia surface".to_string(),
+        ))?;
+
+        Ok(surface)
+    }
+
+    #[allow(dead_code)]
+    pub fn create_surface_from_texture(
+        &mut self,
+        width: i32,
+        height: i32,
+        texture_id: u32,
+    ) -> skia::Surface {
+        let texture_info = TextureInfo {
+            target: gl::TEXTURE_2D,
+            id: texture_id,
+            format: gl::RGBA8,
+            protected: skia::gpu::Protected::No,
+        };
+
+        let backend_texture = unsafe {
+            gpu::backend_textures::make_gl(
+                (width, height),
+                gpu::Mipmapped::No,
+                texture_info,
+                String::from("export_texture"),
+            )
+        };
+
+        gpu::surfaces::wrap_backend_texture(
+            &mut self.context,
+            &backend_texture,
+            gpu::SurfaceOrigin::BottomLeft,
+            None,
             skia::ColorType::RGBA8888,
             None,
             None,

@@ -2,14 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.text.fontfaces
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.main.fonts :as fonts]
-   [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -38,24 +37,17 @@
 
     (mf/ref-val fonts-css-ref)))
 
-(mf/defc fontfaces-style-html
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
-  [props]
-
-  (let [fonts (obj/get props "fonts")
-
-        ;; Fetch its CSS fontfaces
+(mf/defc fontfaces-style-html*
+  {::mf/wrap [mf/memo]}
+  [{:keys [fonts]}]
+  (let [;; Fetch its CSS fontfaces
         fonts-css (use-fonts-css fonts)]
-
     [:style fonts-css]))
 
-(mf/defc fontfaces-style-render
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
-  [props]
-  (let [fonts (obj/get props "fonts")
-        ;; Fetch its CSS fontfaces
+(mf/defc fontfaces-style-render*
+  {::mf/wrap [mf/memo]}
+  [{:keys [fonts]}]
+  (let [;; Fetch its CSS fontfaces
         fonts-css (use-fonts-css fonts)]
     [:style fonts-css]))
 
@@ -76,11 +68,8 @@
        (map (comp fonts/get-content-fonts :content))
        (reduce set/union #{})))
 
-(mf/defc fontfaces-style
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["fonts"]))]}
-  [props]
-  (let [;; Retrieve the fonts ids used by the text shapes
-        fonts (obj/get props "fonts")]
-    (when (d/not-empty? fonts)
-      [:> fontfaces-style-render {:fonts fonts}])))
+(mf/defc fontfaces-style*
+  {::mf/wrap [mf/memo]}
+  [{:keys [fonts]}]
+  (when (d/not-empty? fonts)
+    [:> fontfaces-style-render* {:fonts fonts}]))

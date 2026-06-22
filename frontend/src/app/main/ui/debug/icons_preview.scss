@@ -9,7 +9,8 @@
 }
 
 .title {
-  @include deprecated.bigTitleTipography;
+  @include deprecated.big-title-typography;
+
   color: var(--color-foreground-primary);
 }
 
@@ -28,10 +29,10 @@
   row-gap: 0.5rem;
   grid-template-rows: var(--cell-size) 1fr;
   padding: 0.5rem;
-
   color: var(--color-foreground-primary);
-  word-break: break-word;
-  @include deprecated.bodySmallTypography;
+  overflow-wrap: break-word;
+
+  @include deprecated.body-small-typography;
 
   svg {
     width: var(--cell-size);

@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "./spacing.scss" as *;
 @use "./borders.scss" as *;
@@ -12,11 +12,12 @@
 @use "./z-index.scss" as *;
 
 // SCROLLBAR
-.new-scrollbar {
+%new-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(170, 181, 186, 0.3) transparent;
+  scrollbar-color: rgb(170 181 186 / 0.3) transparent;
+
   &:hover {
-    scrollbar-color: rgba(170, 181, 186, 0.7) transparent;
+    scrollbar-color: rgb(170 181 186 / 0.7) transparent;
   }
 
   // These rules do not apply in chrome - 121 or higher
@@ -27,18 +28,20 @@
     height: $s-12;
     width: $s-12;
   }
+
   ::-webkit-scrollbar-track,
   ::-webkit-scrollbar-corner {
     background-color: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(170, 181, 186, 0.3);
+    background-color: rgb(170 181 186 / 0.3);
     background-clip: content-box;
     border: $s-2 solid transparent;
     border-radius: $br-8;
+
     &:hover {
-      background-color: rgba(170, 181, 186, 0.7);
+      background-color: rgb(170 181 186 / 0.7);
       outline: none;
     }
   }
@@ -48,48 +51,53 @@
     color: var(--text-editor-selection-foreground-color);
   }
 
-  ::placeholder,
-  ::-webkit-input-placeholder {
-    @include bodySmallTypography;
+  ::placeholder {
+    @include body-small-typography;
+
     color: var(--input-placeholder-color);
   }
 }
 
 // BUTTONS
-.button-primary {
-  @include buttonStyle;
-  @include flexCenter;
-  @include headlineSmallTypography;
+%button-primary {
+  @include button-style;
+  @include flex-center;
+  @include headline-small-typography;
+
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
   border-radius: $br-8;
   min-height: $s-32;
-  svg,
-  span svg {
+
+  svg {
     stroke: var(--button-primary-foreground-color-rest);
   }
-  @include focusPrimary;
+
+  @include focus-primary;
+
   &:hover {
     background-color: var(--button-primary-background-color-hover);
     border: $s-1 solid var(--button-primary-border-color-hover);
     color: var(--button-primary-foreground-color-hover);
     text-decoration: none;
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-primary-foreground-color-hover);
     }
   }
+
   &:active {
     background-color: var(--button-primary-background-color-active);
     border: $s-1 solid var(--button-primary-border-color-active);
     color: var(--button-primary-foreground-color-active);
     outline: none;
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-primary-foreground-color-active);
     }
   }
+
   &:global(.disabled),
   &[disabled],
   &:disabled {
@@ -100,38 +108,43 @@
   }
 }
 
-.button-secondary {
-  @include buttonStyle;
-  @include flexCenter;
+%button-secondary {
+  @include button-style;
+  @include flex-center;
+
   border-radius: $br-8;
   background-color: var(--button-secondary-background-color-rest);
   border: $s-1 solid var(--button-secondary-border-color-rest);
   color: var(--button-secondary-foreground-color-rest);
-  svg,
-  span svg {
+
+  svg {
     stroke: var(--button-secondary-foreground-color-rest);
   }
-  @include focusSecondary;
+
+  @include focus-secondary;
+
   &:hover {
     background-color: var(--button-secondary-background-color-hover);
     border: $s-1 solid var(--button-secondary-border-color-hover);
     color: var(--button-secondary-foreground-color-hover);
     text-decoration: none;
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-secondary-foreground-color-hover);
     }
   }
+
   &:active {
     outline: none;
     background-color: var(--button-secondary-background-color-active);
     border: $s-1 solid var(--button-secondary-border-color-active);
     color: var(--button-secondary-foreground-color-active);
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-secondary-foreground-color-active);
     }
   }
+
   &:global(.disabled),
   &[disabled],
   &:disabled {
@@ -142,37 +155,42 @@
   }
 }
 
-.button-tertiary {
-  @include buttonStyle;
-  @include flexCenter;
+%button-tertiary {
+  @include button-style;
+  @include flex-center;
+
   --button-tertiary-border-width: #{$s-2};
+
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;
   border: var(--button-tertiary-border-width) solid transparent;
   display: grid;
   place-content: center;
-  svg,
-  span svg {
+
+  svg {
     stroke: var(--button-tertiary-foreground-color-rest);
   }
-  @include focusTertiary;
+
+  @include focus-tertiary;
+
   &:hover {
     background-color: var(--button-tertiary-background-color-hover);
     color: var(--button-tertiary-foreground-color-hover);
     border-color: var(--button-secondary-border-color-hover);
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-tertiary-foreground-color-hover);
     }
   }
+
   &:active {
     outline: none;
     border-color: transparent;
     background-color: var(--button-tertiary-background-color-active);
     color: var(--button-tertiary-foreground-color-active);
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-tertiary-foreground-color-active);
     }
   }
@@ -184,89 +202,98 @@
     cursor: unset;
     pointer-events: none;
 
-    svg,
-    span svg {
+    svg {
       stroke: var(--button-foreground-color-disabled);
     }
   }
 }
 
-.button-icon-selected {
+%button-icon-selected {
   outline: none;
   border-color: var(--button-icon-border-color-selected);
   background-color: var(--button-icon-background-color-selected);
   color: var(--button-icon-foreground-color-selected);
+
   svg {
     stroke: var(--button-icon-foreground-color-selected);
   }
 }
 
 .button-radio {
-  @include buttonStyle;
-  @include flexCenter;
+  @include button-style;
+  @include flex-center;
+
   border-radius: $br-8;
   color: var(--button-radio-foreground-color-rest);
   border-color: $s-1 solid var(--button-radio-background-color-rest);
-  svg,
-  span svg {
+
+  svg {
     stroke: var(--button-radio-foreground-color-rest);
   }
-  @include focusRadio;
+
+  @include focus-radio;
+
   &:hover {
     background-color: var(--button-radio-background-color-rest);
     color: var(--button-radio-foreground-color-hover);
     border: $s-1 solid transparent;
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-radio-foreground-color-hover);
     }
   }
+
   &:active {
     outline: none;
     border: $s-1 solid transparent;
     background-color: var(--button-radio-background-color-active);
     color: var(--button-radio-foreground-color-active);
-    svg,
-    span svg {
+
+    svg {
       stroke: var(--button-radio-foreground-color-active);
     }
   }
 }
 
 .button-warning {
-  @include buttonStyle;
-  @include flexCenter;
+  @include button-style;
+  @include flex-center;
+
   background-color: var(--button-warning-background-color-rest);
   border: $s-1 solid var(--button-warning-border-color-rest);
   color: var(--button-warning-foreground-color-rest);
 }
 
-.button-disabled {
-  @include buttonStyle;
-  @include flexCenter;
+%button-disabled {
+  @include button-style;
+  @include flex-center;
+
   background-color: var(--button-background-color-disabled);
   border: $s-1 solid var(--button-border-color-disabled);
   color: var(--button-foreground-color-disabled);
   cursor: unset;
 }
 
-.button-tag {
-  @include buttonStyle;
-  @include flexCenter;
+%button-tag {
+  @include button-style;
+  @include flex-center;
   @include focus;
+
   &:hover {
     svg {
       stroke: var(--title-foreground-color-hover);
     }
   }
+
   &:active {
     border: none;
     background-color: transparent;
   }
 }
 
-.button-icon {
-  @include flexCenter;
+%button-icon {
+  @include flex-center;
+
   height: $s-16;
   width: $s-16;
   color: transparent;
@@ -274,21 +301,24 @@
   stroke-width: 1px;
 }
 
-.button-icon-small {
-  @extend .button-icon;
+%button-icon-small {
+  @extend %button-icon;
+
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
 }
 
 .button-constraint {
-  @include buttonStyle;
+  @include button-style;
+
   width: $s-32;
   height: $s-4;
   border-radius: $br-8;
   background-color: var(--button-constraint-background-color-rest);
   padding: 0;
   margin: 0;
+
   &:hover {
     outline: $s-4 solid var(--button-constraint-border-color-hover);
     background-color: var(--button-constraint-background-color-hover);
@@ -296,9 +326,10 @@
 }
 
 // INPUTS
-.input-base {
-  @include removeInputStyle;
-  @include textEllipsis;
+%input-base {
+  @include remove-input-style;
+  @include text-ellipsis;
+
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -306,6 +337,7 @@
   padding: 0 0 0 $s-6;
   border-radius: $br-8;
   color: var(--input-foreground-color-active);
+
   &[disabled] {
     opacity: 0.5;
     pointer-events: none;
@@ -313,24 +345,31 @@
 }
 
 .input-icon {
-  @include flexCenter;
+  @include flex-center;
+
   min-width: $s-12;
   height: $s-32;
+
   svg {
-    @extend .button-icon-small;
+    @extend %button-icon-small;
   }
 }
 
-.input-label {
-  @include headlineSmallTypography;
-  @include flexCenter;
+%input-label {
+  @include headline-small-typography;
+  @include flex-center;
+
   width: $s-20;
   padding-left: $s-8;
   height: $s-32;
   color: var(--input-foreground-color);
 }
 
-.input-element {
+.input-label {
+  @extend %input-label;
+}
+
+%input-element {
   display: flex;
   align-items: center;
   height: $s-32;
@@ -338,60 +377,75 @@
   background-color: var(--input-background-color);
   border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
+
   span,
   label {
-    @extend .input-label;
+    @extend %input-label;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--input-foreground-color);
     }
   }
 
   input {
-    @extend .input-base;
+    @extend %input-base;
   }
 
   ::placeholder {
     color: var(--input-placeholder-color);
   }
 
-  @include focusInput;
+  @include focus-input;
+
   &:hover {
     border: $s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
+
     span {
       color: var(--input-foreground-color-hover);
     }
+
     input {
       color: var(--input-foreground-color-hover);
     }
   }
+
   &:active {
     border: $s-1 solid var(--input-border-color-active);
     background-color: var(--input-background-color-active);
+
     span {
       color: var(--input-foreground-color-active);
     }
+
     input {
       color: var(--input-foreground-color-active);
     }
   }
+
   &:focus,
   &:focus-within {
     border: $s-1 solid var(--input-border-color-focus);
     background-color: var(--input-background-color-focus);
+
     span {
       color: var(--input-foreground-color-focus);
     }
+
     input {
       color: var(--input-foreground-color-focus);
     }
+
     &:hover {
       border: $s-1 solid var(--input-border-color-focus);
       background-color: var(--input-background-color-focus);
+
       span {
         color: var(--input-foreground-color-focus);
       }
+
       input {
         color: var(--input-foreground-color-focus);
       }
@@ -399,13 +453,16 @@
   }
 }
 
-.input-element-label {
-  @include bodySmallTypography;
+%input-element-label {
+  @include body-small-typography;
+
   display: flex;
   align-items: flex-start;
   padding: 0;
+
   input {
-    @extend .input-base;
+    @extend %input-base;
+
     padding-left: $s-8;
     display: flex;
     align-items: flex-start;
@@ -418,10 +475,13 @@
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
   }
+
   ::placeholder {
-    @include bodySmallTypography;
+    @include body-small-typography;
+
     color: var(--input-placeholder-color);
   }
+
   &:hover {
     input {
       color: var(--input-foreground-color-active);
@@ -439,22 +499,25 @@
   }
 }
 
-.disabled-input {
+%disabled-input {
   background-color: var(--input-background-color-disabled);
   border: $s-1 solid var(--input-border-color-disabled);
   color: var(--input-foreground-color-disabled);
+
   input {
     pointer-events: none;
     cursor: default;
     color: var(--input-foreground-color-disabled);
   }
-  span svg {
+
+  svg {
     stroke: var(--input-foreground-color-disabled);
   }
 }
 
-.checkbox-icon {
-  @include flexCenter;
+%checkbox-icon {
+  @include flex-center;
+
   width: $s-16;
   height: $s-16;
   min-width: $s-16;
@@ -462,15 +525,18 @@
   background-color: var(--input-checkbox-background-color-rest);
   border: $s-1 solid var(--input-checkbox-border-color-rest);
   border-radius: $br-4;
+
   svg {
     width: $s-16;
     height: $s-16;
     display: none;
     stroke: var(--input-checkbox-inactive-foreground-color);
   }
+
   &:hover {
     border-color: var(--input-checkbox-border-color-hover);
   }
+
   &:focus {
     border-color: var(--input-checkbox-border-color-focus);
   }
@@ -478,8 +544,10 @@
   &:global(.checked) {
     border-color: var(--input-checkbox-border-color-active);
     background-color: var(--input-checkbox-background-color-active);
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--input-checkbox-foreground-color-active);
     }
   }
@@ -487,8 +555,10 @@
   &:global(.intermediate) {
     background-color: var(--input-checkbox-background-color-intermediate);
     border-color: var(--input-checkbox-border-color-intermediate);
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--input-checkbox-foreground-color-intermediate);
     }
   }
@@ -496,28 +566,34 @@
   &:global(.unchecked) {
     background-color: var(--input-checkbox-background-color-rest);
     border: $s-1 solid var(--input-checkbox-background-color-rest);
+
     svg {
       display: none;
     }
   }
 }
 
-.input-checkbox {
+%input-checkbox {
   display: flex;
   align-items: center;
+
   label {
-    @include bodySmallTypography;
+    @include body-small-typography;
+
     display: flex;
     align-items: center;
     gap: $s-6;
     cursor: pointer;
     color: var(--input-checkbox-text-foreground-color);
+
     span {
-      @extend .checkbox-icon;
+      @extend %checkbox-icon;
     }
+
     input {
       margin: 0;
     }
+
     &:hover {
       span {
         border-color: var(--input-checkbox-border-color-hover);
@@ -533,11 +609,13 @@
   }
 }
 
-.input-with-label {
+%input-with-label {
   display: flex;
   flex-direction: column;
+
   label {
-    @include bodySmallTypography;
+    @include body-small-typography;
+
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -546,8 +624,9 @@
   }
 
   input {
-    @extend .input-base;
-    @include bodySmallTypography;
+    @extend %input-base;
+    @include body-small-typography;
+
     border-radius: $br-8;
     height: $s-32;
     min-height: $s-32;
@@ -555,17 +634,20 @@
     background-color: var(--input-background-color);
     border: $s-1 solid var(--input-border-color);
     color: var(--input-foreground-color-active);
+
     &:focus-within,
     &:active {
       input {
         color: var(--input-foreground-color-active);
       }
+
       background-color: var(--input-background-color-active);
       border: $s-1 solid var(--input-border-color-active);
     }
   }
+
   &:global(.disabled) {
-    @extend .disabled-input;
+    @extend %disabled-input;
   }
 
   &:global(.invalid) {
@@ -575,9 +657,10 @@
   }
 }
 
-//MODALS
-.modal-background {
-  @include menuShadow;
+// MODALS
+%modal-background {
+  @include menu-shadow;
+
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -588,8 +671,9 @@
   background-color: var(--modal-background-color);
 }
 
-.modal-overlay-base {
-  @include flexCenter;
+%modal-overlay-base {
+  @include flex-center;
+
   position: fixed;
   left: 0;
   top: 0;
@@ -599,7 +683,7 @@
   background-color: var(--overlay-color);
 }
 
-.modal-container-base {
+%modal-container-base {
   position: relative;
   padding: $s-32;
   border-radius: $br-8;
@@ -611,52 +695,58 @@
   max-height: $s-512;
 }
 
-.modal-close-btn-base {
-  @extend .button-tertiary;
+%modal-close-btn-base {
+  @extend %button-tertiary;
+
   position: absolute;
   top: $s-8;
   right: $s-6;
   height: $s-32;
   width: $s-28;
+
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
   }
 }
 
 .modal-hint-base {
-  @include bodySmallTypography;
+  @include body-small-typography;
+
   color: var(--modal-title-foreground-color);
   border-top: $s-1 solid var(--modal-hint-border-color);
   border-bottom: $s-1 solid var(--modal-hint-border-color);
 }
 
-.modal-action-btns {
+%modal-action-btns {
   display: flex;
   justify-content: flex-end;
   gap: $s-16;
 }
 
-.modal-cancel-btn {
-  @extend .button-secondary;
-  @include uppercaseTitleTipography;
+%modal-cancel-btn {
+  @extend %button-secondary;
+  @include uppercase-title-typography;
+
   padding: $s-8 $s-24;
   border-radius: $br-8;
   height: $s-32;
   margin: 0;
 }
 
-.modal-accept-btn {
-  @extend .button-primary;
-  @include uppercaseTitleTipography;
+%modal-accept-btn {
+  @extend %button-primary;
+  @include uppercase-title-typography;
+
   padding: $s-8 $s-24;
   border-radius: $br-8;
   height: $s-32;
   margin: 0;
 }
 
-.modal-danger-btn {
-  @extend .button-primary;
-  @include uppercaseTitleTipography;
+%modal-danger-btn {
+  @extend %button-primary;
+  @include uppercase-title-typography;
+
   padding: $s-8 $s-24;
   border-radius: $br-8;
   height: $s-32;
@@ -667,8 +757,12 @@
 }
 
 // UI ELEMENTS
-.asset-element {
-  @include bodySmallTypography;
+
+// FIXME: This is used multiple times accross the app. We should design this in
+// the DS and create a proper component for it.
+%asset-element {
+  @include body-small-typography;
+
   display: flex;
   align-items: center;
   height: $s-32;
@@ -676,42 +770,33 @@
   padding: $s-8 $s-12;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
+
   &:hover {
     background-color: var(--assets-item-background-color-hover);
     color: var(--assets-item-name-foreground-color-hover);
   }
 }
 
-.shortcut-base {
-  @include flexCenter;
+%shortcut-base {
+  @include flex-center;
+
   gap: $s-2;
   color: var(--menu-shortcut-foreground-color);
 }
 
-.shortcut-key-base {
-  @include bodySmallTypography;
-  @include flexCenter;
+%shortcut-key-base {
+  @include body-small-typography;
+  @include flex-center;
+
   height: $s-20;
   padding: $s-2 $s-6;
   border-radius: $br-6;
   background-color: var(--menu-shortcut-background-color);
 }
 
-.user-icon {
-  @include flexCenter;
-  @include bodySmallTypography;
-  height: $s-24;
-  width: $s-24;
-  border-radius: $br-circle;
-  margin-left: calc(-1 * $s-4);
-  img {
-    border-radius: $br-circle;
-    border: $s-2 solid var(--user-count-foreground-color);
-  }
-}
+%mixed-bar {
+  @include body-small-typography;
 
-.mixed-bar {
-  @include bodySmallTypography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -722,7 +807,7 @@
   color: var(--input-foreground-color-active);
 }
 
-.link {
+%link {
   background: unset;
   border: none;
   color: var(--link-foreground-color);
@@ -730,7 +815,7 @@
   text-decoration: none;
 }
 
-.colorpicker-handler {
+%colorpicker-handler {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -740,39 +825,31 @@
   border-radius: $br-circle;
   transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
   z-index: $z-index-1;
+
   &:hover,
   &:active {
     border-color: var(--colorpicker-details-color-selected);
   }
 }
 
-.empty-icon {
-  @include flexCenter;
-  height: $s-48;
-  width: $s-48;
-  border-radius: $br-circle;
-  background-color: var(--empty-message-background-color);
-  svg {
-    @extend .button-icon;
-    height: $s-28;
-    width: $s-28;
-    stroke: var(--empty-message-foreground-color);
-  }
-}
-
-.attr-title {
+%attr-title {
   div {
     margin-left: 0;
     color: var(--entry-foreground-color-hover);
   }
+
   button {
-    @extend .button-tertiary;
+    @extend %button-tertiary;
+
     display: none;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover {
     button {
       display: flex;
@@ -780,15 +857,17 @@
   }
 }
 
-.attr-row {
+%attr-row {
   display: grid;
   grid-template-areas: "name content";
   grid-template-columns: 1fr 3fr;
   gap: $s-4;
   height: $s-32;
+
   :global(.attr-label) {
-    @include bodySmallTypography;
-    @include twoLineTextEllipsis;
+    @include body-small-typography;
+    @include two-line-text-ellipsis;
+
     width: $s-92;
     margin: auto 0;
     color: var(--entry-foreground-color);
@@ -799,17 +878,20 @@
     grid-area: content;
     display: flex;
     color: var(--entry-foreground-color-hover);
-    @include bodySmallTypography;
+
+    @include body-small-typography;
   }
 }
 
-.copy-button-children {
-  @include bodySmallTypography;
+%copy-button-children {
+  @include body-small-typography;
+
   color: var(--color-foreground-primary);
   text-align: left;
   margin: 0;
   padding: 0;
   height: fit-content;
+
   &:hover {
     div {
       color: var(--entry-foreground-color-hover);
@@ -818,21 +900,23 @@
 }
 
 // SELECTS AND DROPDOWNS
-.menu-dropdown {
-  @include menuShadow;
-  @include flexColumn;
+%menu-dropdown {
+  @include menu-shadow;
+  @include flex-column;
+
   position: absolute;
   padding: $s-4;
   border-radius: $br-8;
-  z-index: $z-index-10;
+  z-index: $z-index-dropdown;
   color: var(--title-foreground-color-hover);
   background-color: var(--menu-background-color);
   border: $s-2 solid var(--panel-border-color);
   margin: 0;
 }
 
-.menu-item-base {
-  @include bodySmallTypography;
+%menu-item-base {
+  @include body-small-typography;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -841,13 +925,15 @@
   padding: $s-6;
   border-radius: $br-8;
   cursor: pointer;
+
   &:hover {
     background-color: var(--menu-background-color-hover);
   }
 }
 
-.dropdown-element-base {
-  @include bodySmallTypography;
+%dropdown-element-base {
+  @include body-small-typography;
+
   display: flex;
   align-items: center;
   gap: $s-8;
@@ -858,24 +944,29 @@
   color: var(--menu-foreground-color-rest);
 
   span {
-    @include flexCenter;
-    @include textEllipsis;
+    @include flex-center;
+    @include text-ellipsis;
+
     svg {
-      @extend .button-icon-small;
+      @extend %button-icon-small;
+
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover {
     background-color: var(--menu-background-color-hover);
     color: var(--menu-foreground-color);
-    span svg {
+
+    svg {
       stroke: var(--menu-foreground-color-hover);
     }
   }
 }
 
-.dropdown-wrapper {
-  @include menuShadow;
+%dropdown-wrapper {
+  @include menu-shadow;
+
   position: absolute;
   top: $s-32;
   left: 0;
@@ -886,15 +977,15 @@
   margin-top: $s-1;
   border-radius: $br-8;
   z-index: $z-index-4;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   background-color: var(--menu-background-color);
   color: var(--menu-foreground-color);
   border: $s-2 solid var(--panel-border-color);
 }
 
-.select-wrapper {
-  @include bodySmallTypography;
+%select-wrapper {
+  @include body-small-typography;
+
   position: relative;
   display: flex;
   align-items: center;

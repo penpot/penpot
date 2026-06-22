@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.left-sidebar
   (:require-macros [app.main.style :as stl])
@@ -12,7 +12,7 @@
    [app.common.types.component :as ctk]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
-   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item-inner]]
+   [app.main.ui.workspace.sidebar.layer-item :refer [layer-item-inner*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
@@ -26,7 +26,6 @@
 (mf/defc layer-item
   [{:keys [item selected objects  depth component-child? hide-toggle?] :as props}]
   (let [id        (:id item)
-        hidden?   (:hidden item)
         selected? (contains? selected id)
         item-ref  (mf/use-ref nil)
         depth     (+ depth 1)
@@ -68,18 +67,17 @@
        (when (and (= (count selected) 1) selected?)
          (dom/scroll-into-view-if-needed! (mf/ref-val item-ref) true))))
 
-    [:& layer-item-inner
+    [:> layer-item-inner*
      {:ref item-ref
       :item item
       :depth depth
-      :read-only? true
-      :highlighted? false
-      :selected? selected?
-      :component-tree? component-tree?
-      :hidden? hidden?
-      :filtered? false
-      :expanded? expanded?
-      :hide-toggle? hide-toggle?
+      :is-read-only true
+      :is-highlighted false
+      :is-selected selected?
+      :is-component-tree component-tree?
+      :is-filtered false
+      :is-expanded expanded?
+      :hide-toggle hide-toggle?
       :on-select-shape select-shape
       :on-toggle-collapse toggle-collapse}
 

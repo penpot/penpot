@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.exports.files
   "The files export dialog/modal"
@@ -10,13 +10,11 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
    [beicon.v2.core :as rx]
@@ -47,8 +45,7 @@
      :files files}))
 
 (mf/defc export-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [file]}]
   [:div {:class (stl/css-case
                  :file-entry true
@@ -71,7 +68,7 @@
   {::mf/register modal/components
    ::mf/register-as ::fexp/export-files
    ::mf/props :obj}
-  [{:keys [team-id files format]}]
+  [{:keys [team-id files]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
 
@@ -79,40 +76,19 @@
         selected     (:selected state)
         status       (:status state)
 
-        binary?      (not= format :legacy-zip)
-
-        ;; We've deprecated the merge option on non-binary files
-        ;; because it wasn't working and we're planning to remove this
-        ;; export in future releases.
-        export-types (if binary? fexp/valid-types [:all :detach])
-
         start-export
         (mf/use-fn
          (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (mw/ask-many!
-                 {:cmd :export-files
-                  :format format
-                  :team-id team-id
-                  :type selected
-                  :files files})
-                (rx/mapcat #(->> (rx/of %)
-                                 (rx/delay 1000)))
+           (->> (fexp/export-files :files files :type selected)
                 (rx/subs!
-                 (fn [msg]
-                   (cond
-                     (= :error (:type msg))
-                     (swap! state* update :files mark-file-error (:file-id msg))
-
-                     (= :finish (:type msg))
-                     (let [mtype (if (contains? cf/flags :export-file-v3)
-                                   "application/penpot"
-                                   (:mtype msg))
-                           fname (:filename msg)
-                           uri   (:uri msg)]
-                       (swap! state* update :files mark-file-success (:file-id msg))
-                       (dom/trigger-download-uri fname mtype uri))))))))
+                 (fn [{:keys [file-id error filename uri] :as result}]
+                   (if error
+                     (swap! state* update :files mark-file-error file-id)
+                     (do
+                       (swap! state* update :files mark-file-success file-id)
+                       (dom/trigger-download-uri filename "application/penpot" uri))))))))
 
         on-cancel
         (mf/use-fn
@@ -144,7 +120,7 @@
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)}
-        (tr "dashboard.export.title")]
+        (tr "files-download-modal.title")]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click on-cancel} deprecated-icon/close]]
 
@@ -152,29 +128,29 @@
         (= status :prepare)
         [:*
          [:div {:class (stl/css :modal-content)}
-          [:p {:class (stl/css :modal-msg)} (tr "dashboard.export.explain")]
-          [:p {:class (stl/css :modal-scd-msg)} (tr "dashboard.export.detail")]
+          [:p {:class (stl/css :modal-msg)} (tr "files-download-modal.description-1")]
+          [:p {:class (stl/css :modal-scd-msg)} (tr "files-download-modal.description-2")]
 
-          (for [type export-types]
+          (for [type fexp/valid-types]
             [:div {:class (stl/css :export-option true)
                    :key (name type)}
              [:label {:for (str "export-" type)
                       :class (stl/css-case :global/checked (= selected type))}
               ;; Execution time translation strings:
-              ;;   (tr "dashboard.export.options.all.message")
-              ;;   (tr "dashboard.export.options.all.title")
-              ;;   (tr "dashboard.export.options.detach.message")
-              ;;   (tr "dashboard.export.options.detach.title")
-              ;;   (tr "dashboard.export.options.merge.message")
-              ;;   (tr "dashboard.export.options.merge.title")
+              ;;   (tr "files-download-modal.options.all.message")
+              ;;   (tr "files-download-modal.options.all.title")
+              ;;   (tr "files-download-modal.options.detach.message")
+              ;;   (tr "files-download-modal.options.detach.title")
+              ;;   (tr "files-download-modal.options.merge.message")
+              ;;   (tr "files-download-modal.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
                  deprecated-icon/status-tick)]
               [:div {:class (stl/css :option-content)}
                [:h3 {:class (stl/css :modal-subtitle)}
-                (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
+                (tr (dm/str "files-download-modal.options." (d/name type) ".title"))]
                [:p  {:class (stl/css :modal-msg)}
-                (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]]
+                (tr (dm/str "files-download-modal.options." (d/name type) ".message"))]]
 
               [:input {:type "radio"
                        :class (stl/css :option-input)
@@ -197,15 +173,22 @@
                     :on-click on-accept}]]]]
 
         (= status :exporting)
-        [:*
-         [:div {:class (stl/css :modal-content)}
-          (for [file (:files state)]
-            [:> export-entry* {:file file :key (dm/str (:id file))}])]
+        (let [in-progress? (->> state :files (some :loading))]
+          [:*
+           [:div {:class (stl/css :modal-content)}
+            (for [file (:files state)]
+              [:> export-entry* {:file file :key (dm/str (:id file))}])
 
-         [:div {:class (stl/css :modal-footer)}
-          [:div {:class (stl/css :action-buttons)}
-           [:input {:class (stl/css :accept-btn)
-                    :type "button"
-                    :value (tr "labels.close")
-                    :disabled (->> state :files (some :loading))
-                    :on-click on-cancel}]]]])]]))
+            (when in-progress?
+              [:div {:class (stl/css :status-message)
+                     :role "status"
+                     :aria-live "polite"}
+               (tr "labels.downloading-file")])]
+
+           [:div {:class (stl/css :modal-footer)}
+            [:div {:class (stl/css :action-buttons)}
+             [:input {:class (stl/css :accept-btn)
+                      :type "button"
+                      :value (tr "labels.close")
+                      :disabled in-progress?
+                      :on-click on-cancel}]]]]))]]))

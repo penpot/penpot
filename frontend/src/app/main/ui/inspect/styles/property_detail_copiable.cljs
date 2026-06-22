@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.styles.property-detail-copiable
   (:require-macros [app.main.style :as stl])
@@ -23,11 +23,12 @@
 
 (mf/defc property-detail-copiable*
   {::mf/schema schema:property-detail-copiable}
-  [{:keys [color token copied on-click children]}]
+  [{:keys [color token copied on-click children ref]}]
   [:button {:class (stl/css-case :property-detail-copiable true
                                  :property-detail-copied copied
                                  :property-detail-copiable-color (some? color))
-            :on-click on-click}
+            :on-click on-click
+            :ref ref}
    (when color
      [:> swatch* {:background color
                   :size "small"}])
@@ -48,6 +49,6 @@
    [:> icon* {:class (stl/css :property-detail-icon)
               :icon-id (if copied i/tick i/clipboard)
               :size "s"
-              :aria-label (tr "inspect.tabs.styles.panel.copy-to-clipboard")}]])
+              :aria-label (tr "inspect.tabs.styles.copy-to-clipboard")}]])
 
 

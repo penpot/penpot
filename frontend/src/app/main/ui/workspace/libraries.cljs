@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.libraries
   (:require-macros [app.main.style :as stl])
@@ -13,8 +13,10 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -30,11 +32,14 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.tokens.import-from-library]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [c tr]]
@@ -42,15 +47,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private close-icon
-  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
-
-(def ^:private add-icon
-  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
-
-(def ^:private library-icon
-  (deprecated-icon/icon-xref :library (stl/css :library-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -111,8 +107,7 @@
      "\u00A0")))
 
 (mf/defc library-description*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [summary]}]
   (let [components-count (get summary :components)
         graphics-count   (get summary :graphics)
@@ -137,8 +132,7 @@
         (tr "workspace.libraries.typography" (c typography-count))])]))
 
 (mf/defc sample-library-entry*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [library importing]}]
   (let [id         (:id library)
         importing? (deref importing)
@@ -170,21 +164,26 @@
     [:div {:class (stl/css :sample-library-item)
            :key (dm/str id)}
      [:div {:class (stl/css :sample-library-item-name)} (:name library)]
-     [:input {:class (stl/css-case :sample-library-button true
-                                   :sample-library-add (nil? importing?)
-                                   :sample-library-adding (some? importing?))
-              :type "button"
-              :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
-              :on-click import-library}]]))
+
+     [:> button* {:variant "secondary"
+                  :disabled (some? importing?)
+                  :on-click import-library
+                  :class (stl/css :sample-library-button)}
+      (if (= importing? id) (tr "labels.adding") (tr "labels.add"))]]))
 
 (defn- empty-library?
   "Check if currentt library summary has elements or not"
   [summary]
   (boolean (:is-empty summary)))
 
+(defn- has-tokens?
+  "Check if library has tokens to be imported"
+  [{:keys [data]}]
+  (when-let [tokens-lib (get data :tokens-lib)]
+    (not (ctob/empty-lib? tokens-lib))))
+
 (mf/defc libraries-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [is-shared linked-libraries shared-libraries]}]
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         search-term*   (mf/use-state "")
@@ -232,14 +231,18 @@
                                                        (keep library-names))))
                (sort-by (comp str/lower :name))))
 
-        linked-libraries-ids (mf/with-memo [linked-libraries]
-                               (into #{} (map :id) linked-libraries))
+        linked-libraries-ids
+        (mf/with-memo [linked-libraries]
+          (into #{} d/xf:map-id linked-libraries))
 
+        importing*
+        (mf/use-state nil)
 
-        importing*       (mf/use-state nil)
-        sample-libraries [{:id "penpot-design-system", :name "Design system example"}
-                          {:id "wireframing-kit", :name "Wireframe library"}
-                          {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
+        sample-libraries
+        (mf/with-memo []
+          [{:id "penpot-design-system", :name "Design system example"}
+           {:id "wireframing-kit", :name "Wireframe library"}
+           {:id "whiteboarding-kit", :name "Whiteboarding Kit"}])
 
 
         change-search-term
@@ -268,6 +271,17 @@
                (reset! selected :file))
              (st/emit! (dwl/unlink-file-from-library file-id library-id)
                        (dwl/sync-file file-id library-id)))))
+
+        import-tokens
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (let [library-id (some-> (dom/get-current-target event)
+                                    (dom/get-data "library-id")
+                                    (uuid/parse))]
+             (st/emit! (modal/show
+                        :tokens/import-from-library {:file-id file-id
+                                                     :library-id library-id})))))
 
         on-delete-accept
         (mf/use-fn
@@ -317,29 +331,33 @@
                       :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
-       [:div {:class (stl/css :section-list-item)}
+       [:div {:class (stl/css :section-list-publish)}
         [:div {:class (stl/css :item-content)}
-         [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
+         [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
           [:> library-description* {:summary summary}]]]
 
         (if ^boolean is-shared
-          [:input {:class (stl/css :item-unpublish)
-                   :type "button"
-                   :value (tr "common.unpublish")
-                   :on-click unpublish}]
-          [:input {:class (stl/css :item-publish)
-                   :type "button"
-                   :value (tr "common.publish")
-                   :on-click publish}])]
+          [:> button* {:variant "secondary"
+                       :type "button"
+                       :on-click unpublish}
+           (tr "common.unpublish")]
+
+          [:> button* {:variant "primary"
+                       :type "button"
+                       :on-click publish}
+           (tr "common.publish")])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
-         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
+         (let [disabled?   (some #(contains? linked-libraries-ids %) connected-to)
+               has-tokens? (and (has-tokens? library)
+                                (contains? cf/flags :token-import-from-library))]
            [:div {:class (stl/css :section-list-item)
                   :key (dm/str id)
                   :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
-             [:div {:class (stl/css :item-name)} name]
+             [:div {:class (stl/css-case :item-name true
+                                         :item-name-short has-tokens?)} name]
              [:ul {:class (stl/css :item-contents)}
               (let [summary (get-library-summary data)]
                 [:*
@@ -349,14 +367,23 @@
                     [:span "(" (tr "workspace.libraries.connected-to") " "]
                     [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
                     [:span ")"]])])]]
+            [:div {:class (stl/css :library-actions)}
+             (when ^boolean has-tokens?
+               [:> icon-button*
+                {:type "button"
+                 :aria-label (tr "workspace.tokens.import-tokens")
+                 :icon i/import-export
+                 :data-library-id (dm/str id)
+                 :variant "secondary"
+                 :on-click import-tokens}])
 
-            [:> icon-button* {:type "button"
-                              :aria-label (tr "workspace.libraries.unlink-library-btn")
-                              :icon i/detach
-                              :data-library-id (dm/str id)
-                              :variant "secondary"
-                              :disabled disabled?
-                              :on-click unlink-library}]]))]]
+             [:> icon-button* {:type "button"
+                               :aria-label (tr "workspace.libraries.unlink-library-btn")
+                               :icon i/detach
+                               :data-library-id (dm/str id)
+                               :variant "secondary"
+                               :disabled disabled?
+                               :on-click unlink-library}]]]))]]
 
      [:div {:class (stl/css :shared-section)}
       [:> title-bar* {:collapsable false
@@ -380,11 +407,12 @@
                                 (adapt-backend-summary))]
                 [:> library-description* {:summary summary}])]]
 
-            [:button {:class (stl/css :item-button-shared)
-                      :data-library-id (dm/str id)
-                      :title (tr "workspace.libraries.shared-library-btn")
-                      :on-click link-library}
-             add-icon]])]
+            [:> icon-button* {:class (stl/css :item-button-shared)
+                              :variant "secondary"
+                              :data-library-id (dm/str id)
+                              :icon "add"
+                              :aria-label (tr "workspace.libraries.shared-library-btn")
+                              :on-click link-library}]])]
 
         (when (empty? shared-libraries)
           [:div {:class (stl/css :section-list-empty)}
@@ -405,6 +433,7 @@
                (for [library sample-libraries]
                  [:> sample-library-entry*
                   {:library library
+                   :key (dm/str (:id library))
                    :importing importing*}])]]
 
              :else
@@ -453,8 +482,7 @@
                         :typographies typographies}]))
 
 (mf/defc updates-tab*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [file-id libraries]}]
   ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
@@ -482,20 +510,20 @@
                         (mf/deps file-id)
                         (fn [event]
                           (when-not updating?
-                            (let [library-id (some-> (dom/get-target event)
+                            (let [library-id (some-> (dom/get-current-target event)
                                                      (dom/get-data "library-id")
                                                      (uuid/parse))]
-                              (st/emit!
-                               (dwl/set-updating-library true)
-                               (dwl/sync-file file-id library-id))))))]
+                              (when library-id
+                                (st/emit!
+                                 (dwl/set-updating-library true)
+                                 (dwl/sync-file file-id library-id)))))))]
 
     [:div {:class (stl/css :updates-content)}
      [:div {:class (stl/css :update-section)}
       (if (empty? libs-assets)
         [:div {:class (stl/css :section-list-empty)}
-         [:span {:class (stl/css :empty-state-icon)}
-          library-icon]
-         (tr "workspace.libraries.no-libraries-need-sync")]
+         [:> empty-state* {:icon i/library
+                           :text (tr "workspace.libraries.no-libraries-need-sync")}]]
         [:*
          [:div {:class (stl/css :section-title)} (tr "workspace.libraries.library-updates")]
 
@@ -506,17 +534,17 @@
             [:div {:class (stl/css :section-list-item)
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
-              [:div {:class (stl/css :item-name)} name]
+              [:div {:class (stl/css :item-name-long)} name]
               [:ul {:class (stl/css :item-contents)} (describe-library
                                                       (count components)
                                                       0
                                                       (count colors)
                                                       (count typographies))]]
-             [:button {:type "button"
-                       :class (stl/css :item-update)
-                       :disabled updating?
-                       :data-library-id (dm/str id)
-                       :on-click update}
+             [:> button* {:class (stl/css :item-update)
+                          :disabled updating?
+                          :variant "primary"
+                          :data-library-id (dm/str id)
+                          :on-click update}
               (tr "workspace.libraries.update")]
 
              [:div {:class (stl/css :libraries-updates)}
@@ -552,9 +580,9 @@
                      [:div {:class (stl/css :libraries-updates-item)
                             :key (dm/str (:id color))}
                       [:*
-                       [:& cb/color-bullet {:color {:color (:color color)
-                                                    :id (:id color)
-                                                    :opacity (:opacity color)}}]
+                       [:> cb/color-bullet* {:color {:color (:color color)
+                                                     :id (:id color)
+                                                     :opacity (:opacity color)}}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name color)}
@@ -590,7 +618,7 @@
              (when (or (pos? (:components exceeded))
                        (pos? (:colors exceeded))
                        (pos? (:typographies exceeded)))
-               [:& lb/link-button
+               [:> lb/link-button*
                 {:on-click see-all-assets
                  :class (stl/css :libraries-updates-see-all)
                  :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))
@@ -650,11 +678,11 @@
            :on-click close-dialog-outside
            :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn)
-                :on-click close-dialog
-                :aria-label (tr "labels.close")
-                :data-testid "close-libraries"}
-       close-icon]
+      [:> icon-button* {:class (stl/css :close-btn)
+                        :on-click close-dialog
+                        :aria-label (tr "labels.close")
+                        :variant "ghost"
+                        :icon i/close}]
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.libraries.libraries")]
 
@@ -726,5 +754,6 @@
           "created in your files previously to this new version."]]]
 
        [:div {:class (stl/css :info-bottom)}
-        [:button {:class (stl/css :primary-button)
-                  :on-click handle-gotit-click} "I GOT IT"]]]]]))
+        [:> button* {:class (stl/css :primary-button)
+                     :variant "primary"
+                     :on-click handle-gotit-click} "I GOT IT"]]]]]))

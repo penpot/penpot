@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.validate
   (:require
@@ -17,7 +17,6 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -51,6 +50,7 @@
     :ref-shape-is-head
     :ref-shape-is-not-head
     :shape-ref-in-main
+    :component-id-mismatch
     :root-main-not-allowed
     :nested-main-not-allowed
     :root-copy-not-allowed
@@ -59,6 +59,7 @@
     :not-head-copy-not-allowed
     :not-component-not-allowed
     :component-nil-objects-not-allowed
+    :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
     :misplaced-slot
@@ -91,6 +92,52 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:dynamic ^:private *errors* nil)
+
+;; Per-page volatile map used to memoize `ctf/find-ref-shape` calls during a
+;; single validation pass. Keys are shape-ids; values are the returned ref-shape
+;; (or `nil` when the shape has no ref). The cache is reset once per page so
+;; that stale results never cross page boundaries.
+(def ^:dynamic ^:private *ref-shape-cache* nil)
+
+;; Per-page pre-computed map from parent-id to the set of its children ids.
+;; Enables O(1) containment checks in `check-parent-children` instead of the
+;; default O(k) linear `(some #(= shape-id %) (:shapes parent))` scan.
+;; Bound as a plain immutable map (not a volatile) since it is read-only during
+;; a page's validation pass.
+(def ^:dynamic ^:private *children-sets* nil)
+
+(defn- build-children-sets
+  "Return a {parent-id → #{child-ids}} map built from `objects` in a single
+  `reduce-kv` pass.  Only shapes that have at least one child get an entry."
+  [objects]
+  (reduce-kv (fn [m _ shape]
+               (if-let [kids (not-empty (:shapes shape))]
+                 (assoc m (:id shape) (set kids))
+                 m))
+             {}
+             objects))
+
+(defn- find-ref-shape*
+  "Cached wrapper around `ctf/find-ref-shape` with `:include-deleted? true`.
+  When `*ref-shape-cache*` is bound, each shape-id is resolved at most once
+  per validation pass regardless of how many check functions request it.
+
+  Cache miss detection uses `contains?` rather than a sentinel default
+  (e.g. `(get cache id ::miss)` + `identical?`). The reason: in
+  ClojureScript, `identical?` on namespace-qualified keywords is not
+  reliable across compilation units because keyword interning is not
+  guaranteed — a sentinel retrieved from `get` may not be `===` to the
+  same literal written in code, causing every lookup to appear as a miss
+  and breaking the whole optimisation."
+  [file page libraries shape]
+  (if-let [cache *ref-shape-cache*]
+    (let [id (:id shape)]
+      (if (contains? @cache id)
+        (get @cache id)
+        (let [result (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+          (vswap! cache assoc id result)
+          result)))
+    (ctf/find-ref-shape file page libraries shape :include-deleted? true)))
 
 (defn- library-exists?
   [file libraries shape]
@@ -147,15 +194,32 @@
                     shape file page)
       (do
         (when-not (cfh/root? shape)
-          (when-not (some #(= shape-id %) (:shapes parent))
+          ;; Fast path: O(1) set lookup when `*children-sets*` is pre-computed
+          ;; for the current page.  Falls back to an O(k) linear scan via
+          ;; `some` when the var is unbound (e.g. in isolated single-shape
+          ;; validation calls outside a full page pass).
+          (when-not (if-let [cs *children-sets*]
+                      (contains? (get cs (:id parent)) shape-id)
+                      (some #(= shape-id %) (:shapes parent)))
             (report-error :child-not-in-parent
                           (str/ffmt "Shape % not in parent's children list" shape-id)
                           shape file page)))
 
-        (when-not (= (count shapes) (count (distinct shapes)))
-          (report-error :duplicated-children
-                        (str/ffmt "Shape % has duplicated children" shape-id)
-                        shape file page))
+        ;; Single-pass duplicate detection: walk the children list once,
+        ;; accumulating seen IDs into a set and short-circuiting on the
+        ;; first duplicate.  This replaces the previous two-pass
+        ;; `(not= (count shapes) (count (distinct shapes)))` approach
+        ;; which allocated an intermediate sequence and scanned twice.
+        (let [dup? (reduce (fn [seen id]
+                             (if (contains? seen id)
+                               (reduced true)
+                               (conj seen id)))
+                           #{}
+                           shapes)]
+          (when (true? dup?)
+            (report-error :duplicated-children
+                          (str/ffmt "Shape % has duplicated children" shape-id)
+                          shape file page)))
 
         (doseq [child-id shapes]
           (let [child (ctst/get-shape page child-id)]
@@ -290,7 +354,7 @@
   [shape file page libraries]
   (let [library-exists (library-exists? file libraries shape)
         ref-shape (when library-exists
-                    (ctf/find-ref-shape file page libraries shape :include-deleted? true))]
+                    (find-ref-shape* file page libraries shape))]
     (when (and library-exists (nil? ref-shape))
       (report-error :ref-shape-not-found
                     (str/ffmt "Referenced shape % not found in near component" (:shape-ref shape))
@@ -307,7 +371,7 @@
 (defn- check-ref-is-not-head
   "Validate that the referenced shape is not a nested copy root."
   [shape file page libraries]
-  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+  (let [ref-shape (find-ref-shape* file page libraries shape)]
     (when (and (some? ref-shape)
                (ctk/instance-head? ref-shape))
       (report-error :ref-shape-is-head
@@ -317,7 +381,7 @@
 (defn- check-ref-is-head
   "Validate that the referenced shape is a nested copy root."
   [shape file page libraries]
-  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+  (let [ref-shape (find-ref-shape* file page libraries shape)]
     (when (and (some? ref-shape)
                (not (ctk/instance-head? ref-shape)))
       (report-error :ref-shape-is-not-head
@@ -325,6 +389,20 @@
                     shape file page
                     :component-file (:component-file ref-shape)
                     :component-id (:component-id ref-shape)))))
+
+(defn- check-ref-component-id
+  "Validate that if the copy has not been swapped, the component-id and component-file are
+   the same as in the referenced shape in the near main."
+  [shape file page libraries]
+  (when (nil? (ctk/get-swap-slot shape))
+    (when-let [ref-shape (find-ref-shape* file page libraries shape)]
+      (when (or (not= (:component-id shape) (:component-id ref-shape))
+                (not= (:component-file shape) (:component-file ref-shape)))
+        (report-error :component-id-mismatch
+                      "Nested copy component-id and component-file must be the same as the near main"
+                      shape file page
+                      :component-id (:component-id ref-shape)
+                      :component-file (:component-file ref-shape))))))
 
 (defn- check-empty-swap-slot
   "Validate that this shape does not have any swap slot."
@@ -335,12 +413,21 @@
                   shape file page)))
 
 (defn- has-duplicate-swap-slot?
+  "Returns true if any two children of `shape` share the same swap slot.
+  Uses a single pass with early exit on the first duplicate, avoiding
+  the intermediate `frequencies` map allocation."
   [shape container]
-  (let [shapes   (map #(get (:objects container) %) (:shapes shape))
-        slots    (->> (map #(ctk/get-swap-slot %) shapes)
-                      (remove nil?))
-        counts   (frequencies slots)]
-    (some (fn [[_ count]] (> count 1)) counts)))
+  (let [objects (:objects container)
+        result  (reduce (fn [seen child-id]
+                          (let [slot (ctk/get-swap-slot (get objects child-id))]
+                            (if (nil? slot)
+                              seen
+                              (if (contains? seen slot)
+                                (reduced true)
+                                (conj seen slot)))))
+                        #{}
+                        (:shapes shape))]
+    (true? result)))
 
 (defn- check-duplicate-swap-slot
   "Validate that the children of this shape does not have duplicated slots."
@@ -349,6 +436,21 @@
     (report-error :duplicate-slot
                   "This shape has children with the same swap slot"
                   shape file page)))
+
+(defn- check-required-swap-slot
+  "Validate that the shape has swap-slot if it's a subinstance head and the ref shape is not the
+   matching shape by position in the near main."
+  [shape file page libraries]
+  ;; Guard first: if the shape already has a swap slot the invariant is satisfied
+  ;; and we can avoid the expensive `find-near-match` call entirely.
+  (when (nil? (ctk/get-swap-slot shape))
+    (let [near-match (ctf/find-near-match file page libraries shape :include-deleted? true :with-context? false)]
+      (when (and (some? near-match)
+                 (not= (:shape-ref shape) (:id near-match)))
+        (report-error :missing-slot
+                      "Shape has been swapped, should have swap slot"
+                      shape file page
+                      :swap-slot (or (ctk/get-swap-slot near-match) (:id near-match)))))))
 
 (defn- check-valid-touched
   "Validate that the text touched flags are coherent."
@@ -418,6 +520,8 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
+  (check-ref-component-id shape file page libraries)
+  (check-required-swap-slot shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
@@ -458,35 +562,36 @@
 (defn- check-variant-container
   "Shape is a variant container, so:
      -all its children should be variants with variant-id equals to the shape-id
-     -all the components should have the same properties
-   "
+     -all the components should have the same properties"
   [shape file page]
-  (let [shape-id   (:id shape)
-        shapes     (:shapes shape)
-        children   (map #(ctst/get-shape page %) shapes)
-        prop-names (cfv/extract-properties-names (first children) (:data file))]
-    (doseq [child children]
-      (when child
-        (if (not (ctk/is-variant? child))
-          (report-error :not-a-variant
-                        (str/ffmt "Shape % should be a variant" (:id child))
-                        child file page)
-          (do
-            (when (not= (:variant-id child) shape-id)
-              (report-error :invalid-variant-id
-                            (str/ffmt "Variant % has invalid variant-id %" (:id child) (:variant-id child))
-                            child file page))
-            (when (not= prop-names (cfv/extract-properties-names child (:data file)))
-              (report-error :invalid-variant-properties
-                            (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
-                            child file page))))))))
-
+  (let [shape-id    (:id shape)
+        shapes      (:shapes shape)
+        objects     (:objects page)
+        file-data   (:data file)
+        first-child (get objects (first shapes))
+        prop-names  (cfv/extract-properties-names first-child file-data)]
+    (run! (fn [child-id]
+            (when-let [child (get objects child-id)]
+              (if (not (ctk/is-variant? child))
+                (report-error :not-a-variant
+                              (str/ffmt "Shape % should be a variant" (:id child))
+                              child file page)
+                (do
+                  (when (not= (:variant-id child) shape-id)
+                    (report-error :invalid-variant-id
+                                  (str/ffmt "Variant % has invalid variant-id %" (:id child) (:variant-id child))
+                                  child file page))
+                  (when (not= prop-names (cfv/extract-properties-names child file-data))
+                    (report-error :invalid-variant-properties
+                                  (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
+                                  child file page))))))
+          shapes)))
 (defn- check-variant
   "Shape is a variant, so
      -it should be a main component
      -its parent should be a variant-container
      -its variant-name is derived from the properties
-     -its name should be tha same as its parent's
+     -its name should be the same as its parent's
    "
   [shape file page]
   (let [parent    (ctst/get-shape page (:parent-id shape))
@@ -585,18 +690,26 @@
                           shape file page)
             (check-shape-copy-not-root shape file page libraries))
 
-          (if (ctn/inside-component-main? (:objects page) shape)
-            (if-not (#{:main-top :main-nested :main-any} context)
-              (report-error :not-head-main-not-allowed
-                            "Non-root main only allowed inside a main component"
-                            shape file page)
-              (check-shape-main-not-root shape file page libraries))
+          ;; Short-circuit `inside-component-main?` when the propagated
+          ;; `context` already classifies this sub-tree as belonging to a
+          ;; main component.  `inside-component-main?` performs an O(depth)
+          ;; upward ancestor walk; skipping it for every non-head shape that
+          ;; sits inside a known-main context avoids redundant tree traversals
+          ;; that would otherwise dominate validation time on deep hierarchies.
+          (let [in-main? (or (#{:main-top :main-nested :main-any} context)
+                             (ctn/inside-component-main? (:objects page) shape))]
+            (if in-main?
+              (if-not (#{:main-top :main-nested :main-any} context)
+                (report-error :not-head-main-not-allowed
+                              "Non-root main only allowed inside a main component"
+                              shape file page)
+                (check-shape-main-not-root shape file page libraries))
 
-            (if (#{:main-top :main-nested :main-any} context)
-              (report-error :not-component-not-allowed
-                            "Not compoments are not allowed inside a main"
-                            shape file page)
-              (check-shape-not-component shape file page libraries))))))))
+              (if (#{:main-top :main-nested :main-any} context)
+                (report-error :not-component-not-allowed
+                              "Not components are not allowed inside a main"
+                              shape file page)
+                (check-shape-not-component shape file page libraries)))))))))
 
 (defn check-component-duplicate-swap-slot
   [component file]
@@ -608,11 +721,13 @@
 
 (defn check-ref-cycles
   [component file]
-  (let [cycles-ids (->> component
-                        :objects
-                        vals
-                        (filter #(= (:id %) (:shape-ref %)))
-                        (map :id))]
+  (let [cycles-ids (-> (reduce-kv (fn [acc id shape]
+                                    (if (= id (:shape-ref shape))
+                                      (conj! acc id)
+                                      acc))
+                                  (transient [])
+                                  (:objects component))
+                       (persistent!))]
 
     (when (seq cycles-ids)
       (report-error :shape-ref-cycle
@@ -648,6 +763,13 @@
                     "Component main not allowed inside other component"
                     main-instance file component-page))))
 
+(defn- check-not-objects
+  [component file]
+  (when (d/not-empty? (:objects component))
+    (report-error :non-deleted-component-cannot-have-objects
+                  "A non-deleted component cannot have shapes inside"
+                  component file nil)))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -656,7 +778,8 @@
                   "Objects list cannot be nil"
                   component file nil))
   (when-not (:deleted component)
-    (check-main-inside-main component file))
+    (check-main-inside-main component file)
+    (check-not-objects component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
@@ -665,16 +788,29 @@
     (check-variant-component component file)))
 
 (defn- get-orphan-shapes
-  [{:keys [objects] :as page}]
-  (let [xf (comp (map #(contains? objects (:parent-id %)))
-                 (map :id))]
-    (into [] xf (vals objects))))
+  "Return the ids of shapes whose parent does not exist in the objects
+  map (i.e. shapes unreachable from the root traversal). The root
+  shape itself is excluded since it is always validated separately.
+
+  Implemented with `reduce-kv` rather than a `map`/`filter` pipeline.
+  The previous implementation mapped over `objects` and returned a
+  lazy seq that could contain `nil` entries (for shapes that were
+  *not* orphans), meaning `check-shape` was called with `nil` IDs and
+  orphaned shapes were silently skipped.  The `reduce-kv` approach
+  builds a plain vector of IDs and never yields `nil` entries."
+  [{:keys [objects] :as _page}]
+  (persistent!
+   (reduce-kv (fn [result id shape]
+                (if (and (not (cfh/root? shape))
+                         (not (contains? objects (:parent-id shape))))
+                  (conj! result id)
+                  result))
+              (transient [])
+              objects)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API: VALIDATION FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare check-swap-slots)
 
 (defn validate-file
   "Validate full referential integrity and semantic coherence on file data.
@@ -684,22 +820,39 @@
   (when (contains? features "components/v2")
     (binding [*errors* (volatile! [])]
 
-      (doseq [page (filter :id (ctpl/pages-seq data))]
-        (check-shape uuid/zero file page libraries)
-        (when (str/includes? (:name file) "check-swap-slot")
-          (check-swap-slots uuid/zero file page libraries))
-        (->> (get-orphan-shapes page)
-             (run! #(check-shape % file page libraries))))
+      ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
+      ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
+      ;; maps implement `IKVReduce`, which drives iteration internally without
+      ;; first materialising an intermediate sequence of key-value pairs.
+      (reduce-kv
+       (fn [_ _ page]
+         (when (some? page)
+           ;; Both performance caches are scoped to a single page: ref-shape
+           ;; lookups and parent→children sets are page-local and must never
+           ;; carry over to the next page.  A fresh volatile is created for
+           ;; each page so stale entries cannot corrupt subsequent pages.
+           (binding [*ref-shape-cache* (volatile! {})
+                     *children-sets* (build-children-sets (:objects page))]
+             (check-shape uuid/zero file page libraries)
+             (run! #(check-shape % file page libraries)
+                   (get-orphan-shapes page)))))
+       nil
+       (:pages-index data))
 
-      (->> (vals (:components data))
-           (run! #(check-component % file)))
+      (reduce-kv
+       (fn [_ _ component]
+         (check-component component file))
+       nil
+       (:components data))
 
       (-> *errors* deref not-empty))))
 
 (defn validate-shape
   "Validate a shape and all its children. Returns a list of errors."
   [shape-id file page libraries]
-  (binding [*errors* (volatile! [])]
+  (binding [*errors* (volatile! [])
+            *ref-shape-cache* (volatile! {})
+            *children-sets* (build-children-sets (:objects page))]
     (check-shape shape-id file page libraries)
     (deref *errors*)))
 
@@ -709,6 +862,107 @@
   (binding [*errors* (volatile! [])]
     (check-component component file)
     (deref *errors*)))
+
+(defn- extract-affected-ids
+  "Single reduce pass over a changes batch.
+  Returns {:page-ids #{uuid …} :component-ids #{uuid …}}.
+
+  Only entities that need re-validation after applying `changes` are
+  included.  Deleted entities and pure file-level changes (colors,
+  tokens, typography…) produce no entries because there is nothing left
+  to check."
+  [changes]
+
+  (loop [changes (seq changes)
+         page-ids #{}
+         component-ids #{}]
+    (if-let [change (first changes)]
+      (let [{:keys [type page-id component-id id]} change
+            page-ids
+            (case type
+              ;; Shape-level ops are scoped to either a page or a component
+              (:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects)
+              (cond-> page-ids
+                page-id (conj page-id))
+
+              ;; A new or modified page needs a full page sweep
+              (:add-page :mod-page)
+              (conj page-ids id)
+
+              ;; restore-component resurrects a deleted component (touches the
+              ;; component definition) and places its main instance on a page
+              ;; (touches that page's shape tree)
+              :restore-component
+              (conj page-ids page-id)
+
+              ;; Otherwise don't change the ids
+              page-ids)
+
+            component-ids
+            (case type
+              ;; Shape-level ops are scoped to either a page or a component
+              (:add-obj :mod-obj :del-obj :fix-obj :mov-objects :reorder-children :reg-objects)
+              (cond-> component-ids
+                component-id (conj component-id))
+
+              ;; A new, modified, restored component needs component-level checking
+              (:add-component :mod-component :restore-component)
+              (conj component-ids id)
+
+              ;; Otherwise don't change the ids
+              component-ids)]
+        (recur (rest changes) page-ids component-ids))
+
+      ;; Return result of accumulated ids
+      {:page-ids page-ids :component-ids component-ids})))
+
+(defn validate-file-affected
+  "Validate only the pages and components touched by `changes`.
+
+  Semantics are identical to `validate-file` but the work is bounded
+  to the entities that were actually mutated, making it safe and cheap
+  to call on every incremental file update.
+
+  Returns a list of errors or `nil`."
+  [{:keys [data features] :as file} libraries changes]
+  (when (contains? features "components/v2")
+    (let [{:keys [page-ids component-ids]} (extract-affected-ids changes)]
+      (binding [*errors* (volatile! [])]
+
+        (reduce-kv
+         (fn [_ page-id page]
+           (when (and (some? page) (contains? page-ids page-id))
+             ;; Both performance caches are scoped to a single page: ref-shape
+             ;; lookups and parent→children sets are page-local and must never
+             ;; carry over to the next page.  A fresh volatile is created for
+             ;; each page so stale entries cannot corrupt subsequent pages.
+             (binding [*ref-shape-cache* (volatile! {})
+                       *children-sets*   (build-children-sets (:objects page))]
+               (check-shape uuid/zero file page libraries)
+               (run! #(check-shape % file page libraries)
+                     (get-orphan-shapes page)))))
+         nil
+         (:pages-index data))
+
+        (reduce-kv
+         (fn [_ id component]
+           (when (contains? component-ids id)
+             (check-component component file)))
+         nil
+         (:components data))
+
+        (-> *errors* deref not-empty)))))
+
+(defn validate-file-affected!
+  "Like `validate-file-affected` but raises on the first non-empty
+  error list instead of returning it."
+  [file libraries changes]
+  (when-let [errors (validate-file-affected file libraries changes)]
+    (ex/raise :type :validation
+              :code :referential-integrity
+              :hint "error on validating file referential integrity"
+              :file-id (:id file)
+              :details errors)))
 
 (defn validate-file-schema!
   "Validates the file itself, without external dependencies, it
@@ -728,40 +982,3 @@
               :hint "error on validating file referential integrity"
               :file-id (:id file)
               :details errors)))
-
-(declare compare-slots)
-
-;; Optional check to look for missing swap slots.
-;; Search for copies that do not point the shape-ref to the near component but don't have swap slot
-;; (looking for position relative to the parent, in the copy and the main).
-;;
-;; This check cannot be generally enabled, because files that have been migrated from components v1
-;; may have copies with shapes that do not match by position, but have not been swapped. So we enable
-;; it for specific files only. To activate the check, you need to add the string "check-swap-slot" to
-;; the name of the file.
-(defn- check-swap-slots
-  [shape-id file page libraries]
-  (let [shape (ctst/get-shape page shape-id)]
-    (if (and (ctk/instance-root? shape) (ctk/in-component-copy? shape))
-      (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true :with-context? true)
-            container (:container (meta ref-shape))]
-        (when (some? ref-shape)
-          (compare-slots shape ref-shape file page container)))
-      (doall (for [child-id (:shapes shape)]
-               (check-swap-slots child-id file page libraries))))))
-
-(defn- compare-slots
-  [shape-copy shape-main file container-copy container-main]
-  (if (and (not= (:shape-ref shape-copy) (:id shape-main))
-           (nil? (ctk/get-swap-slot shape-copy)))
-    (report-error :missing-slot
-                  "Shape has been swapped, should have swap slot"
-                  shape-copy file container-copy
-                  :swap-slot (or (ctk/get-swap-slot shape-main) (:id shape-main)))
-    (when (nil? (ctk/get-swap-slot shape-copy))
-      (let [children-id-pairs (d/zip-all (:shapes shape-copy) (:shapes shape-main))]
-        (doall (for [[child-copy-id child-main-id] children-id-pairs]
-                 (let [child-copy (ctst/get-shape container-copy child-copy-id)
-                       child-main (ctst/get-shape container-main child-main-id)]
-                   (when (and (some? child-copy) (some? child-main))
-                     (compare-slots child-copy child-main file container-copy container-main)))))))))

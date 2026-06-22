@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.settings.menu
   (:require-macros [app.main.style :as stl])
@@ -26,7 +26,6 @@
    [rumext.v2 :as mf]))
 
 (mf/defc token-settings*
-  {::mf/wrap-props false}
   []
   (let [file-data (deref refs/workspace-data)
         base-font-size* (mf/use-state #(ctf/get-base-font-size file-data))
@@ -100,9 +99,11 @@
 
         [:div {:class (stl/css :settings-modal-actions)}
          [:> button* {:on-click modal/hide!
+                      :type "button"
                       :variant "secondary"}
           (tr "labels.cancel")]
          [:> button* {:on-click on-set-font
+                      :type "button"
                       :disabled (not is-valid)
                       :variant "primary"}
           (tr "labels.save")]]]]]]))

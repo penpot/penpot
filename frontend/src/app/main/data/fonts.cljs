@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.fonts
   (:require
@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
+   [app.main.data.uploads :as uploads]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -27,6 +28,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General purpose events & IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private font-upload-chunk-size
+  "Size in bytes of each chunk when uploading font files (10 MiB)."
+  (* 1024 1024 10))
 
 (defn fonts-fetched
   [fonts]
@@ -46,9 +51,9 @@
 
           (prepare-font-variant [item]
             {:id (str (:font-style item) "-" (:font-weight item))
-             :name (str (cm/font-weight->name (:font-weight item))
-                        (when (not= "normal" (:font-style item))
-                          (str " " (str/capital (:font-style item)))))
+             :name (cm/font-display-variant (:variant-name item)
+                                            (:font-weight item)
+                                            (:font-style item))
              :style (:font-style item)
              :weight (str (:font-weight item))
              ::fonts/woff1-file-id (:woff1-file-id item)
@@ -80,51 +85,106 @@
       (->> (rp/cmd! :get-font-variants {:team-id team-id})
            (rx/map fonts-fetched)))))
 
+(defn upload-font-variant
+  "Uploads a single font variant item using the chunked upload API.
+
+  For each mime-type in `data`, creates a Blob and uploads it via the
+  session-based chunked upload.  Once all sessions are created, calls
+  `create-font-variant` with the resulting `:uploads` map so the server
+  can assemble the chunks and materialise the final font-variant record.
+
+  Returns an observable that emits the created font-variant."
+  [{:keys [data team-id font-id font-family font-weight font-style] :as _item}]
+  ;; Upload each mtype as a separate chunked session in parallel, collect
+  ;; all [mtype session-id] pairs, then call create-font-variant with :uploads.
+  (->> (rx/from (seq data))
+       (rx/mapcat (fn [[mtype buffer]]
+                    (let [blob (js/Blob. #js [buffer] #js {:type mtype})]
+                      (->> (uploads/upload-blob-chunked blob :chunk-size font-upload-chunk-size)
+                           (rx/map (fn [{:keys [session-id]}]
+                                     [mtype session-id]))))))
+       (rx/reduce (fn [acc [mtype session-id]]
+                    (assoc acc mtype session-id))
+                  {})
+       (rx/mapcat (fn [uploads]
+                    (rp/cmd! :create-font-variant
+                             {:team-id     team-id
+                              :font-id     font-id
+                              :font-family font-family
+                              :font-weight font-weight
+                              :font-style  font-style
+                              :uploads     uploads})))))
+
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
-  map with temporal ID's associated to each font entry."
+  map with temporal ID's associated to each font entry.
+
+  Each font entry's `:data` is a map of `{mtype -> ArrayBuffer}`.  The
+  raw `ArrayBuffer` is kept as-is so that `upload-font-variant` can
+  wrap it in a `Blob` and hand it directly to `upload-blob-chunked`
+  without any intermediate client-side chunking."
   [blobs team-id]
   (letfn [(prepare [{:keys [font type name data] :as params}]
-            (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                                      (.getEnglishName ^js font "fontFamily"))
-                  variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                                      (.getEnglishName ^js font "fontSubfamily"))
+            (if font
+              ;; Font was parsed with opentype.js (ttf, otf, woff)
+              (let [family          (or (.getEnglishName ^js font "preferredFamily")
+                                        (.getEnglishName ^js font "fontFamily"))
+                    variant         (or (.getEnglishName ^js font "preferredSubfamily")
+                                        (.getEnglishName ^js font "fontSubfamily"))
 
-                 ;; Vertical metrics determine the baseline in a text and the space between lines of
-                 ;; text. For historical reasons, there are three pairs of ascender/descender
-                 ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-                 ;; system and application a different set will be used to render text on the
-                 ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-                 ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-                 ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-                 ;; table. On Windows, all browsers use the usWin metrics, but respect the
-                 ;; useTypoMetrics setting and if set will use the OS/2 values.
+                    ;; Vertical metrics determine the baseline in a text and the space between lines of
+                    ;; text. For historical reasons, there are three pairs of ascender/descender
+                    ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+                    ;; system and application a different set will be used to render text on the
+                    ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+                    ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+                    ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+                    ;; table. On Windows, all browsers use the usWin metrics, but respect the
+                    ;; useTypoMetrics setting and if set will use the OS/2 values.
 
-                  hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
-                  hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
+                    hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
+                    hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
 
-                  win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
-                  win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
+                    win-ascent      (abs (-> ^js font .-tables .-os2 .-usWinAscent))
+                    win-descent     (abs (-> ^js font .-tables .-os2 .-usWinDescent))
 
-                  os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
-                  os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
+                    os2-ascent      (abs (-> ^js font .-tables .-os2 .-sTypoAscender))
+                    os2-descent     (abs (-> ^js font .-tables .-os2 .-sTypoDescender))
 
-                  ;; useTypoMetrics can be read from the 7th bit
-                  f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
+                    ;; useTypoMetrics can be read from the 7th bit
+                    f-selection     (-> ^js font .-tables .-os2 .-fsSelection (bit-test 7))
 
-                  height-warning? (or (not= hhea-ascender win-ascent)
-                                      (not= hhea-descender win-descent)
-                                      (and f-selection (or
-                                                        (not= hhea-ascender os2-ascent)
-                                                        (not= hhea-descender os2-descent))))]
-
-              {:content {:data (js/Uint8Array. data)
-                         :name name
-                         :type type}
-               :font-family (or family "")
-               :font-weight (cm/parse-font-weight variant)
-               :font-style  (cm/parse-font-style variant)
-               :height-warning? height-warning?}))
+                    height-warning? (or (not= hhea-ascender win-ascent)
+                                        (not= hhea-descender win-descent)
+                                        (and f-selection (or
+                                                          (not= hhea-ascender os2-ascent)
+                                                          (not= hhea-descender os2-descent))))
+                    data            (js/Uint8Array. data)]
+                {:content {:data data
+                           :name name
+                           :type type}
+                 :font-family (or family "")
+                 :font-weight (cm/parse-font-weight variant)
+                 :font-style  (cm/parse-font-style variant)
+                 :variant-name variant
+                 :height-warning? height-warning?})
+              ;; Font could not be parsed (woff2), extract metadata from filename
+              (let [base-name       (str/replace name #"\.[^.]+$" "")
+                    ;; Strip known weight/style tokens and separators to derive family name
+                    ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
+                    raw-family-name (-> base-name
+                                        (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
+                                        (str/replace #"[-_\s]+" " ")
+                                        (str/trim))
+                    family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
+                    data            (js/Uint8Array. data)]
+                {:content {:data data
+                           :name name
+                           :type type}
+                 :font-family family-name
+                 :font-weight (cm/parse-font-weight base-name)
+                 :font-style  (cm/parse-font-style base-name)
+                 :height-warning? false})))
 
           (join [res {:keys [content] :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
@@ -152,14 +212,18 @@
               (case sg
                 "117 124 124 117" "font/otf"
                 "0 1 0 0"         "font/ttf"
-                "167 117 106 106" "font/woff")))
+                "167 117 106 106" "font/woff"
+                "167 117 106 62"  "font/woff2")))
 
-          (parse-font [{:keys [data] :as params}]
-            (try
-              (assoc params :font (ot/parse data))
-              (catch :default _e
-                (log/warn :msg (str/fmt "skipping file %s, unsupported format" (:name params)))
-                nil)))
+          (parse-font [{:keys [data type name] :as params}]
+            (if (= type "font/woff2")
+              ;; woff2 cannot be parsed by opentype.js, extract metadata from filename
+              (assoc params :font nil)
+              (try
+                (assoc params :font (ot/parse data))
+                (catch :default _e
+                  (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
+                  nil))))
 
           (read-blob [blob]
             (->> (wa/read-file-as-array-buffer blob)
@@ -247,12 +311,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (rx/of (ptk/data-event ::ev/event {::ev/name "add-font"
-                                           :team-id team-id
-                                           :font-id (:id font)
-                                           :font-family (:font-family font)
-                                           :font-style (:font-style font)
-                                           :font-weight (:font-weight font)}))))))
+        (rx/of (ev/event {::ev/name "add-font"
+                          :team-id team-id
+                          :font-id (:id font)
+                          :font-family (:font-family font)
+                          :font-style (:font-style font)
+                          :font-weight (:font-weight font)}))))))
 
 (defn update-font
   [{:keys [id name] :as params}]
@@ -296,9 +360,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font"
-                                            :team-id team-id
-                                            :font-id font-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font"
+                           :team-id team-id
+                           :font-id font-id})))))))
 
 (defn delete-font-variant
   [id]
@@ -317,9 +381,9 @@
         (rx/concat
          (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
               (rx/ignore))
-         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font-variant"
-                                            :id id
-                                            :team-id team-id})))))))
+         (rx/of (ev/event {::ev/name "delete-font-variant"
+                           :id id
+                           :team-id team-id})))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

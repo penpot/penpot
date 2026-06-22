@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.snap
   (:require
@@ -93,23 +93,12 @@
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?)))))
 
-(defn- search-snap
-  [page-id frame-id points coord remove-snap? zoom]
-  (let [snap-accuracy (/ snap-accuracy zoom)
-        ranges (->> points
-                    (map coord)
-                    (mapv #(vector (- % snap-accuracy)
-                                   (+ % snap-accuracy))))
-        vbox @refs/vbox]
-    (->> (mw/ask! {:cmd :index/query-snap
-                   :page-id page-id
-                   :frame-id frame-id
-                   :axis coord
-                   :bounds vbox
-                   :ranges ranges})
-         (rx/take 1)
-         (rx/map (remove-from-snap-points remove-snap?))
-         (rx/map (get-min-distance-snap points coord)))))
+(defn- snap-accuracy-ranges
+  [points coord zoom]
+  (let [acc (/ snap-accuracy zoom)]
+    (->> points
+         (map coord)
+         (mapv #(vector (- % acc) (+ % acc))))))
 
 (defn snap->vector [[[from-x to-x] [from-y to-y]]]
   (when (or from-x to-x from-y to-y)
@@ -119,10 +108,21 @@
 
 (defn- closest-snap
   [page-id frame-id points remove-snap? zoom]
-  (let [snap-x (search-snap page-id frame-id points :x remove-snap? zoom)
-        snap-y (search-snap page-id frame-id points :y remove-snap? zoom)]
-    (->> (rx/combine-latest snap-x snap-y)
-         (rx/map snap->vector))))
+  (let [vbox @refs/vbox
+        x-ranges (snap-accuracy-ranges points :x zoom)
+        y-ranges (snap-accuracy-ranges points :y zoom)
+        rm (remove-from-snap-points remove-snap?)
+        gmx (get-min-distance-snap points :x)
+        gmy (get-min-distance-snap points :y)]
+    (->> (mw/ask! {:cmd :index/query-snap-xy
+                   :page-id page-id
+                   :frame-id frame-id
+                   :bounds vbox
+                   :x-ranges x-ranges
+                   :y-ranges y-ranges})
+         (rx/take 1)
+         (rx/map (fn [{:keys [x y]}]
+                   (snap->vector [(gmx (rm x)) (gmy (rm y))]))))))
 
 (defn sr-distance [coord sr1 sr2]
   (let [c1 (if (= coord :x) :x1 :y1)

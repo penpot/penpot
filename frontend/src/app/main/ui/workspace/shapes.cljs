@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes
   "A workspace specific shapes wrappers.
@@ -60,10 +60,11 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [objects        (obj/get props "objects")
-        active-frames  (obj/get props "active-frames")
-        shapes         (cfh/get-immediate-children objects)
-        vbox           (mf/use-ctx ctx/current-vbox)
+  (let [objects             (obj/get props "objects")
+        active-frames       (obj/get props "active-frames")
+        disable-thumbnails  (obj/get props "disable-thumbnails")
+        shapes              (cfh/get-immediate-children objects)
+        vbox                (mf/use-ctx ctx/current-vbox)
 
         frame-overlap? (mf/with-memo [vbox objects]
                          #(make-is-frame-overlap vbox objects))
@@ -80,58 +81,65 @@
       (let [xform (comp
                    (remove cfh/frame-shape?)
                    (mapcat #(cfh/get-children-with-self objects (:id %))))]
-        [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
+        [:> ff/fontfaces-style* {:shapes (into [] xform shapes)}])
 
       [:g.frame-children
        (for [shape shapes]
-         [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
-          (if ^boolean (cfh/frame-shape? shape)
-            [:& root-frame-wrapper
-             {:shape shape
-              :objects objects
-              :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
-            [:& shape-wrapper {:shape shape}])])]]]))
+         (let [thumbnail?
+               (and (not disable-thumbnails)
+                    (not (contains? active-frames (dm/get-prop shape :id))))]
+           [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
+            (if ^boolean (cfh/frame-shape? shape)
+              [:& root-frame-wrapper
+               {:shape shape
+                :objects objects
+                :thumbnail? thumbnail?}]
+              [:& shape-wrapper {:shape shape}])]))]]]))
+
+(defn- render-shape-content
+  [shape thumbnail?]
+  (let [shape-type    (dm/get-prop shape :type)
+        rawsvg?       (= :svg-raw shape-type)
+        wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
+        wrapper-props (if ^boolean rawsvg?
+                        #js {}
+                        #js {:className "workspace-shape-wrapper"})
+        props         #js {:shape shape :thumbnail? thumbnail?}]
+    (when (and (some? shape)
+               (not ^boolean (:hidden shape)))
+      (mf/html
+       [:> wrapper-elem wrapper-props
+        (case shape-type
+          :path    [:> path/path-wrapper* props]
+          :text    [:> text/text-wrapper props]
+          :group   [:> group-wrapper props]
+          :rect    [:> rect-wrapper props]
+          :image   [:> image-wrapper props]
+          :circle  [:> circle-wrapper props]
+          :svg-raw [:> svg-raw-wrapper props]
+          :bool    [:> bool-wrapper props]
+          :frame   [:> nested-frame-wrapper props]
+          nil)]))))
+
+(mf/defc root-frame-shape-wrapper
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
+   ::mf/wrap-props false}
+  [props]
+  (let [shape         (unchecked-get props "shape")
+        shape-id      (dm/get-prop shape :id)
+        active-frames (mf/use-ctx ctx/active-frames)
+        thumbnail?    (and (some? active-frames)
+                           (not (contains? active-frames shape-id)))]
+    (render-shape-content shape thumbnail?)))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % common/check-shape-props)]
    ::mf/wrap-props false}
   [props]
-  (let [shape      (unchecked-get props "shape")
-        shape-type (dm/get-prop shape :type)
-        shape-id   (dm/get-prop shape :id)
-
-        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
-        active-frames
-        (when (cfh/root-frame? shape)
-          (mf/use-ctx ctx/active-frames))
-
-        thumbnail?
-        (and (some? active-frames)
-             (not (contains? active-frames shape-id)))
-
-        props         #js {:shape shape :thumbnail? thumbnail?}
-
-        rawsvg?       (= :svg-raw shape-type)
-        wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
-        wrapper-props (if ^boolean rawsvg?
-                        #js {}
-                        #js {:className "workspace-shape-wrapper"})]
-
-    (when (and (some? shape)
-               (not ^boolean (:hidden shape)))
-      [:> wrapper-elem wrapper-props
-       (case shape-type
-         :path    [:> path/path-wrapper props]
-         :text    [:> text/text-wrapper props]
-         :group   [:> group-wrapper props]
-         :rect    [:> rect-wrapper props]
-         :image   [:> image-wrapper props]
-         :circle  [:> circle-wrapper props]
-         :svg-raw [:> svg-raw-wrapper props]
-         :bool    [:> bool-wrapper props]
-         :frame   [:> nested-frame-wrapper props]
-
-         nil)])))
+  (let [shape (unchecked-get props "shape")]
+    (if ^boolean (cfh/root-frame? shape)
+      [:> root-frame-shape-wrapper props]
+      (render-shape-content shape false))))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

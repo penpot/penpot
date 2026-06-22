@@ -2,14 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.template
   (:require
    [app.common.exceptions :as ex]
+   [cuerdas.core :as str]
+   [selmer.filters :as sf]
    [selmer.parser :as sp]))
 
-(sp/cache-off!)
+;; (sp/cache-off!)
+
+(sf/add-filter! :abbreviate
+                (fn [s n]
+                  (let [n (parse-long n)]
+                    (str/abbreviate s n))))
+
 
 (defn render
   [path context]

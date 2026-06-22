@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
@@ -11,6 +11,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.main.data.uploads :as uploads]
    [app.main.repo :as rp]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,6 +22,22 @@
    [cuerdas.core :as str]))
 
 (log/set-level! :warn)
+
+(defn- import-cause-message
+  "Prefer the server `:hint` (full text, e.g. SSE error payload), then `:explain`
+   when present; avoid the generic `stream exception` wrapper when a payload exists."
+  [cause default-msg]
+  (let [data    (ex-data cause)
+        hint    (some-> data :hint str/trim)
+        explain (some-> data :explain str/trim)]
+    (cond
+      (not (str/blank? hint)) hint
+      (not (str/blank? explain)) explain
+      :else
+      (let [msg (some-> (ex-message cause) str/trim)]
+        (if (or (str/blank? msg) (= msg "stream exception"))
+          default-msg
+          msg)))))
 
 ;; Upload changes batches size
 (def ^:const change-batch-size 100)
@@ -121,13 +138,30 @@
                           :error (tr "dashboard.import.analyze-error")}))))
 
          (rx/catch (fn [cause]
-                     (let [error (or (ex-message cause) (tr "dashboard.import.analyze-error"))]
+                     (let [error (import-cause-message cause (tr "dashboard.import.analyze-error"))]
                        (rx/of (assoc file :error error :status :error))))))))
 
 (defmethod impl/handler :analyze-import
   [{:keys [files]}]
   (->> (rx/from files)
        (rx/merge-map analyze-file)))
+
+(defn- import-blob-via-upload
+  "Fetches `uri` as a Blob, uploads it using the generic chunked-upload
+  session API and calls `import-binfile` with the resulting upload-id.
+  Returns an observable of SSE events from the import stream."
+  [uri {:keys [name version project-id]}]
+  (->> (slurp-uri uri :blob)
+       (rx/mapcat
+        (fn [blob]
+          (->> (uploads/upload-blob-chunked blob)
+               (rx/mapcat
+                (fn [{:keys [session-id]}]
+                  (rp/cmd! ::sse/import-binfile
+                           {:name       name
+                            :upload-id  session-id
+                            :version    version
+                            :project-id project-id}))))))))
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files]}]
@@ -138,38 +172,29 @@
      (->> (rx/from binfile-v1)
           (rx/merge-map
            (fn [data]
-             (->> (http/send!
-                   {:uri (:uri data)
-                    :response-type :blob
-                    :method :get})
-                  (rx/map :body)
-                  (rx/mapcat
-                   (fn [file]
-                     (->> (rp/cmd! ::sse/import-binfile
-                                   {:name (str/replace (:name data) #".penpot$" "")
-                                    :file file
-                                    :version 1
-                                    :project-id project-id})
-                          (rx/tap (fn [event]
-                                    (let [payload (sse/get-payload event)
-                                          type    (sse/get-type event)]
-                                      (if (= type "progress")
-                                        (log/dbg :hint "import-binfile: progress"
-                                                 :section (:section payload)
-                                                 :name (:name payload))
-                                        (log/dbg :hint "import-binfile: end")))))
-                          (rx/filter sse/end-of-stream?)
-                          (rx/map (fn [_]
-                                    {:status :finish
-                                     :file-id (:file-id data)})))))
-
+             (->> (import-blob-via-upload (:uri data)
+                                          {:name       (str/replace (:name data) #".penpot$" "")
+                                           :version    1
+                                           :project-id project-id})
+                  (rx/tap (fn [event]
+                            (let [payload (sse/get-payload event)
+                                  type    (sse/get-type event)]
+                              (if (= type "progress")
+                                (log/dbg :hint "import-binfile: progress"
+                                         :section (:section payload)
+                                         :name (:name payload))
+                                (log/dbg :hint "import-binfile: end")))))
+                  (rx/filter sse/end-of-stream?)
+                  (rx/map (fn [_]
+                            {:status :finish
+                             :file-id (:file-id data)}))
                   (rx/catch
                    (fn [cause]
                      (log/error :hint "unexpected error on import process"
                                 :project-id project-id
                                 :cause cause)
                      (rx/of {:status :error
-                             :error (ex-message cause)
+                             :error (import-cause-message cause (tr "labels.error"))
                              :file-id (:file-id data)})))))))
 
      (->> (rx/from binfile-v3)
@@ -179,39 +204,33 @@
           (rx/mapcat identity)
           (rx/merge-map
            (fn [[uri entries]]
-             (->> (slurp-uri uri :blob)
-                  (rx/mapcat (fn [content]
-                               ;; FIXME: implement the naming and filtering
-                               (->> (rp/cmd! ::sse/import-binfile
-                                             {:name (-> entries first :name)
-                                              :file content
-                                              :version 3
-                                              :project-id project-id})
-                                    (rx/tap (fn [event]
-                                              (let [payload (sse/get-payload event)
-                                                    type    (sse/get-type event)]
-                                                (if (= type "progress")
-                                                  (log/dbg :hint "import-binfile: progress"
-                                                           :section (:section payload)
-                                                           :name (:name payload))
-                                                  (log/dbg :hint "import-binfile: end")))))
-                                    (rx/filter sse/end-of-stream?)
-                                    (rx/mapcat (fn [_]
-                                                 (->> (rx/from entries)
-                                                      (rx/map (fn [entry]
-                                                                {:status :finish
-                                                                 :file-id (:file-id entry)}))))))))
-
+             (->> (import-blob-via-upload uri
+                                          {:name       (-> entries first :name)
+                                           :version    3
+                                           :project-id project-id})
+                  (rx/tap (fn [event]
+                            (let [payload (sse/get-payload event)
+                                  type    (sse/get-type event)]
+                              (if (= type "progress")
+                                (log/dbg :hint "import-binfile: progress"
+                                         :section (:section payload)
+                                         :name (:name payload))
+                                (log/dbg :hint "import-binfile: end")))))
+                  (rx/filter sse/end-of-stream?)
+                  (rx/mapcat (fn [_]
+                               (->> (rx/from entries)
+                                    (rx/map (fn [entry]
+                                              {:status :finish
+                                               :file-id (:file-id entry)})))))
                   (rx/catch
                    (fn [cause]
                      (log/error :hint "unexpected error on import process"
                                 :project-id project-id
                                 ::log/sync? true
                                 :cause cause)
-                     (->> (rx/from entries)
-                          (rx/map (fn [entry]
-                                    {:status :error
-                                     :error (ex-message cause)
-                                     :file-id (:file-id entry)}))))))))))))
-
-
+                     (let [err (import-cause-message cause (tr "labels.error"))]
+                       (->> (rx/from entries)
+                            (rx/map (fn [entry]
+                                      {:status :error
+                                       :error err
+                                       :file-id (:file-id entry)})))))))))))))

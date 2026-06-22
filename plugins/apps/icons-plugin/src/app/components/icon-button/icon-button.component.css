@@ -1,0 +1,28 @@
+.icon-button {
+  padding: var(--spacing-4);
+  background: transparent;
+  border-radius: var(--spacing-8);
+  color: var(--app-black);
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: var(--lb-tertiary);
+  }
+
+  &:focus,
+  &:active {
+    box-shadow: inset 0 0 0 2px var(--da-primary);
+  }
+}
+
+:host {
+  &.light {
+    .icon-button {
+      &:focus,
+      &:active {
+        box-shadow: inset 0 0 0 2px var(--accent-tertiary);
+      }
+    }
+  }
+}

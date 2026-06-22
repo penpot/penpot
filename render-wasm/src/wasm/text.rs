@@ -1,13 +1,17 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use super::{fills::RawFillData, fonts::RawFontStyle};
-use crate::math::{Matrix, Point};
-use crate::mem;
+
+use crate::mem::{self, SerializableResult};
 use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
-use crate::{with_current_shape_mut, with_state_mut, with_state_mut_current_shape, STATE};
+use crate::{with_current_shape, with_current_shape_mut, with_state};
+
+use crate::error::Error;
+
+pub mod helpers;
 
 const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -285,41 +289,57 @@ pub extern "C" fn clear_shape_text() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_text_content() {
+#[wasm_error]
+pub extern "C" fn set_shape_text_content() -> crate::error::Result<()> {
     let bytes = mem::bytes();
+    let raw_text_data = RawParagraph::try_from(&bytes)
+        .map_err(|_| Error::CriticalError("Invalid text data".to_string()))?;
+
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
-        shape
-            .add_paragraph(raw_text_data.into())
-            .expect("Failed to add paragraph");
+        shape.add_paragraph(raw_text_data.into()).map_err(|_| {
+            Error::RecoverableError(format!(
+                "Error with set_shape_text_content on {:?}",
+                shape.id
+            ))
+        })?;
     });
-    mem::free_bytes();
+
+    mem::free_bytes()?;
+    Ok(())
 }
 
 #[no_mangle]
 pub extern "C" fn set_shape_grow_type(grow_type: u8) {
     let grow_type = RawGrowType::from(grow_type);
-
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.set_grow_type(GrowType::from(grow_type));
-        } else {
-            panic!("Trying to update grow type in a shape that it's not a text shape");
         }
+        // Don't throw error if the object is not text.
+        // On swap component opperations is convenient.
     });
 }
 
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
     let mut ptr = std::ptr::null_mut();
+
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(content) = &mut shape.shape_type {
             let text_content_size = content.update_layout(shape.selrect);
 
-            let mut bytes = vec![0; 12];
+            // Sacar de aqui x, y, width, height
+            let rect = content.content_rect(&shape.selrect, shape.vertical_align);
+
+            let mut bytes = vec![0; 20];
             bytes[0..4].clone_from_slice(&text_content_size.width.to_le_bytes());
             bytes[4..8].clone_from_slice(&text_content_size.height.to_le_bytes());
             bytes[8..12].clone_from_slice(&text_content_size.max_width.to_le_bytes());
+
+            // veamos
+            bytes[12..16].clone_from_slice(&rect.x().to_le_bytes());
+            bytes[16..20].clone_from_slice(&rect.y().to_le_bytes());
+
             ptr = mem::write_bytes(bytes)
         }
     });
@@ -327,6 +347,27 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
     // FIXME: I think it should be better if instead of returning
     // a NULL ptr we failed gracefully.
     ptr
+}
+
+#[no_mangle]
+pub extern "C" fn intersect_position_in_shape(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    x_pos: f32,
+    y_pos: f32,
+) -> bool {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        let Some(shape) = state.shapes.get(&id) else {
+            return false;
+        };
+        if let Type::Text(content) = &shape.shape_type {
+            return content.intersect_position_in_text(shape, x_pos, y_pos);
+        }
+    });
+    false
 }
 
 fn update_text_layout(shape: &mut Shape) {
@@ -345,36 +386,47 @@ pub extern "C" fn update_shape_text_layout() {
 
 #[no_mangle]
 pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         if let Some(shape) = state.shapes.get_mut(&shape_id) {
             update_text_layout(shape);
         }
+        state.touch_shape(shape_id);
     });
 }
 
+const RAW_POSITION_DATA_SIZE: usize = size_of::<shapes::PositionData>();
+
+impl From<[u8; RAW_POSITION_DATA_SIZE]> for shapes::PositionData {
+    fn from(bytes: [u8; RAW_POSITION_DATA_SIZE]) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<shapes::PositionData> for [u8; RAW_POSITION_DATA_SIZE] {
+    fn from(value: shapes::PositionData) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl SerializableResult for shapes::PositionData {
+    type BytesType = [u8; RAW_POSITION_DATA_SIZE];
+
+    // The generic trait doesn't know the size of the array. This is why the
+    // clone needs to be here even if it could be generic.
+    fn clone_to_slice(&self, slice: &mut [u8]) {
+        let bytes = Self::BytesType::from(*self);
+        slice.clone_from_slice(&bytes);
+    }
+}
+
 #[no_mangle]
-pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
-    with_state_mut_current_shape!(state, |shape: &Shape| {
+pub extern "C" fn calculate_position_data() -> *mut u8 {
+    let mut result = Vec::<shapes::PositionData>::default();
+    with_current_shape!(state, |shape: &Shape| {
         if let Type::Text(text_content) = &shape.shape_type {
-            let mut matrix = Matrix::new_identity();
-            let shape_matrix = shape.get_concatenated_matrix(&state.shapes);
-            let view_matrix = state.render_state.viewbox.get_matrix();
-            if let Some(inv_view_matrix) = view_matrix.invert() {
-                matrix.post_concat(&inv_view_matrix);
-                matrix.post_concat(&shape_matrix);
-
-                let mapped_point = matrix.map_point(Point::new(x, y));
-
-                if let Some(position_with_affinity) =
-                    text_content.get_caret_position_at(&mapped_point)
-                {
-                    return position_with_affinity.position_with_affinity.position;
-                }
-            }
-        } else {
-            panic!("Trying to get caret position of a shape that it's not a text shape");
+            result = shapes::calculate_position_data(shape, text_content, false);
         }
     });
-    -1
+    mem::write_vec(result)
 }

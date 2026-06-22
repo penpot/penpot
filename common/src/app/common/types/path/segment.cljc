@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.path.segment
   "A collection of helpers for work with plain segment type"
@@ -19,7 +19,7 @@
 
 #?(:clj (set! *warn-on-reflection* true))
 
-(defn update-handler
+(defn- update-handler
   [command prefix point]
   (let [[cox coy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
     (-> command
@@ -62,7 +62,7 @@
        (map (fn [[index _]] index))))
 
 (defn handler-indices
-  "Return an index where the key is the positions and the values the handlers"
+  "Returns [[index prefix] ...] of all handlers associated with point."
   [content point]
   (->> (d/with-prev content)
        (d/enumerate)
@@ -76,7 +76,7 @@
                    [])))))
 
 (defn opposite-index
-  "Calculates the opposite index given a prefix and an index"
+  "Calculates the opposite handler index given a content, index and prefix."
   [content index prefix]
 
   (let [point (if (= prefix :c2)
@@ -127,11 +127,6 @@
   (let [handler-vector (gpt/to-vec point handler)]
     (gpt/add point (gpt/negate handler-vector))))
 
-(defn opposite-handler
-  "Calculates the coordinates of the opposite handler"
-  [point handler]
-  (let [phv (gpt/to-vec point handler)]
-    (gpt/add point (gpt/negate phv))))
 
 (defn get-points
   "Returns points for the given segment, faster version of
@@ -177,8 +172,6 @@
                point))
 
       (conj result [prev-point last-start]))))
-
-(def ^:const path-closest-point-accuracy 0.01)
 
 ;; FIXME: move to helpers?, this function need performance review, it
 ;; is executed so many times on path edition
@@ -777,7 +770,7 @@
   content as PathData instance."
   [content transform]
   (if (some? transform)
-    (impl/-transform content transform)
+    (impl/-transform (impl/path-data content) transform)
     content))
 
 (defn move-content
@@ -787,7 +780,7 @@
   (let [transform (gmt/translate-matrix move-vec)]
     (transform-content content transform)))
 
-(defn calculate-extremities
+(defn- calculate-extremities
   "Calculate extremities for the provided content"
   [content]
   (loop [points  (transient #{})
@@ -819,7 +812,7 @@
             :line-to
             (recur (cond-> points
                      (and from-p to-p)
-                     (-> (conj! move-p)
+                     (-> (conj! from-p)
                          (conj! to-p)))
                    (not-empty (subvec content 1))
                    to-p

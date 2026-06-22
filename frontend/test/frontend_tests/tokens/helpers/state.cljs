@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.tokens.helpers.state
   (:require
@@ -43,7 +43,9 @@
   (fn [stream]
     (->> stream
          #_(rx/tap #(prn (ptk/type %)))
-         (rx/filter #(ptk/type? event-type %)))))
+         (rx/filter #(ptk/type? event-type %))
+         ;; Safeguard timeout
+         (rx/timeout 200 (rx/of :the/end)))))
 
 (def stop-on-send-update-indices
   "Stops on `send-update-indices` function being called, which should be the last function of an event chain."

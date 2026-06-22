@@ -2,25 +2,27 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
 .workspace {
-  @extend .new-scrollbar;
+  @extend %new-scrollbar;
+
   width: 100vw;
   height: 100vh;
   max-height: 100vh;
   user-select: none;
   display: grid;
-  grid-template-areas: "left-sidebar viewport right-sidebar";
-  grid-template-rows: 1fr;
-  grid-template-columns: auto 1fr auto;
+  grid-template: "left-sidebar viewport right-sidebar" 1fr / auto 1fr auto;
   overflow: hidden;
 }
 
 .workspace-loader {
-  grid-area: viewport;
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-index-loaders);
+  background-color: var(--color-background-primary);
 }
 
 .workspace-content {

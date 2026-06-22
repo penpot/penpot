@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.snap-points
   (:require
@@ -25,7 +25,7 @@
 ;; (def ^:private line-opacity 1 )
 ;; (def ^:private line-width 2)
 
-(mf/defc snap-point
+(mf/defc snap-point*
   [{:keys [point zoom]}]
   (let [{:keys [x y]} point
         cross-width (/ 3 zoom)]
@@ -41,7 +41,7 @@
              :y2 (- y cross-width)
              :style {:stroke line-color :stroke-width (str (/ line-width zoom))}}]]))
 
-(mf/defc snap-line
+(mf/defc snap-line*
   [{:keys [snap point zoom]}]
   [:line {:x1 (:x snap)
           :y1 (:y snap)
@@ -50,8 +50,8 @@
           :style {:stroke line-color :stroke-width (str (/ line-width zoom))}
           :opacity line-opacity}])
 
-(defn get-snap
-  [coord {:keys [shapes page-id remove-snap? zoom]}]
+(defn- get-snap
+  [coord shapes page-id remove-snap zoom]
   (let [bounds (gsh/shapes->rect shapes)
         frame-id  (snap/snap-frame-id shapes)]
 
@@ -63,7 +63,7 @@
 
          (rx/merge-map
           (fn [[frame-id point]]
-            (->> (snap/get-snap-points page-id frame-id remove-snap? zoom point coord)
+            (->> (snap/get-snap-points page-id frame-id remove-snap zoom point coord)
                  (rx/map #(mapcat second %))
                  (rx/map #(map :pt %))
                  (rx/map #(vector point % coord)))))
@@ -74,7 +74,7 @@
   [coord]
   (if (= coord :x) :y :x))
 
-(defn add-point-to-snaps
+(defn- add-point-to-snaps
   [[point snaps coord]]
   (let [normalize-coord #(assoc % coord (get point coord))]
     (cons point (map normalize-coord snaps))))
@@ -100,8 +100,9 @@
        (map (fn [[fixedv [minv maxv]]] [(hash-map coord fixedv (flip coord) minv)
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
-(mf/defc snap-feedback
-  [{:keys [shapes remove-snap? zoom modifiers] :as props}]
+(mf/defc snap-feedback*
+  {::mf/private true}
+  [{:keys [shapes remove-snap zoom modifiers page-id]}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -116,9 +117,9 @@
      (fn []
        (let [sub (->> subject
                       (rx/switch-map
-                       (fn [props]
-                         (->> (get-snap :y props)
-                              (rx/combine-latest (get-snap :x props)))))
+                       (fn [{:keys [shapes page-id remove-snap zoom]}]
+                         (->> (get-snap :y shapes page-id remove-snap zoom)
+                              (rx/combine-latest (get-snap :x shapes page-id remove-snap zoom)))))
 
                       (rx/map
                        (fn [result]
@@ -133,28 +134,31 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes remove-snap? modifiers)
+     (mf/deps shapes remove-snap modifiers page-id zoom)
      (fn []
-       (rx/push! subject props)))
+       (rx/push! subject {:shapes shapes
+                          :page-id page-id
+                          :remove-snap remove-snap
+                          :zoom zoom})))
 
     [:g.snap-feedback
      (for [[from-point to-point] snap-lines]
-       [:& snap-line {:key (str "line-" (:x from-point)
-                                "-" (:y from-point)
-                                "-" (:x to-point)
-                                "-" (:y to-point) "-")
-                      :snap from-point
-                      :point to-point
-                      :zoom zoom}])
+       [:> snap-line* {:key (str "line-" (:x from-point)
+                                 "-" (:y from-point)
+                                 "-" (:x to-point)
+                                 "-" (:y to-point) "-")
+                       :snap from-point
+                       :point to-point
+                       :zoom zoom}])
      (for [point snap-points]
-       [:& snap-point {:key (str "point-" (:x point)
-                                 "-" (:y point))
-                       :point point
-                       :zoom zoom}])]))
+       [:> snap-point* {:key (str "point-" (:x point)
+                                  "-" (:y point))
+                        :point point
+                        :zoom zoom}])]))
 
-(mf/defc snap-points
+(mf/defc snap-points*
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing focus] :as props}]
+  [{:keys [layout zoom objects selected page-id drawing focus]}]
   (dm/assert! (set? selected))
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
@@ -165,7 +169,7 @@
         (mf/with-memo [layout filter-shapes objects focus]
           (snap/make-remove-snap layout filter-shapes objects focus))
 
-        remove-snap?
+        remove-snap
         (mf/use-callback
          (mf/deps remove-snap-base?)
          (fn [{:keys [type grid] :as snap}]
@@ -176,8 +180,8 @@
         shapes    (if drawing [drawing] shapes)
         frame-id (snap/snap-frame-id shapes)]
     (when-not (ctl/any-layout? objects frame-id)
-      [:& snap-feedback {:shapes shapes
-                         :page-id page-id
-                         :remove-snap? remove-snap?
-                         :zoom zoom}])))
+      [:> snap-feedback* {:shapes shapes
+                          :page-id page-id
+                          :remove-snap remove-snap
+                          :zoom zoom}])))
 

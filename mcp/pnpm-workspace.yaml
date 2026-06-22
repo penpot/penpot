@@ -1,0 +1,10 @@
+allowBuilds:
+  esbuild: true
+  sharp: false
+
+linkWorkspacePackages: true
+
+packages:
+  - "./packages/common"
+  - "./packages/server"
+  - "./packages/plugin"

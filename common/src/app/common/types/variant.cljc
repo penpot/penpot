@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.variant
   (:require
@@ -311,16 +311,22 @@
   [variant]
   (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
 
+(def ^:private boolean-pairs
+  [["on" "off"]
+   ["yes" "no"]
+   ["true" "false"]])
+
 (defn find-boolean-pair
-  "Given a vector, return the map from 'bool-values' that contains both as keys.
-   Returns nil if none match."
-  [v]
-  (let [bool-values [{"on" true   "off" false}
-                     {"yes" true  "no" false}
-                     {"true" true "false" false}]]
+  "Given a vector, return a map that contains the boolean equivalency if the values match
+   with any of the boolean pairs. Returns nil if none match."
+  [[a b :as v]]
+  (let [a' (-> a str/trim str/lower)
+        b' (-> b str/trim str/lower)]
     (when (= (count v) 2)
-      (some (fn [b]
-              (when (and (contains? b (first v))
-                         (contains? b (last v)))
-                b))
-            bool-values))))
+      (some (fn [[t f]]
+              (cond (and (= a' t)
+                         (= b' f)) {a true b false}
+                    (and (= b' t)
+                         (= a' f)) {b true a false}
+                    :else nil))
+            boolean-pairs))))

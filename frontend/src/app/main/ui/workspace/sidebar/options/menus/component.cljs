@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
@@ -42,7 +42,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
@@ -309,6 +308,13 @@
                  to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
              (on-reorder from-pos to-space-between-pos))))
 
+
+        on-prop-value-change
+        (mf/use-fn
+         (mf/deps on-prop-value-change pos)
+         (fn [value]
+           (on-prop-value-change pos value)))
+
         [dprops dref]
         (h/use-sortable
          :data-type "penpot/variant-property"
@@ -350,7 +356,8 @@
                            (get :objects))
 
         props-list     (map :variant-properties components)
-        component-ids  (map :id components)
+        component-ids  (mf/with-memo [components]
+                         (map :id components))
         properties     (if (> (count component-ids) 1)
                          (ctv/compare-properties props-list false)
                          (first props-list))
@@ -413,7 +420,7 @@
                                           :prop prop
                                           :options (get-options (:name prop))
                                           :on-prop-name-blur update-property-name
-                                          :on-prop-value-change (partial update-property-value pos)
+                                          :on-prop-value-change update-property-value
                                           :on-reorder reorder-properties}])]]
 
      (if malformed-msg
@@ -500,7 +507,7 @@
 
                    mdata     {:on-error #(do
                                            (reset! key* (uuid/next))
-                                           (st/emit! (ntf/error error-msg)))}
+                                           (st/emit! (ntf/warn error-msg)))}
                    params    {:shapes shapes :pos pos :val val}]
                (st/emit! (dwv/variants-switch (with-meta params mdata)))))))
 
@@ -582,7 +589,7 @@
               :on-click on-select
               :disabled loop}
      (when visible?
-       [:> cmm/component-item-thumbnail* {:file-id (:file-id item)
+       [:> cmm/component-item-thumbnail* {:file-id file-id
                                           :class (stl/css :swap-item-thumbnail)
                                           :root-shape root-shape
                                           :component item
@@ -679,7 +686,7 @@
                               (str/upper (tr "workspace.assets.local-library"))
                               (dm/get-in libraries [current-library-id :name]))
 
-        current-lib-data    (mf/with-memo [libraries]
+        current-lib-data    (mf/with-memo [libraries current-library-id]
                               (get-in libraries [current-library-id :data]))
 
         current-lib-counts  (mf/with-memo [current-lib-data]
@@ -790,10 +797,10 @@
         [:& radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
                            :on-change toggle-list-style
                            :name "swap-listing-style"}
-         [:& radio-button {:icon deprecated-icon/view-as-list
+         [:& radio-button {:icon i/view-as-list
                            :value "list"
                            :id "swap-opt-list"}]
-         [:& radio-button {:icon deprecated-icon/flex-grid
+         [:& radio-button {:icon i/flex-grid
                            :value "grid"
                            :id "swap-opt-grid"}]]]
 
@@ -1089,6 +1096,7 @@
 
           (when (and multi all-main? (not any-variant?))
             [:> button* {:variant "secondary"
+                         :type "button"
                          :class (stl/css :component-combine)
                          :on-click on-combine-as-variants}
              (tr "workspace.shape.menu.combine-as-variants")])

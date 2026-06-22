@@ -1,5 +1,6 @@
 ---
 title: 3.07. Abstraction levels
+desc: "Penpot Technical Guide: organize data and logic in clear abstraction layers—ADTs, file ops, event-sourced changes, business rules, and data events."
 ---
 
 # Code organization in abstraction levels

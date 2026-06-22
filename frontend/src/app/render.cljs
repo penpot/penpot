@@ -2,11 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render
   "The main entry point for UI part needed by the exporter."
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
    [app.common.math :as mth]
@@ -18,6 +19,7 @@
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.globals :as glob]
    [beicon.v2.core :as rx]
@@ -62,7 +64,7 @@
 
 (mf/defc object-svg
   {::mf/wrap-props false}
-  [{:keys [object-id embed skip-children]}]
+  [{:keys [object-id embed skip-children wasm scale]}]
   (let [objects (mf/deref ref:objects)]
 
     ;; Set the globa CSS to assign the page size, needed for PDF
@@ -76,24 +78,52 @@
                    (mth/ceil height) "px")}))))
 
     (when objects
-      [:& render/object-svg
-       {:objects objects
-        :object-id object-id
-        :embed embed
-        :skip-children skip-children}])))
+      (if wasm
+        [:& render/object-wasm
+         {:objects objects
+          :object-id object-id
+          :embed embed
+          :scale scale
+          :skip-children skip-children}]
+
+        [:& (mf/provider ctx/is-render?) {:value true}
+         [:& render/object-svg
+          {:objects objects
+           :object-id object-id
+           :embed embed
+           :skip-children skip-children}]]))))
 
 (mf/defc objects-svg
   {::mf/wrap-props false}
-  [{:keys [object-ids embed skip-children]}]
-  (when-let [objects (mf/deref ref:objects)]
-    (for [object-id object-ids]
-      (let [objects (render/adapt-objects-for-shape objects object-id)]
-        [:& render/object-svg
-         {:objects objects
-          :key (str object-id)
-          :object-id object-id
-          :embed embed
-          :skip-children skip-children}]))))
+  [{:keys [object-ids embed skip-children wasm scale]}]
+  (let [limit
+        (mf/use-state (if wasm (min 1 (count object-ids)) (count object-ids)))
+
+        cb-fn
+        (mf/use-fn
+         (fn []
+           (swap! limit #(min (count object-ids) (inc %)))))]
+    (when-let [objects (mf/deref ref:objects)]
+      ;;Limit
+      (for [object-id (take @limit object-ids)]
+        (let [objects (render/adapt-objects-for-shape objects object-id)]
+          (if wasm
+            [:& render/object-wasm
+             {:objects objects
+              :key (str object-id)
+              :object-id object-id
+              :embed embed
+              :scale (d/parse-integer scale)
+              :skip-children skip-children
+              :on-render cb-fn}]
+
+            [:& (mf/provider ctx/is-render?) {:value true}
+             [:& render/object-svg
+              {:objects objects
+               :key (str object-id)
+               :object-id object-id
+               :embed embed
+               :skip-children skip-children}]]))))))
 
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]
@@ -125,47 +155,46 @@
    [:embed {:optional true} :boolean]
    [:skip-children {:optional true} :boolean]
    [:object-id
-    [:or
-     ::sm/uuid
-     ::sm/coll-of-uuid]]])
+    [:or [::sm/set ::sm/uuid] ::sm/uuid]]])
 
-(def ^:private render-objects-decoder
-  (sm/lazy-decoder schema:render-objects
-                   sm/string-transformer))
+(def ^:private coerce-render-objects-params
+  (sm/coercer schema:render-objects))
 
-(def ^:private render-objects-validator
-  (sm/lazy-validator schema:render-objects))
+(defn- handle-render-error
+  [cause]
+  (log/error :hint "unexpected render error" :cause cause)
+  (mf/html [:span "Unexpected error:" (ex-message cause)]))
 
 (defn- render-objects
   [params]
-  (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params} (render-objects-decoder params)]
-    (if-not (render-objects-validator params)
-      (do
-        (js/console.error "invalid arguments")
-        (sm/pretty-explain schema:render-objects params)
-        nil)
+  (try
+    (let [{:keys [file-id page-id embed share-id object-id skip-children wasm scale] :as params}
+          (coerce-render-objects-params params)]
+      (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
+      (if (uuid? object-id)
+        (mf/html
+         [:& object-svg
+          {:file-id file-id
+           :page-id page-id
+           :share-id share-id
+           :object-id object-id
+           :embed embed
+           :skip-children skip-children
+           :wasm wasm
+           :scale scale}])
 
-      (do
-        (st/emit! (fetch-objects-bundle :file-id file-id :page-id page-id :share-id share-id :object-id object-id))
-
-        (if (uuid? object-id)
-          (mf/html
-           [:& object-svg
-            {:file-id file-id
-             :page-id page-id
-             :share-id share-id
-             :object-id object-id
-             :embed embed
-             :skip-children skip-children}])
-
-          (mf/html
-           [:& objects-svg
-            {:file-id file-id
-             :page-id page-id
-             :share-id share-id
-             :object-ids (into #{} object-id)
-             :embed embed
-             :skip-children skip-children}]))))))
+        (mf/html
+         [:& objects-svg
+          {:file-id file-id
+           :page-id page-id
+           :share-id share-id
+           :object-ids (into #{} object-id)
+           :embed embed
+           :skip-children skip-children
+           :wasm wasm
+           :scale scale}])))
+    (catch :default cause
+      (handle-render-error cause))))
 
 ;; ---- COMPONENTS SPRITE
 
@@ -242,39 +271,34 @@
    [:embed {:optional true} :boolean]
    [:component-id {:optional true} ::sm/uuid]])
 
-(def ^:private render-components-decoder
-  (sm/lazy-decoder schema:render-components
-                   sm/string-transformer))
-
-(def ^:private render-components-validator
-  (sm/lazy-validator schema:render-components))
+(def ^:private coerce-render-components-params
+  (sm/coercer schema:render-components))
 
 (defn render-components
   [params]
-  (let [{:keys [file-id component-id embed] :as params} (render-components-decoder params)]
-    (if-not (render-components-validator params)
-      (do
-        (js/console.error "invalid arguments")
-        (sm/pretty-explain schema:render-components params)
-        nil)
+  (try
+    (let [{:keys [file-id component-id embed] :as params}
+          (coerce-render-components-params params)]
 
-      (do
-        (st/emit! (ptk/reify ::initialize-render-components
-                    ptk/WatchEvent
-                    (watch [_ _ stream]
-                      (rx/merge
-                       (rx/of (fetch-team :file-id file-id))
+      (st/emit! (ptk/reify ::initialize-render-components
+                  ptk/WatchEvent
+                  (watch [_ _ stream]
+                    (rx/merge
+                     (rx/of (fetch-team :file-id file-id))
 
-                       (->> stream
-                            (rx/filter (ptk/type? ::team-fetched))
-                            (rx/observe-on :async)
-                            (rx/map (constantly params))
-                            (rx/map fetch-components-bundle))))))
+                     (->> stream
+                          (rx/filter (ptk/type? ::team-fetched))
+                          (rx/observe-on :async)
+                          (rx/map (constantly params))
+                          (rx/map fetch-components-bundle))))))
 
-        (mf/html
-         [:& components-svg
-          {:component-id component-id
-           :embed embed}])))))
+      (mf/html
+       [:& components-svg
+        {:component-id component-id
+         :embed embed}]))
+
+    (catch :default cause
+      (handle-render-error cause))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETUP
@@ -284,9 +308,6 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
-(declare ^:private render-single-object)
-(declare ^:private render-components)
-(declare ^:private render-objects)
 
 (defn- parse-params
   [loc]

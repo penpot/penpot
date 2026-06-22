@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard
   (:require-macros [app.main.style :as stl])
@@ -13,13 +13,17 @@
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as notif]
    [app.main.data.plugins :as dp]
+   [app.main.data.profile :as dprof]
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.ui.components.progress :refer [progress-notification-widget*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.deleted :refer [deleted-section*]]
    [app.main.ui.dashboard.files :refer [files-section*]]
    [app.main.ui.dashboard.fonts :refer [fonts-page* font-providers-page*]]
    [app.main.ui.dashboard.import]
@@ -42,12 +46,10 @@
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc dashboard-content*
-  {::mf/props :obj
-   ::mf/private true}
+  {::mf/private true}
   [{:keys [team projects project section search-term profile default-project]}]
   (let [container       (mf/use-ref)
         content-width   (mf/use-state 0)
@@ -73,7 +75,13 @@
 
         show-templates?
         (and (contains? cf/flags :dashboard-templates-section)
-             (:can-edit permissions))]
+             (:can-edit permissions))
+
+        show-deleted? (:can-edit permissions)
+
+        section (if (and (not show-deleted?) (= section :dashboard-deleted))
+                  :dashboard-recent
+                  section)]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
@@ -84,6 +92,9 @@
     [:div {:class (stl/css :dashboard-content)
            :on-click clear-selected-fn
            :ref container}
+
+     [:> progress-notification-widget*]
+
      (case section
        :dashboard-recent
        (when (seq projects)
@@ -139,6 +150,11 @@
 
        :dashboard-settings
        [:> team-settings-page* {:team team :profile profile}]
+
+       :dashboard-deleted
+       [:> deleted-section* {:team team
+                             :projects projects
+                             :profile profile}]
 
        nil)]))
 
@@ -200,7 +216,7 @@
               (fn [plugin]
                 (if plugin
                   (do
-                    (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                    (st/emit! (ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
               (fn [_]
@@ -229,12 +245,12 @@
                                          (dd/fetch-recent-files team-id)
                                          (dd/fetch-projects team-id)
                                          (dd/clear-selected-files)
-                                         (ptk/event ::ev/event {::ev/name "install-template-from-link-finished"
-                                                                :name template-name
-                                                                :url template-url}))]
+                                         (ev/event {::ev/name "install-template-from-link-finished"
+                                                    :name template-name
+                                                    :url template-url}))]
             (if valid-url?
               (st/emit!
-               (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url})
+               (ev/event {::ev/name "install-template-from-link" :name template-name :url template-url})
                (modal/show
                 {:type :import
                  :project-id project-id
@@ -246,8 +262,15 @@
         (binding [storage/*sync* true]
           (swap! storage/session dissoc :template))))))
 
+(defn- use-nitrate-entry-popup
+  []
+  (mf/with-effect []
+    (when (dnt/nitrate-entry-popup-pending?)
+      (dnt/consume-nitrate-entry-popup!)
+      (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
+                (dnt/show-nitrate-popup :nitrate-form)))))
+
 (mf/defc dashboard*
-  {::mf/props :obj}
   [{:keys [profile project-id team-id search-term plugin-url template section]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
@@ -285,6 +308,7 @@
 
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
+    (use-nitrate-entry-popup)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]
@@ -313,3 +337,8 @@
         :section section
         :search-term search-term
         :team team}]]]))
+
+(mf/defc dashboard-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> dashboard* props])

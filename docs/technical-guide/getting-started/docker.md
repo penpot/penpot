@@ -188,8 +188,8 @@ server {
   server_name penpot.mycompany.com;
 
   # This value should be in sync with the corresponding in the docker-compose.yml
-  # PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 31457280
-  client_max_body_size 31457280;
+  # PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+  client_max_body_size 367001600;
 
   # Logs: Configure your logs following the best practices inside your company
   access_log /path/to/penpot.access.log;
@@ -204,6 +204,12 @@ server {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection 'upgrade';
     proxy_pass http://localhost:9001/ws/notifications;
+  }
+
+  location /mcp/ws {
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_pass http://localhost:9001/mcp/ws;
   }
 
   # Proxy pass

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::iter;
 
 use crate::performance;
@@ -28,32 +29,53 @@ const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 /// Shapes are stored in a `Vec<Shape>`, which keeps the `Shape` instances
 /// in a contiguous memory block.
 ///
-pub struct ShapesPoolImpl<'a> {
+/// # Index-based Design
+///
+/// All auxiliary HashMaps (modifiers, structure, scale_content, modified_shape_cache)
+/// use `usize` indices instead of `&'a Uuid` references. This eliminates:
+/// - Unsafe lifetime extensions
+/// - The need for `rebuild_references()` after Vec reallocation
+/// - Complex lifetime annotations
+///
+/// The `uuid_to_idx` HashMap maps `Uuid` (owned) to indices, avoiding lifetime issues.
+///
+pub struct ShapesPoolImpl {
     shapes: Vec<Shape>,
     counter: usize,
 
-    shapes_uuid_to_idx: HashMap<&'a Uuid, usize>,
+    /// Maps UUID to index in the shapes Vec. Uses owned Uuid, no lifetime needed.
+    uuid_to_idx: HashMap<Uuid, usize>,
 
-    modified_shape_cache: HashMap<&'a Uuid, OnceCell<Shape>>,
-    modifiers: HashMap<&'a Uuid, skia::Matrix>,
-    structure: HashMap<&'a Uuid, Vec<StructureEntry>>,
-    scale_content: HashMap<&'a Uuid, f32>,
+    /// Cache for modified shapes, keyed by index
+    modified_shape_cache: HashMap<usize, OnceCell<Shape>>,
+    /// Transform modifiers, keyed by index
+    modifiers: HashMap<usize, skia::Matrix>,
+    /// UUIDs of shapes that have an active transform modifier, kept in sync
+    /// with `modifiers`. Stored explicitly so that `modifier_ids()` is O(K)
+    /// (K = number of modified shapes) instead of O(N_shapes) — avoids
+    /// building a full reverse-index HashMap on every call.
+    modifier_uuids: Vec<Uuid>,
+    /// Structure entries, keyed by index
+    structure: HashMap<usize, Vec<StructureEntry>>,
+    /// Scale content values, keyed by index
+    scale_content: HashMap<usize, f32>,
 }
 
-// Type aliases to avoid writing lifetimes everywhere
-pub type ShapesPool<'a> = ShapesPoolImpl<'a>;
-pub type ShapesPoolRef<'a> = &'a ShapesPoolImpl<'a>;
-pub type ShapesPoolMutRef<'a> = &'a mut ShapesPoolImpl<'a>;
+// Type aliases - no longer need lifetimes!
+pub type ShapesPool = ShapesPoolImpl;
+pub type ShapesPoolRef<'a> = &'a ShapesPoolImpl;
+pub type ShapesPoolMutRef<'a> = &'a mut ShapesPoolImpl;
 
-impl<'a> ShapesPoolImpl<'a> {
+impl ShapesPoolImpl {
     pub fn new() -> Self {
         ShapesPoolImpl {
             shapes: vec![],
             counter: 0,
-            shapes_uuid_to_idx: HashMap::default(),
+            uuid_to_idx: HashMap::default(),
 
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
+            modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
         }
@@ -62,15 +84,14 @@ impl<'a> ShapesPoolImpl<'a> {
     pub fn initialize(&mut self, capacity: usize) {
         performance::begin_measure!("shapes_pool_initialize");
         self.counter = 0;
-        self.shapes_uuid_to_idx = HashMap::with_capacity(capacity);
+        self.uuid_to_idx = HashMap::with_capacity(capacity);
 
         let additional = capacity as i32 - self.shapes.len() as i32;
         if additional <= 0 {
             return;
         }
 
-        // Reserve exact capacity to avoid any future reallocations
-        // This is critical because we store &'a Uuid references that would be invalidated
+        // Reserve extra capacity to avoid future reallocations
         let target_capacity = (capacity as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
         self.shapes
             .reserve_exact(target_capacity.saturating_sub(self.shapes.len()));
@@ -81,15 +102,15 @@ impl<'a> ShapesPoolImpl<'a> {
     }
 
     pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
-        let did_reallocate = if self.counter >= self.shapes.len() {
-            // We need more space. Check if we'll need to reallocate the Vec.
+        if self.counter >= self.shapes.len() {
+            // We need more space
             let current_capacity = self.shapes.capacity();
-            let additional = (self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
+            // Ensure we add at least 1 shape when the pool is empty
+            let additional =
+                ((self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize).max(1);
             let needed_capacity = self.shapes.len() + additional;
 
-            let will_reallocate = needed_capacity > current_capacity;
-
-            if will_reallocate {
+            if needed_capacity > current_capacity {
                 // Reserve extra space to minimize future reallocations
                 let extra_reserve = (needed_capacity as f32 * 0.5) as usize;
                 self.shapes
@@ -98,166 +119,110 @@ impl<'a> ShapesPoolImpl<'a> {
 
             self.shapes
                 .extend(iter::repeat_with(|| Shape::new(Uuid::nil())).take(additional));
-
-            will_reallocate
-        } else {
-            false
-        };
+        }
 
         let idx = self.counter;
         let new_shape = &mut self.shapes[idx];
         new_shape.id = id;
 
-        // Get a reference to the id field in the shape with lifetime 'a
-        // SAFETY: This is safe because:
-        // 1. We pre-allocate enough capacity to avoid Vec reallocation
-        // 2. The shape and its id field won't move within the Vec
-        // 3. The reference won't outlive the ShapesPoolImpl
-        let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
-
-        self.shapes_uuid_to_idx.insert(id_ref, idx);
+        // Simply store the UUID -> index mapping. No unsafe lifetime tricks needed!
+        self.uuid_to_idx.insert(id, idx);
         self.counter += 1;
-
-        // If the Vec reallocated, we need to rebuild all references in the HashMaps
-        // because the old references point to deallocated memory
-        if did_reallocate {
-            self.rebuild_references();
-        }
 
         &mut self.shapes[idx]
     }
-
-    /// Rebuilds all &'a Uuid references in the HashMaps after a Vec reallocation.
-    /// This is necessary because Vec reallocation invalidates all existing references.
-    fn rebuild_references(&mut self) {
-        // Rebuild shapes_uuid_to_idx with fresh references
-        let mut new_map = HashMap::with_capacity(self.shapes_uuid_to_idx.len());
-        for (_, idx) in self.shapes_uuid_to_idx.drain() {
-            let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
-            new_map.insert(id_ref, idx);
-        }
-        self.shapes_uuid_to_idx = new_map;
-
-        // Rebuild modifiers with fresh references
-        if !self.modifiers.is_empty() {
-            let old_modifiers: Vec<(Uuid, skia::Matrix)> = self
-                .modifiers
-                .drain()
-                .map(|(uuid_ref, matrix)| (*uuid_ref, matrix))
-                .collect();
-
-            for (uuid, matrix) in old_modifiers {
-                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                    self.modifiers.insert(uuid_ref, matrix);
-                }
-            }
-        }
-
-        // Rebuild structure with fresh references
-        if !self.structure.is_empty() {
-            let old_structure: Vec<(Uuid, Vec<StructureEntry>)> = self
-                .structure
-                .drain()
-                .map(|(uuid_ref, entries)| (*uuid_ref, entries))
-                .collect();
-
-            for (uuid, entries) in old_structure {
-                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                    self.structure.insert(uuid_ref, entries);
-                }
-            }
-        }
-
-        // Rebuild scale_content with fresh references
-        if !self.scale_content.is_empty() {
-            let old_scale_content: Vec<(Uuid, f32)> = self
-                .scale_content
-                .drain()
-                .map(|(uuid_ref, scale)| (*uuid_ref, scale))
-                .collect();
-
-            for (uuid, scale) in old_scale_content {
-                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                    self.scale_content.insert(uuid_ref, scale);
-                }
-            }
-        }
-        // Rebuild modified_shape_cache with fresh references
-        if !self.modified_shape_cache.is_empty() {
-            let old_cache: Vec<(Uuid, OnceCell<Shape>)> = self
-                .modified_shape_cache
-                .drain()
-                .map(|(uuid_ref, cell)| (*uuid_ref, cell))
-                .collect();
-
-            for (uuid, cell) in old_cache {
-                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                    self.modified_shape_cache.insert(uuid_ref, cell);
-                }
-            }
-        }
-    }
+    // No longer needed! Index-based storage means no references to rebuild.
+    // The old rebuild_references() function has been removed entirely.
 
     pub fn len(&self) -> usize {
-        self.shapes_uuid_to_idx.len()
+        self.uuid_to_idx.len()
     }
 
     pub fn has(&self, id: &Uuid) -> bool {
-        self.shapes_uuid_to_idx.contains_key(&id)
+        self.uuid_to_idx.contains_key(id)
     }
 
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
-        let idx = *self.shapes_uuid_to_idx.get(&id)?;
+        let idx = *self.uuid_to_idx.get(id)?;
         Some(&mut self.shapes[idx])
     }
 
-    pub fn get(&self, id: &Uuid) -> Option<&'a Shape> {
-        let idx = *self.shapes_uuid_to_idx.get(&id)?;
+    /// Returns the current transform modifier matrix for the shape, if any.
+    pub fn get_modifier(&self, id: &Uuid) -> Option<&skia::Matrix> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        self.modifiers.get(&idx)
+    }
 
-        // SAFETY: We're extending the lifetimes to 'a.
-        // This is safe because:
-        // 1. All internal HashMaps and the shapes Vec have fields with lifetime 'a
-        // 2. The shape at idx won't be moved or reallocated (pre-allocated Vec)
-        // 3. The id is stored in shapes[idx].id which has lifetime 'a
-        // 4. The references won't outlive the ShapesPoolImpl
-        unsafe {
-            let shape_ptr = &self.shapes[idx] as *const Shape;
-            let modifiers_ptr = &self.modifiers as *const HashMap<&'a Uuid, skia::Matrix>;
-            let structure_ptr = &self.structure as *const HashMap<&'a Uuid, Vec<StructureEntry>>;
-            let scale_content_ptr = &self.scale_content as *const HashMap<&'a Uuid, f32>;
-            let cache_ptr = &self.modified_shape_cache as *const HashMap<&'a Uuid, OnceCell<Shape>>;
+    /// Get a shape by UUID without applying modifiers/structure/scale-content.
+    pub fn get_raw(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
+        Some(&self.shapes[idx])
+    }
 
-            // Extend the lifetime of id to 'a - safe because it's the same Uuid stored in shapes[idx].id
-            let id_ref: &'a Uuid = &*(id as *const Uuid);
+    /// Get a shape by UUID. Returns the modified shape if modifiers/structure
+    /// are applied, otherwise returns the base shape.
+    pub fn get(&self, id: &Uuid) -> Option<&Shape> {
+        let idx = *self.uuid_to_idx.get(id)?;
 
-            if (*shape_ptr).is_bool()
-                || (*modifiers_ptr).contains_key(&id_ref)
-                || (*structure_ptr).contains_key(&id_ref)
-                || (*scale_content_ptr).contains_key(&id_ref)
-            {
-                if let Some(cell) = (*cache_ptr).get(&id_ref) {
-                    Some(cell.get_or_init(|| {
-                        let mut shape = (*shape_ptr).transformed(
-                            (*modifiers_ptr).get(&id_ref),
-                            (*structure_ptr).get(&id_ref),
-                        );
+        let shape = &self.shapes[idx];
 
-                        if self.to_update_bool(&shape) {
-                            math_bools::update_bool_to_path(&mut shape, self);
-                        }
+        // Check if this shape needs modification (has modifiers, structure changes, or is a bool)
+        let needs_modification = shape.is_bool()
+            || self.modifiers.contains_key(&idx)
+            || self.structure.contains_key(&idx)
+            || self.scale_content.contains_key(&idx);
 
-                        if let Some(scale) = (*scale_content_ptr).get(&id_ref) {
-                            shape.scale_content(*scale);
-                        }
-                        shape
-                    }))
-                } else {
-                    Some(&*shape_ptr)
-                }
+        if needs_modification {
+            // Check if we have a cached modified version
+            if let Some(cell) = self.modified_shape_cache.get(&idx) {
+                Some(cell.get_or_init(|| {
+                    let mut modified_shape =
+                        shape.transformed(self.modifiers.get(&idx), self.structure.get(&idx));
+
+                    if self.to_update_bool(&modified_shape) {
+                        math_bools::update_bool_to_path(&mut modified_shape, self);
+                    }
+
+                    if let Some(scale) = self.scale_content.get(&idx) {
+                        modified_shape.scale_content(*scale);
+                    }
+                    modified_shape
+                }))
             } else {
-                Some(&*shape_ptr)
+                Some(shape)
             }
+        } else {
+            if let Some(cell) = self.modified_shape_cache.get(&idx) {
+                return Some(cell.get_or_init(|| {
+                    if let Some(m) = self.find_nearest_ancestor_modifier(idx) {
+                        shape.transformed(Some(&m), None)
+                    } else {
+                        shape.clone()
+                    }
+                }));
+            }
+            Some(shape)
         }
+    }
+
+    // Given an id, returns the depth in the tree-shaped structure
+    // of shapes.
+    pub fn get_depth(&self, id: &Uuid) -> usize {
+        if id == &Uuid::nil() {
+            return 0;
+        }
+
+        let Some(idx) = self.uuid_to_idx.get(id) else {
+            return 0;
+        };
+
+        let shape = &self.shapes[*idx];
+
+        let Some(parent_id) = shape.parent_id else {
+            return 0;
+        };
+
+        self.get_depth(&parent_id) + 1
     }
 
     #[allow(dead_code)]
@@ -275,121 +240,204 @@ impl<'a> ShapesPoolImpl<'a> {
     }
 
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
-        // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
-        // Initialize the cache cells because later we don't want to have the mutable pointer
-
         let mut ids = Vec::<Uuid>::new();
+        let mut modifiers_with_idx = HashMap::with_capacity(modifiers.len());
 
-        let mut modifiers_with_refs = HashMap::with_capacity(modifiers.len());
         for (uuid, matrix) in modifiers {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                // self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
-                modifiers_with_refs.insert(uuid_ref, matrix);
-                ids.push(*uuid_ref);
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                modifiers_with_idx.insert(idx, matrix);
+                ids.push(uuid);
             }
         }
-        self.modifiers = modifiers_with_refs;
 
+        // Expand every root modifier to its full descendant subtree.
+        // When CLJS sends only root shapes (translation on drag), descendants
+        // need the same matrix.
+        // For resize/rotate, propagate-modifiers already includes all descendants.
+        // Descendants are NOT pushed into `ids` / `modifier_uuids`: tile invalidation
+        // via rebuild_modifier_tiles only runs for roots, which is sufficient because
+        // descendants always lie inside the parent's bounding box and are therefore
+        // covered by the parent's old/new tile ranges.
+        let root_pairs: Vec<(usize, skia::Matrix)> = ids
+            .iter()
+            .filter_map(|uuid| {
+                let idx = self.uuid_to_idx.get(uuid).copied()?;
+                let matrix = modifiers_with_idx.get(&idx).copied()?;
+                Some((idx, matrix))
+            })
+            .collect();
+
+        let mut descendants_idxs: Vec<usize> = Vec::new();
+        for (root_idx, matrix) in root_pairs {
+            for descendant_idx in self.collect_all_descendants(root_idx) {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    modifiers_with_idx.entry(descendant_idx)
+                {
+                    e.insert(matrix);
+                    descendants_idxs.push(descendant_idx);
+                }
+            }
+        }
+
+        self.modifiers = modifiers_with_idx;
+
+        for descendant_idx in descendants_idxs {
+            self.modified_shape_cache
+                .insert(descendant_idx, OnceCell::new());
+        }
+
+        // Compute ancestors before consuming `ids` so we can move it into
+        // `modifier_uuids` without a clone.
         let all_ids = shapes::all_with_ancestors(&ids, self, true);
+        // rebuild_modifier_tiles doesn't process every descendant individually.
+        self.modifier_uuids = ids;
         for uuid in all_ids {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                self.modified_shape_cache.insert(idx, OnceCell::new());
             }
         }
     }
 
     pub fn set_structure(&mut self, structure: HashMap<Uuid, Vec<StructureEntry>>) {
-        // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
-        // Initialize the cache cells because later we don't want to have the mutable pointer
-        let mut structure_with_refs = HashMap::with_capacity(structure.len());
+        // Convert HashMap<Uuid, V> to HashMap<usize, V> using indices
+        // Initialize the cache cells for affected shapes
+        let mut structure_with_idx = HashMap::with_capacity(structure.len());
         let mut ids = Vec::<Uuid>::new();
 
         for (uuid, entries) in structure {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                structure_with_refs.insert(uuid_ref, entries);
-                ids.push(*uuid_ref);
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                structure_with_idx.insert(idx, entries);
+                ids.push(uuid);
             }
         }
-        self.structure = structure_with_refs;
+        self.structure = structure_with_idx;
 
         let all_ids = shapes::all_with_ancestors(&ids, self, true);
         for uuid in all_ids {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                self.modified_shape_cache.insert(idx, OnceCell::new());
             }
         }
     }
 
     pub fn set_scale_content(&mut self, scale_content: HashMap<Uuid, f32>) {
-        // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
-        // Initialize the cache cells because later we don't want to have the mutable pointer
-        let mut scale_content_with_refs = HashMap::with_capacity(scale_content.len());
+        // Convert HashMap<Uuid, V> to HashMap<usize, V> using indices
+        // Initialize the cache cells for affected shapes
+        let mut scale_content_with_idx = HashMap::with_capacity(scale_content.len());
         let mut ids = Vec::<Uuid>::new();
 
         for (uuid, value) in scale_content {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                scale_content_with_refs.insert(uuid_ref, value);
-                ids.push(*uuid_ref);
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                scale_content_with_idx.insert(idx, value);
+                ids.push(uuid);
             }
         }
-        self.scale_content = scale_content_with_refs;
+        self.scale_content = scale_content_with_idx;
 
         let all_ids = shapes::all_with_ancestors(&ids, self, true);
         for uuid in all_ids {
-            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            if let Some(idx) = self.uuid_to_idx.get(&uuid).copied() {
+                self.modified_shape_cache.insert(idx, OnceCell::new());
             }
         }
     }
 
-    pub fn clean_all(&mut self) {
+    /// Clears transient per-frame state (modifiers, structure, scale_content)
+    /// and returns the list of UUIDs that had a `modifier` applied at the
+    /// moment of cleaning. The caller can use that list to re-sync the tile
+    /// index / tile cache for those shapes: after cleaning their modifier is
+    /// gone, but if we don't touch their tiles they keep pointing at the
+    /// previous modified position and the tile texture cache may serve stale
+    /// pixels.
+    pub fn clean_all(&mut self) -> Vec<Uuid> {
         self.clean_shape_cache();
+
+        // `modifier_uuids` is kept in sync with `modifiers` by `set_modifiers`,
+        // so we can take it directly — no need to rebuild a reverse index.
+        let modified_uuids = std::mem::take(&mut self.modifier_uuids);
+
         self.modifiers = HashMap::default();
         self.structure = HashMap::default();
         self.scale_content = HashMap::default();
+
+        modified_uuids
     }
 
-    /// Get a reference to the Uuid stored in a shape, if it exists
-    pub fn get_uuid_ref(&self, id: &Uuid) -> Option<&'a Uuid> {
-        let idx = *self.shapes_uuid_to_idx.get(&id)?;
-        // SAFETY: We're returning a reference with lifetime 'a to a Uuid stored
-        // in the shapes Vec. This is safe because the Vec is stable (pre-allocated)
-        // and won't be reallocated.
-        unsafe { Some(&*(&self.shapes[idx].id as *const Uuid)) }
+    /// UUIDs of all shapes that currently have a transform modifier.
+    /// Used by the throttled drag path so per-rAF tile invalidation can
+    /// be done once with the current modifier set instead of once per
+    /// pointer move.
+    ///
+    /// Returns a reference to avoid allocation on every call — callers
+    /// inside hot render loops should hold this reference rather than
+    /// calling `modifier_ids()` repeatedly.
+    pub fn modifier_ids(&self) -> &[Uuid] {
+        &self.modifier_uuids
     }
 
-    pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl<'a> {
+    pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl {
         let Some(shape) = self.get(id) else {
             panic!("Subtree not found");
         };
 
         let mut shapes = vec![];
-        let mut idx = 0;
-        let mut shapes_uuid_to_idx = HashMap::default();
+        let mut new_idx = 0;
+        let mut uuid_to_idx = HashMap::default();
 
-        for id in shape.all_children_iter(self, true, true) {
-            let Some(shape) = self.get(&id) else {
+        for child_id in shape.all_children_iter(self, true, true) {
+            let Some(child_shape) = self.get(&child_id) else {
                 panic!("Not found");
             };
-            shapes.push(shape.clone());
-
-            let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
-            shapes_uuid_to_idx.insert(id_ref, idx);
-            idx += 1;
+            shapes.push(child_shape.clone());
+            uuid_to_idx.insert(child_id, new_idx);
+            new_idx += 1;
         }
 
-        let mut result = ShapesPoolImpl {
+        ShapesPoolImpl {
             shapes,
-            counter: idx,
-            shapes_uuid_to_idx,
+            counter: new_idx,
+            uuid_to_idx,
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
+            modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
-        };
-        result.rebuild_references();
+        }
+    }
 
+    fn collect_all_descendants(&self, idx: usize) -> Vec<usize> {
+        let mut result = Vec::new();
+        let mut queue: VecDeque<&Uuid> = VecDeque::new();
+        let shape = &self.shapes[idx];
+        for child_id in shape.children_ids_iter(false) {
+            queue.push_back(child_id);
+        }
+        while let Some(child_id) = queue.pop_front() {
+            if let Some(&child_idx) = self.uuid_to_idx.get(child_id) {
+                result.push(child_idx);
+                let child_shape = &self.shapes[child_idx];
+                for grandchild_id in child_shape.children_ids_iter(false) {
+                    queue.push_back(grandchild_id);
+                }
+            }
+        }
         result
+    }
+
+    fn find_nearest_ancestor_modifier(&self, idx: usize) -> Option<Matrix> {
+        let mut current_idx = idx;
+        loop {
+            let shape = &self.shapes[current_idx];
+            let parent_id = shape.parent_id?;
+            if parent_id == Uuid::nil() {
+                return None;
+            }
+            let &parent_idx = self.uuid_to_idx.get(&parent_id)?;
+            if let Some(matrix) = self.modifiers.get(&parent_idx) {
+                return Some(*matrix);
+            }
+            current_idx = parent_idx;
+        }
     }
 
     fn to_update_bool(&self, shape: &Shape) -> bool {
@@ -398,11 +446,44 @@ impl<'a> ShapesPoolImpl<'a> {
         }
 
         let default = &Matrix::default();
-        let parent_modifier = self.modifiers.get(&shape.id).unwrap_or(default);
+
+        // Get parent modifier by index
+        let parent_idx = self.uuid_to_idx.get(&shape.id);
+        let parent_modifier = parent_idx
+            .and_then(|idx| self.modifiers.get(idx))
+            .unwrap_or(default);
 
         // Returns true if the transform of any child is different to the parent's
-        shape.all_children_iter(self, true, false).any(|id| {
-            !math::is_close_matrix(parent_modifier, self.modifiers.get(&id).unwrap_or(default))
+        shape.all_children_iter(self, true, false).any(|child_id| {
+            let child_modifier = self
+                .uuid_to_idx
+                .get(&child_id)
+                .and_then(|idx| self.modifiers.get(idx))
+                .unwrap_or(default);
+            !math::is_close_matrix(parent_modifier, child_modifier)
         })
+    }
+}
+
+impl Default for ShapesPoolImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Clone for ShapesPoolImpl {
+    fn clone(&self) -> Self {
+        ShapesPoolImpl {
+            shapes: self.shapes.clone(),
+            counter: self.counter,
+            uuid_to_idx: self.uuid_to_idx.clone(),
+            // The modified_shape_cache is a derived/computed cache; reset it on clone
+            // so it gets lazily rebuilt on demand rather than cloning OnceCell state.
+            modified_shape_cache: HashMap::default(),
+            modifiers: self.modifiers.clone(),
+            modifier_uuids: self.modifier_uuids.clone(),
+            structure: self.structure.clone(),
+            scale_content: self.scale_content.clone(),
+        }
     }
 }

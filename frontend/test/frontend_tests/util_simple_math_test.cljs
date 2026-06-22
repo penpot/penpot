@@ -2,13 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.util-simple-math-test
   (:require
    [app.common.math :as cm]
    [app.util.simple-math :as sm]
-   [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest test-parser-inst
@@ -48,7 +47,7 @@
     (let [result (sm/expr-eval "*10" 20)]
       (t/is (= result 200))))
 
-  (t/testing "Evaluate a negative number (not relative substraction)"
+  (t/testing "Evaluate a negative number (not relative subtraction)"
     (let [result (sm/expr-eval "-10" 20)]
       (t/is (= result -10))))
 
@@ -88,3 +87,23 @@
           result2 (sm/expr-eval "(20,333 + 10%) * (1 / 3)" 20)]
       (t/is (cm/close? result1 result2 7.44433333)))))
 
+(t/deftest test-error-handling
+  (t/testing "Division by zero should return nil"
+    (let [result (sm/expr-eval "10/0" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Expression with division by zero should return nil"
+    (let [result (sm/expr-eval "(10 + 5) / 0" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Invalid syntax should return nil"
+    (let [result (sm/expr-eval "asdasd+2" 999)]
+      (t/is (= result nil))))
+
+  (t/testing "Empty expression with no init-value should return nil"
+    (let [result (sm/expr-eval "" nil)]
+      (t/is (= result nil))))
+
+  (t/testing "Partial invalid expression should return nil"
+    (let [result (sm/expr-eval "10 + abc" 100)]
+      (t/is (= result nil)))))

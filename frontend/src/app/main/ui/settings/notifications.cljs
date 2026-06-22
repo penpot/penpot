@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.notifications
   (:require-macros [app.main.style :as stl])
@@ -82,6 +82,7 @@
 
        [:> fm/submit-button*
         {:label (tr "dashboard.settings.notifications.submit")
+         :disabled (= (:data @form) (:initial @form))
          :data-testid "submit-settings"
          :class (stl/css :update-btn)}]]]]))
 

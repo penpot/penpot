@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.svg-attrs
   (:require-macros [app.main.style :as stl])
@@ -17,7 +17,8 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
+(mf/defc attribute-value*
+  [{:keys [attr value on-change on-delete]}]
   (let [last-value (mf/use-state value)
 
         handle-change*
@@ -56,13 +57,24 @@
          (str (d/name (last attr)))]
         (for [[key value] value]
           [:div {:class (stl/css :attr-row) :key key}
-           [:& attribute-value {:key key
-                                :attr (conj attr key)
-                                :value value
-                                :on-change on-change
-                                :on-delete on-delete}]])])]))
+           [:> attribute-value* {:key key
+                                 :attr (conj attr key)
+                                 :value value
+                                 :on-change on-change
+                                 :on-delete on-delete}]])])]))
 
-(mf/defc svg-attrs-menu [{:keys [ids values]}]
+(defn- check-svg-attrs-menu-props
+  [old-props new-props]
+  (let [old-values (unchecked-get old-props "values")
+        new-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (get old-values :svg-attrs)
+                     (get new-values :svg-attrs)))))
+
+(mf/defc svg-attrs-menu*
+  {::mf/wrap [#(mf/memo' % check-svg-attrs-menu-props)]}
+  [{:keys [ids values]}]
   (let [state*          (mf/use-state true)
         open?           (deref state*)
         attrs           (:svg-attrs values)
@@ -103,8 +115,8 @@
        (when open?
          [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]
-            [:& attribute-value {:key attr-key
-                                 :attr [attr-key]
-                                 :value attr-value
-                                 :on-change handle-change
-                                 :on-delete handle-delete}])])])))
+            [:> attribute-value* {:key attr-key
+                                  :attr [attr-key]
+                                  :value attr-value
+                                  :on-change handle-change
+                                  :on-delete handle-delete}])])])))

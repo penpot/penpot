@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.exceptions
   "A helpers for work with exceptions."
@@ -10,15 +10,19 @@
   (:refer-clojure :exclude [instance?])
   (:require
    #?(:clj [clojure.stacktrace :as strace])
+   [app.common.data :refer [obfuscate-string]]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [clojure.core :as c]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound])
+   [cuerdas.core :as str])
   #?(:clj
      (:import
       clojure.lang.IPersistentMap)))
+
+(def ^:private sensitive-fields
+  "Keys whose values must be obfuscated in validation explains."
+  #{:password :old-password :token :invitation-token})
 
 #?(:clj (set! *warn-on-reflection* true))
 
@@ -110,15 +114,26 @@
          (contains? data :explain))
     (explain (:explain data) opts)
 
-    (and (contains? data ::s/problems)
-         (contains? data ::s/value)
-         (contains? data ::s/spec))
-    (binding [s/*explain-out* expound/printer]
-      (with-out-str
-        (s/explain-out (update data ::s/problems #(take (:length opts 10) %)))))
-
     (contains? data ::sm/explain)
-    (sm/humanize-explain (::sm/explain data) opts)))
+    (let [exp (::sm/explain data)
+          sanitize-map (fn sanitize-map [m]
+                         (reduce-kv
+                          (fn [acc k v]
+                            (let [k* (if (string? k) (keyword k) k)]
+                              (cond
+                                (contains? sensitive-fields k*)
+                                (assoc acc k (if (map? v)
+                                               (sanitize-map v)
+                                               (obfuscate-string v true)))
+
+                                (map? v) (assoc acc k (sanitize-map v))
+                                :else (assoc acc k v))))
+                          {}
+                          m))
+          sanitize-explain (fn [exp]
+                             (cond-> exp
+                               (:value exp) (update :value sanitize-map)))]
+      (sm/humanize-explain (sanitize-explain exp) opts))))
 
 #?(:clj
    (defn format-throwable
@@ -224,9 +239,77 @@
                        (recur cause))))))]
 
        (with-out-str
-         (print-all cause)))))
+         (print-all cause))))
 
-#?(:clj
-   (defn print-throwable
+   :cljs
+   (defn format-throwable
      [cause & {:as opts}]
-     (println (format-throwable cause opts))))
+     (with-out-str
+       (println "====================")
+       (when-let [exdata (ex-data cause)]
+         (when-let [hint (or (get exdata :hint)
+                             (ex-message cause))]
+           (when (str/index-of hint "\n")
+             (println "Hint:")
+             (println "--------------------")
+             (println hint)
+             (println)))
+
+         (when-let [explain (get exdata ::sm/explain)]
+           (println "Explain:")
+           (println "--------------------")
+
+           (println (sm/humanize-explain explain))
+           (println))
+
+         (when-let [explain (get exdata :explain)]
+           (println "Server Explain:")
+           (println "--------------------")
+           (println explain))
+
+         (println "Data:")
+         (println "--------------------")
+         (pp/pprint (dissoc exdata ::sm/explain :explain))
+         (println))
+
+       (when-let [trace (.-stack cause)]
+         (println "Trace:")
+         (println "--------------------")
+         (println (.-stack cause)))
+
+       (println "===================="))))
+
+(defn first-line
+  [s]
+  (let [break-index (str/index-of s "\n")]
+    (if (pos? break-index)
+      (subs s 0 break-index)
+      s)))
+
+(defn print-throwable
+  [cause & {:as opts}]
+  #?(:clj
+     (println (format-throwable cause opts))
+     :cljs
+     (let [prefix (get opts :prefix)
+           data   (ex-data cause)
+           title  (cond->> (or (some-> (:hint data) first-line)
+                               (ex-message cause))
+                    (string? prefix)
+                    (str prefix ": "))]
+
+       (js/console.group title)
+       (try
+         (js/console.log (format-throwable cause))
+         (loop [cause (ex-cause cause)]
+           (when cause
+             (js/console.log "\nCaused by:")
+             (js/console.log (format-throwable cause))
+             (recur (ex-cause cause))))
+         (finally
+           (js/console.groupEnd))))))
+
+(defn get-hint
+  [cause]
+  (or (some-> (ex-data cause) (get :hint) first-line)
+      (some-> (ex-message cause) first-line)))

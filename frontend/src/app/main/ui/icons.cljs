@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.icons
   (:refer-clojure :exclude [import mask])
@@ -17,9 +17,9 @@
 (def ^:icon logo (icon-xref :penpot-logo))
 (def ^:icon logo-icon (icon-xref :penpot-logo-icon))
 (def ^:icon logo-error-screen (icon-xref :logo-error-screen))
-(def ^:icon login-illustration (icon-xref :login-illustration))
 (def ^:icon logo-subscription (icon-xref :logo-subscription))
 (def ^:icon logo-subscription-light (icon-xref :logo-subscription-light))
+(def ^:icon nitrate-welcome (icon-xref :nitrate-welcome))
 
 (def ^:icon brand-openid (icon-xref :brand-openid))
 (def ^:icon brand-github (icon-xref :brand-github))
@@ -114,7 +114,7 @@
 (def ^:icon easing-ease (icon-xref :easing-ease))
 (def ^:icon easing-linear (icon-xref :easing-linear))
 (def ^:icon effects (icon-xref :effects))
-(def ^:icon elipse (icon-xref :elipse))
+(def ^:icon ellipse (icon-xref :ellipse))
 (def ^:icon exit (icon-xref :exit))
 (def ^:icon expand (icon-xref :expand))
 (def ^:icon external-link (icon-xref :external-link))

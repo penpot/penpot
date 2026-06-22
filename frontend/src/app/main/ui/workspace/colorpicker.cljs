@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.colorpicker
   (:require-macros [app.main.style :as stl])
@@ -15,7 +15,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cfg]
-   [app.main.data.event :as-alias ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace.colors :as dc]
@@ -26,19 +26,18 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
+   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs*]]
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
-   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
-   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
-   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
+   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector*]]
+   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector*]]
+   [app.main.ui.workspace.colorpicker.libraries :refer [libraries*]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.colorpicker.shortcuts :as sc]
    [app.util.dom :as dom]
@@ -46,7 +45,6 @@
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
    [rumext.v2.util :as mfu]))
 
@@ -83,6 +81,15 @@
           hsl-from (cc/hsv->hsl [h 0.0 v])
           hsl-to (cc/hsv->hsl [h 1.0 v])
 
+          ;; HSL-mode gradients. For S: fix current lightness, sweep
+          ;; saturation 0 → 1. For L: fix current saturation, sweep
+          ;; lightness 0 → 0.5 (pure hue) → 1. All computed at the
+          ;; current hue.
+          [_ cur-hsl-s cur-hsl-l] (cc/rgb->hsl rgb)
+          hsl-sat-from  [h 0.0 cur-hsl-l]
+          hsl-sat-to    [h 1.0 cur-hsl-l]
+          lightness-mid [h cur-hsl-s 0.5]
+
           format-hsl (fn [[h s l]]
                        (str/fmt "hsl(%s, %s, %s)"
                                 h
@@ -91,10 +98,13 @@
       (dom/set-css-property! node "--color" (str/join ", " rgb))
       (dom/set-css-property! node "--hue-rgb" (str/join ", " hue-rgb))
       (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
-      (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
+      (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to))
+      (dom/set-css-property! node "--hsl-saturation-grad-from" (format-hsl hsl-sat-from))
+      (dom/set-css-property! node "--hsl-saturation-grad-to" (format-hsl hsl-sat-to))
+      (dom/set-css-property! node "--lightness-grad-mid" (format-hsl lightness-mid)))))
 
-(mf/defc colorpicker
-  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab]}]
+(mf/defc colorpicker*
+  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
@@ -129,10 +139,15 @@
         active-color-tab*      (hooks/use-persisted-state ::color-tab "ramp")
         active-color-tab       (deref active-color-tab*)
 
+        ;; Inline HSB/HSL toggle inside the HSBA tab — shared between
+        ;; the slider selector (for labels) and the numeric inputs.
+        hsb-mode*              (hooks/use-persisted-state ::hsb-mode :hsb)
+        hsb-mode               (deref hsb-mode*)
+
         drag?*                 (mf/use-state false)
         drag?                  (deref drag?*)
 
-        type                   (if (= active-color-tab "hsva") :hsv :rgb)
+        type                   (if (= active-color-tab "hsva") :hsb :rgb)
 
         fill-image-ref         (mf/use-ref nil)
 
@@ -174,9 +189,9 @@
 
              (st/emit!
               (dc/update-colorpicker-color {:image image} true)
-              (ptk/data-event ::ev/event {::ev/name "toggle-image-aspect-ratio"
-                                          ::ev/origin "workspace:colorpicker"
-                                          :checked keep-aspect-ratio?})))))
+              (ev/event {::ev/name "toggle-image-aspect-ratio"
+                         ::ev/origin "workspace:colorpicker"
+                         :checked keep-aspect-ratio?})))))
 
         on-change-tab
         (mf/use-fn #(reset! active-color-tab* %))
@@ -341,11 +356,6 @@
                  (mapv #(assoc %2 :offset (:offset %1)) stops new-stops)]
              (st/emit! (dc/update-colorpicker-stops stops)))))
 
-        handle-change-gradient-opacity
-        (mf/use-fn
-         (fn [value]
-           (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
-
         render-wasm?
         (features/use-feature "render-wasm/v1")
 
@@ -357,7 +367,7 @@
            {:aria-label "Harmony"
             :icon i/rgba-complementary
             :id "harmony"}
-           {:aria-label "HSVA"
+           {:aria-label "HSBA"
             :icon i/hsva
             :id "hsva"}])
 
@@ -366,7 +376,12 @@
     ;; Initialize colorpicker state
     (mf/with-effect []
       (st/emit! (dc/initialize-colorpicker on-change active-fill-tab))
-      (partial st/emit! (dc/finalize-colorpicker)))
+      ;; Always deactivate picking mode on unmount so that :picking-color? never
+      ;; stays true if the modal closes for any reason other than the normal
+      ;; pointer-up path (e.g. ESC, navigation, programmatic hide).
+      (fn []
+        (st/emit! (dc/stop-picker)
+                  (dc/finalize-colorpicker))))
 
     ;; Update colorpicker with external color changes
     (mf/with-effect [data]
@@ -394,17 +409,6 @@
       [:div {:class (stl/css :top-actions)}
 
        [:div {:class (stl/css :top-actions-right)}
-        (when (and (= color-style :direct-color)
-                   (= :gradient selected-mode))
-          [:div {:class (stl/css :opacity-input-wrapper)}
-           [:span {:class (stl/css :icon-text)} "%"]
-           [:> numeric-input*
-            {:value (-> data :opacity opacity->string)
-             :on-change handle-change-gradient-opacity
-             :default 100
-             :data-testid "opacity-global-input"
-             :min 0
-             :max 100}]])
 
         (when (and (= color-style :direct-color)
                    (or (not disable-gradient) (not disable-image)))
@@ -418,11 +422,11 @@
           [:& radio-buttons {:selected color-style
                              :on-change toggle-token-color
                              :name "color-style"}
-           [:& radio-button {:icon deprecated-icon/swatches
+           [:& radio-button {:icon i/swatches
                              :value :direct-color
                              :title (tr "labels.color")
                              :id "opt-color"}]
-           [:& radio-button {:icon deprecated-icon/tokens
+           [:& radio-button {:icon i/tokens
                              :value :token-color
                              :title (tr "workspace.colorpicker.color-tokens")
                              :id "opt-token-color"}]])]
@@ -511,27 +515,31 @@
                     :on-finish-drag on-finish-drag}]
 
                   "harmony"
-                  [:& harmony-selector
-                   {:color current-color
-                    :disable-opacity disable-opacity
-                    :on-change handle-change-color
-                    :on-start-drag on-start-drag}]
-
-                  "hsva"
-                  [:& hsva-selector
+                  [:> harmony-selector*
                    {:color current-color
                     :disable-opacity disable-opacity
                     :on-change handle-change-color
                     :on-start-drag on-start-drag
+                    :on-finish-drag on-finish-drag}]
+
+                  "hsva"
+                  [:> hsva-selector*
+                   {:color current-color
+                    :disable-opacity disable-opacity
+                    :mode hsb-mode
+                    :on-change handle-change-color
+                    :on-start-drag on-start-drag
                     :on-finish-drag on-finish-drag}]))]]
 
-            [:& color-inputs
+            [:> color-inputs*
              {:type type
               :disable-opacity disable-opacity
+              :mode hsb-mode
+              :on-mode-change #(reset! hsb-mode* %)
               :color current-color
               :on-change handle-change-color}]
 
-            [:& libraries
+            [:> libraries*
              {:state state
               :current-color current-color
               :disable-gradient disable-gradient
@@ -542,6 +550,7 @@
 
         [:> token-section* {:combined-tokens combined-tokens
                             :on-token-change on-token-change
+                            :applied-token applied-token
                             :color-origin color-origin}])]
      (when (fn? on-accept)
        [:div {:class (stl/css :actions)}
@@ -728,6 +737,7 @@
            on-token-change
            on-close
            tab
+           applied-token
            on-accept]}]
   (let [vport       (mf/deref viewport)
         dirty?      (mf/use-var false)
@@ -784,14 +794,15 @@
            :data-testid "colorpicker"
            :style style}
 
-     [:& colorpicker {:data data
-                      :combined-tokens grouped-tokens-by-set
-                      :disable-gradient disable-gradient
-                      :disable-opacity disable-opacity
-                      :disable-image disable-image
-                      :on-token-change on-token-change
-                      :on-change on-change'
-                      :origin origin
-                      :tab tab
-                      :color-origin color-origin
-                      :on-accept on-accept}]]))
+     [:> colorpicker* {:data data
+                       :combined-tokens grouped-tokens-by-set
+                       :disable-gradient disable-gradient
+                       :disable-opacity disable-opacity
+                       :disable-image disable-image
+                       :on-token-change on-token-change
+                       :applied-token applied-token
+                       :on-change on-change'
+                       :origin origin
+                       :tab tab
+                       :color-origin color-origin
+                       :on-accept on-accept}]]))

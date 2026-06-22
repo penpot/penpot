@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.text.v2-editor
   (:require-macros [app.main.style :as stl])
@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
    [app.common.types.color :as color]
    [app.common.types.text :as txt]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
@@ -31,6 +33,8 @@
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
+   [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn get-contrast-color [background-color]
@@ -44,6 +48,20 @@
     (let [editor-root (.-root editor)
           result (.-textContent editor-root)]
       (when (not= result "") result))))
+
+(defn coalesce-per-tick
+  "Return a function that runs `f` at most once per JS tick.
+  Rationale: `needslayout` can fire on every input (including key repeat). We want
+  to break nested store update loops."
+  [f]
+  (let [scheduled?* (atom false)]
+    (fn []
+      (when-not @scheduled?*
+        (reset! scheduled?* true)
+        (ts/asap
+         (fn []
+           (reset! scheduled?* false)
+           (f)))))))
 
 (defn- get-fonts
   [content]
@@ -81,12 +99,14 @@
           default-font))
 
         options
-        #js {:styleDefaults style-defaults}
+        #js {:styleDefaults style-defaults
+             :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")}
 
         instance
         (dwt/create-editor editor-node canvas-node options)
 
-        update-name? (nil? content)
+        ;; Store original content to compare name later
+        original-content content
 
         on-key-up
         (fn [event]
@@ -97,10 +117,25 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content
-                                                        :update-name? update-name?
-                                                        :name (gen-name instance)
-                                                        :finalize? true)))
+            (let [state @st/state
+                  objects (dsh/lookup-page-objects state)
+                  shape (get objects shape-id)
+                  current-name (:name shape)
+                  generated-name (gen-name instance)
+                  ;; Update name if: (1) it's a new shape (nil original content), or
+                  ;; (2) the current name matches the generated name from original content
+                  ;; (meaning it was never manually renamed)
+                  update-name? (or (nil? original-content)
+                                   (and (some? current-name)
+                                        (some? original-content)
+                                        (= current-name (txt/generate-shape-name (txt/content->text original-content)))))]
+              (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                          :update-name? update-name?
+                                                          :name generated-name
+                                                          :finalize? true
+                                                          ;; Single undo entry for the whole edit
+                                                          :save-undo? true
+                                                          :original-content original-content))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))
@@ -112,21 +147,35 @@
 
         on-style-change
         (fn [event]
-          (let [styles (styles/get-styles-from-event event)]
+          (let [styles     (styles/get-styles-from-event event)
+                fills      (:fills styles)
+                fill-color (when (sequential? fills) (some :fill-color fills))]
+            ;; Dynamically update the caret color as the cursor moves between spans
+            (when-let [container-node (mf/ref-val container-ref)]
+              (dom/set-style! container-node "--text-editor-caret-color"
+                              (or fill-color text-color)))
             (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
 
         on-needs-layout
-        (fn []
-          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true)))
-          ;; FIXME: We need to find a better way to trigger layout changes.
-          #_(st/emit!
-             (dwt/v2-update-text-shape-position-data shape-id [])))
+        (coalesce-per-tick
+         (fn []
+           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+             ;; For WASM renderer, use the dedicated layout sync to avoid touching shape content
+             ;; during `needslayout` bursts. For non-wasm, keep existing behavior.
+             (if (features/active-feature? @st/state "render-wasm/v1")
+               (st/emit! (dwt/v2-sync-wasm-text-layout shape-id content))
+               (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                           :update-name? true
+                                                           :save-undo? false))))))
 
         on-change
         (fn []
-          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))
+          (let [is-empty? (dwt/is-empty? instance)
+                save-undo? (not is-empty?)]
+            (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+              (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                          :update-name? true
+                                                          :save-undo? save-undo?)))))
 
         on-clipboard-change
         (fn [event]
@@ -134,7 +183,6 @@
             (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
-    (.addEventListener ^js instance "blur" on-blur)
     (.addEventListener ^js instance "focus" on-focus)
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
@@ -149,8 +197,12 @@
 
     ;; This function is called when the component is unmounted
     (fn []
+      ;; Explicitly call on-blur here instead of relying on browser blur events,
+      ;; because in Firefox blur is not reliably fired when leaving the text editor
+      ;; by clicking elsewhere. The component does unmount when the shape is
+      ;; deselected, so we can safely call the blur handler here to finalize the editor.
+      (on-blur)
       (.removeEventListener ^js global/document "keyup" on-key-up)
-      (.removeEventListener ^js instance "blur" on-blur)
       (.removeEventListener ^js instance "focus" on-focus)
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
@@ -159,11 +211,32 @@
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
 
+(defn vertical-align-editor-classes
+  "Returns `[align-top? align-center? align-bottom?]` for the text editor root
+  flex layout. When `render-wasm?` is true, the `foreignObject` is already
+  positioned using the same vertical offset as Skia (`content_rect`); applying
+  `justify-content` center/end here would double the offset and misalign the DOM
+  editor with the rendered text, caret, and selection."
+  [content render-wasm?]
+  (if render-wasm?
+    [true false false]
+    [(= (:vertical-align content "top") "top")
+     (= (:vertical-align content) "center")
+     (= (:vertical-align content) "bottom")]))
+
 (defn get-color-from-content [content]
-  (let [fills (->> (tree-seq map? :children content)
-                   (mapcat :fills)
-                   (filter :fill-color))]
-    (some :fill-color fills)))
+  (let [nodes     (tree-seq map? :children content)
+        get-color (fn [node]
+                    ;; Handle both new format (:fills vector) and old/deprecated format
+                    ;; (direct :fill-color on the content node — pre-fills-refactor files)
+                    (or (some :fill-color (:fills node))
+                        (:fill-color node)))]
+    ;; Prefer inline (leaf) text nodes over paragraph nodes. The paragraph's :fills
+    ;; tracks the last-typed color, so using it directly would make the caret take
+    ;; the last span's color rather than the first visible span's color.
+    ;; Inline nodes have no :type; they are identified by the presence of :text.
+    (or (->> nodes (filter #(contains? % :text)) (some get-color))
+        (->> nodes (some get-color)))))
 
 (defn get-default-text-color
   "Returns the appropriate text color based on fill, frame, and background."
@@ -179,7 +252,7 @@
   "Text editor (HTML)"
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [shape canvas-ref]}]
+  [{:keys [shape canvas-ref render-wasm?] :or {render-wasm? false}}]
   (let [content          (:content shape)
         shape-id         (dm/get-prop shape :id)
         fill-color       (get-color-from-content content)
@@ -197,6 +270,9 @@
 
         text-color       (or fill-color (get-default-text-color {:frame frame
                                                                  :background-color background-color}) color/black)
+
+        [align-top? align-center? align-bottom?]
+        (vertical-align-editor-classes content render-wasm?)
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
@@ -226,17 +302,19 @@
                      (stl/css :text-editor-container))
       :ref container-ref
       :data-testid "text-editor-container"
-      :style {:width (:width shape)
-              :height (:height shape)}
-      ;; We hide the editor when is blurred because otherwise the
-      ;; selection won't let us see the underlying text. Use opacity
-      ;; because display or visibility won't allow to recover focus
-      ;; afterwards.
+      :style {:width "var(--editor-container-width)"
+              :height "var(--editor-container-height)"
+              :min-width "var(--editor-container-min-width, 1px)"
+              :min-height "var(--editor-container-min-height, 1px)"}}
+     ;; We hide the editor when is blurred because otherwise the
+     ;; selection won't let us see the underlying text. Use opacity
+     ;; because display or visibility won't allow to recover focus
+     ;; afterwards.
 
-      ;; IMPORTANT! This is now done through DOM mutations (see
-      ;; on-blur and on-focus) but I keep this for future references.
-      ;; :opacity (when @blurred 0)}}
-      }
+     ;; IMPORTANT! This is now done through DOM mutations (see
+     ;; on-blur and on-focus) but I keep this for future references.
+     ;; :opacity (when @blurred 0)}}
+
      [:div
       {:class (dm/str
                "mousetrap "
@@ -245,9 +323,9 @@
                 :grow-type-fixed (= (:grow-type shape) :fixed)
                 :grow-type-auto-width (= (:grow-type shape) :auto-width)
                 :grow-type-auto-height (= (:grow-type shape) :auto-height)
-                :align-top    (= (:vertical-align content "top") "top")
-                :align-center (= (:vertical-align content) "center")
-                :align-bottom (= (:vertical-align content) "bottom")))
+                :align-top    align-top?
+                :align-center align-center?
+                :align-bottom align-bottom?))
        :ref editor-ref
        :data-testid "text-editor-content"
        :data-x (dm/get-prop shape :x)
@@ -265,7 +343,12 @@
     "bottom" "flex-end"
     nil))
 
-;;
+(defn- font-family-from-font-id [font-id]
+  (if (str/includes? font-id "gfont-noto-sans")
+    (let [lang (str/replace font-id #"gfont\-noto\-sans\-" "")]
+      (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
+    "Noto Color Emoji"))
+
 ;; Text Editor Wrapper
 ;; This is an SVG element that wraps the HTML editor.
 ;;
@@ -277,6 +360,10 @@
   [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
+
+        fallback-fonts (wasm.api/fonts-from-text-content (:content shape) false)
+        fallback-families (map (fn [font]
+                                 (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         clip-id   (dm/str "text-edition-clip" shape-id)
 
@@ -293,8 +380,11 @@
         ;; NOTE: this teoretically breaks hooks rules, but in practice
         ;; it is imposible to really break it
         maybe-zoom
-        (when (cf/check-browser? :safari-16)
+        (when (cf/check-browser? :safari)
           (mf/deref refs/selected-zoom))
+
+        vbox
+        (mf/deref refs/vbox)
 
         shape (cond-> shape
                 (some? text-modifier)
@@ -303,12 +393,32 @@
                 (some? modifiers)
                 (gsh/transform-shape modifiers))
 
-        [x y width height]
-        (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
-                {:keys [x y]} (:selrect shape)]
+        render-wasm? (mf/use-memo #(features/active-feature? @st/state "render-wasm/v1"))
 
-            [x y width height])
+        [{:keys [x y width height selrect-width selrect-height]} transform]
+        (if render-wasm?
+          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+                selrect-transform (mf/deref refs/workspace-selrect)
+                [selrect transform] (dsh/get-selrect selrect-transform shape)
+                selrect-height (:height selrect)
+                selrect-width (:width selrect)
+                max-width (max width selrect-width)
+                max-height (max height selrect-height)
+                ;; During auto-width editing we keep the shape width trimmed, but the caret
+                ;; must be able to move after trailing spaces. Expand only the editor
+                ;; overlay up to one viewport width to avoid clipping caret rendering.
+                viewport-width (or (:width vbox) 0)
+                overlay-width (if (= (:grow-type shape) :auto-width)
+                                (+ max-width viewport-width)
+                                max-width)
+                valign (-> shape :content :vertical-align)
+                y (:y selrect)
+                y (case valign
+                    "bottom" (+ y (- selrect-height height))
+                    "center" (+ y (/ (- selrect-height height) 2))
+                    y)]
+            [(assoc selrect :y y :width overlay-width :height max-height
+                    :selrect-width selrect-width :selrect-height selrect-height) transform])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -319,21 +429,43 @@
                                 (dm/get-prop shape :width))
                 height (mth/max (dm/get-prop bounds :height)
                                 (dm/get-prop shape :height))]
-            [x y width height]))
+            [(grc/make-rect x y width height) (gsh/transform-matrix shape)]))
 
         style
         (cond-> #js {:pointerEvents "all"}
+          render-wasm?
+          (obj/merge!
+           #js {"--editor-container-width" "auto"
+                "--editor-container-height" "auto"
+                "--editor-container-min-width" (dm/str (max 1 selrect-width) "px")
+                "--editor-container-min-height" (dm/str (max 1 selrect-height) "px")
+                "--fallback-families" (if (seq fallback-families) (dm/str (str/join ", " fallback-families)) "sourcesanspro")
+                :display "flex"})
 
-          (not (cf/check-browser? :safari))
+          (not render-wasm?)
+          (obj/merge!
+           #js {"--editor-container-width" (dm/str (max 1 width) "px")
+                "--editor-container-height" (dm/str (max 1 height) "px")})
+
+          ;; Transform is necessary when there is a text overflow and the vertical
+          ;; aligment is center or bottom.
+          (and (not render-wasm?)
+               (not (cf/check-browser? :safari-16)))
           (obj/merge!
            #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
 
-          (cf/check-browser? :safari-17)
+          (and (cf/check-browser? :safari) (not (cf/check-browser? :safari-16)))
           (obj/merge!
            #js {:height "100%"
                 :display "flex"
                 :flexDirection "column"
                 :justifyContent (shape->justify shape)})
+
+          (or (cf/check-browser? :safari-26) (cf/check-browser? :safari-18))
+          (obj/merge!
+           #js {:position "fixed"
+                :transform-origin "top left"
+                :transform (dm/fmt "scale(%)" maybe-zoom)})
 
           (cf/check-browser? :safari-16)
           (obj/merge!
@@ -345,7 +477,8 @@
                              (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
-                     :transform (dm/str (gsh/transform-matrix shape))}
+                     :transform (dm/str transform)
+                     :data-testid "text-editor"}
      [:defs
       [:clipPath {:id clip-id}
        [:rect {:x x :y y :width width :height height}]]]
@@ -354,4 +487,5 @@
       [:div {:style style}
        [:& text-editor-html {:shape shape
                              :canvas-ref canvas-ref
+                             :render-wasm? render-wasm?
                              :key (dm/str shape-id)}]]]]))

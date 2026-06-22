@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.srepl.cli
   "PREPL API for external usage (CLI or ADMIN)"
@@ -53,7 +53,7 @@
     :or {is-active true}}]
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [system]
              (let [password (derive-password password)
                    params   {:id (uuid/next)
                              :email email
@@ -61,8 +61,8 @@
                              :is-active is-active
                              :password password
                              :props {}}]
-               (->> (cmd.auth/create-profile! conn params)
-                    (cmd.auth/create-profile-rels! conn)))))))
+               (->> (cmd.auth/create-profile system params)
+                    (cmd.auth/create-profile-rels system)))))))
 
 (defmethod exec-command "update-profile"
   [{:keys [fullname email password is-active]}]

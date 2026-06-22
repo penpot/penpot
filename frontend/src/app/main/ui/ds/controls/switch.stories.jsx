@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 import * as React from "react";
 import Components from "@target/components";
@@ -20,17 +20,17 @@ export default {
     disabled: {
       control: { type: "boolean" },
       description: "Whether the switch is disabled",
-    }
+    },
   },
   args: {
-    disabled: false
+    disabled: false,
   },
   parameters: {
-    controls: { exclude: ["id", "class", "aria-label", "default-checked", "on-change"] },
+    controls: {
+      exclude: ["id", "class", "aria-label", "default-checked", "on-change"],
+    },
   },
-  render: ({ ...args }) => (
-    <Switch {...args} />
-  ),
+  render: ({ ...args }) => <Switch {...args} />,
 };
 
 export const Default = {
@@ -38,23 +38,20 @@ export const Default = {
     label: "Toggle something",
     disabled: false,
   },
-  render: ({ ...args }) => (
-    <Switch {...args} />
-  ),
+  render: ({ ...args }) => <Switch {...args} />,
 };
 
 export const WithoutLabel = {
   args: {
     disabled: false,
   },
-  render: ({ ...args }) => (
-    <Switch {...args} />
-  ),
+  render: ({ ...args }) => <Switch {...args} />,
 };
 
 export const WithLongLabel = {
   args: {
-    label: "This is a very long label that demonstrates how the switch component handles text wrapping and layout when the label content is extensive",
+    label:
+      "This is a very long label that demonstrates how the switch component handles text wrapping and layout when the label content is extensive",
     disabled: false,
   },
   render: ({ ...args }) => (

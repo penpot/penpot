@@ -3,7 +3,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns  app.main.ui.ds.controls.shared.option
   (:require-macros
@@ -20,8 +20,16 @@
     [:icon {:optional true} [:maybe :string]]
     [:selected {:optional true} :boolean]
     [:focused {:optional true} :boolean]
+    [:disabled {:optional true} :boolean]
     [:dimmed {:optional true} :boolean]
     [:label {:optional true} :string]
+    [:title {:optional true} [:maybe :string]]
+    [:avatar {:optional true}
+     [:maybe
+      [:map
+       [:size {:optional true} :string]
+       [:organization {:optional true} :any]
+       [:render-fn {:optional true} fn?]]]]
     [:aria-label {:optional true} [:maybe :string]]
     [:on-click {:optional true} fn?]]
    [:fn {:error/message "invalid data: missing required props"}
@@ -33,19 +41,26 @@
 
 (mf/defc option*
   {::mf/schema schema:option}
-  [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
-  (let [class (stl/css-case :option true
+  [{:keys [id ref label icon avatar aria-label on-click selected focused disabled dimmed title] :rest props}]
+  (let [render-avatar-fn (when avatar
+                           (get avatar :render-fn))
+
+        class (stl/css-case :option true
                             :option-with-icon (some? icon)
+                            :option-with-avatar (fn? render-avatar-fn)
+                            :option-disabled disabled
                             :option-selected selected
                             :option-current focused)]
 
     [:li {:value id
           :class class
           :aria-selected selected
+          :aria-disabled disabled
           :ref ref
           :role "option"
           :id id
-          :on-click on-click
+          :title title
+          :on-click (when-not disabled on-click)
           :data-id id
           :data-testid "dropdown-option"}
 
@@ -56,6 +71,9 @@
          :class (stl/css :option-icon)
          :aria-hidden (when label true)
          :aria-label  (when (not label) aria-label)}])
+
+     (when (fn? render-avatar-fn)
+       [:> render-avatar-fn {:avatar avatar}])
 
      [:span {:class (stl/css-case :option-text true
                                   :option-text-dimmed dimmed)}

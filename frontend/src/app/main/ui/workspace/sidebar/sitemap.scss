@@ -2,9 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
 
 .sitemap {
   position: relative;
@@ -29,6 +30,7 @@
   border-top: deprecated.$s-2 solid var(--resize-area-border-color);
   background-color: var(--resize-area-background-color);
   cursor: ns-resize;
+
   &:hover {
     border-color: var(--resize-area-border-color);
   }
@@ -39,8 +41,7 @@
   flex-direction: column;
   height: calc(-38px + var(--height, deprecated.$s-200));
   width: var(--left-sidebar-width);
-  overflow-x: hidden;
-  overflow-y: overlay;
+  overflow: hidden auto;
   scrollbar-gutter: stable;
 
   .element-list {
@@ -54,20 +55,33 @@
   margin-bottom: deprecated.$s-12;
 }
 
+.page-delete-button {
+  --delete-button-display: none;
+}
+
+.page-delete-button-icon {
+  display: var(--delete-button-display);
+}
+
 .page-element {
-  @include deprecated.bodySmallTypography;
+  @include deprecated.body-small-typography;
+
   min-height: deprecated.$s-32;
   width: 100%;
   cursor: pointer;
+
   &.dnd-over-top {
     border-top: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
+
   &.dnd-over-bot {
     border-bottom: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
+
   .dnd-over > .element-list-body {
     border: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
   }
+
   .element-list-body {
     display: flex;
     align-items: center;
@@ -76,51 +90,37 @@
     padding: 0 deprecated.$s-12 0 0;
     transition: none;
     color: var(--layer-row-foreground-color);
+
     .page-name {
-      @include deprecated.textEllipsis;
+      @include deprecated.text-ellipsis;
+
       flex-grow: 1;
       padding-left: deprecated.$s-2;
     }
+
     .page-icon {
-      @include deprecated.flexCenter;
-      height: deprecated.$s-32;
-      width: deprecated.$s-24;
+      @include deprecated.flex-center;
+
       padding: 0 deprecated.$s-4 0 deprecated.$s-8;
-      svg {
-        @extend .button-icon-small;
-        height: deprecated.$s-12;
-        width: deprecated.$s-12;
-        color: transparent;
-        fill: none;
-        stroke: var(--icon-foreground);
-      }
     }
+
     .page-actions {
       height: deprecated.$s-32;
-      button {
-        @include deprecated.buttonStyle;
-        @include deprecated.flexCenter;
-        width: deprecated.$s-24;
-        height: 100%;
-        opacity: deprecated.$op-0;
-        svg {
-          @extend .button-icon-small;
-          height: deprecated.$s-12;
-          width: deprecated.$s-12;
-          color: transparent;
-          fill: none;
-          stroke: var(--icon-foreground);
-        }
-      }
+      display: flex;
+      align-items: center;
     }
+
     .element-name {
-      @include deprecated.textEllipsis;
+      @include deprecated.text-ellipsis;
+
       color: var(--layer-row-foreground-color-focus);
     }
+
     input.element-name {
-      @include deprecated.textEllipsis;
-      @include deprecated.bodySmallTypography;
-      @include deprecated.removeInputStyle;
+      @include deprecated.text-ellipsis;
+      @include deprecated.body-small-typography;
+      @include deprecated.remove-input-style;
+
       flex-grow: 1;
       height: deprecated.$s-28;
       max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
@@ -131,21 +131,19 @@
       color: var(--layer-row-foreground-color);
     }
   }
+
   &:active,
   &.on-drag {
     .element-list-body {
       color: var(--layer-row-foreground-color-drag);
       background-color: var(--layer-row-background-color-drag);
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-drag);
-        }
-      }
+
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-drag);
       }
     }
   }
+
   &.selected,
   &.selected:hover {
     .element-list-body {
@@ -153,16 +151,13 @@
       background-color: var(--layer-row-background-color-selected);
       box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
         var(--layer-row-background-color-selected);
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-selected);
-        }
-      }
+
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-selected);
       }
     }
   }
+
   &:hover,
   &.hover {
     .element-list-body {
@@ -170,30 +165,35 @@
       background-color: var(--layer-row-background-color-hover);
       box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
         var(--layer-row-background-color-hover);
+
       .page-actions button {
         opacity: deprecated.$op-10;
-        svg {
-          stroke: var(--layer-row-foreground-color-hover);
-        }
+
+        --delete-button-display: initial;
       }
+
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hover);
       }
     }
   }
+
   &:focus {
     .element-list-body {
       color: var(--layer-row-foreground-color-focus);
       border: deprecated.$s-1 solid var(--layer-row-border-color-focus);
       outline: none;
+
       .page-actions button {
         opacity: deprecated.$op-10;
       }
     }
   }
+
   &:focus-within {
     .element-list-body {
       outline: none;
+
       .page-actions button {
         opacity: deprecated.$op-10;
       }
@@ -205,11 +205,7 @@
       color: var(--layer-row-foreground-color-hidden);
       background-color: var(--layer-row-background-color-hidden);
       opacity: deprecated.$op-7;
-      .page-actions button {
-        svg {
-          stroke: var(--layer-row-foreground-color-hidden);
-        }
-      }
+
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hidden);
       }
@@ -217,8 +213,27 @@
   }
 }
 
+.element-list-body.separator-body {
+  height: auto;
+  min-height: var(--sp-xxxl);
+  padding: 0;
+}
+
+.page-separator {
+  width: 100%;
+  height: $b-1;
+  margin: var(--sp-s);
+  background-color: var(--color-background-quaternary);
+}
+
+.page-element.separator:hover .element-list-body,
+.page-element.separator.hover .element-list-body {
+  color: var(--layer-row-foreground-color);
+  background-color: transparent;
+  box-shadow: none;
+}
+
 .title-spacing-sitemap {
   padding-inline-start: deprecated.$s-8;
-  margin-block-start: deprecated.$s-8;
-  margin-block-end: deprecated.$s-4;
+  margin-block: deprecated.$s-8 deprecated.$s-4;
 }

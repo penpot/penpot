@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace
   (:require-macros [app.main.style :as stl])
@@ -27,7 +27,7 @@
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
-   [app.main.ui.workspace.palette :refer [palette]]
+   [app.main.ui.workspace.palette :refer [palette*]]
    [app.main.ui.workspace.plugins]
    [app.main.ui.workspace.sidebar :refer [sidebar*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -35,10 +35,13 @@
    [app.main.ui.workspace.tokens.export.modal]
    [app.main.ui.workspace.tokens.import]
    [app.main.ui.workspace.tokens.import.modal]
-   [app.main.ui.workspace.tokens.management.create.modals]
+   [app.main.ui.workspace.tokens.management.forms.modals]
+   [app.main.ui.workspace.tokens.management.forms.rename-node-modal]
+   [app.main.ui.workspace.tokens.remapping-modal]
    [app.main.ui.workspace.tokens.settings]
    [app.main.ui.workspace.tokens.themes.create-modal]
    [app.main.ui.workspace.viewport :refer [viewport*]]
+   [app.main.ui.workspace.webgl-unavailable-modal]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -55,7 +58,7 @@
         selected    (mf/deref refs/selected-shapes)
         page-id     (get page :id)
 
-        {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
+        vport       (mf/deref refs/workspace-vport)
         {:keys [options-mode]} wglobal
 
 
@@ -74,7 +77,8 @@
          (mf/deps vport)
          (fn [resize-type size]
            (when (and vport (not= size vport))
-             (st/emit! (dw/update-viewport-size resize-type size)))))
+             (st/emit! (dw/update-viewport-size resize-type size)
+                       (dw/sync-wasm-workspace-viewport)))))
 
         on-resize-palette
         (mf/use-fn
@@ -84,8 +88,8 @@
         node-ref (use-resize-observer on-resize)]
     [:*
      (when (not ^boolean hide-ui?)
-       [:& palette {:layout layout
-                    :on-change-palette-size on-resize-palette}])
+       [:> palette* {:layout layout
+                     :on-change-size on-resize-palette}])
 
      [:section
       {:key (dm/str "workspace-" page-id)
@@ -94,7 +98,7 @@
 
       [:section {:class (stl/css :workspace-viewport)}
        (when (dbg/enabled? :coordinates)
-         [:& coordinates/coordinates {:colorpalette? colorpalette?}])
+         [:> coordinates/coordinates* {:is-colorpalette colorpalette?}])
 
        (when (dbg/enabled? :history-overlay)
          [:div {:class (stl/css :history-debug-overlay)}
@@ -104,7 +108,6 @@
        [:> viewport*
         {:file file
          :page page
-         :wlocal wlocal
          :wglobal wglobal
          :selected selected
          :layout layout
@@ -165,7 +168,7 @@
                    (dsh/lookup-page state file-id page-id))))
              st/state))
 
-(mf/defc workspace-page*
+(mf/defc workspace-inner*
   {::mf/private true}
   [{:keys [page-id file-id file layout wglobal]}]
   (let [page-ref (mf/with-memo [file-id page-id]
@@ -217,6 +220,10 @@
 
         design-tokens?   (features/use-feature "design-tokens/v1")
 
+        wasm-renderer-enabled? (features/use-feature "render-wasm/v1")
+
+        first-frame-rendered?  (mf/use-state false)
+
         background-color (:background-color wglobal)]
 
     (mf/with-effect []
@@ -241,6 +248,17 @@
       (when (and file-loaded? (not page-id))
         (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/replace true))))
 
+    (mf/with-effect [file-id page-id]
+      (reset! first-frame-rendered? false))
+
+    (mf/with-effect []
+      (let [handle-wasm-render
+            (fn [_]
+              (reset! first-frame-rendered? true))
+            listener-key (events/listen globals/document "penpot:wasm:render" handle-wasm-render)]
+        (fn []
+          (events/unlistenByKey listener-key))))
+
     [:> (mf/provider ctx/current-project-id) {:value project-id}
      [:> (mf/provider ctx/current-file-id) {:value file-id}
       [:> (mf/provider ctx/current-page-id) {:value page-id}
@@ -249,13 +267,26 @@
          [:> modal-container*]
          [:section {:class (stl/css :workspace)
                     :style {:background-color background-color
-                            :touch-action "none"}}
+                            :touch-action "none"
+                            :position "relative"}}
           [:> context-menu*]
-          (if (and file-loaded? page-id)
-            [:> workspace-page*
+          (when (and file-loaded? page-id)
+            [:> workspace-inner*
              {:page-id page-id
               :file-id file-id
               :file file
               :wglobal wglobal
-              :layout layout}]
+              :layout layout}])
+          (when (or (not (and file-loaded? page-id))
+                    ;; in wasm renderer, extend the pixel loader until the first frame is rendered
+                    ;; but do not apply it when switching pages
+                    (and wasm-renderer-enabled?
+                         (not file-loaded?)
+                         (not @first-frame-rendered?)))
             [:> workspace-loader*])]]]]]]))
+
+(mf/defc workspace-page*
+  {::mf/lazy-load true}
+  [props]
+  [:> workspace* props])
+

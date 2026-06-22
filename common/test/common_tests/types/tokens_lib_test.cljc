@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.types.tokens-lib-test
   (:require
@@ -11,7 +11,6 @@
    #?(:clj [app.common.test-helpers.tokens :as tht])
    #?(:clj [clojure.datafy :refer [datafy]])
    [app.common.data :as d]
-   [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.time :as ct]
    [app.common.transit :as tr]
@@ -234,6 +233,19 @@
                 :is-source 42}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-theme"
                             (ctob/make-token-theme params)))))
+
+(t/deftest make-token-theme-strips-nil-from-sets
+  (t/testing "make-token-theme strips nil values from :sets"
+    (let [theme (ctob/make-token-theme :name "test" :sets #{"valid-set" nil})]
+      (t/is (= (:sets theme) #{"valid-set"}))))
+  (t/testing "enable-set with nil set-name does not add nil to :sets"
+    (let [theme  (ctob/make-token-theme :name "test" :sets #{"existing-set"})
+          theme' (ctob/enable-set theme nil)]
+      (t/is (= (:sets theme') #{"existing-set"}))))
+  (t/testing "toggle-set with nil set-name does not add nil to :sets"
+    (let [theme  (ctob/make-token-theme :name "test" :sets #{})
+          theme' (ctob/toggle-set theme nil)]
+      (t/is (= (:sets theme') #{})))))
 
 (t/deftest make-tokens-lib
   (let [tokens-lib (ctob/make-tokens-lib)]
@@ -678,35 +690,35 @@
 
 (t/deftest list-active-themes-tokens-bug-taiga-10617
   (let [tokens-lib (-> (ctob/make-tokens-lib)
-                       (ctob/add-set (ctob/make-token-set :name "Mode / Dark"
+                       (ctob/add-set (ctob/make-token-set :name "Mode/Dark"
                                                           :tokens {"red"
                                                                    (ctob/make-token :name "red"
                                                                                     :type :color
                                                                                     :value "#700000")}))
-                       (ctob/add-set (ctob/make-token-set :name "Mode / Light"
+                       (ctob/add-set (ctob/make-token-set :name "Mode/Light"
                                                           :tokens {"red"
                                                                    (ctob/make-token :name "red"
                                                                                     :type :color
                                                                                     :value "#ff0000")}))
-                       (ctob/add-set (ctob/make-token-set :name "Device / Desktop"
+                       (ctob/add-set (ctob/make-token-set :name "Device/Desktop"
                                                           :tokens {"border1"
                                                                    (ctob/make-token :name "border1"
                                                                                     :type :border-radius
                                                                                     :value 30)}))
-                       (ctob/add-set (ctob/make-token-set :name "Device / Mobile"
+                       (ctob/add-set (ctob/make-token-set :name "Device/Mobile"
                                                           :tokens {"border1"
                                                                    (ctob/make-token :name "border1"
                                                                                     :type :border-radius
                                                                                     :value 50)}))
                        (ctob/add-theme (ctob/make-token-theme :group "App"
                                                               :name "Mobile"
-                                                              :sets #{"Mode / Dark" "Device / Mobile"}))
+                                                              :sets #{"Mode/Dark" "Device/Mobile"}))
                        (ctob/add-theme (ctob/make-token-theme :group "App"
                                                               :name "Web"
-                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop"}))
+                                                              :sets #{"Mode/Dark" "Mode/Light" "Device/Desktop"}))
                        (ctob/add-theme (ctob/make-token-theme :group "Brand"
                                                               :name "Brand A"
-                                                              :sets #{"Mode / Dark" "Mode / Light" "Device / Desktop" "Device / Mobile"}))
+                                                              :sets #{"Mode/Dark" "Mode/Light" "Device/Desktop" "Device/Mobile"}))
                        (ctob/add-theme (ctob/make-token-theme :group "Brand"
                                                               :name "Brand B"
                                                               :sets #{}))
@@ -1337,6 +1349,50 @@
          (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
 #?(:clj
+   (t/deftest parse-dtcg-group-type-inheritance
+     ;; Per DTCG spec: $type on a group is inherited by every nested token
+     ;; that does not declare its own $type. Tokens are identified by the
+     ;; presence of $value, not by the presence of $type.
+     (let [json {"colors" {"$type"  "color"
+                           "red"    {"$value" "#ff0000"}
+                           "blue"   {"$value" "#0000ff"
+                                     "$description" "Brand blue"}
+                           "danger" {"$type"  "color"
+                                     "$value" "#cc0000"}}
+                 "space"  {"$type" "dimension"
+                           "small" {"$value" "4px"}
+                           "large" {"$value" "16px"
+                                    "$type"  "dimension"}}}
+           lib  (ctob/parse-decoded-json json "set")]
+       (t/testing "group `$type` is inherited by tokens without their own `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.red")
+                                   {:name "colors.red"
+                                    :type :color
+                                    :value "#ff0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.blue")
+                                   {:name "colors.blue"
+                                    :type :color
+                                    :value "#0000ff"
+                                    :description "Brand blue"}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.small")
+                                   {:name "space.small"
+                                    :type :dimensions
+                                    :value "4px"
+                                    :description ""})))
+       (t/testing "token `$type` overrides the inherited group `$type`"
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "colors.danger")
+                                   {:name "colors.danger"
+                                    :type :color
+                                    :value "#cc0000"
+                                    :description ""}))
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "set" "space.large")
+                                   {:name "space.large"
+                                    :type :dimensions
+                                    :value "16px"
+                                    :description ""}))))))
+
+#?(:clj
    (t/deftest parse-multi-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
@@ -1440,8 +1496,7 @@
            result   (ctob/export-dtcg-json tokens-lib)
            expected {"$themes" [{"description" ""
                                  "group" "group-1"
-                                 "is-source" false
-                                 "modified-at" now
+                                 "isSource" false
                                  "id" "test-id-00"
                                  "name" "theme-1"
                                  "selectedTokenSets" {"core" "enabled"}}]
@@ -1558,12 +1613,11 @@
                                                                  :external-id "test-id-01"
                                                                  :modified-at now
                                                                  :sets #{"core"}))
-                          (ctob/toggle-theme-active? (thi/id :theme-1)))
+                          (ctob/toggle-theme-active (thi/id :theme-1)))
            result   (ctob/export-dtcg-json tokens-lib)
            expected {"$themes" [{"description" ""
                                  "group" "group-1"
-                                 "is-source" false
-                                 "modified-at" now
+                                 "isSource" false
                                  "id" "test-id-01"
                                  "name" "theme-1"
                                  "selectedTokenSets" {"core" "enabled"}}]
@@ -1612,12 +1666,11 @@
                                                                  :external-id "test-id-01"
                                                                  :modified-at now
                                                                  :sets #{"some/set"}))
-                          (ctob/toggle-theme-active? (thi/id :theme-1)))
+                          (ctob/toggle-theme-active (thi/id :theme-1)))
            result   (ctob/export-dtcg-multi-file tokens-lib)
            expected {"$themes.json" [{"description" ""
                                       "group" "group-1"
-                                      "is-source" false
-                                      "modified-at" now
+                                      "isSource" false
                                       "id" "test-id-01"
                                       "name" "theme-1"
                                       "selectedTokenSets" {"some/set" "enabled"}}]
@@ -1900,15 +1953,15 @@
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-single")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset false}]
+           (t/is (= [{:offset-x "0", :offset-y "2px", :blur "4px", :spread "0", :color "#000", :inset false}]
                     (:value token)))))
 
        (t/testing "multiple shadow token"
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-multiple")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "2px", :blur "4px", :spread "0", :color "#000", :inset true}
-                     {:offsetX "0", :offsetY "8px", :blur "16px", :spread "0", :color "#000", :inset true}]
+           (t/is (= [{:offset-x "0", :offset-y "2px", :blur "4px", :spread "0", :color "#000", :inset true}
+                     {:offset-x "0", :offset-y "8px", :blur "16px", :spread "0", :color "#000", :inset true}]
                     (:value token)))))
 
        (t/testing "shadow token with reference"
@@ -1921,7 +1974,7 @@
          (let [token (ctob/get-token-by-name lib "shadow-test" "test.shadow-with-type")]
            (t/is (some? token))
            (t/is (= :shadow (:type token)))
-           (t/is (= [{:offsetX "0", :offsetY "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset false}]
+           (t/is (= [{:offset-x "0", :offset-y "4px", :blur "8px", :spread "0", :color "rgba(0,0,0,0.2)", :inset true}]
                     (:value token)))))
 
        (t/testing "shadow token with description"
@@ -1940,14 +1993,14 @@
                                      (ctob/make-token
                                       {:name "shadow.single"
                                        :type :shadow
-                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}]
+                                       :value [{:offset-x "0" :offset-y "2px" :blur "4px" :spread "0" :color "#0000001A"}]
                                        :description "A single shadow"})
                                      "shadow.multiple"
                                      (ctob/make-token
                                       {:name "shadow.multiple"
                                        :type :shadow
-                                       :value [{:offsetX "0" :offsetY "2px" :blur "4px" :spread "0" :color "#0000001A"}
-                                               {:offsetX "0" :offsetY "8px" :blur "16px" :spread "0" :color "#0000001A"}]})
+                                       :value [{:offset-x "0" :offset-y "2px" :blur "4px" :spread "0" :color "#0000001A"}
+                                               {:offset-x "0" :offset-y "8px" :blur "16px" :spread "0" :color "#0000001A"}]})
                                      "shadow.ref"
                                      (ctob/make-token
                                       {:name "shadow.ref"
@@ -1994,7 +2047,7 @@
                                        (ctob/make-token
                                         {:name "shadow.test"
                                          :type :shadow
-                                         :value [{:offsetX "1" :offsetY "1" :blur "1" :spread "1" :color "red" :inset true}]
+                                         :value [{:offset-x "1" :offset-y "1" :blur "1" :spread "1" :color "red" :inset true}]
                                          :description "Round trip test"})
                                        "shadow.ref"
                                        (ctob/make-token
@@ -2016,3 +2069,39 @@
            (t/is (some? imported-ref))
            (t/is (= (:type original-ref) (:type imported-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
+
+(t/deftest token-name-path-exists?-test
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm" {"border-radius" {:name "sm"}})))
+  (t/is (true? (ctob/token-name-path-exists? "border-radius.sm.x" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "other" {"border-radius" {:name "sm"}})))
+  (t/is (false? (ctob/token-name-path-exists? "dark.border-radius.md" {"dark" {"border-radius" {"sm" {:name "sm"}}}}))))
+
+#?(:clj
+   (t/deftest token-set-encode-decode-roundtrip-with-invalid-set-name
+     (binding [ct/*clock* (ct/tick-millis-clock)]
+       (let [tokens-lib
+             (-> (ctob/make-tokens-lib)
+                 (ctob/add-set
+                  (ctob/map->token-set
+                   {:id (thi/new-id! :test-token-set)
+                    :name "foo / bar"
+                    :modified-at (ct/now)
+                    :description ""}))
+                 (ctob/add-token
+                  (thi/id :test-token-set)
+                  (ctob/make-token :name "test-token-1"
+                                   :type :boolean
+                                   :value true)))
+
+             encoded-tokens-lib
+             (fres/encode tokens-lib)
+
+             decoded-tokens-lib
+             (fres/decode encoded-tokens-lib)]
+
+         (let [tset-a (ctob/get-set tokens-lib (thi/id :test-token-set))
+               tset-b (ctob/get-set decoded-tokens-lib (thi/id :test-token-set))]
+           (t/is (= (ctob/get-name tset-a) "foo / bar"))
+           (t/is (= (ctob/get-name tset-b) "foo/bar")))))))

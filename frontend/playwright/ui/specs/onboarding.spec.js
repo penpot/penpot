@@ -4,6 +4,7 @@ import OnboardingPage from "../pages/OnboardingPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
+  await DashboardPage.mockConfigFlags(page, ["enable-onboarding"]);
   await DashboardPage.mockRPC(
     page,
     "get-profile",
@@ -14,6 +15,8 @@ test.beforeEach(async ({ page }) => {
 test("User can complete the onboarding", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   const onboardingPage = new OnboardingPage(page);
+
+  await dashboardPage.mockConfigFlags(["enable-onboarding"]);
 
   await dashboardPage.goToDashboard();
   await expect(

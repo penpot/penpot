@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 
@@ -28,7 +28,8 @@
 }
 
 .zoom-widget {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -38,7 +39,8 @@
   border-radius: deprecated.$br-8;
 
   .label {
-    @include deprecated.bodySmallTypography;
+    @include deprecated.body-small-typography;
+
     height: 100%;
     padding: deprecated.$s-8 0;
     color: var(--button-tertiary-foreground-color-rest);
@@ -58,7 +60,8 @@
 }
 
 .dropdown {
-  @extend .menu-dropdown;
+  @extend %menu-dropdown;
+
   right: deprecated.$s-2;
   top: calc(deprecated.$s-2 + deprecated.$s-48);
   width: deprecated.$s-272;
@@ -76,7 +79,8 @@
 }
 
 .zoom-text {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   height: 100%;
   min-width: deprecated.$s-48;
   padding: 0;
@@ -85,20 +89,21 @@
 }
 
 .reset-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   color: var(--button-tertiary-foreground-color-hover);
   height: deprecated.$s-28;
   border-radius: deprecated.$br-8;
 }
 
 .zoom-option {
-  @extend .menu-item-base;
+  @extend %menu-item-base;
 
   .shortcuts {
-    @extend .shortcut-base;
+    @extend %shortcut-base;
 
     .shortcut-key {
-      @extend .shortcut-key-base;
+      @extend %shortcut-key-base;
     }
   }
 
@@ -114,7 +119,8 @@
 }
 
 .comments-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   height: deprecated.$s-28;
@@ -122,7 +128,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
     height: deprecated.$s-16;
     width: deprecated.$s-16;
@@ -143,7 +150,8 @@
 }
 
 .history-button {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   height: deprecated.$s-28;
@@ -151,7 +159,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--icon-foreground);
     height: deprecated.$s-16;
     width: deprecated.$s-16;
@@ -172,20 +181,23 @@
 }
 
 .persistence-status-widget {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-28;
   height: deprecated.$s-28;
 }
 
 .status-icon {
-  @include deprecated.flexCenter;
+  @include deprecated.flex-center;
+
   width: deprecated.$s-24;
   height: deprecated.$s-24;
   margin: 0;
   border-radius: deprecated.$br-circle;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     stroke: var(--status-widget-icon-foreground-color);
   }
 }
@@ -213,7 +225,8 @@
 
 .share-btn,
 .viewer-btn {
-  @extend .button-tertiary;
+  @extend %button-tertiary;
+
   border-radius: deprecated.$br-8;
   margin: 0;
   width: deprecated.$s-28;
@@ -221,7 +234,8 @@
   border: none;
 
   svg {
-    @extend .button-icon;
+    @extend %button-icon;
+
     height: deprecated.$s-16;
     width: deprecated.$s-16;
     stroke: var(--icon-foreground);
@@ -239,7 +253,7 @@
   height: 8px;
   border: 2px solid var(--color-background-tertiary);
   border-radius: 50%;
-  background: red;
+  background: var(--color-foreground-error);
   top: 6px;
   right: 6px;
 }

@@ -2,11 +2,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/mixins.scss" as *;
 
 .dashboard-sidebar {
+  @include custom-scrollbar;
+
   grid-column: 1 / span 2;
   grid-row: 1 / span 2;
   display: grid;
@@ -42,6 +45,7 @@
 .settings-item {
   --settings-foreground-color: var(--menu-foreground-color-rest);
   --settings-background-color: transparent;
+
   display: flex;
   align-items: center;
   padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-24;
@@ -61,18 +65,20 @@
 }
 
 .feedback-icon {
-  @extend .button-icon-small;
+  @extend %button-icon-small;
+
   stroke: var(--settings-foreground-color);
   margin-right: deprecated.$s-8;
 }
 
 .element-title {
-  @include deprecated.textEllipsis;
-  @include deprecated.bodyMediumTypography;
+  @include deprecated.text-ellipsis;
+  @include deprecated.body-medium-typography;
 }
 
 .back-to-dashboard {
-  @include deprecated.buttonStyle;
+  @include deprecated.button-style;
+
   display: flex;
   align-items: center;
   padding: deprecated.$s-12 deprecated.$s-16;
@@ -84,7 +90,8 @@
 }
 
 .arrow-icon {
-  @extend .button-icon;
+  @extend %button-icon;
+
   stroke: var(--icon-foreground);
   transform: rotate(180deg);
   margin-right: deprecated.$s-12;

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.dom.dnd
   "Drag & Drop interop helpers."
@@ -44,9 +44,9 @@
     (js/console.log
      label
      "[" (:name data) "]"
-      ;; (if currentTarget
-      ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
-      ;;   "null")
+     ;; (if currentTarget
+     ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
+     ;;   "null")
      (if relatedTarget
        (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
        "null"))))

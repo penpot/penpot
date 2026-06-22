@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.path.impl
   "Contains schemas and data type implementation for PathData binary
@@ -30,6 +30,18 @@
 #?(:clj (set! *warn-on-reflection* true))
 
 (def ^:const SEGMENT-U8-SIZE 28)
+
+(defn- normalize-coord
+  "Normalize a coordinate value to be within safe integer bounds.
+   Clamps values greater than max-safe-int to max-safe-int,
+   and values less than min-safe-int to min-safe-int.
+   Always returns a double."
+  [v]
+  (cond
+    (> v sm/max-safe-int) (double sm/max-safe-int)
+    (< v sm/min-safe-int) (double sm/min-safe-int)
+    :else (double v)))
+
 (def ^:const SEGMENT-U32-SIZE (/ SEGMENT-U8-SIZE 4))
 
 (defprotocol IPathData
@@ -52,14 +64,15 @@
   [target key & expr]
   (if (:ns &env)
     (let [target (with-meta target {:tag 'js})]
-      `(let [~'cache  (.-cache ~target)
-             ~'result (.get ~'cache ~key)]
-         (if ~'result
-           (do
-             ~'result)
-           (let [~'result (do ~@expr)]
-             (.set ~'cache ~key ~'result)
-             ~'result))))
+      `(let [~'cache (.-cache ~target)]
+         (if (some? ~'cache)
+           (let [~'result (.get ~'cache ~key)]
+             (if ~'result
+               ~'result
+               (let [~'result (do ~@expr)]
+                 (.set ~'cache ~key ~'result)
+                 ~'result)))
+           (do ~@expr))))
     `(do ~@expr)))
 
 (defn- impl-transform-segment
@@ -120,18 +133,20 @@
     (if (< index size)
       (let [offset (* index SEGMENT-U8-SIZE)
             type   (buf/read-short buffer offset)
-            c1x    (buf/read-float buffer (+ offset 4))
-            c1y    (buf/read-float buffer (+ offset 8))
-            c2x    (buf/read-float buffer (+ offset 12))
-            c2y    (buf/read-float buffer (+ offset 16))
-            x      (buf/read-float buffer (+ offset 20))
-            y      (buf/read-float buffer (+ offset 24))
+            c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+            c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+            c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+            c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+            x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+            y      (normalize-coord (buf/read-float buffer (+ offset 24)))
             type   (case type
-                     1 :line-to
-                     2 :move-to
+                     1 :move-to
+                     2 :line-to
                      3 :curve-to
-                     4 :close-path)
-            res    (f type c1x c1y c2x c2y x y)]
+                     4 :close-path
+                     nil)
+            res    (when (some? type)
+                     (f type c1x c1y c2x c2y x y))]
         (recur (inc index)
                (if (some? res)
                  (conj! result res)
@@ -145,18 +160,21 @@
     (if (< index size)
       (let [offset (* index SEGMENT-U8-SIZE)
             type   (buf/read-short buffer offset)
-            c1x    (buf/read-float buffer (+ offset 4))
-            c1y    (buf/read-float buffer (+ offset 8))
-            c2x    (buf/read-float buffer (+ offset 12))
-            c2y    (buf/read-float buffer (+ offset 16))
-            x      (buf/read-float buffer (+ offset 20))
-            y      (buf/read-float buffer (+ offset 24))
+            c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+            c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+            c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+            c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+            x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+            y      (normalize-coord (buf/read-float buffer (+ offset 24)))
             type   (case type
-                     1 :line-to
-                     2 :move-to
+                     1 :move-to
+                     2 :line-to
                      3 :curve-to
-                     4 :close-path)
-            result (f result index type c1x c1y c2x c2y x y)]
+                     4 :close-path
+                     nil)
+            result (if (some? type)
+                     (f result index type c1x c1y c2x c2y x y)
+                     result)]
         (if (reduced? result)
           result
           (recur (inc index) result)))
@@ -166,19 +184,21 @@
   [buffer index f]
   (let [offset (* index SEGMENT-U8-SIZE)
         type   (buf/read-short buffer offset)
-        c1x    (buf/read-float buffer (+ offset 4))
-        c1y    (buf/read-float buffer (+ offset 8))
-        c2x    (buf/read-float buffer (+ offset 12))
-        c2y    (buf/read-float buffer (+ offset 16))
-        x      (buf/read-float buffer (+ offset 20))
-        y      (buf/read-float buffer (+ offset 24))
+        c1x    (normalize-coord (buf/read-float buffer (+ offset 4)))
+        c1y    (normalize-coord (buf/read-float buffer (+ offset 8)))
+        c2x    (normalize-coord (buf/read-float buffer (+ offset 12)))
+        c2y    (normalize-coord (buf/read-float buffer (+ offset 16)))
+        x      (normalize-coord (buf/read-float buffer (+ offset 20)))
+        y      (normalize-coord (buf/read-float buffer (+ offset 24)))
         type   (case type
-                 1 :line-to
-                 2 :move-to
+                 1 :move-to
+                 2 :line-to
                  3 :curve-to
-                 4 :close-path)]
-    #?(:clj (f type c1x c1y c2x c2y x y)
-       :cljs (^function f type c1x c1y c2x c2y x y))))
+                 4 :close-path
+                 nil)]
+    (when (some? type)
+      #?(:clj (f type c1x c1y c2x c2y x y)
+         :cljs (^function f type c1x c1y c2x c2y x y)))))
 
 (defn- to-string-segment*
   [buffer offset type ^StringBuilder builder]
@@ -218,7 +238,10 @@
           (.append ",")
           (.append y)))
     4 (doto builder
-        (.append "Z"))))
+        (.append "Z"))
+
+    ;; Skip corrupted/unknown segment types
+    nil))
 
 (defn- to-string
   "Format the path data structure to string"
@@ -235,39 +258,43 @@
     (.toString builder)))
 
 (defn- read-segment
-  "Read segment from binary buffer at specified index"
+  "Read segment from binary buffer at specified index. Returns nil for
+  corrupted/invalid segment types."
   [buffer index]
   (let [offset (* index SEGMENT-U8-SIZE)
         type   (buf/read-short buffer offset)]
     (case (long type)
-      1 (let [x (buf/read-float buffer (+ offset 20))
-              y (buf/read-float buffer (+ offset 24))]
+      1 (let [x (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :move-to
-           :params {:x (double x)
-                    :y (double y)}})
+           :params {:x x
+                    :y y}})
 
-      2 (let [x (buf/read-float buffer (+ offset 20))
-              y (buf/read-float buffer (+ offset 24))]
+      2 (let [x (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :line-to
-           :params {:x (double x)
-                    :y (double y)}})
+           :params {:x x
+                    :y y}})
 
-      3 (let [c1x (buf/read-float buffer (+ offset 4))
-              c1y (buf/read-float buffer (+ offset 8))
-              c2x (buf/read-float buffer (+ offset 12))
-              c2y (buf/read-float buffer (+ offset 16))
-              x   (buf/read-float buffer (+ offset 20))
-              y   (buf/read-float buffer (+ offset 24))]
+      3 (let [c1x (normalize-coord (buf/read-float buffer (+ offset 4)))
+              c1y (normalize-coord (buf/read-float buffer (+ offset 8)))
+              c2x (normalize-coord (buf/read-float buffer (+ offset 12)))
+              c2y (normalize-coord (buf/read-float buffer (+ offset 16)))
+              x   (normalize-coord (buf/read-float buffer (+ offset 20)))
+              y   (normalize-coord (buf/read-float buffer (+ offset 24)))]
           {:command :curve-to
-           :params {:x (double x)
-                    :y (double y)
-                    :c1x (double c1x)
-                    :c1y (double c1y)
-                    :c2x (double c2x)
-                    :c2y (double c2y)}})
+           :params {:x x
+                    :y y
+                    :c1x c1x
+                    :c1y c1y
+                    :c2x c2x
+                    :c2y c2y}})
 
       4 {:command :close-path
-         :params {}})))
+         :params {}}
+
+      ;; Return nil for corrupted/unknown segment types
+      nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPE: PATH-DATA
@@ -319,8 +346,10 @@
        (when (pos? size)
          ((fn next-seq [i]
             (when (< i size)
-              (cons (read-segment buffer i)
-                    (lazy-seq (next-seq (inc i))))))
+              (let [segment (read-segment buffer i)]
+                (if (some? segment)
+                  (cons segment (lazy-seq (next-seq (inc i))))
+                  (next-seq (inc i))))))
           0)))
 
      clojure.lang.IReduceInit
@@ -328,7 +357,10 @@
        (loop [index  0
               result start]
          (if (< index size)
-           (let [result (f result (read-segment buffer index))]
+           (let [segment (read-segment buffer index)
+                 result  (if (some? segment)
+                           (f result segment)
+                           result)]
              (if (reduced? result)
                @result
                (recur (inc index) result)))
@@ -370,10 +402,10 @@
        ;; NOTE: we still use u8 because until the heap refactor merge
        ;; we can't guarrantee the alignment of offset on 4 bytes
        (assert (instance? js/ArrayBuffer into-buffer))
-       (let [buffer' (.-buffer ^js/DataView buffer)
-             size    (.-byteLength buffer')
+       (let [size    (.-byteLength ^js/DataView buffer)
+             src-off (.-byteOffset ^js/DataView buffer)
              mem     (js/Uint8Array. into-buffer offset size)]
-         (.set mem (js/Uint8Array. buffer'))))
+         (.set mem (js/Uint8Array. (.-buffer ^js/DataView buffer) src-off size))))
 
      ITransformable
      (-transform [this m]
@@ -406,7 +438,10 @@
                        (read-segment buffer 0)
                        nil)]
          (if (< index size)
-           (let [result (f result (read-segment buffer index))]
+           (let [segment (read-segment buffer index)
+                 result  (if (some? segment)
+                           (f result segment)
+                           result)]
              (if (reduced? result)
                @result
                (recur (inc index) result)))
@@ -416,7 +451,10 @@
        (loop [index  0
               result start]
          (if (< index size)
-           (let [result (f result (read-segment buffer index))]
+           (let [segment (read-segment buffer index)
+                 result  (if (some? segment)
+                           (f result segment)
+                           result)]
              (if (reduced? result)
                @result
                (recur (inc index) result)))
@@ -436,7 +474,7 @@
          nil))
 
      (-nth [_ i default]
-       (if (d/in-range? i size)
+       (if (d/in-range? size i)
          (read-segment buffer i)
          default))
 
@@ -445,8 +483,10 @@
        (when (pos? size)
          ((fn next-seq [i]
             (when (< i size)
-              (cons (read-segment buffer i)
-                    (lazy-seq (next-seq (inc i))))))
+              (let [segment (read-segment buffer i)]
+                (if (some? segment)
+                  (cons segment (lazy-seq (next-seq (inc i))))
+                  (next-seq (inc i))))))
           0)))
 
      cljs.core/IPrintWithWriter
@@ -565,6 +605,9 @@
 (def check-content
   (sm/check-fn schema:content))
 
+(def decode-segments
+  (sm/lazy-decoder schema:segments sm/json-transformer))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS & PREDICATES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -604,19 +647,27 @@
                     nil))
 
        (instance? js/DataView buffer)
-       (let [buffer' (.-buffer ^js/DataView buffer)
-             size    (.-byteLength ^js/ArrayBuffer buffer')
-             count   (long (/ size SEGMENT-U8-SIZE))]
+       (let [size  (.-byteLength ^js/DataView buffer)
+             count (long (/ size SEGMENT-U8-SIZE))]
          (PathData. count buffer (weak/weak-value-map) nil))
 
        (instance? js/Uint8Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        (instance? js/Uint32Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        (instance? js/Int8Array buffer)
-       (from-bytes (.-buffer buffer))
+       (let [ab     (.-buffer buffer)
+             offset (.-byteOffset buffer)
+             size   (.-byteLength buffer)]
+         (from-bytes (js/DataView. ab offset size)))
 
        :else
        (throw (js/Error. "invalid data provided")))))
@@ -627,8 +678,6 @@
 (defn from-plain
   "Create a PathData instance from plain data structures"
   [segments]
-  (assert (check-plain-content segments))
-
   (let [total  (count segments)
         buffer (buf/allocate (* total SEGMENT-U8-SIZE))]
     (loop [index 0]
@@ -638,30 +687,28 @@
           (case (get segment :command)
             :move-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))]
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))]
               (buf/write-short buffer offset 1)
               (buf/write-float buffer (+ offset 20) x)
               (buf/write-float buffer (+ offset 24) y))
 
             :line-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))]
-
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))]
               (buf/write-short buffer offset 2)
               (buf/write-float buffer (+ offset 20) x)
               (buf/write-float buffer (+ offset 24) y))
 
             :curve-to
             (let [params (get segment :params)
-                  x      (float (get params :x))
-                  y      (float (get params :y))
-                  c1x    (float (get params :c1x x))
-                  c1y    (float (get params :c1y y))
-                  c2x    (float (get params :c2x x))
-                  c2y    (float (get params :c2y y))]
-
+                  x      (normalize-coord (get params :x))
+                  y      (normalize-coord (get params :y))
+                  c1x    (normalize-coord (get params :c1x x))
+                  c1y    (normalize-coord (get params :c1y y))
+                  c2x    (normalize-coord (get params :c2x x))
+                  c2y    (normalize-coord (get params :c2y y))]
               (buf/write-short buffer offset 3)
               (buf/write-float buffer (+ offset 4)  c1x)
               (buf/write-float buffer (+ offset 8)  c1y)
@@ -702,7 +749,9 @@
   :class PathData
   :wfn (fn [^PathData pdata]
          (let [buffer (.-buffer pdata)]
-           #?(:cljs (js/Uint8Array. (.-buffer ^js/DataView buffer))
+           #?(:cljs (js/Uint8Array. (.-buffer ^js/DataView buffer)
+                                    (.-byteOffset ^js/DataView buffer)
+                                    (.-byteLength ^js/DataView buffer))
               :clj  (.array ^ByteBuffer buffer))))
   :rfn from-bytes})
 

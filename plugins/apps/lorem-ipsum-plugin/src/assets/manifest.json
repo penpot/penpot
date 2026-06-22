@@ -1,0 +1,7 @@
+{
+  "name": "Lorem ipsum",
+  "description": "Lorem ipsum text generator plugin",
+  "code": "/assets/plugin.js",
+  "icon": "/assets/icon.png",
+  "permissions": ["content:read", "content:write"]
+}

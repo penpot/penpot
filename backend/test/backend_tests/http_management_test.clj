@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.http-management-test
   (:require
@@ -21,17 +21,6 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
-
-
-(t/deftest authenticate-method
-  (let [profile  (th/create-profile* 1)
-        token    (#'sess/gen-token th/*system* {:profile-id (:id profile)})
-        request  {:params {:token token}}
-        response (#'mgmt/authenticate th/*system* request)]
-
-    (t/is (= 200 (::yres/status response)))
-    (t/is (= "authentication" (-> response ::yres/body :iss)))
-    (t/is (= (:id profile) (-> response ::yres/body :uid)))))
 
 (t/deftest get-customer-method
   (let [profile  (th/create-profile* 1)
@@ -89,7 +78,3 @@
 
       (let [subs' (-> response ::yres/body :subscription)]
         (t/is (= subs' subs))))))
-
-
-
-

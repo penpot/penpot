@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.simple-math
   (:require
@@ -90,7 +90,16 @@
         init-value (or init-value 0)]
     (s/assert number? init-value)
     (if-not (insta/failure? result)
-      (interpret result init-value)
+      (try
+        (let [value (interpret result init-value)]
+          ;; Check for division by zero (Infinity or -Infinity)
+          (if (or (js/Number.isFinite value) (nil? value))
+            value
+            nil))
+        (catch :default err
+          (js/console.debug (str "Expression evaluation error: " (ex-message err))
+                            (str "Expression: '" expr "'"))
+          nil))
       (let [text (:text result)
             index (:index result)
             expecting (->> result

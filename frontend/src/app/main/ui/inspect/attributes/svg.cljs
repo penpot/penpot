@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.svg
   (:require-macros [app.main.style :as stl])
@@ -54,5 +54,6 @@
       [:div {:class (stl/css :attributes-block)}
        [:> inspect-title-bar*
         {:title (tr "workspace.sidebar.options.svg-attrs.title")
-         :class (stl/css :title-spacing-svg)}]
+         :class (stl/css :title-wrapper)
+         :title-class (stl/css :svg-attr-title)}]
        [:& svg-block {:shape shape}]])))

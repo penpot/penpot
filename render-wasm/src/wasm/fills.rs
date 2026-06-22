@@ -1,9 +1,8 @@
-use macros::ToJs;
+use macros::{wasm_error, ToJs};
 
 use crate::mem;
 use crate::shapes;
 use crate::with_current_shape_mut;
-use crate::STATE;
 
 mod gradient;
 mod image;
@@ -36,9 +35,41 @@ impl From<RawFillData> for shapes::Fill {
     }
 }
 
+impl TryFrom<&shapes::Fill> for RawFillData {
+    type Error = String;
+
+    fn try_from(fill: &shapes::Fill) -> Result<Self, Self::Error> {
+        match fill {
+            shapes::Fill::Solid(shapes::SolidColor(color)) => {
+                Ok(RawFillData::Solid(solid::RawSolidData {
+                    color: ((color.a() as u32) << 24)
+                        | ((color.r() as u32) << 16)
+                        | ((color.g() as u32) << 8)
+                        | (color.b() as u32),
+                }))
+            }
+            shapes::Fill::LinearGradient(_) => {
+                Err("LinearGradient serialization is not implemented".to_string())
+            }
+            shapes::Fill::RadialGradient(_) => {
+                Err("RadialGradient serialization is not implemented".to_string())
+            }
+            shapes::Fill::Image(_) => {
+                Err("Image fill serialization is not implemented".to_string())
+            }
+        }
+    }
+}
+
 impl From<[u8; RAW_FILL_DATA_SIZE]> for RawFillData {
     fn from(bytes: [u8; RAW_FILL_DATA_SIZE]) -> Self {
         unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<RawFillData> for [u8; RAW_FILL_DATA_SIZE] {
+    fn from(fill_data: RawFillData) -> Self {
+        unsafe { std::mem::transmute(fill_data) }
     }
 }
 
@@ -54,7 +85,7 @@ impl TryFrom<&[u8]> for RawFillData {
 }
 
 // FIXME: return Result
-pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
+pub fn read_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
     buffer
         .chunks_exact(RAW_FILL_DATA_SIZE)
         .take(num_fills)
@@ -67,16 +98,18 @@ pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fi
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_fills() {
+#[wasm_error]
+pub extern "C" fn set_shape_fills() -> Result<()> {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
         // The first byte contains the actual number of fills
         let num_fills = bytes.first().copied().unwrap_or(0) as usize;
         // Skip the first 4 bytes (header with fill count) and parse only the actual fills
-        let fills = parse_fills_from_bytes(&bytes[4..], num_fills);
+        let fills = read_fills_from_bytes(&bytes[4..], num_fills);
         shape.set_fills(fills);
-        mem::free_bytes();
+        mem::free_bytes()?;
     });
+    Ok(())
 }
 
 #[no_mangle]

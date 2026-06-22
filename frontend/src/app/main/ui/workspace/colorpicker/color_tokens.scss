@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
 @use "ds/_borders.scss" as *;
@@ -16,6 +16,7 @@
 
 .color-token-item {
   --color-token-background: var(--color-background-primary);
+
   background-color: var(--color-token-background);
   color: var(--color-foreground-primary);
   text-align: left;
@@ -29,6 +30,7 @@
   block-size: $sz-28;
   border: none;
   cursor: pointer;
+
   &:hover {
     --color-token-background: var(--color-background-tertiary);
   }
@@ -36,6 +38,7 @@
 
 .color-token-empty-state {
   @include t.use-typography("body-small");
+
   padding: var(--sp-s) var(--sp-xxl);
   text-align: center;
   color: var(--color-foreground-secondary);
@@ -57,6 +60,7 @@
 
 .token-name {
   @include t.use-typography("body-small");
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,13 +92,18 @@
 
 .color-tokens-inputs {
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
 }
 
 // Title bar
 .set-title-bar {
   --title-color: var(--color-foreground-secondary);
   --arrow-color: var(--color-foreground-secondary);
+
   @include t.use-typography("title-small");
+
   text-transform: none;
   display: flex;
   overflow: hidden;

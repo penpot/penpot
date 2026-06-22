@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.filters
   (:require
@@ -21,7 +21,9 @@
 (defn filter-str
   [filter-id shape]
   (when (or (seq (->> (:shadow shape) (remove :hidden)))
-            (and (:blur shape) (-> shape :blur :hidden not)))
+            (and (:blur shape)
+                 (-> shape :blur :hidden not)
+                 (= :layer-blur (-> shape :blur :type))))
     (str/ffmt "url(#%)" filter-id)))
 
 (mf/defc color-matrix
@@ -135,7 +137,7 @@
   (if (or (mth/close? 0.01 (:width selrect))
           (mth/close? 0.01 (:height selrect)))
 
-    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/heigth
+    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/height
     ;; From the SVG spec (https://www.w3.org/TR/SVG11/coords.html#ObjectBoundingBox
     ;; Keyword objectBoundingBox should not be used when the geometry of the applicable element
     ;; has no width or no height, such as the case of a horizontal or vertical line, even when

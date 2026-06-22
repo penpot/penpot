@@ -2,10 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.config
-  "A configuration management."
   (:refer-clojure :exclude [get])
   (:require
    [app.common.data :as d]
@@ -73,6 +72,11 @@
    :telemetry-uri "https://telemetry.penpot.app/"
 
    :media-max-file-size (* 1024 1024 30) ; 30MiB
+   :font-max-file-size  (* 1024 1024 30) ; 30MiB
+
+   :font-process-mem 512    ;; 512 MiB address space ceiling
+   :font-process-cpu 30     ;; 30 seconds CPU time
+   :font-process-timeout 60 ;; 60 seconds wall-clock
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
@@ -83,7 +87,14 @@
    :initial-project-skey "initial-project"
 
    ;; time to avoid email sending after profile modification
-   :email-verify-threshold "15m"})
+   :email-verify-threshold "15m"
+
+   :quotes-upload-sessions-per-profile 5
+   :quotes-upload-chunks-per-session 20
+
+   ;; SSRF protection
+   :ssrf-allowed-hosts #{}
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -99,11 +110,18 @@
     [:http-server-port {:optional true} ::sm/int]
     [:http-server-host {:optional true} :string]
     [:http-server-max-body-size {:optional true} ::sm/int]
-    [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
-    [:management-api-shared-key {:optional true} :string]
+    ;; Explicit CORS allowlist used when the :cors flag is enabled.
+    ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
+    ;; separated list of origins (e.g. "https://plugins.example.com").
+    [:allowed-origins {:optional true} [::sm/set :string]]
+
+    [:exporter-shared-key {:optional true} :string]
+    [:nitrate-shared-key {:optional true} :string]
+    [:nexus-shared-key {:optional true} :string]
+    [:management-api-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
@@ -112,6 +130,23 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
+    [:font-max-file-size  {:optional true} ::sm/int]
+
+    ;; Font processing resource limits (PENPOT_FONT_PROCESS_*)
+    [:font-process-mem {:optional true} ::sm/int]
+    [:font-process-cpu {:optional true} ::sm/int]
+    [:font-process-timeout {:optional true} ::sm/int]
+
+    ;; ImageMagick resource limits (PENPOT_IMAGEMAGICK_*)
+    [:imagemagick-thread-limit {:optional true} :string]
+    [:imagemagick-memory-limit {:optional true} :string]
+    [:imagemagick-map-limit {:optional true} :string]
+    [:imagemagick-area-limit {:optional true} :string]
+    [:imagemagick-disk-limit {:optional true} :string]
+    [:imagemagick-time-limit {:optional true} :string]
+    [:imagemagick-width-limit {:optional true} :string]
+    [:imagemagick-height-limit {:optional true} :string]
+
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
@@ -153,6 +188,8 @@
     [:quotes-snapshots-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
+    [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
+    [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
@@ -168,7 +205,7 @@
     [:google-client-id {:optional true} :string]
     [:google-client-secret {:optional true} :string]
     [:oidc-client-id {:optional true} :string]
-    [:oidc-user-info-source {:optional true} :keyword]
+    [:oidc-user-info-source {:optional true} [:enum "auto" "userinfo" "token"]]
     [:oidc-client-secret {:optional true} :string]
     [:oidc-base-uri {:optional true} :string]
     [:oidc-token-uri {:optional true} :string]
@@ -224,7 +261,8 @@
     [:assets-path {:optional true} :string]
 
     [:netty-io-threads {:optional true} ::sm/int]
-    [:executor-threads {:optional true} ::sm/int]
+
+    [:nitrate-backend-uri {:optional true} ::sm/uri]
 
     ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]
@@ -237,17 +275,26 @@
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
+
+    ;; SSRF protection
+    [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
+    [:ssrf-extra-blocked-cidrs {:optional true} [::sm/set :string]]]))
 
 (defn- parse-flags
   [config]
   (let [public-uri  (c/get config :public-uri)
         public-uri  (some-> public-uri (u/uri))
-        extra-flags (if (and public-uri
-                             (= (:scheme public-uri) "http")
-                             (not= (:host public-uri) "localhost"))
-                      #{:disable-secure-session-cookies}
-                      #{})]
+        extra-flags (cond-> #{}
+                      ;; When public-uri is http (non-localhost), disable secure cookies
+                      (and public-uri
+                           (= (:scheme public-uri) "http")
+                           (not= (:host public-uri) "localhost"))
+                      (conj :disable-secure-session-cookies)
+
+                      ;; When telemetry-enabled config is true, add :telemetry flag
+                      (true? (c/get config :telemetry-enabled))
+                      (conj :enable-telemetry))]
     (flags/parse flags/default extra-flags (:flags config))))
 
 (defn read-env
@@ -272,7 +319,7 @@
   (sm/explainer schema:config))
 
 (defn read-config
-  "Reads the configuration from enviroment variables and decodes all
+  "Reads the configuration from environment variables and decodes all
   known values."
   [& {:keys [prefix default] :or {prefix "penpot"}}]
   (->> (read-env prefix)
@@ -324,7 +371,7 @@
 
 (defn logging-context
   []
-  {:version/backend (:full version)})
+  {:backend/version (:full version)})
 
 ;; Set value for all new threads bindings.
 (alter-var-root #'*assert* (constantly (contains? flags :backend-asserts)))

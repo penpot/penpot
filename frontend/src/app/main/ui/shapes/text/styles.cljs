@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.text.styles
   (:require
@@ -106,9 +106,11 @@
                               :overflowWrap "initial"
                               :lineBreak "auto"
                               :whiteSpace "break-spaces"
-                              :textRendering "geometricPrecision"
-                              :display "inline-block"
-                              :verticalAlign "top"}
+                              :textRendering "geometricPrecision"}
+         base            (cond-> base
+                           (= (:line-height data) "0")
+                           (-> (obj/set! "display" "inline-block")
+                               (obj/set! "verticalAlign" "top")))
          fills
          (cond
            ;; DEPRECATED: still here for backward compatibility with

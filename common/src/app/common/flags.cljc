@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.flags
   "Flags parsing algorithm."
@@ -33,7 +33,9 @@
     :login-with-ldap
     ;; Uses any generic authentication provider that implements OIDC protocol as credentials.
     :login-with-oidc
-    ;; Allows registration with Open ID
+    ;; Enables custom SSO flow
+    :login-with-custom-sso
+    ;; Allows registration with OIDC (takes effect only when general `registration` is disabled)
     :oidc-registration
     ;; This logs to console the invitation tokens. It's useful in case the SMTP is not configured.
     :log-invitation-tokens})
@@ -60,6 +62,7 @@
   #{:audit-log
     :audit-log-archive
     :audit-log-gc
+    :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
     :backend-api-doc
@@ -69,7 +72,11 @@
     :backend-worker
     ;; Only for development
     :component-thumbnails
-    ;; enables the default cors configuration that allows all domains (currently this configuration is only used for development).
+    ;; Enables CORS support for the RPC API. Requires an explicit
+    ;; allowlist of origins via PENPOT_ALLOWED_ORIGINS; if no allowlist
+    ;; is configured the middleware fails closed (a warning is logged
+    ;; and CORS headers are not emitted) to avoid CSRF / data
+    ;; exfiltration via origin reflection.
     :cors
     ;; Enables the templates dialog on Penpot dashboard.
     :dashboard-templates-section
@@ -116,26 +123,34 @@
     :strict-session-cookies
     :telemetry
     :terms-and-privacy-checkbox
-    ;; Only for developtment.
     :tiered-file-data-storage
-    :token-units
+
+    ;; Tokens
     :token-base-font-size
+    :token-combobox
     :token-color
-    :token-typography-types
-    :token-typography-composite
     :token-shadow
+    :token-tokenscript
+    :token-import-from-library
+    :token-typography-row
+
+    ;; Only for developtment.
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
     :v2-migration
     :webhooks
     ;; TODO: deprecate this flag and consolidate the code
-    :export-file-v3
     :render-wasm-dpr
+    ;; Show WASM renderer info label (hidden by default).
+    :render-wasm-info
+    :render-switch
     :hide-release-modal
     :subscriptions
     :subscriptions-old
     :inspect-styles
+    ;; Enable performance logs in devconsole (disabled by default)
+    :perf-logs
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
@@ -147,7 +162,15 @@
 
     ;; A temporal flag, enables backend code use more extensivelly
     ;; redis for caching data
-    :redis-cache})
+    :redis-cache
+
+    ;; Activates the nitrate module
+    :nitrate
+
+    :mcp
+    :background-blur
+    :available-viewer-wasm
+    :stroke-path})
 
 (def all-flags
   (set/union email login varia))
@@ -170,10 +193,16 @@
    :enable-google-fonts-provider
    :enable-component-thumbnails
    :enable-render-wasm-dpr
-   :enable-token-units
-   :enable-token-typography-types
-   :enable-token-typography-composite
-   :enable-feature-fdata-objects-map])
+   :enable-token-color
+   :enable-token-shadow
+   :enable-token-typography-row
+   :enable-inspect-styles
+   :enable-feature-fdata-objects-map
+   :enable-feature-render-wasm
+   :enable-token-import-from-library
+   :enable-render-switch
+   :enable-render-wasm-info
+   :enable-available-viewer-wasm])
 
 (defn parse
   [& flags]

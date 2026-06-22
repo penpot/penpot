@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.pin-button
   (:require-macros
@@ -18,7 +18,6 @@
   (deprecated-icon/icon-xref :pin (stl/css :icon)))
 
 (mf/defc pin-button*
-  {::mf/props :obj}
   [{:keys [aria-label is-pinned class] :as props}]
   (let [aria-label (or aria-label (tr "dashboard.pin-unpin"))
         class (dm/str (or class "") " " (stl/css-case :button true :button-active is-pinned))

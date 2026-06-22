@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.features
   (:require
@@ -53,7 +53,9 @@
     "plugins/runtime"
     "tokens/numeric-input"
     "design-tokens/v1"
+    "text-editor/v2-html-paste"
     "text-editor/v2"
+    "text-editor-wasm/v1"
     "render-wasm/v1"
     "variants/v1"})
 
@@ -66,6 +68,7 @@
     "components/v2"
     "plugins/runtime"
     "design-tokens/v1"
+    "tokens/numeric-input"
     "variants/v1"})
 
 ;; A set of features which only affects on frontend and can be enabled
@@ -75,7 +78,9 @@
 (def frontend-only-features
   #{"styles/v2"
     "plugins/runtime"
+    "text-editor/v2-html-paste"
     "text-editor/v2"
+    "text-editor-wasm/v1"
     "tokens/numeric-input"
     "render-wasm/v1"})
 
@@ -124,6 +129,8 @@
     :feature-plugins "plugins/runtime"
     :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
+    :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
+    :feature-text-editor-wasm "text-editor-wasm/v1"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"

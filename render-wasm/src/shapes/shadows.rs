@@ -1,5 +1,6 @@
 use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 
+use super::blurs::radius_to_sigma;
 use super::Color;
 use crate::render::filters::compose_filters;
 
@@ -48,9 +49,10 @@ impl Shadow {
     }
 
     pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        let sigma = radius_to_sigma(self.blur);
         let mut filter = image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
-            (self.blur, self.blur),
+            (sigma, sigma),
             self.color,
             None,
             None,
@@ -78,7 +80,7 @@ impl Shadow {
     }
 
     pub fn get_inner_shadow_filter(&self) -> Option<ImageFilter> {
-        let sigma = self.blur * 0.5;
+        let sigma = radius_to_sigma(self.blur);
         let mut filter = skia::image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1), // DPR?
             (sigma, sigma),

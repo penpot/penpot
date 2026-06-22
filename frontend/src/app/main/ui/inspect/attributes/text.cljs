@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.attributes.text
   (:require-macros [app.main.style :as stl])
@@ -107,10 +107,10 @@
      (when (:text-decoration style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Decoration"]
-              ;; Execution time translation strings:
-              ;;   (tr "inspect.attributes.typography.text-decoration.none")
-              ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
-              ;;   (tr "inspect.attributes.typography.text-decoration.underline")
+        ;; Execution time translation strings:
+        ;;   (tr "inspect.attributes.typography.text-decoration.none")
+        ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
+        ;;   (tr "inspect.attributes.typography.text-decoration.underline")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-decoration)}
           [:div {:class (stl/css :button-children)}
@@ -119,12 +119,12 @@
      (when (:text-transform style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Transform"]
-              ;; Execution time translation strings:
-              ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
-              ;;   (tr "inspect.attributes.typography.text-transform.none")
-              ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
-              ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
-              ;;   (tr "inspect.attributes.typography.text-transform.unset")
+        ;; Execution time translation strings:
+        ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
+        ;;   (tr "inspect.attributes.typography.text-transform.none")
+        ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
+        ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
+        ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-transform)}
           [:div {:class (stl/css :button-children)}
@@ -157,7 +157,8 @@
     [:div {:class (stl/css :attributes-block)}
      [:> inspect-title-bar*
       {:title (tr "inspect.attributes.typography")
-       :class (stl/css :title-spacing-text)}]
+       :class (stl/css :title-wrapper)
+       :title-class (stl/css :text-atrr-title)}]
 
      (for [shape shapes]
        [:& text-block {:shape shape

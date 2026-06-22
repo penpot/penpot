@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.tasks.delete-object
   "A generic task for object deletion cascade handling"
@@ -45,7 +45,8 @@
            :deleted-at (ct/format-inst deleted-at))
 
     (db/update! conn :file
-                {:deleted-at deleted-at}
+                {:deleted-at deleted-at
+                 :is-shared false}
                 {:id id}
                 {::db/return-keys false})
 
@@ -53,7 +54,7 @@
                (not *team-deletion*))
       ;; NOTE: we don't prevent file deletion on absorb operation failure
       (try
-        (db/tx-run! cfg files/absorb-library! id)
+        (db/tx-run! cfg files/absorb-library id)
         (catch Throwable cause
           (l/warn :hint "error on absorbing library"
                   :file-id id

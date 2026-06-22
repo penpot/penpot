@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC
+ * Copyright (c) KALEIDOS INC Sucursal en España SL
  */
 
 import {
@@ -17,7 +17,7 @@ import { setStyles, mergeStyles } from "./Style.js";
 import { createRandomId } from "./Element.js";
 
 export const TAG = "SPAN";
-export const TYPE = "inline";
+export const TYPE = "span";
 export const QUERY = `[data-itype="${TYPE}"]`;
 export const STYLES = [
   ["--typography-ref-id"],
@@ -115,9 +115,9 @@ export function createTextSpan(textOrLineBreak, styles, attrs) {
     textOrLineBreak instanceof Text &&
     textOrLineBreak.nodeValue.length === 0
   ) {
-    console.trace("nodeValue", textOrLineBreak.nodeValue);
     throw new TypeError("Invalid text span child, cannot be an empty text");
   }
+
   return createElement(TAG, {
     attributes: { id: createRandomId(), ...attrs },
     data: { itype: TYPE },

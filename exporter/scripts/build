@@ -7,15 +7,26 @@ export NODE_ENV=production;
 
 corepack enable;
 corepack install || exit 1;
-yarn install || exit 1;
+pnpm install || exit 1;
 rm -rf target
 
 # Build the application
-yarn run build;
+pnpm run build;
 
-# Copy package*.json files
-cp ../.yarnrc.yml target/;
-cp yarn.lock target/;
+cp pnpm-lock.yaml target/;
+cp pnpm-workspace.yaml target/;
 cp package.json target/;
+touch target/pnpm-workspace.yaml;
+
+cat <<EOF | tee target/setup
+#/usr/bin/env bash
+set -e;
+corepack enable;
+corepack install;
+pnpm install
+pnpm exec playwright install chromium;
+EOF
+
+chmod +x target/setup;
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/app.js;

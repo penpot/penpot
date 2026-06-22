@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.test-helpers.shapes
   (:require
@@ -76,6 +76,18 @@
                (thf/get-page file page-label)
                (thf/current-page file))
         shape (ctst/get-shape page (thi/id shape-label))]
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
+
+(defn update-shape-by-id
+  [file shape-id attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page shape-id)]
     (update file :data
             (fn [file-data]
               (ctpl/update-page file-data

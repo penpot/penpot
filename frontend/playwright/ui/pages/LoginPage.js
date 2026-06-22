@@ -1,9 +1,13 @@
 import { BasePage } from "./BasePage";
 
 export class LoginPage extends BasePage {
+  static async init(page) {
+    await super.init(page);
+  }
+
   constructor(page) {
     super(page);
-    this.loginButton = page.getByRole("button", { name: "Login" });
+    this.loginButton = page.getByRole("button", { name: "Continue" });
     this.password = page.getByLabel("Password");
     this.userName = page.getByLabel("Email");
     this.invalidCredentialsError = page.getByText(

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 #_{:clj-kondo/ignore [:unused-namespace]}
 (ns app.common.time
@@ -28,6 +28,7 @@
               ["date-fns/locale/eu$default" :as dfn-eu]
               ["date-fns/locale/fa-IR$default" :as dfn-fa-ir]
               ["date-fns/locale/fr$default" :as dfn-fr]
+              ["date-fns/locale/fr-CA$default" :as dfn-fr-ca]
               ["date-fns/locale/gl$default" :as dfn-gl]
               ["date-fns/locale/he$default" :as dfn-he]
               ["date-fns/locale/hr$default" :as dfn-hr]
@@ -64,12 +65,46 @@
       java.time.temporal.TemporalAmount
       java.time.temporal.TemporalUnit)))
 
+(declare inst)
+
 #?(:clj (def ^:dynamic *clock* (Clock/systemDefaultZone)))
+
+#?(:clj
+   (defn clock?
+     [o]
+     (instance? Clock o)))
+
+#?(:clj
+   (defn get-system-clock
+     []
+     (Clock/systemDefaultZone)))
+
+#?(:clj
+   (defn offset-clock
+     [offset]
+     (Clock/offset ^Clock (Clock/systemDefaultZone) ^Duration offset)))
+
+#?(:clj
+   (defn fixed-clock
+     [instant]
+     (Clock/fixed ^Instant (inst instant)
+                  ^ZoneId (ZoneId/of "Z"))))
 
 (defn now
   []
   #?(:clj (Instant/now *clock*)
      :cljs (new js/Date)))
+
+#?(:clj
+   (defn tick-millis-clock
+     "Alternate clock with a resolution of milliseconds instead of the default nanoseconds of the Java clock.
+      This may be useful if the instant is going to be serialized to DB with fressian (that does not have
+      resolution enough to store all precission) and need to compare the deserialized value for equality.
+
+      You can replace the global clock (for example in unit tests) with
+        (alter-var-root #'ct/*clock* (constantly (ct/tick-millis-clock)))"
+     []
+     (Clock/tickMillis (ZoneId/of "Z"))))
 
 ;; --- DURATION
 
@@ -167,6 +202,24 @@
       (zero? result)  false
       :else false)))
 
+(defn is-after-or-equal?
+  "Analgous to: da >= db"
+  [da db]
+  (let [result (compare da db)]
+    (cond
+      (neg? result) false
+      (zero? result) true
+      :else true)))
+
+(defn is-before-or-equal?
+  "Analgous to: da <= db"
+  [da db]
+  (let [result (compare da db)]
+    (cond
+      (neg? result)   true
+      (zero? result)  true
+      :else false)))
+
 (defn inst?
   [o]
   #?(:clj (instance? Instant o)
@@ -179,40 +232,41 @@
 (defn format-inst
   ([v] (format-inst v :iso))
   ([v fmt]
-   (case fmt
-     (:iso :iso8601)
-     #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
-        :cljs (dfn-format-iso v))
+   (when (some? v)
+     (case fmt
+       (:iso :iso8601)
+       #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+          :cljs (dfn-format-iso v))
 
-     :iso-date
-     #?(:clj (.format DateTimeFormatter/ISO_LOCAL_DATE
-                      ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
-        :cljs (dfn-format-iso v #js {:representation "date"}))
+       :iso-date
+       #?(:clj (.format DateTimeFormatter/ISO_LOCAL_DATE
+                        ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
+          :cljs (dfn-format-iso v #js {:representation "date"}))
 
-     (:rfc1123 :http)
-     #?(:clj (.format DateTimeFormatter/RFC_1123_DATE_TIME
-                      ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
-        :cljs (dfn-format v "EEE, dd LLL yyyy HH:mm:ss 'GMT'"))
+       (:rfc1123 :http)
+       #?(:clj (.format DateTimeFormatter/RFC_1123_DATE_TIME
+                        ^ZonedDateTime (ZonedDateTime/ofInstant v (ZoneId/of "UTC")))
+          :cljs (dfn-format v "EEE, dd LLL yyyy HH:mm:ss 'GMT'"))
 
-     #?@(:cljs [:time-24-simple
-                (dfn-format v "HH:mm")
+       #?@(:cljs [:time-24-simple
+                  (dfn-format v "HH:mm")
 
-                ;; DEPRECATED
-                :date-full
-                (dfn-format v "PPP")
+                  ;; DEPRECATED
+                  :date-full
+                  (dfn-format v "PPP")
 
-                :localized-date
-                (dfn-format v "PPP")
+                  :localized-date
+                  (dfn-format v "PPP")
 
-                :localized-time
-                (dfn-format v "p")
+                  :localized-time
+                  (dfn-format v "p")
 
-                :localized-date-time
-                (dfn-format v "PPPp")
+                  :localized-date-time
+                  (dfn-format v "PPP . p")
 
-                (if (string? fmt)
-                  (dfn-format v fmt)
-                  (throw (js/Error. "unpexted format")))]))))
+                  (if (string? fmt)
+                    (dfn-format v fmt)
+                    (throw (js/Error. "unpexted format")))])))))
 
 #?(:cljs
    (def locales
@@ -227,6 +281,7 @@
           :fa dfn-fa-ir
           :fa_ir dfn-fa-ir
           :fr dfn-fr
+          :fr_ca dfn-fr-ca
           :he dfn-he
           :pt dfn-pt
           :pt_pt dfn-pt
@@ -340,7 +395,7 @@
      (dfn-diff t2 t1)))
 
 #?(:cljs
-   (defn set-default-locale!
+   (defn set-default-locale
      [locale]
      (when-let [locale (unchecked-get locales locale)]
        (dfn-set-default-options #js {:locale locale}))))

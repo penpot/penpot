@@ -2,20 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.flex
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.plugins.register :as r]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]
-   [potok.v2.core :as ptk]))
+   [app.util.object :as obj]))
 
 ;; Define in `app.plugins.shape` we do this way to prevent circular dependency
 (def shape-proxy? nil)
@@ -39,10 +39,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/flex-direction-types value))
-           (u/display-not-valid :dir value)
+           (u/not-valid plugin-id :dir value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :dir "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :dir "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :dir "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-flex-dir value})))))}
@@ -55,10 +58,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/wrap-types value))
-           (u/display-not-valid :wrap value)
+           (u/not-valid plugin-id :wrap value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :wrap "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :wrap "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :wrap "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-wrap-type value})))))}
@@ -71,10 +77,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/align-items-types value))
-           (u/display-not-valid :alignItems value)
+           (u/not-valid plugin-id :alignItems value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignItems "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignItems "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :alignItems "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-align-items value})))))}
@@ -87,10 +96,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/align-content-types value))
-           (u/display-not-valid :alignContent value)
+           (u/not-valid plugin-id :alignContent value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignContent "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignContent "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :alignContent "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-align-content value})))))}
@@ -103,10 +115,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/justify-items-types value))
-           (u/display-not-valid :justifyItems value)
+           (u/not-valid plugin-id :justifyItems value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :justifyItems "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :justifyItems "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :justifyItems "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-justify-items value})))))}
@@ -119,10 +134,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/justify-content-types value))
-           (u/display-not-valid :justifyContent value)
+           (u/not-valid plugin-id :justifyContent value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :justifyContent "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :justifyContent "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :justifyContent "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout #{id} {:layout-justify-content value})))))}
@@ -133,11 +151,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :rowGap value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rowGap "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rowGap "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :rowGap "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-gap {:row-gap value}}))))}
@@ -148,11 +169,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :columnGap value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :columnGap "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :columnGap "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :columnGap "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-gap {:column-gap value}}))))}
@@ -163,11 +187,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :verticalPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :verticalPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :verticalPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :verticalPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}}))))}
@@ -178,15 +205,17 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :horizontalPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :horizontalPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :horizontalPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
-
 
     :topPadding
     {:this true
@@ -194,11 +223,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :topPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :topPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :topPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :topPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value}}))))}
@@ -209,11 +241,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :rightPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rightPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rightPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :rightPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}}))))}
@@ -224,11 +259,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :bottomPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :bottomPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :bottomPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :bottomPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}}))))}
@@ -239,11 +277,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-int? value))
-         (u/display-not-valid :leftPadding value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :leftPadding "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :leftPadding "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :leftPadding "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}}))))}
@@ -256,13 +297,63 @@
     (fn [child]
       (cond
         (not (shape-proxy? child))
-        (u/display-not-valid :appendChild child)
+        (u/not-valid plugin-id :appendChild child)
+
+        (or (not (u/page-active? page-id))
+            (not (u/page-active? (obj/get child "$page"))))
+        (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
 
         :else
-        (let [child-id  (obj/get child "$id")]
-          (st/emit! (dwt/move-shapes-to-frame #{child-id} id nil nil)
-                    (ptk/data-event :layout/update {:ids [id]})))))))
+        (let [child-id (obj/get child "$id")
+              shape (u/locate-shape file-id page-id id)
+              child-shape (u/locate-shape file-id page-id child-id)
+              index
+              (if (and (u/natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
+                0
+                (count (:shapes shape)))]
+          (st/emit!
+           (dwsh/relocate-shapes #{child-id} id index)
+           (se/event plugin-id "add-layout-element"
+                     :type (:type child-shape)
+                     :parent-type (:type shape))))))
 
+    :horizontalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-h-sizing-types value))
+           (u/not-valid plugin-id :horizontalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :horizontalSizing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :horizontalSizing "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+
+    :verticalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-v-sizing-types value))
+           (u/not-valid plugin-id :verticalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}))
 
 (defn layout-child-proxy? [p]
   (obj/type-of? p "LayoutChildProxy"))
@@ -282,10 +373,13 @@
      (fn [_ value]
        (cond
          (not (boolean? value))
-         (u/display-not-valid :absolute value)
+         (u/not-valid plugin-id :absolute value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :absolute "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :absolute "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :absolute "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout #{id} {:layout-item-absolute value}))))}
@@ -296,11 +390,14 @@
      :set
      (fn [_ value]
        (cond
-         (us/safe-int? value)
-         (u/display-not-valid :zIndex value)
+         (not (sm/valid-safe-int? value))
+         (u/not-valid plugin-id :zIndex value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :zIndex "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :zIndex "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :zIndex "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-z-index value}))))}
@@ -313,10 +410,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-h-sizing-types value))
-           (u/display-not-valid :horizontalPadding value)
+           (u/not-valid plugin-id :horizontalPadding value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :horizontalPadding "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :horizontalPadding "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-h-sizing value})))))}
@@ -329,10 +429,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-v-sizing-types value))
-           (u/display-not-valid :verticalSizing value)
+           (u/not-valid plugin-id :verticalSizing value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}
@@ -345,10 +448,13 @@
        (let [value (keyword value)]
          (cond
            (not (contains? ctl/item-align-self-types value))
-           (u/display-not-valid :alignSelf value)
+           (u/not-valid plugin-id :alignSelf value)
 
            (not (r/check-permission plugin-id "content:write"))
-           (u/display-not-valid :alignSelf "Plugin doesn't have 'content:write' permission")
+           (u/not-valid plugin-id :alignSelf "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :alignSelf "Cannot modify a page that is not currently active")
 
            :else
            (st/emit! (dwsl/update-layout-child #{id} {:layout-item-align-self value})))))}
@@ -359,11 +465,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :verticalMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :verticalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :verticalMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :verticalMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :verticalMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value :m3 value}}))))}
@@ -374,11 +483,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :horizontalMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :horizontalMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :horizontalMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :horizontalMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :horizontalMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value :m4 value}}))))}
@@ -389,11 +501,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :topMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :topMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :topMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :topMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :topMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value}}))))}
@@ -404,11 +519,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :rightMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :rightMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :rightMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :rightMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :rightMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value}}))))}
@@ -419,11 +537,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :bottomMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :bottomMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :bottomMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :bottomMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :bottomMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m3 value}}))))}
@@ -434,11 +555,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :leftMargin value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :leftMargin value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :leftMargin "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :leftMargin "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :leftMargin "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m4 value}}))))}
@@ -449,11 +573,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :maxWidth value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :maxWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :maxWidth "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :maxWidth "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :maxWidth "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-max-w value}))))}
@@ -464,11 +591,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :minWidth value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :minWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :minWidth "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :minWidth "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :minWidth "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-min-w value}))))}
@@ -479,11 +609,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :maxHeight value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :maxHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :maxHeight "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :maxHeight "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :maxHeight "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-max-h value}))))}
@@ -494,11 +627,14 @@
      :set
      (fn [_ value]
        (cond
-         (not (us/safe-number? value))
-         (u/display-not-valid :minHeight value)
+         (not (sm/valid-safe-number? value))
+         (u/not-valid plugin-id :minHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
-         (u/display-not-valid :minHeight "Plugin doesn't have 'content:write' permission")
+         (u/not-valid plugin-id :minHeight "Plugin doesn't have 'content:write' permission")
+
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :minHeight "Cannot modify a page that is not currently active")
 
          :else
          (st/emit! (dwsl/update-layout-child #{id} {:layout-item-min-h value}))))}))

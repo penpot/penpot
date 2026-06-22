@@ -1,3 +1,4 @@
+use crate::math::is_close_to;
 use crate::shapes::fills::{Fill, SolidColor};
 use skia_safe::{self as skia, Rect};
 
@@ -40,6 +41,10 @@ pub struct Stroke {
     pub cap_end: Option<StrokeCap>,
     pub cap_start: Option<StrokeCap>,
     pub kind: StrokeKind,
+    // Dash and gap overrides for the `Dashed` style. `None` falls back to the
+    // default `width + 10` pattern to keep existing designs visually identical.
+    pub dash: Option<f32>,
+    pub gap: Option<f32>,
 }
 
 impl Stroke {
@@ -71,6 +76,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -79,6 +86,8 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Center,
+            dash,
+            gap,
         }
     }
 
@@ -87,6 +96,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -95,6 +106,8 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Inner,
+            dash,
+            gap,
         }
     }
 
@@ -103,6 +116,8 @@ impl Stroke {
         style: StrokeStyle,
         cap_start: Option<StrokeCap>,
         cap_end: Option<StrokeCap>,
+        dash: Option<f32>,
+        gap: Option<f32>,
     ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
@@ -111,11 +126,32 @@ impl Stroke {
             cap_end,
             cap_start,
             kind: StrokeKind::Outer,
+            dash,
+            gap,
         }
     }
 
     pub fn scale_content(&mut self, value: f32) {
         self.width *= value;
+        if let Some(dash) = self.dash {
+            self.dash = Some(dash * value);
+        }
+        if let Some(gap) = self.gap {
+            self.gap = Some(gap * value);
+        }
+    }
+
+    /// Returns the clip operation for dotted inner/outer strokes.
+    /// Returns `None` when no clipping is needed (center or non-dotted).
+    pub fn clip_op(&self) -> Option<skia::ClipOp> {
+        if self.style != StrokeStyle::Dotted || self.kind == StrokeKind::Center {
+            return None;
+        }
+        match self.kind {
+            StrokeKind::Inner => Some(skia::ClipOp::Intersect),
+            StrokeKind::Outer => Some(skia::ClipOp::Difference),
+            StrokeKind::Center => None,
+        }
     }
 
     pub fn delta(&self) -> f32 {
@@ -127,24 +163,46 @@ impl Stroke {
     }
 
     pub fn outer_rect(&self, rect: &Rect) -> Rect {
-        match self.kind {
-            StrokeKind::Inner => Rect::from_xywh(
-                rect.left + (self.width / 2.),
-                rect.top + (self.width / 2.),
-                rect.width() - self.width,
-                rect.height() - self.width,
-            ),
-            StrokeKind::Center => Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height()),
-            StrokeKind::Outer => Rect::from_xywh(
-                rect.left - (self.width / 2.),
-                rect.top - (self.width / 2.),
-                rect.width() + self.width,
-                rect.height() + self.width,
-            ),
+        match (self.kind, self.style) {
+            (StrokeKind::Inner, StrokeStyle::Dotted) | (StrokeKind::Outer, StrokeStyle::Dotted) => {
+                // Boundary so circles center on it and semicircles match after clipping
+                *rect
+            }
+            _ => match self.kind {
+                StrokeKind::Inner => Rect::from_xywh(
+                    rect.left + (self.width / 2.),
+                    rect.top + (self.width / 2.),
+                    rect.width() - self.width,
+                    rect.height() - self.width,
+                ),
+                StrokeKind::Center => {
+                    Rect::from_xywh(rect.left, rect.top, rect.width(), rect.height())
+                }
+                StrokeKind::Outer => Rect::from_xywh(
+                    rect.left - (self.width / 2.),
+                    rect.top - (self.width / 2.),
+                    rect.width() + self.width,
+                    rect.height() + self.width,
+                ),
+            },
         }
     }
 
+    pub fn aligned_rect(&self, rect: &Rect, scale: f32) -> Rect {
+        let stroke_rect = self.outer_rect(rect);
+        if self.kind != StrokeKind::Center {
+            return stroke_rect;
+        }
+
+        align_rect_to_half_pixel(&stroke_rect, self.width, scale)
+    }
+
     pub fn outer_corners(&self, corners: &Corners) -> Corners {
+        if matches!(self.style, StrokeStyle::Dotted | StrokeStyle::Dashed) {
+            // Path at boundary so no corner offset
+            return *corners;
+        }
+
         let offset = match self.kind {
             StrokeKind::Center => 0.0,
             StrokeKind::Inner => -self.width / 2.0,
@@ -162,7 +220,6 @@ impl Stroke {
         &self,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
         let mut paint = self.fill.to_paint(rect, antialias);
@@ -171,32 +228,47 @@ impl Stroke {
         let width = match self.kind {
             StrokeKind::Inner => self.width,
             StrokeKind::Center => self.width,
-            StrokeKind::Outer => self.width + (1. / scale),
+            StrokeKind::Outer => self.width,
         };
 
         paint.set_stroke_width(width);
         paint.set_anti_alias(antialias);
 
         if let Some(svg_attrs) = svg_attrs {
-            if svg_attrs.stroke_linecap == StrokeLineCap::Round {
-                paint.set_stroke_cap(skia::paint::Cap::Round);
+            match svg_attrs.stroke_linecap {
+                StrokeLineCap::Round => {
+                    paint.set_stroke_cap(skia::paint::Cap::Round);
+                }
+                StrokeLineCap::Square => {
+                    paint.set_stroke_cap(skia::paint::Cap::Square);
+                }
+                StrokeLineCap::Butt => {} // Skia default
             }
 
-            if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
-                paint.set_stroke_join(skia::paint::Join::Round);
+            match svg_attrs.stroke_linejoin {
+                StrokeLineJoin::Round => {
+                    paint.set_stroke_join(skia::paint::Join::Round);
+                }
+                StrokeLineJoin::Bevel => {
+                    paint.set_stroke_join(skia::paint::Join::Bevel);
+                }
+                StrokeLineJoin::Miter => {} // Skia default
             }
         }
 
         if self.style != StrokeStyle::Solid {
             let path_effect = match self.style {
                 StrokeStyle::Dotted => {
-                    let mut circle_path = skia::Path::new();
                     let width = match self.kind {
                         StrokeKind::Inner => self.width,
                         StrokeKind::Center => self.width / 2.0,
                         StrokeKind::Outer => self.width,
                     };
-                    circle_path.add_circle((0.0, 0.0), width, None);
+                    let circle_path = {
+                        let mut pb = skia::PathBuilder::new();
+                        pb.add_circle((0.0, 0.0), width, None);
+                        pb.detach()
+                    };
                     let advance = self.width + 5.0;
                     skia::PathEffect::path_1d(
                         &circle_path,
@@ -206,7 +278,9 @@ impl Stroke {
                     )
                 }
                 StrokeStyle::Dashed => {
-                    skia::PathEffect::dash(&[self.width + 10., self.width + 10.], 0.)
+                    let dash = self.dash.unwrap_or(self.width + 10.);
+                    let gap = self.gap.unwrap_or(self.width + 10.);
+                    skia::PathEffect::dash(&[dash, gap], 0.)
                 }
                 StrokeStyle::Mixed => skia::PathEffect::dash(
                     &[
@@ -230,10 +304,9 @@ impl Stroke {
         is_open: bool,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
+        let mut paint = self.to_paint(rect, svg_attrs, antialias);
         match self.render_kind(is_open) {
             StrokeKind::Inner => {
                 paint.set_stroke_width(2. * paint.stroke_width());
@@ -242,6 +315,10 @@ impl Stroke {
             StrokeKind::Outer => {
                 paint.set_stroke_width(2. * paint.stroke_width());
             }
+        }
+
+        if let Some(cap) = self.to_skia_linecap() {
+            paint.set_stroke_cap(cap);
         }
 
         paint
@@ -254,10 +331,9 @@ impl Stroke {
         is_open: bool,
         rect: &Rect,
         svg_attrs: Option<&SvgAttrs>,
-        scale: f32,
         antialias: bool,
     ) -> skia::Paint {
-        let mut paint = self.to_paint(rect, svg_attrs, scale, antialias);
+        let mut paint = self.to_paint(rect, svg_attrs, antialias);
         match self.render_kind(is_open) {
             StrokeKind::Inner => {
                 paint.set_stroke_width(2. * paint.stroke_width());
@@ -276,5 +352,68 @@ impl Stroke {
             Fill::Solid(SolidColor(color)) => color.a() == 0,
             _ => false,
         }
+    }
+
+    pub fn cap_bounds_margin(&self) -> f32 {
+        cap_margin_for_cap(self.cap_start, self.width)
+            .max(cap_margin_for_cap(self.cap_end, self.width))
+    }
+
+    /// Returns a Skia `PaintCap` to apply natively on the stroke paint when
+    /// both ends share the same simple line cap (`Round/Round` or
+    /// `Square/Square`). Skia only emits cap geometry at sub-path endpoints,
+    /// so this is a no-op on closed paths and avoids the extra fill draw the
+    /// manual caps would otherwise require on open paths.
+    pub fn to_skia_linecap(&self) -> Option<skia::paint::Cap> {
+        match (self.cap_start, self.cap_end) {
+            (Some(StrokeCap::Round), Some(StrokeCap::Round)) => Some(skia::paint::Cap::Round),
+            (Some(StrokeCap::Square), Some(StrokeCap::Square)) => Some(skia::paint::Cap::Square),
+            _ => None,
+        }
+    }
+}
+
+fn align_rect_to_half_pixel(rect: &Rect, stroke_width: f32, scale: f32) -> Rect {
+    if scale <= 0.0 {
+        return *rect;
+    }
+
+    let stroke_pixels = stroke_width * scale;
+    let stroke_pixels_rounded = stroke_pixels.round();
+    if !is_close_to(stroke_pixels, stroke_pixels_rounded) {
+        return *rect;
+    }
+
+    if (stroke_pixels_rounded as i32) % 2 == 0 {
+        return *rect;
+    }
+
+    let left_px = rect.left * scale;
+    let top_px = rect.top * scale;
+    let target_frac = 0.5;
+    let dx_px = target_frac - (left_px - left_px.floor());
+    let dy_px = target_frac - (top_px - top_px.floor());
+
+    if is_close_to(dx_px, 0.0) && is_close_to(dy_px, 0.0) {
+        return *rect;
+    }
+
+    Rect::from_xywh(
+        rect.left + (dx_px / scale),
+        rect.top + (dy_px / scale),
+        rect.width(),
+        rect.height(),
+    )
+}
+fn cap_margin_for_cap(cap: Option<StrokeCap>, width: f32) -> f32 {
+    match cap {
+        Some(StrokeCap::LineArrow)
+        | Some(StrokeCap::TriangleArrow)
+        | Some(StrokeCap::SquareMarker)
+        | Some(StrokeCap::DiamondMarker) => width * 4.0,
+        Some(StrokeCap::CircleMarker) => width * 2.0,
+        Some(StrokeCap::Square) => width,
+        Some(StrokeCap::Round) => width * 0.5,
+        _ => 0.0,
     }
 }
