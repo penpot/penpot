@@ -136,6 +136,9 @@
     :name
     {:get #(-> (u/locate-file id) :name)}
 
+    :revn
+    {:get #(-> (u/locate-file id) :revn)}
+
     :pages
     {:this true
      :get #(.getPages ^js %)}
