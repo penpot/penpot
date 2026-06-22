@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Beeby Xia <beeby@163.com>\n"
+"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -3348,6 +3348,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "你的团队有多少人？"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "告诉我们您的工作"
 
