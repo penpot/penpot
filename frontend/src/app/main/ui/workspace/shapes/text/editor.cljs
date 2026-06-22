@@ -31,11 +31,11 @@
 ;; --- Text Editor Rendering
 
 (mf/defc block-component*
-  {::mf/props :obj}
-  [{:keys [blockProps] :as props}]
-  (let [data  (.-data blockProps)
-        style (sts/generate-paragraph-styles (.-shape blockProps) data)
+  [{:keys [block-props] :as props}]
+  (let [data  (.-data ^js block-props)
+        style (sts/generate-paragraph-styles (.-shape ^js block-props) data)
         dir   (:text-direction data "auto")]
+
     [:div {:style style :dir dir}
      [:> draft/EditorBlock props]]))
 
