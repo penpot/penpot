@@ -269,3 +269,32 @@
         (doseq [[label thunk] (setter-specs m)]
           (t/is (not (throws? thunk)) (str label " must be allowed on the active page")))))))
 
+(t/deftest test-layout-gap-padding-accepts-fractional-values
+  ;; Regression: the flex/grid gap and padding setters validated with
+  ;; `valid-safe-int?`, but the layout model types `:row-gap`/`:column-gap` and
+  ;; `:p1`-`:p4` as `safe-number` (and the sidebar accepts decimals), so a
+  ;; fractional value was wrongly rejected. With `throwValidationErrors` on (set
+  ;; by `setup`) and page2 active, a fractional value must be accepted (no throw).
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [{:keys [store page2-id ^js flex ^js grid]} (setup)]
+        (activate-page! store page2-id)
+        (doseq [[label thunk]
+                [["flex.rowGap"            #(set! (.-rowGap flex) 10.5)]
+                 ["flex.columnGap"         #(set! (.-columnGap flex) 3.25)]
+                 ["flex.verticalPadding"   #(set! (.-verticalPadding flex) 4.5)]
+                 ["flex.horizontalPadding" #(set! (.-horizontalPadding flex) 4.5)]
+                 ["flex.topPadding"        #(set! (.-topPadding flex) 1.5)]
+                 ["flex.rightPadding"      #(set! (.-rightPadding flex) 1.5)]
+                 ["flex.bottomPadding"     #(set! (.-bottomPadding flex) 1.5)]
+                 ["flex.leftPadding"       #(set! (.-leftPadding flex) 1.5)]
+                 ["grid.rowGap"            #(set! (.-rowGap grid) 7.5)]
+                 ["grid.columnGap"         #(set! (.-columnGap grid) 2.25)]
+                 ["grid.verticalPadding"   #(set! (.-verticalPadding grid) 4.5)]
+                 ["grid.horizontalPadding" #(set! (.-horizontalPadding grid) 4.5)]
+                 ["grid.topPadding"        #(set! (.-topPadding grid) 1.5)]
+                 ["grid.rightPadding"      #(set! (.-rightPadding grid) 1.5)]
+                 ["grid.bottomPadding"     #(set! (.-bottomPadding grid) 1.5)]
+                 ["grid.leftPadding"       #(set! (.-leftPadding grid) 1.5)]]]
+          (t/is (not (throws? thunk)) (str label " must accept a fractional value")))))))
+
