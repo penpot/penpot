@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
 "Last-Translator: deveronica <deveronica42@gmail.com>\n"
-"Language-Team: Korean "
-"<https://hosted.weblate.org/projects/penpot/frontend/ko/>\n"
+"Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
+"ko/>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -3357,6 +3357,7 @@ msgid "not-found.login.sent-recovery-check"
 msgstr "이메일을 확인하고 링크를 클릭하여 새 비밀번호를 생성하세요."
 
 #: src/app/main/ui/static.cljs:167
+#, fuzzy
 msgid "not-found.login.signup-free"
 msgstr "무료 회원가입"
 
@@ -3576,8 +3577,11 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "구성원 초대"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
-msgstr "모든 분들을 포함하는 것을 잊지 마세요. 개발자, 디자이너, 매니저... 다양성이 힘이 됩니다 :)"
+msgstr ""
+"모든 분들을 포함하는 것을 잊지 마세요. 개발자, 디자이너, 매니저... 다양성이 "
+"힘이 됩니다 :)"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
 msgid "onboarding.choice.team-up.roles"
@@ -3701,6 +3705,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "회사의 규모는 어느 정도인가요?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "사용자분의 업무에 대해 알려주세요"
 
