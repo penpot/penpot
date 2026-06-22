@@ -825,6 +825,87 @@ LEFT JOIN profile AS p
     nil))
 
 
+;; ---- API: get-teams-detail
+
+(def ^:private sql:get-teams-detail
+  "SELECT
+     t.id,
+     t.name,
+     t.photo_id,
+     t.created_at,
+     (SELECT MAX(p2.modified_at)
+        FROM project AS p2
+       WHERE p2.team_id = t.id
+         AND p2.deleted_at IS NULL) AS last_activity_at,
+     owner_tpr.profile_id AS owner_profile_id,
+     owner_p.fullname AS owner_name,
+     owner_p.photo_id AS owner_photo_id,
+     (SELECT COUNT(*)
+        FROM project AS p3
+       WHERE p3.team_id = t.id
+         AND p3.deleted_at IS NULL
+         AND p3.is_default IS FALSE) AS num_projects,
+     (SELECT COUNT(*)
+        FROM file AS f
+        JOIN project AS p4 ON p4.id = f.project_id
+       WHERE p4.team_id = t.id
+         AND f.deleted_at IS NULL
+         AND p4.deleted_at IS NULL) AS num_files,
+     (SELECT COUNT(*)
+        FROM team_profile_rel AS tpr
+       WHERE tpr.team_id = t.id) AS num_members
+   FROM team AS t
+   LEFT JOIN team_profile_rel AS owner_tpr
+     ON owner_tpr.team_id = t.id AND owner_tpr.is_owner IS TRUE
+   LEFT JOIN profile AS owner_p
+     ON owner_p.id = owner_tpr.profile_id
+   WHERE t.id = ANY(?)
+     AND t.deleted_at IS NULL
+     AND t.is_default IS FALSE
+   ORDER BY last_activity_at DESC NULLS LAST")
+
+(def ^:private schema:get-teams-detail-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(def ^:private schema:get-teams-detail-result
+  [:vector
+   [:map
+    [:id ::sm/uuid]
+    [:name ::sm/text]
+    [:photo-url {:optional true} ::sm/uri]
+    [:created-at ::sm/inst]
+    [:last-activity-at {:optional true} [:maybe ::sm/inst]]
+    [:owner-profile-id {:optional true} [:maybe ::sm/uuid]]
+    [:owner-name {:optional true} [:maybe ::sm/text]]
+    [:owner-photo-url {:optional true} ::sm/uri]
+    [:num-projects ::sm/int]
+    [:num-files ::sm/int]
+    [:num-members ::sm/int]]])
+
+(sv/defmethod ::get-teams-detail
+  "Get detailed information for all non-deleted teams in an organization,
+   including owner info and project/file/member counts."
+  {::doc/added "2.20"
+   ::sm/params schema:get-teams-detail-params
+   ::sm/result schema:get-teams-detail-result}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (->> (:teams org-summary)
+                         (map :id)
+                         (filter uuid?)
+                         (into []))]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg
+               (fn [{:keys [::db/conn]}]
+                 (let [ids-array (db/create-array conn "uuid" team-ids)]
+                   (->> (db/exec! conn [sql:get-teams-detail ids-array])
+                        (mapv (fn [{:keys [photo-id owner-photo-id] :as row}]
+                                (cond-> (dissoc row :photo-id :owner-photo-id)
+                                  photo-id       (assoc :photo-url       (files/resolve-public-uri photo-id))
+                                  owner-photo-id (assoc :owner-photo-url (files/resolve-public-uri owner-photo-id))))))))))))
+
 ;; ---- API: notify-org-sso-change
 
 (sv/defmethod ::notify-org-sso-change
