@@ -202,7 +202,8 @@
    :enable-token-import-from-library
    :enable-render-switch
    :enable-render-wasm-info
-   :enable-available-viewer-wasm])
+   :enable-available-viewer-wasm
+   :enable-background-blur])
 
 (defn parse
   [& flags]
