@@ -484,7 +484,13 @@
     :fn (mg/resource "app/migrations/sql/0148-add-variant-name-team-font-variant.sql")}
 
    {:name "0149-mod-file-library-rel-synced-at"
-    :fn (mg/resource "app/migrations/sql/0149-mod-file-library-rel-synced-at.sql")}])
+    :fn (mg/resource "app/migrations/sql/0149-mod-file-library-rel-synced-at.sql")}
+
+   {:name "0150-mod-storage-object-table"
+    :fn (mg/resource "app/migrations/sql/0150-mod-storage-object-table.sql")}
+
+   {:name "0151-mod-file-tagged-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0151-mod-file-tagged-object-thumbnail-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
