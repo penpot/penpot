@@ -321,8 +321,7 @@
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg*
-  {::mf/props :obj}
-  [{:keys [shape] :as props}]
+  [{:keys [shape]}]
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
