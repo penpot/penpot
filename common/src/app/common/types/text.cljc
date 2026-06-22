@@ -78,6 +78,10 @@
    text-transform-attrs
    text-fills))
 
+(defn text-node-attr?
+  [attr]
+  (d/index-of text-node-attrs attr))
+
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
 (def text-style-attrs
@@ -210,7 +214,7 @@
     - Normalize numeric values (legacy) into strings.
     - No value is equal than the default value."
   [key value1 value2]
-  (when (d/index-of text-node-attrs key)
+  (when (text-node-attr? key)
     (let [default-value (get default-text-attrs key)
           normalize-value (fn [value]
                             (as-> value $
