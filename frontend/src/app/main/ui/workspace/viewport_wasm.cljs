@@ -51,7 +51,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -333,7 +335,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -526,6 +530,10 @@
                                           :background background
                                           :on-shapes-ready
                                           (fn []
+                                            ;; The target page's shapes are now loaded; arm
+                                            ;; the transition so the next full frame (the one
+                                            ;; that actually shows this page) removes the blur.
+                                            (wasm.api/arm-page-transition-end!)
                                             (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 

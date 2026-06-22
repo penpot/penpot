@@ -752,8 +752,15 @@
   (drops the edit without committing)."
   [{:keys [wasm-guides zoom wasm-guides? disabled-guides? on-guide-change
            on-guide-drag on-guide-hover get-hover-frame focus]}]
+
+  ;; NOTE: Some of the refs below are live mirrors of state, needed for DOM
+  ;; listeners registered via `mf/with-effect`. Reading the state might return
+  ;; a stale value or an invalid one (triggered right after a re-render)
+  ;; Reading the ref instead gives the current, real value, so hover detection
+  ;; and other pointer events ompares against the real guide data.
   (let [dragging-ref       (mf/use-ref false)
         moved-ref          (mf/use-ref false)
+        editing-ref        (mf/use-ref false)
         start-ref          (mf/use-ref nil)
         guide-ref          (mf/use-ref nil)
         pending-ref        (mf/use-ref nil)
@@ -761,12 +768,20 @@
         hover-axis-ref     (mf/use-ref nil)
         hover-guide-id-ref (mf/use-ref nil)
         state              (mf/use-state nil)
+        state-ref          (mf/use-ref nil)
 
         snap-pixel?
         (mf/deref refs/snap-pixel?)
 
         read-only?
         (mf/use-ctx ctx/workspace-read-only?)
+
+        ;; Always mutate the overlay state through this so `state-ref` stays in
+        ;; sync with the `use-state` value the renderer derefs.
+        set-state
+        (fn [value]
+          (mf/set-ref-val! state-ref value)
+          (reset! state value))
 
         ;; The handlers are defined here so they close directly over the refs and
         ;; the current render's props (guides, zoom, ...). The pointerdown /
@@ -813,11 +828,12 @@
         reset-state
         (fn []
           (clear-drag-refs)
+          (mf/set-ref-val! editing-ref false)
           (when (some? on-guide-drag)
             (on-guide-drag nil))
           (emit-hover-axis nil)
           (emit-hover-guide-id nil)
-          (reset! state nil))
+          (set-state nil))
 
         finish-drag
         (fn [event]
@@ -871,10 +887,10 @@
                       (when (some? on-guide-drag)
                         (on-guide-drag (:id guide))))
                     (mf/set-ref-val! pending-ref pending)
-                    (reset! state pending)))))))
+                    (set-state pending)))))))
 
         editing?
-        (fn [] (= :edit (:mode @state)))
+        (fn [] (mf/ref-val editing-ref))
 
         guide-at-event
         (fn [event]
@@ -903,7 +919,7 @@
                      (not (editing?))
                      (not (mf/ref-val dragging-ref)))
             (let [guide (visible-guide-at-event event)
-                  current-state @state
+                  current-state (mf/ref-val state-ref)
                   current-hover-id (when (= :hover (:mode current-state))
                                      (-> current-state :guide :id))]
               (emit-hover-axis (:axis guide))
@@ -912,20 +928,20 @@
                 (and (some? guide)
                      (not= (:id guide) current-hover-id))
                 (let [frame (some-> (:frame-id guide) refs/object-by-id deref)]
-                  (reset! state {:guide guide
-                                 :new-position (:position guide)
-                                 :frame-offset (guide-frame-offset guide)
-                                 ;; Only root, non-rotated frames get the
-                                 ;; segmented line (matching the SVG renderer),
-                                 ;; so we only overlay dotted extensions there.
-                                 :frame (when (and frame
-                                                   (cfh/root-frame? frame)
-                                                   (not (ctst/rotated-frame? frame)))
-                                          frame)
-                                 :mode :hover}))
+                  (set-state {:guide guide
+                              :new-position (:position guide)
+                              :frame-offset (guide-frame-offset guide)
+                              ;; Only root, non-rotated frames get the
+                              ;; segmented line (matching the SVG renderer),
+                              ;; so we only overlay dotted extensions there.
+                              :frame (when (and frame
+                                                (cfh/root-frame? frame)
+                                                (not (ctst/rotated-frame? frame)))
+                                       frame)
+                              :mode :hover}))
 
                 (and (nil? guide) (some? current-hover-id))
-                (reset! state nil)))))
+                (set-state nil)))))
 
         pointer-down
         (fn [event]
@@ -976,20 +992,21 @@
                 (when (some? on-guide-drag)
                   (on-guide-drag id))
                 (mf/set-ref-val! guide-ref guide)
+                (mf/set-ref-val! editing-ref true)
                 (let [frame  (some-> frame-id refs/object-by-id deref)
                       offset (if frame
                                (if (= :x axis) (:x frame) (:y frame))
                                0)]
-                  (reset! state {:guide guide
-                                 :new-position position
-                                 :new-frame-id frame-id
-                                 :frame-offset offset
-                                 :mode :edit}))))))
+                  (set-state {:guide guide
+                              :new-position position
+                              :new-frame-id frame-id
+                              :frame-offset offset
+                              :mode :edit}))))))
 
         commit-edit
         (fn [raw-value]
           (when (editing?)
-            (let [{:keys [guide new-frame-id frame-offset]} @state
+            (let [{:keys [guide new-frame-id frame-offset]} (mf/ref-val state-ref)
                   parsed (some-> raw-value str/trim d/parse-double)]
               (when (and (some? parsed) (some? on-guide-change))
                 (on-guide-change (assoc guide

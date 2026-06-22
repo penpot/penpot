@@ -25,6 +25,18 @@
   (t/testing "doesnt accept invalid double"
     (t/is (nil? (cfo/parse-token-value ".3")))))
 
+(t/deftest convert-dtcg-token-test
+  (t/testing "keeps string scalar values untouched"
+    (t/is (= {:name "spacing.16" :type :spacing :value "16"}
+             (cfo/convert-dtcg-token {"name" "spacing.16" "type" "spacing" "value" "16"})))
+    (t/is (= {:name "spacing.16" :type :spacing :value "16px"}
+             (cfo/convert-dtcg-token {"name" "spacing.16" "type" "spacing" "value" "16px"}))))
+  (t/testing "coerces numeric scalar values to strings"
+    (t/is (= {:name "spacing.16" :type :spacing :value "16"}
+             (cfo/convert-dtcg-token {"name" "spacing.16" "type" "spacing" "value" 16})))
+    (t/is (= {:name "radius" :type :border-radius :value "4"}
+             (cfo/convert-dtcg-token {"name" "radius" "type" "borderRadius" "value" 4})))))
+
 (t/deftest token-applied-test
   (t/testing "matches passed token with `:token-attributes`"
     (t/is (true? (cfo/token-applied? {:name "a"} {:applied-tokens {:x "a"}} #{:x}))))

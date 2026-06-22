@@ -8,5 +8,7 @@ allowBuilds:
   lmdb: false
   msgpackr-extract: false
   puppeteer: false
+  sharp: true
+  workerd: true
 
 linkWorkspacePackages: true

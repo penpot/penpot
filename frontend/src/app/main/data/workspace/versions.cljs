@@ -19,7 +19,6 @@
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.thumbnails :as th]
    [app.main.features :as features]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -73,9 +72,7 @@
          (rx/of ::dwp/force-persist
                 (ev/event {::ev/name "create-version"}))
 
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/take 1)
+         (->> (dwp/wait-persisted)
               (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
@@ -119,13 +116,6 @@
     ptk/EffectEvent
     (effect [_ _ _]
       (th/clear-queue!))))
-
-(defn- wait-for-persistence
-  [file-id snapshot-id]
-  (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-       (rx/filter #(or (nil? %) (= :saved %)))
-       (rx/take 1)
-       (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id snapshot-id}))))
 
 (defn delete-version
   [id]
@@ -223,7 +213,8 @@
          (rx/of ::dwp/force-persist
                 (dw/remove-layout-flag :document-history))
 
-         (->> (wait-for-persistence file-id id)
+         (->> (dwp/wait-persisted)
+              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
               (rx/map #(initialize-version))))))))
 
 (defn enter-restore
@@ -349,12 +340,6 @@
 ;; PLUGINS SPECIFIC EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wait-persisted-status
-  []
-  (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-       (rx/filter #(or (nil? %) (= :saved %)))
-       (rx/take 1)))
-
 (defn create-version-from-plugins
   [file-id label resolve reject]
 
@@ -371,7 +356,7 @@
                 (rx/of ::dwp/force-persist))
 
               (->> (if (= file-id current-file-id)
-                     (wait-persisted-status)
+                     (dwp/wait-persisted)
                      (rx/of :nothing))
                    (rx/mapcat
                     (fn [_]
@@ -401,7 +386,8 @@
                               ::ev/origin "plugins"})
                    ::dwp/force-persist)
 
-            (->> (wait-for-persistence file-id id)
+            (->> (dwp/wait-persisted)
+                 (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
                  (rx/map #(initialize-version)))
 
             (->> (rx/of 1)

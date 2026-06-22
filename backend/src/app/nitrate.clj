@@ -17,6 +17,7 @@
    [app.common.types.organization :as cto]
    [app.config :as cf]
    [app.http.client :as http]
+   [app.http.session :as session]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [clojure.core :as c]
@@ -301,14 +302,14 @@
               org))
           orgs)))
 
-(defn- delete-owned-orgs-api
+(defn- cleanup-deleted-penpot-user-api
   [cfg {:keys [profile-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
     (request-to-nitrate cfg :post
                         (str baseuri
                              "/api/users/"
                              profile-id
-                             "/delete-owned-organizations")
+                             "/cleanup-after-deletion")
                         nil params)))
 
 (defn- set-team-org-api
@@ -350,16 +351,6 @@
                              "/api/organizations/"
                              organization-id
                              "/remove-user")
-                        nil params)))
-
-(defn- remove-profile-from-all-orgs-api
-  [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/remove-organizations")
                         nil params)))
 
 (defn- remove-team-from-org-api
@@ -435,6 +426,28 @@
                          [:permissions [:map-of :keyword :string]]]
                         params)))
 
+(def ^:private schema:nitrate-sso
+  [:map
+   [:organization-id ::sm/uuid]
+   [:active [:maybe :boolean]]
+   [:provider [:maybe :string]]
+   [:client-id [:maybe :string]]
+   [:base-url [:maybe :string]]
+   [:client-secret [:maybe :string]]
+   [:issuer [:maybe :string]]
+   [:scopes [:maybe [::sm/set ::sm/text]]]])
+
+(defn- get-org-sso-by-team-api
+  [cfg {:keys [team-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/teams/"
+                             team-id
+                             "/sso")
+                        schema:nitrate-sso
+                        params)))
+
 (defn- get-org-members-api
   [cfg {:keys [organization-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -469,11 +482,11 @@
      :get-owned-orgs               (partial get-owned-orgs-api cfg)
      :get-owned-orgs-summary       (partial get-owned-orgs-summary-api cfg)
      :get-org-members              (partial get-org-members-api cfg)
-     :delete-owned-orgs            (partial delete-owned-orgs-api cfg)
+     :cleanup-deleted-penpot-user  (partial cleanup-deleted-penpot-user-api cfg)
      :add-profile-to-org           (partial add-profile-to-org-api cfg)
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
-     :remove-profile-from-all-orgs (partial remove-profile-from-all-orgs-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
+     :get-org-sso-by-team          (partial get-org-sso-by-team-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
@@ -485,6 +498,24 @@
 ;; UTILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn sso-session-authorized?
+  "Fetches the org-SSO config for the given team and checks whether
+  the HTTP request has a valid session entry for it. Returns a map
+  with :authorized and :sso keys."
+  [cfg team-id request]
+  (let [session (session/get-session request) sso (call cfg :get-org-sso-by-team {:team-id team-id})]
+    (if-not (:active sso)
+      {:authorized true :sso sso}
+      (if (or (:issuer sso) (:base-url sso))
+        (let [props           (:props session)
+              sso-map         (get props :sso {})
+              organization-id (:organization-id sso)
+              exp             (get sso-map organization-id)
+              now             (ct/now)
+              authorized      (and (ct/inst? exp)
+                                   (ct/is-after? exp now))]
+          {:authorized authorized :sso sso})
+        {:authorized false :sso sso}))))
 
 (defn add-nitrate-licence-to-profile
   "Enriches a profile map with subscription information from Nitrate.

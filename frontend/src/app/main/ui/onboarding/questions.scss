@@ -5,35 +5,13 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .modal-overlay {
   @extend %modal-overlay-base;
-}
-
-.modal-container {
-  max-width: deprecated.$s-960;
-  max-height: fit-content;
-  width: fit-content;
-  padding-inline: deprecated.$s-100;
-  padding-block: deprecated.$s-40 deprecated.$s-72;
-  border-radius: deprecated.$br-8;
-  border: deprecated.$s-2 solid var(--modal-border-color);
-  background-color: var(--modal-background-color);
-}
-
-.form-wrapper {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: deprecated.$s-24;
-}
-
-// STEP CONTAINER
-.paginator {
-  @include deprecated.small-title-typography;
-
-  height: deprecated.$s-20;
-  text-align: right;
-  color: var(--modal-text-foreground-color);
 }
 
 .action-buttons {
@@ -48,29 +26,51 @@
   @extend %modal-cancel-btn;
 }
 
-.radio-btns label,
-.select-class span {
-  @include deprecated.body-medium-typography;
+.modal-container {
+  max-width: $sz-964;
+  max-height: fit-content;
+  inline-size: fit-content;
+  padding-inline: $sz-96;
+  padding-block: $sz-40 $sz-64;
+  border-radius: $br-8;
+  border: $b-2 solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
 }
 
-// STEP 1
+.form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-xxl);
+}
+
+.paginator {
+  @include t.use-typography("title-small");
+
+  text-align: right;
+  color: var(--modal-text-foreground-color);
+}
+
+.radio label,
+.select span {
+  @include t.use-typography("body-medium");
+}
 
 .header-image {
-  height: deprecated.$s-60;
-  width: auto;
+  block-size: $sz-120;
+  inline-size: auto;
   margin-inline-start: auto;
 }
 
 .modal-title {
-  @include deprecated.big-title-typography;
+  @include t.use-typography("title-large");
 
   color: var(--modal-title-foreground-color);
-  min-height: deprecated.$s-32;
+  min-block-size: $sz-32;
   margin-block: auto;
 }
 
 .modal-subtitle {
-  @include deprecated.body-large-typography;
+  @include t.use-typography("body-large");
 
   color: var(--modal-title-foreground-color);
   margin: 0;
@@ -78,71 +78,35 @@
 }
 
 .modal-text {
-  @include deprecated.body-large-typography;
+  @include t.use-typography("body-large");
 
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
-// STEP-2
-.step-1,
-.step-2,
-.step-3,
-.step-5 {
-  max-width: deprecated.$s-540;
-  width: deprecated.$s-540;
-}
-
-.step-2 {
-  grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
+.step {
+  max-inline-size: $sz-520;
+  inline-size: $sz-520;
 }
 
 .modal-question {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: deprecated.$s-16 deprecated.$s-32;
-  gap: deprecated.$s-16;
-  height: fit-content;
-}
-
-.question-centered {
-  width: deprecated.$s-424;
-  grid-template-rows: auto deprecated.$s-32;
-  margin: 0 auto;
+  grid-template-rows: $sz-16 $sz-32;
+  gap: var(--sp-l);
+  block-size: fit-content;
 }
 
 .radio-wrapper {
   display: grid;
   grid-template-columns: 1fr;
-  gap: deprecated.$s-16;
+  gap: var(--sp-l);
 }
 
-// STEP-3
-.step-3 {
-  grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
-}
-
-.image-radio {
+.radio-image {
   display: grid;
   grid-template-rows: 1fr 1fr;
-  grid-template-columns: deprecated.$s-92 deprecated.$s-92 deprecated.$s-92;
-  gap: deprecated.$s-16 deprecated.$s-24;
+  grid-template-columns: $sz-96 $sz-96 $sz-96;
+  gap: var(--sp-l) var(--sp-xxl);
   justify-content: center;
-}
-
-.input-spacing {
-  height: deprecated.$s-32;
-  width: 100%;
-  margin-block-end: deprecated.$s-8;
-}
-
-.input-spacing input {
-  @include deprecated.body-medium-typography;
-}
-
-// STEP-4
-
-.step-4 {
-  grid-template-rows: deprecated.$s-20 auto auto deprecated.$s-32;
-  row-gap: deprecated.$s-16;
 }

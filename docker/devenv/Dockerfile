@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         python3 \
         unzip \
@@ -353,6 +353,7 @@ RUN set -ex; \
 
 RUN set -ex; \
     apt-get -qq update; \
+    apt-get -qq dist-upgrade; \
     apt-get -qqy install --no-install-recommends \
       redis-tools \
       gnupg2 \
@@ -435,6 +436,7 @@ RUN set -ex; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-16; \
+    apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
 

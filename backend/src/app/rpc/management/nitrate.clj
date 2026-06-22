@@ -18,10 +18,11 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.nitrate :as nitrate]
-   [app.rpc :as-alias rpc]
+   [app.rpc :as rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
@@ -823,3 +824,19 @@ LEFT JOIN profile AS p
       (run! (partial submit-nitrate-audit-event cfg) events))
     nil))
 
+
+;; ---- API: notify-org-sso-change
+
+(sv/defmethod ::notify-org-sso-change
+  "Nitrate notifies that an organization sso values have changed"
+  {::doc/added "2.19"
+   ::sm/params [:map
+                [:organization-id ::sm/uuid]
+                [:updated-props ::sm/boolean]]
+   ::rpc/auth false}
+  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props]}]
+  (when updated-props
+    (rpc/invalidate-org-sso-cache-by-org! organization-id)
+    (session/clear-org-sso-sessions! pool organization-id))
+  (notifications/notify-organization-change-sso cfg organization-id)
+  nil)

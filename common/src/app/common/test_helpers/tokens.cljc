@@ -6,12 +6,14 @@
 
 (ns app.common.test-helpers.tokens
   (:require
+   [app.common.data :as d]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]))
 
@@ -81,11 +83,16 @@
                                               :token {:name token-name}
                                               :attributes token-attrs})
                    (reduce (fn [shape attr]
-                             (case attr
-                               :stroke-width (set-stroke-width shape resolved-value)
-                               :stroke-color (set-stroke-color shape resolved-value)
-                               :fill (set-fill-color shape resolved-value)
-                               (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true})))
+                             (if (ctt/text-node-attr? attr)
+                               (let [value (if (sequential? resolved-value) (first resolved-value) resolved-value)]
+                                 (ctt/update-text-content shape
+                                                          ctt/is-content-node?
+                                                          d/txt-merge {attr value}))
+                               (case attr
+                                 :stroke-width (set-stroke-width shape resolved-value)
+                                 :stroke-color (set-stroke-color shape resolved-value)
+                                 :fill (set-fill-color shape resolved-value)
+                                 (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true}))))
                            $
                            shape-attrs)))]
 

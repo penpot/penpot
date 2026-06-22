@@ -8,9 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.token :as cto]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -209,19 +209,12 @@
 
 ;; TODO: use cfo/make-schema:token-value and extend it with typography and reference fields
 (defn- make-schema
-  [tokens-tree active-tab]
+  [current-token-path tokens-tree active-tab]
   (sm/schema
    [:and
     [:map
-     [:name
-      [:and
-       [:string {:min 1 :max 255
-                 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
-       (sm/update-properties cto/schema:token-name assoc
-                             :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
-       [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
-
+     [:name (cfo/make-token-name-schema (-> tokens-tree
+                                            (d/dissoc-in current-token-path)))]
      [:value
       [:map
        [:font-family {:optional true} [:maybe :string]]
@@ -269,7 +262,7 @@
          result))]]))
 
 (mf/defc form*
-  [{:keys [token] :as props}]
+  [{:keys [token current-token-path] :as props}]
   (let [initial
         (mf/with-memo [token]
           (let [value (:value token)
@@ -297,7 +290,7 @@
              :value       processed-value
              :description (:description token "")}))
         props (mf/spread-props props {:initial initial
-                                      :make-schema make-schema
+                                      :make-schema (partial make-schema current-token-path)
                                       :token token
                                       :validator validate-typography-token
                                       :value-type :composite

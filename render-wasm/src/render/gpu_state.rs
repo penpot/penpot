@@ -6,7 +6,7 @@ use skia_safe::gpu::{
 use skia_safe::{self as skia, ISize};
 
 const MIN_MAX_TEXTURE_SIZE: i32 = 512;
-const MAX_MAX_TEXTURE_SIZE: i32 = 8192 * 2;
+const MAX_MAX_TEXTURE_SIZE: i32 = 4096;
 
 #[derive(Debug, Clone)]
 pub struct GpuState {
