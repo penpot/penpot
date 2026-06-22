@@ -156,3 +156,27 @@
 (t/deftest is-variant-container-predicate-returns-boolean
   (t/is (false? (ctk/is-variant-container? {})))
   (t/is (true? (ctk/is-variant-container? {:is-variant-container true}))))
+
+(t/deftest combine-as-variants-uses-the-passed-component-ids
+  ;; `combine-as-variants` needs real main components and the variant pipeline,
+  ;; so this stays at the proxy boundary and verifies the component ids that
+  ;; the head proxy collects from its argument before delegating.
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        head-id  (uuid/next)
+        other-id (uuid/next)
+        proxy    (shape/shape-proxy plugin-id file-id page-id head-id)
+        captured (atom nil)]
+    (with-redefs [u/locate-shape (fn [_file _page id] {:id id :component-id id})
+                  u/locate-library-component (constantly {:id (uuid/next)})
+                  ctk/is-variant? (constantly false)
+                  dwv/combine-as-variants
+                  (fn [ids opts]
+                    (reset! captured {:ids ids :opts opts})
+                    ;; return value flows through `se/add-event` (which
+                    ;; calls `with-meta`), so it must support metadata
+                    {:event :combine-as-variants})
+                  st/emit! mock/noop
+                  shape/shape-proxy (mock/stub (fn [& _] #js {}))]
+      (.combineAsVariants proxy #js [(str other-id)])
+      (t/is (= #{head-id other-id} (:ids @captured))))))

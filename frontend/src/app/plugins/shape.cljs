@@ -1645,7 +1645,7 @@
 
                :else
                (let [ids
-                     (into #{id} (keep uuid/parse*) id)
+                     (into #{id} (keep uuid/parse*) ids)
 
                      valid?
                      (every?
