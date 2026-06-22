@@ -1315,19 +1315,19 @@
 
            :bringForward
            (fn []
-             (st/emit! (dw/vertical-order-selected :up)))
+             (st/emit! (dw/vertical-order-selected :up [id])))
 
            :sendBackward
            (fn []
-             (st/emit! (dw/vertical-order-selected :down)))
+             (st/emit! (dw/vertical-order-selected :down [id])))
 
            :bringToFront
            (fn []
-             (st/emit! (dw/vertical-order-selected :top)))
+             (st/emit! (dw/vertical-order-selected :top [id])))
 
            :sendToBack
            (fn []
-             (st/emit! (dw/vertical-order-selected :bottom)))
+             (st/emit! (dw/vertical-order-selected :bottom [id])))
 
            ;; COMPONENTS
            :isComponentInstance

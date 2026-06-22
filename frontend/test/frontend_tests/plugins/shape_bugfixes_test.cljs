@@ -110,3 +110,45 @@
         (t/is (= shape-id (aget result 0 "$id")))
         (t/is (= file-id (aget result 0 "$file")))
         (t/is (= page-id (aget result 0 "$page")))))))
+
+(t/deftest z-order-methods-reorder-the-shape-within-its-parent
+  ;; Asserts the observable child order in the parent after each z-order
+  ;; method, instead of merely checking which location keyword was emitted.
+  ;; The assertions are independent of the parent's `:shapes` ordering
+  ;; convention: a reorder is verified by relative movement and extremes.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context plugin-id)
+            _           (set! st/state store)
+            ^js board   (.createBoard context)
+            children    (mapv (fn [_] (.createRectangle context)) (range 4))
+            ids         (mapv #(aget % "$id") children)
+            order       #(child-shapes store context board)]
+        (doseq [^js c children] (.appendChild board c))
+
+        ;; Operate on a shape that is currently interior (so both a forward
+        ;; and a backward step are observable).
+        (let [mid-id  (nth (order) 1)
+              ^js mid (nth children (d/index-of ids mid-id))]
+
+          (t/testing "bringForward and sendBackward move in opposite directions"
+            (let [i0 (d/index-of (order) mid-id)
+                  _  (.bringForward mid)
+                  i1 (d/index-of (order) mid-id)
+                  _  (.sendBackward mid)
+                  i2 (d/index-of (order) mid-id)]
+              (t/is (not= i0 i1) "bringForward changes the order")
+              (t/is (not= i1 i2) "sendBackward changes the order")
+              (t/is (= (pos? (- i1 i0)) (neg? (- i2 i1)))
+                    "the two steps move the shape in opposite directions")))
+
+          (t/testing "bringToFront and sendToBack move to opposite extremes"
+            (let [n  (count (order))
+                  _  (.bringToFront mid)
+                  p1 (d/index-of (order) mid-id)
+                  _  (.sendToBack mid)
+                  p2 (d/index-of (order) mid-id)]
+              (t/is (contains? #{0 (dec n)} p1) "bringToFront moves to an extreme")
+              (t/is (contains? #{0 (dec n)} p2) "sendToBack moves to an extreme")
+              (t/is (not= p1 p2) "front and back are opposite extremes"))))))))
