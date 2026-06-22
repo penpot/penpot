@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Egor Filatov <e.v.filatov@javatar.ru>\n"
+"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -3629,6 +3629,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Пригласить участников"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Никого не забудьте. Разработчики, дизайнеры, менеджеры... разнообразие "
