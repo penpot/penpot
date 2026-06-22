@@ -25,18 +25,21 @@
   (mf/create-context false))
 
 (mf/defc render-xml*
-  [{{:keys [tag attrs content] :as node} :xml}]
-
+  [{:keys [xml]}]
   (cond
-    (map? node)
-    (let [props (-> (csvg/attrs->props attrs)
+    (map? xml)
+    (let [{:keys [tag attrs content]}
+          xml
+
+          props (-> (csvg/attrs->props attrs)
                     (json/->js :key-fn name))]
+
       [:> (d/name tag) props
        (for [child content]
          [:> render-xml* {:xml child :key (swap! internal-counter inc)}])])
 
-    (string? node)
-    node
+    (string? xml)
+    xml
 
     :else
     nil))
