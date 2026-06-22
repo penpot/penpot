@@ -5,7 +5,7 @@ use crate::emscripten::init_gl;
 
 use crate::mem;
 use crate::render::{gpu_state::GpuState, RenderState};
-use crate::state::{State, TextEditorState};
+use crate::state::{State, TextEditorState, UIState};
 
 static mut DESIGN_STATE: *mut State = std::ptr::null_mut();
 
@@ -47,6 +47,17 @@ pub(crate) fn get_text_editor_state() -> &'static mut TextEditorState {
     unsafe {
         debug_assert!(!TEXT_EDITOR_STATE.is_null(), "Text Editor state is null");
         &mut *TEXT_EDITOR_STATE
+    }
+}
+
+/// UI State
+static mut UI_STATE: *mut UIState = std::ptr::null_mut();
+
+#[inline(always)]
+pub(crate) fn get_ui_state() -> &'static mut UIState {
+    unsafe {
+        debug_assert!(!UI_STATE.is_null(), "UI State is null");
+        &mut *UI_STATE
     }
 }
 
@@ -118,6 +129,14 @@ fn text_editor_init() {
     }
 }
 
+/// Initializes UIState.
+fn ui_init() {
+    unsafe {
+        let ui_state = UIState::new();
+        UI_STATE = Box::into_raw(Box::new(ui_state));
+    }
+}
+
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
@@ -127,6 +146,7 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     render_init(width, height);
     text_editor_init();
     design_init();
+    ui_init();
     Ok(())
 }
 

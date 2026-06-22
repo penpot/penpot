@@ -4,9 +4,11 @@ use std::collections::HashMap;
 mod rulers;
 mod shapes_pool;
 mod text_editor;
+mod ui;
 pub use rulers::RulerState;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
+pub use ui::UIState;
 
 use crate::error::{Error, Result};
 use crate::render::FrameType;
@@ -80,7 +82,9 @@ impl State {
     }
 
     pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<FrameType> {
-        get_render_state().start_render_loop(Some(id), &self.shapes, timestamp, true)
+        let render_state = get_render_state();
+        render_state.prepare_sync_shape_render();
+        render_state.start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
     pub fn render_shape_pixels(
@@ -90,6 +94,10 @@ impl State {
         timestamp: i32,
     ) -> Result<(Vec<u8>, i32, i32)> {
         get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp)
+    }
+
+    pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
@@ -107,7 +115,8 @@ impl State {
     }
 
     pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
-        get_render_state().continue_render_loop(None, &self.shapes, timestamp)
+        let allow_stop = true;
+        get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -206,6 +215,11 @@ impl State {
     /// invalidated and recalculated to include the new child. This ensures that frames
     /// and groups properly encompass their children.
     pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
+        // Reparent preview during drag is handled by structure modifiers only.
+        if get_render_state().options.is_interactive_transform() {
+            return;
+        }
+
         let Some(shape) = self.current_shape_mut() else {
             panic!("Invalid current shape")
         };

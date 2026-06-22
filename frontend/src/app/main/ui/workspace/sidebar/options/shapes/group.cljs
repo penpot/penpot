@@ -18,8 +18,8 @@
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu*]]
@@ -36,6 +36,9 @@
         type   (dm/get-prop shape :type)
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
+
+        typographies
+        (mf/deref refs/workspace-file-typography)
 
         applied-tokens
         (get shape :applied-tokens)
@@ -119,7 +122,7 @@
                          :values measure-values
                          :shapes shapes}]
 
-     [:& layout-container-menu
+     [:> layout-container-menu*
       {:type type
        :ids [(:id shape)]
        :values layout-container-values
@@ -127,18 +130,19 @@
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
+       [:> grid-cell/options*
+        {:shape-id (-> (first parents)
+                       :id)
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when is-layout-child?
-       [:& layout-item-menu
+       [:> layout-item-menu*
         {:type type
          :ids layout-item-ids
-         :is-layout-child? true
-         :is-layout-container? false
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
+         :is-layout-child true
+         :is-layout-container false
+         :is-flex-parent is-flex-parent?
+         :is-grid-parent is-grid-parent?
          :applied-tokens applied-tokens
          :values layout-item-values}])
 
@@ -174,7 +178,10 @@
        [:> ot/text-menu* {:type type
                           :ids text-ids
                           :values text-values
-                          :applied-tokens text-tokens}])
+                          :applied-tokens text-tokens
+                          :libraries libraries
+                          :file-id file-id
+                          :typographies typographies}])
 
      (when-not (empty? svg-values)
        [:> svg-attrs-menu* {:ids ids :values svg-values}])

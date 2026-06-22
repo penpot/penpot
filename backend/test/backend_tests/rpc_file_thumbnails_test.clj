@@ -380,3 +380,538 @@
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))))
 
+;; --- delete-file-object-thumbnails (batch)
+
+(t/deftest delete-file-object-thumbnails-basic
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid1    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid2    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid3    (thc/fmt-object-id (:id file) page-id (uuid/random) "component")]
+
+    ;; Create three thumbnails
+    (doseq [oid [oid1 oid2 oid3]]
+      (let [data   {::th/type :create-file-object-thumbnail
+                    ::rpc/profile-id (:id profile)
+                    :file-id (:id file)
+                    :object-id oid
+                    :media {:filename "sample.jpg"
+                            :size 7923
+                            :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                            :mtype "image/jpeg"}}
+            out    (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (map? (:result out)))))
+
+    ;; Verify all three exist and are not soft-deleted
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false
+                             :order-by [[:created-at :asc]]})]
+      (t/is (= 3 (count rows)))
+      (doseq [row rows]
+        (t/is (nil? (:deleted-at row)))))
+
+    ;; Batch delete all three
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid1 oid2 oid3]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify all three are now soft-deleted
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false
+                             :order-by [[:created-at :asc]]})]
+      (t/is (= 3 (count rows)))
+      (doseq [row rows]
+        (t/is (some? (:deleted-at row)))))))
+
+(t/deftest delete-file-object-thumbnails-empty
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :delete-file-object-thumbnails
+                 ::rpc/profile-id (:id profile)
+                 :object-ids []}
+        out     (th/command! data)]
+    (t/is (nil? (:error out)))
+    (t/is (nil? (:result out)))))
+
+(t/deftest delete-file-object-thumbnails-non-existent
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid1    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid2    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Batch delete non-existent object-ids (no thumbnails were created)
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid1 oid2]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))))
+
+(t/deftest delete-file-object-thumbnails-mixed-exists
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid1    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid2    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid3    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Create only one thumbnail
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid1
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; Batch delete mix of existing and non-existing
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid1 oid2 oid3]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify oid1 is soft-deleted, others don't exist
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= 1 (count rows)))
+      (t/is (= oid1 (:object-id (first rows))))
+      (t/is (some? (:deleted-at (first rows)))))))
+
+(t/deftest delete-file-object-thumbnails-already-deleted
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid     (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Create a thumbnail
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; First batch delete
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Second batch delete (idempotent — no rows match deleted_at IS NULL)
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify still 1 row, still soft-deleted, not duplicated
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= 1 (count rows)))
+      (t/is (= oid (:object-id (first rows))))
+      (t/is (some? (:deleted-at (first rows)))))))
+
+(t/deftest delete-file-object-thumbnails-unauthorized
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file     (th/create-file* 1 {:profile-id (:id profile1)
+                                     :project-id (:default-project-id profile1)
+                                     :is-shared false})
+        page-id  (first (get-in file [:data :pages]))
+        oid      (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; profile1 creates a thumbnail on their file
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile1)
+                :file-id (:id file)
+                :object-id oid
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; profile2 tries to batch delete thumbnails from profile1's file
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile2)
+                :object-ids [oid]}
+          out  (th/command! data)]
+      (t/is (some? (:error out)))
+      (t/is (th/ex-info? (:error out)))
+      (t/is (= :not-found (th/ex-type (:error out)))))
+
+    ;; Verify the thumbnail is NOT deleted
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= 1 (count rows)))
+      (t/is (nil? (:deleted-at (first rows)))))))
+
+(t/deftest delete-file-object-thumbnails-cross-file
+  (let [profile  (th/create-profile* 1)
+        file1    (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        file2    (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page1-id (first (get-in file1 [:data :pages]))
+        page2-id (first (get-in file2 [:data :pages]))
+        oid1     (thc/fmt-object-id (:id file1) page1-id (uuid/random) "frame")
+        oid2     (thc/fmt-object-id (:id file2) page2-id (uuid/random) "frame")]
+
+    ;; Create thumbnails on both files
+    (doseq [[oid fid] [[oid1 (:id file1)] [oid2 (:id file2)]]]
+      (let [data {::th/type :create-file-object-thumbnail
+                  ::rpc/profile-id (:id profile)
+                  :file-id fid
+                  :object-id oid
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (map? (:result out)))))
+
+    ;; Batch delete from both files in one call
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid1 oid2]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify both are soft-deleted
+    (let [rows1 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file1)}
+                             {::db/remove-deleted false})
+          rows2 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file2)}
+                             {::db/remove-deleted false})]
+      (t/is (= 1 (count rows1)))
+      (t/is (some? (:deleted-at (first rows1))))
+      (t/is (= 1 (count rows2)))
+      (t/is (some? (:deleted-at (first rows2)))))))
+
+(t/deftest delete-file-object-thumbnails-cross-file-unauthorized
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:profile-id (:id profile1)
+                                     :project-id (:default-project-id profile1)
+                                     :is-shared false})
+        file2    (th/create-file* 2 {:profile-id (:id profile2)
+                                     :project-id (:default-project-id profile2)
+                                     :is-shared false})
+        page1-id (first (get-in file1 [:data :pages]))
+        page2-id (first (get-in file2 [:data :pages]))
+        oid1     (thc/fmt-object-id (:id file1) page1-id (uuid/random) "frame")
+        oid2     (thc/fmt-object-id (:id file2) page2-id (uuid/random) "frame")]
+
+    ;; Create thumbnails on both files (by their respective owners)
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile1)
+                :file-id (:id file1)
+                :object-id oid1
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile2)
+                :file-id (:id file2)
+                :object-id oid2
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; profile1 tries to batch delete thumbnails from both files
+    ;; (profile1 does NOT have access to file2)
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile1)
+                :object-ids [oid1 oid2]}
+          out  (th/command! data)]
+      (t/is (some? (:error out)))
+      (t/is (th/ex-info? (:error out)))
+      (t/is (= :not-found (th/ex-type (:error out)))))
+
+    ;; Verify NEITHER thumbnail was deleted (all-or-nothing)
+    (let [rows1 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file1)}
+                             {::db/remove-deleted false})
+          rows2 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file2)}
+                             {::db/remove-deleted false})]
+      (t/is (= 1 (count rows1)))
+      (t/is (nil? (:deleted-at (first rows1))))
+      (t/is (= 1 (count rows2)))
+      (t/is (nil? (:deleted-at (first rows2)))))))
+
+(t/deftest delete-file-object-thumbnails-media-touch
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid1    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")
+        oid2    (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Create two thumbnails
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid1
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid2
+                :media {:filename "sample.jpg"
+                        :size 312043
+                        :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; Get media-ids for both thumbnails
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {:order-by [[:created-at :asc]]})
+          mid1 (:media-id (first rows))
+          mid2 (:media-id (second rows))]
+
+      ;; Verify storage objects exist (they are created with touched-at already set)
+      (t/is (some? (th/db-get :storage-object {:id mid1})))
+      (t/is (some? (th/db-get :storage-object {:id mid2})))
+
+      ;; Batch delete both thumbnails
+      (let [data {::th/type :delete-file-object-thumbnails
+                  ::rpc/profile-id (:id profile)
+                  :object-ids [oid1 oid2]}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      ;; After soft-delete, storage objects should STILL exist
+      ;; (they are only garbage-collected later by storage-gc-touched task)
+      (t/is (some? (th/db-get :storage-object {:id mid1})))
+      (t/is (some? (th/db-get :storage-object {:id mid2}))))))
+
+(t/deftest delete-file-object-thumbnails-max-batch
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        cnt     200
+        oids    (vec (repeatedly cnt
+                                 #(thc/fmt-object-id (:id file) page-id
+                                                     (uuid/random) "frame")))]
+
+    ;; Create 200 thumbnails
+    (doseq [oid oids]
+      (let [data {::th/type :create-file-object-thumbnail
+                  ::rpc/profile-id (:id profile)
+                  :file-id (:id file)
+                  :object-id oid
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (map? (:result out)))))
+
+    ;; Verify all 200 exist
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= cnt (count rows))))
+
+    ;; Batch delete all 200 in one call
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids oids}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify all 200 are now soft-deleted
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= cnt (count rows)))
+      (doseq [row rows]
+        (t/is (some? (:deleted-at row)))))))
+
+(t/deftest delete-file-object-thumbnails-single
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid     (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Create a single thumbnail
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; Batch delete just one
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify it's soft-deleted
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= 1 (count rows)))
+      (t/is (some? (:deleted-at (first rows)))))))
+
+(t/deftest delete-file-object-thumbnails-same-object-twice-in-batch
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        page-id (first (get-in file [:data :pages]))
+        oid     (thc/fmt-object-id (:id file) page-id (uuid/random) "frame")]
+
+    ;; Create one thumbnail
+    (let [data {::th/type :create-file-object-thumbnail
+                ::rpc/profile-id (:id profile)
+                :file-id (:id file)
+                :object-id oid
+                :media {:filename "sample.jpg"
+                        :size 7923
+                        :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                        :mtype "image/jpeg"}}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    ;; Batch delete with the same object-id listed twice
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid oid]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify it's soft-deleted (only one row)
+    (let [rows (th/db-query :file-tagged-object-thumbnail
+                            {:file-id (:id file)}
+                            {::db/remove-deleted false})]
+      (t/is (= 1 (count rows)))
+      (t/is (some? (:deleted-at (first rows)))))))
+
+(t/deftest delete-file-object-thumbnails-keeps-other-files-intact
+  (let [profile  (th/create-profile* 1)
+        file1    (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        file2    (th/create-file* 2 {:profile-id (:id profile)
+                                     :project-id (:default-project-id profile)
+                                     :is-shared false})
+        page1-id (first (get-in file1 [:data :pages]))
+        page2-id (first (get-in file2 [:data :pages]))
+        oid1     (thc/fmt-object-id (:id file1) page1-id (uuid/random) "frame")
+        oid2     (thc/fmt-object-id (:id file2) page2-id (uuid/random) "frame")]
+
+    ;; Create thumbnails on both files
+    (doseq [[oid fid] [[oid1 (:id file1)] [oid2 (:id file2)]]]
+      (let [data {::th/type :create-file-object-thumbnail
+                  ::rpc/profile-id (:id profile)
+                  :file-id fid
+                  :object-id oid
+                  :media {:filename "sample.jpg"
+                          :size 7923
+                          :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                          :mtype "image/jpeg"}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (map? (:result out)))))
+
+    ;; Delete only thumbnail from file1
+    (let [data {::th/type :delete-file-object-thumbnails
+                ::rpc/profile-id (:id profile)
+                :object-ids [oid1]}
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    ;; Verify file1's thumbnail is deleted, file2's is not
+    (let [rows1 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file1)}
+                             {::db/remove-deleted false})
+          rows2 (th/db-query :file-tagged-object-thumbnail
+                             {:file-id (:id file2)}
+                             {::db/remove-deleted false})]
+      (t/is (= 1 (count rows1)))
+      (t/is (some? (:deleted-at (first rows1))))
+      (t/is (= 1 (count rows2)))
+      (t/is (nil? (:deleted-at (first rows2)))))))
+

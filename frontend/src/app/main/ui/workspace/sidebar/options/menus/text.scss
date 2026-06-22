@@ -14,12 +14,11 @@
 
 .element-set {
   @include sidebar.option-grid-structure;
-
-  position: relative;
 }
 
 .element-title {
   grid-column: span 8;
+  position: relative;
 }
 
 .element-content {

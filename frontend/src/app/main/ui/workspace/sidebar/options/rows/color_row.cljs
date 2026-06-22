@@ -98,16 +98,16 @@
         token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "not-active-token.no-name")
-                                 has-errors
                                  (tr "options.deleted-token")
+                                 has-errors
+                                 (tr "not-active-token.no-name")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "not-active-token.no-name")
-                               has-errors
                                (tr "options.deleted-token")
+                               has-errors
+                               (tr "not-active-token.no-name")
                                :else
                                #(mf/html
                                  [:div
@@ -451,5 +451,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
-                         :tooltip-position "top-left"
+                         :tooltip-placement "top-left"
                          :icon i/move}])]))

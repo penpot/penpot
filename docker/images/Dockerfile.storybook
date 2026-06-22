@@ -1,10 +1,14 @@
-FROM nginxinc/nginx-unprivileged:1.30.0
+FROM nginxinc/nginx-unprivileged:1.31.1-alpine
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 USER root
 
 RUN set -ex; \
-    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot;
+    apk update; \
+    apk upgrade; \
+    rm -rf /var/cache/apk/*; \
+    addgroup -g 1001 penpot; \
+    adduser -D -H -u 1001 -s /bin/false -h /opt/penpot -G penpot penpot;
 
 ARG BUNDLE_PATH="./bundle-storybook/"
 COPY $BUNDLE_PATH /var/www/

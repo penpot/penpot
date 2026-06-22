@@ -45,3 +45,8 @@ jobs:
           pnpm run fmt:check;
           pnpm -r run build;
           pnpm -r run types:check;
+
+      - name: Tests
+        working-directory: ./mcp
+        run: |
+          pnpm -r run test;

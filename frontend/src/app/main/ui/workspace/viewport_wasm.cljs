@@ -51,7 +51,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -117,6 +119,44 @@
       (uuid? outlined-frame-id) (conj outlined-frame-id)
       (uuid? edition) (disj edition))))
 
+(mf/defc transition-overlay*
+  "Frozen-frame overlay shown while switching pages or recovering from WebGL
+   context loss. `image` is either an `ImageBitmap` snapshot of the canvas or
+   a data-url string placeholder (initial load)."
+  [{:keys [image clip-path]}]
+  (let [canvas-ref (mf/use-ref nil)
+        bitmap?    (not (string? image))]
+    (mf/with-effect [image]
+      (when bitmap?
+        (when-let [canvas (mf/ref-val canvas-ref)]
+          ;; A closed ImageBitmap reports zero size; skip instead of throwing.
+          (when (pos? (.-width ^js image))
+            (set! (.-width ^js canvas) (.-width ^js image))
+            (set! (.-height ^js canvas) (.-height ^js image))
+            (let [ctx (.getContext ^js canvas "2d")]
+              (.drawImage ^js ctx image 0 0))))))
+    (if bitmap?
+      ;; Full-bleed so the snapshot overlays the canvas 1:1.
+      [:canvas {:data-testid "canvas-wasm-transition"
+                :ref canvas-ref
+                :style {:position "absolute"
+                        :inset 0
+                        :width "100%"
+                        :height "100%"
+                        :object-fit "cover"
+                        :pointer-events "none"
+                        :clip-path clip-path}}]
+      [:img {:data-testid "canvas-wasm-transition"
+             :src image
+             :draggable false
+             :style {:position "absolute"
+                     :inset 0
+                     :width "100%"
+                     :height "100%"
+                     :object-fit "cover"
+                     :pointer-events "none"
+                     :clip-path clip-path}}])))
+
 (mf/defc viewport*
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
@@ -181,6 +221,16 @@
         active-frames        (mf/use-state #{})
         canvas-init?         (mf/use-state false)
         initialized?         (mf/use-state false)
+        dragging-guide-id*   (mf/use-state nil)
+        guide-hover-axis*    (mf/use-state nil)
+
+        on-guide-drag
+        (mf/use-fn
+         #(reset! dragging-guide-id* %))
+
+        on-guide-hover
+        (mf/use-fn
+         #(reset! guide-hover-axis* %))
 
         ;; REFS
         [viewport-ref
@@ -285,7 +335,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -342,6 +394,14 @@
         disabled-guides?         (or drawing-tool transform path-drawing? path-editing?
                                      (contains? layout :lock-guides))
 
+        wasm-guides
+        (mf/with-memo [guides focus show-rulers? show-grids? @dragging-guide-id*]
+          (guides/wasm-visible-guides
+           {:guides guides
+            :visible? (and show-rulers? show-grids?)
+            :focused focus
+            :dragging-id @dragging-guide-id*}))
+
         single-select?           (= (count selected-shapes) 1)
 
         first-shape (first selected-shapes)
@@ -375,7 +435,7 @@
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))
         shapes-loading? (mf/deref wasm.api/shapes-loading?)
-        transition-image-url (mf/deref wasm.api/transition-image-url*)]
+        transition-image (mf/deref wasm.api/transition-image*)]
 
     ;; NOTE: We need this page-id dependency to react to it and reset the
     ;;       canvas, even though we are not using `page-id` inside the hook.
@@ -470,6 +530,10 @@
                                           :background background
                                           :on-shapes-ready
                                           (fn []
+                                            ;; The target page's shapes are now loaded; arm
+                                            ;; the transition so the next full frame (the one
+                                            ;; that actually shows this page) removes the blur.
+                                            (wasm.api/arm-page-transition-end!)
                                             (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 
@@ -538,6 +602,13 @@
       (when @canvas-init?
         (wasm.api/render-ui-only)))
 
+    ;; Ruler guides: push the WASM-visible guide set to the render engine.
+    ;; `wasm-guides` is also passed to the SVG overlay for index-based hit
+    ;; testing — it must stay in sync with what we serialize here.
+    (mf/with-effect [@canvas-init? wasm-guides objects]
+      (when @canvas-init?
+        (wasm.api/set-guides wasm-guides objects)))
+
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -593,25 +664,16 @@
 
      ;; Show the transition image when switching pages or recovering from WebGL context loss.
      (when (and (or page-transition? context-loss-overlay?)
-                (some? transition-image-url))
-       (let [src transition-image-url]
-         [:img {:data-testid "canvas-wasm-transition"
-                :src src
-                :draggable false
-                ;; Full-bleed so the snapshot overlays the canvas 1:1.
-                :style {:position "absolute"
-                        :inset 0
-                        :width "100%"
-                        :height "100%"
-                        :object-fit "cover"
-                        :pointer-events "none"
-                        ;; Initial load: clip to the live canvas frame (rounded
-                        ;; corner + ruler strips when present) so it shows
-                        ;; through. No frame in hide-UI mode -> no clip.
-                        :clip-path (when (and transition-reveal-rulers? frame-visible?)
-                                     (let [strip (if show-rulers? rulers/ruler-area-size 0)]
-                                       (dm/str "inset(" strip "px 0 0 " strip "px round "
-                                               rulers/canvas-border-radius "px)")))}}]))
+                (some? transition-image))
+       [:> transition-overlay*
+        {:image transition-image
+         ;; Initial load: clip to the live canvas frame (rounded
+         ;; corner + ruler strips when present) so it shows
+         ;; through. No frame in hide-UI mode -> no clip.
+         :clip-path (when (and transition-reveal-rulers? frame-visible?)
+                      (let [strip (if show-rulers? rulers/ruler-area-size 0)]
+                        (dm/str "inset(" strip "px 0 0 " strip "px round "
+                                rulers/canvas-border-radius "px)")))}])
 
 
      [:svg.viewport-controls
@@ -622,7 +684,12 @@
        :id "viewport-controls"
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
-       :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
+       :class (dm/str @cursor " "
+                      (stl/css-case
+                       :global/drawing drawing-tool
+                       :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
+                       :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
+                       :viewport-controls true))
        :style {:touch-action "none"}
        :fill "none"
        :on-click         on-click
@@ -725,33 +792,33 @@
            :zoom zoom}])
 
        (when show-padding?
-         [:& mfc/padding-control
+         [:> mfc/padding-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-padding?
-         [:& mfc/gap-control
+         [:> mfc/gap-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-margin?
-         [:& mfc/margin-control
+         [:> mfc/margin-control*
           {:shape first-shape
            :parent selected-frame
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?}])
+           :is-alt @alt?
+           :is-shift @shift?}])
 
        (when-not shapes-loading?
          [:> widgets/frame-titles*
@@ -824,14 +891,21 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
+       ;; NOTE: ruler guides are being migrated to the WASM render engine.
+       ;; The SVG-overlay rendering is temporarily disabled while we implement
+       ;; the new path.
        (when (and show-rulers? show-grids?)
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
            :guides guides
+           :wasm-guides wasm-guides
+           :wasm-guides? true
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
-           :modifiers wasm-modifiers}])
+           :modifiers wasm-modifiers
+           :on-guide-drag on-guide-drag
+           :on-guide-hover on-guide-hover}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (dbg/enabled? :layout-drop-zones)

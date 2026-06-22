@@ -24,5 +24,5 @@
 
 (defn ^:export plugins []
   (st/emit! (features/enable-feature "plugins/runtime"))
-  (plugins/init-plugins-runtime!)
+  (plugins/init-plugins-runtime)
   nil)

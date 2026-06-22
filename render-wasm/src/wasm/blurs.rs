@@ -29,14 +29,21 @@ impl From<RawBlurType> for BlurType {
 #[no_mangle]
 pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let blur_type = RawBlurType::from(blur_type);
-        shape.set_blur(Some(Blur::new(blur_type.into(), hidden, value)));
+        let blur_type: BlurType = RawBlurType::from(blur_type).into();
+        let blur = Some(Blur::new(blur_type, hidden, value));
+        match blur_type {
+            BlurType::LayerBlur => shape.set_blur(blur),
+            BlurType::BackgroundBlur => shape.set_background_blur(blur),
+        }
     });
 }
 
 #[no_mangle]
-pub extern "C" fn clear_shape_blur() {
+pub extern "C" fn clear_shape_blur(blur_type: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_blur(None);
+        match RawBlurType::from(blur_type).into() {
+            BlurType::LayerBlur => shape.set_blur(None),
+            BlurType::BackgroundBlur => shape.set_background_blur(None),
+        }
     });
 }

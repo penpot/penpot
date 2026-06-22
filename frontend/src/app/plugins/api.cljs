@@ -27,6 +27,7 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -54,7 +55,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -315,6 +317,9 @@
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :group-shapes shapes)
 
+        (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+        (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
+
         :else
         (let [file-id (:current-file-id @st/state)
               page-id (:current-page-id @st/state)
@@ -332,6 +337,10 @@
 
         (and (some? rest) (not (every? shape/shape-proxy? rest)))
         (u/not-valid plugin-id :ungroup rest)
+
+        (or (not (u/page-active? (obj/get group "$page")))
+            (some #(not (u/page-active? (obj/get % "$page"))) rest))
+        (u/not-valid plugin-id :ungroup "Cannot modify a page that is not currently active")
 
         :else
         (let [shapes (concat [group] rest)
@@ -370,8 +379,11 @@
     :createText
     (fn [text]
       (cond
-        (or (not (string? text)) (empty? text))
+        (not (string? text))
         (u/not-valid plugin-id :createText text)
+
+        (empty? text)
+        nil
 
         :else
         (let [page  (dsh/lookup-page @st/state)
@@ -441,6 +453,9 @@
 
           (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
           (u/not-valid plugin-id :createBoolean-shapes shapes)
+
+          (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+          (u/not-valid plugin-id :createBoolean "Cannot modify a page that is not currently active")
 
           :else
           (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
@@ -571,11 +586,20 @@
       (let [id (cond
                  (page/page-proxy? page) (obj/get page "$id")
                  (string? page)          (uuid/parse* page)
-                 :else nil)
-            new-window (if (boolean? new-window) new-window false)]
+                 :else nil)]
         (if (nil? id)
           (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+          (if (true? new-window)
+            (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+                (js/Promise.resolve nil))
+            (js/Promise.
+             (fn [resolve _]
+               (->> st/stream
+                    (rx/filter (ptk/type? ::dwpg/initialized))
+                    (rx/filter #(= (deref %) id))
+                    (rx/take 1)
+                    (rx/subs! #(resolve nil)))
+               (st/emit! (dcm/go-to-workspace :page-id id))))))))
 
     :alignHorizontal
     (fn [shapes direction]

@@ -473,6 +473,9 @@
 (defn access-tokens-fetched
   [access-tokens]
   (ptk/reify ::access-tokens-fetched
+    IDeref
+    (-deref [_] access-tokens)
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :access-tokens access-tokens))))
@@ -487,7 +490,7 @@
 
 ;; --- EVENT: create-access-token
 
-(defn access-token-created
+(defn- access-token-created
   [access-token]
   (ptk/reify ::access-token-created
     ptk/UpdateEvent
@@ -495,24 +498,35 @@
       (assoc state :access-token-created access-token))))
 
 (defn create-access-token
-  [{:keys [] :as params}]
+  [params]
   (ptk/reify ::create-access-token
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}}
+            (meta params)]
+
         (->> (rp/cmd! :create-access-token params)
-             (rx/map access-token-created)
              (rx/tap on-success)
+             (rx/mapcat (fn [token]
+                          (rx/of (access-token-created token)
+                                 (fetch-access-tokens))))
              (rx/catch on-error))))))
 
 ;; --- EVENT: delete-access-token
 
 (defn delete-access-token
   [{:keys [id] :as params}]
-  (assert (uuid? id))
+  (assert (uuid? id) "expect valid token id")
+
   (ptk/reify ::delete-access-token
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :access-tokens
+              (fn [tokens]
+                (into [] (remove #(= id (:id %))) tokens))))
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-success on-error]

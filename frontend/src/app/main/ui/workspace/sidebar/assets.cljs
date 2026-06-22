@@ -36,7 +36,6 @@
         libraries (mf/with-memo [files file-id]
                     (->> (refs/select-libraries files file-id)
                          (vals)
-                         (remove :is-indirect)
                          (remove #(= file-id (:id %)))
                          (map (fn [file]
                                 (update file :data dissoc :pages-index)))

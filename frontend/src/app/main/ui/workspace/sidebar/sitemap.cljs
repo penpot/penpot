@@ -88,7 +88,7 @@
                      (p/resolved nil)
                      ;; Blur with Skia, then capture the already-blurred frame.
                      (do (wasm.api/render-blurred-snapshot!)
-                         (wasm.api/capture-canvas-snapshot-url)))
+                         (wasm.api/capture-canvas-snapshot)))
                    (p/finally
                      (fn []
                        (wasm.api/apply-canvas-blur)

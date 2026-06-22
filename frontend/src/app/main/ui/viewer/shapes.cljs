@@ -301,11 +301,8 @@
 ;; wired to the same interaction handlers as the regular SVG tree.
 
 (mf/defc hotspot*
-  {::mf/wrap-props false}
-  [props]
-  (let [shape        (unchecked-get props "shape")
-        all-objects  (unchecked-get props "all-objects")
-        base-frame   (mf/use-ctx base-frame-ctx)
+  [{:keys [shape all-objects]}]
+  (let [base-frame   (mf/use-ctx base-frame-ctx)
         frame-offset (mf/use-ctx frame-offset-ctx)
         show-interactions (mf/deref ref:viewer-show-interactions)
         overlays     (mf/deref refs/viewer-overlays)
@@ -350,12 +347,8 @@
 
   Optional `shape-filter` is a predicate that receives the shape id and returns
   true when it should be included (used to split fixed-scroll vs normal layers)."
-  {::mf/wrap-props false}
-  [props]
-  (let [objects     (unchecked-get props "objects")
-        all-objects (or (unchecked-get props "all-objects") objects)
-        shape-filter (unchecked-get props "shape-filter")
-        frame       (unchecked-get props "frame")
+  [{:keys [objects all-objects shape-filter frame]}]
+  (let [all-objects (or all-objects objects)
         frame-id    (:id frame)
         ids         (cond->> (cons frame-id (cfh/get-children-ids objects frame-id))
                       shape-filter (filter shape-filter))
@@ -363,10 +356,11 @@
                          (keep #(get objects %))
                          (filter (fn [s] (and (not (:hidden s))
                                               (seq (:interactions s))))))]
-    [:* (for [shape hotspots]
-          [:& hotspot* {:key (str (:id shape))
-                        :shape shape
-                        :all-objects all-objects}])]))
+    [:g {}
+     (for [shape hotspots]
+       [:> hotspot* {:key (str (:id shape))
+                     :shape shape
+                     :all-objects all-objects}])]))
 
 
 ;; TODO: use-memo use-fn

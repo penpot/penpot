@@ -191,7 +191,7 @@
   @extend %menu-item-base;
 
   display: grid;
-  grid-template-columns: var(--sp-xxxl) 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: var(--sp-s);
   height: $sz-40;
 }
@@ -603,7 +603,7 @@
   height: calc(2 * var(--sp-xxxl));
   max-height: calc(2 * var(--sp-xxxl));
   justify-content: space-between;
-  padding: 0 var(--sp-xl);
+  padding: 0 var(--sp-l);
 }
 
 .selected-org {
@@ -690,6 +690,7 @@
   grid-template-columns: 1fr auto auto;
   gap: var(--sp-s);
   height: 100%;
+  padding: 0 px2rem(10);
   width: 100%;
 }
 

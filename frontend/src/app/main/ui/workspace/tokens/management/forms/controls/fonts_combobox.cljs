@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -67,21 +68,23 @@
 
         tokens
         (update tokens (:name token) #(ctob/make-token (merge % prev-token token)))]
-
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (if errors
-                                 (first errors)
-                                 (wte/error-with-value :error/unknown value))}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (if errors
+                                   (first errors)
+                                   (wte/error-with-value :error/unknown value))})))))))))
 
 (mf/defc fonts-combobox*
   [{:keys [token tokens name] :rest props}]
@@ -167,24 +170,25 @@
                                   :hint-message (:message error)})
           props)]
 
-    (mf/with-effect [resolve-stream tokens token input-name touched? token-name]
+    (mf/with-effect [resolve-stream tokens token input-name token-name]
       (let [subs (->> resolve-stream
                       (rx/debounce 300)
                       (rx/mapcat (partial resolve-value tokens token token-name))
                       (rx/map (fn [result]
                                 (d/update-when result :error wte/resolve-error-assoc-message)))
                       (rx/subs! (fn [{:keys [error value]}]
-                                  (when touched?
-                                    (if error
-                                      (let [error' (:message error)]
-                                        (if (csu/group-name-conflict-error? error' token-name)
-                                          (swap! form assoc-in [:extra-errors ""] error')
-                                          (do
-                                            (swap! form assoc-in [:extra-errors input-name] error')
-                                            (reset! hint* {:message error' :type "error"}))))
-                                      (let [message (tr "workspace.tokens.resolved-value" value)]
-                                        (swap! form update :extra-errors dissoc input-name)
-                                        (reset! hint* {:message message :type "hint"})))))))]
+                                  (let [touched? (get-in @form [:touched input-name])]
+                                    (when touched?
+                                      (if error
+                                        (let [error' (:message error)]
+                                          (if (csu/group-name-conflict-error? error' token-name)
+                                            (swap! form assoc-in [:extra-errors ""] error')
+                                            (do
+                                              (swap! form assoc-in [:extra-errors input-name] error')
+                                              (reset! hint* {:message error' :type "error"}))))
+                                        (let [message (tr "workspace.tokens.resolved-value" value)]
+                                          (swap! form update :extra-errors dissoc input-name)
+                                          (reset! hint* {:message message :type "hint"}))))))))]
         (fn []
           (rx/dispose! subs))))
 
@@ -194,8 +198,7 @@
        [:div {:class (stl/css :font-select-wrapper)}
         [:> font-selector* {:current-font font
                             :on-select on-select-font
-                            :on-close on-close-font-selector
-                            :full-size true}]])]))
+                            :on-close on-close-font-selector}]])]))
 
 (defn- on-composite-combobox-token-change
   ([form field value]
@@ -332,8 +335,7 @@
     [:*
      [:> input* props]
      (when font-selector-open?
-       [:div {:class (stl/css :font-select-wrapper)}
+       [:div {:class (stl/css :font-select-wrapper-composite)}
         [:> font-selector* {:current-font font
                             :on-select on-select-font
-                            :on-close on-close-font-selector
-                            :full-size true}]])]))
+                            :on-close on-close-font-selector}]])]))

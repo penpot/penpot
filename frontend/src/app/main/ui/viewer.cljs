@@ -186,7 +186,7 @@
                :style {:width (:width size)
                        :height (:height size)
                        :position "fixed"}}
-         [:& interactions/viewport
+         [:> interactions/viewport*
           {:frame overlay-frame
            :base-frame frame
            :frame-offset overlay-position
@@ -201,7 +201,7 @@
                       :height (:height size)
                       :left (* (:x overlay-position) zoom)
                       :top (* (:y overlay-position) zoom)}}
-        [:& interactions/viewport
+        [:> interactions/viewport*
          {:frame overlay-frame
           :base-frame frame
           :frame-offset overlay-position
@@ -236,7 +236,7 @@
                       :height (:height orig-size)
                       :position "relative"}}
 
-        [:& interactions/viewport
+        [:> interactions/viewport*
          {:frame orig-frame
           :base-frame orig-frame
           :frame-offset (gpt/point 0 0)
@@ -251,7 +251,7 @@
                     :height (:height size)
                     :position "relative"}}
 
-      [:& interactions/viewport
+      [:> interactions/viewport*
        {:frame frame
         :base-frame frame
         :frame-offset (gpt/point 0 0)

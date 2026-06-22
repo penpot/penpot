@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -49,21 +50,23 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (if errors
-                                 (first errors)
-                                 (wte/error-with-value :error/unknown value))}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (if errors
+                                   (first errors)
+                                   (wte/error-with-value :error/unknown value))})))))))))
 
 (mf/defc value-combobox*
   [{:keys [name tokens token token-type empty-to-end ref] :rest props}]
@@ -147,12 +150,14 @@
         toggle-dropdown
         (mf/use-fn
          (mf/deps is-open)
-         (fn [event]
+         (fn [event & [select-text?]]
            (dom/prevent-default event)
            (swap! is-open* not)
            (reset! selected-id* (get-selected-id))
-           (let [input-node (mf/ref-val ref)]
-             (dom/focus! input-node))))
+           (when select-text?
+             (let [input-node (mf/ref-val ref)]
+               (dom/select-text! input-node)
+               (dom/focus! input-node)))))
 
         resolve-stream
         (mf/with-memo [token]
@@ -264,7 +269,7 @@
                                      :tab-index "-1"
                                      :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                      :on-mouse-down dom/prevent-default
-                                     :on-click toggle-dropdown}]))})
+                                     :on-click #(toggle-dropdown % true)}]))})
         props
         (if (or extra-error (and error touched?))
           (mf/spread-props props {:hint-type "error"

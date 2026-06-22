@@ -217,11 +217,11 @@ goog.scope(function () {
 
       // Parse ........-....-....-####-............
       int8[8] = (rest = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-      (int8[9] = rest & 0xff),
+      ((int8[9] = rest & 0xff),
         // Parse ........-....-....-....-############
         // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
         (int8[10] =
-          ((rest = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff);
+          ((rest = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff));
       int8[11] = (rest / 0x100000000) & 0xff;
       int8[12] = (rest >>> 24) & 0xff;
       int8[13] = (rest >>> 16) & 0xff;

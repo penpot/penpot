@@ -7,7 +7,9 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
@@ -119,27 +121,44 @@
 
 (mf/defc nitrate-sidebar*
   [{:keys [profile teams]}]
-  (let [nitrate? (dnt/is-valid-license? profile)
-        nitrate-license (:subscription profile)
-        manual-license? (:manual nitrate-license)
+  (let [nitrate?              (dnt/is-valid-license? profile)
+        nitrate-license       (:subscription profile)
+        manual-license?       (:manual nitrate-license)
         subscription-warning* (mf/use-state nil)
-        subscription-warning (deref subscription-warning*)
-        days-until-expiry (or (:days-until-expiry subscription-warning)
-                              (:daysUntilExpiry subscription-warning)
-                              (:days-from-expiry subscription-warning)
-                              (:daysFromExpiry subscription-warning))
-        expiration-date (or (:expiration-date subscription-warning)
-                            (:expirationDate subscription-warning))
-        expiration-date-text (when expiration-date
-                               (ct/format-inst expiration-date "MMMM d"))
-        show-subscription-warning? (and manual-license?
-                                        (some? days-until-expiry)
-                                        (some? expiration-date-text))
-        subscription-type (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
+        subscription-warning  (deref subscription-warning*)
+        route                 (mf/deref refs/route)
+        route-name            (get-in route [:data :name])
+
+        days-until-expiry
+        (or (:days-until-expiry subscription-warning)
+            (:daysUntilExpiry subscription-warning)
+            (:days-from-expiry subscription-warning)
+            (:daysFromExpiry subscription-warning))
+
+        expiration-date
+        (or (:expiration-date subscription-warning)
+            (:expirationDate subscription-warning))
+        expiration-date-text
+        (when expiration-date
+          (ct/format-inst expiration-date "MMMM d"))
+
+        show-subscription-warning?
+        (and nitrate?
+             manual-license?
+             (not= route-name :settings-subscription)
+             (some? days-until-expiry)
+             (some? expiration-date-text))
+
+        subscription-type
+        (if nitrate? (:type nitrate-license) (get-subscription-type (-> profile :props :subscription)))
+
+        teams-loaded? (seq teams)
+
         no-orgs-created? (mf/with-memo [teams]
-                           (->> teams
-                                vals
-                                (not-any? :organization)))
+                           (and (seq teams)
+                                (->> teams
+                                     vals
+                                     (not-any? :organization))))
 
         handle-click
         (mf/use-fn
@@ -152,8 +171,8 @@
         handle-go-to-cc
         (mf/use-fn dnt/go-to-nitrate-ac-create-org)
 
-        handle-go-to-subscription
-        (mf/use-fn #(st/emit! (rt/nav :settings-subscription)))]
+        handle-open-renew-modal
+        (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]
 
     (mf/with-effect [manual-license?]
       (if manual-license?
@@ -163,7 +182,7 @@
 
     [:*
      ;; TODO add translations for this texts when we have the definitive ones
-     (if (and nitrate? no-orgs-created? (not show-subscription-warning?))
+     (if (and nitrate? teams-loaded? no-orgs-created? (not show-subscription-warning?))
        ;; Banner for users with active nitrate license but no organizations created
        [:div {:class (stl/css :nitrate-banner :highlighted)}
         [:div {:class (stl/css :nitrate-content)}
@@ -206,7 +225,7 @@
          [:> button* {:variant "primary"
                       :type "button"
                       :class (stl/css :nitrate-bottom-button)
-                      :on-click handle-go-to-subscription}
+                      :on-click handle-open-renew-modal}
           (tr "subscription.dashboard.banner.renew")]]])]))
 
 (mf/defc nitrate-current-plan*

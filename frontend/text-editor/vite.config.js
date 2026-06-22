@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { defineConfig } from "vite";
 import { coverageConfigDefaults } from "vitest/config";
+import { playwright } from "@vitest/browser-playwright";
 
 async function waitFor(timeInMillis) {
   return new Promise((resolve) => setTimeout((_) => resolve(), timeInMillis));
@@ -69,11 +70,7 @@ export default defineConfig({
       enabled: true,
       exclude: ["main.js", "**/scripts/**", ...coverageConfigDefaults.exclude],
     },
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    singleThread: true,
     environmentOptions: {
       jsdom: {
         resources: "usable",
@@ -81,7 +78,7 @@ export default defineConfig({
     },
     browser: {
       name: "chromium",
-      provider: "playwright",
+      provider: playwright(),
     },
     exclude: ["main.js", "**/scripts/**", "**/node_modules/**", "**/dist/**"],
   },

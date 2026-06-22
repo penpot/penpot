@@ -721,7 +721,7 @@
           (or (nil? last-space-left)   (> (dm/number open-pos) (dm/number last-space-left)))
           (or (nil? first-space-right) (< (dm/number close-pos) (dm/number first-space-right)))))))
 
-(defn- build-result
+(defn build-result
   "Builds the result map for `insert-ref` by replacing the substring of `value`
    between `prefix-end` and `suffix-start` with a formatted reference `{name}`.
    Returns a map with:

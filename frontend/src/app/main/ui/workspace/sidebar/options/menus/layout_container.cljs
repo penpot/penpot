@@ -1070,8 +1070,39 @@
   [_]
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
-(mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple :shapes :applied-tokens}}
+(defn- check-layout-container-menu-props
+  [old-props new-props]
+  (let [o-values (unchecked-get old-props "values")
+        n-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
+         (identical? (unchecked-get old-props "multiple")
+                     (unchecked-get new-props "multiple"))
+         (identical? (get o-values :layout-gap)
+                     (get n-values :layout-gap))
+         (identical? (get o-values :layout-gap-type)
+                     (get n-values :layout-gap-type))
+         (identical? (get o-values :layout-padding)
+                     (get n-values :layout-padding))
+         (identical? (get o-values :layout-padding-type)
+                     (get n-values :layout-padding-type))
+         (identical? (get o-values :layout-wrap-type)
+                     (get n-values :layout-wrap-type))
+         (identical? (get o-values :layout-align-items)
+                     (get n-values :layout-align-items))
+         (identical? (get o-values :layout-flex-dir)
+                     (get n-values :layout-flex-dir))
+         (identical? (get o-values :layout-justify-content)
+                     (get n-values :layout-justify-content))
+         (identical? (get o-values :layout-align-content)
+                     (get n-values :layout-align-content))
+         (identical? (get o-values :layout)
+                     (get n-values :layout)))))
+
+(mf/defc layout-container-menu*
+  {::mf/wrap [#(mf/memo' % check-layout-container-menu-props)]}
   [{:keys [ids values multiple applied-tokens]}]
   (let [;; Display
         layout-type    (:layout values)
@@ -1249,7 +1280,9 @@
                      :on-click on-add-layout}
             (tr "labels.grid-layout")]]])]
 
-    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
+    [:section {:class (stl/css :element-set)
+               :aria-label "Layout container section"
+               :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar*
        {:collapsable has-layout?

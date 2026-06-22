@@ -62,7 +62,7 @@
 
 (def default
   {:database-uri "postgresql://postgres/penpot_test"
-   :redis-uri "redis://redis/1"
+   :redis-uri "redis://valkey/1"
    :auto-file-snapshot-every 1
    :file-data-backend "db"})
 

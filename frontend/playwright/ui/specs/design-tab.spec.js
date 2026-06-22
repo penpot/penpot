@@ -257,12 +257,26 @@ test.describe("Background blur", () => {
     // Click the first Rectangle (which has background-blur type)
     await workspace.clickLeafLayer("Rectangle");
 
+    const blurSection = workspace.page.getByRole("region", {
+      name: "Blur effects",
+    });
+    await expect(blurSection).toBeVisible();
+
     // The blur type select should show "Background blur" as the current value
-    const blurTypeSelect = workspace.page
-      .getByTestId("blur-info")
-      .getByRole("combobox");
+    const blurTypeSelect = workspace.page.getByRole("combobox", {
+      name: "Blur type select",
+    });
     await expect(blurTypeSelect).toBeVisible();
     await expect(blurTypeSelect).toContainText("Background blur");
+
+    // Select first group layer, which has not blur effect
+    await workspace.layers.getByTestId("layer-row").nth(5).click();
+
+    await expect(blurTypeSelect).not.toBeVisible();
+    await blurSection.getByRole("button", { name: "Add blur" }).click();
+    await expect(blurTypeSelect).toBeVisible();
+
+    await expect(blurTypeSelect).toContainText("Layer blur");
   });
 
   test("Shows both layer-blur and background-blur options in the blur type dropdown", async ({
@@ -279,25 +293,66 @@ test.describe("Background blur", () => {
     });
 
     await workspace.clickLeafLayer("Rectangle");
+    const blurSection = workspace.page.getByRole("region", {
+      name: "Blur effects",
+    });
+    await expect(blurSection).toBeVisible();
 
     // Open the blur type dropdown
-    const blurTypeSelect = workspace.page
-      .getByTestId("blur-info")
-      .getByRole("combobox");
+    const blurTypeSelect = blurSection.getByRole("combobox", {
+      name: "Blur type select",
+    });
+    await expect(blurTypeSelect).toBeVisible();
+
     await blurTypeSelect.click();
 
     // Both options should be visible
-    const layerBlurOption = workspace.page.getByRole("option", {
+    const layerBlurOption = blurSection.getByRole("option", {
       name: "Layer blur",
     });
-    const backgroundBlurOption = workspace.page.getByRole("option", {
+    const backgroundBlurOption = blurSection.getByRole("option", {
       name: "Background blur",
     });
     await expect(layerBlurOption).toBeVisible();
     await expect(backgroundBlurOption).toBeVisible();
   });
 
-  test("Does not show background blur option when background-blur flag is not active", async ({
+  test("Shape can have both layer blur and background blur effects at the same time", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page);
+    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
+    await workspace.setupEmptyFile();
+    await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
+
+    await workspace.goToWorkspace({
+      fileId: "93bfc923-66b2-813c-8007-b2725507ba08",
+      pageId: "93bfc923-66b2-813c-8007-b2725507ba09",
+    });
+
+    await workspace.clickLeafLayer("Rectangle");
+    const blurSection = workspace.page.getByRole("region", {
+      name: "Blur effects",
+    });
+    await expect(blurSection).toBeVisible();
+
+    const addBlurButton = blurSection.getByRole("button", { name: "Add blur" });
+    await expect(addBlurButton).toBeVisible();
+    await addBlurButton.click();
+
+    const blurTypeSelect = blurSection.getByRole("combobox", {
+      name: "Blur type select",
+    });
+    await expect(blurTypeSelect).toHaveCount(2);
+
+    const backgroundBlurLabel = blurSection.getByText("Background blur");
+    await expect(backgroundBlurLabel).toBeVisible();
+
+    const layerBlurLabel = blurSection.getByText("Layer blur");
+    await expect(layerBlurLabel).toBeVisible(); 
+  });
+
+  test("Show background blur disabled when flag is not active", async ({
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
@@ -312,15 +367,42 @@ test.describe("Background blur", () => {
 
     await workspace.clickLeafLayer("Rectangle");
 
+    // When there is no background blur flag the section has the old name "blur" instead of "blur effects"
+    const blurSection = workspace.page.getByRole("region", {
+      name: "Blur",
+    });
+    await expect(blurSection).toBeVisible();
     // Without the background-blur flag, no blur type dropdown should appear.
-    // Instead, a plain "Blur" label is shown.
-    const blurTypeSelect = workspace.page
-      .getByTestId("blur-info")
-      .getByRole("combobox");
+    // Instead, a plain "Background blur" label is shown and more option button is disabled.
+    const blurTypeSelect = blurSection.getByRole("combobox", {
+      name: "Blur type select",
+    });
     await expect(blurTypeSelect).not.toBeVisible();
 
-    const blurLabel = workspace.page.getByTestId("blur-info").getByText("Blur");
-    await expect(blurLabel).toBeVisible();
+    const backgroundBlurLabel = blurSection.getByText("Background blur");
+    await expect(backgroundBlurLabel).toBeVisible();
+
+    const showMoreOptionsButton = blurSection.getByRole("button", {
+      name: "Show/hide more options",
+    });
+    await expect(showMoreOptionsButton).toBeDisabled();
+
+    const showAndHideButton = blurSection.getByRole("button", {
+      name: "Toggle blur",
+    });
+    await expect(showAndHideButton).toBeDisabled();
+
+    const addBlurButton = blurSection.getByRole("button", { name: "Add blur" });
+
+    // We can add a layer blur, but not a background blur, and the type select should not appear
+    await expect(addBlurButton).toBeVisible();
+    await addBlurButton.click();
+
+    await expect(blurTypeSelect).not.toBeVisible();
+    await expect(backgroundBlurLabel).toBeVisible();
+
+    const blurLabel = blurSection.getByText("Blur", { exact: true });
+    await expect(blurLabel).toHaveCount(2);
   });
 });
 

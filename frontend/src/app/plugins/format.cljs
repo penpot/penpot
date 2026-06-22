@@ -22,9 +22,10 @@
   (when kw (d/name kw)))
 
 (defn format-array
+  "Formats a collection into a JS array, applying `format-fn` to each item.
+  Always returns an array; an empty array is returned for a nil/empty `coll`."
   [format-fn coll]
-  (when (some? coll)
-    (apply array (keep format-fn coll))))
+  (apply array (keep format-fn coll)))
 
 
 (defn format-mixed
@@ -174,9 +175,7 @@
 
 (defn format-shadows
   [shadows]
-  (if (some? shadows)
-    (format-array format-shadow shadows)
-    (array)))
+  (format-array format-shadow shadows))
 
 ;;export interface Fill {
 ;;  fillColor?: string;
@@ -232,16 +231,14 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }
 (defn format-blur
-  [{:keys [id type value hidden] :as blur}]
+  [{:keys [id value hidden] :as blur}]
   (when (some? blur)
     (obj/without-empty
      #js {:id (format-id id)
-          :type (format-key type)
           :value value
           :hidden hidden})))
 
@@ -260,8 +257,7 @@
 
 (defn format-exports
   [exports]
-  (when (some? exports)
-    (format-array format-export exports)))
+  (format-array format-export exports))
 
 ;; export interface GuideColumnParams {
 ;;   color: { color: string; opacity: number };
@@ -343,8 +339,7 @@
 
 (defn format-frame-guides
   [guides]
-  (when (some? guides)
-    (format-array format-frame-guide guides)))
+  (format-array format-frame-guide guides))
 
 ;;interface PathCommand {
 ;;  command:
@@ -398,8 +393,7 @@
 
 (defn format-path-content
   [content]
-  (when (some? content)
-    (format-array format-command content)))
+  (format-array format-command content))
 
 ;; export type TrackType = 'flex' | 'fixed' | 'percent' | 'auto';
 ;;
@@ -416,8 +410,7 @@
 
 (defn format-tracks
   [tracks]
-  (when (some? tracks)
-    (format-array format-track tracks)))
+  (format-array format-track tracks))
 
 
 ;; export interface Dissolve {

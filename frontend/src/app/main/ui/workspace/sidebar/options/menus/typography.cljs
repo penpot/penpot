@@ -185,8 +185,10 @@
          #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
             (.scrollToPosition ^js inst offset)))))
 
-    [:div {:class (stl/css :font-selector)}
-     [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
+    [:div {:class [(stl/css-case :font-selector true
+                                 :fonts-on-modal (not full-size?))]}
+     [:div {:class (stl/css-case :font-selector-dropdown true
+                                 :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
        [:> search-bar* {:on-change on-filter-change
                         :value (:term state)
@@ -230,8 +232,7 @@
                      :on-click on-select
                      :is-current (= (:id font) (:id selected))}])))
 
-(mf/defc font-options
-  {::mf/wrap-props false}
+(mf/defc font-options*
   [{:keys [values on-change on-blur show-recent full-size-selector]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
@@ -308,6 +309,7 @@
          :on-close on-font-selector-close
          :on-select on-font-select
          :full-size full-size-selector
+         :origin "right-sidebar"
          :show-recent show-recent}])
 
      [:div {:class (stl/css :font-option)
@@ -375,8 +377,7 @@
            :on-change on-font-variant-change
            :on-blur on-blur}])]]]))
 
-(mf/defc spacing-options
-  {::mf/wrap-props false}
+(mf/defc spacing-options*
   [{:keys [values on-change on-blur]}]
   (let [{:keys [line-height
                 letter-spacing]} values
@@ -384,7 +385,7 @@
         letter-spacing (or letter-spacing "0")
         handle-change
         (fn [value attr]
-          (on-change {attr (str value)}))]
+          (on-change {attr (ust/format-precision value 2)}))]
 
     [:div {:class (stl/css :spacing-options)}
      [:div {:class (stl/css :line-height)
@@ -424,8 +425,7 @@
         :nillable (= :multiple letter-spacing)
         :on-blur on-blur}]]]))
 
-(mf/defc text-transform-options
-  {::mf/wrap-props false}
+(mf/defc text-transform-options*
   [{:keys [values on-change on-blur]}]
   (let [text-transform (or (:text-transform values) "none")
         unset-value    (if (features/active-feature? @st/state "text-editor/v2") "none" "unset")
@@ -459,28 +459,29 @@
 (mf/defc text-options*
   [{:keys [ids editor values on-change on-blur show-recent]}]
   (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
-        opts #js {:editor editor
-                  :ids ids
-                  :values values
-                  :on-change on-change
-                  :on-blur on-blur
-                  :show-recent show-recent
-                  :full-size-selector full-size-selector?}]
+        opts (mf/props
+              {:editor editor
+               :ids ids
+               :values values
+               :on-change on-change
+               :on-blur on-blur
+               :show-recent show-recent
+               :full-size-selector full-size-selector?})]
     [:div {:class (stl/css-case :text-options true
                                 :text-options-full-size full-size-selector?)}
-     [:> font-options opts]
+     [:> font-options* opts]
      [:div {:class (stl/css :typography-variations)}
-      [:> spacing-options opts]
-      [:> text-transform-options opts]]]))
+      [:> spacing-options* opts]
+      [:> text-transform-options* opts]]]))
 
-(mf/defc typography-advanced-options
+(mf/defc typography-advanced-options*
   {::mf/wrap [mf/memo]}
-  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur
-           local? navigate-to-library on-key-down file-id is-asset?]}]
+  [{:keys [is-visible typography is-editable name-input-ref on-close on-change on-name-blur
+           is-local navigate-to-library on-key-down file-id is-asset?]}]
   (let [ref            (mf/use-ref nil)
         font-data      (fonts/get-font-data (:font-id typography))
         typography-id  (:id typography)
-        show-actions?  (and is-asset? editable?)
+        show-actions?  (and is-asset? is-editable)
 
         on-delete
         (mf/use-fn
@@ -501,17 +502,17 @@
     (fonts/ensure-loaded! (:font-id typography))
 
     (mf/use-effect
-     (mf/deps visible?)
+     (mf/deps is-visible)
      (fn []
        (when-let [node (mf/ref-val ref)]
-         (when visible?
+         (when is-visible
            (dom/scroll-into-view-if-needed! node)))))
 
-    (when visible?
+    (when is-visible
       [:div {:ref ref
              :class (stl/css :advanced-options-wrapper)}
 
-       (if ^boolean editable?
+       (if ^boolean is-editable
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
@@ -588,19 +589,18 @@
            [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.text-transform")]
            [:span {:class (stl/css :info-content)} (:text-transform typography)]]
 
-          (when-not local?
+          (when-not is-local
             [:> button* {:variant "secondary"
                          :on-click navigate-to-library}
              (tr "workspace.assets.typography.go-to-edit")])])])))
 
-(mf/defc typography-entry
-  {::mf/wrap-props false}
-  [{:keys [file-id typography local? selected? on-click on-change on-detach on-context-menu editing? renaming? focus-name? external-open* is-asset?]}]
+(mf/defc typography-entry*
+  [{:keys [file-id typography is-local is-selected on-click on-change on-detach on-context-menu is-editing is-renaming is-focus-name external-open* is-asset?]}]
   (let [name-input-ref       (mf/use-ref)
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
-        editable?            (and local? (not read-only?))
+        editable?            (and is-local (not read-only?))
 
-        open*                (mf/use-state editing?)
+        open*                (mf/use-state is-editing)
         open?                (deref open*)
         font-data            (fonts/get-font-data (:font-id typography))
         name-only?           (= (:name typography) (:name font-data))
@@ -638,16 +638,16 @@
              (when ^boolean esc?
                (dom/blur! input-node)))))]
 
-    (mf/with-effect [editing?]
-      (when editing?
-        (reset! open* editing?)))
+    (mf/with-effect [is-editing]
+      (when is-editing
+        (reset! open* is-editing)))
 
     (mf/with-effect [open?]
       (when (some? external-open*)
         (reset! external-open* open?)))
 
-    (mf/with-effect [focus-name?]
-      (when focus-name?
+    (mf/with-effect [is-focus-name]
+      (when is-focus-name
         (tm/schedule
          #(when-let [node (mf/ref-val name-input-ref)]
             (dom/focus! node)
@@ -655,9 +655,9 @@
 
     [:*
      [:div {:class (stl/css-case :typography-entry true
-                                 :selected ^boolean selected?)
+                                 :selected ^boolean is-selected)
             :style {:display (when ^boolean open? "none")}}
-      (if renaming?
+      (if is-renaming
         [:div {:class (stl/css :font-name-wrapper)}
          [:div
           {:class (stl/css :typography-sample-input)
@@ -706,16 +706,16 @@
                          :on-click on-open
                          :icon i/menu}]]]
 
-     [:& typography-advanced-options
-      {:visible? open?
+     [:> typography-advanced-options*
+      {:is-visible open?
        :on-close on-close
        :typography  typography
-       :editable? editable?
+       :is-editable editable?
        :name-input-ref  name-input-ref
        :on-change  on-change
        :on-name-blur on-name-blur
        :on-key-down on-key-down
        :file-id file-id
        :is-asset? is-asset?
-       :local?  local?
+       :is-local  is-local
        :navigate-to-library navigate-to-library}]]))

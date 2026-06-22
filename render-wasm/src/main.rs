@@ -9,6 +9,7 @@ mod render;
 mod shapes;
 mod state;
 mod tiles;
+mod ui;
 mod utils;
 mod uuid;
 mod view;
@@ -969,6 +970,22 @@ pub extern "C" fn render_stats() {
 #[no_mangle]
 pub fn free_gpu_resources() {
     get_render_state().free_gpu_resources();
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let data = state.render_shape_pdf(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
 }
 
 pub fn main() {
