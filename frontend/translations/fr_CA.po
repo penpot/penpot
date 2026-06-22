@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-19 01:01+0000\n"
+"PO-Revision-Date: 2026-06-22 07:25+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9567,7 +9567,7 @@ msgstr "Trouver"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
 msgid "shortcuts.find-and-replace"
-msgstr "Recherche et remplacement"
+msgstr "Rechercher et remplacer"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
 msgid "shortcuts.paste-replace"
@@ -9692,3 +9692,347 @@ msgstr "Serveur MCP"
 #: src/app/main/ui/workspace/main_menu.cljs:400
 msgid "workspace.header.menu.unlock-guides"
 msgstr "Déverrouiller les guides"
+
+#: src/app/main/ui/settings/subscription.cljs:576
+msgid "nitrate.subscription.active-until"
+msgstr "Actif jusqu'au %s"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+msgid "nitrate.subscription.renew-success"
+msgstr "Ton abonnement Nitrate a été renouvelé."
+
+#: src/app/main/ui/settings/subscription.cljs:585
+msgid "nitrate.subscription.settings.manual-cancel"
+msgstr "Annuler l'abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:105
+msgid "nitrate.subscription.settings.renew-with-code"
+msgstr "Renouveler avec code d'activation"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
+msgid "not-active-token.no-name"
+msgstr "Ce token n'est disponible dans aucun ensemble ou a une valeur invalide."
+
+#: src/app/main/data/workspace/mcp.cljs:185
+msgid "notifications.mcp.active-in-another-tab"
+msgstr "MCP est actif dans un autre onglet. Basculer ici?"
+
+#, unused
+msgid "notifications.mcp.active-in-this-tab"
+msgstr "MCP est maintenant actif dans cet onglet."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
+msgid "webgl.modals.webgl-unavailable.cta-dashboard"
+msgstr "Aller au tableau de bord"
+
+#: src/app/render_wasm/api.cljs:1869
+msgid "webgl.webgl-context-lost.toast"
+msgstr "Le contexte WebGL a été perdu"
+
+#: src/app/render_wasm/api.cljs:1885
+msgid "webgl.webgl-context-recovered.toast"
+msgstr "Le contexte WebGL a été récupéré"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
+msgid "workspace.assets.delete-group"
+msgstr "Supprimer le groupe"
+
+#: src/app/main/data/workspace/clipboard.cljs:1175
+msgid "workspace.clipboard.copying"
+msgstr "Copie de l'image…"
+
+#: src/app/main/data/workspace/clipboard.cljs:1198
+msgid "workspace.clipboard.image-copied"
+msgstr "Image copiée au presse-papiers"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:78
+msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
+msgstr "Guide de dépannage"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
+msgid "webgl.modals.webgl-unavailable.title"
+msgstr "Oups! WebGL n'est pas disponible"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr ""
+" pour vérifier les paramètres du navigateur, d'accélération GPU, pilotes et "
+"erreurs de système communes."
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
+msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
+msgstr "Consulte notre "
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:70
+msgid "webgl.modals.webgl-unavailable.troubleshooting.link"
+msgstr "guide de dépannage WebGL"
+
+#, unused
+msgid "webgl.toast.webgl-render-disabled"
+msgstr "Rendu WebGL désactivé"
+
+#, unused
+msgid "webgl.toast.webgl-render-enabled"
+msgstr "Rendu WebGL activé"
+
+#: src/app/main/data/workspace/clipboard.cljs:1204
+msgid "workspace.clipboard.image-copy-failed"
+msgstr "Erreur de copie de l'image"
+
+#: src/app/main/ui/workspace/context_menu.cljs:873
+msgid "workspace.context-menu.grid-cells.copy-columns"
+msgstr "Copier les colonnes"
+
+#: src/app/main/ui/workspace/context_menu.cljs:869
+msgid "workspace.context-menu.grid-cells.copy-rows"
+msgstr "Copier les rangées"
+
+#: src/app/main/ui/workspace/context_menu.cljs:877
+msgid "workspace.context-menu.grid-cells.paste-tracks"
+msgstr "Coller"
+
+#: src/app/main/ui/workspace/context_menu.cljs:911
+msgid "workspace.context-menu.guides.change-color"
+msgstr "Couleur du guide"
+
+#: src/app/main/ui/workspace/context_menu.cljs:923
+msgid "workspace.context-menu.guides.remove"
+msgstr "Supprimer le guide"
+
+#: src/app/main/ui/workspace/main_menu.cljs:335
+msgid "workspace.header.menu.disable-webgl"
+msgstr "Désactiver le rendu WebGL (bêta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.enable-webgl"
+msgstr "Activer le rendu WebGL (bêta)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:508
+msgid "workspace.header.menu.find"
+msgstr "Recherche"
+
+#: src/app/main/ui/workspace/main_menu.cljs:515
+msgid "workspace.header.menu.find-and-replace"
+msgstr "Rechercher et remplacer"
+
+#: src/app/main/ui/workspace/main_menu.cljs:401
+msgid "workspace.header.menu.lock-guides"
+msgstr "Verrouiller les guides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:496
+msgid "workspace.libraries.text.mixed-tokens"
+msgstr "Tokens mixtes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:491
+msgid "workspace.libraries.text.mixed-tokens-and-assets"
+msgstr "Tokens et atouts mixtes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511
+msgid "workspace.libraries.text.mixed-typography"
+msgstr "Atouts mixtes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:513
+msgid "workspace.libraries.text.multiple-assets-tooltip"
+msgstr "Délier tous les atouts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:335
+#, unused
+msgid "workspace.libraries.text.multiple-token-and-asset-tooltip"
+msgstr "Détacher tous les tokens et atouts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:498
+msgid "workspace.libraries.text.multiple-token-tooltip"
+msgstr "Détacher tous les tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:103
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Flou d'arrière-plan"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
+msgid "webgl.modals.webgl-unavailable.message"
+msgstr ""
+"WebGL n'est pas disponible sur ce navigateur et est nécessaire pour que "
+"Penpot fonctionne. Vérifier la configuration du navigateur ou fermer les "
+"fenêtres qui font un usage intense de graphismes."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:480
+msgid "workspace.options.convert-to-typography"
+msgstr "Créer un style de typographie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:198
+msgid "workspace.options.fill.section"
+msgstr "Remplir la section"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:285
+msgid "workspace.options.layer-options.layer-section"
+msgstr "Section du menu des calques"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:448
+msgid "workspace.options.no-size-preset-results"
+msgstr "Aucun taille prédéfinie correspondante"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+#, unused
+msgid "workspace.options.pixel grid-color"
+msgstr "Couleur de la grille pixel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:169, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:287
+msgid "workspace.options.radius.radius-section"
+msgstr "Section du rayon du contour"
+
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
+msgid "workspace.options.search-size-preset"
+msgstr "Rechercher une taille prédéfinie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:200
+msgid "workspace.options.selection-color.section"
+msgstr "Section des couleurs de sélection"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:327
+msgid "workspace.options.stroke-dash"
+msgstr "Trait"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
+msgid "workspace.options.stroke-gap"
+msgstr "Gouttière"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:248
+msgid "workspace.options.stroke.toggle-stroke"
+msgstr "Basculer le contour"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:464
+msgid "workspace.options.text-options.text-section"
+msgstr "Section du texte"
+
+#: src/app/main/ui/workspace/plugins.cljs:317
+msgid "workspace.plugins.permissions.clipboard-read"
+msgstr "Lire les contenus du presse-papiers."
+
+#: src/app/main/ui/workspace/plugins.cljs:311
+msgid "workspace.plugins.permissions.clipboard-write"
+msgstr "Lire et écrire au presse-papiers."
+
+#: src/app/main/ui/workspace/context_menu.cljs:651
+msgid "workspace.shape.menu.clear-guides"
+msgstr "Effacer les guides des tableaux"
+
+#: src/app/main/ui/workspace/context_menu.cljs:229
+msgid "workspace.shape.menu.copy-as-image"
+msgstr "Copier comme image"
+
+#: src/app/main/ui/workspace/context_menu.cljs:453
+msgid "workspace.shape.menu.stroke-to-path"
+msgstr "Contour à chemin"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs
+#, unused
+msgid "workspace.sidebar.layers.match-count"
+msgstr "%s de %s"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:601
+msgid "workspace.sidebar.layers.no-matches"
+msgstr "Aucun résultat"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:620
+msgid "workspace.sidebar.layers.replace"
+msgstr "Remplacer"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:626
+msgid "workspace.sidebar.layers.replace-all"
+msgstr "Tout remplacer"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:587
+msgid "workspace.sidebar.layers.replace-placeholder"
+msgstr "Remplacer avec…"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:575
+msgid "workspace.sidebar.layers.search-and-replace"
+msgstr "Rechercher et remplacer"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:606
+msgid "workspace.sidebar.layers.search-scope-canvas"
+msgstr "Contenu texte"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:610
+msgid "workspace.sidebar.layers.search-scope-layers"
+msgstr "Noms des calques"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:357
+msgid "workspace.tokens.copy-name"
+msgstr "Copier le chemin du token"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:60
+msgid "workspace.tokens.duplicate-group"
+msgstr "Dupliquer le groupe de tokens"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32
+msgid "workspace.tokens.duplicated-json-token-name"
+msgstr "Erreur d'importation : nom de token dupliqué dans le JSON."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.duplicated-json-token-name-detail"
+msgstr ""
+"Un token existe déjà au chemin « %s » ou avec le même préfixe, dans un autre "
+"ensemble."
+
+#: src/app/main/data/workspace/tokens/application.cljs:730, src/app/main/ui/workspace/tokens/management/group.cljs:162
+msgid "workspace.tokens.error-text-edition"
+msgstr ""
+"Il n'est pas possible d'appliquer un token pendant l'édition du texte. "
+"Sélectionner plutôt le calque de texte."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:102
+msgid "workspace.tokens.remap-node-references-title"
+msgstr "Renommer « %s » à « %s » et remapper tous les tokens de ce groupe?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:101
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Flou de calque"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:105
+msgid "workspace.tokens.remap-token-warning-effects"
+msgstr ""
+"Ceci modifiera tous les calques et références qui font usage de l'ancien nom "
+"du token."
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
+msgid "workspace.tokens.remap-node-warning-effects"
+msgstr ""
+"Ceci mettra à jours tous les tokens et références qui font usage des anciens "
+"noms de token."
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:59
+msgid "workspace.tokens.rename-group"
+msgstr "Renommer le groupe de tokens"
+
+#: src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:68
+msgid "workspace.tokens.rename-group-name-hint"
+msgstr "Les tokens seront automatiquement renommés à %s.(suffixe).(nomDeToken)"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:551
+msgid "workspace.tokens.search-by-token"
+msgstr "Recherche par nom de token"
+
+#, unused
+msgid "workspace.top-bar.webgl-context-lost"
+msgstr "Rendu indisponible. Recharger la page pour restaurer l'édition."
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:43
+msgid "workspace.top-bar.webgl-context-lost.reload"
+msgstr "Recharger"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:358
+msgid "workspace.undo.entry.by"
+msgstr "par %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.button.preview"
+msgstr "Version aperçu"
+
+#: src/app/main/data/workspace/versions.cljs:301
+msgid "workspace.versions.preview-banner-title"
+msgstr "Aperçu de la version : %s"
+
+#: src/app/main/data/workspace/versions.cljs:295
+msgid "workspace.versions.preview.unnamed"
+msgstr "Version sans nom"
