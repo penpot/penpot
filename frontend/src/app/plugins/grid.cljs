@@ -344,25 +344,25 @@
 
     :addColumnAtIndex
     (fn [index type value]
-      (cond
-        (not (sm/valid-safe-int? index))
-        (u/not-valid plugin-id :addColumnAtIndex-index index)
+      (let [type (keyword type)]
+        (cond
+          (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :addColumnAtIndex-index index)
 
-        (not (contains? ctl/grid-track-types type))
-        (u/not-valid plugin-id :addColumnAtIndex-type type)
+          (not (contains? ctl/grid-track-types type))
+          (u/not-valid plugin-id :addColumnAtIndex-type type)
 
-        (and (or (= :percent type) (= :flex type) (= :fixed type))
-             (not (sm/valid-safe-number? value)))
-        (u/not-valid plugin-id :addColumnAtIndex-value value)
+          (and (or (= :percent type) (= :flex type) (= :fixed type))
+               (not (sm/valid-safe-number? value)))
+          (u/not-valid plugin-id :addColumnAtIndex-value value)
 
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :addColumnAtIndex "Plugin doesn't have 'content:write' permission")
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :addColumnAtIndex "Plugin doesn't have 'content:write' permission")
 
-        (not (u/page-active? page-id))
-        (u/not-valid plugin-id :addColumnAtIndex "Cannot modify a page that is not currently active")
+          (not (u/page-active? page-id))
+          (u/not-valid plugin-id :addColumnAtIndex "Cannot modify a page that is not currently active")
 
-        :else
-        (let [type (keyword type)]
+          :else
           (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value} index)))))
 
     :removeRow
