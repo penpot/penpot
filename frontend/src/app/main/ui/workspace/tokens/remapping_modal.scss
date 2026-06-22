@@ -52,7 +52,7 @@
   @include t.use-typography("headline-medium");
 
   color: var(--modal-title-foreground-color);
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .modal-content {
