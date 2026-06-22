@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:29+0000\n"
-"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3893,6 +3893,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Inviter des membres"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "N'oubliez pas d'inclure tout le monde. Développeurs, concepteurs, "
