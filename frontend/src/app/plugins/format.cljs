@@ -146,7 +146,7 @@
   [[color attrs]]
   (let [shapes-info (apply array (map format-shape-info attrs))
         color (format-color color)]
-    (obj/set! color "shapeInfo" shapes-info)
+    (obj/set! color "shapesInfo" shapes-info)
     color))
 
 
