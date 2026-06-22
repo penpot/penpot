@@ -16,6 +16,8 @@
    in :fetching) and are permanently stuck with fallback-font layout metrics."
   (:require
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.mem :as mem]
+   [app.render-wasm.wasm :as wasm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
 
@@ -108,3 +110,21 @@
     ;; process-pending fires update-text-layouts, it covers shape-b too.
     (t/is (= 2 (count (:shapes @captured)))
           "Both shapes are in process-pending so font-load covers all of them")))
+
+(t/deftest empty-grid-tracks-do-not-allocate-zero-bytes
+  (let [calls  (atom [])
+        ;; `h/call` is a macro that resolves the wasm function off the module
+        ;; via `unchecked-get`, so it cannot be redefined. Mock the module
+        ;; itself with recording stubs and let the real macro expansion run.
+        module #js {"_set_grid_rows"    (fn [& _] (swap! calls conj [:call "_set_grid_rows"]) nil)
+                    "_set_grid_columns" (fn [& _] (swap! calls conj [:call "_set_grid_columns"]) nil)}]
+    (with-redefs [mem/alloc (fn [size]
+                              (swap! calls conj [:alloc size])
+                              0)
+                  wasm/internal-module module]
+      (wasm.api/set-grid-layout-rows [])
+      (wasm.api/set-grid-layout-columns []))
+    (t/is (not-any? #(= :alloc (first %)) @calls))
+    (t/is (= [[:call "_set_grid_rows"]
+              [:call "_set_grid_columns"]]
+             @calls))))
