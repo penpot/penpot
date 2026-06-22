@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
+"Last-Translator: Beeby Xia <beeby@163.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -3224,6 +3224,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "邀请成员"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr "记得将开发人员、设计师、经理……等各类人员都加进来:)"
 
