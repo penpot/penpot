@@ -269,3 +269,21 @@
         (doseq [[label thunk] (setter-specs m)]
           (t/is (not (throws? thunk)) (str label " must be allowed on the active page")))))))
 
+(t/deftest test-border-radius-accepts-fractional-values
+  ;; Regression: the ShapeProxy borderRadius setters validated with
+  ;; `valid-safe-int?`, but the model types `:r1`-`:r4` as `safe-number` (and the
+  ;; radius sidebar input has min 0, not integer-only), so a fractional radius was
+  ;; wrongly rejected. With `throwValidationErrors` on and page2 active, a
+  ;; fractional radius must be accepted (no throw).
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [{:keys [store page2-id ^js rect]} (setup)]
+        (activate-page! store page2-id)
+        (doseq [[label thunk]
+                [["borderRadius"            #(set! (.-borderRadius rect) 7.5)]
+                 ["borderRadiusTopLeft"     #(set! (.-borderRadiusTopLeft rect) 2.5)]
+                 ["borderRadiusTopRight"    #(set! (.-borderRadiusTopRight rect) 2.5)]
+                 ["borderRadiusBottomRight" #(set! (.-borderRadiusBottomRight rect) 2.5)]
+                 ["borderRadiusBottomLeft"  #(set! (.-borderRadiusBottomLeft rect) 2.5)]]]
+          (t/is (not (throws? thunk)) (str label " must accept a fractional value")))))))
+
