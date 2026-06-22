@@ -196,3 +196,7 @@
         (.removeRulerGuide board guide)
         (t/is (empty? (page-guides store context))
               "removeRulerGuide deletes the guide from the page")))))
+
+(t/deftest group-empty-input-returns-nil
+  (let [context (api/create-context plugin-id)]
+    (t/is (nil? (.group context #js [])))))

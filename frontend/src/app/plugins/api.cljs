@@ -317,6 +317,11 @@
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :group-shapes shapes)
 
+        ;; A group cannot be created from no shapes; per the documented contract
+        ;; return null instead of a proxy pointing at a shape that never exists.
+        (zero? (alength shapes))
+        nil
+
         (some #(not (u/page-active? (obj/get % "$page"))) shapes)
         (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
 

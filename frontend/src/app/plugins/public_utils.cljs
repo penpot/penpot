@@ -19,6 +19,11 @@
     (not (every? shape/shape-proxy? shapes))
     (u/not-valid nil :centerShapes shapes)
 
+    ;; The documented contract returns null for an empty array; without this
+    ;; guard `shapes->rect` yields a non-rect and `rect->center` asserts.
+    (empty? shapes)
+    nil
+
     :else
     (let [shapes (->> shapes (map u/proxy->shape))]
       (-> (gsh/shapes->rect shapes)
