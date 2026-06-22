@@ -27,6 +27,7 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.format-test]
    [frontend-tests.plugins.interactions-test]
@@ -89,6 +90,9 @@
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.comments-test
+   'frontend-tests.plugins.format-test
+   'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.format-test
