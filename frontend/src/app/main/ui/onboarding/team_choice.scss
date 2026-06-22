@@ -22,13 +22,8 @@
   text-align: right;
 }
 
-.flex-align-right {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.margin-bottom {
-  margin-bottom: var(--sp-xxl);
+.align-center {
+  justify-content: center;
 }
 
 .link-wrapper {
@@ -60,7 +55,7 @@
   gap: var(--sp-xxl);
   position: relative;
   inline-size: px2rem(908);
-  padding: $sz-64 px2rem(100);
+  padding: px2rem(72) px2rem(100);
   border-radius: $br-8;
   background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
@@ -68,7 +63,7 @@
 
 .modal-sections {
   display: grid;
-  grid-template-columns: px2rem(310) $sz-32 1fr;
+  grid-template-columns: px2rem(336) $sz-12 1fr;
   gap: var(--sp-xxl);
   block-size: 100%;
 }
@@ -76,17 +71,20 @@
 .modal-info {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-xl);
-  border: $b-1 solid var(--color-foreground-secondary);
+  gap: var(--sp-xxl);
   padding: var(--sp-m);
-  border-radius: $br-12;
-  background-color: var(--color-background-quaternary);
+}
+
+.modal-info-desc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
 }
 
 .modal-info-features {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-m);
+  gap: var(--sp-s);
 }
 
 .modal-info-item {
@@ -112,10 +110,8 @@
 }
 
 .modal-separator-line {
-  inline-size: px2rem(8);
+  inline-size: $sz-1;
   block-size: 100%;
-  border-radius: $br-8;
-  opacity: 0.5;
   background-color: var(--color-background-quaternary);
 }
 
@@ -134,7 +130,7 @@
 .modal-team-block {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-m);
+  gap: var(--sp-l);
 }
 
 .modal-team-sub-block {

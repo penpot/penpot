@@ -4607,12 +4607,15 @@ msgstr "Crear equipo y enviar invitaciones"
 msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
 msgstr "Podrás enviar invitaciones después"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:193
+msgid "onboarding.choice.team-up.create-team-name"
+msgstr "Nombre del equipo"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:176
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Tras nombrar tu equipo podrás invitar a personas para que se unan."
 
-#: src/app/main/ui/onboarding/team_choice.cljs:188
-msgid "onboarding.choice.team-up.create-team-placeholder"
+#: src/app/main/ui/onboarding/team_choice.cljs:184
+msgid "onboarding.choice.team-up.create-team-enter"
 msgstr "Introduce el nombre del equipo"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:228
@@ -4627,7 +4630,12 @@ msgstr "Crear equipo sin invitar"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invitar integrantes"
 
-#: src/app/main/ui/onboarding/team_choice.cljs:218
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "" 
+"Personas de desarrollo, diseño, gestión... todo el mundo es bienvenido. "
+"Podrás invitar a más gente posteriormente."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:187
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "No olvides incluir personas de desarrollo, diseño, gestión… la diversidad "

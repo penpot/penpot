@@ -42,15 +42,16 @@
   [:div {:class (stl/css :modal-info)}
    [:img {:src "images/form/slide-final-team.svg"}]
 
-   [:> heading* {:level 2
-                 :typography t/title-medium
-                 :class (stl/css :color-light)}
-    (tr "onboarding.team-modal.team-definition")]
+   [:div {:class (stl/css :modal-info-desc)}
+    [:> heading* {:level 2
+                  :typography t/title-medium
+                  :class (stl/css :color-light)}
+     (tr "onboarding.team-modal.team-definition")]
 
-   [:> text* {:as "div"
-              :typography t/body-medium
-              :class (stl/css :color-dimmed :margin-bottom)}
-    (tr "onboarding.team-modal.create-team-desc")]
+    [:> text* {:as "div"
+               :typography t/body-large
+               :class (stl/css :color-dimmed)}
+     (tr "onboarding.team-modal.create-team-desc")]]
 
    [:ul {:class (stl/css :modal-info-features)}
     [:> team-info-feature* {:icon-id i/document
@@ -181,11 +182,18 @@
                      :class (stl/css :color-light)}
         (tr "onboarding.team-modal.create-team")]
 
-       [:> fc/form-input* {:type "text"
-                           :name :name
-                           :auto-focus true
-                           :auto-complete "off"
-                           :placeholder (tr "onboarding.choice.team-up.create-team-placeholder")}]
+       [:div {:class (stl/css :modal-team-sub-block)}
+        [:> text* {:as "div"
+                   :typography t/headline-small
+                   :class (stl/css :color-light)}
+         (tr "onboarding.choice.team-up.create-team-enter")]
+
+        [:> fc/form-input* {:type "text"
+                            :icon i/effects
+                            :name :name
+                            :auto-focus true
+                            :auto-complete "off"
+                            :placeholder (tr "onboarding.choice.team-up.create-team-name")}]]
 
        [:> text* {:as "div"
                   :typography t/body-small
@@ -215,28 +223,23 @@
        [:> text* {:as "div"
                   :typography t/body-small
                   :class (stl/css :color-dimmed)}
-        (tr "onboarding.choice.team-up.invite-members-info")]
+        (tr "onboarding.choice.team-up.invite-members-desc")]]
 
+      [:div {:class (stl/css :modal-team-block)}
        (let [params     (:clean-data @form)
              emails     (:emails params)
              num-emails (count emails)]
          [:*
-          [:div {:class (stl/css :flex-align-right)}
-           [:> fc/form-submit* {:variant "primary"}
-            (if (> num-emails 0)
-              (tr "onboarding.choice.team-up.create-team-and-invite")
-              (tr "onboarding.choice.team-up.create-team-without-invite"))]]
+          [:> fc/form-submit* {:variant "primary"
+                               :class (stl/css :align-center)}
+           (if (> num-emails 0)
+             (tr "onboarding.choice.team-up.create-team-and-invite")
+             (tr "onboarding.choice.team-up.create-team-without-invite"))]])
 
-          (when (= num-emails 0)
-            [:> text* {:as "div"
-                       :typography t/body-small
-                       :class (stl/css :color-dimmed :text-align-right)}
-             "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")"])])]]
-
-     [:div {:class (stl/css :link-wrapper)}
-      [:> link* {:class (stl/css :link)
-                 :action on-skip}
-       (tr "onboarding.choice.team-up.continue-without-a-team")]]]))
+       [:div {:class (stl/css :link-wrapper)}
+        [:> link* {:class (stl/css :link)
+                   :action on-skip}
+         (tr "onboarding.choice.team-up.continue-without-a-team")]]]]]))
 
 (mf/defc onboarding-team-modal*
   [{:keys [go-to-team]}]
