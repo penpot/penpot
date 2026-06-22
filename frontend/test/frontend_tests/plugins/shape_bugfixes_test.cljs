@@ -83,3 +83,30 @@
       (let [blur (.-backgroundBlur proxy)]
         (t/is (= (str blur-id) (aget blur "id")))
         (t/is (= 12 (aget blur "value")))))))
+
+(t/deftest flatten-returns-proxies-for-converted-shapes
+  ;; `convert-selected-to-path` runs the WASM boolean/path pipeline, so this
+  ;; test stays at the proxy boundary: it verifies `flatten` forwards the
+  ;; selected ids to the conversion and wraps the result back into proxies.
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        input    (shape/shape-proxy plugin-id file-id page-id shape-id)
+        emitted  (atom nil)
+        context  (api/create-context plugin-id)]
+    (set! st/state (atom {:current-file-id file-id
+                          :current-page-id page-id}))
+    (with-redefs [dw/convert-selected-to-path
+                  (mock/stub (fn [ids]
+                               (reset! emitted ids)
+                               :convert-selected-to-path))
+                  st/emit! mock/noop
+                  shape/shape-proxy
+                  (mock/stub (fn [_plugin file page id]
+                               #js {"$file" file "$page" page "$id" id}))]
+      (let [result (.flatten context #js [input])]
+        (t/is (= #{shape-id} @emitted))
+        (t/is (array? result))
+        (t/is (= shape-id (aget result 0 "$id")))
+        (t/is (= file-id (aget result 0 "$file")))
+        (t/is (= page-id (aget result 0 "$page")))))))

@@ -664,8 +664,13 @@
         (u/not-valid plugin-id :flatten-shapes "Not valid shapes")
 
         :else
-        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/convert-selected-to-path ids)))))
+        ;; convert-selected-to-path converts the shapes in place (keeping their
+        ;; ids), so return proxies for the same ids, now resolving as paths.
+        (let [file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)
+              ids (mapv #(obj/get % "$id") shapes)]
+          (st/emit! (dw/convert-selected-to-path (into #{} ids)))
+          (apply array (map #(shape/shape-proxy plugin-id file-id page-id %) ids)))))
 
     :createVariantFromComponents
     (fn [shapes]
