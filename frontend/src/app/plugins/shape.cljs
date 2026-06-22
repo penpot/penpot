@@ -1563,7 +1563,7 @@
                    (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
-           (fn [_ value]
+           (fn [value]
              (cond
                (not (rg/ruler-guide-proxy? value))
                (u/not-valid plugin-id :removeRulerGuide "Guide not provided")

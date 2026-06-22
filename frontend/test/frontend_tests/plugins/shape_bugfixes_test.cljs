@@ -180,3 +180,19 @@
                   shape/shape-proxy (mock/stub (fn [& _] #js {}))]
       (.combineAsVariants proxy #js [(str other-id)])
       (t/is (= #{head-id other-id} (:ids @captured))))))
+
+(t/deftest remove-ruler-guide-deletes-the-guide-from-the-page
+  ;; Adds a real ruler guide through the API and asserts it is gone from the
+  ;; page guides after removeRulerGuide, rather than checking the removal call.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context plugin-id)
+            _           (set! st/state store)
+            ^js board   (.createBoard context)
+            ^js guide   (.addRulerGuide board "horizontal" 10)]
+        (t/is (= 1 (count (page-guides store context)))
+              "addRulerGuide stores one guide on the page")
+        (.removeRulerGuide board guide)
+        (t/is (empty? (page-guides store context))
+              "removeRulerGuide deletes the guide from the page")))))
