@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"PO-Revision-Date: 2026-06-23 10:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -3930,7 +3930,7 @@ msgstr "מה גודל הצוות שלך?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "נשמח לשמוע על העבודה שלך"
+msgstr "מה גודל החברה שלך?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
