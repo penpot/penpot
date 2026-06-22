@@ -47,6 +47,7 @@
     :frame "board"
     :rect "rectangle"
     :circle "ellipse"
+    :bool "boolean"
     (d/name type)))
 
 ;;export type Bounds = {
