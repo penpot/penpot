@@ -398,7 +398,7 @@
         [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
       (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:page page}])
+        [:> use/export-page* {:page page}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
       [:rect {:width (:width vbox 0)
