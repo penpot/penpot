@@ -422,7 +422,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (sm/valid-safe-int? value)) (< value 0))
+                  (or (not (sm/valid-safe-number? value)) (< value 0))
                   (u/not-valid plugin-id :borderRadius value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -441,7 +441,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -460,7 +460,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -479,7 +479,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -498,7 +498,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
