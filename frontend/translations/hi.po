@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-27 16:03+0000\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi "
-"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
+"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/"
+"hi/>\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.6.dev0\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -3500,6 +3500,7 @@ msgid "not-found.login.sent-recovery-check"
 msgstr "अपना ईमेल जांचें और नया पासवर्ड बनाने के लिए लिंक पर क्लिक करें।"
 
 #: src/app/main/ui/static.cljs:167
+#, fuzzy
 msgid "not-found.login.signup-free"
 msgstr "मुफ्त में साइन अप"
 
@@ -3742,10 +3743,11 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "सदस्यों को आमंत्रित करो"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"सभी को शामिल करना याद रखें — डेवलपर्स, डिज़ाइनर्स, मैनेजर्स... विविधता से "
-"शक्ति बढ़ती है 🙂"
+"सभी को शामिल करना याद रखें — डेवलपर्स, डिज़ाइनर्स, मैनेजर्स... विविधता से शक्ति बढ़ती है "
+"🙂"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
 msgid "onboarding.choice.team-up.roles"
@@ -3870,6 +3872,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "आपकी कंपनी कितनी बड़ी है?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "हमें अपनी नौकरी के बारे में बताइये"
 
