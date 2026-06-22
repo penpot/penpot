@@ -8921,12 +8921,6 @@ msgstr ""
 "Penpots MCP-server gör det möjligt för MCP-klienter att interagera direkt "
 "med Penpot-designfiler."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Denna unika MCP-nyckel kan inte återställas. Om du förlorar den måste du "
-"skapa en ny."
-
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
 msgstr "MCP-nyckeln går ut den %s"

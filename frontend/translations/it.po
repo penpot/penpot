@@ -2501,12 +2501,6 @@ msgstr ""
 "Il server MCP di Penpot consente ai client MCP di interagire direttamente "
 "con i file di design di Penpot."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Questa chiave MCP unica non è recuperabile. In caso di smarrimento, sarà "
-"necessario crearne uno nuovo."
-
 #: src/app/main/ui/settings/integrations.cljs:488
 msgid "integrations.mcp-server.description"
 msgstr ""

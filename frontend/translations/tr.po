@@ -9005,12 +9005,6 @@ msgstr ""
 "Penpot MCP Sunucusu, MCP istemcilerinin Penpot tasarım dosyalarıyla doğrudan "
 "etkileşime girmesini sağlar."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Bu benzersiz MCP anahtarı geri kurtarılamaz. Kaybederseniz, yeni bir tane "
-"oluşturmanız gerekecektir."
-
 #: src/app/main/ui/settings/integrations.cljs:113
 msgid "integrations.mcp-key.will-expire"
 msgstr "MCP anahtarının geçerlilik süresi %s tarihinde sona erecek"

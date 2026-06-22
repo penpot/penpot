@@ -9152,12 +9152,6 @@ msgstr ""
 "Le serveur MCP Penpot permet aux clients MCP d'interagir directement avec "
 "les fichiers Penpot design."
 
-#: src/app/main/ui/settings/integrations.cljs:101
-msgid "integrations.mcp-key.info.non-recuperable"
-msgstr ""
-"Cette clé unique MCP n'est pas récupérable. En cas de perte, il faudra en "
-"créer une nouvelle."
-
 #: src/app/main/ui/settings/integrations.cljs:338
 msgid "integrations.regenerate-mcp-key.info"
 msgstr ""
