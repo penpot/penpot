@@ -65,7 +65,7 @@
                      ;; Dropdown closed with options: open and focus first
                      (seq focusables)
                      (do
-                       (toggle-dropdown event)
+                       (toggle-dropdown event false)
                        (when get-selected-id
                          (get-selected-id))
                        (reset! focused-id* (first-focusable-id focusables)))

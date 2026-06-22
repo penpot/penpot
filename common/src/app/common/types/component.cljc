@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.component
   (:require
@@ -91,6 +91,7 @@
    :blend-mode              :layer-effects-group
    :shadow                  :shadow-group
    :blur                    :blur-group
+   :background-blur         :blur-group
    :masked-group            :mask-group
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group
@@ -159,7 +160,7 @@
       group)))
 
 (defn component-attr?
-  "Check if some attribute is one that is involved in component syncrhonization.
+  "Check if some attribute is one that is involved in component synchronization.
    Note that design tokens also are involved, although they go by an alternate
    route and thus they are not part of :sync-attrs.
    Also when detaching a nested copy it also needs to trigger a synchronization,

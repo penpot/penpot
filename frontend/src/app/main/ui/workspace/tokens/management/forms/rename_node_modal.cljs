@@ -3,8 +3,8 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cfo]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -18,8 +18,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc rename-node-form*
-  [{:keys [new-node-name node active-tokens tokens-lib selected-token-set-id variant on-close on-submit]}]
-  (let [make-schema #(cfo/make-node-token-schema active-tokens tokens-lib node selected-token-set-id)
+  [{:keys [new-node-name node active-tokens tokens-tree variant on-close on-submit]}]
+  (let [make-schema #(cfo/make-node-token-schema active-tokens tokens-tree node)
 
         schema
         (mf/with-memo [active-tokens]
@@ -82,9 +82,10 @@
 
   (let [variant (d/nilv variant "rename") ;; "rename" or "duplicate"
 
-        selected-token-set-id  (mf/deref refs/selected-token-set-id)
-
-        tokens-lib (mf/deref refs/tokens-lib)
+        tokens-tree-in-selected-set
+        (mf/with-memo [tokens-in-active-set node]
+          (-> (ctob/tokens-tree tokens-in-active-set)
+              (d/dissoc-in (:name node))))
 
         close-modal
         (mf/use-fn
@@ -117,7 +118,6 @@
                              :node node
                              :variant variant
                              :active-tokens tokens-in-active-set
-                             :tokens-lib tokens-lib
-                             :selected-token-set-id selected-token-set-id
+                             :tokens-tree tokens-tree-in-selected-set
                              :on-close close-modal
                              :on-submit rename}]]]))

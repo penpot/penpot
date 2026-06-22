@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.ruler-guides
   (:require
@@ -53,6 +53,9 @@
            (not (r/check-permission plugin-id "content:write"))
            (u/not-valid plugin-id :board "Plugin doesn't have 'content:write' permission")
 
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :board "Cannot modify a page that is not currently active")
+
            :else
            (let [board-id (when value (obj/get value "$id"))
                  guide    (-> self u/proxy->ruler-guide)]
@@ -85,6 +88,9 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :position "Plugin doesn't have 'content:write' permission")
 
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
+
          :else
          (let [guide (u/proxy->ruler-guide self)
                position
@@ -109,12 +115,20 @@
          (not (r/check-permission plugin-id "content:write"))
          (u/not-valid plugin-id :color "Plugin doesn't have 'content:write' permission")
 
+         (not (u/page-active? page-id))
+         (u/not-valid plugin-id :color "Cannot modify a page that is not currently active")
+
          :else
          (let [guide (u/proxy->ruler-guide self)]
            (st/emit! (dwgu/update-guides (assoc guide :color value))))))}
 
     :remove
     (fn []
-      (let [guide (u/locate-ruler-guide file-id page-id id)]
-        (st/emit! (-> (dwgu/remove-guide guide)
-                      (se/add-event plugin-id)))))))
+      (cond
+        (not (u/page-active? page-id))
+        (u/not-valid plugin-id :remove "Cannot modify a page that is not currently active")
+
+        :else
+        (let [guide (u/locate-ruler-guide file-id page-id id)]
+          (st/emit! (-> (dwgu/remove-guide guide)
+                        (se/add-event plugin-id))))))))

@@ -39,9 +39,9 @@
 
         tooltip-content (cond
                           not-active
-                          (tr "not-active-token.no-name")
-                          has-errors
                           (tr "options.deleted-token")
+                          has-errors
+                          (tr "not-active-token.no-name")
                           :else
                           (mf/html [:> to/resolved-value-tooltip* {:token-name token-name
                                                                    :resolved-value resolved-value}]))]

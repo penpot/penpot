@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.cache
   "In-memory cache backed by Caffeine"
@@ -24,7 +24,8 @@
 
 (defprotocol ICache
   (get [_ k] [_ k load-fn] "get cache entry")
-  (invalidate! [_] [_ k] "invalidate cache"))
+  (invalidate [_] [_ k] "invalidate cache")
+  (invalidate-if [_ pred] "invalidate all entries whose value satisfies pred"))
 
 (defprotocol ICacheStats
   (stats [_] "get stats"))
@@ -68,10 +69,14 @@
               ^Function (reify Function
                           (apply [_ k]
                             (load-fn k)))))
-      (invalidate! [_]
+      (invalidate [_]
         (.invalidateAll ^Cache cache))
-      (invalidate! [_ k]
+      (invalidate [_ k]
         (.invalidate ^Cache cache ^Object k))
+      (invalidate-if [_ pred]
+        (doseq [[k v] (.asMap ^Cache cache)]
+          (when (pred v)
+            (.invalidate ^Cache cache ^Object k))))
 
       ICacheStats
       (stats [_]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.logic.libraries
   #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
@@ -836,20 +836,30 @@
       changes)))
 
 (defn- find-main-container
-  "Find the container that has the main shape."
-  [container-inst shape-inst shape-main library component]
+  "Find the container that has the main shape.
+
+  When walking up through nested component copies, each intermediate component
+  may live in a different library/file. We resolve the right file-data for each
+  component via `ctf/find-component-file` so we can locate components that span
+  multiple libraries."
+  [container-inst shape-inst shape-main library file libraries component]
   (loop [shape-inst' shape-inst
-         component' component]
-    (let [container (ctf/get-component-container library component')] ; TODO: this won't work if some intermediate component is in a different library
-      (if (some? (ctn/get-shape container (:id shape-main)))          ;       for this to work we need to have access to the libraries list here
+         library'    library
+         component'  component]
+    (let [container (ctf/get-component-container library' component')]
+      (if (some? (ctn/get-shape container (:id shape-main)))
         container
-        (let [parent (ctn/get-shape container-inst (:parent-id shape-inst'))
+        (let [parent      (ctn/get-shape container-inst (:parent-id shape-inst'))
               shape-inst' (ctn/get-head-shape (:objects container-inst) parent)
-              component' (or (ctkl/get-component library (:component-id shape-inst'))
-                             (ctkl/get-deleted-component library (:component-id shape-inst')))]
+              next-file   (some-> shape-inst'
+                                  :component-file
+                                  (->> (ctf/find-component-file file libraries)))
+              next-data   (some-> next-file :data)
+              component'  (when next-data
+                            (or (ctkl/get-component next-data (:component-id shape-inst'))
+                                (ctkl/get-deleted-component next-data (:component-id shape-inst'))))]
           (if (some? component')
-            (recur shape-inst'
-                   component')
+            (recur shape-inst' next-data component')
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
@@ -895,7 +905,7 @@
             set-remote-synced?
             (change-remote-synced shape-inst container true))
 
-          component-container (find-main-container container shape-inst shape-main library component)
+          component-container (find-main-container container shape-inst shape-main library file libraries component)
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
@@ -2091,6 +2101,39 @@
            (grc/rect->center selrect)
            (or (:transform current-shape) (gmt/matrix)))))))
 
+
+(defn- switch-geom-change-value
+  [prev-shape current-shape attr]
+  ;; Composite geometry stores absolute coordinates. When preserving a size
+  ;; override across variants, keep the target variant's position and only carry
+  ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
+  (let [prev-selrect (:selrect prev-shape)
+        current-selrect (:selrect current-shape)
+        final-width (:width prev-selrect)
+        final-height (:height prev-selrect)
+        x (:x current-selrect)
+        y (:y current-selrect)
+        selrect (assoc current-selrect
+                       :width final-width
+                       :height final-height
+                       :x x
+                       :y y
+                       :x1 x
+                       :y1 y
+                       :x2 (+ x final-width)
+                       :y2 (+ y final-height))]
+    (case attr
+      :selrect
+      selrect
+
+      :points
+      (-> selrect
+          (grc/rect->points)
+          (gsh/transform-points
+           (grc/rect->center selrect)
+           (or (:transform current-shape) (gmt/matrix)))))))
+
+
 (defn- equal-geometry?
   "Returns true when the value of `attr` in `shape` is considered equal
    to the corresponding value in `origin-shape`, ignoring positional
@@ -2259,6 +2302,10 @@
                            (= :fix (:layout-item-v-sizing previous-shape)))
                        (contains? #{:points :selrect :width :height} attr))
                   (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
+
+                  (and (contains? #{:points :selrect} attr)
+                       (not path-change?))
+                  (switch-geom-change-value previous-shape current-shape attr)
 
                   :else
                   (get previous-shape attr)))

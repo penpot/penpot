@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.token-tree
   (:require-macros [app.main.style :as stl])
@@ -134,7 +134,6 @@
            selected-shapes
            is-selected-inside-layout
            active-theme-tokens
-           active-theme-tokens-not-forced
            tokens-lib
            selected-token-set-id
            on-token-pill-click
@@ -172,7 +171,6 @@
              :selected-shapes selected-shapes
              :is-selected-inside-layout is-selected-inside-layout
              :active-theme-tokens active-theme-tokens
-             :active-theme-tokens-not-forced active-theme-tokens-not-forced
              :on-click on-token-pill-click
              :on-context-menu on-pill-context-menu}])
          ;; Render segment folder

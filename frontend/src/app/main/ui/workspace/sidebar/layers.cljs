@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require-macros [app.main.style :as stl])
@@ -173,7 +173,7 @@
     [:> layers-tree* props]))
 
 (mf/defc filters-tree*
-  {::mf/wrap [mf/memo #(mf/throttle % 300)]
+  {::mf/wrap [mf/memo #(mf/throttle % 50)]
    ::mf/private true}
   [{:keys [objects parent-size]}]
   (let [selected    (use-selected-shapes)

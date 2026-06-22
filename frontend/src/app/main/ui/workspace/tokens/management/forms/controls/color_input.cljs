@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.color-input
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.color :as cl]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -24,6 +25,7 @@
    [app.main.ui.forms :as fc]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -71,19 +73,21 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (first errors)})))))))))
 
 (defn- hex->color-obj
   [hex]
@@ -282,10 +286,13 @@
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
                                       (if error
-                                        (do
-                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                          (swap! form assoc-in [:data :color-result] "")
-                                          (reset! hint* {:message error :type "error"}))
+                                        (if (csu/group-name-conflict-error? error token-name)
+                                          (swap! form assoc-in [:extra-errors ""] {:message error})
+                                          (do
+                                            (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                            (swap! form assoc-in [:data :color-result] "")
+                                            (reset! hint* {:message error :type "error"})))
+
                                         (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))]
                                           (swap! form update :extra-errors dissoc input-name)
                                           (swap! form assoc-in [:data :color-result] value)
@@ -315,7 +322,8 @@
                        (update :errors dissoc :value)
                        (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 
 (mf/defc indexed-color-input*
@@ -470,10 +478,12 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (do
-                               (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
-                               (swap! form assoc-in [:data :value value-subfield index :color-result] "")
-                               (reset! hint* {:message error' :type "error"})))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+                               (do
+                                 (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
+                                 (swap! form assoc-in [:data :value value-subfield index :color-result] "")
+                                 (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))

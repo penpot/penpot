@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.migrations
   (:require
@@ -486,8 +486,11 @@
    {:name "0149-mod-file-library-rel-synced-at"
     :fn (mg/resource "app/migrations/sql/0149-mod-file-library-rel-synced-at.sql")}
 
-   {:name "0150-add-issuer-to-sso-provider"
-    :fn (mg/resource "app/migrations/sql/0150-add-issuer-to-sso-provider.sql")}])
+   {:name "0150-mod-http-session-v2"
+    :fn (mg/resource "app/migrations/sql/0150-mod-http-session-v2.sql")}
+
+   {:name "0151-add-issuer-to-sso-provider"
+    :fn (mg/resource "app/migrations/sql/0151-add-issuer-to-sso-provider.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

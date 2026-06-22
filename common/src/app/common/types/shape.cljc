@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape
   (:require
@@ -24,12 +24,14 @@
    [app.common.types.path :as path]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
+   [app.common.types.shape.background-blur :as ctsbb]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.stroke :as stroke]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.variant :as ctv]
@@ -61,8 +63,8 @@
              (map->Shape attrs))
      :clj  (map->Shape attrs)))
 
-(def stroke-caps-line #{:round :square})
-(def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
+(def stroke-caps-line stroke/stroke-caps-line)
+(def stroke-caps-marker stroke/stroke-caps-marker)
 (def stroke-caps (conj (set/union stroke-caps-line stroke-caps-marker) nil))
 
 (def shape-types
@@ -221,6 +223,7 @@
    [:shadow {:optional true}
     [:vector {:gen/max 1} ctss/schema:shadow]]
    [:blur {:optional true} ctsb/schema:blur]
+   [:background-blur {:optional true} ctsbb/schema:background-blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} cto/schema:applied-tokens]
@@ -414,7 +417,7 @@
     :remote-synced :shape-ref :touched :blocked :collapsed :locked
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
-    :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
+    :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
     :plugin-data})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
@@ -656,6 +659,7 @@
 ;;  - Contraints
 ;;  - Shadow
 ;;  - Blur
+;;  - Background blur
 ;;  - Border radius
 (def ^:private basic-extract-props
   #{:fills
@@ -680,6 +684,7 @@
 
     :shadow
     :blur
+    :background-blur
 
     ;; Radius
     :r1
@@ -729,7 +734,7 @@
           (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))))))
 
 (defn patch-props
-  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necesary"
+  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necessary"
   [shape props objects]
 
   (letfn [(patch-text-props [shape props]

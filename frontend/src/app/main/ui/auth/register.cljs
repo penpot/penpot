@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
@@ -234,8 +234,8 @@
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
      [:div {:class (stl/css :auth-title-wrapper)}
       [:h2 {:class (stl/css :auth-title)}
-       (tr "auth.check-mail")]
-      [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
+       (tr "auth.check-email")]
+      [:div {:class (stl/css :notification-text)} (tr "auth.verification-sent-email")]]
      [:div {:class (stl/css :notification-text-email)} email]]))
 
 (mf/defc terms-register*

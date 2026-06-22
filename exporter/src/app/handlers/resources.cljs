@@ -2,12 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.handlers.resources
   "Temporal resources management."
   (:require
-   ["archiver$default" :as arc]
+   ["archiver" :as arc]
    ["node:fs" :as fs]
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
@@ -41,7 +41,7 @@
 
 (defn create-zip
   [& {:keys [resource on-complete on-progress on-error]}]
-  (let [^js zip  (arc/create "zip")
+  (let [^js zip  (new arc/ZipArchive)
         ^js out  (fs/createWriteStream (:path resource))
         on-complete (or on-complete (constantly nil))
         progress (atom 0)]

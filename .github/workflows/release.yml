@@ -19,7 +19,6 @@ permissions:
 
 jobs:
   release:
-    environment: release-admins
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.vars.outputs.gh_ref }}

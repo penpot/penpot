@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.controls.numeric-input
   (:require-macros [app.main.style :as stl])
@@ -12,6 +12,8 @@
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.main.constants :refer [max-input-length]]
+   [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.select :refer [get-option handle-focus-change]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
@@ -252,6 +254,7 @@
         drag-state*          (mf/use-ref :idle)
         drag-start-x*        (mf/use-ref 0)
         drag-start-val*      (mf/use-ref 0)
+        undo-transaction-id* (mf/use-ref nil)
 
         dropdown-options
         (mf/with-memo [tokens filter-id]
@@ -551,7 +554,7 @@
 
         on-scrub-pointer-move
         (mf/use-fn
-         (mf/deps apply-value update-input step min max on-change-start  is-token-applied?)
+         (mf/deps apply-value update-input step min max on-change-start is-token-applied?)
          (fn [event]
            (when-not is-token-applied?
              (let [state (mf/ref-val drag-state*)]
@@ -561,9 +564,12 @@
                        delta-x  (- client-x start-x)]
                    (when (and (= state :maybe-dragging)
                               (>= (js/Math.abs delta-x) 3))
-                     (mf/set-ref-val! drag-state* :dragging)
-                     (when (fn? on-change-start)
-                       (on-change-start)))
+                     (let [undo-id (js/Symbol)]
+                       (mf/set-ref-val! undo-transaction-id* undo-id)
+                       (st/emit! (dwu/start-undo-transaction undo-id))
+                       (mf/set-ref-val! drag-state* :dragging)
+                       (when (fn? on-change-start)
+                         (on-change-start))))
                    (when (= (mf/ref-val drag-state*) :dragging)
                      (let [effective-step (cond
                                             (.-shiftKey event) (* step 10)
@@ -590,6 +596,9 @@
                (when (= state :dragging)
                  (mf/set-ref-val! drag-state* :idle)
                  (dom/release-pointer event)
+                 (when-let [undo-id (mf/ref-val undo-transaction-id*)]
+                   (st/emit! (dwu/commit-undo-transaction undo-id))
+                   (mf/set-ref-val! undo-transaction-id* nil))
                  (when (fn? on-change-end)
                    (on-change-end)))))))
 
@@ -600,8 +609,12 @@
            (when-not is-token-applied?
              (let [was-dragging (= :dragging (mf/ref-val drag-state*))]
                (mf/set-ref-val! drag-state* :idle)
-               (when (and was-dragging (fn? on-change-end))
-                 (on-change-end))))))
+               (when was-dragging
+                 (when-let [undo-id (mf/ref-val undo-transaction-id*)]
+                   (st/emit! (dwu/commit-undo-transaction undo-id))
+                   (mf/set-ref-val! undo-transaction-id* nil))
+                 (when (fn? on-change-end)
+                   (on-change-end)))))))
 
         open-dropdown
         (mf/use-fn

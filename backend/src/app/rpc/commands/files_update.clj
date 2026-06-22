@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files-update
   (:require
@@ -130,7 +130,8 @@
 ;; database.
 
 (sv/defmethod ::update-file
-  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+  {::rpc/id-type :file
+   ::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
 
    ::webhooks/event? true

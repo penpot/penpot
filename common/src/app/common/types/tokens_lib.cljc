@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.tokens-lib
   (:require
@@ -1435,7 +1435,7 @@ Will return a value that matches this schema:
               (d/oassoc data hidden-theme-name (make-hidden-theme))))))
 
 (defn map->tokens-lib
-  "Make a new instance of TokensLib from a map, but skiping all
+  "Make a new instance of TokensLib from a map, but skipping all
   validation; it is used for create new instances from trusted
   sources"
   [& {:keys [sets themes active-themes]}]
@@ -1484,63 +1484,49 @@ Will return a value that matches this schema:
           (rename copy-name)
           (reid (uuid/next))))))
 
+(defn- token-name->path-selector
+  "Splits token-name into map with `:path` and `:selector` using `token-name->path`.
+
+  `:selector` is the last item of the names path
+  `:path` is everything leading up the the `:selector`."
+  [token-name]
+  (let [path-segments (get-token-path {:name token-name})
+        last-idx (dec (count path-segments))
+        [path [selector]] (split-at last-idx path-segments)]
+    {:path (seq path)
+     :selector selector}))
+
 (defn token-name-path-exists?
-  "Check if a token name or fragment exists in any part of the library, to prevent creating
-   duplicated names that may clash when merging sets and resolving tokens.
+  "Traverses the path from `token-name` down a `tokens-tree` and checks if a token at that path exists.
 
-   Matches any combination of of names completely included inside group or token names.
-   For example:
-   - Matches the name \"foo.bar\" with an existing token named \"foo.bar.baz\" or \"foo\".
-   - Does not match the name \"foo.bar\" with an existing token named \"foo.baz\".
+  It's not allowed to create a token inside a token. E.g.:
+  Creating a token with
 
-   You can give a current set id, and it will check if there is a token with the exact same
-   name in this set (there may be tokens with same name in different sets for overriding
-   values, but not in the same set). You can also give a token id to ignore, to search for
-   a token that is a different one.
+    {:name \"foo.bar\"}
 
-   If the function finds a match, it returns the part of the name that is duplicated;
-   if not, it returns null."
-  [token-name tokens-lib current-set-id token-id-to-ignore]
-  (letfn [(exists-in-set?
-            [set]
-            (let [tokens-tree (-> set (get-tokens-) (tokens-tree))
-                  token-name-path (get-token-path {:name token-name})]
-              (loop [path-segment token-name-path
-                     subtree tokens-tree]
-                (if (empty? path-segment)
-                  ;; All path segments found -> return full name
-                  token-name
-                  (let [node (get subtree (first path-segment))]
-                    (cond
-                      ;; Path segment doesn't exist
-                      (nil? node) nil
-                      ;; A token exists at this path
-                      (token? node)
-                      (if (and (some? token-id-to-ignore)
-                               (= (get-id node) token-id-to-ignore))
-                        ;; This is the token to ignore
-                        nil
-                        (if (and (not= (get-id set) current-set-id)
-                                 (= (get-name node) token-name))
-                          ;; A token with the same name in a different set is allowed
-                          nil
-                          ;; If we are in the same set or the name of the token is a subpath of the
-                          ;; current name: this is a conflict
-                          ;; -> return the part of the name until this point
-                          (str/join "." (take (- (count token-name-path) (count (rest path-segment)))
-                                              token-name-path))))
-                      ;; Continue traversing the tree
-                      :else (recur (rest path-segment) node)))))))]
+  in the tokens tree:
 
-    (if (or (nil? tokens-lib) (empty? (get-sets tokens-lib))
-            (nil? token-name) (str/empty? token-name))
-      nil
-      (do
-        (assert (or (nil? current-set-id)
-                    (some? (get-set tokens-lib current-set-id)))
-                (str "Set '" current-set-id "' does not exist in the library"))
-        (assert (or (nil? token-id-to-ignore) (uuid? token-id-to-ignore)))
-        (some exists-in-set? (get-sets tokens-lib))))))
+    {\"foo\" {:name \"other\"}}"
+  [token-name tokens-tree]
+  (let [{:keys [path selector]} (token-name->path-selector token-name)
+        path-target (reduce
+                     (fn [acc cur]
+                       (let [target (get acc cur)]
+                         (cond
+                           ;; Path segment doesn't exist yet
+                           (nil? target) (reduced false)
+                           ;; A token exists at this path
+                           (:name target) (reduced true)
+                           ;; Continue traversing the true
+                           :else target)))
+                     tokens-tree
+                     path)]
+    (cond
+      (boolean? path-target) path-target
+      (get path-target :name) true
+      :else (-> (get path-target selector)
+                (seq)
+                (boolean)))))
 
 (defn update-tokens-group
   "Updates the active tokens path when renaming a group node.
@@ -1552,9 +1538,8 @@ Will return a value that matches this schema:
    current-path: the path of the group being renamed, e.g. \"foo.bar\"
    current-name: the current name of the group being renamed, e.g. \"bar\"
    new-name: the new name for the group being renamed, e.g. \"baz\"
-   
-   Returns a sequence of [name token] for each renamed token."
 
+   Returns a sequence of [name token] for each renamed token."
   [active-tokens current-path current-name new-name]
   (let [path-prefix (str/replace current-path current-name "")]
     (mapv (fn [[token-path token-obj]]
@@ -1927,11 +1912,7 @@ Will return a value that matches this schema:
         library
         (reduce (fn [library name]
                   (if-let [tokens (get sets name)]
-                    (do (doseq [token (vals tokens)]
-                          (when (token-name-path-exists? (get-name token) library nil (get-id token))
-                            (throw (ex-info (get-name token)
-                                            {:error/code :error.import/duplicated-token-name}))))
-                        (add-set library (make-token-set :name name :tokens tokens)))
+                    (add-set library (make-token-set :name name :tokens tokens))
                     library))
                 library
                 ordered-set-names)
@@ -2222,7 +2203,7 @@ Will return a value that matches this schema:
           (get-themes tokens-lib)))
 
 (defn fix-duplicate-token-set-ids
-  "Given an instance of TokensLib fixes it internal sets data sturcture
+  "Given an instance of TokensLib fixes it internal sets data structure
   for ensure each set has unique id;
 
   Specific function for file data migrations"
@@ -2247,29 +2228,6 @@ Will return a value that matches this schema:
                 (update :sets d/update-vals migrate-set-node)
                 (map->tokens-lib)
                 (check)))))
-
-(defn fix-conflicting-token-names
-  [tokens-lib]
-  (let [counter        (atom 0)
-        match-suffixes (atom {})
-
-        generate-name
-        (fn [name match]
-          (let [matches (if (contains? @match-suffixes match)
-                          @match-suffixes
-                          (swap! match-suffixes assoc match (swap! counter inc)))
-                suffix  (get matches match)]
-            (str (str/slice name 0 (count match))
-                 "-" suffix
-                 (str/slice name (count match)))))]
-
-    (update-all-tokens
-     tokens-lib
-     (fn [lib set token]
-       (let [name (get-name token)]
-         (if-let [match (token-name-path-exists? name lib (:id set) (get-id token))]
-           (rename token (generate-name name match))
-           token))))))
 
 (defn fix-missing-sets-in-themes
   [tokens-lib]
@@ -2321,7 +2279,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-3
      "Migrate the TokensLib data structure internals to v1.3 version; it
-     expects input from v1.2 version"
+      expects input from v1.2 version"
      [{:keys [sets themes] :as params}]
      (let [migrate-token
            (fn [token]
@@ -2369,7 +2327,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-4
      "Migrate the TokensLib data structure internals to v1.4 version; it
-     expects input from v1.3 version"
+      expects input from v1.3 version"
      [params]
      (let [migrate-set-node
            (fn recurse [node]

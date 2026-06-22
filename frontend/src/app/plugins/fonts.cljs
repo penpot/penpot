@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.fonts
   (:require
@@ -60,6 +60,9 @@
             (not (r/check-permission (obj/get text "$plugin") "content:write"))
             (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
+            (not (u/page-active? (obj/get text "$page")))
+            (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
             :else
             (let [id (obj/get text "$id")
                   values {:font-id id
@@ -77,6 +80,9 @@
 
             (not (r/check-permission (obj/get range "$plugin") "content:write"))
             (u/not-valid plugin-id :applyToRange "Plugin doesn't have 'content:write' permission")
+
+            (not (u/page-active? (obj/get range "$page")))
+            (u/not-valid plugin-id :applyToRange "Cannot modify a page that is not currently active")
 
             :else
             (let [id    (obj/get range "$id")

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.assets.typographies
   (:require-macros [app.main.style :as stl])
@@ -23,7 +23,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -112,17 +112,17 @@
            :on-drag-over dom/prevent-default
            :on-drop on-drop}
 
-     [:& typography-entry
+     [:> typography-entry*
       {:file-id file-id
        :typography typography
-       :local? local?
-       :selected? (contains? selected typography-id)
+       :is-local local?
+       :is-selected (contains? selected typography-id)
        :on-click on-asset-click
        :on-change handle-change
        :on-context-menu on-context-menu
-       :editing? editing?
-       :renaming? renaming?
-       :focus-name? rename?
+       :is-editing editing?
+       :is-renaming renaming?
+       :is-focus-name rename?
        :external-open* open*
        :is-asset? true}]
      (when ^boolean dragging?

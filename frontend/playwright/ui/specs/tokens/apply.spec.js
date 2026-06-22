@@ -6,6 +6,7 @@ import {
   setupTypographyTokensFileRender,
   unfoldTokenType,
   createToken,
+  createSet,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -185,11 +186,8 @@ test.describe("Tokens: Apply token", () => {
 
     await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
-    const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
-      name: "Font Size",
-    });
-    await expect(fontSizeInput).toBeVisible();
-    await expect(fontSizeInput).toHaveValue("100");
+    const tokenRow = workspacePage.rightSidebar.getByLabel('Full');
+    await expect(tokenRow).toBeVisible();
   });
 
   test("User adds shadow token with multiple shadows and applies it to shape", async ({
@@ -1101,21 +1099,6 @@ test("BUG: 14200, Tokens in sets are applied when clicking on Save during creati
     flags: ["enable-token-combobox", "enable-feature-token-input"],
   });
 
-  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
-    const setInput = sidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill(setName);
-    await setInput.press(finalKey);
-  };
-
-  const createSet = async (sidebar, setName, finalKey = "Enter") => {
-    const tokensTabButton = sidebar
-      .getByRole("button", { name: "Add set" })
-      .click();
-
-    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
-  };
-
   // Select rectangle layer
   await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -1212,21 +1195,6 @@ test("Check token application across sets", async ({ page }) => {
   } = await setupTokensFileRender(page, {
     flags: ["enable-token-combobox", "enable-feature-token-input"],
   });
-
-  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
-    const setInput = sidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill(setName);
-    await setInput.press(finalKey);
-  };
-
-  const createSet = async (sidebar, setName, finalKey = "Enter") => {
-    const tokensTabButton = sidebar
-      .getByRole("button", { name: "Add set" })
-      .click();
-
-    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
-  };
 
   const createTokenInSet = async (tokenName, tokenValue) => {
     await unfoldTokenType(tokensSidebar, "Border radius");

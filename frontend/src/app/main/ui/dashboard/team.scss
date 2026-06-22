@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
@@ -865,7 +865,19 @@
   flex-direction: column;
 }
 
+.modal-invitation-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-invitation-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--color-foreground-primary);
+}
+
 .modal-invitation-content {
+  @include t.use-typography("body-medium");
+
   overflow: auto;
   color: var(--color-foreground-secondary);
 }
@@ -888,6 +900,26 @@
   color: var(--color-foreground-secondary);
 }
 
+.modal-restricted-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-restricted-title {
+  @include t.use-typography("headline-large");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-restricted-content {
+  @include t.use-typography("body-medium");
+
+  margin-block-end: 0;
+}
+
+.restricted-warning {
+  margin-block: var(--sp-xxl);
+}
+
 .restricted-email-summary {
   color: var(--color-accent-primary);
 }
@@ -895,7 +927,6 @@
 .restricted-emails-section {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-l);
 }
 
 .restricted-emails-toggle {
@@ -935,33 +966,48 @@
   width: $sz-512;
 }
 
+.modal-select-org-header {
+  margin-block-end: var(--sp-xxxl);
+}
+
+.modal-select-org-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.modal-select-org-warning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+}
+
 .modal-select-org-content {
-  @include t.use-typography("body-large");
+  @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
-  overflow: auto;
-  margin-block-end: var(--sp-s);
 }
 
 .modal-select-org-info {
   @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
-  margin-block-end: var(--sp-xxxl);
 }
 
 .modal-select-org-title {
-  @include t.use-typography("title-medium");
+  @include t.use-typography("headline-large");
 
   color: var(--color-foreground-primary);
-  text-transform: uppercase;
-  height: $sz-40;
 }
 
 .modal-select-org-text {
-  @include t.use-typography("body-large");
+  @include t.use-typography("body-medium");
 
   color: var(--color-foreground-secondary);
+}
+
+.external-invitations-warning {
+  margin: 0;
 }
 
 // ORGANIZATIONS SETTINGS

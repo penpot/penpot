@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.variants-test
   (:require
@@ -303,3 +303,37 @@
     (t/is (not (nil? container)))
     ;; The variant containew is nil after the deletion
     (t/is (nil? container'))))
+
+
+(t/deftest test-instantiate-component-over-variant-container
+  ;; When a component is instantiated at a position over a variant container,
+  ;; the new copy must not become a child of the container (its children can
+  ;; only be variant mains)
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        container (ths/get-shape file :v01)
+        page      (thf/current-page file)
+
+        ;; ==== Action
+        ;; Instantiate at a position inside the variant container, without
+        ;; an explicit parent, so the destiny frame is chosen by position
+        [new-shape changes]
+        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+                                                (pcb/with-objects (:objects page)))
+                                            (:objects page)
+                                            (:id file)
+                                            (thi/id :c01)
+                                            (gpt/point (:x container) (:y container))
+                                            page
+                                            {(:id file) file})
+
+        file'      (thf/apply-changes file changes)
+
+        ;; ==== Get
+        new-shape' (ths/get-shape-by-id file' (:id new-shape))]
+
+    ;; ==== Check
+    (thf/validate-file! file')
+    (t/is (some? new-shape'))
+    (t/is (not= (:parent-id new-shape') (:id container)))))

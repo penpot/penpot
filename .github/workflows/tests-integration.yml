@@ -1,0 +1,93 @@
+name: "CI: Integration"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'common/**'
+      - 'render-wasm/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'frontend/**'
+      - 'common/**'
+      - 'render-wasm/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-integration:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Build Integration Bundle"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build Bundle
+        working-directory: ./frontend
+        run: |
+          ./scripts/build
+
+      - name: Store Bundle Cache
+        uses: actions/cache@v5
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+  test-integration:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Integration Tests"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    needs: build-integration
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: "integration-bundle-${{ github.sha }}"
+          path: frontend/resources/public
+
+      - name: Run Tests
+        working-directory: ./frontend
+        run: |
+          ./scripts/test-e2e
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-tests-result
+          path: frontend/test-results/
+          overwrite: true
+          retention-days: 3

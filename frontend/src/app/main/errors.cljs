@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.errors
   "Generic error handling"
@@ -36,7 +36,7 @@
 (defn is-plugin-error?
   "This is a placeholder that always return false. It will be
   overwritten when plugin system is initialized. This works this way
-  because we can't import plugins here because plugins requries full
+  because we can't import plugins here because plugins requires full
   DOM.
 
   This placeholder is set on app.plugins/initialize event"
@@ -437,7 +437,10 @@
   (let [stack (.-stack cause)]
     (and (string? stack)
          (or (str/includes? stack "chrome-extension://")
-             (str/includes? stack "moz-extension://")))))
+             (str/includes? stack "moz-extension://")
+             ;; Safari/WebKit masks extension and Web Inspector URLs
+             ;; with this internal scheme.
+             (str/includes? stack "webkit-masked-url://")))))
 
 (defn- from-posthog?
   "True when the error stack trace originates from PostHog analytics."
@@ -472,6 +475,14 @@
         ;; TypeError.  This is a known Zone.js / browser-extension
         ;; incompatibility and is NOT a Penpot bug.
         (str/starts-with? message "Cannot assign to read only property 'toString'")
+        ;; Safari TypeError: "Attempting to change value of a readonly
+        ;; property".  Raised when browser extensions or Web Inspector
+        ;; devtools (e.g., jsonPrune) try to mutate ClojureScript's
+        ;; immutable data structures via Object.defineProperty.
+        ;; ClojureScript defines getter-only properties on its maps
+        ;; and records, making them readonly.  This is NOT a Penpot bug.
+        (and (= (.-name ^js cause) "TypeError")
+             (= message "Attempting to change value of a readonly property"))
         ;; NotFoundError DOMException: "Failed to execute
         ;; 'removeChild' on 'Node'" — Thrown by React's commit
         ;; phase when the DOM tree has been modified externally
@@ -553,4 +564,3 @@
     (fn []
       (.removeEventListener g/window "error" on-unhandled-error)
       (.removeEventListener g/window "unhandledrejection" on-unhandled-rejection))))
-

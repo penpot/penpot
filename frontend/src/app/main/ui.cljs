@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui
   (:require
@@ -27,7 +27,7 @@
    [app.main.ui.nitrate.entry :as nitrate-entry]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
-   [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
+   [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal*]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
@@ -238,14 +238,14 @@
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
           #_[:& app.main.ui.onboarding/onboarding-modal]
-          #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
+          #_[:> app.main.ui.onboarding.team-choice/onboarding-team-modal*]
 
           (cond
             show-question-modal?
             [:& questions-modal]
 
             show-team-modal?
-            [:& onboarding-team-modal {:go-to-team true}]
+            [:> onboarding-team-modal* {:go-to-team true}]
 
             show-release-modal?
             [:& release-notes-modal {:version (:main cf/version)}])
@@ -272,7 +272,7 @@
               [:& questions-modal]
 
               show-team-modal?
-              [:& onboarding-team-modal {:go-to-team false}]
+              [:> onboarding-team-modal* {:go-to-team false}]
 
               show-release-modal?
               [:& release-notes-modal {:version (:main cf/version)}]))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.sidebar
   (:require-macros [app.main.style :as stl])
@@ -57,8 +57,7 @@
       (st/emit! (modal/show {:type :onboarding}))
       (st/emit! (modal/show {:type :release-notes :version version})))))
 
-(mf/defc sidebar-content
-  {::mf/props :obj}
+(mf/defc sidebar-content*
   [{:keys [profile section]}]
   (let [profile?       (= section :settings-profile)
         password?      (= section :settings-password)
@@ -135,12 +134,10 @@
           feedback-icon
           [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
-(mf/defc sidebar
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc sidebar*
+  {::mf/wrap [mf/memo]}
   [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
-   [:& sidebar-content {:profile profile
-                        :section section}]
+   [:> sidebar-content* {:profile profile
+                         :section section}]
    [:> profile-section* {:profile profile}]])
-

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
@@ -43,8 +43,15 @@
 
 (mf/defc error-container*
   [{:keys [children]}]
-  (let [profile-id  (:profile-id @st/state)
-        on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
+  (let [profile     (mf/deref refs/profile)
+        profile-id  (:id profile)
+        on-nav-root (mf/use-fn
+                     (mf/deps profile-id profile)
+                     (fn []
+                       (if (and profile-id (some? (:default-team-id profile)))
+                         (st/emit! (dcm/go-to-dashboard-recent
+                                    :team-id (:default-team-id profile)))
+                         (st/emit! (rt/nav-root)))))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)

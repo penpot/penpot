@@ -78,7 +78,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.16}"
     restart: always
     ports:
       - 9001:8080
@@ -109,8 +109,9 @@ services:
       << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
       # Set to "true" on hosts where IPv6 is disabled at kernel boot level.
       # PENPOT_DISABLE_IPV6_LISTEN: "true"
+
   penpot-backend:
-    image: "penpotapp/backend:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.16}"
     restart: always
 
     volumes:
@@ -161,7 +162,7 @@ services:
       ## based on real scenarios. If you want to help us, please leave it enabled. You can
       ## audit what data we send with the code available on github.
 
-      PENPOT_TELEMETRY_ENABLED: true
+      PENPOT_TELEMETRY_ENABLED: "true"
       PENPOT_TELEMETRY_REFERER: compose
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
@@ -175,17 +176,17 @@ services:
       PENPOT_SMTP_PORT: 1025
       PENPOT_SMTP_USERNAME:
       PENPOT_SMTP_PASSWORD:
-      PENPOT_SMTP_TLS: false
-      PENPOT_SMTP_SSL: false
+      PENPOT_SMTP_TLS: "false"
+      PENPOT_SMTP_SSL: "false"
 
   penpot-mcp:
-    image: "penpotapp/mcp:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/mcp:${PENPOT_VERSION:-2.16}"
     restart: always
     networks:
       - penpot
 
   penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.16}"
     restart: always
 
     depends_on:

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.delete-account
   (:require-macros [app.main.style :as stl])
@@ -66,11 +66,12 @@
                  :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
-       [:& context-notification
-        {:level :warning
-         :content (tr (if has-orgs?
-                        "modals.delete-account.info.with-orgs"
-                        "modals.delete-account.info"))}]
+       [:div {:class (stl/css :warning-notice)}
+        [:& context-notification
+         {:level :warning
+          :content (tr (if has-orgs?
+                         "modals.delete-account.info.with-orgs"
+                         "modals.delete-account.info"))}]]
 
        (when has-orgs?
          [:div {:class (stl/css :orgs-section)}

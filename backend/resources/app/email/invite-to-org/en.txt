@@ -1,6 +1,6 @@
 Hello!
 
-{{invited-by|abbreviate:25}} has invited you to join the organization “{{ organization-name|abbreviate:25 }}”.
+{{invited-by|abbreviate:25}} has invited you to join the organization “{{ organization.name|abbreviate:25 }}”.
 
 Accept invitation using this link:
 

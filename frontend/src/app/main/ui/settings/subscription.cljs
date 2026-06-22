@@ -91,18 +91,17 @@
                                       :bottom-link (not (or has-trial? code-action)))
                  :on-click cta-link} cta-text])
      (when code-action
-       [:button {:class (stl/css-case :cta-button true
-                                      :activate-by-code (= code-action :activate)
-                                      :renew-by-code (= code-action :renovate)
-                                      :bottom-link (= code-action :renovate))
-                 :on-click (cond
-                             (= code-action :activate)
-                             #(st/emit! (modal/show {:type :nitrate-code-activation}))
-                             (= code-action :renovate)
-                             #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))}
-        (if (= code-action :activate)
-          (tr "subscription.settings.activate-by-code")
-          (tr "nitrate.subscription.settings.renew-with-code"))])
+       (if (= code-action :activate)
+         [:button {:class (stl/css :cta-button :activate-by-code)
+                   :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
+          (tr "subscription.settings.activate-by-code")]
+
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :renew-by-code :bottom-link)
+                      :on-click #(st/emit! (modal/show :nitrate-code-activation {:renew? true}))}
+          (tr "nitrate.subscription.settings.renew-with-code")]))
+
      (when inline-error
        [:p {:class (stl/css :inline-error)} inline-error])]))
 
@@ -570,7 +569,7 @@
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
          ;; TODO add translations for this texts when we have the definitive ones
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-b
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
@@ -719,7 +718,7 @@
 
        ;; TODO add translations for this texts when we have the definitive ones
        (when (and (contains? cf/flags :nitrate) (not nitrate?))
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-n
                          :price-value "$25"
                          :price-period (tr "subscription.settings.organization-member-month")
@@ -757,7 +756,7 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
-       "Subcribe to the Business Nitrate plan"]
+       "Subscribe to the Enterprise plan"]
 
       (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.fonts
   (:require
@@ -181,7 +181,7 @@
 (defn create-font-variant
   [{:keys [::sto/storage] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-missing [data]
-            (let [data (media/run {:cmd :generate-fonts :input data})]
+            (let [data (media/run cfg {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
                          (not (contains? data "font/ttf"))
                          (not (contains? data "font/woff"))

@@ -52,6 +52,7 @@ cd penpot/render-wasm
 
 ## Technical documentation
 
+- [Rendering Architecture (Live vs Vector/PDF)](./docs/rendering_architecture.md)
 - [Serialization](./docs/serialization.md)
 - [Tile Rendering](./docs/tile_rendering.md)
 - [Texts](./docs/texts.md)

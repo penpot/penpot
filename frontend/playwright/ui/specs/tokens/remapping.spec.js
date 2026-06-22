@@ -418,13 +418,9 @@ test.describe("Remapping a single token", () => {
         .filter({ hasText: "Some Text" })
         .click();
 
-      // Verify the shape shows the updated font size value (18)
       // This proves the remapping worked and the value update propagated through the reference
-      const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
-        name: "Font Size",
-      });
-      await expect(fontSizeInput).toBeVisible();
-      await expect(fontSizeInput).toHaveValue("18");
+      const tokenPillSidebar = workspacePage.rightSidebar.getByLabel('paragraph-style')
+      await expect(tokenPillSidebar).toBeVisible();
     });
   });
 

@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC
+ * Copyright (c) KALEIDOS INC Sucursal en España SL
  */
 "use strict";
 
@@ -159,7 +159,7 @@ goog.scope(function () {
           it1--, i++
         ) {
           carry += (256 * b58[it1]) >>> 0;
-          b58[it1] = carry % BASE >>> 0;
+          b58[it1] = (carry % BASE) >>> 0;
           carry = (carry / BASE) >>> 0;
         }
         if (carry !== 0) {
@@ -214,7 +214,7 @@ goog.scope(function () {
           it3--, i++
         ) {
           carry += (BASE * b256[it3]) >>> 0;
-          b256[it3] = carry % 256 >>> 0;
+          b256[it3] = (carry % 256) >>> 0;
           carry = (carry / 256) >>> 0;
         }
         if (carry !== 0) {

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
@@ -291,7 +291,76 @@
               :stroke "var(--color-accent-tertiary)"
               :stroke-width (if show-interactions 1 0)
               :fill-opacity (if show-interactions 0.2 0)
+              :pointer-events "none"
               :transform (gsh/transform-str shape)}])))
+
+;; --- WASM viewer hotspots ---
+;; In WASM viewer mode the frame pixels come from a WASM snapshot, so we don't
+;; render the SVG visuals at all. We only render the actionable areas (hotspots)
+;; on top of the image: a transparent hit/highlight rect per interactive shape,
+;; wired to the same interaction handlers as the regular SVG tree.
+
+(mf/defc hotspot*
+  [{:keys [shape all-objects]}]
+  (let [base-frame   (mf/use-ctx base-frame-ctx)
+        frame-offset (mf/use-ctx frame-offset-ctx)
+        show-interactions (mf/deref ref:viewer-show-interactions)
+        overlays     (mf/deref refs/viewer-overlays)
+        interactions (:interactions shape)
+        {:keys [x y width height]} (:selrect shape)
+
+        on-pd (mf/use-fn (mf/deps shape base-frame frame-offset all-objects overlays)
+                         #(on-pointer-down % shape base-frame frame-offset all-objects overlays))
+        on-pu (mf/use-fn (mf/deps shape base-frame frame-offset all-objects overlays)
+                         #(on-pointer-up % shape base-frame frame-offset all-objects overlays))
+        on-pe (mf/use-fn (mf/deps shape base-frame frame-offset all-objects overlays)
+                         #(on-pointer-enter % shape base-frame frame-offset all-objects overlays))
+        on-pl (mf/use-fn (mf/deps shape base-frame frame-offset all-objects overlays)
+                         #(on-pointer-leave % shape base-frame frame-offset all-objects overlays))]
+
+    (mf/with-effect []
+      (let [sems (on-load shape base-frame frame-offset all-objects overlays)]
+        (partial run! tm/dispose! sems)))
+
+    [:g {:style {:cursor (when (ctsi/actionable? interactions) "pointer")}
+         :on-pointer-down on-pd
+         :on-pointer-up on-pu
+         :on-pointer-enter on-pe
+         :on-pointer-leave on-pl}
+     [:rect {:x (- x 1)
+             :y (- y 1)
+             :width (+ width 2)
+             :height (+ height 2)
+             :fill "var(--color-accent-tertiary)"
+             :stroke "var(--color-accent-tertiary)"
+             :stroke-width (if show-interactions 1 0)
+             :fill-opacity (if show-interactions 0.2 0)
+             ;; This rect is the only hit target, so it must always capture
+             ;; pointer events even when fully transparent.
+             :pointer-events "all"
+             :transform (gsh/transform-str shape)}]]))
+
+(mf/defc frame-hotspots*
+  "Renders interaction hotspots for a frame subtree (WASM viewer mode).
+  `objects` must be the prepared (vbox-space) objects and `frame` the prepared
+  frame; only shapes with interactions produce a hotspot.
+
+  Optional `shape-filter` is a predicate that receives the shape id and returns
+  true when it should be included (used to split fixed-scroll vs normal layers)."
+  [{:keys [objects all-objects shape-filter frame]}]
+  (let [all-objects (or all-objects objects)
+        frame-id    (:id frame)
+        ids         (cond->> (cons frame-id (cfh/get-children-ids objects frame-id))
+                      shape-filter (filter shape-filter))
+        hotspots    (->> ids
+                         (keep #(get objects %))
+                         (filter (fn [s] (and (not (:hidden s))
+                                              (seq (:interactions s))))))]
+    [:g {}
+     (for [shape hotspots]
+       [:> hotspot* {:key (str (:id shape))
+                     :shape shape
+                     :all-objects all-objects}])]))
 
 
 ;; TODO: use-memo use-fn

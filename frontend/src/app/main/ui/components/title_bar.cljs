@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.components.title-bar
   (:require-macros [app.main.style :as stl])
@@ -14,33 +14,32 @@
 (mf/defc title-bar*
   [{:keys [class collapsable collapsed title children
            btn-icon btn-title add-icon-gap
-           title-class on-collapsed on-btn-click]}]
-  [:div {:class [(stl/css :title-bar)
-                 class]}
+           title-class on-collapsed on-btn-click] :rest props}]
+  (let [props (mf/spread-props props {:class (stl/css :icon-text-btn)
+                                      :on-click on-collapsed})]
 
-   (if ^boolean collapsable
-     [:div {:class [(stl/css :title-wrapper) title-class]}
+    [:div {:class [(stl/css :title-bar) class]}
+     (if ^boolean collapsable
+       [:div {:class [(stl/css :title-wrapper) title-class]}
+        (let [icon-id (if collapsed "arrow-right" "arrow-down")]
+          [:> :button props
+           [:> icon* {:icon-id icon-id
+                      :size "s"
+                      :class (stl/css :icon)}]
+           [:div {:class (stl/css :title)} title]])]
 
-      (let [icon-id (if collapsed "arrow-right" "arrow-down")]
-        [:button {:class (stl/css :icon-text-btn)
-                  :on-click on-collapsed}
-         [:> icon* {:icon-id icon-id
-                    :size "s"
-                    :class (stl/css :icon)}]
-         [:div {:class (stl/css :title)} title]])]
+       [:div {:class [(stl/css-case :title-only true
+                                    :title-only-icon-gap add-icon-gap)
+                      title-class]}
+        title])
 
-     [:div {:class [(stl/css-case :title-only true
-                                  :title-only-icon-gap add-icon-gap)
-                    title-class]}
-      title])
+     children
 
-   children
-
-   (when (some? on-btn-click)
-     [:> icon-button* {:variant "ghost"
-                       :aria-label btn-title
-                       :on-click on-btn-click
-                       :icon btn-icon}])])
+     (when (some? on-btn-click)
+       [:> icon-button* {:variant "ghost"
+                         :aria-label btn-title
+                         :on-click on-btn-click
+                         :icon btn-icon}])]))
 
 
 (mf/defc inspect-title-bar*

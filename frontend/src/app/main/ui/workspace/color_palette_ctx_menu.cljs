@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.color-palette-ctx-menu
   (:require-macros [app.main.style :as stl])
@@ -22,32 +22,41 @@
 
 (defn- extract-colors
   [{:keys [data] :as file}]
-  (let [colors (into [] xf:sample-colors (:colors data))]
+  (let [all-colors (:colors data)
+        colors (into [] xf:sample-colors all-colors)]
     (-> file
         (assoc :colors colors)
+        (assoc :total-colors (count all-colors))
         (dissoc :data))))
 
 (mf/defc color-palette-ctx-menu*
   [{:keys [show on-close on-select selected]}]
   (let [recent-colors (mf/deref refs/recent-colors)
         libraries     (mf/deref refs/libraries)
-
         file-id       (mf/use-ctx ctx/current-file-id)
-        local-colors  (mf/with-memo [libraries file-id]
-                        (let [colors (dm/get-in libraries [file-id :data :colors])]
-                          (into [] xf:sample-colors colors)))
 
-        libraries     (mf/with-memo [libraries file-id]
-                        (->> (dissoc libraries file-id)
-                             (vals)
-                             (mapv extract-colors)))
+        local-colors
+        (mf/with-memo [libraries file-id]
+          (let [colors (dm/get-in libraries [file-id :data :colors])]
+            (into [] xf:sample-colors colors)))
 
-        recent-colors (mf/with-memo [recent-colors]
-                        (->> (reverse recent-colors)
-                             (take 7)
-                             (map-indexed (fn [index color]
-                                            (assoc color ::id (dm/str index))))
-                             (vec)))]
+        local-colors-count
+        (mf/with-memo [libraries file-id]
+          (count (dm/get-in libraries [file-id :data :colors])))
+
+        libraries
+        (mf/with-memo [libraries file-id]
+          (->> (dissoc libraries file-id)
+               (vals)
+               (mapv extract-colors)))
+
+        recent-colors
+        (mf/with-memo [recent-colors]
+          (->> (reverse recent-colors)
+               (take 7)
+               (map-indexed (fn [index color]
+                              (assoc color ::id (dm/str index))))
+               (vec)))]
 
     [:& dropdown {:show show :on-close on-close}
      [:ul {:class (stl/css :palette-menu)}
@@ -63,16 +72,16 @@
             [:span {:class (stl/css :lib-name)}
              (dm/str (:name library))]
             [:span {:class (stl/css :lib-num)}
-             (dm/str "(" (count colors) ")")]]
+             (dm/str "(" (:total-colors library) ")")]]
            (when (= selected id)
              [:span {:class (stl/css :icon-wrapper)}
               deprecated-icon/tick])]
           [:div {:class (stl/css :color-sample)
                  :style {:--bullet-size "20px"}}
            (for [color colors]
-             [:& cb/color-bullet {:key (dm/str (:id color))
-                                  :mini true
-                                  :color color}])]]])
+             [:> cb/color-bullet* {:key (dm/str (:id color))
+                                   :mini true
+                                   :color color}])]]])
 
       [:li {:class (stl/css-case
                     :file-library true
@@ -87,7 +96,7 @@
           [:span {:class (stl/css :lib-name)}
            (dm/str (tr "workspace.libraries.colors.file-library"))]
           [:span {:class (stl/css :lib-num)}
-           (dm/str "(" (count local-colors) ")")]]
+           (dm/str "(" local-colors-count ")")]]
 
          (when (= selected :file)
            [:span {:class (stl/css :icon-wrapper)}
@@ -95,9 +104,9 @@
         [:div {:class (stl/css :color-sample)
                :style {:--bullet-size "20px"}}
          (for [color local-colors]
-           [:& cb/color-bullet {:key (dm/str (:id color))
-                                :mini true
-                                :color color}])]]]
+           [:> cb/color-bullet* {:key (dm/str (:id color))
+                                 :mini true
+                                 :color color}])]]]
 
       [:li {:class (stl/css
                     :recent-colors true
@@ -119,6 +128,6 @@
                :style {:--bullet-size "20px"}}
 
          (for [color recent-colors]
-           [:& cb/color-bullet {:key (dm/str (::id color))
-                                :mini true
-                                :color color}])]]]]]))
+           [:> cb/color-bullet* {:key (dm/str (::id color))
+                                 :mini true
+                                 :color color}])]]]]]))

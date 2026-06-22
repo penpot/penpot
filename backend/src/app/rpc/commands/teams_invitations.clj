@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.teams-invitations
   (:require
@@ -25,7 +25,6 @@
    [app.main :as-alias main]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -115,20 +114,18 @@
     (not= :none (:email-invites notifications))))
 
 (defn- assert-email-can-be-invited
-  "Asserts that member/email is either an org member or has a pending
-  direct org invitation. org-member-ids is non-nil only when the org
+  "Asserts that member is an org member when the org
   restricts who can be added to teams."
-  [member email org-member-ids invited-emails]
+  [member org-member-ids]
   (when (some? org-member-ids)
-    (let [is-member? (or (and (some? member) (contains? org-member-ids (:id member)))
-                         (contains? invited-emails email))]
+    (let [is-member? (and (some? member) (contains? org-member-ids (:id member)))]
       (when-not is-member?
         (ex/raise :type :validation
                   :code :email-not-org-member
                   :hint "The invited email is not a member of the organization")))))
 
 (defn- create-invitation
-  [{:keys [::db/conn] :as cfg} {:keys [team organization profile role email org-member-ids invited-emails] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [team organization profile role email org-member-ids] :as params}]
 
   (assert (db/connection-map? cfg)
           "expected cfg with valid connection")
@@ -146,11 +143,10 @@
                 :hint "email domain is in the blacklist"))
 
     ;; When nitrate is active and the team belongs to an org, check that
-    ;; the email is already an org member or has a pending org-level
-    ;; invitation, unless the org explicitly allows adding anybody.
+    ;; the email is already an org member unless the org explicitly allows adding anybody.
     (when (and (contains? cf/flags :nitrate)
                (:organization team))
-      (assert-email-can-be-invited member email org-member-ids invited-emails))
+      (assert-email-can-be-invited member org-member-ids))
 
 
     ;; When we have email verification disabled and invitation user is
@@ -241,9 +237,7 @@
                             :to email
                             :invited-by (:fullname profile)
                             :user-name (:fullname member)
-                            :organization-name (:name organization)
-                            :organization-logo (:logo organization)
-                            :organization-initials (:initials organization)
+                            :organization organization
                             :token itoken
                             :extra-data ptoken}))
               (eml/send! {::eml/conn conn
@@ -259,11 +253,10 @@
           itoken)))))
 
 (defn create-org-invitation
-  [cfg {:keys [::rpc/profile-id id name initials logo] :as params}]
+  [cfg {:keys [::rpc/profile-id] :as params}]
   (let [profile  (db/get-by-id cfg :profile profile-id)]
     (create-invitation cfg
                        (assoc params
-                              :organization {:id id :name name :initials initials :logo logo}
                               :profile profile
                               :role :editor))))
 
@@ -338,9 +331,7 @@
         restricted?      (and org-id (not (nitrate-perms/allowed? :add-anybody-to-team {:org-perms org})))
         org-member-ids   (when restricted?
                            (into #{} (nitrate/call cfg :get-org-members {:organization-id org-id})))
-        invited-emails   (when restricted?
-                           (cnit/get-org-direct-invitation-emails conn org-id))
-        params           (assoc params :team team :org-member-ids org-member-ids :invited-emails invited-emails)
+        params           (assoc params :team team :org-member-ids org-member-ids)
 
         ;; Normalize input to a consistent format: [{:email :role}]
         invitation-data  (cond

@@ -7,7 +7,10 @@ export default [
   {
     languageOptions: {
       parser: typescriptEslintParser,
-      parserOptions: { project: './tsconfig.json' },
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
   {

@@ -8,6 +8,7 @@
   "Nitrate API for Penpot. Provides nitrate-related endpoints to be called
    from Penpot frontend."
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
@@ -19,7 +20,9 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.notifications :as notifications]
+   [app.tokens :as tokens]
    [app.util.services :as sv]))
 
 
@@ -58,6 +61,22 @@
    ::sm/result schema:connectivity}
   [cfg _params]
   (nitrate/call cfg :connectivity {}))
+
+(def ^:private schema:subscription-warning
+  [:maybe
+   [:map {:title "SubscriptionWarning"}
+    [:type {:optional true} ::sm/text]
+    [:days-from-expiry {:optional true} ::sm/int]
+    [:days-until-expiry {:optional true} ::sm/int]
+    [:expiration-date {:optional true} ct/schema:inst]]])
+
+(sv/defmethod ::get-subscription-warning
+  {::rpc/auth true
+   ::doc/added "2.14"
+   ::sm/params [:map]
+   ::sm/result schema:subscription-warning}
+  [cfg {:keys [::rpc/profile-id]}]
+  (nitrate/call cfg :get-subscription-warning {:profile-id profile-id}))
 
 (def ^:private schema:redeem-activation-code-params
   [:map {:title "RedeemActivationCodeParams"}
@@ -375,6 +394,45 @@
   (notifications/notify-team-change cfg {:id team-id :organization {:name organization-name}} "dashboard.team-no-longer-belong-org")
   nil)
 
+(def ^:private sql:get-team-invitation-emails
+  "SELECT email_to
+     FROM team_invitation
+    WHERE team_id = ?
+      AND valid_until > now()")
+
+(def ^:private sql:delete-team-external-invitations
+  "DELETE FROM team_invitation
+    WHERE team_id = ?
+      AND email_to = ANY(?)
+      AND valid_until > now()")
+
+(def ^:private sql:get-profiles-by-emails
+  "SELECT id, email
+     FROM profile
+    WHERE email = ANY(?)
+      AND deleted_at IS NULL")
+
+(defn- get-external-invitation-info
+  "Returns info about external (non-org-member) invitations pending for a team.
+   External invitations are those sent to users who are not members of the given org.
+   Returns {:allows-anybody bool :external-emails [...]}"
+  [{:keys [::db/conn] :as cfg} team-id organization-id]
+  (let [org-perms      (nitrate/call cfg :get-org-permissions {:organization-id organization-id})
+        allows-anybody (nitrate-perms/allowed? :add-anybody-to-team {:org-perms org-perms})]
+    (if allows-anybody
+      {:allows-anybody true :external-emails []}
+      (let [invitation-emails (db/exec! conn [sql:get-team-invitation-emails team-id])
+            emails            (map :email-to invitation-emails)]
+        (if (empty? emails)
+          {:allows-anybody false :external-emails []}
+          (let [emails-array    (db/create-array conn "text" (vec emails))
+                profiles        (db/exec! conn [sql:get-profiles-by-emails emails-array])
+                org-member-ids  (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+                external-emails (->> profiles
+                                     (remove #(contains? org-member-ids (:id %)))
+                                     (map :email)
+                                     (vec))]
+            {:allows-anybody false :external-emails external-emails}))))))
 
 (def ^:private schema:add-team-to-organization
   [:map
@@ -429,41 +487,28 @@
                                          :profile-id profile-id})
         (ex/raise :type :validation
                   :code :not-allowed
-                  :hint "You are not allowed to add teams in this organization"))))
+                  :hint "You are not allowed to add teams in this organization")))
 
-  (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
-    ;; Add teammates to the org if needed
-    (doseq [{member-id :profile-id} team-members
-            :when (not= member-id profile-id)]
-      (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
+    (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
+      ;; Add teammates to the org if needed
+      (doseq [{member-id :profile-id} team-members
+              :when (not= member-id profile-id)]
+        (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
-  ;; Api call to nitrate
-  (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+    ;; Api call to nitrate
+    (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
 
-    ;; Notify connected users
-    (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
+      ;; Notify connected users
+      (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
+
+    ;; Delete pending invitations for users who are not members of the target organization
+    (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
+      (when (and (not allows-anybody) (seq external-emails))
+        (let [conn         (::db/conn cfg)
+              emails-array (db/create-array conn "text" external-emails)]
+          (db/exec! conn [sql:delete-team-external-invitations team-id emails-array])))))
+
   nil)
-
-(def ^:private sql:get-profiles-by-emails
-  "SELECT id, email
-     FROM profile
-    WHERE email = ANY(?)
-      AND deleted_at IS NULL")
-
-(def ^:private sql:get-org-direct-invitation-emails
-  "SELECT DISTINCT email_to
-     FROM team_invitation
-    WHERE org_id = ?
-      AND team_id IS NULL
-      AND valid_until >= now()")
-
-(defn get-org-direct-invitation-emails
-  "Returns the set of emails that have a pending direct org-level invitation
-  (i.e. invited to the org itself, not to a specific team)."
-  [conn org-id]
-  (->> (db/exec! conn [sql:get-org-direct-invitation-emails org-id])
-       (map :email-to)
-       (into #{})))
 
 (def ^:private schema:check-org-members-params
   [:map {:title "CheckOrgMembersParams"}
@@ -482,13 +527,11 @@
         (let [emails-array   (db/create-array conn "text" emails)
               profiles       (db/exec! conn [sql:get-profiles-by-emails emails-array])
               email->id      (into {} (map (fn [p] [(:email p) (:id p)])) profiles)
-              org-member-ids (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
-              invited-emails (get-org-direct-invitation-emails conn organization-id)]
+              org-member-ids (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))]
           (into {}
                 (map (fn [email]
                        (let [pid (get email->id email)]
-                         [email (boolean (or (and pid (contains? org-member-ids pid))
-                                             (contains? invited-emails email)))])))
+                         [email (boolean (and pid (contains? org-member-ids pid)))])))
                 emails)))
       {}))
 
@@ -547,4 +590,69 @@
               organization-ids)))
     {}))
 
+(def ^:private schema:check-team-external-invitations-params
+  [:map {:title "CheckTeamExternalInvitationsParams"}
+   [:team-id ::sm/uuid]
+   [:organization-id ::sm/uuid]])
 
+(def ^:private schema:check-team-external-invitations-result
+  [:map {:title "CheckTeamExternalInvitationsResult"}
+   [:has-external-invitations ::sm/boolean]
+   [:allows-anybody ::sm/boolean]])
+
+(sv/defmethod ::check-team-external-invitations
+  {::rpc/auth true
+   ::doc/added "2.17"
+   ::sm/params schema:check-team-external-invitations-params
+   ::sm/result schema:check-team-external-invitations-result
+   ::db/transaction true}
+  [cfg {:keys [::rpc/profile-id team-id organization-id]}]
+  (if (contains? cf/flags :nitrate)
+    (let [perms (teams/get-permissions cfg profile-id team-id)]
+      (when-not (or (:is-admin perms) (:is-owner perms))
+        (ex/raise :type :validation
+                  :code :insufficient-permissions))
+      (assert-membership cfg profile-id organization-id)
+      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
+        {:has-external-invitations (boolean (seq external-emails))
+         :allows-anybody allows-anybody}))
+    {:has-external-invitations false
+     :allows-anybody false}))
+
+
+(def ^:private schema:check-nitrate-sso
+  [:map {:title "AuthSsoParams"}
+   [:team-id ::sm/uuid]
+   [:url ::sm/uri]])
+
+(sv/defmethod ::check-nitrate-sso
+  "Check if a user needs to login into the organization SSO.
+  Returns {:authorized true} when SSO is not active for the team.
+  Returns {:authorized false :redirect-uri <url>} when SSO is active;
+  the client must redirect there. The OIDC provider itself handles
+  re-authentication transparently if the user already has an active SSO session."
+  {::rpc/auth true
+   ::doc/added "2.19"
+   ::sm/params schema:check-nitrate-sso
+   ::nitrate/sso false}
+  [cfg {:keys [team-id url] :as params}]
+  (if (contains? cf/flags :nitrate)
+    (let [request                   (rph/get-request params)
+          {:keys [authorized sso]}  (nitrate/sso-session-authorized? cfg team-id request)]
+      (if authorized
+        {:authorized true}
+        (if-let [issuer (or (:issuer sso) (:base-url sso))]
+          (let [oidc-provider   (oidc/prepare-org-sso-provider cfg sso)
+                organization-id (:organization-id sso)
+                state-token     (tokens/generate cfg {:iss             "oidc"
+                                                      :dest-url        url
+                                                      :team-id         team-id
+                                                      :organization-id organization-id
+                                                      :issuer          issuer
+                                                      :exp             (ct/in-future "4h")})
+                redirect-uri        (oidc/build-auth-redirect-uri oidc-provider state-token)]
+            {:authorized false
+             :redirect-uri redirect-uri})
+          {:authorized false
+           :redirect-uri nil})))
+    {:authorized true}))

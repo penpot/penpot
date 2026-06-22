@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.email
   "Main api for send emails."
@@ -431,20 +431,40 @@
    :id ::invite-to-team
    :schema schema:invite-to-team))
 
+(def ^:private schema:organization-data
+  [:map
+   [:name ::sm/text]
+   [:initials [:maybe :string]]
+   [:logo [:maybe ::sm/uri]]
+   [:avatar-bg-url [:maybe ::sm/uri]]])
+
 (def ^:private schema:invite-to-org
   [:map
    [:invited-by ::sm/text]
-   [:organization-name ::sm/text]
-   [:organization-initials [:maybe :string]]
-   [:organization-logo ::sm/uri]
    [:user-name [:maybe ::sm/text]]
-   [:token ::sm/text]])
+   [:token ::sm/text]
+   [:organization schema:organization-data]])
 
 (def invite-to-org
   "Org member invitation email."
   (template-factory
    :id ::invite-to-org
    :schema schema:invite-to-org))
+
+
+
+(def ^:private schema:renewal-notice
+  [:map
+   [:user-name [:maybe ::sm/text]]
+   [:renewal-date ::sm/text]
+   [:estimated-amount ::sm/text]
+   [:organizations [:vector schema:organization-data]]])
+
+(def renewal-notice
+  "Enterprise subscription renewal notice email."
+  (template-factory
+   :id ::renewal-notice
+   :schema schema:renewal-notice))
 
 (def ^:private schema:join-team
   [:map

@@ -1,6 +1,5 @@
-import { Component, effect, inject, linkedSignal } from '@angular/core';
+import { Component, effect, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
 import type {
   PluginMessageEvent,
   PluginUIEvent,
@@ -8,7 +7,7 @@ import type {
   SetColorsPluginEvent,
   TokenFileExtraData,
 } from '../model';
-import { filter, fromEvent, map, merge, take } from 'rxjs';
+import { filter, fromEvent, map, merge, of } from 'rxjs';
 import { transformToToken } from './utils/transform-to-token';
 import { SvgComponent } from './components/svg.component';
 
@@ -70,14 +69,11 @@ import { SvgComponent } from './components/svg.component';
   },
 })
 export class AppComponent {
-  route = inject(ActivatedRoute);
   messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(window, 'message');
 
-  initialTheme$ = this.route.queryParamMap.pipe(
-    map((params) => params.get('theme')),
-    filter((theme) => !!theme),
-    take(1),
-  );
+  initialTheme$ = of(
+    new URLSearchParams(window.location.search).get('theme'),
+  ).pipe(filter((theme) => !!theme));
 
   theme = toSignal(
     merge(

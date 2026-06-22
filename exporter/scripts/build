@@ -14,6 +14,7 @@ rm -rf target
 pnpm run build;
 
 cp pnpm-lock.yaml target/;
+cp pnpm-workspace.yaml target/;
 cp package.json target/;
 touch target/pnpm-workspace.yaml;
 
