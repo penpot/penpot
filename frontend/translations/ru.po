@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
+"Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -3745,6 +3745,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "Каков размер вашей компании?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "Расскажите нам о своей работе"
 
