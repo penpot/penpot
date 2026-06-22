@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.shapes.path
   (:require
@@ -26,8 +26,7 @@
   (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)]
     (types.path/update-geometry shape)))
 
-(mf/defc path-wrapper
-  {::mf/wrap-props false}
+(mf/defc path-wrapper*
   [{:keys [shape]}]
   (let [shape-id (dm/get-prop shape :id)
 

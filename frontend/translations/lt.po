@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-01-08 17:06+0000\n"
+"PO-Revision-Date: 2026-05-27 16:03+0000\n"
 "Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
 "Language-Team: Lithuanian "
 "<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
@@ -10,9 +10,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "(n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.15.1\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
-#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:100
+#: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Jau turite paskyrą?"
 
@@ -27,7 +27,7 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "Slaptažodžio patvirtinimas"
 
-#: src/app/main/ui/auth/register.cljs:227
+#: src/app/main/ui/auth/register.cljs:226
 msgid "auth.create-demo-account"
 msgstr "Kurti demonstracinę paskyrą"
 
@@ -36,21 +36,21 @@ msgstr "Kurti demonstracinę paskyrą"
 msgid "auth.create-demo-profile"
 msgstr "Norite tik išmėginti?"
 
-#: src/app/main/ui/auth/login.cljs:42
+#: src/app/main/ui/auth/login.cljs:40
 msgid "auth.demo-warning"
 msgstr ""
 "Tai yra DEMONSTRACINĖ versija, NEKURKITE tikrų darbų, nes projektai "
 "periodiškai - šalinami."
 
-#: src/app/main/ui/auth/login.cljs:198, src/app/main/ui/viewer/login.cljs:86
+#: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:86
 msgid "auth.forgot-password"
 msgstr "Pamiršote slaptažodį?"
 
-#: src/app/main/ui/auth/register.cljs:160, src/app/main/ui/auth/register.cljs:328
+#: src/app/main/ui/auth/register.cljs:161, src/app/main/ui/auth/register.cljs:328
 msgid "auth.fullname"
 msgstr "Vardas ir Pavardė"
 
-#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:161, src/app/main/ui/viewer/login.cljs:103
+#: src/app/main/ui/auth/register.cljs:218, src/app/main/ui/static.cljs:183, src/app/main/ui/viewer/login.cljs:103
 msgid "auth.login-here"
 msgstr "Prisijungimas čia"
 
@@ -59,23 +59,23 @@ msgstr "Prisijungimas čia"
 msgid "auth.login-submit"
 msgstr "Prisijungti"
 
-#: src/app/main/ui/auth/login.cljs:231
+#: src/app/main/ui/auth/login.cljs:230
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:237
+#: src/app/main/ui/auth/login.cljs:236
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:225
+#: src/app/main/ui/auth/login.cljs:224
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:210
+#: src/app/main/ui/auth/login.cljs:209
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:243
+#: src/app/main/ui/auth/login.cljs:242
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
@@ -95,19 +95,19 @@ msgstr "Paskyra yra nepatvirtinta, prieš tęsdami patikrinkite paskyrą."
 msgid "auth.notifications.recovery-token-sent"
 msgstr "Slaptažodžio atkūrimo nuoroda išsiųsta į jūsų pašto dėžutę."
 
-#: src/app/main/ui/auth/verify_token.cljs:49
+#: src/app/main/ui/auth/verify_token.cljs:57
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Sėkmingai prisijungė prie komandos"
 
-#: src/app/main/ui/auth/login.cljs:188, src/app/main/ui/auth/register.cljs:174
+#: src/app/main/ui/auth/login.cljs:187, src/app/main/ui/auth/register.cljs:175
 msgid "auth.password"
 msgstr "Slaptažodis"
 
-#: src/app/main/ui/auth/register.cljs:173
+#: src/app/main/ui/auth/register.cljs:174
 msgid "auth.password-length-hint"
 msgstr "Ne mažiau kaip 8 simboliai"
 
-#: src/app/main/ui/auth/register.cljs:261
+#: src/app/main/ui/auth/register.cljs:259
 msgid "auth.privacy-policy"
 msgstr "Privatumo politika"
 
@@ -127,15 +127,15 @@ msgstr "Pamiršote slaptažodį?"
 msgid "auth.recovery-submit"
 msgstr "Slaptažodžio keitimas"
 
-#: src/app/main/ui/auth/login.cljs:287, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:89
+#: src/app/main/ui/auth/login.cljs:286, src/app/main/ui/static.cljs:166, src/app/main/ui/viewer/login.cljs:89
 msgid "auth.register"
 msgstr "Dar neturite paskyros?"
 
-#: src/app/main/ui/auth/login.cljs:291, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:148, src/app/main/ui/viewer/login.cljs:93
+#: src/app/main/ui/auth/login.cljs:290, src/app/main/ui/auth/register.cljs:186, src/app/main/ui/auth/register.cljs:339, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:93
 msgid "auth.register-submit"
 msgstr "Sukurti paskyrą"
 
-#: src/app/main/ui/auth/register.cljs:206
+#: src/app/main/ui/auth/register.cljs:205
 msgid "auth.register-title"
 msgstr "Sukurti paskyrą"
 
@@ -144,56 +144,57 @@ msgstr "Sukurti paskyrą"
 msgid "auth.sidebar-tagline"
 msgstr "Atviro kodo dizaino ir prototipų kūrimo sprendimas."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:979, src/app/main/ui/workspace/main_menu.cljs:184
+#: src/app/main/ui/auth/register.cljs:251, src/app/main/ui/dashboard/sidebar.cljs:1221, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "auth.terms-of-service"
 msgstr "Paslaugų teikimo sąlygos"
 
-#: src/app/main/ui/auth/register.cljs:239
+#: src/app/main/ui/auth/register.cljs:238
+#, unused
 msgid "auth.verification-email-sent"
 msgstr "Išsiuntėme patvirtinimo el. laišką adresu"
 
-#: src/app/main/ui/workspace/libraries.cljs:323
+#: src/app/main/ui/workspace/libraries.cljs:349
 msgid "common.publish"
 msgstr "Paskelbti"
 
-#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:315
+#: src/app/main/ui/viewer/share_link.cljs:305, src/app/main/ui/viewer/share_link.cljs:315
 msgid "common.share-link.all-users"
 msgstr "Visi Penpot vartotojai"
 
-#: src/app/main/ui/viewer/share_link.cljs:204
+#: src/app/main/ui/viewer/share_link.cljs:199
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Ar tikrai norite pašalinti šią nuorodą? Jei tai padarysite, ji niekam "
 "nebebus pasiekiama"
 
-#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
+#: src/app/main/ui/viewer/share_link.cljs:260, src/app/main/ui/viewer/share_link.cljs:290
 msgid "common.share-link.current-tag"
 msgstr "(dabartinis)"
 
-#: src/app/main/ui/viewer/share_link.cljs:211, src/app/main/ui/viewer/share_link.cljs:216
+#: src/app/main/ui/viewer/share_link.cljs:208, src/app/main/ui/viewer/share_link.cljs:215
 msgid "common.share-link.destroy-link"
 msgstr "Naikinti nuorodą"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:222
 msgid "common.share-link.get-link"
 msgstr "Gauti nuorodą"
 
-#: src/app/main/ui/viewer/share_link.cljs:142
+#: src/app/main/ui/viewer/share_link.cljs:138
 msgid "common.share-link.link-copied-success"
 msgstr "Nuoroda sėkmingai nukopijuota"
 
-#: src/app/main/ui/viewer/share_link.cljs:231
+#: src/app/main/ui/viewer/share_link.cljs:232
 msgid "common.share-link.manage-ops"
 msgstr "Valdyti leidimus"
 
-#: src/app/main/ui/viewer/share_link.cljs:277
+#: src/app/main/ui/viewer/share_link.cljs:278
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "Bendrinamas 1 puslapis"
 msgstr[1] "Bendrinami % puslapiai"
 msgstr[2] "Bendrinama % puslapių"
 
-#: src/app/main/ui/viewer/share_link.cljs:298
+#: src/app/main/ui/viewer/share_link.cljs:299
 msgid "common.share-link.permissions-can-comment"
 msgstr "Gali komentuoti"
 
@@ -201,45 +202,45 @@ msgstr "Gali komentuoti"
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Gali apžiūrėti kodą"
 
-#: src/app/main/ui/viewer/share_link.cljs:199
+#: src/app/main/ui/viewer/share_link.cljs:194
 msgid "common.share-link.permissions-hint"
 msgstr "Kiekvienas, turintis nuorodą, turės prieigą"
 
-#: src/app/main/ui/viewer/share_link.cljs:241
+#: src/app/main/ui/viewer/share_link.cljs:242
 msgid "common.share-link.permissions-pages"
 msgstr "Bendrinti puslapiai"
 
-#: src/app/main/ui/viewer/share_link.cljs:189
+#: src/app/main/ui/viewer/share_link.cljs:184
 msgid "common.share-link.placeholder"
 msgstr "Bendrinama nuoroda bus rodoma čia"
 
-#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:314
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.team-members"
 msgstr "Tik komandos nariams"
 
-#: src/app/main/ui/viewer/share_link.cljs:176
+#: src/app/main/ui/viewer/share_link.cljs:172
 msgid "common.share-link.title"
 msgstr "Dalinkitės prototipais"
 
-#: src/app/main/ui/viewer/share_link.cljs:269
+#: src/app/main/ui/viewer/share_link.cljs:270
 msgid "common.share-link.view-all"
 msgstr "Rinktis viską"
 
-#: src/app/main/ui/workspace/libraries.cljs:320
+#: src/app/main/ui/workspace/libraries.cljs:344
 msgid "common.unpublish"
 msgstr "Atšaukti paskelbimą"
 
-#: src/app/main/ui/dashboard/projects.cljs:93
+#: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.management"
 msgstr "Komandos valdymas"
 
-#: src/app/main/ui/dashboard/projects.cljs:92
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot yra skirtas komandoms. Pakvieskite narius bendram darbui su "
 "projektais ir failais"
 
-#: src/app/main/ui/dashboard/projects.cljs:90
+#: src/app/main/ui/dashboard/projects.cljs:87
 msgid "dasboard.team-hero.title"
 msgstr "Suburkite komandą!"
 
@@ -263,7 +264,7 @@ msgstr "Panagrinėkite Penpot ir susipažinkite su pagrindinėmis jo savybėmis.
 msgid "dasboard.walkthrough-hero.start"
 msgstr "Pradėkite apžvalgą"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:322, src/app/main/ui/workspace/main_menu.cljs:650
+#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:695
 msgid "dashboard.add-shared"
 msgstr "Pridėti kaip bendrinamą biblioteką"
 
@@ -271,35 +272,35 @@ msgstr "Pridėti kaip bendrinamą biblioteką"
 msgid "dashboard.change-email"
 msgstr "Keisti el. paštą"
 
-#: src/app/main/data/dashboard.cljs:330, src/app/main/data/dashboard.cljs:565, src/app/main/data/workspace/pages.cljs:198
+#: src/app/main/data/dashboard.cljs:333, src/app/main/data/dashboard.cljs:568, src/app/main/data/workspace/pages.cljs:199
 msgid "dashboard.copy-suffix"
 msgstr "(kopija)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:340
+#: src/app/main/ui/dashboard/sidebar.cljs:439
 msgid "dashboard.create-new-team"
 msgstr "Sukurti naują komandą"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:638
+#: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
 msgid "dashboard.default-team-name"
 msgstr "Jūsų Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:495
+#: src/app/main/ui/dashboard/sidebar.cljs:588, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "Naikinti komandą"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:305, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Dublikatas"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:271
+#: src/app/main/ui/dashboard/file_menu.cljs:272
 msgid "dashboard.duplicate-multi"
 msgstr "Dubliuoti %s failus"
 
-#: src/app/main/ui/workspace/main_menu.cljs:698
+#: src/app/main/ui/workspace/main_menu.cljs:740
 msgid "dashboard.export-frames"
 msgstr "Eksportuokite darbalaukius į PDF"
 
-#: src/app/main/ui/exports/assets.cljs:201
+#: src/app/main/ui/exports/assets.cljs:202
 msgid "dashboard.export-frames.title"
 msgstr "Eksportuoti į PDF"
 
@@ -311,7 +312,7 @@ msgstr "Eksportuoti Penpot %s failus"
 msgid "dashboard.export-multiple.selected"
 msgstr "Pasirinkta %s iš %s elementų"
 
-#: src/app/main/ui/workspace/main_menu.cljs:679
+#: src/app/main/ui/workspace/main_menu.cljs:723
 msgid "dashboard.export-shapes"
 msgstr "Eksportuoti"
 
@@ -340,26 +341,26 @@ msgstr ""
 "Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos "
 "bendros bibliotekos. Ką norite daryti su jų komponentais*?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:336
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Šriftas ištrintas"
 
-#: src/app/main/ui/dashboard/fonts.cljs:218
+#: src/app/main/ui/dashboard/fonts.cljs:235
 msgid "dashboard.fonts.dismiss-all"
 msgstr "Atmesti visus"
 
-#: src/app/main/ui/dashboard/fonts.cljs:455
+#: src/app/main/ui/dashboard/fonts.cljs:495
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Vis dar neįdiegėte tinkintų šriftų."
 
-#: src/app/main/ui/dashboard/fonts.cljs:206
+#: src/app/main/ui/dashboard/fonts.cljs:223
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Pridėtas 1 šriftas"
 msgstr[1] "Pridėti %s šriftai"
 msgstr[2] "Šriftas(-ai) pridėti"
 
-#: src/app/main/ui/dashboard/fonts.cljs:181
+#: src/app/main/ui/dashboard/fonts.cljs:198
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
@@ -369,7 +370,7 @@ msgstr ""
 "šriftų šeima**. Galite įkelti šių formatų šriftus: **TTF, OTF ir WOFF** "
 "(reikės tik vieno)."
 
-#: src/app/main/ui/dashboard/fonts.cljs:194
+#: src/app/main/ui/dashboard/fonts.cljs:211
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
@@ -379,15 +380,15 @@ msgstr ""
 "galite paskaityti apie [šriftų "
 "licencijavimą](https://www.typography.com/faq)."
 
-#: src/app/main/ui/dashboard/fonts.cljs:214
+#: src/app/main/ui/dashboard/fonts.cljs:231
 msgid "dashboard.fonts.upload-all"
 msgstr "Įkelti viską"
 
-#: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
+#: src/app/main/ui/dashboard/import.cljs:463, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
 msgstr "Importuokite Penpot failus"
 
-#: src/app/main/ui/dashboard/import.cljs:293, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
+#: src/app/main/ui/dashboard/import.cljs:290, src/app/worker/import.cljs:138, src/app/worker/import.cljs:141
 msgid "dashboard.import.analyze-error"
 msgstr "Oi! Nepavyko importuoti šio failo"
 
@@ -396,63 +397,63 @@ msgstr "Oi! Nepavyko importuoti šio failo"
 msgid "dashboard.import.import-error"
 msgstr "Iškilo problema importuojant failą. Failas nebuvo importuotas."
 
-#: src/app/main/ui/dashboard/import.cljs:474
+#: src/app/main/ui/dashboard/import.cljs:473
 msgid "dashboard.import.import-warning"
 msgstr "Kai kuriuose failuose buvo netinkamų objektų, kurie buvo pašalinti."
 
-#: src/app/main/ui/dashboard/import.cljs:128
+#: src/app/main/ui/dashboard/import.cljs:125
 msgid "dashboard.import.progress.process-colors"
 msgstr "Apdorojimo spalvos"
 
-#: src/app/main/ui/dashboard/import.cljs:137, src/app/main/ui/dashboard/import.cljs:140
+#: src/app/main/ui/dashboard/import.cljs:134, src/app/main/ui/dashboard/import.cljs:137
 msgid "dashboard.import.progress.process-components"
 msgstr "Komponentų apdorojimas"
 
-#: src/app/main/ui/dashboard/import.cljs:134
+#: src/app/main/ui/dashboard/import.cljs:131
 msgid "dashboard.import.progress.process-media"
 msgstr "Apdorojamos laikmenos"
 
-#: src/app/main/ui/dashboard/import.cljs:125
+#: src/app/main/ui/dashboard/import.cljs:122
 msgid "dashboard.import.progress.process-page"
 msgstr "Apdorojamas puslapis: %s"
 
-#: src/app/main/ui/dashboard/import.cljs:131
+#: src/app/main/ui/dashboard/import.cljs:128
 msgid "dashboard.import.progress.process-typographies"
 msgstr "Tipografijų apdorojimas"
 
-#: src/app/main/ui/dashboard/import.cljs:119
+#: src/app/main/ui/dashboard/import.cljs:116
 msgid "dashboard.import.progress.upload-data"
 msgstr "Įkeliami duomenys į serverį (%s/%s)"
 
-#: src/app/main/ui/dashboard/import.cljs:122
+#: src/app/main/ui/dashboard/import.cljs:119
 msgid "dashboard.import.progress.upload-media"
 msgstr "Įkeliamas failas: %s"
 
-#: src/app/main/data/dashboard.cljs:536, src/app/main/data/dashboard.cljs:648
+#: src/app/main/data/dashboard.cljs:539, src/app/main/data/dashboard.cljs:651
 msgid "dashboard.new-file-prefix"
 msgstr "Naujas failas"
 
-#: src/app/main/ui/dashboard/projects.cljs:62
+#: src/app/main/ui/dashboard/projects.cljs:61
 msgid "dashboard.new-project"
 msgstr "+ Naujas projektas"
 
-#: src/app/main/data/dashboard.cljs:289, src/app/main/data/dashboard.cljs:651
+#: src/app/main/data/dashboard.cljs:292, src/app/main/data/dashboard.cljs:654
 msgid "dashboard.new-project-prefix"
 msgstr "Naujas projektas"
 
-#: src/app/main/ui/dashboard/search.cljs:77
+#: src/app/main/ui/dashboard/search.cljs:76
 msgid "dashboard.no-matches-for"
 msgstr "Nerasta jokių atitikmenų pagal \"%s\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs:858
+#: src/app/main/ui/dashboard/sidebar.cljs:1103
 msgid "dashboard.no-projects-placeholder"
 msgstr "Prisegti projektai bus rodomi čia"
 
-#: src/app/main/ui/auth/verify_token.cljs:34
+#: src/app/main/ui/auth/verify_token.cljs:36
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Jūsų el. pašto adresas sėkmingai atnaujintas"
 
-#: src/app/main/ui/auth/verify_token.cljs:28
+#: src/app/main/ui/auth/verify_token.cljs:30
 msgid "dashboard.notifications.email-verified-successfully"
 msgstr "Jūsų el. pašto adresas buvo sėkmingai patvirtintas"
 
@@ -460,15 +461,15 @@ msgstr "Jūsų el. pašto adresas buvo sėkmingai patvirtintas"
 msgid "dashboard.notifications.password-saved"
 msgstr "Slaptažodis sėkmingai išsaugotas!"
 
-#: src/app/main/ui/dashboard/team.cljs:1340
+#: src/app/main/ui/dashboard/team.cljs:1658
 msgid "dashboard.num-of-members"
 msgstr "%s nariai"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:295
+#: src/app/main/ui/dashboard/file_menu.cljs:296
 msgid "dashboard.open-in-new-tab"
 msgstr "Atidarykite failą naujame skirtuke"
 
-#: src/app/main/ui/dashboard/deleted.cljs:157, src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/files.cljs:120, src/app/main/ui/dashboard/grid.cljs:442, src/app/main/ui/dashboard/projects.cljs:266, src/app/main/ui/dashboard/projects.cljs:267
+#: src/app/main/ui/dashboard/deleted.cljs:158, src/app/main/ui/dashboard/deleted.cljs:159, src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:446, src/app/main/ui/dashboard/projects.cljs:262, src/app/main/ui/dashboard/projects.cljs:263
 msgid "dashboard.options"
 msgstr "Nustatymai"
 
@@ -476,11 +477,11 @@ msgstr "Nustatymai"
 msgid "dashboard.password-change"
 msgstr "Keisti slaptažodį"
 
-#: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
+#: src/app/main/ui/dashboard/pin_button.cljs:22, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
 msgstr "Prisegti/Atsegti"
 
-#: src/app/main/ui/dashboard/deleted.cljs:62, src/app/main/ui/dashboard/projects.cljs:57
+#: src/app/main/ui/dashboard/deleted.cljs:63, src/app/main/ui/dashboard/projects.cljs:56
 msgid "dashboard.projects-title"
 msgstr "Projektai"
 
@@ -493,7 +494,7 @@ msgstr "Norite pašalinti paskyrą?"
 msgid "dashboard.remove-shared"
 msgstr "Pašalinti kaip bendrinamą biblioteką"
 
-#: src/app/main/ui/settings/options.cljs:63
+#: src/app/main/ui/settings/options.cljs:71
 msgid "dashboard.theme-change"
 msgstr "Vartotojo sąsajos tema"
 
@@ -501,38 +502,38 @@ msgstr "Vartotojo sąsajos tema"
 msgid "errors.invalid-recovery-token"
 msgstr "Atkūrimo prieigos raktas neteisingas."
 
-#: src/app/main/ui/exports/files.cljs:133
+#: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Gali apimti komponentus, grafiką, spalvas ir (arba) tipografiją."
 
-#: src/app/main/ui/exports/files.cljs:141
+#: src/app/main/ui/exports/files.cljs:140
 msgid "files-download-modal.options.all.message"
 msgstr ""
 "Failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
 "susiejimą."
 
-#: src/app/main/ui/exports/files.cljs:142
+#: src/app/main/ui/exports/files.cljs:141
 msgid "files-download-modal.options.all.title"
 msgstr "Eksportuoti bendrai naudojamas bibliotekas"
 
-#: src/app/main/ui/exports/files.cljs:143
+#: src/app/main/ui/exports/files.cljs:142
 msgid "files-download-modal.options.detach.message"
 msgstr ""
 "Bendrai naudojamos bibliotekos nebus įtrauktos į eksportą ir į biblioteką "
 "nebus pridėta jokių išteklių. "
 
-#: src/app/main/ui/exports/files.cljs:144
+#: src/app/main/ui/exports/files.cljs:143
 msgid "files-download-modal.options.detach.title"
 msgstr ""
 "Bendrai naudojamus bibliotekos komponentus traktuokite kaip pagrindinius "
 "objektus"
 
-#: src/app/main/ui/exports/files.cljs:145
+#: src/app/main/ui/exports/files.cljs:144
 msgid "files-download-modal.options.merge.message"
 msgstr ""
 "Jūsų failas bus eksportuotas su visais išoriniais komponentais, sujungtais "
 "į failų biblioteką."
 
-#: src/app/main/ui/exports/files.cljs:146
+#: src/app/main/ui/exports/files.cljs:145
 msgid "files-download-modal.options.merge.title"
 msgstr "Įtraukti bendrai naudojamus bibliotekos komponentus į failų bibliotekas"

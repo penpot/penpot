@@ -2,12 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.data.tokenscript :as ts]
+   [app.main.store :as st]
+   [app.plugins.api :as api]
    [app.plugins.tokens :as ptok]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each {:before cthi/reset-idmap!})
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -54,6 +66,16 @@
   (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top-left)))
   (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom-right))))
 
+(t/deftest token-attr-plugin->token-attr-resolves-padding-margin-side-aliases
+  (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top)))
+  (t/is (= :p2 (ptok/token-attr-plugin->token-attr :padding-right)))
+  (t/is (= :p3 (ptok/token-attr-plugin->token-attr :padding-bottom)))
+  (t/is (= :p4 (ptok/token-attr-plugin->token-attr :padding-left)))
+  (t/is (= :m1 (ptok/token-attr-plugin->token-attr :margin-top)))
+  (t/is (= :m2 (ptok/token-attr-plugin->token-attr :margin-right)))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom)))
+  (t/is (= :m4 (ptok/token-attr-plugin->token-attr :margin-left))))
+
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr "fill")))
@@ -76,7 +98,131 @@
   (t/is (true? (boolean (ptok/token-attr? "r1"))))
   (t/is (true? (boolean (ptok/token-attr? "m3")))))
 
+(t/deftest shape-apply-token-accepts-padding-top
+  (t/async
+    done
+    (let [set-id    (cthi/new-id! :token-set)
+          token-id  (cthi/new-id! :spacing-token)
+          file      (-> (cthf/sample-file :file1 :page-label :page1)
+                        (ctho/add-frame :frame1 {:layout :flex})
+                        (ctht/add-tokens-lib)
+                        (ctht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set
+                               (ctob/make-token-set :id set-id
+                                                    :name "spacing"))
+                              (ctob/add-theme
+                               (ctob/make-token-theme :name "theme"
+                                                      :sets #{"spacing"}))
+                              (ctob/set-active-themes #{"/theme"})
+                              (ctob/add-token
+                               set-id
+                               (ctob/make-token :id token-id
+                                                :name "spacing.medium"
+                                                :type :spacing
+                                                :value 16)))))
+          store     (ths/setup-store file)
+          _         (set! st/state store)
+          _         (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :frame1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str token-id))]
+      (.applyToken shape token #js ["paddingTop"])
+      (js/setTimeout
+       (fn []
+         (let [shape-id (cthi/id :frame1)
+               page-id  (cthf/current-page-id file)]
+           (t/is (= "spacing.medium" (.. shape -tokens -paddingTopLeft)))
+           (t/is (= "spacing.medium"
+                    (get-in @store
+                            [:files (:id file) :data :pages-index page-id
+                             :objects shape-id :applied-tokens :p1])))
+           (done)))
+       0))))
+
 (t/deftest token-attr?-rejects-unknown-input
   (t/is (false? (boolean (ptok/token-attr? :not-a-real-attr))))
   (t/is (false? (boolean (ptok/token-attr? "not-a-real-attr"))))
   (t/is (false? (boolean (ptok/token-attr? nil)))))
+
+;; Regression coverage for issue #10070.
+;;
+;; The Plugin API's `addToken` rejected reference tokens whose target
+;; lives in an *inactive* token set, even though the referenced token
+;; exists structurally. The proxy `:fn` resolved the new token against
+;; active sets only (`get-tokens-in-active-sets`), so a reference into an
+;; inactive set never resolved and fell into the generic `not-valid`
+;; error path.
+;;
+;; The fix resolves against *all* tokens in the library (inactive sets
+;; included), mirroring the workspace token-creation form. These tests
+;; reproduce the exact `tokens-tree` construction from both the buggy and
+;; the fixed `addToken` `:fn` and assert resolution behaviour directly —
+;; the proxy `:fn` itself drives the global store and `st/emit!`, so it is
+;; not unit-testable, but the resolve step it gates on is.
+
+(defn- inactive-set-library
+  "A library with `primitives` (holding `color.gray.50`) left inactive and
+  an active, empty `semantic` set — the repro from the issue."
+  []
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :primitives)
+                                         :name "primitives"))
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :semantic)
+                                         :name "semantic"))
+      (ctob/add-token (cthi/id :primitives)
+                      (ctob/make-token {:name "color.gray.50"
+                                        :value "#fafafa"
+                                        :type :color}))
+      ;; `add-set` does not activate sets, so activate only `semantic`,
+      ;; leaving `primitives` (the reference target) inactive.
+      (ctob/toggle-set-in-theme ctob/hidden-theme-id "semantic")))
+
+(t/deftest add-token-active-sets-only-fails-to-resolve-cross-set-reference
+  ;; Demonstrates the bug: resolving the new token against active sets
+  ;; only leaves the reference unresolved.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.gray.50}"
+                                :type :color})
+        tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (nil? resolved-value))
+    (t/is (seq errors))))
+
+(t/deftest add-token-resolves-cross-set-reference-into-inactive-set
+  ;; The fix: resolving against all tokens in the library (inactive sets
+  ;; included) resolves the reference even though `primitives` is inactive.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.gray.50}"
+                                :type :color})
+        tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                               (ctob/get-tokens tokens-lib (cthi/id :semantic)))
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (some? resolved-value))
+    (t/is (empty? errors))))
+
+(t/deftest add-token-still-fails-for-references-missing-from-every-set
+  ;; A reference to a token that exists in *no* set must still fail, even
+  ;; with the all-tokens resolution.
+  (let [tokens-lib (inactive-set-library)
+        token (ctob/make-token {:name "color.bg.default"
+                                :value "{color.does.not.exist}"
+                                :type :color})
+        tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                               (ctob/get-tokens tokens-lib (cthi/id :semantic)))
+                        (assoc (:name token) token))
+        resolved (ts/resolve-tokens tokens-tree)
+        {:keys [errors resolved-value]} (get resolved (:name token))]
+    (t/is (nil? resolved-value))
+    (t/is (seq errors))))

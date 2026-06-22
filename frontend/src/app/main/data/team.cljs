@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.team
   (:require
@@ -67,6 +67,19 @@
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
 
+(defn with-refreshed-team
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, updates the app state, and calls f with the fresh team data.
+  Returns an observable of events."
+  [team-id f]
+  (->> (rp/cmd! :get-teams)
+       (rx/mapcat
+        (fn [teams]
+          (let [team (d/seek #(= (:id %) team-id) teams)]
+            (rx/concat
+             (rx/of (teams-fetched teams))
+             (f team)))))))
+
 (defn check-and-create-team
   "Fetches fresh team data from the server to ensure up-to-date org
   permissions, then shows the team-form modal or a no-permission modal."
@@ -75,26 +88,23 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-id (dm/get-in state [:profile :id])]
-        (->> (rp/cmd! :get-teams)
-             (rx/mapcat
-              (fn [teams]
-                (let [team        (d/seek #(= (:id %) team-id) teams)
-                      in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
-                      can-create? (if in-org?
-                                    (nitrate-perms/allowed? :create-team
-                                                            {:org-perms {:owner-id    (:organization-owner-id team)
-                                                                         :permissions (:organization-permissions team)}
-                                                             :profile-id profile-id
-                                                             :team-perms (:permissions team)})
-                                    true)]
-                  (rx/of (teams-fetched teams)
-                         (if can-create?
-                           (modal/show :team-form (if in-org?
-                                                    {:organization-id   (:organization-id team)
-                                                     :organization-name (:organization-name team)}
-                                                    {}))
-                           (modal/show :no-permission-modal {:type :create-team
-                                                             :organization-name (:organization-name team)})))))))))))
+        (with-refreshed-team team-id
+          (fn [team]
+            (let [organization (:organization team)
+                  in-org?      (and (contains? cf/flags :nitrate) organization)
+                  can-create?  (if in-org?
+                                 (nitrate-perms/allowed? :create-team
+                                                         {:org-perms {:owner-id    (:owner-id organization)
+                                                                      :permissions (:permissions organization)}
+                                                          :profile-id profile-id
+                                                          :team-perms (:permissions team)})
+                                 true)]
+              (rx/of (if can-create?
+                       (modal/show :team-form (if in-org?
+                                                {:organization-id   (:id organization)
+                                                 :organization-name (:name organization)}
+                                                {}))
+                       (modal/show :no-permission-modal {:type :create-team}))))))))))
 
 (defn check-and-delete-team
   "Fetches fresh team data from the server to ensure up-to-date org
@@ -104,31 +114,80 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [profile-id (dm/get-in state [:profile :id])]
-        (->> (rp/cmd! :get-teams)
-             (rx/mapcat
-              (fn [teams]
-                (let [team        (d/seek #(= (:id %) team-id) teams)
-                      in-org?     (and (contains? cf/flags :nitrate) (:organization-id team))
-                      can-delete? (if in-org?
-                                    (nitrate-perms/allowed? :delete-team
-                                                            {:org-perms {:owner-id    (:organization-owner-id team)
-                                                                         :permissions (:organization-permissions team)}
-                                                             :profile-id profile-id
-                                                             :team-perms (:permissions team)})
-                                    (boolean (dm/get-in team [:permissions :is-owner])))
-                      message     (if in-org?
-                                    (tr "modals.delete-org-team-confirm.message" (:organization-name team))
-                                    (tr "modals.delete-team-confirm.message"))]
-                  (rx/of (teams-fetched teams)
-                         (if can-delete?
-                           (modal/show
-                            {:type :confirm
-                             :title (tr "modals.delete-team-confirm.title")
-                             :message message
-                             :accept-label (tr "modals.delete-team-confirm.accept")
-                             :on-accept delete-fn})
-                           (modal/show :no-permission-modal {:type :delete-team
-                                                             :organization-name (:organization-name team)})))))))))))
+        (with-refreshed-team team-id
+          (fn [team]
+            (let [org         (:organization team)
+                  in-org?     (and (contains? cf/flags :nitrate) org)
+                  can-delete? (if in-org?
+                                (nitrate-perms/allowed? :delete-team
+                                                        {:org-perms {:owner-id    (:owner-id org)
+                                                                     :permissions (:permissions org)}
+                                                         :profile-id profile-id
+                                                         :team-perms (:permissions team)})
+                                (boolean (dm/get-in team [:permissions :is-owner])))
+                  message     (if in-org?
+                                (tr "modals.delete-org-team-confirm.message" (:name org))
+                                (tr "modals.delete-team-confirm.message"))]
+              (rx/of (if can-delete?
+                       (modal/show
+                        {:type :confirm
+                         :title (tr "modals.delete-team-confirm.title")
+                         :message message
+                         :accept-label (tr "modals.delete-team-confirm.accept")
+                         :on-accept delete-fn})
+                       (modal/show :no-permission-modal {:type :delete-team}))))))))))
+
+(defn- check-new-team-members-permission-and-show-invite-members
+  "Receives refreshed team data with up-to-date org
+  permissions, then shows the invite members modal or an appropriate alert."
+  [{:keys [team invite-email origin]}]
+  (ptk/reify ::check-new-team-members-permission-and-show-invite-members
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [show-invite (rx/of (modal/show {:type :invite-members
+                                            :team team
+                                            :origin (or origin :team)
+                                            :invite-email invite-email}))]
+        (if (and (contains? cf/flags :nitrate)
+                 (not (nitrate-perms/allowed? :add-anybody-to-team
+                                              {:org-perms (:organization team)})))
+          (->> (rp/cmd! :all-org-members-in-team
+                        {:team-id (:id team)
+                         :organization-id (get-in team [:organization :id])})
+               (rx/mapcat
+                (fn [all-org-members-in-team?]
+                  (if all-org-members-in-team?
+                    (rx/of (modal/show
+                            {:type :alert
+                             :message (tr "modals.invite-restricted-members.all-org-members-in-team" (get-in team [:organization :name]))
+                             :accept-label (tr "labels.accept")
+                             :accept-style :primary
+                             :title (tr "modals.invite-team-member.title")}))
+                    show-invite))))
+          show-invite)))))
+
+(defn check-and-invite-members
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, then shows invite-members modal or a permission error."
+  [{:keys [team-id origin invite-email]
+    :or {origin :team}}]
+  (ptk/reify ::check-and-invite-members
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile-id (dm/get-in state [:profile :id])]
+        (with-refreshed-team team-id
+          (fn [team]
+            (let [org         (:organization team)
+                  can-invite? (nitrate-perms/can-send-invitations?
+                               {:nitrate-enabled? (contains? cf/flags :nitrate)
+                                :organization org
+                                :profile-id profile-id
+                                :team-permissions (:permissions team)})]
+              (rx/of (if can-invite?
+                       (check-new-team-members-permission-and-show-invite-members {:team team
+                                                                                   :origin origin
+                                                                                   :invite-email invite-email})
+                       (modal/show :no-permission-modal {:type :invite-members}))))))))))
 
 ;; --- EVENT: fetch-members
 
@@ -149,7 +208,15 @@
      (watch [_ state _]
        (when-let [team-id (or team-id (:current-team-id state))]
          (->> (rp/cmd! :get-team-members {:team-id team-id})
-              (rx/map (partial members-fetched team-id))))))))
+              (rx/map (partial members-fetched team-id))
+              (rx/catch (fn [cause]
+                          (let [{:keys [type]} (ex-data cause)]
+                            (if (= :not-found type)
+                              (do
+                                (log/warn :hint "fetch-members: team not found, skipping"
+                                          :team-id (str team-id))
+                                (rx/empty))
+                              (rx/throw cause)))))))))))
 
 (defn- invitations-fetched
   [team-id invitations]
@@ -252,10 +319,10 @@
                           (rx/of (dp/refresh-profile)
                                  (fetch-members team-id)
                                  (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "delete-team-member"
-                                                  :team-id team-id
-                                                  :member-id member-id})))))))))
+                                 (ev/event
+                                  {::ev/name "delete-team-member"
+                                   :team-id team-id
+                                   :member-id member-id})))))))))
 
 
 (defn- stats-fetched
@@ -316,9 +383,9 @@
              (rx/tap on-success)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-photo"
-                                                  :team-id team-id}))))
+                                 (ev/event
+                                  {::ev/name "update-team-photo"
+                                   :team-id team-id}))))
              (rx/catch on-error))))))
 
 
@@ -422,10 +489,10 @@
                 (rx/merge
                  (rx/of (team-leaved params)
                         (fetch-teams)
-                        (ptk/data-event ::ev/event
-                                        {::ev/name "leave-team"
-                                         :reassign-to reassign-to
-                                         :team-id team-id}))
+                        (ev/event
+                         {::ev/name "leave-team"
+                          :reassign-to reassign-to
+                          :team-id team-id}))
                  (on-success))))
              (rx/catch on-error))))))
 
@@ -484,6 +551,53 @@
         (->> (rp/cmd! :create-team-invitations (with-meta rpc-params (meta it)))
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn check-and-submit-invite-members
+  "Fetches fresh team data from the server to ensure up-to-date org
+  permissions, then submits member invitations or shows a restriction modal."
+  [{:keys [team-id] :as params} origin do-invite-members]
+  (ptk/reify ::check-and-submit-invite-members
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if (contains? cf/flags :nitrate)
+        (with-refreshed-team team-id
+          (fn [team]
+            (if (not (nitrate-perms/allowed? :add-anybody-to-team
+                                             {:org-perms (:organization team)}))
+              (->> (rp/cmd! :check-org-members {:organization-id (get-in team [:organization :id])
+                                                :emails (vec (:emails params))})
+                   (rx/mapcat
+                    (fn [result]
+                      (let [blocked (into [] (comp (filter (fn [[_ v]] (not v)))
+                                                   (map first))
+                                          result)]
+                        (cond
+                          (empty? blocked)
+                          (do (do-invite-members params origin) (rx/empty))
+
+                          (= (count blocked) (count result))
+                          (rx/of
+                           (modal/show
+                            {:type :alert
+                             :title (tr "modals.invite-restricted-members.all-blocked-title")
+                             :message (tr "modals.invite-restricted-members.all-blocked")
+                             :accept-label (tr "labels.accept")
+                             :accept-style :primary}))
+
+                          :else
+                          (rx/of
+                           (modal/show
+                            {:type :invite-restricted-members
+                             :blocked-emails blocked
+                             :on-accept (fn []
+                                          (let [valid-emails (into #{} (filter (fn [e] (get result e)))
+                                                                   (:emails params))
+                                                params'      (assoc params :emails valid-emails)]
+                                            (do-invite-members params' origin)))})))))))
+              (do (do-invite-members params origin)
+                  (rx/empty)))))
+        (do (do-invite-members params origin)
+            (rx/empty))))))
 
 (defn copy-invitation-link
   [{:keys [email team-id] :as params}]
@@ -615,9 +729,10 @@
 
 (defn create-webhook
   [{:keys [uri mtype is-active] :as params}]
-  (dm/assert! (contains? valid-mtypes mtype))
-  (dm/assert! (boolean? is-active))
-  (dm/assert! (u/uri? uri))
+
+  (assert (contains? valid-mtypes mtype))
+  (assert (boolean? is-active))
+  (assert (u/uri? uri))
 
   (ptk/reify ::create-webhook
     ptk/WatchEvent
@@ -659,12 +774,6 @@
 
 
 (defn team->organization [team]
-  {:id              (:organization-id team)
-   :slug            (:organization-slug team)
-   :owner-id        (:organization-owner-id team)
-   :avatar-bg-url   (:organization-avatar-bg-url team)
-   :custom-photo    (:organization-custom-photo team)
-   :name            (:organization-name team)
-   :default-team-id (:id team)
-   :permissions     (:organization-permissions team)})
+  (when-let [org (:organization team)]
+    (assoc org :default-team-id (:id team))))
 

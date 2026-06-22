@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.data-test
   (:require
@@ -532,7 +532,12 @@
   (t/is (= {nil 0 :b 2} (d/patch-object {nil 0 :a 1 :b 2} {:a nil})))
   ;; transducer arity (1-arg returns a fn)
   (let [f (d/patch-object {:a 99})]
-    (t/is (= {:a 99 :b 2} (f {:a 1 :b 2})))))
+    (t/is (= {:a 99 :b 2} (f {:a 1 :b 2}))))
+  ;; when object is nil, nil values in changes are stripped (not preserved)
+  (t/is (= {} (d/patch-object nil {:a nil})))
+  (t/is (= {:a 1} (d/patch-object nil {:a 1 :b nil})))
+  ;; nested path: patching a key that doesn't exist creates a new map without nils
+  (t/is (= {:b {:y 2}} (d/patch-object {:b nil} {:b {:x nil :y 2}}))))
 
 (t/deftest without-obj-test
   (t/is (= [1 3] (d/without-obj [1 2 3] 2)))
@@ -883,7 +888,7 @@
   (t/is (not (d/editable-collection? "hello")))
   (t/is (not (d/editable-collection? 42))))
 
-(t/deftest num-predicate
+(t/deftest num-predicate-2
   (t/is (d/num? 1))
   (t/is (d/num? 0))
   (t/is (d/num? -3.14))

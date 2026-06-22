@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.tokens
   (:require
@@ -17,6 +17,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [clojure.datafy :refer [datafy]]
@@ -42,7 +43,16 @@
    :m4 :margin-bottom-left})
 
 (def ^:private map:token-attr-plugin->token-attr
-  (map-invert map:token-attr->token-attr-plugin))
+  (merge
+   (map-invert map:token-attr->token-attr-plugin)
+   {:padding-top    :p1
+    :padding-right  :p2
+    :padding-bottom :p3
+    :padding-left   :p4
+    :margin-top     :m1
+    :margin-right   :m2
+    :margin-bottom  :m3
+    :margin-left    :m4}))
 
 (defn token-attr->token-attr-plugin
   [k]
@@ -80,10 +90,11 @@
     (if (some #(not (token-attr? %)) attrs)
       (u/not-valid plugin-id :applyToSelected attrs)
       (st/emit!
-       (dwta/toggle-token {:token token
-                           :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
-                           :shape-ids shape-ids
-                           :expand-with-children false})))))
+       (-> (dwta/toggle-token {:token token
+                               :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                               :shape-ids shape-ids
+                               :expand-with-children false})
+           (se/add-event plugin-id))))))
 
 (defn- get-resolved-value
   [token tokens-tree]
@@ -123,7 +134,8 @@
                       (ctob/get-tokens set-id)))
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:name value})))}
+       (st/emit! (-> (dwtl/update-token set-id id {:name value})
+                     (se/add-event plugin-id))))}
 
     :type
     {:this true
@@ -173,7 +185,8 @@
      :schema cfo/schema:token-description
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:description value})))}
+       (st/emit! (-> (dwtl/update-token set-id id {:description value})
+                     (se/add-event :plugin-id))))}
 
     :duplicate
     (fn []
@@ -186,12 +199,14 @@
             token' (ctob/make-token (-> (datafy token)
                                         (dissoc :id
                                                 :modified-at)))]
-        (st/emit! (dwtl/create-token set-id token'))
+        (st/emit! (-> (dwtl/create-token set-id token')
+                      (se/add-event plugin-id)))
         (token-proxy plugin-id file-id set-id (:id token'))))
 
     :remove
     (fn []
-      (st/emit! (dwtl/delete-token set-id id)))
+      (st/emit! (-> (dwtl/delete-token set-id id)
+                    (se/add-event plugin-id))))
 
     :applyToShapes
     {:enumerable false
@@ -311,7 +326,8 @@
                                       (ctob/tokens-tree))]
                   [:tuple (-> (cfo/make-token-schema
                                tokens-tree
-                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
+                               nil)
                               ;; Don't allow plugins to set the id
                               (sm/dissoc-key :id)
                               ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
@@ -322,7 +338,14 @@
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)
                   token (ctob/make-token attrs)
-                  tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                  ;; Resolve against all tokens in the library (including those
+                  ;; in inactive sets) so that references to structurally
+                  ;; existing tokens resolve even if their set is not active.
+                  ;; The target set's tokens take precedence over equally named
+                  ;; tokens in other sets, and the new token takes precedence
+                  ;; over all.
+                  tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                                         (ctob/get-tokens tokens-lib id))
                                   (assoc (:name token) token))
                   resolved-tokens (ts/resolve-tokens tokens-tree)
 
@@ -330,7 +353,8 @@
                   (get resolved-tokens (:name token))]
 
               (if resolved-value
-                (do (st/emit! (dwtl/create-token id token))
+                (do (st/emit! (-> (dwtl/create-token id token)
+                                  (se/add-event plugin-id)))
                     (token-proxy plugin-id file-id id (:id token)))
                 (do (u/not-valid plugin-id :addToken (str errors))
                     nil))))}
@@ -494,12 +518,12 @@
 
     :addTheme
     {:enumerable false
-     :schema (fn [attrs]
-               [:tuple (-> (sm/schema (cfo/make-token-theme-schema
-                                       (u/locate-tokens-lib file-id)
-                                       (or (obj/get attrs "group") "")
-                                       (or (obj/get attrs "name") "")
-                                       nil))
+     :schema (fn [args]
+               [:tuple (-> (cfo/make-token-theme-schema
+                            (u/locate-tokens-lib file-id)
+                            (get (first args) :group "")
+                            (get (first args) :name "")
+                            nil)
                            (sm/dissoc-key :id))]) ;; We don't allow plugins to set the id
      :fn (fn [attrs]
            (let [theme (ctob/make-token-theme attrs)]
@@ -511,12 +535,27 @@
      :schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
                                      (u/locate-tokens-lib file-id)
                                      nil))
-                         (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
+                         (sm/dissoc-key :id) ;; We don't allow plugins to set the id
+                         ;; Allow an optional `active` flag so a plugin can create
+                         ;; an already-active set in a single call. Newly created
+                         ;; sets are inactive by default (only active sets affect
+                         ;; shapes and reference resolution). `active` is not part
+                         ;; of the token-set data model, so the :fn strips it and
+                         ;; applies it through the set-activation logic.
+                         (sm/merge [:map [:active {:optional true} ::sm/boolean]]))]
 
      :fn (fn [attrs]
-           (let [attrs (update attrs :name ctob/normalize-set-name)
-                 set (ctob/make-token-set attrs)]
+           (let [active? (boolean (:active attrs))
+                 attrs   (-> attrs
+                             (dissoc :active)
+                             (update :name ctob/normalize-set-name))
+                 set     (ctob/make-token-set attrs)]
              (st/emit! (dwtl/create-token-set set))
+             ;; Newly created sets are inactive by default; activate it when
+             ;; requested. Enabling only adds the set name to the hidden theme,
+             ;; so it does not depend on the create event having propagated yet.
+             (when active?
+               (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) true)))
              ;; Pass the set name as `initial-name` so the proxy can resolve
              ;; it immediately, before the async `st/emit!` above propagates
              ;; the new set into `@st/state`.
@@ -537,4 +576,3 @@
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
                (token-set-proxy plugin-id file-id set-id))))}))
-

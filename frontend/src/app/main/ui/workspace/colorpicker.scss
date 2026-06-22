@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
 @use "ds/spacing";
@@ -14,9 +14,11 @@
 .colorpicker-tooltip {
   @extend %modal-background;
 
+  --colorpicker-width: #{$sz-284};
+
   left: calc(10 * px2rem(140));
   padding: var(--sp-m);
-  width: $sz-284;
+  width: var(--colorpicker-width);
   overflow: auto;
   display: flex;
   flex-direction: column;

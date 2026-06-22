@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options
   (:require-macros [app.main.style :as stl])
@@ -157,8 +157,9 @@
 
      (cond
        (and edit-grid? (d/not-empty? selected-cells))
-       [:& grid-cell/options
-        {:shape (get objects edition)
+       [:> grid-cell/options*
+        {:shape-id (-> (get objects edition)
+                       :id)
          :cells selected-cells}]
 
        edit-grid?
@@ -219,6 +220,7 @@
   [{:keys [objects selected page-id file-id on-change-section on-expand]}]
   (let [permissions
         (mf/use-ctx ctx/permissions)
+        render-context-lost? (mf/deref refs/render-context-lost?)
 
         options-mode
         (mf/deref refs/options-mode-global)
@@ -228,7 +230,7 @@
           (sequence (keep (d/getf objects)) selected))]
 
     [:div {:class (stl/css :tool-window)}
-     (if (:can-edit permissions)
+     (if (and (:can-edit permissions) (not render-context-lost?))
        [:> tab-switcher* {:tabs options-tabs
                           :on-change on-option-tab-change
                           :selected (name options-mode)

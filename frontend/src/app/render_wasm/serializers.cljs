@@ -2,13 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
  (ns app.render-wasm.serializers
    (:require
     [app.common.data :as d]
     [app.common.data.macros :as dm]
+    [app.common.files.helpers :as cfh]
+    [app.common.types.color :as clr]
+    [app.common.types.shape-tree :as ctst]
     [app.common.uuid :as uuid]
+    [app.render-wasm.serializers.color :as sr-clr]
     [app.render-wasm.wasm :as wasm]
     [cuerdas.core :as str]))
 
@@ -281,3 +285,76 @@
   (let [values (unchecked-get wasm/serializers "transform-entry-kind")
         default (unchecked-get values "parent")]
     (d/nilv (unchecked-get values (d/name kind)) default)))
+
+;; --- Guides
+
+;; Each guide is serialized as 5 x 32-bit words:
+;;   kind (u32) | color (u32 argb) | position (f32) | frame-start (f32) | frame-end (f32)
+;; `frame-start`/`frame-end` hold the board clip range (along the guide's line
+;; direction); they are NaN when the guide is not bound to a board.
+(def ^:private guide-entry-size 20)
+
+;; Default guide color used when a guide has no explicit color (matches the
+;; previous SVG overlay `default-guide-color`).
+(def ^:private default-guide-color clr/new-danger)
+
+;; Sentinel clip range for a guide whose board is rotated or not a root frame.
+;; The engine clips each guide to `[start end]` and skips drawing when `start >
+;; end`; both bounds at +Infinity collapse to an empty range, so the guide is
+;; hidden (matching the SVG renderer, which drops it from the DOM).
+;; We hide via the range rather than by removing the guide from the set so the
+;; guide count stays stable and board rendering is unaffected.
+(def ^:private guide-hidden-range [js/Infinity js/Infinity])
+
+(defn- translate-guide-axis
+  "Maps a guide axis to the RawGuideKind discriminant expected by WASM.
+  `:x` (constant x) is a vertical guide, `:y` is a horizontal one."
+  [axis]
+  (let [values  (unchecked-get wasm/serializers "guide-kind")
+        default (unchecked-get values "vertical")]
+    (case axis
+      :x (unchecked-get values "vertical")
+      :y (unchecked-get values "horizontal")
+      default)))
+
+(defn get-guides-byte-size
+  "Total heap size (in bytes) needed to serialize `guides` (a map id -> guide),
+  including the 4-byte header that holds the guide count."
+  [guides]
+  (+ 4 (* (count (or guides {})) guide-entry-size)))
+
+(defn- guide-frame-range
+  "Returns the `[start end]` clip range (along the guide's line direction) for a
+  board-bound guide: the board's y-range for vertical `:x` guides, its x-range
+  for horizontal `:y` guides. Returns nil for free guides (drawn full-length).
+  A guide bound to a rotated or non-root board returns `guide-hidden-range`, an
+  empty range the engine clips out, hiding it like the SVG renderer does."
+  [guide objects]
+  (when-let [frame (some->> (get guide :frame-id) (get objects))]
+    (if (and (cfh/root-frame? frame)
+             (not (ctst/rotated-frame? frame)))
+      (if (= :x (get guide :axis))
+        [(:y frame) (+ (:y frame) (:height frame))]
+        [(:x frame) (+ (:x frame) (:width frame))])
+      guide-hidden-range)))
+
+(defn write-guides
+  "Writes `guides` (a map id -> guide) into the heap views starting at the
+  32-bit `offset`. Layout: count header (u32) followed by
+  `kind | color | position | frame-start | frame-end` per guide. The frame
+  range is resolved from `objects` and written as NaN for free guides."
+  [guides objects heapu32 heapf32 offset]
+  (let [guides (vec (vals (or guides {})))
+        total  (count guides)]
+    (aset heapu32 offset total)
+    (loop [i 0]
+      (when (< i total)
+        (let [guide (nth guides i)
+              base  (+ offset 1 (* i 5))
+              [frame-start frame-end] (guide-frame-range guide objects)]
+          (aset heapu32 base (translate-guide-axis (get guide :axis)))
+          (aset heapu32 (+ base 1) (sr-clr/hex->u32argb (or (get guide :color) default-guide-color) 1))
+          (aset heapf32 (+ base 2) (get guide :position))
+          (aset heapf32 (+ base 3) (or frame-start js/NaN))
+          (aset heapf32 (+ base 4) (or frame-end js/NaN)))
+        (recur (inc i))))))

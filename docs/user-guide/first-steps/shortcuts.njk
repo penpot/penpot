@@ -113,6 +113,21 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td style="text-align: center;"><kbd>⌘</kbd><kbd>V</kbd></td>
     </tr>
     <tr>
+      <td>Paste to replace</td>
+      <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>V</kbd></td>
+      <td style="text-align: center;"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>V</kbd></td>
+    </tr>
+    <tr>
+      <td>Find</td>
+      <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>F</kbd></td>
+      <td style="text-align: center;"><kbd>⌘</kbd><kbd>F</kbd></td>
+    </tr>
+    <tr>
+      <td>Find and replace</td>
+      <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>H</kbd></td>
+      <td style="text-align: center;"><kbd>⌘</kbd><kbd>H</kbd></td>
+    </tr>
+    <tr>
       <td>Redo</td>
       <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd></td>
       <td style="text-align: center;"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd></td>
@@ -195,6 +210,11 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td>Show/hide rulers</td>
       <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd></td>
       <td style="text-align: center;"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>R</kbd></td>
+    </tr>
+    <tr>
+      <td>Show/hide comments</td>
+      <td style="text-align: center;"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd></td>
+      <td style="text-align: center;"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>C</kbd></td>
     </tr>
     <tr>
       <td>Show/hide shortcuts</td>
@@ -422,6 +442,90 @@ desc: Get quickstart tips, shortcuts, and tutorials for Penpot! Learn interface 
       <td>Go to view mode inspect section</td>
       <td style="text-align: center;"><kbd>G</kbd> and then <kbd>H</kbd></td>
       <td style="text-align: center;"><kbd>G</kbd> and then <kbd>H</kbd></td>
+    </tr>
+    <tr>
+      <td>Go to view mode</td>
+      <td style="text-align: center;"><kbd>G</kbd> and then <kbd>V</kbd></td>
+      <td style="text-align: center;"><kbd>G</kbd> and then <kbd>V</kbd></td>
+    </tr>
+    <tr>
+      <td>Go to view mode comments</td>
+      <td style="text-align: center;"><kbd>G</kbd> and then <kbd>C</kbd></td>
+      <td style="text-align: center;"><kbd>G</kbd> and then <kbd>C</kbd></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="layers-panel">Layers panel</h3>
+<p>Keyboard shortcuts and mouse actions for the Layers sidebar. Layer order in the panel is bottom-to-top; <kbd>Tab</kbd> and <kbd>Shift</kbd> + <kbd>Tab</kbd> move between siblings of the current selection (wrapping at the ends). Use <kbd>Ctrl</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd> to change stacking order in the list (see <a href="#modify-layers">Modify layers</a>).</p>
+<table cellspacing="0" cellpadding="1" border="1" width="100%">
+  <thead>
+    <tr>
+      <th valign="top" class="cellrowborder"><strong>Action</strong></th>
+      <th valign="top" class="cellrowborder" style="text-align: center;"><strong>Linux and Windows</strong></th>
+      <th style="text-align: center;"><strong>macOS</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Select next layer (sibling)</td>
+      <td style="text-align: center;"><kbd>Tab</kbd></td>
+      <td style="text-align: center;"><kbd>Tab</kbd></td>
+    </tr>
+    <tr>
+      <td>Select previous layer (sibling)</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>Tab</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>Tab</kbd></td>
+    </tr>
+    <tr>
+      <td>Select parent layer</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>Enter</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>Enter</kbd></td>
+    </tr>
+    <tr>
+      <td>Select children (group, frame, or boolean; single selection)</td>
+      <td style="text-align: center;"><kbd>Enter</kbd></td>
+      <td style="text-align: center;"><kbd>Enter</kbd></td>
+    </tr>
+    <tr>
+      <td>Rename next layer (while renaming in the panel)</td>
+      <td style="text-align: center;"><kbd>Tab</kbd></td>
+      <td style="text-align: center;"><kbd>Tab</kbd></td>
+    </tr>
+    <tr>
+      <td>Rename previous layer (while renaming in the panel)</td>
+      <td style="text-align: center;"><kbd>Shift</kbd><kbd>Tab</kbd></td>
+      <td style="text-align: center;"><kbd>⇧</kbd><kbd>Tab</kbd></td>
+    </tr>
+    <tr>
+      <td>Toggle expand or collapse (group or board)</td>
+      <td style="text-align: center;">Click disclosure arrow</td>
+      <td style="text-align: center;">Click disclosure arrow</td>
+    </tr>
+    <tr>
+      <td>Expand entire subtree (when collapsed)</td>
+      <td style="text-align: center;"><kbd>Alt</kbd> + click disclosure arrow</td>
+      <td style="text-align: center;"><kbd>⌥</kbd> + click disclosure arrow</td>
+    </tr>
+    <tr>
+      <td>Collapse all layers in the sidebar (when expanded)</td>
+      <td style="text-align: center;"><kbd>Shift</kbd> + click disclosure arrow</td>
+      <td style="text-align: center;"><kbd>⇧</kbd> + click disclosure arrow</td>
+    </tr>
+    <tr>
+      <td>Add layer to selection</td>
+      <td style="text-align: center;"><kbd>Ctrl</kbd> + click layer</td>
+      <td style="text-align: center;"><kbd>⌘</kbd> + click layer</td>
+    </tr>
+    <tr>
+      <td>Range select layers</td>
+      <td style="text-align: center;"><kbd>Shift</kbd> + click layer</td>
+      <td style="text-align: center;"><kbd>⇧</kbd> + click layer</td>
+    </tr>
+    <tr>
+      <td>Zoom to layer</td>
+      <td style="text-align: center;">Double-click layer icon</td>
+      <td style="text-align: center;">Double-click layer icon</td>
     </tr>
   </tbody>
 </table>

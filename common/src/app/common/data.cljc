@@ -2,14 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.data
   "A collection of helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid max min regexp? array?])
+                            parse-uuid max min regexp? array? empty?])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -175,9 +175,17 @@
        (.isArray (class o))
        false)))
 
+(defn empty?
+  [val]
+  (if (or (coll? val) (string? val))
+    (clojure.core/empty? val)
+    (nil? val)))
+
 (defn not-empty?
-  [coll]
-  (boolean (seq coll)))
+  [val]
+  (if (or (coll? val) (string? val))
+    (boolean (seq val))
+    (some? val)))
 
 (defn editable-collection?
   [m]
@@ -379,7 +387,7 @@
                :else
                (assoc object key value)))
            object))
-     changes)))
+     (without-nils changes))))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the

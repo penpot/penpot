@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
  (ns app.common.types.text
    (:require
@@ -77,6 +77,10 @@
    text-decoration-attrs
    text-transform-attrs
    text-fills))
+
+(defn text-node-attr?
+  [attr]
+  (d/index-of text-node-attrs attr))
 
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
@@ -201,6 +205,27 @@
   [text]
   (subs text 0 (min 280 (count text))))
 
+(defn- compare-text-attr
+  "Compare two attribute values and return true if they are different.
+   Take into account the following:
+    - Only process keys that belong to text node attrs (ignore deprecated
+      attributes or other things that may be attached).
+    - Consider nil values, empty strings or empty lists all equal.
+    - Normalize numeric values (legacy) into strings.
+    - No value is equal than the default value."
+  [key value1 value2]
+  (when (text-node-attr? key)
+    (let [default-value (get default-text-attrs key)
+          normalize-value (fn [value]
+                            (as-> value $
+                              (if (number? $) (str $) $)
+                              (if (or (d/empty? $) (= $ default-value))
+                                nil
+                                $)))
+          value1' (normalize-value value1)
+          value2' (normalize-value value2)]
+      (not= value1' value2'))))
+
 (defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the differences info.
@@ -242,8 +267,10 @@
                acc)
 
              :else
-             ;; If the key is not :text, and they are different, it is an attribute differece
-             (if (not= v1 v2)
+             ;; If the key is not :text, and they are different, it is an attribute difference.
+             ;; Take into account that some processes remove empty attributes, so in some
+             ;; cases we will compare [] with nil, and this is not a difference.
+             (if (compare-text-attr k v1 v2)
                (attribute-cb acc k)
                acc))))
        #{}

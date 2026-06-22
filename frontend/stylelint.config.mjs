@@ -3,7 +3,7 @@ import postcssScss from "postcss-scss";
 /** @type {import("stylelint").Config} */
 export default {
   extends: ["stylelint-config-standard-scss"],
-  plugins: ["stylelint-scss", "stylelint-use-logical-spec"],
+  plugins: ["stylelint-scss", "stylelint-plugin-logical-css"],
   overrides: [
     {
       files: ["**/*.scss"],
@@ -13,6 +13,7 @@ export default {
   rules: {
     "at-rule-no-unknown": null,
     "declaration-property-value-no-unknown": null,
+    "property-no-unknown": [true, { ignoreProperties: ["text-box"] }],
     "selector-pseudo-class-no-unknown": [
       true,
       { ignorePseudoClasses: ["global"] }, // TODO: Avoid global selector usage and remove this exception
@@ -58,7 +59,7 @@ export default {
     "font-weight-notation": "numeric",
     // // URLs
     "function-url-no-scheme-relative": true,
-    // "liberty/use-logical-spec": "always",
+    // "plugin/use-logical-properties-and-values": "always",
     "selector-class-pattern": null,
     "alpha-value-notation": "number",
     "color-function-notation": "modern",

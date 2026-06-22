@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.storage
   "Objects storage abstraction layer."
@@ -135,7 +135,8 @@
         ;; still not deleted.
         result (when (and (::deduplicate? params)
                           (:hash mdata)
-                          (:bucket mdata))
+                          (:bucket mdata)
+                          (not= "tempfile" (:bucket mdata)))
                  (let [result (get-database-object-by-hash connectable backend
                                                            (:bucket mdata)
                                                            (:hash mdata))]

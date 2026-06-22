@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.tokens.errors
   (:require
@@ -44,6 +44,10 @@
    {:error/code :error.token/direct-self-reference
     :error/fn #(tr "errors.tokens.self-reference")}
 
+   :error.token/circular-reference
+   {:error/code :error.token/circular-reference
+    :error/fn #(tr "errors.tokens.circular-reference")}
+
    :error.token/invalid-color
    {:error/code :error.token/invalid-color
     :error/fn #(str (tr "errors.tokens.invalid-color" %))}
@@ -51,6 +55,16 @@
    :error.token/number-too-large
    {:error/code :error.token/number-too-large
     :error/fn #(str (tr "errors.tokens.number-too-large" %))}
+
+   ;; Surfaced when a token name conflicts with a token-group prefix
+   ;; across the active sets (e.g. one set defines `a`, another set
+   ;; defines `a.b`). DTCG/StyleDictionary cannot represent both as
+   ;; resolvable leaves, so the colliding token is preserved with this
+   ;; error rather than silently disappearing from the sidebar — see
+   ;; #9584.
+   :error.token/name-collision
+   {:error/code :error.token/name-collision
+    :error/fn #(str (tr "errors.tokens.name-collision" %))}
 
    :error.style-dictionary/missing-reference
    {:error/code :error.style-dictionary/missing-reference
@@ -141,9 +155,11 @@
   :error/value to produce the message.  Falls back to :message for
   errors that originate from schema-validation (which have no :error/fn)."
   [error]
-  (if-let [f (:error/fn error)]
-    (f (:error/value error))
-    (:message error)))
+  (if error
+    (if-let [f (:error/fn error)]
+      (f (:error/value error))
+      (:message error))
+    (tr "labels.unknown-error")))
 
 (defn resolve-error-assoc-message
   "Returns the error map with a :message key set to the resolved human-
@@ -151,9 +167,11 @@
   is called with :error/value; otherwise the map is returned unchanged
   (it is expected to already carry a :message from schema-validation)."
   [error]
-  (if-let [f (:error/fn error)]
-    (assoc error :message (f (:error/value error)))
-    error))
+  (if error
+    (if-let [f (:error/fn error)]
+      (assoc error :message (f (:error/value error)))
+      error)
+    (assoc error :message (tr "labels.unknown-error"))))
 
 (defn humanize-errors [errors]
   (->> errors

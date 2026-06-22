@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.loggers-webhooks-test
   (:require
@@ -41,7 +41,7 @@
       (t/is (nil? res)))))
 
 (t/deftest run-webhook-handler-1
-  (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 200}}]
+  (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           evt  {:type "command"
@@ -63,7 +63,7 @@
         (t/is (nil? (:error-code whk')))))))
 
 (t/deftest run-webhook-handler-2
-  (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 400}}]
+  (with-mocks [http-mock {:target 'app.http.client/req :return {:status 400}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           evt  {:type "command"

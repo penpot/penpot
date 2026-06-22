@@ -1,0 +1,57 @@
+name: "CI: WASM"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'render-wasm/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'render-wasm/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-render-wasm:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Render WASM Tests"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Format
+        working-directory: ./render-wasm
+        run: |
+          cargo fmt --check
+
+      - name: Lint
+        working-directory: ./render-wasm
+        run: |
+          ./lint
+
+      - name: Test
+        working-directory: ./render-wasm
+        run: |
+          ./test

@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.shortcuts
   (:require
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
@@ -15,6 +16,7 @@
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
@@ -29,8 +31,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
-   [app.util.dom :as dom]
-   [potok.v2.core :as ptk]))
+   [app.util.dom :as dom]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -40,6 +41,19 @@
   [flag]
   (-> (dw/toggle-layout-flag flag)
       (vary-meta assoc ::ev/origin "workspace-shortcuts")))
+
+(defn on-display-guides-keydown
+  [^js event]
+  (let [mod?   (if (cf/check-platform? :macos)
+                 (.-metaKey event)
+                 (.-ctrlKey event))
+        shift? (.-shiftKey event)
+        code   (.-code event)]
+    (when (and mod?
+               (or (and (not shift?) (= "Quote" code))
+                   (and shift?       (= "Backslash" code))))
+      (.preventDefault event)
+      (st/emit! (toggle-layout-flag :display-guides)))))
 
 (defn- emit-when-no-readonly
   [& events]
@@ -308,6 +322,12 @@
                           :command "c"
                           :subsections [:tools]
                           :fn #(st/emit! (dwd/select-for-drawing :comments))}
+
+   :toggle-comments-visibility
+   {:tooltip (ds/meta-shift "C")
+    :command (ds/c-mod "shift+c")
+    :subsections [:main-menu]
+    :fn #(st/emit! (dwcm/toggle-comments-visibility {:origin "workspace-shortcuts"}))}
 
    :insert-image         {:tooltip (ds/shift "K")
                           :command "shift+k"
@@ -598,7 +618,7 @@
                            :subsections [:basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
                                   (st/emit!
-                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
+                                   (ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
                                    (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts

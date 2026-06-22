@@ -2,14 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.top-bar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -23,18 +25,24 @@
   []
   (let [on-close
         (mf/use-fn
-         #(st/emit! :interrupt
-                    (dw/set-options-mode :design)
-                    (dwc/set-workspace-read-only false)))]
+         (fn []
+           (st/emit! :interrupt
+                     (dw/set-options-mode :design)
+                     (dwc/set-workspace-read-only false))))
+        render-context-lost? (mf/deref refs/render-context-lost?)]
     [:div {:class (stl/css :viewport-actions)}
      [:div {:class (stl/css :viewport-actions-container)}
       [:div {:class (stl/css :viewport-actions-title)}
        [:> i18n/tr-html*
         {:tag-name "span"
-         :content (tr "workspace.top-bar.view-only")}]]
-      [:button {:class (stl/css :done-btn)
-                :on-click on-close}
-       (tr "workspace.top-bar.read-only.done")]]]))
+         :content (tr (if render-context-lost?
+                        "workspace.top-bar.webgl-context-lost"
+                        "workspace.top-bar.view-only"))}]]
+      (if render-context-lost?
+        [:> button* {:variant "primary" :on-click (fn [] (js/location.reload))}
+         (tr "workspace.top-bar.webgl-context-lost.reload")]
+        [:> button* {:on-click on-close}
+         (tr "workspace.top-bar.read-only.done")])]]))
 
 (mf/defc path-edition-bar*
   [{:keys [layout edit-path-state shape]}]

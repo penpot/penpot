@@ -1,5 +1,12 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
+import { formatTaskError } from "./ErrorUtils";
+
+/**
+ * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
+ * enabled (as opposed to a local server used with the explicitly loaded plugin)
+ */
+const isIntegratedRemoteMcp = !!mcp;
 
 /**
  * Extracts the major.minor.patch prefix from a version string.
@@ -23,12 +30,17 @@ const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
 penpot.ui.open("Penpot MCP Plugin", `?theme=${penpot.theme}`, {
     width: 236,
     height: 210,
-    hidden: !!mcp,
+    hidden: isIntegratedRemoteMcp,
 } as any);
 
 // Register message handlers
 penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task: string; params: any }>((message) => {
     if (typeof message === "object" && message.type === "ui-initialized") {
+        // Inform the UI about the operating mode
+        penpot.ui.sendMessage({
+            type: "mcp-mode",
+            integratedRemoteMcp: isIntegratedRemoteMcp,
+        });
         // Check Penpot version compatibility
         const penpotVersionPrefix = penpot.version ? extractVersionPrefix(penpot.version) : "<2.15"; // pre-2.15 versions don't have version info
         const mcpVersionPrefix = extractVersionPrefix(PENPOT_MCP_VERSION);
@@ -42,7 +54,7 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
             });
         }
         // Initiate connection to remote MCP server (if enabled)
-        if (mcp) {
+        if (isIntegratedRemoteMcp) {
             penpot.ui.sendMessage({
                 type: "start-server",
                 url: mcp?.getServerUrl(),
@@ -86,8 +98,7 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
             console.log("Task handled successfully:", task);
         } catch (error) {
             console.error("Error handling task:", error);
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            task.sendError(`Error handling task: ${errorMessage}`);
+            task.sendError(`Error handling task: ${formatTaskError(error)}`);
         }
     } else {
         console.error("Unknown plugin task:", request.task);

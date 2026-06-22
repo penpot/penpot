@@ -1,7 +1,7 @@
 name = "icons-plugin"
 compatibility_date = "2025-01-01"
 
-assets = { directory = "../../dist/apps/icons-plugin/browser" }
+assets = { directory = "../../dist/apps/icons-plugin" }
 
 [[routes]]
 pattern = "WORKER_URI"

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.color
   "FIXME: this is legacy namespace, all functions of this ns should be
@@ -93,3 +93,14 @@
           (mth/floor (* (js/Math.random) 256))
           (mth/floor (* (js/Math.random) 256))
           (mth/floor (* (js/Math.random) 256))))
+
+(defn parse-css-color
+  "Normalizes a CSS color string to #rrggbb.
+   Handles #rrggbb, #rgb, rgb()."
+  [raw]
+  (let [s (some-> raw str/trim)]
+    (when (string? s)
+      (cond
+        (cc/valid-hex-color? s)
+        (-> (subs s 1) cc/expand-hex cc/prepend-hash)
+        :else (some-> (cc/parse-rgb s) cc/rgb->hex)))))

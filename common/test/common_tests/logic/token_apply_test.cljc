@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.logic.token-apply-test
   (:require
@@ -111,8 +111,8 @@
       (tht/apply-token-to-shape :frame1 "token-color" [:stroke-color] [:stroke-color] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-color" [:fill] [:fill] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
-      (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] 24)
-      (tht/apply-token-to-shape :text1 "token-letter-spacing" [:letter-spacing] [:letter-spacing] 2)
+      (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] "24")
+      (tht/apply-token-to-shape :text1 "token-letter-spacing" [:letter-spacing] [:letter-spacing] "2")
       (tht/apply-token-to-shape :text1 "token-font-family" [:font-family] [:font-family] ["Helvetica" "Arial" "sans-serif"])
       (tht/apply-token-to-shape :circle1
                                 "token-sizing"
@@ -331,7 +331,7 @@
                                                    d/txt-merge
                                                    {:fills (ths/sample-fills-color :fill-color "#fabada")
                                                     :font-size "1"
-                                                    :letter-spacing "0"
+                                                    :letter-spacing "3"
                                                     :font-family "Arial"}))
                                                 (:objects page)
                                                 {})
@@ -360,3 +360,40 @@
     (t/is (= (count applied-tokens-frame') 0))
     (t/is (= (count applied-tokens-text') 0))
     (t/is (= (count applied-tokens-circle') 0))))
+
+(t/deftest dont-unapply-automatic-when-null-change
+  (let [;; ==== Setup
+        file    (-> (setup-file)
+                    (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] "14")
+                    (tht/apply-token-to-shape :text1 "token-letter-spacing" [:letter-spacing] [:letter-spacing] "2")
+                    (tht/apply-token-to-shape :text1 "token-font-family" [:font-family] [:font-family] ["Helvetica" "Arial" "sans-serif"]))
+        page    (thf/current-page file)
+        text1   (ths/get-shape file :text1)
+
+        ;; ==== Action
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    ;; Some changes in text content are not semantic changes
+                    ;; and thus they don't unapply tokens (e.g. adding an attribute
+                    ;; with value nil or with the default value).
+                    (cls/generate-update-shapes [(:id text1)]
+                                                (fn [shape]
+                                                  (txt/update-text-content
+                                                   shape
+                                                   txt/is-content-node?
+                                                   d/txt-merge
+                                                   {:font-size nil
+                                                    :line-height "3"
+                                                    :nonexistent-attr "sample value"}))
+                                                (:objects page)
+                                                {}))
+
+        file' (thf/apply-changes file changes)
+
+        ;; ==== Get
+        text1'                  (ths/get-shape file' :text1)
+        applied-tokens-text'    (:applied-tokens text1')]
+
+    ;; ==== Check
+    (t/is (= (count applied-tokens-text') 3))))

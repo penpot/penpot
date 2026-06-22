@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.shape
   (:require
@@ -122,7 +122,7 @@
     [:& (mf/provider muc/render-id) {:value render-id}
      [:> :g wrapper-props
       (when include-metadata?
-        [:& ed/export-data {:shape shape}])
+        [:> ed/export-data* {:shape shape}])
 
       [:defs
        [:> defs/svg-defs*         {:shape shape :render-id render-id}]

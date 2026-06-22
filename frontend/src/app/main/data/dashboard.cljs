@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.dashboard
   (:require
@@ -27,6 +27,7 @@
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -481,7 +482,7 @@
            (->> (rp/cmd! :get-file-summary {:id id})
                 (rx/map (fn [summary]
                           (when (-> summary :variants :count pos?)
-                            (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
+                            (ev/event {::ev/name "set-file-variants-shared" ::ev/origin "dashboard"})))))))))))
 
 (defn set-file-thumbnail
   [file-id thumbnail-id]
@@ -726,21 +727,24 @@
                             :timeout nil})
                  (dtm/fetch-teams)
                  ;; When the user is currently on a team of the org
-                 (when (= organization-id (:organization-id team))
+                 (when (= organization-id (dm/get-in team [:organization :id]))
                    (dcm/go-to-dashboard-recent {:team-id :default}))))))))
 
 
 (defn- handle-organization-deleted
-  [{:keys [organization-name teams deleted-teams]}]
+  [{:keys [organization-id organization-name teams deleted-teams]}]
   (ptk/reify ::handle-organization-deleted
     ptk/WatchEvent
     (watch [_ state _]
       (when (contains? cf/flags :nitrate)
         (let [team-id        (:current-team-id state)
+              current-team   (dm/get-in state [:teams team-id])
+              current-org-id (dm/get-in current-team [:organization :id])
               teams-set      (set teams)
               notify?        (contains? teams-set team-id)
               fetch?         (some (:teams state) teams)
-              go-to-default? (some #{team-id} deleted-teams)]
+              go-to-default? (or (some #{team-id} deleted-teams)
+                                 (= organization-id current-org-id))]
           (rx/concat
            (when go-to-default? ;; If the user is currently on one of the deleted teams
              (rx/of (dcm/go-to-dashboard-recent {:team-id :default})))
@@ -753,15 +757,35 @@
            (when fetch? ;; If the user belonged to the org
              (rx/of (dtm/fetch-teams)))))))))
 
+(defn- handle-nitrate-change-sso
+  [{:keys [organization-id]}]
+  (ptk/reify ::handle-nitrate-change-sso
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (contains? cf/flags :nitrate)
+        (let [team-id (:current-team-id state)
+              team    (dm/get-in state [:teams team-id])
+              org-id  (dm/get-in team [:organization :id])]
+          (when (= organization-id org-id)
+            (let [url (rt/get-current-href)]
+              (->> (rp/cmd! :check-nitrate-sso {:team-id team-id :url url})
+                   (rx/mapcat (fn [{:keys [authorized redirect-uri]}]
+                                (if authorized
+                                  (rx/empty)
+                                  (if redirect-uri
+                                    (rx/of (rt/nav-raw :uri (str redirect-uri)))
+                                    (rx/empty)))))))))))))
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :notification           (dcm/handle-notification msg)
-    :team-role-change       (handle-change-team-role msg)
-    :team-membership-change (dcm/team-membership-change msg)
-    :team-org-change        (handle-change-team-org msg)
-    :user-org-change        (handle-user-org-change msg)
-    :organization-deleted   (handle-organization-deleted msg)
+    :notification            (dcm/handle-notification msg)
+    :team-role-change        (handle-change-team-role msg)
+    :team-membership-change  (dcm/team-membership-change msg)
+    :team-org-change         (handle-change-team-org msg)
+    :user-org-change         (handle-user-org-change msg)
+    :organization-deleted    (handle-organization-deleted msg)
+    :organization-change-sso (handle-nitrate-change-sso msg)
     nil))
 
 

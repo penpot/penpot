@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.colors
   (:require
@@ -40,6 +40,20 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (layout/toggle-layout-flag :colorpalette :force? true)
+             (mbc/event colorpalette-selected-broadcast-key selected)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
+
+(defn toggle-palette
+  "Toggle the palette tool and change the library it uses"
+  [selected]
+  (ptk/reify ::toggle-palette
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (layout/toggle-layout-flag :colorpalette)
              (mbc/event colorpalette-selected-broadcast-key selected)))
 
     ptk/EffectEvent
@@ -738,7 +752,7 @@
         [h s v] (clr/hex->hsv value)]
     (merge data
            {:hex (or value "000000")
-            :alpha (or opacity 1)
+            :alpha (if (d/nan? opacity) 1 (or opacity 1))
             :r r :g g :b b
             :h h :s s :v v})))
 
@@ -815,7 +829,6 @@
               (rx/filter (ptk/type? ::update-colorpicker-add-stop) stream)
               (rx/filter (ptk/type? ::update-colorpicker-add-auto) stream)
               (rx/filter (ptk/type? ::remove-gradient-stop) stream))
-             (rx/debounce 40)
              (rx/map (constantly (colorpicker-onchange-runner on-change)))
              (rx/take-until stopper))))
 
@@ -1048,7 +1061,15 @@
           (when-let [color (-> state
                                (select-keys [:image :gradient :color :opacity])
                                (not-empty))]
-            (rx/of (add-recent-color color))))))))
+            ;; Closing the dialog while an image-fill upload is still in
+            ;; flight (or a gradient is mid-edit) leaves the colorpicker
+            ;; with a partial selection — opacity-only, or with stops not
+            ;; yet committed. ``add-recent-color`` runs the value through
+            ;; ``check-color`` and asserts; gate on the same schema here
+            ;; so the partial value is silently dropped instead of crashing
+            ;; the workspace.
+            (when (clr/valid-color? color)
+              (rx/of (add-recent-color color)))))))))
 
 (defn update-colorpicker-gradient
   [changes]

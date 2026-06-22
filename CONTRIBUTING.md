@@ -175,26 +175,26 @@ Commit messages must follow this format:
 
 ### Commit types
 
-| Emoji                  | Description                |
-| ---------------------- | -------------------------- |
-| :bug:                  | Bug fix                    |
-| :sparkles:             | Improvement or enhancement |
-| :tada:                 | New feature                |
-| :recycle:              | Refactor                   |
-| :lipstick:             | Cosmetic changes           |
-| :ambulance:            | Critical bug fix           |
-| :books:                | Documentation              |
-| :construction:         | Work in progress           |
-| :boom:                 | Breaking change            |
-| :wrench:               | Configuration update       |
-| :zap:                  | Performance improvement    |
-| :whale:                | Docker-related change      |
-| :paperclip:            | Other non-relevant changes |
-| :arrow_up:             | Dependency update          |
-| :arrow_down:           | Dependency downgrade       |
-| :fire:                 | Removal of code or files   |
-| :globe_with_meridians: | Add or update translations |
-| :rocket:               | Epic or highlight          |
+| Emoji                  | Code                     | Description                |
+| ---------------------- | ------------------------ | -------------------------- |
+| :bug:                  | `:bug:`                  | Bug fix                    |
+| :sparkles:             | `:sparkles:`             | Improvement or enhancement |
+| :tada:                 | `:tada:`                 | New feature                |
+| :recycle:              | `:recycle:`              | Refactor                   |
+| :lipstick:             | `:lipstick:`             | Cosmetic changes           |
+| :ambulance:            | `:ambulance:`            | Critical bug fix           |
+| :books:                | `:books:`                | Documentation              |
+| :construction:         | `:construction:`         | Work in progress           |
+| :boom:                 | `:boom:`                 | Breaking change            |
+| :wrench:               | `:wrench:`               | Configuration update       |
+| :zap:                  | `:zap:`                  | Performance improvement    |
+| :whale:                | `:whale:`                | Docker-related change      |
+| :paperclip:            | `:paperclip:`            | Other non-relevant changes |
+| :arrow_up:             | `:arrow_up:`             | Dependency update          |
+| :arrow_down:           | `:arrow_down:`           | Dependency downgrade       |
+| :fire:                 | `:fire:`                 | Removal of code or files   |
+| :globe_with_meridians: | `:globe_with_meridians:` | Add or update translations |
+| :rocket:               | `:rocket:`               | Epic or highlight          |
 
 ### Rules
 
@@ -250,9 +250,8 @@ setting this up.
 
 ## Changelog
 
-When your change is user-facing or otherwise notable, add an entry to
-[CHANGES.md](CHANGES.md) following the same commit-type conventions. Reference
-the relevant GitHub issue or Taiga user story.
+The changelog is updated automatically as part of the release process. Contributors
+should **not** modify `CHANGES.md` manually in their pull requests.
 
 ## Code of Conduct
 
