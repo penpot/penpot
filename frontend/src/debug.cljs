@@ -37,8 +37,6 @@
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]
-   [app.util.object :as obj]
-   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
@@ -135,6 +133,14 @@
       (wasm.mem/free)
       text)))
 
+(defn ^:export wasmCaptureFrames
+  [amount]
+  (let [module wasm/internal-module
+        f      (when module (unchecked-get module "_capture_frames"))]
+    (if (fn? f)
+      (wasm.h/call module "_capture_frames" amount)
+      (js/console.warn "[debug] render-wasm module not ready or missing _render_stats"))))
+
 (defn ^:export wasmRenderStats
   []
   (let [module wasm/internal-module
@@ -212,31 +218,6 @@
   z-index: 99999;
   opacity: 0.5;
 ")
-
-(defn ^:export fps
-  "Adds a widget to keep track of the average FPS's"
-  []
-  (let [last (volatile! (.now js/performance))
-        avg  (volatile! 0)
-        node (-> (.createElement js/document "div")
-                 (obj/set! "id" "fps")
-                 (obj/set! "style" widget-style))
-        body (obj/get js/document "body")
-
-        do-thing (fn do-thing []
-                   (timers/raf
-                    (fn []
-                      (let [cur (.now js/performance)
-                            ts (/ 1000 (* (- cur @last)))
-                            val (+ @avg (* (- ts @avg) 0.1))]
-
-                        (obj/set! node "innerText" val)
-                        (vreset! last cur)
-                        (vreset! avg val)
-                        (do-thing)))))]
-
-    (.appendChild body node)
-    (do-thing)))
 
 (defn ^:export dump-state []
   (logjs "state" @st/state)

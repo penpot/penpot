@@ -27,8 +27,7 @@
 
 ;; DEPRECATED, use fill-block-styles* instead.
 ;; This component is kept for backward compatibility
-(mf/defc fill-block
-  {::mf/wrap-props false}
+(mf/defc fill-block*
   [{:keys [objects shape]}]
   (let [format*   (mf/use-state :hex)
         format    (deref format*)
@@ -84,7 +83,7 @@
                                       :shape shape}])
             (if (seq (:fills shape))
               (for [value (:fills shape [])]
-                [:& fill-block {:key (str "fill-block-" (:id shape) value)
-                                :shape value}])
-              [:& fill-block {:key (str "fill-block-only" (:id shape))
-                              :shape shape}])))]])))
+                [:> fill-block* {:key (str "fill-block-" (:id shape) value)
+                                 :shape value}])
+              [:> fill-block* {:key (str "fill-block-only" (:id shape))
+                               :shape shape}])))]])))

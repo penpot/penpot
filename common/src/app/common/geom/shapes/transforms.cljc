@@ -283,7 +283,7 @@
     [selrect transform (when (some? transform) (gmt/inverse transform))]))
 
 (defn- adjust-shape-flips
-  "After some tranformations the flip-x/flip-y flags can change we need
+  "After some transformations the flip-x/flip-y flags can change we need
   to check this before adjusting the selrect"
   [shape points]
   (let [points' (dm/get-prop shape :points)

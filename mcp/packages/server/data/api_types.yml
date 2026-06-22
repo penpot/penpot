@@ -15,7 +15,7 @@ Penpot:
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
-            sendMessage: (message: unknown) => void;
+            sendMessage: (message: unknown, throwOnError?: boolean) => void;
             onMessage: <T>(callback: (message: T) => void) => void;
         };
         utils: ContextUtils;
@@ -105,7 +105,7 @@ Penpot:
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
-            sendMessage: (message: unknown) => void;
+            sendMessage: (message: unknown, throwOnError?: boolean) => void;
             onMessage: <T>(callback: (message: T) => void) => void;
         }
         ```
@@ -130,7 +130,7 @@ Penpot:
           ```
           penpot.ui.resize(300, 400);
           ```
-        * sendMessage: (message: unknown) => void
+        * sendMessage: (message: unknown, throwOnError?: boolean) => void
 
           Sends a message to the plugin UI.
 
@@ -11244,7 +11244,7 @@ LibraryComponent:
     interface LibraryComponent {
         instance(): Shape;
         mainInstance(): Shape;
-        isVariant(): boolean;
+        isVariant(): this is LibraryVariantComponent;
         transformInVariant(): void;
         id: string;
         libraryId: string;
@@ -11318,12 +11318,14 @@ LibraryComponent:
         Returns the reference to the main component shape.
       isVariant: |-
         ```
-        isVariant(): boolean
+        isVariant(): this is LibraryVariantComponent
         ```
 
-        Returns boolean
+        Checks whether this component is a variant component.
+        If true, the component can be used as a `LibraryVariantComponent`,
+        which provides additional attributes (e.g. `variants`) and methods.
 
-        true when this component is a VariantComponent
+        Returns this is LibraryVariantComponent
       transformInVariant: |-
         ```
         transformInVariant(): void
@@ -11474,7 +11476,7 @@ LibraryVariantComponent:
     interface LibraryVariantComponent {
         instance(): Shape;
         mainInstance(): Shape;
-        isVariant(): boolean;
+        isVariant(): this is LibraryVariantComponent;
         transformInVariant(): void;
         variants: Variants | null;
         variantProps: { [property: string]: string };
@@ -11499,7 +11501,7 @@ LibraryVariantComponent:
     * LibraryComponent
       + LibraryVariantComponent
 
-    Referenced by: ContextTypesUtils
+    Referenced by: ContextTypesUtils, LibraryComponent, LibraryVariantComponent
   members:
     Properties:
       variants: |-
@@ -11571,12 +11573,14 @@ LibraryVariantComponent:
         Returns the reference to the main component shape.
       isVariant: |-
         ```
-        isVariant(): boolean
+        isVariant(): this is LibraryVariantComponent
         ```
 
-        Returns boolean
+        Checks whether this component is a variant component.
+        If true, the component can be used as a `LibraryVariantComponent`,
+        which provides additional attributes (e.g. `variants`) and methods.
 
-        true when this component is a VariantComponent
+        Returns this is LibraryVariantComponent
       transformInVariant: |-
         ```
         transformInVariant(): void

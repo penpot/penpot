@@ -110,7 +110,7 @@
 ;; DEPRECATED and all new code should not use it and old code should
 ;; be gradually migrated to more efficient approach
 (def libraries
-  "A derived state that contanins the currently loaded shared
+  "A derived state that contains the currently loaded shared
   libraries with all its content; including the current file"
   (l/derived (fn [state]
                (let [files   (get state :files)

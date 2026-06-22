@@ -81,7 +81,7 @@
       (let [xform (comp
                    (remove cfh/frame-shape?)
                    (mapcat #(cfh/get-children-with-self objects (:id %))))]
-        [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
+        [:> ff/fontfaces-style* {:shapes (into [] xform shapes)}])
 
       [:g.frame-children
        (for [shape shapes]
@@ -96,46 +96,50 @@
                 :thumbnail? thumbnail?}]
               [:& shape-wrapper {:shape shape}])]))]]]))
 
-(mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
-   ::mf/wrap-props false}
-  [props]
-  (let [shape      (unchecked-get props "shape")
-        shape-type (dm/get-prop shape :type)
-        shape-id   (dm/get-prop shape :id)
-
-        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
-        active-frames
-        (when (cfh/root-frame? shape)
-          (mf/use-ctx ctx/active-frames))
-
-        thumbnail?
-        (and (some? active-frames)
-             (not (contains? active-frames shape-id)))
-
-        props         #js {:shape shape :thumbnail? thumbnail?}
-
+(defn- render-shape-content
+  [shape thumbnail?]
+  (let [shape-type    (dm/get-prop shape :type)
         rawsvg?       (= :svg-raw shape-type)
         wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
         wrapper-props (if ^boolean rawsvg?
                         #js {}
-                        #js {:className "workspace-shape-wrapper"})]
-
+                        #js {:className "workspace-shape-wrapper"})
+        props         #js {:shape shape :thumbnail? thumbnail?}]
     (when (and (some? shape)
                (not ^boolean (:hidden shape)))
-      [:> wrapper-elem wrapper-props
-       (case shape-type
-         :path    [:> path/path-wrapper props]
-         :text    [:> text/text-wrapper props]
-         :group   [:> group-wrapper props]
-         :rect    [:> rect-wrapper props]
-         :image   [:> image-wrapper props]
-         :circle  [:> circle-wrapper props]
-         :svg-raw [:> svg-raw-wrapper props]
-         :bool    [:> bool-wrapper props]
-         :frame   [:> nested-frame-wrapper props]
+      (mf/html
+       [:> wrapper-elem wrapper-props
+        (case shape-type
+          :path    [:> path/path-wrapper* props]
+          :text    [:> text/text-wrapper props]
+          :group   [:> group-wrapper props]
+          :rect    [:> rect-wrapper props]
+          :image   [:> image-wrapper props]
+          :circle  [:> circle-wrapper props]
+          :svg-raw [:> svg-raw-wrapper props]
+          :bool    [:> bool-wrapper props]
+          :frame   [:> nested-frame-wrapper props]
+          nil)]))))
 
-         nil)])))
+(mf/defc root-frame-shape-wrapper
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
+   ::mf/wrap-props false}
+  [props]
+  (let [shape         (unchecked-get props "shape")
+        shape-id      (dm/get-prop shape :id)
+        active-frames (mf/use-ctx ctx/active-frames)
+        thumbnail?    (and (some? active-frames)
+                           (not (contains? active-frames shape-id)))]
+    (render-shape-content shape thumbnail?)))
+
+(mf/defc shape-wrapper
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
+   ::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")]
+    (if ^boolean (cfh/root-frame? shape)
+      [:> root-frame-shape-wrapper props]
+      (render-shape-content shape false))))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

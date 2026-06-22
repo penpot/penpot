@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.nitrate-permissions :as nitrate-perms]
    [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -193,7 +194,9 @@
   (dm/with-open [conn (db/open pool)]
     (cond->> (get-teams conn profile-id)
       (contains? cf/flags :nitrate)
-      (map #(nitrate/add-org-info-to-team cfg % params)))))
+      (map #(nitrate/add-org-info-to-team cfg % params))
+      (contains? cf/flags :nitrate)
+      (remove #(get-in % [:organization :expired-license])))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -233,6 +236,7 @@
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:get-team}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id file-id]}]
   (get-team pool :profile-id profile-id :team-id id :file-id file-id))
@@ -506,10 +510,26 @@
 (sv/defmethod ::create-team
   {::doc/added "1.17"
    ::sm/params schema:create-team}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id organization-id] :as params}]
 
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
+
+  ;; When creating inside an org, verify the user has permission to do so.
+  ;; Fail closed: if org permissions cannot be fetched, deny the operation.
+  (when (and organization-id (contains? cf/flags :nitrate))
+    (let [org-perms (nitrate/call cfg :get-org-permissions
+                                  {:organization-id organization-id})]
+      (if (nil? org-perms)
+        (ex/raise :type :validation
+                  :code :not-allowed
+                  :hint "Unable to verify organization permissions")
+        (when-not (nitrate-perms/allowed? :create-team
+                                          {:org-perms org-perms
+                                           :profile-id profile-id})
+          (ex/raise :type :validation
+                    :code :not-allowed
+                    :hint "You are not allowed to create teams in this organization")))))
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
@@ -672,6 +692,7 @@
 
 (sv/defmethod ::update-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:update-team
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
@@ -747,6 +768,7 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:leave-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -757,16 +779,31 @@
 
 (defn delete-team
   "Mark a team for deletion"
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
 
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
-        perms (get team :permissions)]
+        team  (if (contains? cf/flags :nitrate)
+                (nitrate/add-org-info-to-team cfg team params)
+                team)
+        perms (get team :permissions)
+        org   (:organization team)
+        in-org? (and (contains? cf/flags :nitrate) org)
+        can-delete?
+        (if in-org?
+          (nitrate-perms/allowed? :delete-team
+                                  {:org-perms {:owner-id    (dm/get-in team [:organization :owner-id])
+                                               :permissions (dm/get-in team [:organization :permissions])}
+                                   :profile-id profile-id
+                                   :team-perms perms})
+          (boolean (:is-owner perms)))]
 
-    (when-not (:is-owner perms)
+    (when-not can-delete?
       (ex/raise :type :validation
                 :code :only-owner-can-delete-team))
 
-    (when (:is-default team)
+    ;; Protect the user's personal default team from deletion.
+    ;; Org-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    (when (and (:is-default team) (not in-org?))
       (ex/raise :type :validation
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
@@ -794,6 +831,7 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]

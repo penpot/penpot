@@ -15,6 +15,12 @@
 .repl
 /*.jpg
 /*.md
+!CHANGES.md
+!CONTRIBUTING.md
+!README.md
+!AGENTS.md
+!CODE_OF_CONDUCT.md
+!SECURITY.md
 /*.png
 /*.svg
 /*.sql
@@ -87,6 +93,10 @@
 /.pnpm-store
 /.vscode
 /.idea
+*.iml
 /.claude
 /.playwright-mcp
+/.devenv/mcp/
+/opencode.json
+/.codex/
 /tools/__pycache__

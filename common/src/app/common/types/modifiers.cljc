@@ -692,6 +692,9 @@
       (some? (:blur shape))
       (gse/update-blur-scale value)
 
+      (some? (:background-blur shape))
+      (gse/update-background-blur-scale value)
+
       (ctl/flex-layout? shape)
       (ctl/update-flex-scale value)
 

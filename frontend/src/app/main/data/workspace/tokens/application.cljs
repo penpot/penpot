@@ -734,7 +734,7 @@
 
 (defn apply-spacing-token-separated
   "Handles edge-case for spacing token when applying token via toggle button.
-  Splits out `shape-ids` into seperate default actions:
+  Splits out `shape-ids` into separate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
   [{:keys [token shapes attr]}]
@@ -776,6 +776,19 @@
           shape-ids
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
+
+(defn unapply-multiple-tokens
+  "Removes `attributes` for `shape-ids` without knowing the token, used when a token is deleted."
+  [{:keys [attributes shape-ids] :as _props}]
+
+  (ptk/reify ::unapply-multiple-tokens
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (dwsh/update-shapes
+        shape-ids
+        (fn [shape]
+          (update shape :applied-tokens #(when % (apply dissoc % attributes)))))))))
 
 
 (defn toggle-token

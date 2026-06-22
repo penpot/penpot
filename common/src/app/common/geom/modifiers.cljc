@@ -34,7 +34,7 @@
 ;;                    modif-tree))))
 
 (defn- set-children-modifiers
-  "Propagates the modifiers from a parent too its children applying constraints if necesary"
+  "Propagates the modifiers from a parent too its children applying constraints if necessary"
   [modif-tree children objects bounds parent transformed-parent-bounds ignore-constraints]
   (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
     ;; Move modifiers don't need to calculate constraints

@@ -26,8 +26,7 @@
   (let [shape (update shape :content types.path/apply-content-modifiers content-modifiers)]
     (types.path/update-geometry shape)))
 
-(mf/defc path-wrapper
-  {::mf/wrap-props false}
+(mf/defc path-wrapper*
   [{:keys [shape]}]
   (let [shape-id (dm/get-prop shape :id)
 
@@ -55,4 +54,4 @@
                          :pointer-events (when editing? "none")}
      [:& path/path-shape {:shape shape}]
      (when *assert*
-       [:& wsd/shape-debug {:shape shape}])]))
+       [:> wsd/shape-debug* {:shape shape}])]))

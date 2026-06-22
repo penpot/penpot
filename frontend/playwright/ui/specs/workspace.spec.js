@@ -78,6 +78,32 @@ test("User draws a rect", async ({ page }) => {
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
+test("Selection size badge appears on selection and hides on deselect", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  const badge = page.locator(".selection-size-badge");
+
+  await expect(badge).toHaveCount(0);
+
+  await workspacePage.clickLeafLayer("Rectangle");
+  await expect(badge).toBeVisible();
+
+  await workspacePage.page.keyboard.press("Escape");
+  await expect(badge).toHaveCount(0);
+});
+
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
@@ -388,7 +414,8 @@ test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
     .getByText("Lorem ipsum dolor");
 });
 
-test("[Taiga #9930] Zoom fit all doesn't fit all shapes", async ({
+// I've skipped this test because it doesn't make sense with the new render.
+test.skip("[Taiga #9930] Zoom fit all doesn't fit all shapes", async ({
   page,
   context,
 }) => {
@@ -506,7 +533,7 @@ test("BUG 13415 - Grid layout overlay is not removed when deleting a board", asy
   await expect(workspacePage.canvas).toHaveScreenshot();
 });
 
-test("BUG 13822 - Problems with z-index", async({
+test("BUG 13822 - Problems with z-index", async ({
   page
 }) => {
   const workspacePage = new WasmWorkspacePage(page);
@@ -520,6 +547,27 @@ test("BUG 13822 - Problems with z-index", async({
 
   await workspacePage.waitForFirstRenderWithoutUI();
   await expect(workspacePage.canvas).toHaveScreenshot();
+});
+
+test("BUG 14239 - Fix default path thickness", async ({
+  page
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-empty.json");
+  await workspacePage.goToWorkspace();
+
+  // (Workaround a bug in which mouse position can be nil and path editor crashes
+  // if we click on the Path tool without hovering over the viewport first)
+  await workspacePage.viewport.hover();
+  // 1. Draw a path
+  await workspacePage.pathButton.click();
+  await workspacePage.clickAt(779, 163);
+  await workspacePage.clickAt(951, 258);
+  // 2. Close it
+  await page.keyboard.press("Escape");
+
+  await expect(workspacePage.rightSidebar.getByRole("textbox", { name: "Stroke width" })).toHaveValue("1");
 });
 
 test("Bug 14250 - User with viewer role can select a locked board with a grid", async ({

@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG='C.UTF-8' \
@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
     DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-ARG IMAGEMAGICK_VERSION=7.1.2-13
+ARG IMAGEMAGICK_VERSION=7.1.2-24
 
 RUN set -e; \
     apt-get -qq update; \
@@ -79,13 +79,12 @@ RUN set -e; \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \
-        libxml2 \
         libtiff6 \
         libwebp7 \
         libwebpdemux2 \
         libwebpmux3 \
-        libxml2 \
-        libzip4t64 \
+        libxml2-16 \
+        libzip5 \
         libzstd1 \
     ;\
     apt-get -qqy clean; \

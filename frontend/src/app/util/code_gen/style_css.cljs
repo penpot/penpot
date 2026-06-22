@@ -50,7 +50,10 @@ body {
 
 (def shape-wrapper-css-properties
   #{:flex-shrink
-    :margin
+    :margin-block-start
+    :margin-block-end
+    :margin-inline-start
+    :margin-inline-end
     :max-height
     :min-height
     :max-width
@@ -113,7 +116,6 @@ body {
 
    ;; Flex/grid self properties
    :flex-shrink
-   :margin
    :margin-block-start
    :margin-block-end
    :margin-inline-start

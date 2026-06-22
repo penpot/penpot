@@ -304,10 +304,30 @@ Variants are a system for grouping related component versions along named proper
 Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
 
 **Creating a variant group**:
-- `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
-  All components end up inside a single new container on the canvas.
-  The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
-- After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+
+Use `penpotUtils.createVariantContainer(components)` — it handles the full multi-step workflow in one call:
+```js
+// Given three main components s, m, l (here: the first three main components on the page)
+const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3);
+// Single property:
+const container = penpotUtils.createVariantContainer([
+  { shape: s, properties: { Size: 'Small' } },
+  { shape: m, properties: { Size: 'Medium' } },
+  { shape: l, properties: { Size: 'Large' } },
+]);
+// Multiple properties:
+const container2 = penpotUtils.createVariantContainer([
+  { shape: s, properties: { Size: 'Small', State: 'Default' } },
+  { shape: m, properties: { Size: 'Medium', State: 'Default' } },
+  { shape: l, properties: { Size: 'Large', State: 'Hover' } },
+]);
+```
+
+If you must use the lower-level API, follow this exact order — skipping or reordering steps leaves the variant broken:
+1. `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer` — combines several main component instances into a new variant group. All components end up inside a single new container on the canvas; always creates one property called `"Property 1"`.
+2. `container.variants.renameProperty(0, name)` — rename `Property 1`.
+3. For each extra property: `variants.addProperty()` then `variants.renameProperty(pos, name)`.
+4. For every component × every property: iterate `variants.variantComponents()` and call `comp.setVariantProperty(pos, value)`.
 
 **Adding a variant to an existing group**:
 Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.

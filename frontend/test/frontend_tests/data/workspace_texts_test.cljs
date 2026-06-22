@@ -7,9 +7,13 @@
 (ns frontend-tests.data.workspace-texts-test
   (:require
    [app.common.geom.rect :as grc]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.shapes :as cths]
    [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]
    [app.main.data.workspace.texts :as dwt]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.state :as ths]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -272,3 +276,101 @@
           result (dwt/apply-text-modifier shape {:width 200 :position-data pd})]
       (t/is (some? result))
       (t/is (some? (:selrect result))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: add-typography event normalises float line-height / letter-spacing
+;;
+;; These tests exercise the full add-typography event path in texts.cljs:
+;; a text shape whose content nodes carry float line-height / letter-spacing
+;; values (as produced by JS float arithmetic) must yield a typography entry
+;; in the file with properly-rounded *string* values, not the raw floats.
+;;
+;; Root cause reproduced here: JS float arithmetic (e.g. 1.3 - 0.1) can
+;; produce 1.2000000000000002 instead of 1.2.  Without the fix, that number
+;; survives through add-typography unchanged, and (ctt/check-typography)
+;; would throw because :line-height must be a :string.
+;; With the fix (mth/precision + str), it is normalised to "1.2" before the
+;; schema check runs.
+;; ---------------------------------------------------------------------------
+
+(t/deftest add-typography-normalises-float-line-height
+  (t/async
+    done
+    (let [;; Exact value reproduced from the issue: 1.3 - 0.1 in JS
+          float-lh  1.2000000000000002
+          content   (txt/change-text nil "hello" :line-height float-lh)
+          file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content content))
+          shape-id  (:id (cths/get-shape file :text1))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [;; Pre-select the text shape so add-typography can find it
+                     (fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
+                     (dwt/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))]
+           (t/is (= 1 (count typographies))
+                 "exactly one typography was added")
+           (t/is (= "1.2" (:line-height (first typographies)))
+                 "float line-height is normalised to 2-decimal string")))))))
+
+(t/deftest add-typography-truncates-line-height-to-two-decimals
+  (t/async
+    done
+    (let [;; A value with more than 2 decimal places: 1.234234234 → "1.23"
+          long-lh   1.234234234
+          content   (txt/change-text nil "hello" :line-height long-lh)
+          file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content content))
+          shape-id  (:id (cths/get-shape file :text1))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
+                     (dwt/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))]
+           (t/is (= 1 (count typographies))
+                 "exactly one typography was added")
+           (t/is (= "1.23" (:line-height (first typographies)))
+                 "line-height with more than 2 decimals is truncated to 2")))))))
+
+(t/deftest add-typography-normalises-float-letter-spacing
+  (t/async
+    done
+    (let [;; Analogous imprecision for letter-spacing
+          float-ls  0.10000000000000001
+          content   (txt/change-text nil "hello" :letter-spacing float-ls)
+          file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content content))
+          shape-id  (:id (cths/get-shape file :text1))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
+                     (dwt/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))]
+           (t/is (= 1 (count typographies))
+                 "exactly one typography was added")
+           (t/is (= "0.1" (:letter-spacing (first typographies)))
+                 "float letter-spacing is normalised to 2-decimal string")))))))

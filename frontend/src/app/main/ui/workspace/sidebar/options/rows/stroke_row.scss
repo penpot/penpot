@@ -77,6 +77,12 @@
   column-gap: var(--sp-xs);
 }
 
+.stroke-dash-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--sp-xs);
+}
+
 .stroke-options-tokens {
   @include sidebar.option-grid-structure;
 

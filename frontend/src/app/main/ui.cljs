@@ -18,8 +18,8 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.debug.icons-preview :refer [icons-preview]]
-   [app.main.ui.debug.playground :refer [playground]]
+   [app.main.ui.debug.icons-preview :refer [icons-preview*]]
+   [app.main.ui.debug.playground :refer [playground*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
@@ -27,7 +27,7 @@
    [app.main.ui.nitrate.entry :as nitrate-entry]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
-   [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
+   [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal*]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
@@ -211,11 +211,11 @@
 
        :debug-icons-preview
        (when *assert*
-         [:& icons-preview])
+         [:> icons-preview*])
 
        :debug-playground
        (when *assert*
-         [:& playground])
+         [:> playground*])
 
        (:dashboard-search
         :dashboard-recent
@@ -238,14 +238,14 @@
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
           #_[:& app.main.ui.onboarding/onboarding-modal]
-          #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
+          #_[:> app.main.ui.onboarding.team-choice/onboarding-team-modal*]
 
           (cond
             show-question-modal?
             [:& questions-modal]
 
             show-team-modal?
-            [:& onboarding-team-modal {:go-to-team true}]
+            [:> onboarding-team-modal* {:go-to-team true}]
 
             show-release-modal?
             [:& release-notes-modal {:version (:main cf/version)}])
@@ -272,7 +272,7 @@
               [:& questions-modal]
 
               show-team-modal?
-              [:& onboarding-team-modal {:go-to-team false}]
+              [:> onboarding-team-modal* {:go-to-team false}]
 
               show-release-modal?
               [:& release-notes-modal {:version (:main cf/version)}]))
@@ -362,7 +362,7 @@
            :share share}])
 
        :frame-preview
-       [:& frame-preview/frame-preview]
+       [:> frame-preview/frame-preview*]
 
        nil)]))
 

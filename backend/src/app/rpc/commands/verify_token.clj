@@ -185,7 +185,10 @@
         registration-disabled? (not (contains? cf/flags :registration))
 
         org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        membership             (when org-invitation?
+        ;; Membership only makes sense for a logged-in profile; querying it for
+        ;; an anonymous recipient would call nitrate with a nil profile-id and
+        ;; mask the clean :invalid-token response with a generic error.
+        membership             (when (and profile org-invitation?)
                                  (nitrate/call cfg :get-org-membership {:profile-id profile-id
                                                                         :organization-id organization-id}))]
 

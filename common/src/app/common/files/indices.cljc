@@ -13,7 +13,7 @@
 
 (defn- generate-index
   "An optimized algorithm for calculate parents index that walk from top
-  to down starting from a provided shape-id. Usefull when you want to
+  to down starting from a provided shape-id. Useful when you want to
   create an index for the whole objects or subpart of the tree."
   [index objects shape-id parents]
   (let [shape   (get objects shape-id)

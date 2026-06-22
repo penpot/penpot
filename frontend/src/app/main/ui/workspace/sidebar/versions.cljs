@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.event :as ev]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.workspace.versions :as dwv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,9 +37,14 @@
   (l/derived :workspace-versions st/state))
 
 (defn- get-versions-stored-days
-  [team]
-  (let [subscription-type (get-subscription-type (:subscription team))]
+  [team profile]
+  (let [subscription-type (get-subscription-type (:subscription team))
+        nitrate-type      (dm/get-in profile [:subscription :type])
+        nitrate-active?   (dnt/is-valid-license? profile)]
     (cond
+      (and nitrate-active?
+           (contains? #{"enterprise" "nitrate"} nitrate-type)) 90
+
       (= subscription-type "unlimited") 30
       (= subscription-type "enterprise") 90
       :else 7)))
@@ -454,7 +460,7 @@
 
                nil))])
 
-        [:> cta* {:title (tr "workspace.versions.warning.text" (get-versions-stored-days team))}
+        [:> cta* {:title (tr "workspace.versions.warning.text" (get-versions-stored-days team profile))}
          [:> i18n/tr-html*
           {:tag-name "div"
            :class (stl/css :cta)

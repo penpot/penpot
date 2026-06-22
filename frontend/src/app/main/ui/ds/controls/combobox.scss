@@ -47,6 +47,8 @@
   background: var(--combobox-background-color);
   color: var(--combobox-text-color);
   appearance: none;
+  align-content: center;
+  place-items: center start;
 }
 
 .arrow {
@@ -67,6 +69,7 @@
 .header-avatar {
   grid-template-columns: auto 1fr;
   gap: var(--sp-s);
+  width: 100%;
 }
 
 .input {

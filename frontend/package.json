@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.5.3+sha512.7ac1c919341c213a34dc0d02afb7143c5c26ac26ee8c4782deea821b8ac64d2134a081fd8941dae6e29bbb48f58dfc2b7fbceeccc07cb2f09d219d342a4969ed",
+  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
   "browserslist": [
     "defaults"
   ],
@@ -34,6 +34,7 @@
     "lint:scss": "pnpm exec stylelint '{src,resources}/**/*.scss'",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test": "pnpm run build:wasm && pnpm run build:test && node target/tests/test.js",
+    "test:quiet": "node ./scripts/test-quiet.js",
     "test:storybook": "vitest run --project=storybook",
     "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
     "test:e2e": "playwright test --project default",
@@ -55,6 +56,7 @@
     "@penpot/svgo": "penpot/svgo#3.3.0",
     "@penpot/text-editor": "link:text-editor",
     "@penpot/tokenscript": "link:packages/tokenscript",
+    "@penpot/ua-parser": "penpot/ua-parser#1.0.0",
     "@penpot/ui": "link:packages/ui",
     "@playwright/test": "1.61.0",
     "@storybook/addon-docs": "10.4.6",
@@ -120,7 +122,6 @@
     "tdigest": "^0.1.2",
     "tinycolor2": "^1.6.0",
     "typescript": "^6.0.2",
-    "ua-parser-js": "2.0.10",
     "vite": "^8.0.16",
     "vitest": "^4.1.9",
     "wait-on": "^9.0.4",

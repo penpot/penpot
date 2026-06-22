@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.profile :as dprof]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -23,7 +24,7 @@
 (mf/defc nitrate-code-activation-modal*
   {::mf/register modal/components
    ::mf/register-as :nitrate-code-activation}
-  [_props]
+  [{:keys [renew?]}]
   (let [value*  (mf/use-state "")
         error*  (mf/use-state nil)
 
@@ -35,17 +36,21 @@
 
         on-accept
         (mf/use-fn
-         (mf/deps value*)
+         (mf/deps value* renew?)
          (fn [_]
            (let [code (str/trim @value*)]
              (when (seq code)
                (->> (rp/cmd! ::redeem-nitrate-activation-code {:activation-code code})
                     (rx/subs!
-                     (fn [result]
+                     (fn [_]
                        (modal/hide!)
-                       (st/emit!
-                        (modal/show {:type :nitrate-activation-success :subscription result})
-                        (dprof/refresh-profile)))
+                       (if renew?
+                         (st/emit!
+                          (dprof/refresh-profile)
+                          (ntf/success (tr "nitrate.subscription.renew-success")))
+                         (st/emit!
+                          (modal/show {:type :nitrate-activation-success})
+                          (dprof/refresh-profile))))
                      (fn [error]
                        ;; TODO: "Already used" is not yet detectable (CC upserts on reuse).
                        (let [code (-> error ex-data :code)]
@@ -69,28 +74,32 @@
                         :icon i/close}]
 
       [:div {:class (stl/css :modal-header)}
-       [:h2 {:class (stl/css :modal-title)} (tr "nitrate.code-activation.title")]]
+       [:h2 {:class (stl/css :modal-title)}
+        (if renew?
+          (tr "nitrate.code-activation.renew-title")
+          (tr "nitrate.code-activation.title"))]]
 
       [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css-case :code-field true :invalid (some? @error*))}
-        [:label {:class (stl/css :code-label)}
-         (tr "nitrate.code-activation.input-label")]
-        [:textarea {:class (stl/css :code-textarea)
-                    :auto-focus true
-                    :value @value*
-                    :placeholder (tr "nitrate.code-activation.placeholder")
-                    :on-change on-change
-                    :on-key-down on-key-down}]
-        (when @error*
-          [:span {:class (stl/css :error-msg)} @error*])]
+       [:div {:class (stl/css :content-stack)}
+        [:div {:class (stl/css-case :code-field true :invalid (some? @error*))}
+         [:label {:class (stl/css :code-label)}
+          (tr "nitrate.code-activation.input-label")]
+         [:textarea {:class (stl/css :code-textarea)
+                     :auto-focus true
+                     :value @value*
+                     :placeholder (tr "nitrate.code-activation.placeholder")
+                     :on-change on-change
+                     :on-key-down on-key-down}]
+         (when @error*
+           [:span {:class (stl/css :error-msg)} @error*])]
 
-       [:input
-        {:type "button"
-         :class (stl/css-case :accept-btn true
-                              :global/disabled (empty? (str/trim @value*)))
-         :disabled (empty? (str/trim @value*))
-         :value (tr "nitrate.code-activation.submit")
-         :on-click on-accept}]
+        [:input
+         {:type "button"
+          :class (stl/css-case :accept-btn true
+                               :global/disabled (empty? (str/trim @value*)))
+          :disabled (empty? (str/trim @value*))
+          :value (tr "nitrate.code-activation.submit")
+          :on-click on-accept}]]
        [:div {:class (stl/css :footer-text)}
         (tr "nitrate.code-activation.footer") " "
         [:a {:class (stl/css :link)

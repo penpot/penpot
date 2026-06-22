@@ -187,6 +187,9 @@
         :blur
         (api/set-shape-blur v)
 
+        :background-blur
+        (api/set-shape-background-blur v)
+
         :shadow
         (api/set-shape-shadows v)
 
@@ -230,6 +233,7 @@
           ;; Always update fills/blur/shadow to clear previous state if filters disappear
           (api/set-shape-fills id (:fills shape) false)
           (api/set-shape-blur (:blur shape))
+          (api/set-shape-background-blur (:background-blur shape))
           (api/set-shape-shadows (:shadow shape)))
 
         :masked-group
@@ -405,7 +409,7 @@
                   (= k :type))))))
 
 (defn create-shape
-  "Instanciate a shape from a map"
+  "Instantiate a shape from a map"
   [attrs]
   (ShapeProxy. (:id attrs)
                (:type attrs)

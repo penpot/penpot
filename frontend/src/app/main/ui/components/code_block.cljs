@@ -16,8 +16,7 @@
 (def highlight-fn
   (delay (modules/load-fn 'app.util.code-highlight/highlight!)))
 
-(mf/defc code-block
-  {::mf/wrap-props false}
+(mf/defc code-block*
   [{:keys [code type]}]
   (let [block-ref (mf/use-ref)
         code      (str/trim code)]

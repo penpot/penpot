@@ -137,7 +137,7 @@
   (if (or (mth/close? 0.01 (:width selrect))
           (mth/close? 0.01 (:height selrect)))
 
-    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/heigth
+    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/height
     ;; From the SVG spec (https://www.w3.org/TR/SVG11/coords.html#ObjectBoundingBox
     ;; Keyword objectBoundingBox should not be used when the geometry of the applicable element
     ;; has no width or no height, such as the case of a horizontal or vertical line, even when

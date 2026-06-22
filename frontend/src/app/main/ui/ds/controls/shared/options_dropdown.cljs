@@ -37,11 +37,14 @@
    [:value {:optional true} :keyword]
    [:icon {:optional true} schema:icon-list]
    [:label {:optional true} :string]
+   [:title {:optional true} :string]
    [:avatar {:optional true}
     [:map
      [:size {:optional true} :string]
      [:organization {:optional true} :any]
      [:render-fn {:optional true} fn?]]]
+   [:disabled {:optional true} :boolean]
+   [:dimmed {:optional true} :boolean]
    [:aria-label {:optional true} :string]])
 
 (def ^:private schema:options-dropdown

@@ -22,6 +22,7 @@
    [:id :string]
    [:icon {:optional true}
     [:maybe [:and :string [:fn #(contains? icon-list %)]]]]
+   [:text-icon {:optional true} [:maybe :string]]
    [:has-hint {:optional true} :boolean]
    [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]
    [:type {:optional true} :string]
@@ -33,7 +34,7 @@
 (mf/defc input-field*
   {::mf/forward-ref true
    ::mf/schema schema:input-field}
-  [{:keys [id icon class type
+  [{:keys [id icon text-icon class type
            has-hint hint-type
            max-length variant
            slot-start slot-end
@@ -86,6 +87,9 @@
                   :class (stl/css :icon)
                   :size "s"
                   :on-click on-icon-click}])
+     (when (some? text-icon)
+       [:span {:class (stl/css :text-icon)}
+        text-icon])
      (if aria-label
        [:> tooltip* {:content aria-label
                      :trigger-ref (or ref input-ref)

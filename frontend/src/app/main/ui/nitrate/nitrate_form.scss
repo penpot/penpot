@@ -55,8 +55,22 @@
   @include t.use-typography("body-small");
 }
 
+.price-value {
+  @include t.use-typography("title-medium");
+
+  color: var(--color-foreground-primary);
+  font-weight: 500;
+}
+
+.price-text {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-s);
+  margin-block-end: var(--sp-xxxl);
+}
+
 .modal-info {
-  margin-block-start: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-l);
   width: 40%;
 }
 
@@ -103,7 +117,7 @@
 }
 
 .contact {
-  margin-block-start: $sz-96;
+  margin-block-start: $sz-48;
   color: var(--color-foreground-primary);
 }
 

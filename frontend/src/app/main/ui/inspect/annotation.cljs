@@ -12,8 +12,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc annotation
-  [{:keys [content] :as props}]
+(mf/defc annotation*
+  [{:keys [content]}]
   [:div {:class (stl/css :attributes-block)}
    [:> title-bar* {:collapsable false
                    :title       (tr "workspace.options.component.annotation")

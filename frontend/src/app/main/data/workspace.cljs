@@ -188,9 +188,13 @@
                        (rx/merge
                         (->> (rx/from libraries)
                              (rx/merge-map
-                              (fn [{:keys [id synced-at]}]
+                              (fn [{:keys [id synced-at is-indirect]}]
                                 (->> (rp/cmd! :get-file {:id id :features features})
-                                     (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                                     (rx/map (fn [file]
+                                               (-> file
+                                                   (assoc :synced-at synced-at)
+                                                   (assoc :library-of file-id)
+                                                   (assoc :is-indirect is-indirect)))))))
                              (rx/mapcat resolve-file)
                              (rx/map library-resolved))
                         (->> (rx/from libraries)
@@ -384,7 +388,7 @@
                         (df/fetch-fonts team-id)))
 
                 ;; Once the essential data is fetched, lets proceed to
-                ;; fetch teh file bunldle
+                ;; fetch the file bundle
                 (rx/of (initialize-file team-id file-id)))
 
                (->> stream

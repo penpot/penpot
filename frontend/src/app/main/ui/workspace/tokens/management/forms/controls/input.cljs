@@ -171,20 +171,22 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> tokens
-         (sd/resolve-tokens-interactive)
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (if errors
-                                 (first errors)
-                                 (wte/error-with-value :error/unknown value))}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cft/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> tokens
+           (sd/resolve-tokens-interactive)
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (if errors
+                                   (first errors)
+                                   (wte/error-with-value :error/unknown value))})))))))))
 
 (mf/defc input*
   [{:keys [name tokens token] :rest props}]
@@ -325,8 +327,12 @@
                                 :variant "comfortable"
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
+
+        ;; On Typography composite tokens, line-height depends on font-size. If a typography
+        ;; token contains a line-height but no font-size, validation should fail and surface
+        ;; the corresponding error so the user understands why submission is blocked.
         props
-        (if (or extra-error (and touched? error))
+        (if (or extra-error (and touched? error) (and (= :line-height input-name) error))
           (mf/spread-props props {:hint-type "error"
                                   :hint-message (:message (or error extra-error))})
           props)
@@ -375,7 +381,6 @@
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (swap! form update :async-errors dissoc :reference)
                              (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
@@ -395,25 +400,43 @@
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value value-subfield index field] true)
+                       (update :errors dissoc :value)
+                       (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)
                        (update :extra-errors dissoc "")))))))
 
 (mf/defc input-indexed*
-  [{:keys [name tokens token index value-subfield] :rest props}]
+  [{:keys [name tokens token index value-subfield nillable] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        nillable   (d/nilv nillable false)
 
-        error
-        (get-in @form [:errors :value value-subfield index input-name])
+        touched?
+        (get-in @form [:touched :value value-subfield index input-name])
 
         extra-error
         (get-in @form [:extra-errors :value value-subfield index input-name])
 
         value-from-form
         (get-in @form [:data :value value-subfield index input-name] "")
+
+        ;; Resolution error for this specific field (e.g. missing reference)
+        indexed-error
+        (get-in @form [:errors :value value-subfield index input-name])
+
+        ;; Empty-field error: derived purely from the local field value so that
+        ;; each shadow layer is evaluated independently.
+        empty-error
+        (when (and (not nillable)
+                   (str/blank? value-from-form))
+          {:message (tr "errors.tokens.empty-field")})
+
+        error
+        (when touched? (or indexed-error empty-error))
 
         resolve-stream
         (mf/with-memo [token index input-name]
@@ -444,7 +467,8 @@
         props
         (if (or error extra-error)
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message (or error extra-error))})
+                                  :hint-message (or (:message (or error extra-error))
+                                                    (tr "errors.field-missing"))})
           props)
 
         props

@@ -36,7 +36,7 @@
 (defn is-plugin-error?
   "This is a placeholder that always return false. It will be
   overwritten when plugin system is initialized. This works this way
-  because we can't import plugins here because plugins requries full
+  because we can't import plugins here because plugins requires full
   DOM.
 
   This placeholder is set on app.plugins/initialize event"
@@ -354,6 +354,7 @@
 (derive :not-found ::exceptional-state)
 (derive :bad-gateway ::exceptional-state)
 (derive :service-unavailable ::exceptional-state)
+(derive :nitrate-unavailable ::exceptional-state)
 
 (defmethod ptk/handle-error ::exceptional-state
   [error]
@@ -563,4 +564,3 @@
     (fn []
       (.removeEventListener g/window "error" on-unhandled-error)
       (.removeEventListener g/window "unhandledrejection" on-unhandled-rejection))))
-

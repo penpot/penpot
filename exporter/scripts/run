@@ -3,4 +3,8 @@
 SCRIPT_DIR=$(dirname $0);
 source $SCRIPT_DIR/../../backend/scripts/_env;
 
+if [ -f $SCRIPT_DIR/../../backend/scripts/_env.local ]; then
+    source $SCRIPT_DIR/../../backend/scripts/_env.local;
+fi
+
 exec node target/app.js

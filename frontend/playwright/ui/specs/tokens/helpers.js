@@ -76,6 +76,7 @@ const setupEmptyTokensFileRender = async (page, options = {}) => {
     tokenSetItems: workspacePage.tokenSetItems,
     tokensSidebar: workspacePage.tokensSidebar,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokenContextMenuForToken: workspacePage.tokenContextMenuForToken,
     tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
   };
 };
@@ -332,7 +333,26 @@ const unfoldTokenType = async (tokensTabPanel, type) => {
   }
 };
 
-const createToken = async (page, type, name, textFieldName, value) => {
+/**
+ * Creates a token from the Tokens sidebar modal.
+ *
+ * @param {import("@playwright/test").Page} page - Playwright page instance.
+ * @param {string} type - Token category label shown in UI (e.g. "Color", "Typography", "Shadow").
+ * @param {string} name - Token name to create.
+ * @param {string} textFieldName - Accessible label of the value textbox in the modal (e.g. "Value", "Color", "Font size").
+ * @param {"textbox" | "combobox"} textFieldType - Type of the token value field, wether it's a simple text field or a combo box, to properly fill the value.
+ * @param {string} value - Token value to set in the modal.
+ * @returns {Promise<void>}
+ */
+
+const createToken = async (
+  page,
+  type,
+  name,
+  textFieldName,
+  textFieldType,
+  value,
+) => {
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
   const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
@@ -348,7 +368,7 @@ const createToken = async (page, type, name, textFieldName, value) => {
   const nameField = tokensUpdateCreateModal.getByLabel("Name");
   await nameField.fill(name);
 
-  const valueField = tokensUpdateCreateModal.getByRole("textbox", {
+  const valueField = tokensUpdateCreateModal.getByRole(textFieldType, {
     name: textFieldName,
   });
   await valueField.fill(value);

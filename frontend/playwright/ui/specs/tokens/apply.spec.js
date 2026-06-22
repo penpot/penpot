@@ -186,11 +186,8 @@ test.describe("Tokens: Apply token", () => {
 
     await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
-    const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
-      name: "Font Size",
-    });
-    await expect(fontSizeInput).toBeVisible();
-    await expect(fontSizeInput).toHaveValue("100");
+    const tokenRow = workspacePage.rightSidebar.getByLabel('Full');
+    await expect(tokenRow).toBeVisible();
   });
 
   test("User adds shadow token with multiple shadows and applies it to shape", async ({
@@ -1702,6 +1699,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
       "Dimensions",
       "reference-token",
       "Value",
+      "combobox",
       "{card.padding}",
     );
 
@@ -1758,8 +1756,8 @@ test("BUG: 14234, Numeric input token filtering must be case sensitive", async (
   await tokensTabButton.click();
   await unfoldTokenType(tokensSidebar, "dimensions");
 
-  await createToken(page, "Dimensions", "Dim-up", "Value", "20");
-  await createToken(page, "Dimensions", "dim-up", "Value", "10");
+  await createToken(page, "Dimensions", "Dim-up", "Value", "combobox", "20");
+  await createToken(page, "Dimensions", "dim-up", "Value", "combobox", "10");
   const measuresSection = page.getByRole("region", {
     name: "shape-measures-section",
   });

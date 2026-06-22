@@ -225,8 +225,17 @@
 }
 
 .team-separator {
-  border-top: $b-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--color-background-quaternary);
   margin: 0;
+}
+
+.org-section-label {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  list-style: none;
+  padding: var(--sp-m) $sz-6 $sz-6;
+  text-transform: uppercase;
 }
 
 .tick-icon {
@@ -642,6 +651,28 @@
     fill: var(--icon-stroke-color);
     width: var(--sp-xl);
     height: var(--sp-xl);
+  }
+}
+
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
+.my-teams-icon-xxxl {
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxxl);
+    height: var(--sp-xxxl);
   }
 }
 

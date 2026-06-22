@@ -452,10 +452,7 @@
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    ;; TODO For now we check read permissions instead of write,
-                    ;; to allow viewer users to update thumbnails. We might
-                    ;; review this approach on the future.
-                    (files/check-read-permissions! conn profile-id file-id)
+                    (files/check-edition-permissions! conn profile-id file-id)
                     (when-not (db/read-only? conn)
                       (let [media (create-file-thumbnail cfg params)]
                         {:uri (files/resolve-public-uri (:id media))

@@ -208,28 +208,40 @@
    :compile (constantly wrap-errors)})
 
 (defn- with-cors-headers
-  [headers origin]
-  (-> headers
-      (assoc "access-control-allow-origin" origin)
-      (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
-      (assoc "access-control-allow-credentials" "true")
-      (assoc "access-control-expose-headers" "content-type, set-cookie")
-      (assoc "access-control-allow-headers" "x-frontend-version, x-client, x-requested-width, content-type, accept, cookie")))
+  "Build CORS response headers. Only emits permissive headers when the
+  request `origin` is present on the configured `allowed` allowlist;
+  otherwise returns the headers unchanged except for `Vary: Origin` so
+  shared caches don't leak per-origin responses."
+  [headers origin allowed]
+  (cond-> (assoc headers "vary" "Origin")
+    (and (some? origin) (contains? allowed origin))
+    (-> (assoc "access-control-allow-origin" origin)
+        (assoc "access-control-allow-credentials" "true")
+        (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
+        (assoc "access-control-expose-headers" "content-type")
+        (assoc "access-control-allow-headers" "x-frontend-version, x-client, content-type, accept"))))
 
 (defn wrap-cors
-  [handler]
+  [handler allowed]
   (fn [request]
     (let [response (if (= (yreq/method request) :options)
                      {::yres/status 204}
                      (handler request))
           origin   (yreq/get-header request "origin")]
-      (update response ::yres/headers with-cors-headers origin))))
+      (update response ::yres/headers with-cors-headers origin allowed))))
 
 (def cors
   {:name ::cors
    :compile (fn [& _]
               (when (contains? cf/flags :cors)
-                wrap-cors))})
+                (let [allowed (not-empty (cf/get :allowed-origins))]
+                  (if allowed
+                    (fn [handler] (wrap-cors handler allowed))
+                    (do
+                      (l/wrn :hint (str "cors flag is enabled but :allowed-origins is empty; "
+                                        "CORS middleware disabled (fail-closed). "
+                                        "Configure PENPOT_ALLOWED_ORIGINS with a comma-separated list of trusted origins."))
+                      nil)))))})
 
 (def restrict-methods
   {:name ::restrict-methods

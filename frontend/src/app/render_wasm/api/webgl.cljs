@@ -11,15 +11,6 @@
    [app.render-wasm.wasm :as wasm]
    [promesa.core :as p]))
 
-(defn max-texture-size
-  "Returns `gl.MAX_TEXTURE_SIZE` (max dimension of a 2D texture), or nil if
-  unavailable."
-  [gl]
-  (when gl
-    (let [n (.getParameter ^js gl (.-MAX_TEXTURE_SIZE ^js gl))]
-      (when (and (number? n) (pos? n) (js/isFinite n))
-        (js/Math.floor n)))))
-
 (defn get-webgl-context
   "Gets the WebGL context from the WASM module"
   []
@@ -143,28 +134,20 @@ void main() {
       (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
       (.deleteTexture ^js gl texture))))
 
-(defn capture-canvas-snapshot-url
-  "Captures the current viewport canvas as a PNG `blob:` URL and stores it in
-  `wasm/canvas-snapshot-url`.
+(defn capture-canvas-snapshot
+  "Captures the current viewport canvas as an `ImageBitmap` and stores it in
+  `wasm/canvas-snapshot`. Unlike `canvas.toBlob` (which does a synchronous GPU
+  readback plus PNG encoding on the main thread), `createImageBitmap` resolves
+  asynchronously and stays on the GPU in accelerated browsers.
 
-  Returns a promise resolving to the URL string (or nil)."
+  Returns a promise resolving to the ImageBitmap (or nil)."
   []
   (if-let [^js canvas wasm/canvas]
-    (p/create
-     (fn [resolve _reject]
-       ;; Revoke previous snapshot to avoid leaking blob URLs.
-       (when-let [prev wasm/canvas-snapshot-url]
-         (when (and (string? prev) (.startsWith ^js prev "blob:"))
-           (js/URL.revokeObjectURL prev)))
-       (set! wasm/canvas-snapshot-url nil)
-       (.toBlob canvas
-                (fn [^js blob]
-                  (if blob
-                    (let [url (js/URL.createObjectURL blob)]
-                      (set! wasm/canvas-snapshot-url url)
-                      (resolve url))
-                    (resolve nil)))
-                "image/png")))
+    (-> (js/createImageBitmap canvas)
+        (p/then (fn [^js bitmap]
+                  (set! wasm/canvas-snapshot bitmap)
+                  bitmap))
+        (p/catch (fn [_] nil)))
     (p/resolved nil)))
 
 (defn draw-thumbnail-to-canvas

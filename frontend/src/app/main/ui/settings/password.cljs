@@ -59,7 +59,7 @@
     (fn [{:keys [password-1 password-2]}]
       (= password-1 password-2))]])
 
-(mf/defc password-form
+(mf/defc password-form*
   []
   (let [initial (mf/with-memo []
                   {:password-old ""
@@ -99,7 +99,7 @@
 
 ;; --- Password Page
 
-(mf/defc password-page
+(mf/defc password-page*
   []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.password")))
@@ -107,4 +107,4 @@
   [:section {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "dashboard.password-change")]
-    [:& password-form]]])
+    [:> password-form*]]])

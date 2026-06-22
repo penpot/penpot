@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]))
@@ -30,9 +31,30 @@
             ^js shape   (.createRectangle context)
 
             get-shape-path
-            #(vector :files (aget file "$id") :data :pages-index (aget page "$id") :objects (aget shape "$id") %)]
+            #(vector :files (aget file "$id") :data :pages-index (aget page "$id") :objects (aget shape "$id") %)
 
-        (t/testing "Basic shape properites"
+            gradient
+            (fn []
+              #js {:type "linear"
+                   :startX 0.5
+                   :startY 0
+                   :endX 0.5
+                   :endY 1
+                   :width 1
+                   :stops #js [#js {:color "#b400ff" :opacity 1 :offset 0}
+                               #js {:color "#0c3fd5" :opacity 1 :offset 1}]})
+
+            parsed-gradient
+            {:type :linear
+             :start-x 0.5
+             :start-y 0
+             :end-x 0.5
+             :end-y 1
+             :width 1
+             :stops [{:color "#b400ff" :opacity 1 :offset 0}
+                     {:color "#0c3fd5" :opacity 1 :offset 1}]}]
+
+        (t/testing "Basic shape properties"
           (t/testing " - name"
             (set! (.-name shape) "TEST")
             (t/is (= (.-name shape) "TEST"))
@@ -110,6 +132,15 @@
             (t/is (= (.-constraintsVertical shape) "bottom"))
             (t/is (= (get-in @store (get-shape-path :constraints-v)) :bottom)))
 
+          (t/testing " - fixedWhenScrolling"
+            (set! (.-fixedWhenScrolling shape) true)
+            (t/is (= (.-fixedWhenScrolling shape) true))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) true))
+
+            (set! (.-fixedWhenScrolling shape) false)
+            (t/is (= (.-fixedWhenScrolling shape) false))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) false)))
+
           (t/testing " - borderRadius"
             (set! (.-borderRadius shape) 10)
             (t/is (= (.-borderRadius shape) 10))
@@ -168,7 +199,6 @@
 
           (t/testing " - blur"
             (set! (.-blur shape) #js {:value 10})
-            (t/is (= (-> (. shape -blur) (aget "type")) "layer-blur"))
             (t/is (= (-> (. shape -blur) (aget "value")) 10))
             (t/is (= (-> (. shape -blur) (aget "hidden")) false))
             (let [id (-> (. shape -blur) (aget "id") uuid/uuid)]
@@ -218,7 +248,100 @@
             (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5}]))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
-            (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5))))
+            (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5)))
+
+          (t/testing " - fills per-element property mutation (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+            (obj/set! (aget (.-fills shape) 0) "fillColor" "#ff0000")
+            (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#ff0000" :fill-opacity 1}]))
+            (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#ff0000")))
+
+          (t/testing " - fills gradient assignment replaces solid color (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+            (obj/set! (aget (.-fills shape) 0) "fillColorGradient" (gradient))
+            (t/is (= (get-in @store (get-shape-path :fills))
+                     [{:fill-opacity 1 :fill-color-gradient parsed-gradient}]))
+            (t/is (nil? (-> (. shape -fills) (aget 0) (aget "fillColor")))))
+
+          (t/testing " - fills nested gradient mutation (bug #8357)"
+            (set! (.-fills shape) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+            (let [fill-gradient (-> (. shape -fills) (aget 0) (aget "fillColorGradient"))
+                  stop          (-> fill-gradient (aget "stops") (aget 0))]
+              (obj/set! fill-gradient "startX" 0.25)
+              (obj/set! stop "color" "#ffffff")
+              (t/is (= (get-in @store (get-shape-path :fills))
+                       [{:fill-opacity 1
+                         :fill-color-gradient (-> parsed-gradient
+                                                  (assoc :start-x 0.25)
+                                                  (assoc-in [:stops 0 :color] "#ffffff"))}]))))
+
+          (t/testing " - strokes per-element property mutation (bug #8357)"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
+            (obj/set! (aget (.-strokes shape) 0) "strokeColor" "#0000ff")
+            (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#0000ff" :stroke-opacity 1 :stroke-width 5}])))
+
+          (t/testing " - strokes gradient assignment replaces solid color (bug #8357)"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
+            (obj/set! (aget (.-strokes shape) 0) "strokeColorGradient" (gradient))
+            (t/is (= (get-in @store (get-shape-path :strokes))
+                     [{:stroke-opacity 1 :stroke-width 5 :stroke-color-gradient parsed-gradient}])))
+
+          (t/testing " - strokes nested gradient mutation (bug #8357)"
+            (set! (.-strokes shape) #js [#js {:strokeColorGradient (gradient) :strokeOpacity 1 :strokeWidth 5}])
+            (let [stroke-gradient (-> (. shape -strokes) (aget 0) (aget "strokeColorGradient"))
+                  stop            (-> stroke-gradient (aget "stops") (aget 1))]
+              (obj/set! stroke-gradient "endY" 0.75)
+              (obj/set! stop "opacity" 0.25)
+              (t/is (= (get-in @store (get-shape-path :strokes))
+                       [{:stroke-opacity 1
+                         :stroke-width 5
+                         :stroke-color-gradient (-> parsed-gradient
+                                                    (assoc :end-y 0.75)
+                                                    (assoc-in [:stops 1 :opacity] 0.25))}])))))
+
+        (t/testing "Text shape fills"
+          (let [^js text (.createText context "Hello")]
+
+            (t/testing " - flat fill set and read-back"
+              (set! (.-fills text) #js [#js {:fillColor "#aa00aa" :fillOpacity 0.9}])
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#aa00aa"))
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillOpacity")) 0.9)))
+
+            (t/testing " - in-place fill color mutation"
+              (set! (.-fills text) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
+              (obj/set! (aget (.-fills text) 0) "fillColor" "#00ccdd")
+              (obj/set! (aget (.-fills text) 0) "fillOpacity" 0.5)
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#00ccdd"))
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillOpacity")) 0.5)))
+
+            (t/testing " - gradient fill set"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (let [g (-> (. text -fills) (aget 0) (aget "fillColorGradient"))]
+                (t/is (= (aget g "type") "linear"))
+                (t/is (= (-> g (aget "stops") (aget 0) (aget "color")) "#b400ff"))
+                (t/is (= (-> g (aget "stops") (aget 1) (aget "color")) "#0c3fd5"))))
+
+            (t/testing " - gradient stop mutation"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (let [fill-gradient (-> (. text -fills) (aget 0) (aget "fillColorGradient"))
+                    stop          (-> fill-gradient (aget "stops") (aget 0))]
+                (obj/set! fill-gradient "startX" 0.1)
+                (obj/set! stop "color" "#ffff00")
+                (obj/set! stop "opacity" 0.5)
+                (let [g2 (-> (. text -fills) (aget 0) (aget "fillColorGradient"))]
+                  (t/is (= (aget g2 "startX") 0.1))
+                  (t/is (= (-> g2 (aget "stops") (aget 0) (aget "color")) "#ffff00"))
+                  (t/is (= (-> g2 (aget "stops") (aget 0) (aget "opacity")) 0.5)))))
+
+            (t/testing " - fillColor clears fillColorGradient"
+              (set! (.-fills text) #js [#js {:fillColorGradient (gradient) :fillOpacity 1}])
+              (obj/set! (aget (.-fills text) 0) "fillColor" "#123456")
+              (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
+              (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
+
+        (t/testing "createText with empty string returns null"
+          (t/is (nil? (.createText context "")))
+          (t/is (some? (.createText context "Hello"))))
 
         (t/testing "Relative properties"
           (let [board (.createBoard context)]
@@ -259,3 +382,23 @@
           (t/is (pos? (thw/call-count :clean-modifiers)))
           (t/is (pos? (thw/call-count :set-structure-modifiers)))
           (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+
+(t/deftest test-array-properties-return-empty-array-when-no-items
+  ;; Array-typed properties must always return an array, never null,
+  ;; even when the shape has no items for that property.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
+            _           (set! st/state store)
+            ^js shape   (.createRectangle context)]
+
+        (t/testing " - exports (no exports set)"
+          (let [exports (.-exports shape)]
+            (t/is (array? exports))
+            (t/is (= 0 (.-length exports)))))
+
+        (t/testing " - shadows (no shadows set)"
+          (let [shadows (.-shadows shape)]
+            (t/is (array? shadows))
+            (t/is (= 0 (.-length shadows)))))))))

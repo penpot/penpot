@@ -38,10 +38,6 @@
   margin-block-start: var(--sp-s);
 }
 
-.membership.first {
-  margin-block-start: var(--sp-l);
-}
-
 .membership-date {
   @include t.use-typography("body-small");
 
@@ -102,22 +98,20 @@
 .plan-title-icon {
   @extend %button-icon;
 
-  stroke: var(--color-foreground-primary);
   block-size: var(--sp-xl);
   inline-size: var(--sp-xl);
   border-radius: 6px;
   border: 1.75px solid var(--color-foreground-primary);
-  stroke-width: 2.25px;
-  padding: px2rem(3);
+}
 
-  svg {
-    block-size: var(--sp-m);
-    inline-size: var(--sp-m);
-  }
+.plan-title-icon svg {
+  stroke: var(--color-foreground-primary);
+  stroke-width: 2.25px;
 }
 
 .plan-card-title,
-.plan-price-value {
+.plan-price-value,
+.price-value {
   @include t.use-typography("title-medium");
 
   color: var(--color-foreground-primary);
@@ -196,6 +190,13 @@
 
 .bottom-button {
   margin-block-start: var(--sp-xl);
+}
+
+.inline-error {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-error);
+  margin-block: var(--sp-s) 0;
 }
 
 .modal-overlay {
@@ -292,14 +293,14 @@
   justify-content: center;
   max-inline-size: $sz-224;
 
-  svg {
-    inline-size: 100%;
-    block-size: auto;
-  }
-
   @media (width <= 992px) {
     display: none;
   }
+}
+
+.modal-start svg {
+  inline-size: 100%;
+  block-size: auto;
 }
 
 .editors-text {
@@ -363,19 +364,19 @@
 }
 
 .radio-btns {
-  label {
-    @include t.use-typography("body-large");
-
-    padding: 0;
-    display: flex;
-    align-items: center;
-    color: var(--color-foreground-secondary);
-  }
-
   display: flex;
   flex-direction: column;
-  padding: 0 0 var(--sp-xl) 0;
+  padding-block-end: var(--sp-xl);
   gap: var(--sp-s);
+}
+
+.radio-btns label {
+  @include t.use-typography("body-large");
+
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-foreground-secondary);
 }
 
 .modal-contact-content {
@@ -403,4 +404,36 @@
   @include t.use-typography("body-medium");
 
   margin-block-end: var(--sp-l);
+}
+
+.cta-link {
+  @include t.use-typography("body-medium");
+
+  align-items: center;
+  color: var(--color-accent-primary);
+  display: flex;
+  margin-block-end: var(--sp-xxxl);
+  text-align: left;
+  text-decoration: underline;
+}
+
+.button-full-width {
+  justify-content: center;
+  inline-size: 100%;
+}
+
+.price-text,
+.nitrate-subscription {
+  margin-block-end: px2rem(30);
+}
+
+.price-text {
+  align-items: center;
+  display: flex;
+  gap: var(--sp-s);
+  margin-block-end: px2rem(34);
+}
+
+.price-value {
+  font-weight: 500;
 }

@@ -48,6 +48,23 @@
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
 
+(t/deftest tempfile-objects-are-not-deduplicated
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/in-future {:minutes 10})
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/in-future {:minutes 10})
+                                          :bucket "tempfile"
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

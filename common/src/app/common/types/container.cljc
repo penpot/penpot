@@ -259,7 +259,7 @@
    (some? (find-component-main objects shape only-direct-child?))))
 
 (defn in-any-component?
-  "Check if the shape is part of any component (main or copy), wether it's
+  "Check if the shape is part of any component (main or copy), whether it's
    head or not."
   [objects shape]
   (or (ctk/in-component-copy? shape)
@@ -339,7 +339,10 @@
                                                                           ;; We must avoid that destiny frame is inside the component frame
                                                                           (nil? (get component-children (:id %)))
                                                                           ;; We must avoid that destiny frame is inside a copy
-                                                                          (not (ctk/in-component-copy? %)))}))
+                                                                          (not (ctk/in-component-copy? %))
+                                                                          ;; We must avoid that destiny frame is a variant container,
+                                                                          ;; because their children must be variant mains
+                                                                          (not (ctk/is-variant-container? %)))}))
          frame           (get-shape page frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 
@@ -405,7 +408,7 @@
       (map remap-ids new-shapes)])))
 
 (defn get-first-valid-parent
-  "Go trough the parents until we find a shape that is not a copy of a component nor
+  "Go through the parents until we find a shape that is not a copy of a component nor
    a variant container."
   [objects id]
   (let [shape (get objects id)]
@@ -517,7 +520,7 @@
      :any-main-descendant any-main-descendant}))
 
 (defn find-valid-parent-and-frame-ids
-  "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
+  "Navigate through the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
   ([parent-id objects children]
    (find-valid-parent-and-frame-ids parent-id objects children false nil nil))
   ([parent-id objects children pasting? libraries]

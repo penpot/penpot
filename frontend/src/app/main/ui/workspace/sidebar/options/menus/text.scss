@@ -4,8 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .element-set {
   @include sidebar.option-grid-structure;
@@ -13,40 +18,41 @@
 
 .element-title {
   grid-column: span 8;
+  position: relative;
 }
 
 .element-content {
-  @include deprecated.flex-column;
-
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   grid-column: span 8;
-  margin-top: deprecated.$s-4;
+  margin-block-start: var(--sp-xs);
 }
 
 .multiple-typography {
-  @extend %mixed-bar;
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-s) 0;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }
 
 .multiple-text {
-  @include deprecated.body-small-typography;
+  @include t.use-typography("body-small");
 
   flex-grow: 1;
-  color: var(--input-foreground-color-active);
-}
-
-.multiple-typography-button {
-  @extend %button-tertiary;
-
-  height: deprecated.$s-32;
-  width: deprecated.$s-28;
-
-  svg {
-    @extend %button-icon;
-  }
+  color: var(--color-foreground-secondary);
 }
 
 .text-align-options {
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }
 
 .align-options,
@@ -54,10 +60,10 @@
 .vertical-align-options,
 .grow-options,
 .text-decoration-options {
-  height: deprecated.$s-32;
+  block-size: $sz-32;
 }
 
 .text-decoration-options {
   display: flex;
-  gap: deprecated.$s-4;
+  gap: var(--sp-xs);
 }
