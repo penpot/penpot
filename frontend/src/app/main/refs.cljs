@@ -36,11 +36,7 @@
   (l/derived (l/key :current-page-id) st/state))
 
 (def team
-  (l/derived (fn [state]
-               (let [team-id (:current-team-id state)
-                     teams   (:teams state)]
-                 (get teams team-id)))
-             st/state))
+  (l/derived dsh/lookup-team st/state))
 
 (def project
   (l/derived (fn [state]

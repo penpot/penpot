@@ -541,7 +541,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! pool profile-id team-id)
+  (teams/check-read-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
