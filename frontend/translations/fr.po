@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
+"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -4022,6 +4022,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "Quelle est la taille de votre équipe ?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "Dites nous quel est votre poste"
 
