@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:25+0000\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -3514,6 +3514,7 @@ msgstr ""
 "passe."
 
 #: src/app/main/ui/static.cljs:167
+#, fuzzy
 msgid "not-found.login.signup-free"
 msgstr "S'inscrire gratuitement"
 
@@ -3758,6 +3759,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Inviter des membres"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "N'oublie pas d'inclure tout le monde. Développeurs, designers et "
@@ -3888,6 +3890,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "Quelle est la taille de ton entreprise ?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "Parle-nous de ta job"
 
