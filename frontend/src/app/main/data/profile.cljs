@@ -495,9 +495,7 @@
   (ptk/reify ::access-token-created
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :access-token-created access-token)
-          (update :access-tokens conj access-token)))))
+      (assoc state :access-token-created access-token))))
 
 (defn create-access-token
   [params]
@@ -510,8 +508,10 @@
             (meta params)]
 
         (->> (rp/cmd! :create-access-token params)
-             (rx/map access-token-created)
              (rx/tap on-success)
+             (rx/mapcat (fn [token]
+                          (rx/of (access-token-created token)
+                                 (fetch-access-tokens))))
              (rx/catch on-error))))))
 
 ;; --- EVENT: delete-access-token

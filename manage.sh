@@ -50,6 +50,7 @@ PENPOT_PORT_BASE_SERENA=${SERENA_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_SERENA_DASHBOARD=${SERENA_DASHBOARD_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_OPENCODE=${OPENCODE_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MDTS=${MDTS_EXTERNAL_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_STORYBOOK=${PENPOT_STORYBOOK_PORT:?missing in defaults.env}
 
 # Per-instance values like PENPOT_REDIS_URI are injected by
 # instance-env-overrides as shell env variables (not set in this shell),
@@ -314,6 +315,7 @@ function instance-env-overrides {
     serena_dash=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA_DASHBOARD")
     opencode=$(instance-port "$instance" "$PENPOT_PORT_BASE_OPENCODE")
     mdts=$(instance-port "$instance" "$PENPOT_PORT_BASE_MDTS")
+    storybook=$(instance-port "$instance" "$PENPOT_PORT_BASE_STORYBOOK")
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
@@ -323,6 +325,7 @@ function instance-env-overrides {
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
         "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
+        "PENPOT_STORYBOOK_PORT=${storybook}" \
         "SERENA_EXTERNAL_PORT=${serena}" \
         "OPENCODE_EXTERNAL_PORT=${opencode}" \
         "MDTS_EXTERNAL_PORT=${mdts}" \

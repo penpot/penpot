@@ -53,7 +53,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar* path-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -223,7 +225,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -394,7 +398,7 @@
         [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
       (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:page page}])
+        [:> use/export-page* {:page page}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
       [:rect {:width (:width vbox 0)

@@ -136,12 +136,25 @@
     (reset! transition-tiles-handler* handler)
     (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
 
+(defn arm-page-transition-end!
+  "Arms the end of an active page transition: installs a `tiles-complete` handler
+   (bound to the current epoch) that ends the transition on the next full frame.
+
+   Called once the target page's shapes have been loaded into WASM, so the
+   earlier/empty frames rendered while the previous page is still mounted and
+   while the fresh canvas re-initializes cannot dismiss the blur prematurely.
+   No-op when no transition is active."
+  []
+  (when @page-transition?
+    (set-transition-tiles-complete-handler! @transition-epoch* end-page-transition!)))
+
 (defn start-initial-load-transition!
   "Starts a page-transition workflow for initial file open.
 
    - Sets `page-transition?` to true
-   - Installs a tiles-complete handler to end the transition
-   - Uses a solid background-color placeholder as the transition image"
+   - Uses a solid background-color placeholder as the transition image
+   - The tiles-complete handler that ends the transition is armed later, once
+     the page's shapes are loaded (see `arm-page-transition-end!`)"
   [background]
   (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
@@ -149,9 +162,10 @@
   (when (or (not @page-transition?) (nil? @transition-image*))
     (set-transition-image-from-background! background))
   (when-not @page-transition?
-    ;; Start transition + bind the tiles-complete handler to this epoch.
-    (let [epoch (begin-page-transition!)]
-      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+    ;; Start the transition. The tiles-complete → end handler is armed later,
+    ;; once the target page's shapes are loaded (see `arm-page-transition-end!`),
+    ;; so an earlier/empty frame can't dismiss the overlay prematurely.
+    (begin-page-transition!)))
 
 (defn- start-context-loss-overlay!
   []
@@ -497,7 +511,14 @@
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
-                 (render ts)))]
+                 (try
+                   (render ts)
+                   (catch :default e
+                     ;; A failed render (e.g. a WASM panic) must not strand an
+                     ;; active page-transition. Force ending of it so the
+                     ;; workspace is shown without a blur.
+                     (end-page-transition!)
+                     (throw e)))))]
           (set! wasm/internal-frame-id frame-id))))))
 
 (defn- begin-shapes-loading!
@@ -2019,6 +2040,8 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; End any in-flight page transition
+  (end-page-transition!)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
@@ -2465,9 +2488,12 @@
 (defn apply-canvas-blur
   []
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
-  (let [already? @page-transition?
-        epoch    (begin-page-transition!)]
-    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+  (let [already? @page-transition?]
+    (begin-page-transition!)
+    ;; The tiles-complete → end handler is armed later, once the target page's
+    ;; shapes are loaded (see `arm-page-transition-end!`), so a frame rendered
+    ;; before the new page is drawn can't dismiss the blur prematurely.
+    ;;
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
     ;; the final target page finishes rendering. The caller (sitemap on-click) is
@@ -2554,5 +2580,11 @@
                 (js/console.error cause)
                 (p/resolved false)))))
       (p/resolved false))))
+
+(defn preload-module!
+  "Starts downloading + compiling the WASM engine now instead of on first
+   viewport mount. Idempotent: the `delay` caches its in-flight promise."
+  []
+  @module)
 
 

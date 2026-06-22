@@ -260,7 +260,7 @@
 
 ;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields
 (defn- make-schema
-  [tokens-tree active-tab]
+  [current-token-path tokens-tree active-tab]
   (sm/schema
    [:and
     [:map
@@ -271,7 +271,8 @@
        (sm/update-properties cto/schema:token-name assoc
                              :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (ctob/token-name-path-exists? % tokens-tree))]]]
+        #(not (ctob/token-name-path-exists? % (-> tokens-tree
+                                                  (d/dissoc-in current-token-path))))]]]
 
      [:value
       [:map
@@ -349,7 +350,8 @@
 
 (mf/defc form*
   [{:keys [token
-           token-type] :as props}]
+           token-type
+           current-token-path] :as props}]
   (let [token
         (mf/with-memo [token]
           (or token
@@ -372,7 +374,7 @@
         props (mf/spread-props props {:token token
                                       :token-type token-type
                                       :initial initial
-                                      :make-schema make-schema
+                                      :make-schema (partial make-schema current-token-path)
                                       :value-type :indexed
                                       :value-subfield :shadow
                                       :input-component tabs-wrapper*

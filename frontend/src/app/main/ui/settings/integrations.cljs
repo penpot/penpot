@@ -93,14 +93,13 @@
                 :class (stl/css :color-primary)}
       title]
 
-     [:> notification-pill* {:level :info
-                             :type :context}
-      [:> text* {:as "div"
-                 :typography t/body-small
-                 :class (stl/css :color-primary)}
-       (if is-mcp
-         (tr "integrations.mcp-key.info.non-recuperable")
-         (tr "integrations.token.info.non-recuperable"))]]
+     (when-not is-mcp
+       [:> notification-pill* {:level :info
+                               :type :context}
+        [:> text* {:as "div"
+                   :typography t/body-small
+                   :class (stl/css :color-primary)}
+         (tr "integrations.token.info.non-recuperable")]])
 
      [:div {:class (stl/css :modal-content)}
       [:> input-copy* {:value (:token token-created "")

@@ -15,7 +15,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
    [app.main.features :as features]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -204,13 +203,7 @@
                           :wait true
                           :is-wasm (wasm-export-enabled? state)}]
           (rx/concat
-           (rx/of ::dwp/force-persist)
-
-           ;; Wait the persist to be succesfull
-           (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-                (rx/filter #(or (nil? %) (= :saved %)))
-                (rx/first)
-                (rx/timeout 400 (rx/empty)))
+           (dwp/force-persist-and-wait 400)
 
            (->> (rp/cmd! :export params)
                 (rx/map (fn [{:keys [filename mtype uri]}]

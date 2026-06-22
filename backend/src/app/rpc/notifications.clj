@@ -43,3 +43,11 @@
                          :organization-name organization-name
                          :teams teams
                          :deleted-teams deleted-teams})))
+
+(defn notify-organization-change-sso
+  [cfg organization-id]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic uuid/zero
+               :message {:type :organization-change-sso
+                         :organization-id organization-id})))

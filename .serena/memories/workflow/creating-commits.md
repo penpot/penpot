@@ -15,7 +15,7 @@ automatically pull the identity from the local git config `user.name` and `user.
 
 Body explaining what changed and why.
 
-Co-authored-by: <You (the LLM)>
+Co-authored-by: model-name <model-name@penpot.app>
 ```
 
 ## Commit Type Emojis

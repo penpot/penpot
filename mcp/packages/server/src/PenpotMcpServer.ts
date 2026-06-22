@@ -111,12 +111,22 @@ export class PenpotMcpServer {
      */
     private readonly redisBridge?: RedisBridge;
 
+    /**
+     * Tenant identifier, read from the `PENPOT_TENANT` environment variable.
+     *
+     * Used to qualify Redis channel names so that multiple environments sharing a
+     * Redis instance do not interfere with each other. Defaults to `"default"`,
+     * matching the backend default.
+     */
+    private readonly tenant: string;
+
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
         this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "localhost";
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
+        this.tenant = process.env.PENPOT_TENANT ?? "default";
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
@@ -134,7 +144,7 @@ export class PenpotMcpServer {
         // requiring the plugin and the MCP client to connect to the same instance.
         const redisUri = process.env.PENPOT_MCP_REDIS_URI;
         if (this.isMultiUser && redisUri) {
-            this.redisBridge = new RedisBridge(redisUri);
+            this.redisBridge = new RedisBridge(redisUri, this.tenant);
         }
 
         this.pluginBridge = new PluginBridge(this, this.webSocketPort, this.redisBridge);

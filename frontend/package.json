@@ -46,7 +46,7 @@
     "clear:wasm": "cargo clean --manifest-path ../render-wasm/Cargo.toml",
     "watch": "exit 0",
     "watch:app": "pnpm run clear:shadow-cache && pnpm run clear:wasm && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
-    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 -h 0.0.0.0 --no-open\" \"node ./scripts/watch-storybook.js\"",
+    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 3451 -h 0.0.0.0 --no-open\" \"node ./scripts/watch-storybook.js\"",
     "postinstall": "(cd ../plugins/libs/plugins-runtime; pnpm install; pnpm run build)"
   },
   "devDependencies": {
@@ -107,7 +107,7 @@
     "react-virtualized": "^9.22.6",
     "rimraf": "^6.1.3",
     "rxjs": "8.0.0-alpha.14",
-    "sass": "^1.100.0",
+    "sass": "^1.101.0",
     "sass-embedded": "^1.100.0",
     "sax": "^1.6.0",
     "scheduler": "^0.27.0",
@@ -117,7 +117,7 @@
     "stylelint": "^17.13.0",
     "stylelint-config-standard-scss": "^17.0.0",
     "stylelint-scss": "^7.2.0",
-    "stylelint-use-logical-spec": "^5.0.1",
+    "stylelint-plugin-logical-css": "^2.1.0",
     "svg-sprite": "^2.0.4",
     "tdigest": "^0.1.2",
     "tinycolor2": "^1.6.0",
