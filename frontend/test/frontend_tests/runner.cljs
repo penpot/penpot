@@ -34,6 +34,7 @@
    [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
    [frontend-tests.plugins.library-test]
+   [frontend-tests.plugins.local-storage-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
@@ -102,6 +103,7 @@
    'frontend-tests.plugins.grid-test
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.library-test
+   'frontend-tests.plugins.local-storage-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.format-test
