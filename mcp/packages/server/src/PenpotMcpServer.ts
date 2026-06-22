@@ -4,6 +4,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
 import { PluginBridge } from "./PluginBridge";
+import { RedisBridge } from "./RedisBridge";
 import { ConfigurationLoader } from "./ConfigurationLoader";
 import { createLogger } from "./logger";
 import { Tool } from "./Tool";
@@ -11,6 +12,12 @@ import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
+import { CljsReplTool } from "./tools/CljsReplTool";
+import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
+import { CljsCompilerOutputTool } from "./tools/CljsCompilerOutputTool";
+import { CljCheckParentheses } from "./tools/CljCheckParentheses";
+import { ReadTaigaIssueTool } from "./tools/ReadTaigaIssueTool";
+import { NreplClient } from "./NreplClient";
 import { ReplServer } from "./ReplServer";
 import { ApiDocs } from "./ApiDocs";
 
@@ -45,9 +52,31 @@ class ToolInfo {
 
 export class PenpotMcpServer {
     /**
-     * Timeout, in minutes, for idle Streamable HTTP sessions before they are automatically closed and removed.
+     * Timeout, in minutes, for idle sessions (Streamable HTTP and SSE) before they are automatically closed and removed.
      */
     private static readonly SESSION_TIMEOUT_MINUTES = 60;
+
+    /**
+     * Returns a short, non-reversible fingerprint of a user token, suitable for
+     * correlating log lines without exposing the full credential.
+     *
+     * Penpot tokens are JWEs in compact serialization (RFC 7516 §7.1) with five
+     * dot-separated segments; we use the first 8 chars of the wrapped CEK
+     * (segment 1) as a stable per-token identifier. For malformed tokens (e.g.
+     * test stubs that aren't real JWEs), we fall back to the first 8 chars of
+     * the raw token.
+     *
+     * @param token - the token to fingerprint, or `undefined`
+     * @returns a short fingerprint, or `<none>` if no token was given
+     */
+    private static tokenFingerprint(token: string | undefined): string {
+        if (!token) {
+            return "<none>";
+        }
+        const segments = token.split(".");
+        const source = segments.length === 5 ? segments[1] : token;
+        return source.slice(0, 8);
+    }
 
     private readonly logger = createLogger("PenpotMcpServer");
     private readonly tools: ToolInfo[];
@@ -65,7 +94,10 @@ export class PenpotMcpServer {
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
 
     private readonly streamableTransports: Record<string, StreamableSession> = {};
-    private readonly sseTransports: Record<string, { transport: SSEServerTransport; userToken?: string }> = {};
+    private readonly sseTransports: Record<
+        string,
+        { transport: SSEServerTransport; userToken?: string; lastActiveTime: number }
+    > = {};
 
     public readonly host: string;
     public readonly port: number;
@@ -73,12 +105,28 @@ export class PenpotMcpServer {
     public readonly replPort: number;
     private sessionTimeoutInterval: ReturnType<typeof setInterval> | undefined;
 
+    /**
+     * Optional Redis bridge for multi-instance task routing; present only when running
+     * in multi-user mode with a configured Redis URI.
+     */
+    private readonly redisBridge?: RedisBridge;
+
+    /**
+     * Tenant identifier, read from the `PENPOT_TENANT` environment variable.
+     *
+     * Used to qualify Redis channel names so that multiple environments sharing a
+     * Redis instance do not interfere with each other. Defaults to `"default"`,
+     * matching the backend default.
+     */
+    private readonly tenant: string;
+
     constructor(private isMultiUser: boolean = false) {
         // read port configuration from environment variables
         this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "localhost";
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
+        this.tenant = process.env.PENPOT_TENANT ?? "default";
 
         this.configLoader = new ConfigurationLoader(process.cwd());
         this.apiDocs = new ApiDocs();
@@ -91,7 +139,15 @@ export class PenpotMcpServer {
 
         this.tools = this.initTools();
 
-        this.pluginBridge = new PluginBridge(this, this.webSocketPort);
+        // Enable multi-instance task routing when running in multi-user mode with a
+        // configured Redis URI. Without it, the server operates in single-instance mode,
+        // requiring the plugin and the MCP client to connect to the same instance.
+        const redisUri = process.env.PENPOT_MCP_REDIS_URI;
+        if (this.isMultiUser && redisUri) {
+            this.redisBridge = new RedisBridge(redisUri, this.tenant);
+        }
+
+        this.pluginBridge = new PluginBridge(this, this.webSocketPort, this.redisBridge);
         this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
     }
 
@@ -127,6 +183,16 @@ export class PenpotMcpServer {
     }
 
     /**
+     * Indicates whether the server is running in a Penpot development environment.
+     *
+     * When enabled (by setting the environment variable PENPOT_MCP_DEVENV to "true"),
+     * additional developer tools such as ClojureScript expression evaluation are exposed.
+     */
+    public isDevEnv(): boolean {
+        return process.env.PENPOT_MCP_DEVENV === "true";
+    }
+
+    /**
      * Retrieves the high-level overview instructions explaining core Penpot usage.
      */
     public getHighLevelOverviewInstructions(): string {
@@ -151,6 +217,14 @@ export class PenpotMcpServer {
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
+        }
+        if (this.isDevEnv()) {
+            const nreplClient = new NreplClient();
+            toolInstances.push(new CljsReplTool(this, nreplClient));
+            toolInstances.push(new ImportPenpotFileTool(this, nreplClient));
+            toolInstances.push(new CljsCompilerOutputTool(this, nreplClient));
+            toolInstances.push(new CljCheckParentheses(this));
+            toolInstances.push(new ReadTaigaIssueTool(this));
         }
 
         return toolInstances.map((instance) => {
@@ -179,7 +253,7 @@ export class PenpotMcpServer {
     }
 
     /**
-     * Starts a periodic timer that closes and removes Streamable HTTP sessions that have been
+     * Starts a periodic timer that closes and removes Streamable HTTP and SSE sessions that have been
      * idle for longer than {@link SESSION_TIMEOUT_MINUTES}.
      */
     private startSessionTimeoutChecker(): void {
@@ -195,8 +269,18 @@ export class PenpotMcpServer {
                     removed++;
                 }
             }
+            for (const [id, session] of Object.entries(this.sseTransports)) {
+                if (now - session.lastActiveTime > timeoutMs) {
+                    this.logger.info(`Closing stale SSE session ${id}`);
+                    session.transport.close();
+                    delete this.sseTransports[id];
+                    removed++;
+                }
+            }
             this.logger.info(
-                `Removed ${removed} stale session(s); total sessions remaining: ${Object.keys(this.streamableTransports).length}`
+                `Removed ${removed} stale session(s); total sessions remaining: ${
+                    Object.keys(this.streamableTransports).length + Object.keys(this.sseTransports).length
+                }`
             );
         }, checkIntervalMs);
     }
@@ -222,26 +306,52 @@ export class PenpotMcpServer {
                 userToken = session.userToken;
                 session.lastActiveTime = Date.now();
                 this.logger.info(
-                    `Received request for existing session with id=${sessionId}; userToken=${session.userToken}`
+                    `Received request for existing session with id=${sessionId}; userTokenFp=${PenpotMcpServer.tokenFingerprint(session.userToken)}`
                 );
             } else {
-                // new session: create a fresh McpServer and transport
+                // No locally-known session for this request. Either a brand-new session
+                // (no session ID) or a session that was initialized on another instance
+                // and routed here by the load balancer (session ID present but unknown
+                // locally), which we adopt rather than reject.
+                const isAdoptedSession = sessionId !== undefined;
                 userToken = req.query.userToken as string | undefined;
-                this.logger.info(`Received new session request; userToken=${userToken}`);
+                this.logger.info(
+                    `${isAdoptedSession ? `Adopting session initialized on another instance with id=${sessionId}` : "Received new session request"}; userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                );
+
                 const { randomUUID } = await import("node:crypto");
                 const server = this.createMcpServer();
                 transport = new StreamableHTTPServerTransport({
-                    sessionIdGenerator: () => randomUUID(),
+                    // For an adopted session, reuse the existing ID; otherwise generate a new one.
+                    sessionIdGenerator: () => (isAdoptedSession ? sessionId! : randomUUID()),
                     onsessioninitialized: (id) => {
                         this.streamableTransports[id] = new StreamableSession(transport, userToken, Date.now());
                         this.logger.info(
-                            `Session initialized with id=${id} for userToken=${userToken}; total sessions: ${Object.keys(this.streamableTransports).length}`
+                            `Session initialized with id=${id} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}; total sessions: ${Object.keys(this.streamableTransports).length}`
                         );
                     },
                 });
+
+                if (isAdoptedSession) {
+                    // Pre-initialize the transport so that the SDK's validateSession() accepts
+                    // subsequent (non-initialize) requests for this session ID. The SDK stores
+                    // these on the inner WebStandardStreamableHTTPServerTransport as plain
+                    // (non-#private) properties; validateSession() checks exactly _initialized
+                    // and sessionId. Verified against @modelcontextprotocol/sdk 1.25.3.
+                    //
+                    // Since no initialize request will arrive for an adopted session, the
+                    // onsessioninitialized callback will not fire; register the session here.
+                    const inner = (transport as any)._webStandardTransport;
+                    inner._initialized = true;
+                    inner.sessionId = sessionId;
+                    this.streamableTransports[sessionId!] = new StreamableSession(transport, userToken, Date.now());
+                }
+
                 transport.onclose = () => {
                     if (transport.sessionId) {
-                        this.logger.info(`Closing session with id=${transport.sessionId} for userToken=${userToken}`);
+                        this.logger.info(
+                            `Closing session with id=${transport.sessionId} for userTokenFp=${PenpotMcpServer.tokenFingerprint(userToken)}`
+                        );
                         delete this.streamableTransports[transport.sessionId];
                     }
                 };
@@ -262,7 +372,7 @@ export class PenpotMcpServer {
 
             await this.sessionContext.run({ userToken }, async () => {
                 const transport = new SSEServerTransport("/messages", res);
-                this.sseTransports[transport.sessionId] = { transport, userToken };
+                this.sseTransports[transport.sessionId] = { transport, userToken, lastActiveTime: Date.now() };
 
                 const server = this.createMcpServer();
                 await server.connect(transport);
@@ -281,6 +391,7 @@ export class PenpotMcpServer {
             const session = this.sseTransports[sessionId];
 
             if (session) {
+                session.lastActiveTime = Date.now();
                 await this.sessionContext.run({ userToken: session.userToken }, async () => {
                     await session.transport.handlePostMessage(req, res, req.body);
                 });
@@ -300,7 +411,11 @@ export class PenpotMcpServer {
         return new Promise((resolve) => {
             this.app.listen(this.port, this.host, async () => {
                 this.logger.info(`Multi-user mode: ${this.isMultiUserMode()}`);
+                this.logger.info(
+                    `Multi-instance mode with Redis-backed transport: ${this.redisBridge ? "true" : "false"}`
+                );
                 this.logger.info(`Remote mode: ${this.isRemoteMode()}`);
+                this.logger.info(`DevEnv mode: ${this.isDevEnv()}`);
                 this.logger.info(`Modern Streamable HTTP endpoint: http://${this.host}:${this.port}/mcp`);
                 this.logger.info(`Legacy SSE endpoint: http://${this.host}:${this.port}/sse`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
@@ -322,6 +437,7 @@ export class PenpotMcpServer {
     public async stop(): Promise<void> {
         this.logger.info("Stopping Penpot MCP Server...");
         clearInterval(this.sessionTimeoutInterval);
+        await this.redisBridge?.close();
         await this.replServer.stop();
         this.logger.info("Penpot MCP Server stopped");
     }

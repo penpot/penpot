@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 #_:clj-kondo/ignore
 (ns app.common.uuid
@@ -183,3 +183,8 @@
 ;;          (js/console.log "RES:  " res))
 ;;
 ;;        )))
+
+
+(defn coerce [v]
+  (cond (uuid? v) v
+        (string? v) (parse* v)))

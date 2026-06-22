@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/typography.scss" as t;
 @use "ds/_sizes.scss" as *;
@@ -196,11 +196,6 @@
 
   display: flex;
   align-items: center;
-
-  &:not(:focus-within) {
-    cursor: ew-resize;
-  }
-
   block-size: $sz-32;
   inline-size: px2rem(60);
   padding-inline-start: var(--sp-xs);
@@ -260,11 +255,6 @@
   margin: var(--sp-xxs) 0;
   padding: 0 0 0 px2rem(6);
   color: var(--color-foreground-primary);
-  cursor: ew-resize;
-
-  &:focus {
-    cursor: text;
-  }
 
   &[disabled] {
     opacity: 0.5;

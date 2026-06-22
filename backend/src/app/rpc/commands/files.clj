@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files
   (:require
@@ -165,6 +165,7 @@
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
@@ -601,6 +602,7 @@
 (sv/defmethod ::get-file-summary
   "Retrieve a file summary by its ID. Only authenticated users."
   {::doc/added "1.20"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-summary}
   [cfg {:keys [::rpc/profile-id id] :as params}]
   (check-read-permissions! cfg profile-id id)
@@ -669,6 +671,7 @@
    outbound library reference counts. Cheap alternative to `get-file`
    when only metrics are needed."
   {::doc/added "2.17"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-stats
    ::sm/result schema:get-file-stats-result
    ::db/transaction true}
@@ -842,6 +845,7 @@
 
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
 
    ::sm/webhook
@@ -974,6 +978,12 @@
                              {:id id})
                  file)
 
+               (= (:is-shared file) (:is-shared params))
+               ;; File is already in the desired state (idempotent);
+               ;; this can happen when the frontend sends a duplicate
+               ;; request due to optimistic updates or race conditions.
+               file
+
                :else
                (ex/raise :type :validation
                          :code :invalid-shared-state
@@ -995,6 +1005,7 @@
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:set-file-shared}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -1050,6 +1061,7 @@
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:delete-file}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -1064,7 +1076,10 @@
 
 (defn link-file-to-library
   [conn {:keys [file-id library-id] :as params}]
-  (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
+  (db/exec-one! conn [sql:link-file-to-library file-id library-id])
+  (bfc/upsert-file-library-sync! conn {:file-id file-id
+                                       :library-file-id library-id
+                                       :synced-at (ct/now)}))
 
 (def ^:private
   schema:link-file-to-library
@@ -1118,11 +1133,9 @@
 
 (defn update-sync
   [conn {:keys [file-id library-id] :as params}]
-  (db/update! conn :file-library-rel
-              {:synced-at (ct/now)}
-              {:file-id file-id
-               :library-file-id library-id}
-              {::db/return-keys true}))
+  (bfc/upsert-file-library-sync! conn {:file-id file-id
+                                       :library-file-id library-id
+                                       :synced-at (ct/now)}))
 
 (def ^:private schema:update-file-library-sync-status
   [:map {:title "update-file-library-sync-status"}

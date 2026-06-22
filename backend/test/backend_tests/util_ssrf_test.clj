@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.util-ssrf-test
   (:require
@@ -130,8 +130,42 @@
     (ssrf/validate-uri "http://127.0.0.1/foo")
     (t/is false "should have thrown")
     (catch Exception e
-      (t/is (= :validation (:type (ex-data e))))
-      (t/is (= :ssrf-blocked-target (:code (ex-data e)))))))
+      (let [data (ex-data e)]
+        (t/is (= :validation (:type data)))
+        (t/is (= :ssrf-blocked-target (:code data)))
+        (t/is (= "http://127.0.0.1/foo" (:uri data)))))))
+
+(t/deftest validate-url-throw-on-scheme
+  (try
+    (ssrf/validate-uri "file:///etc/passwd")
+    (t/is false "should have thrown")
+    (catch Exception e
+      (let [data (ex-data e)]
+        (t/is (= :validation (:type data)))
+        (t/is (= :ssrf-blocked-target (:code data)))
+        (t/is (= "file:///etc/passwd" (:uri data)))
+        (t/is (= "file" (:scheme data)))))))
+
+(t/deftest validate-url-throw-on-missing-host
+  (try
+    (ssrf/validate-uri "http:///path")
+    (t/is false "should have thrown")
+    (catch Exception e
+      (let [data (ex-data e)]
+        (t/is (= :validation (:type data)))
+        (t/is (= :ssrf-blocked-target (:code data)))
+        (t/is (= "http:///path" (:uri data)))
+        (t/is (nil? (:host data)))))))
+
+(t/deftest validate-url-throw-on-dns-failure
+  (try
+    (ssrf/validate-uri "http://nonexistent.invalid/foo")
+    (t/is false "should have thrown")
+    (catch Exception e
+      (let [data (ex-data e)]
+        (t/is (= :validation (:type data)))
+        (t/is (= :ssrf-blocked-target (:code data)))
+        (t/is (= "http://nonexistent.invalid/foo" (:uri data)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; http/req automatic SSRF validation

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.components.forms
   (:require-macros [app.main.style :as stl])
@@ -557,6 +557,32 @@
                  (dom/stop-propagation event)
                  (swap! items (fn [items] (if (c/empty? items) items (pop items)))))))))
 
+        on-paste
+        (mf/use-fn
+         (fn [event]
+           (let [paste-data (-> event .-clipboardData (.getData "text"))]
+             (when (and (string? paste-data)
+                        (re-find #"[,\s]" paste-data))
+               (dom/prevent-default event)
+               (dom/stop-propagation event)
+
+               ;; Mark as touched
+               (swap! form assoc-in [:touched input-name] true)
+
+               ;; Split pasted text by commas and/or whitespace, add each valid part
+               (let [parts (->> (str/split paste-data #",|\s+")
+                                (map str/trim)
+                                (remove str/empty?))]
+                 (doseq [part parts]
+                   (when (valid-item-fn part)
+                     (swap! items conj-dedup {:text part
+                                              :valid true
+                                              :caution (caution-item-fn part)})))
+
+                 ;; Reset input value and mark as untouched after successful paste
+                 (reset! value "")
+                 (swap! form assoc-in [:touched input-name] false))))))
+
         on-blur
         (mf/use-fn
          (fn [_]
@@ -590,6 +616,7 @@
               :on-focus on-focus
               :on-blur on-blur
               :on-key-down on-key-down
+              :on-paste on-paste
               :value @value
               :on-change on-change
               :placeholder (when empty? label)}]

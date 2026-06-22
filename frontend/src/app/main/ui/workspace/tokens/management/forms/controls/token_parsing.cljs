@@ -50,9 +50,12 @@
 (defn select-option-by-id
   [id options-ref input-node value]
   (let [cursor     (dom/selection-start input-node)
+        sel-end    (dom/selection-end input-node)
         options    (mf/ref-val options-ref)
         options    (if (delay? options) @options options)
 
         option     (get-option options id)
         name       (:name option)]
-    (cto/insert-ref value cursor name)))
+    (if (= cursor sel-end)
+      (cto/insert-ref value cursor name)
+      (cto/build-result value cursor sel-end name))))

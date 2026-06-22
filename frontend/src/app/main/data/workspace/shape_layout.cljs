@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.shape-layout
   (:require
@@ -305,11 +305,11 @@
                 (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)
                 (when (or (:layout-align-content changes) (:layout-justify-content changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-alignment"}))
+                  (ev/event
+                   {::ev/name "layout-change-alignment"}))
                 (when (or (:layout-padding changes) (:layout-gap changes))
-                  (ptk/event ::ev/event
-                             {::ev/name "layout-change-margin"}))))))))
+                  (ev/event
+                   {::ev/name "layout-change-margin"}))))))))
 
 (defn add-layout-track
   ([ids type value]

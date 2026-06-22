@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require-macros [app.main.style :as stl])
@@ -98,16 +98,16 @@
         token-name-ref (mf/use-ref nil)
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "not-active-token.no-name")
-                                 has-errors
                                  (tr "options.deleted-token")
+                                 has-errors
+                                 (tr "not-active-token.no-name")
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
         name-tooltip-content (cond
                                not-active
-                               (tr "not-active-token.no-name")
-                               has-errors
                                (tr "options.deleted-token")
+                               has-errors
+                               (tr "not-active-token.no-name")
                                :else
                                #(mf/html
                                  [:div
@@ -451,5 +451,5 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
-                         :tooltip-position "top-left"
+                         :tooltip-placement "top-left"
                          :icon i/move}])]))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.render
   "The main container for a frame in inspect mode"
@@ -23,7 +23,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.viewer.interactions :refer [prepare-objects]]
+   [app.main.ui.viewer.viewport-common :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))

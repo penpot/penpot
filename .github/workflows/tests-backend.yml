@@ -1,0 +1,84 @@
+name: "CI: Backend"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'common/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'backend/**'
+      - 'common/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-backend:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Backend Tests"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    services:
+      postgres:
+        image: postgres:17
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot_test
+
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:9
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Lint
+        working-directory: ./backend
+        run: |
+          corepack enable;
+          corepack install;
+          pnpm install;
+          pnpm run check-fmt
+          pnpm run lint
+
+      - name: Tests
+        working-directory: ./backend
+        env:
+          PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
+          PENPOT_TEST_DATABASE_USERNAME: penpot_test
+          PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+          PENPOT_TEST_REDIS_URI: "redis://redis/1"
+
+        run: |
+          mkdir -p /tmp/penpot;
+          clojure -M:dev:test --reporter kaocha.report/documentation

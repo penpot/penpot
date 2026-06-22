@@ -1,0 +1,17 @@
+Hi {% if user-name %}{{ user-name }}{% endif %},
+
+Your Enterprise subscription is coming up for renewal. Here's a summary of what's included.
+
+Renewal date: {{ renewal-date }}
+Estimated amount: {{ estimated-amount }}
+
+Organizations covered: {% if organizations|empty? %}No organizations yet.{% endif %}
+{% for org in organizations %}
+- {{ org.name }}
+{% endfor %}
+This amount is based on current member counts across your organizations. You can adjust members from the Admin Console.
+
+Check our Terms and Conditions and Privacy Policy.
+
+Enjoy!
+The Penpot team.

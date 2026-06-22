@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.data
   "A collection of helpers for working with data structures and other
@@ -177,7 +177,9 @@
 
 (defn not-empty?
   [coll]
-  (boolean (seq coll)))
+  (if (coll? coll)
+    (boolean (seq coll))
+    (not (nil? coll))))
 
 (defn editable-collection?
   [m]

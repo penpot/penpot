@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.placeholder
   (:require-macros [app.main.style :as stl])
@@ -16,7 +16,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-project-placeholder*
@@ -27,9 +26,9 @@
         on-add-library
         (mf/use-fn
          (fn [_]
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section "empty-placeholder-projects"}))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section "empty-placeholder-projects"}))
            (dom/open-new-window "https://penpot.app/penpothub/libraries-templates")))
 
         on-import
@@ -60,9 +59,9 @@
       [:div {:class (stl/css :empty-project-card-subtitle)}
        (tr "dashboard.empty-project.explore")]]
 
-     [:& udi/import-form {:ref file-input
-                          :project-id project-id
-                          :on-finish-import on-finish-import}]]))
+     [:> udi/import-form* {:ref file-input
+                           :project-id project-id
+                           :on-finish-import on-finish-import}]]))
 
 (defn- make-has-other-files-or-projects-ref
   "Return a ref that resolves to true or false if there are at least some

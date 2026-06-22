@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.deleted
   (:require-macros [app.main.style :as stl])
@@ -12,10 +12,12 @@
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
@@ -239,13 +241,15 @@
 
         ;; Calculate deletion days based on team subscription
         deletion-days
-        (let [subscription (get team :subscription)
-              sub-type     (get subscription :type)
-              sub-status   (get subscription :status)
-              canceled?    (contains? #{"canceled" "unpaid"} sub-status)]
+        (let [profile          (mf/deref refs/profile)
+              subscription-type (get-subscription-type (:subscription team))
+              nitrate-type      (get-in profile [:subscription :type])
+              nitrate-active?   (dnt/is-valid-license? profile)]
           (cond
-            (and (= "unlimited" sub-type) (not canceled?)) 30
-            (and (= "enterprise" sub-type) (not canceled?)) 90
+            (and nitrate-active?
+                 (contains? #{"enterprise" "nitrate"} nitrate-type)) 90
+            (= subscription-type "unlimited") 30
+            (= subscription-type "enterprise") 90
             :else 7))
 
         on-delete-all

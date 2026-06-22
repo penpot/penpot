@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.util-simple-math-test
   (:require
@@ -47,7 +47,7 @@
     (let [result (sm/expr-eval "*10" 20)]
       (t/is (= result 200))))
 
-  (t/testing "Evaluate a negative number (not relative substraction)"
+  (t/testing "Evaluate a negative number (not relative subtraction)"
     (let [result (sm/expr-eval "-10" 20)]
       (t/is (= result -10))))
 
@@ -107,4 +107,3 @@
   (t/testing "Partial invalid expression should return nil"
     (let [result (sm/expr-eval "10 + abc" 100)]
       (t/is (= result nil)))))
-

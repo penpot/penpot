@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.cache
   "In-memory cache backed by Caffeine"
@@ -12,7 +12,6 @@
    [app.common.time :as ct]
    [promesa.exec :as px])
   (:import
-   com.github.benmanes.caffeine.cache.AsyncCache
    com.github.benmanes.caffeine.cache.Cache
    com.github.benmanes.caffeine.cache.Caffeine
    com.github.benmanes.caffeine.cache.RemovalListener
@@ -25,7 +24,8 @@
 
 (defprotocol ICache
   (get [_ k] [_ k load-fn] "get cache entry")
-  (invalidate! [_] [_ k] "invalidate cache"))
+  (invalidate [_] [_ k] "invalidate cache")
+  (invalidate-if [_ pred] "invalidate all entries whose value satisfies pred"))
 
 (defprotocol ICacheStats
   (stats [_] "get stats"))
@@ -47,15 +47,18 @@
      :miss-rate  (.missRate stats)}))
 
 (defn create
-  [& {:keys [executor on-remove max-size keepalive]}]
+  "Build an in-memory cache. Loads run synchronously on the calling
+  thread, so when a load fn throws or returns nil the entry is not
+  stored — concurrent loads for the same key still deduplicate."
+  [& {:keys [executor on-remove max-size keepalive expire]}]
   (let [cache (as-> (Caffeine/newBuilder) builder
                 (if (fn? on-remove) (.removalListener builder (create-listener on-remove)) builder)
                 (if executor  (.executor builder ^Executor (px/resolve-executor executor)) builder)
                 (if keepalive (.expireAfterAccess builder ^Duration (ct/duration keepalive)) builder)
+                (if expire    (.expireAfterWrite  builder ^Duration (ct/duration expire)) builder)
                 (if (int? max-size) (.maximumSize builder (long max-size)) builder)
                 (.recordStats builder)
-                (.buildAsync builder))
-        cache (.synchronous ^AsyncCache cache)]
+                (.build builder))]
     (reify
       ICache
       (get [_ k]
@@ -66,10 +69,14 @@
               ^Function (reify Function
                           (apply [_ k]
                             (load-fn k)))))
-      (invalidate! [_]
+      (invalidate [_]
         (.invalidateAll ^Cache cache))
-      (invalidate! [_ k]
-        (.invalidateAll ^Cache cache ^Object k))
+      (invalidate [_ k]
+        (.invalidate ^Cache cache ^Object k))
+      (invalidate-if [_ pred]
+        (doseq [[k v] (.asMap ^Cache cache)]
+          (when (pred v)
+            (.invalidate ^Cache cache ^Object k))))
 
       ICacheStats
       (stats [_]

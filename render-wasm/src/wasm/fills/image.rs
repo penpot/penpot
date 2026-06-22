@@ -4,8 +4,7 @@ use crate::mem;
 use crate::shapes::Fill;
 use crate::state::State;
 use crate::uuid::Uuid;
-use crate::with_state_mut;
-use crate::STATE;
+use crate::with_state;
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 use macros::wasm_error;
 
@@ -71,22 +70,20 @@ pub struct ShapeImageIds {
     image_id: Uuid,
 }
 
-impl From<[u8; IMAGE_IDS_SIZE]> for ShapeImageIds {
-    fn from(bytes: [u8; IMAGE_IDS_SIZE]) -> Self {
-        // FIXME: this should probably be a try_from instead
-        let shape_id = Uuid::try_from(&bytes[0..16]).unwrap();
-        let image_id = Uuid::try_from(&bytes[16..32]).unwrap();
-        ShapeImageIds { shape_id, image_id }
-    }
-}
-
-impl TryFrom<Vec<u8>> for ShapeImageIds {
+impl TryFrom<&[u8]> for ShapeImageIds {
     type Error = Error;
 
-    fn try_from(value: Vec<u8>) -> Result<Self> {
-        let mut arr = [0u8; IMAGE_IDS_SIZE];
-        arr.copy_from_slice(&value);
-        Ok(ShapeImageIds::from(arr))
+    fn try_from(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() < IMAGE_IDS_SIZE {
+            return Err(Error::CriticalError(format!(
+                "Invalid image ids byte length: expected at least {}, got {}",
+                IMAGE_IDS_SIZE,
+                bytes.len()
+            )));
+        }
+        let shape_id = Uuid::try_from(&bytes[0..16]).map_err(Error::CriticalError)?;
+        let image_id = Uuid::try_from(&bytes[16..32]).map_err(Error::CriticalError)?;
+        Ok(ShapeImageIds { shape_id, image_id })
     }
 }
 
@@ -94,7 +91,7 @@ impl TryFrom<Vec<u8>> for ShapeImageIds {
 #[wasm_error]
 pub extern "C" fn store_image() -> Result<()> {
     let bytes = mem::bytes();
-    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec())?;
+    let ids = ShapeImageIds::try_from(&bytes[0..IMAGE_IDS_SIZE])?;
 
     // Read is_thumbnail flag (4 bytes as u32)
     let is_thumbnail_bytes = &bytes[IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE];
@@ -106,7 +103,7 @@ pub extern "C" fn store_image() -> Result<()> {
 
     let image_bytes = &bytes[IMAGE_HEADER_SIZE..];
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if let Err(msg) = get_render_state().add_image(ids.image_id, is_thumbnail, image_bytes) {
             eprintln!("{}", msg);
         }
@@ -140,7 +137,7 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
         ));
     }
 
-    let ids = ShapeImageIds::try_from(bytes[0..IMAGE_IDS_SIZE].to_vec())
+    let ids = ShapeImageIds::try_from(&bytes[0..IMAGE_IDS_SIZE])
         .map_err(|_| Error::CriticalError("Invalid image ids".to_string()))?;
 
     // FIXME: read bytes in a safe way
@@ -176,7 +173,7 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
             .map_err(|_| Error::CriticalError("Invalid bytes for height".to_string()))?,
     );
 
-    with_state_mut!(state, {
+    with_state!(state, {
         if let Err(msg) = get_render_state().add_image_from_gl_texture(
             ids.image_id,
             is_thumbnail,

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.media
   "Media & Font postprocessing."
@@ -21,9 +21,9 @@
    [app.media.sanitize :as sanitize]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
+   [app.util.shell :as shell]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
-   [clojure.java.shell :as sh]
    [clojure.string]
    [clojure.xml :as xml]
    [cuerdas.core :as str]
@@ -34,12 +34,7 @@
    java.io.InputStream
    javax.xml.parsers.SAXParserFactory
    javax.xml.XMLConstants
-   org.apache.commons.io.IOUtils
-   org.im4java.core.ConvertCmd
-   org.im4java.core.IMOperation))
-
-(def default-max-file-size
-  (* 1024 1024 10)) ; 10 MiB
+   org.apache.commons.io.IOUtils))
 
 (def schema:upload
   [:map {:title "Upload"}
@@ -79,25 +74,31 @@
                                 max-size)))
     upload))
 
-(defmulti process :cmd)
-(defmulti process-error class)
+(defn validate-font-size!
+  "Validates that the font file `upload` does not exceed the configured
+  `:font-max-file-size` limit.  Accepts the same map shape as
+  `validate-media-size!` — requires a `:size` key in bytes."
+  [upload]
+  (let [max-size (cf/get :font-max-file-size)]
+    (when (> (:size upload) max-size)
+      (ex/raise :type :restriction
+                :code :font-max-file-size-reached
+                :hint (str/ffmt "the uploaded font size % is greater than the maximum %"
+                                (:size upload)
+                                max-size)))
+    upload))
+
+(defmulti process (fn [_system params] (:cmd params)))
 
 (defmethod process :default
-  [{:keys [cmd] :as params}]
+  [_system {:keys [cmd] :as params}]
   (ex/raise :type :internal
             :code :not-implemented
             :hint (str/fmt "No impl found for process cmd: %s" cmd)))
 
-(defmethod process-error :default
-  [error]
-  (throw error))
-
 (defn run
-  [params]
-  (try
-    (process params)
-    (catch Throwable e
-      (process-error e))))
+  [system params]
+  (process system params))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG PARSING
@@ -141,16 +142,63 @@
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
+(def ^:private imagemagick-default-env
+  "Default environment variables for ImageMagick resource limits.
+   These are the soft ceiling — policy.xml is the hard ceiling."
+  {"MAGICK_THREAD_LIMIT" "2"
+   "MAGICK_MEMORY_LIMIT" "256MiB"
+   "MAGICK_MAP_LIMIT" "512MiB"
+   "MAGICK_AREA_LIMIT" "128MP"
+   "MAGICK_DISK_LIMIT" "1GiB"
+   "MAGICK_TIME_LIMIT" "30"})
+
+(defn- get-imagemagick-env
+  "Returns environment variables for ImageMagick commands.
+   Reads individual PENPOT_IMAGEMAGICK_* config values, falling back to defaults."
+  []
+  (let [thread (cf/get :imagemagick-thread-limit)
+        memory (cf/get :imagemagick-memory-limit)
+        map-l  (cf/get :imagemagick-map-limit)
+        area   (cf/get :imagemagick-area-limit)
+        disk   (cf/get :imagemagick-disk-limit)
+        time   (cf/get :imagemagick-time-limit)
+        width  (cf/get :imagemagick-width-limit)
+        height (cf/get :imagemagick-height-limit)]
+    (cond-> imagemagick-default-env
+      thread (assoc "MAGICK_THREAD_LIMIT" thread)
+      memory (assoc "MAGICK_MEMORY_LIMIT" memory)
+      map-l  (assoc "MAGICK_MAP_LIMIT" map-l)
+      area   (assoc "MAGICK_AREA_LIMIT" area)
+      disk   (assoc "MAGICK_DISK_LIMIT" disk)
+      time   (assoc "MAGICK_TIME_LIMIT" time)
+      width  (assoc "MAGICK_WIDTH_LIMIT" width)
+      height (assoc "MAGICK_HEIGHT_LIMIT" height))))
+
+(defn- exec-magick!
+  "Execute an ImageMagick command with resource limits.
+   `args` is a vector of string arguments to pass to `magick`."
+  [system args]
+  (let [cmd    (into ["magick"] args)
+        result (shell/exec! system
+                            :cmd cmd
+                            :env (get-imagemagick-env)
+                            :timeout 60)]
+    (when (not= 0 (:exit result))
+      (ex/raise :type :internal
+                :code :imagemagick-error
+                :hint (str "ImageMagick command failed: " (:err result))
+                :cmd cmd
+                :exit (:exit result)))
+    result))
+
 (defn- generic-process
-  [{:keys [input format operation] :as params}]
+  [system {:keys [input format convert-args] :as params}]
   (let [{:keys [path mtype]} input
-        format (or (cm/mtype->format mtype) format)
+        format (or format (cm/mtype->format mtype))
         ext    (cm/format->extension format)
-        tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)]
-
-    (doto (ConvertCmd.)
-      (.run operation (into-array (map str [path tmp]))))
-
+        tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)
+        args   (into [(str path)] (conj (vec convert-args) (str tmp)))]
+    (exec-magick! system args)
     (assoc params
            :format format
            :mtype  (cm/format->mtype format)
@@ -158,38 +206,26 @@
            :data   tmp)))
 
 (defmethod process :generic-thumbnail
-  [params]
+  [system params]
   (let [{:keys [quality width height] :as params}
-        (check-thumbnail-params params)
-
-        operation
-        (doto (IMOperation.)
-          (.addImage)
-          (.autoOrient)
-          (.strip)
-          (.thumbnail ^Integer (int width) ^Integer (int height) ">")
-          (.quality (double quality))
-          (.addImage))]
-
-    (generic-process (assoc params :operation operation))))
+        (check-thumbnail-params params)]
+    (generic-process system
+                     (assoc params
+                            :convert-args ["-auto-orient" "-strip"
+                                           "-thumbnail" (str width "x" height ">")
+                                           "-quality" (str quality)]))))
 
 (defmethod process :profile-thumbnail
-  [params]
+  [system params]
   (let [{:keys [quality width height] :as params}
-        (check-thumbnail-params params)
-
-        operation
-        (doto (IMOperation.)
-          (.addImage)
-          (.autoOrient)
-          (.strip)
-          (.thumbnail ^Integer (int width) ^Integer (int height) "^")
-          (.gravity "center")
-          (.extent (int width) (int height))
-          (.quality (double quality))
-          (.addImage))]
-
-    (generic-process (assoc params :operation operation))))
+        (check-thumbnail-params params)]
+    (generic-process system
+                     (assoc params
+                            :convert-args ["-auto-orient" "-strip"
+                                           "-thumbnail" (str width "x" height "^")
+                                           "-gravity" "center"
+                                           "-extent" (str width "x" height)
+                                           "-quality" (str quality)]))))
 
 (defn get-basic-info-from-svg
   [{:keys [tag attrs] :as data}]
@@ -219,11 +255,11 @@
                  {:width (int width)
                   :height (int height)})))]))
 
-(defn- get-dimensions-with-orientation [^String path]
+(defn- get-dimensions-with-orientation [system ^String path]
   ;; Image magick doesn't give info about exif rotation so we use the identify command
   ;; If we are processing an animated gif we use the first frame with -scene 0
-  (let [dim-result (sh/sh "identify" "-format" "%w %h\n" path)
-        orient-result (sh/sh "identify" "-format" "%[EXIF:Orientation]\n" path)]
+  (let [dim-result    (exec-magick! system ["identify" "-format" "%w %h\n" path])
+        orient-result (exec-magick! system ["identify" "-format" "%[EXIF:Orientation]\n" path])]
     (when (= 0 (:exit dim-result))
       (let [[w h] (-> (:out dim-result)
                       str/trim
@@ -238,7 +274,7 @@
           {:width w :height h})))))        ; If orientation can't be read, use dimensions as-is
 
 (defmethod process :info
-  [{:keys [input] :as params}]
+  [system {:keys [input] :as params}]
   (let [{:keys [path mtype] :as input} (check-input input)]
     (if (= mtype "image/svg+xml")
       (let [info (some-> path slurp parse-svg get-basic-info-from-svg)]
@@ -249,7 +285,7 @@
         (merge input info {:ts (ct/now) :size (fs/size path)}))
 
       (let [path-str      (str path)
-            identify-res  (sh/sh "identify" "-format" "image/%[magick]\n" path-str)
+            identify-res  (exec-magick! system ["identify" "-format" "image/%[magick]\n" path-str])
             ;; identify prints one line per frame (animated GIFs, etc.); we take the first one
             mtype'        (if (zero? (:exit identify-res))
                             (-> identify-res
@@ -262,7 +298,7 @@
                                       :code :invalid-image
                                       :hint "invalid image"))
             {:keys [width height]}
-            (or (get-dimensions-with-orientation path-str)
+            (or (get-dimensions-with-orientation system path-str)
                 (do
                   (l/warn "Failed to read image dimensions with orientation" {:path path})
                   (ex/raise :type :validation
@@ -280,13 +316,6 @@
                :size (fs/size path)
                :ts (ct/now))))))
 
-(defmethod process-error org.im4java.core.InfoException
-  [error]
-  (ex/raise :type :validation
-            :code :invalid-image
-            :hint "invalid image"
-            :cause error))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMAGE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -296,9 +325,7 @@
   [{:keys [::http/client]} uri]
   (letfn [(parse-and-validate [{:keys [status headers] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
-                  mtype    (get headers "content-type")
-                  format   (cm/mtype->format mtype)
-                  max-size (cf/get :media-max-file-size default-max-file-size)]
+                  mtype    (get headers "content-type")]
 
               (when-not (<= 200 status 299)
                 (ex/raise :type :validation
@@ -310,19 +337,9 @@
                           :code :unknown-size
                           :hint "seems like the url points to resource with unknown size"))
 
-              (when (> size max-size)
-                (ex/raise :type :validation
-                          :code :file-too-large
-                          :hint (str/ffmt "the file size % is greater than the maximum %"
-                                          size
-                                          default-max-file-size)))
-
-              (when (nil? format)
-                (ex/raise :type :validation
-                          :code :media-type-not-allowed
-                          :hint "seems like the url points to an invalid media object"))
-
-              {:size size :mtype mtype :format format}))]
+              (-> {:size size :mtype mtype}
+                  (validate-media-type!)
+                  (validate-media-size!))))]
 
     (let [{:keys [body] :as response}
           (try
@@ -371,48 +388,80 @@
 ;; FONTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- get-font-prlimit
+  "Returns resource limits for font processing tools, read from config."
+  []
+  {:mem (cf/get :font-process-mem)
+   :cpu (cf/get :font-process-cpu)})
+
+(defn- get-font-timeout
+  "Returns the wall-clock timeout for font processing, read from config."
+  []
+  (cf/get :font-process-timeout))
+
+(defn- exec-font!
+  "Execute a font processing command with resource limits.
+   `args` is a vector of string arguments."
+  [system args]
+  (shell/exec! system
+               :cmd args
+               :prlimit (get-font-prlimit)
+               :timeout (get-font-timeout)))
+
 (defmethod process :generate-fonts
-  [{:keys [input] :as params}]
+  [system {:keys [input] :as params}]
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".otf"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "fontforge" "-lang=ff" "-c"
-                                 (str/fmt "Open('%s'); Generate('%s')"
-                                          (str finput)
-                                          (str foutput)))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".otf"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["fontforge" "-lang=ff" "-c"
+                                              (str/fmt "Open('%s'); Generate('%s')"
+                                                       (str finput)
+                                                       (str foutput))])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (otf->ttf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".ttf"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "fontforge" "-lang=ff" "-c"
-                                 (str/fmt "Open('%s'); Generate('%s')"
-                                          (str finput)
-                                          (str foutput)))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".ttf"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["fontforge" "-lang=ff" "-c"
+                                              (str/fmt "Open('%s'); Generate('%s')"
+                                                       (str finput)
+                                                       (str foutput))])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (ttf-or-otf->woff [data]
-            ;; NOTE: foutput is not used directly, it represents the
-            ;; default output of the execution of the underlying
-            ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
-                  foutput (fs/path (str finput ".woff"))
-                  _       (io/write* finput data)
-                  res     (sh/sh "sfnt2woff" (str finput))]
-              (when (zero? (:exit res))
-                foutput)))
+                  foutput (fs/path (str finput ".woff"))]
+              (try
+                (io/write* finput data)
+                (let [res (exec-font! system ["sfnt2woff" (str finput)])]
+                  (when (zero? (:exit res))
+                    foutput))
+                (finally
+                  (fs/delete finput)))))
 
           (woff->sfnt [data]
-            (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
-                  _       (io/write* finput data)
-                  res     (sh/sh "woff2sfnt" (str finput)
-                                 :out-enc :bytes)]
-              (when (zero? (:exit res))
-                (:out res))))
+            (let [finput (tmp/tempfile :prefix "penpot" :suffix "")]
+              (try
+                (io/write* finput data)
+                (let [res (shell/exec! system
+                                       :cmd ["woff2sfnt" (str finput)]
+                                       :out-enc :bytes
+                                       :prlimit (get-font-prlimit)
+                                       :timeout (get-font-timeout))]
+                  (when (zero? (:exit res))
+                    (:out res)))
+                (finally
+                  (fs/delete finput)))))
 
           (woff2->sfnt [data]
             ;; woff2_decompress outputs to same directory with .ttf extension
@@ -420,7 +469,7 @@
                   foutput (fs/path (str/replace (str finput) #"\.woff2$" ".ttf"))]
               (try
                 (io/write* finput data)
-                (let [res (sh/sh "woff2_decompress" (str finput))]
+                (let [res (exec-font! system ["woff2_decompress" (str finput)])]
                   (if (zero? (:exit res))
                     foutput
                     (do

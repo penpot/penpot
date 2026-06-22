@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.controls.input
   (:require
@@ -17,6 +17,7 @@
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.ds.controls.input :as ds]
    [app.main.ui.forms :as fc]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr]]
@@ -170,18 +171,22 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> tokens
-         (sd/resolve-tokens-interactive)
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cft/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> tokens
+           (sd/resolve-tokens-interactive)
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (if errors
+                                   (first errors)
+                                   (wte/error-with-value :error/unknown value))})))))))))
 
 (mf/defc input*
   [{:keys [name tokens token] :rest props}]
@@ -246,9 +251,11 @@
                                   (let [touched? (get-in @form [:touched input-name])]
                                     (when touched?
                                       (if error
-                                        (do
-                                          (swap! form assoc-in [:extra-errors input-name] {:message error})
-                                          (reset! hint* {:message error :type "error"}))
+                                        (if (csu/group-name-conflict-error? error token-name)
+                                          (swap! form assoc-in [:extra-errors ""] {:message error})
+                                          (do
+                                            (swap! form assoc-in [:extra-errors input-name] {:message error})
+                                            (reset! hint* {:message error :type "error"})))
                                         (let [message (tr "workspace.tokens.resolved-value" value)]
                                           (swap! form update :extra-errors dissoc input-name)
                                           (reset! hint* {:message message :type "hint"}))))))))]
@@ -272,7 +279,8 @@
                        (assoc-in [:data :value field] (if trim? (str/trim value) value))
                        (assoc-in [:touched :value field] true)
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (mf/defc input-composite*
   [{:keys [name tokens token] :rest props}]
@@ -283,6 +291,9 @@
 
         error
         (get-in @form [:errors :value input-name])
+
+        extra-error
+        (get-in @form [:extra-errors :value input-name])
 
         value
         (get-in @form [:data :value input-name] "")
@@ -316,10 +327,14 @@
                                 :variant "comfortable"
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
+
+        ;; On Typography composite tokens, line-height depends on font-size. If a typography
+        ;; token contains a line-height but no font-size, validation should fail and surface
+        ;; the corresponding error so the user understands why submission is blocked.
         props
-        (if (and touched? error)
+        (if (or extra-error (and touched? error) (and (= :line-height input-name) error))
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (:message (or error extra-error))})
           props)
 
         props (if (and (not error) (= input-name :reference))
@@ -345,8 +360,11 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
-                             (reset! hint* {:message error' :type "error"}))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+                               (do
+                                 (swap! form assoc-in  [:extra-errors :value input-name] {:message error'})
+                                 (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [input-value (get-in @form [:data :value input-name] "")
@@ -363,7 +381,6 @@
                                  message (tr "workspace.tokens.resolved-value" (or resolved-value value))]
                              (swap! form update :errors dissoc :value)
                              (swap! form update :extra-errors dissoc :value)
-                             (swap! form update :async-errors dissoc :reference)
                              (if (= input-value (str resolved-value))
                                (reset! hint* {})
                                (reset! hint* {:message message :type "hint"})))))))]
@@ -383,21 +400,43 @@
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value value-subfield index field] true)
+                       (update :errors dissoc :value)
+                       (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
-                       (update :extra-errors clean-errors)))))))
+                       (update :extra-errors clean-errors)
+                       (update :extra-errors dissoc "")))))))
 
 (mf/defc input-indexed*
-  [{:keys [name tokens token index value-subfield] :rest props}]
+  [{:keys [name tokens token index value-subfield nillable] :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
+        nillable   (d/nilv nillable false)
 
-        error
-        (get-in @form [:errors :value value-subfield index input-name])
+        touched?
+        (get-in @form [:touched :value value-subfield index input-name])
+
+        extra-error
+        (get-in @form [:extra-errors :value value-subfield index input-name])
 
         value-from-form
         (get-in @form [:data :value value-subfield index input-name] "")
+
+        ;; Resolution error for this specific field (e.g. missing reference)
+        indexed-error
+        (get-in @form [:errors :value value-subfield index input-name])
+
+        ;; Empty-field error: derived purely from the local field value so that
+        ;; each shadow layer is evaluated independently.
+        empty-error
+        (when (and (not nillable)
+                   (str/blank? value-from-form))
+          {:message (tr "errors.tokens.empty-field")})
+
+        error
+        (when touched? (or indexed-error empty-error))
 
         resolve-stream
         (mf/with-memo [token index input-name]
@@ -426,9 +465,10 @@
                                 :hint-message (:message hint)
                                 :hint-type (:type hint)})
         props
-        (if error
+        (if (or error extra-error)
           (mf/spread-props props {:hint-type "error"
-                                  :hint-message (:message error)})
+                                  :hint-message (or (:message (or error extra-error))
+                                                    (tr "errors.field-missing"))})
           props)
 
         props
@@ -455,8 +495,11 @@
 
                            (some? error)
                            (let [error' (:message error)]
-                             (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
-                             (reset! hint* {:message error' :type "error"}))
+                             (if (csu/group-name-conflict-error? error' token-name)
+                               (swap! form assoc-in [:extra-errors ""] {:message error'})
+
+                               (do (swap! form assoc-in  [:extra-errors :value value-subfield index input-name] {:message error'})
+                                   (reset! hint* {:message error' :type "error"}))))
 
                            :else
                            (let [message (tr "workspace.tokens.resolved-value" (dwtf/format-token-value value))

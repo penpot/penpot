@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.comments
   (:require
@@ -17,6 +17,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
+   [app.plugins.system-events :as se]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -71,7 +72,13 @@
              :else
              (->> (rp/cmd! :update-comment {:id (:id data) :content content})
                   (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
-                  (rx/subs! #(swap! data* assoc :content content))))))}
+                  (rx/subs!
+                   (fn []
+                     (st/emit! (se/event plugin-id "update-comment"
+                                         :thread-id thread-id
+                                         :id (:id data)
+                                         :content-size (count content)))
+                     (swap! data* assoc :content content)))))))}
 
       ;; Public methods
       :remove
@@ -87,7 +94,11 @@
              :else
              (->> (rp/cmd! :delete-comment {:id (:id data)})
                   (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
-                  (rx/subs! #(resolve) reject)))))))))
+                  (rx/subs!
+                   (fn []
+                     (st/emit! (se/event plugin-id "update-comment" :thread-id thread-id))
+                     (resolve))
+                   reject)))))))))
 
 (defn comment-thread-proxy? [p]
   (obj/type-of? p "CommentThreadProxy"))
@@ -125,6 +136,9 @@
              (not (r/check-permission plugin-id "comment:write"))
              (u/not-valid plugin-id :position "Plugin doesn't have 'comment:write' permission")
 
+             (not (u/page-active? page-id))
+             (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
+
              :else
              (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
                  (swap! data* assoc :position (gpt/point position))))))}
@@ -143,7 +157,8 @@
            (u/not-valid plugin-id :resolved "Plugin doesn't have 'comment:write' permission")
 
            :else
-           (do (st/emit! (dc/update-comment-thread (assoc @data* :is-resolved is-resolved)))
+           (do (st/emit! (-> (dc/update-comment-thread (assoc @data* :is-resolved is-resolved))
+                             (se/add-event plugin-id)))
                (swap! data* assoc :is-resolved is-resolved))))}
 
       :findComments
@@ -178,7 +193,13 @@
           (js/Promise.
            (fn [resolve reject]
              (->> (rp/cmd! :create-comment {:thread-id (:id data) :content content})
-                  (rx/subs! #(resolve (comment-proxy plugin-id file-id page-id (:id data) %)) reject))))))
+                  (rx/subs!
+                   (fn [result]
+                     (st/emit! (se/event plugin-id "create-comment"
+                                         :thread-id (:id data)
+                                         :file-id file-id
+                                         :content-size (count content)))
+                     (resolve (comment-proxy plugin-id file-id page-id (:id data) result))) reject))))))
 
       :remove
       (fn []
@@ -194,4 +215,5 @@
             :else
             (js/Promise.
              (fn [resolve]
-               (st/emit! (dc/delete-comment-thread-on-workspace {:id (:id data)} #(resolve)))))))))))
+               (st/emit! (-> (dc/delete-comment-thread-on-workspace {:id (:id data)} #(resolve))
+                             (se/add-event plugin-id)))))))))))

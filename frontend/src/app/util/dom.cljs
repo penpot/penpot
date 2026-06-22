@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.dom
   (:require
@@ -299,6 +299,11 @@
   (when (some? node)
     (.-selectionStart node)))
 
+(defn selection-end
+  [^js node]
+  (when (some? node)
+    (.-selectionEnd node)))
+
 (defn set-selection-range!
   [^js node start end]
   (when (some? node)
@@ -330,6 +335,18 @@
    (create-text globals/document text))
   ([document ^js text]
    (.createTextNode document text)))
+
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
 
 (defn set-html!
   [^js el html]
@@ -830,10 +847,11 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (when-let [new-window (.open js/window (str uri) name features)]
-     (when (not= name "_blank")
-       (when-let [location (.-location new-window)]
-         (.reload location))))))
+   (when (exists? js/window)
+     (when-let [new-window (.open js/window (str uri) name features)]
+       (when (not= name "_blank")
+         (when-let [location (.-location new-window)]
+           (.reload location)))))))
 
 (defn browser-back
   []

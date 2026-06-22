@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.loggers.webhooks
   "A mattermost integration for error reporting."
@@ -70,14 +70,14 @@
   (fn [{:keys [props] :as task}]
 
     (let [items (lookup-webhooks cfg props)
-          event {::audit/profile-id (:profile-id props)
-                 ::audit/name "webhook"
-                 ::audit/type "trigger"
-                 ::audit/props {:name (get props :name)
-                                :event-id (get props :id)
-                                :total-affected (count items)}}]
+          event {:profile-id (:profile-id props)
+                 :name "webhook"
+                 :type "trigger"
+                 :props {:name (get props :name)
+                         :event-id (get props :id)
+                         :total-affected (count items)}}]
 
-      (audit/insert! cfg event)
+      (audit/insert cfg event)
 
       (when items
         (l/trc :hint "webhooks found for event" :total (count items))

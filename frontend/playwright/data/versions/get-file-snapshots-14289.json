@@ -1,0 +1,34 @@
+[
+    {
+        "~:revn": 3,
+        "~:modified-at": "~m1780390308760",
+        "~:deleted-at": "~m1780476708760",
+        "~:created-by": "system",
+        "~:label": "snapshot-2026-06-02-08-51-48-760883637",
+        "~:id": "~uf3a9df94-b15a-80eb-8008-1d2623e61ed3",
+        "~:profile-id": "~u99e49e93-362f-80ef-8007-3450ea5204aa",
+        "~:version": 67,
+        "~:created-at": "~m1780390308760"
+    },
+    {
+        "~:revn": 0,
+        "~:modified-at": "~m1780389436291",
+        "~:deleted-at": "~m1780475836238",
+        "~:created-by": "system",
+        "~:label": "internal/snapshot/0",
+        "~:id": "~uf3a9df94-b15a-80eb-8008-1d22cfe0f1d4",
+        "~:profile-id": "~u99e49e93-362f-80ef-8007-3450ea5204aa",
+        "~:version": 67,
+        "~:created-at": "~m1780389436291"
+    },
+    {
+        "~:id": "~uf3a9df94-b15a-80eb-8008-1d22d3c4857a",
+        "~:label": "Inicial",
+        "~:revn": 1,
+        "~:version": 67,
+        "~:created-at": "~m1780389440274",
+        "~:modified-at": "~m1780389440274",
+        "~:created-by": "user",
+        "~:profile-id": "~u99e49e93-362f-80ef-8007-3450ea5204aa"
+    }
+]

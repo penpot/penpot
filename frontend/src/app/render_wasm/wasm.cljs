@@ -2,19 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.render-wasm.wasm
   (:require ["./api/shared.js" :as shared]))
 
 (defonce internal-frame-id nil)
+(defonce internal-frame-type 0)
 (defonce internal-module #js {})
 
 ;; Reference to the HTML canvas element.
 (defonce canvas nil)
-;; Snapshot of the current canvas suitable for `<img src=...>` overlays.
-;; This is typically a `blob:` URL created via `canvas.toBlob`.
-(defonce canvas-snapshot-url nil)
+;; Snapshot of the current canvas as an `ImageBitmap`, suitable for painting
+;; into an overlay canvas. Created via `createImageBitmap` so capturing never
+;; encodes pixels on the main thread.
+(defonce canvas-snapshot nil)
 
 ;; Reference to the Emscripten GL context wrapper.
 (defonce gl-context-handle nil)
@@ -29,6 +31,19 @@
 ;; When we're rendering in a sync way we want to stop the asynchrous `request-render`
 (defonce disable-request-render? (atom false))
 
+(defn module-ready?
+  []
+  (and internal-module (fn? (unchecked-get internal-module "_init"))))
+
+(defn reset-context-state!
+  []
+  (set! internal-frame-id nil)
+  (set! canvas nil)
+  (set! canvas-snapshot nil)
+  (set! gl-context-handle nil)
+  (set! gl-context nil)
+  (set! context-initialized? false)
+  (reset! context-lost? false))
 
 (defonce serializers
   #js {:blur-type shared/RawBlurType
@@ -47,6 +62,7 @@
        :wrap-type shared/RawWrapType
        :grid-track-type shared/RawGridTrackType
        :shadow-style shared/RawShadowStyle
+       :guide-kind shared/RawGuideKind
        :stroke-style shared/RawStrokeStyle
        :stroke-cap shared/RawStrokeCap
        :shape-type shared/RawShapeType

@@ -4,7 +4,7 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
@@ -13,11 +13,10 @@
     "lib": ["es2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": ".",
     "paths": {
-      "@penpot/plugin-types": ["libs/plugin-types/index.d.ts"],
-      "plugins-runtime": ["libs/plugins-runtime/src/index.ts"],
-      "plugins-styles/*": ["libs/plugins-styles/src/*"]
+      "@penpot/plugin-types": ["./libs/plugin-types/index.d.ts"],
+      "plugins-runtime": ["./libs/plugins-runtime/src/index.ts"],
+      "plugins-styles/*": ["./libs/plugins-styles/src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require-macros [app.main.style :as stl])
@@ -130,7 +130,47 @@
                        acc))))
           acc)))))
 
+(defn- check-measures-menu-props
+  [old-props new-props]
+  (let [o-values (unchecked-get old-props "values")
+        n-values (unchecked-get new-props "values")]
+    (and (identical? (unchecked-get old-props "ids")
+                     (unchecked-get new-props "ids"))
+         (identical? (unchecked-get old-props "type")
+                     (unchecked-get new-props "type"))
+         (identical? (unchecked-get old-props "appliedTokens")
+                     (unchecked-get new-props "appliedTokens"))
+         (identical? (get o-values :x)
+                     (get n-values :x))
+         (identical? (get o-values :y)
+                     (get n-values :y))
+         (identical? (get o-values :rotation)
+                     (get n-values :rotation))
+         (identical? (get o-values :hide-in-viewer)
+                     (get n-values :hide-in-viewer))
+         (identical? (get o-values :width)
+                     (get n-values :width))
+         (identical? (get o-values :width)
+                     (get n-values :width))
+         (identical? (get o-values :height)
+                     (get n-values :height))
+         (identical? (get o-values :points)
+                     (get n-values :points))
+         (identical? (get o-values :selrect)
+                     (get n-values :selrect))
+         (identical? (get o-values :r1)
+                     (get n-values :r1))
+         (identical? (get o-values :r2)
+                     (get n-values :r2))
+         (identical? (get o-values :r3)
+                     (get n-values :r3))
+         (identical? (get o-values :r4)
+                     (get n-values :r4))
+         (identical? (get o-values :proportion-lock)
+                     (get n-values :proportion-lock)))))
+
 (mf/defc measures-menu*
+  {::mf/wrap [#(mf/memo' % check-measures-menu-props)]}
   [{:keys [ids values applied-tokens type shapes]}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")

@@ -1,10 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { Component, signal } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { FeatherIconNames, icons } from 'feather-icons';
 import { IconButtonComponent } from './components/icon-button/icon-button.component';
 import { IconSearchComponent } from './components/icon-search/icon-search.component';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, fromEvent, map, merge, take } from 'rxjs';
+import { filter, fromEvent, map, merge, of } from 'rxjs';
 import { PluginMessageEvent } from '../model';
 
 @Component({
@@ -36,7 +36,6 @@ import { PluginMessageEvent } from '../model';
   },
 })
 export class AppComponent {
-  public route = inject(ActivatedRoute);
   public icons = signal(icons);
   public iconKeys = signal(Object.keys(icons) as FeatherIconNames[]);
   public messages$ = fromEvent<MessageEvent<PluginMessageEvent>>(
@@ -44,11 +43,9 @@ export class AppComponent {
     'message',
   );
 
-  public initialTheme$ = this.route.queryParamMap.pipe(
-    map((params) => params.get('theme')),
-    filter((theme) => !!theme),
-    take(1),
-  );
+  public initialTheme$ = of(
+    new URLSearchParams(window.location.search).get('theme'),
+  ).pipe(filter((theme) => !!theme));
 
   public theme = toSignal(
     merge(

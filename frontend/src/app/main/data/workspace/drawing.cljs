@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.drawing
   "Drawing interactions."
@@ -14,6 +14,7 @@
    [app.main.data.workspace.drawing.box :as box]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
+   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.path :as path]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -57,6 +58,9 @@
 
        ;; NOTE: comments are a special case and they manage they
        ;; own interrupt cycle.
+       (when (= tool :comments)
+         (rx/of (dwlo/toggle-layout-flag :display-comments :force? true)))
+
        (when (and (not= tool :comments)
                   (not= tool :path))
          (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main
   (:require
@@ -38,7 +38,6 @@
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
-   [app.svgo :as-alias svgo]
    [app.util.cron]
    [app.worker :as-alias wrk]
    [app.worker.executor]
@@ -61,21 +60,15 @@
     ::mdef/help "A total number of bytes processed by update-file."
     ::mdef/type :counter}
 
-   :rpc-mutation-timing
-   {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timing."
+   :rpc-main-timing
+   {::mdef/name "penpot_rpc_main_timing"
+    ::mdef/help "RPC command method call timing for main"
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
-   :rpc-command-timing
-   {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-query-timing
-   {::mdef/name "penpot_rpc_query_timing"
-    ::mdef/help "RPC query method call timing."
+   :rpc-management-timing
+   {::mdef/name "penpot_rpc_management_timing"
+    ::mdef/help "RPC command method call timing for management."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
@@ -160,16 +153,16 @@
     ::db/username   (cf/get :database-username)
     ::db/password   (cf/get :database-password)
     ::db/read-only  (cf/get :database-readonly false)
-    ::db/min-size   (cf/get :database-min-pool-size 0)
-    ::db/max-size   (cf/get :database-max-pool-size 60)
+    ::db/min-size   (cf/get :database-min-pool-size)
+    ::db/max-size   (cf/get :database-max-pool-size)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)
    ::wrk/netty-io-executor
    {:threads (cf/get :netty-io-threads)}
 
-   ::wrk/netty-executor
-   {:threads (cf/get :executor-threads)}
+   ::wrk/executor
+   {}
 
    :app.migrations/migrations
    {::db/pool (ig/ref ::db/pool)}
@@ -184,9 +177,6 @@
    {::rds/uri
     (cf/get :redis-uri)
 
-    ::wrk/netty-executor
-    (ig/ref ::wrk/netty-executor)
-
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
 
@@ -195,12 +185,12 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::mbus/msgbus
-   {::wrk/executor (ig/ref ::wrk/netty-executor)
+   {::wrk/executor (ig/ref ::wrk/executor)
     ::rds/client   (ig/ref ::rds/client)
     ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    :app.storage.tmp/cleaner
-   {::wrk/executor (ig/ref ::wrk/netty-executor)}
+   {::wrk/executor (ig/ref ::wrk/executor)}
 
    ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
@@ -271,7 +261,8 @@
     ::oidc/providers     (ig/ref ::oidc/providers)
     ::session/manager    (ig/ref ::session/manager)
     ::email/blacklist    (ig/ref ::email/blacklist)
-    ::email/whitelist    (ig/ref ::email/whitelist)}
+    ::email/whitelist    (ig/ref ::email/whitelist)
+    :app.nitrate/client (ig/ref :app.nitrate/client)}
 
    ::mgmt/routes
    {::db/pool            (ig/ref ::db/pool)
@@ -308,16 +299,18 @@
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
     ::sto/storage                   (ig/ref ::sto/storage)
-    ::session/manager               (ig/ref ::session/manager)}
+    ::session/manager               (ig/ref ::session/manager)
+    ::setup/props                   (ig/ref ::setup/props)
+    ::db/pool                       (ig/ref ::db/pool)}
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::climit/config      (cf/get :rpc-climit-config)
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/netty-executor)
+   {::wrk/executor (ig/ref ::wrk/executor)
 
     :app.loggers.mattermost/reporter
     (ig/ref :app.loggers.mattermost/reporter)
@@ -329,8 +322,8 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
-    :app.nitrate/client (ig/ref :app.nitrate/client)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
     ::sto/storage        (ig/ref ::sto/storage)
@@ -360,12 +353,12 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
-    ::wrk/executor       (ig/ref ::wrk/netty-executor)
+    ::wrk/executor       (ig/ref ::wrk/executor)
     ::session/manager    (ig/ref ::session/manager)
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
-    :app.nitrate/client (ig/ref :app.nitrate/client)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
@@ -659,9 +652,8 @@
   [& _args]
   (try
     (let [p (promise)]
-      (when (contains? cf/flags :nrepl-server)
-        (l/inf :hint "start nrepl server" :port 6064)
-        (nrepl/start-server :bind "0.0.0.0" :port 6064))
+      (l/inf :hint "start nrepl server" :port 6064)
+      (nrepl/start-server :bind "0.0.0.0" :port 6064)
 
       (start)
       (deref p))
