@@ -145,7 +145,6 @@
          :on-focus on-focus-m1
          :placeholder m1-placeholder
          :icon i/margin-top-bottom
-         :min 0
          :attr :m1
          :default nil
          :input-type :vertical-margin
@@ -176,7 +175,6 @@
          :placeholder m2-placeholder
          :icon i/margin-left-right
          :class (stl/css :horizontal-margin-wrapper)
-         :min 0
          :attr :m2
          :align :right
          :default nil
@@ -271,7 +269,6 @@
          :on-focus on-focus-m1
          :icon i/margin-top
          :class (stl/css :top-margin-wrapper)
-         :min 0
          :default nil
          :attr :m1
          :input-type :vertical-margin
@@ -300,7 +297,6 @@
          :on-focus on-focus-m2
          :icon i/margin-right
          :class (stl/css :right-margin-wrapper)
-         :min 0
          :default nil
          :attr :m2
          :align :right
@@ -331,7 +327,6 @@
          :on-focus on-focus-m3
          :icon i/margin-bottom
          :class (stl/css :bottom-margin-wrapper)
-         :min 0
          :attr :m3
          :default nil
          :align :right
@@ -362,7 +357,6 @@
          :on-focus on-focus-m4
          :icon i/margin-left
          :class (stl/css :left-margin-wrapper)
-         :min 0
          :default nil
          :attr :m4
          :property "Left margin"
