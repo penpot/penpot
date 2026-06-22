@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: al0cam <benjaminsikac@gmail.com>\n"
+"Last-Translator: Zvonimir Juranko <zjuranko@gmail.com>\n"
 "Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
 "hr/>\n"
 "Language: hr\n"
@@ -2961,6 +2961,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Pozovi članove"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Ne zaboravi uključiti sve. Programere, dizajnere, menadžere... raznolikost "
