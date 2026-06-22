@@ -53,14 +53,16 @@
             auth-uri   (get data :authorization_endpoint)
             user-uri   (get data :userinfo_endpoint)
             jwks-uri   (get data :jwks_uri)
-            logout-uri (get data :end_session_endpoint)]
+            logout-uri (get data :end_session_endpoint)
+            issuer     (get data :issuer)]
 
         (-> provider
             (assoc :token-uri token-uri)
             (assoc :auth-uri  auth-uri)
             (assoc :user-uri  user-uri)
             (assoc :jwks-uri jwks-uri)
-            (assoc :logout-uri logout-uri)))
+            (assoc :logout-uri logout-uri)
+            (update :issuer #(or % issuer))))
 
       (ex/raise :type ::internal
                 :code :invalid-sso-config
@@ -76,6 +78,7 @@
   []
   (d/without-nils
    {:base-uri         (cf/get :oidc-base-uri)
+    :issuer           (cf/get :oidc-issuer)
     :client-id        (cf/get :oidc-client-id)
     :client-secret    (cf/get :oidc-client-secret)
     :token-uri        (cf/get :oidc-token-uri)
@@ -139,22 +142,30 @@
               :hint "missing params for provider initialization"
               :provider (:id params)))
 
-  (try
-    (if (and (string? (:token-uri params))
-             (string? (:user-uri params))
-             (string? (:auth-uri params)))
-      (populate-jwks cfg params)
-      (let [provider (->> params
-                          (discover-oidc-config cfg)
-                          (populate-jwks cfg))]
-        (with-meta provider {::discovered true})))
+  (let [provider (try
+                   (if (and (string? (:token-uri params))
+                            (string? (:user-uri params))
+                            (string? (:auth-uri params)))
+                     (populate-jwks cfg params)
+                     (let [discovered (->> params
+                                           (discover-oidc-config cfg)
+                                           (populate-jwks cfg))]
+                       (with-meta discovered {::discovered true})))
+                   (catch Throwable cause
+                     (ex/raise :type ::internal
+                               :type :invalid-sso-config
+                               :hint "unexpected exception on configuring provider"
+                               :provider (:id params)
+                               :cause cause)))]
 
-    (catch Throwable cause
+    ;; OIDC core 3.1.3.7 — fail closed instead of silently skipping iss.
+    (when-not (string? (:issuer provider))
       (ex/raise :type ::internal
-                :type :invalid-sso-config
-                :hint "unexpected exception on configuring provider"
-                :provider (:id params)
-                :cause cause))))
+                :code :invalid-sso-config
+                :hint "OIDC provider is missing issuer; rely on discovery or set it explicitly"
+                :provider (:id params)))
+
+    provider))
 
 (defmethod ig/assert-key ::providers/generic
   [_ params]
@@ -187,6 +198,7 @@
    {:client-id        (cf/get :google-client-id)
     :client-secret    (cf/get :google-client-secret)
     :scopes           #{"openid" "email" "profile"}
+    :issuer           "https://accounts.google.com"
     :auth-uri         "https://accounts.google.com/o/oauth2/v2/auth"
     :token-uri        "https://oauth2.googleapis.com/token"
     :user-uri         "https://openidconnect.googleapis.com/v1/userinfo"
@@ -307,6 +319,7 @@
   []
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
+              :issuer        base
               :client-id     (cf/get :gitlab-client-id)
               :client-secret (cf/get :gitlab-client-secret)
               :scopes        #{"openid" "profile" "email"}
@@ -526,19 +539,19 @@
 
     (-> response :body json/decode)))
 
+;; Per OIDC core 3.1.3.7: validate iss/aud/exp; failures must propagate
+;; so they cannot be bypassed via the userinfo fallback in `get-info`.
 (defn- get-id-token-claims
   [provider tdata]
-  (try
-    (when (:token/id tdata)
-      (let [{:keys [kid alg]} (jwt/decode-header (:token/id tdata))]
-        (when-let [key (if (str/starts-with? (name alg) "hs")
-                         (:client-secret provider)
-                         (get-in provider [:jwks kid]))]
-
-          (jwt/unsign (:token/id tdata) key {:alg alg}))))
-    (catch Throwable cause
-      (l/warn :hint "unable to get user info from JWT token (unexpected exception)"
-              :cause cause))))
+  (when-let [token (:token/id tdata)]
+    (let [{:keys [kid alg]} (jwt/decode-header token)]
+      (when-let [key (if (str/starts-with? (name alg) "hs")
+                       (:client-secret provider)
+                       (get-in provider [:jwks kid]))]
+        (jwt/unsign token key
+                    (cond-> {:alg alg
+                             :aud (:client-id provider)}
+                      (:issuer provider) (assoc :iss (:issuer provider))))))))
 
 (def ^:private schema:info
   [:map
