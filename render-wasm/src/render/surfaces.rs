@@ -529,8 +529,11 @@ impl Surfaces {
         viewbox: &Viewbox,
         tile_viewbox: &TileViewbox,
         background: skia::Color,
+        clear_background: bool,
     ) {
-        self.tiles.update(viewbox, tile_viewbox);
+        self.tiles
+            .update(viewbox, tile_viewbox, &self.atlas.tile_doc_rects);
+
         if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
             self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
             self.tiles.snapshot();
@@ -538,8 +541,14 @@ impl Surfaces {
         let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
             return;
         };
+
         let canvas = self.backbuffer.canvas();
-        canvas.clear(background);
+        canvas.save();
+        canvas.reset_matrix();
+        if clear_background {
+            canvas.clear(background);
+        }
+
         canvas.draw_atlas(
             atlas_image,
             &self.tiles.transforms,
@@ -550,6 +559,7 @@ impl Surfaces {
             None,
             None,
         );
+        canvas.restore();
     }
 
     /// Draw the persistent atlas onto the backbuffer using the current viewbox transform.
@@ -713,18 +723,6 @@ impl Surfaces {
             (0.0, 0.0),
             sampling_options,
             paint,
-        );
-    }
-
-    /// Draws the cache surface directly to the backbuffer canvas.
-    /// This avoids creating an intermediate snapshot, reducing GPU stalls.
-    pub fn draw_cache_to_backbuffer(&mut self) {
-        let sampling_options = self.sampling_options;
-        self.cache.draw(
-            self.backbuffer.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            Some(&skia::Paint::default()),
         );
     }
 
@@ -1567,7 +1565,12 @@ impl TileTextureCache {
         }
     }
 
-    pub fn update(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
+    pub fn update(
+        &mut self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+        tile_doc_rects: &HashMap<Tile, skia::Rect>,
+    ) {
         if self.transforms.len() != tile_viewbox.visible_rect.len() as usize {
             self.transforms.resize(
                 tile_viewbox.visible_rect.len() as usize,
@@ -1586,7 +1589,8 @@ impl TileTextureCache {
             texture.set_empty();
         }
 
-        let offset = viewbox.get_offset();
+        let s = viewbox.get_scale();
+        let view_doc = viewbox.area;
         let mut index = 0;
         for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
             for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
@@ -1600,8 +1604,22 @@ impl TileTextureCache {
                     continue;
                 }
 
-                self.transforms[index].tx = x as f32 * self.tile_size - offset.x;
-                self.transforms[index].ty = y as f32 * self.tile_size - offset.y;
+                // Tile indices are zoom-dependent: a cached texture keyed by (x, y)
+                // may cover a different document area than the current grid slot.
+                // Always place via the stored document rect when available.
+                let doc_rect = tile_doc_rects
+                    .get(&tile)
+                    .copied()
+                    .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+                if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
+                    continue;
+                }
+
+                let xf = &mut self.transforms[index];
+                xf.scos = doc_rect.width() * s / self.tile_size;
+                xf.ssin = 0.0;
+                xf.tx = (doc_rect.left + viewbox.pan.x) * s;
+                xf.ty = (doc_rect.top + viewbox.pan.y) * s;
 
                 self.textures[index].set_ltrb(
                     tile_ref.rect.left,
@@ -1612,6 +1630,33 @@ impl TileTextureCache {
 
                 index += 1;
             }
+        }
+
+        self.transforms.truncate(index);
+        self.textures.truncate(index);
+
+        // Cached tiles from a previous zoom level use indices outside visible_rect;
+        // place them via their stored document rect, not the current grid walk above.
+        for (&tile, tile_ref) in &self.grid {
+            if tile_viewbox.is_visible(&tile) || self.removed.contains(&tile) {
+                continue;
+            }
+
+            let doc_rect = tile_doc_rects
+                .get(&tile)
+                .copied()
+                .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+            if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
+                continue;
+            }
+
+            let tx = (doc_rect.left + viewbox.pan.x) * s;
+            let ty = (doc_rect.top + viewbox.pan.y) * s;
+            let scos = doc_rect.width() * s / self.tile_size;
+
+            self.transforms
+                .push(skia::RSXform::new(scos, 0.0, (tx, ty)));
+            self.textures.push(tile_ref.rect);
         }
     }
 
@@ -1652,11 +1697,6 @@ impl TileTextureCache {
     }
 
     pub fn remove(&mut self, tile: Tile) {
-        if let Some(tile_ref) = self.grid.get(&tile) {
-            if tile_ref.index < self.textures.len() {
-                self.textures[tile_ref.index].set_empty();
-            }
-        }
         self.is_updated = true;
         self.removed.insert(tile);
     }

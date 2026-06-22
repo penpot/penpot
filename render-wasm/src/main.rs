@@ -355,6 +355,13 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // instead of re-drawing every visible tile from scratch.
             render_state.rebuild_tile_index(&state.shapes);
         }
+        // Keep the last presented frame on screen while the post-gesture
+        // full-quality render runs asynchronously.  Pan-only gestures need
+        // this because zoom_changed() is false and would otherwise hit
+        // reset_canvas() (blank screen until the first Full frame).
+        if !render_state.options.is_profile_rebuild_tiles() {
+            render_state.preserve_target_during_render = true;
+        }
         performance::end_measure!("set_view_end");
     });
     Ok(())
