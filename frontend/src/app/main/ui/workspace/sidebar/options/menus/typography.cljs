@@ -185,8 +185,10 @@
          #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
             (.scrollToPosition ^js inst offset)))))
 
-    [:div {:class (stl/css :font-selector)}
-     [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
+    [:div {:class [(stl/css-case :font-selector true
+                                 :fonts-on-modal (not full-size?))]}
+     [:div {:class (stl/css-case :font-selector-dropdown true
+                                 :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
        [:> search-bar* {:on-change on-filter-change
                         :value (:term state)
@@ -307,6 +309,7 @@
          :on-close on-font-selector-close
          :on-select on-font-select
          :full-size full-size-selector
+         :origin "right-sidebar"
          :show-recent show-recent}])
 
      [:div {:class (stl/css :font-option)

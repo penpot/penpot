@@ -165,6 +165,7 @@
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
@@ -601,6 +602,7 @@
 (sv/defmethod ::get-file-summary
   "Retrieve a file summary by its ID. Only authenticated users."
   {::doc/added "1.20"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-summary}
   [cfg {:keys [::rpc/profile-id id] :as params}]
   (check-read-permissions! cfg profile-id id)
@@ -669,6 +671,7 @@
    outbound library reference counts. Cheap alternative to `get-file`
    when only metrics are needed."
   {::doc/added "2.17"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-stats
    ::sm/result schema:get-file-stats-result
    ::db/transaction true}
@@ -842,6 +845,7 @@
 
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
 
    ::sm/webhook
@@ -1001,6 +1005,7 @@
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:set-file-shared}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -1056,6 +1061,7 @@
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:delete-file}
   [cfg {:keys [::rpc/profile-id] :as params}]

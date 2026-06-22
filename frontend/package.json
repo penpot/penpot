@@ -46,7 +46,7 @@
     "clear:wasm": "cargo clean --manifest-path ../render-wasm/Cargo.toml",
     "watch": "exit 0",
     "watch:app": "pnpm run clear:shadow-cache && pnpm run clear:wasm && pnpm run build:wasm && concurrently --kill-others-on-fail \"pnpm run watch:app:assets\" \"pnpm run watch:app:main\" \"pnpm run watch:app:libs\"",
-    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 6006 -h 0.0.0.0 --no-open\" \"node ./scripts/watch-storybook.js\"",
+    "watch:storybook": "pnpm run build:storybook:assets && concurrently --kill-others-on-fail \"storybook dev -p 3451 -h 0.0.0.0 --no-open\" \"node ./scripts/watch-storybook.js\"",
     "postinstall": "(cd ../plugins/libs/plugins-runtime; pnpm install; pnpm run build)"
   },
   "devDependencies": {

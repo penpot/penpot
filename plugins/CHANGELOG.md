@@ -2,6 +2,7 @@
 
 - **plugins-runtime**: changes outside the current page now raise a validation error when the target belongs to a page that is not currently active, instead of silently operating on the active page.
 - **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
+- **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
@@ -13,6 +14,9 @@
 - **plugin-types**: Added `textBounds` property for text shapes
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
+- **plugin-types**: Added `fixedWhenScrolling` property for shapes
+- **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
+- **plugin-types:** `TokenCatalog.addSet` now accepts an optional `active` flag to create an already-active set (sets are inactive by default)
 
 ## 1.4.2 (2026-01-21)
 

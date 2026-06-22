@@ -379,8 +379,11 @@
     :createText
     (fn [text]
       (cond
-        (or (not (string? text)) (empty? text))
+        (not (string? text))
         (u/not-valid plugin-id :createText text)
+
+        (empty? text)
+        nil
 
         :else
         (let [page  (dsh/lookup-page @st/state)

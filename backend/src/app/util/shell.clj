@@ -8,16 +8,31 @@
   "A penpot specific, modern api for executing external (shell)
   subprocesses"
   (:require
+   [app.common.exceptions :as ex]
    [app.worker :as-alias wrk]
    [datoteka.io :as io]
    [promesa.exec :as px])
   (:import
    java.io.InputStream
    java.io.OutputStream
+   java.util.concurrent.TimeUnit
    java.util.List
    org.apache.commons.io.IOUtils))
 
 (set! *warn-on-reflection* true)
+
+(defn- prlimit-cmd
+  "Build a prlimit command prefix from a resource limits map.
+   Returns nil if limits is nil/empty."
+  [limits]
+  (when (seq limits)
+    (let [prefix (cond-> ["prlimit"]
+                   (:mem limits)
+                   (conj (str "--as=" (* (long (:mem limits)) 1024 1024)))
+
+                   (:cpu limits)
+                   (conj (str "--cpu=" (long (:cpu limits)))))]
+      (conj prefix "--"))))
 
 (defn- read-as-bytes
   [in]
@@ -39,17 +54,22 @@
   [penv k v]
   (.put ^java.util.Map penv
         ^String k
-        ^String v))
+        ^String v)
+  penv)
 
 (defn exec!
-  [system & {:keys [cmd in out-enc in-enc env]
+  [system & {:keys [cmd in out-enc in-enc env prlimit timeout]
              :or {out-enc "UTF-8"
                   in-enc "UTF-8"}}]
   (assert (vector? cmd) "a command parameter should be a vector")
   (assert (every? string? cmd) "the command should be a vector of strings")
 
   (let [executor (::wrk/executor system)
-        builder  (ProcessBuilder. ^List cmd)
+        _        (assert (some? executor) "executor is required, check ::wrk/executor")
+        full-cmd (cond->> cmd
+                   (seq prlimit)
+                   (into (prlimit-cmd prlimit)))
+        builder  (ProcessBuilder. ^List full-cmd)
         env-map  (.environment ^ProcessBuilder builder)
         _        (reduce-kv set-env env-map env)
         process  (.start builder)]
@@ -63,9 +83,22 @@
 
     (with-open [stdout (.getInputStream ^Process process)
                 stderr (.getErrorStream ^Process process)]
-      (let [out (px/submit! executor (fn [] (read-with-enc stdout out-enc)))
-            err (px/submit! executor (fn [] (read-as-string stderr)))
-            ext (.waitFor ^Process process)]
+      (let [out (px/submit! executor (fn [] (try (read-with-enc stdout out-enc)
+                                                 (catch java.io.IOException _ ""))))
+            err (px/submit! executor (fn [] (try (read-as-string stderr)
+                                                 (catch java.io.IOException _ ""))))
+            ext (if timeout
+                  (let [completed (.waitFor ^Process process (long timeout) TimeUnit/SECONDS)]
+                    (if completed
+                      (.exitValue ^Process process)
+                      (do
+                        (.destroyForcibly ^Process process)
+                        (ex/raise :type :internal
+                                  :code :process-timeout
+                                  :hint (str "process timed out after " timeout " seconds")
+                                  :cmd cmd
+                                  :timeout timeout))))
+                  (.waitFor ^Process process))]
         {:exit ext
          :out @out
          :err @err}))))

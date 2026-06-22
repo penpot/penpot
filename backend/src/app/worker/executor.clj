@@ -15,9 +15,7 @@
    [promesa.exec :as px])
   (:import
    io.netty.channel.nio.NioEventLoopGroup
-   io.netty.util.concurrent.DefaultEventExecutorGroup
    java.util.concurrent.ExecutorService
-   java.util.concurrent.ThreadFactory
    java.util.concurrent.TimeUnit))
 
 (set! *warn-on-reflection* true)
@@ -36,13 +34,6 @@
   {:title "executor"
    :description "Instance of NioEventLoopGroup"}})
 
-(sm/register!
- {:type ::wrk/netty-executor
-  :pred #(instance? DefaultEventExecutorGroup %)
-  :type-properties
-  {:title "executor"
-   :description "Instance of DefaultEventExecutorGroup"}})
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IO Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,7 +49,7 @@
         nthreads (or threads (mth/round (/ (px/get-available-processors) 2)))
         nthreads (max 2 nthreads)]
     (l/inf :hint "start netty io executor" :threads nthreads)
-    (NioEventLoopGroup. (int nthreads) ^ThreadFactory factory)))
+    (NioEventLoopGroup. (int nthreads) ^java.util.concurrent.ThreadFactory factory)))
 
 (defmethod ig/halt-key! ::wrk/netty-io-executor
   [_ instance]
@@ -68,22 +59,15 @@
                               TimeUnit/MILLISECONDS)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; IO Offload Executor
+;; Executor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::wrk/netty-executor
-  [_ {:keys [threads]}]
-  (assert (or (nil? threads) (int? threads))
-          "expected valid threads value, revisit PENPOT_EXEC_THREADS environment variable"))
+(defmethod ig/init-key ::wrk/executor
+  [_ _]
+  (let [factory (px/thread-factory :prefix "penpot/exec/")]
+    (l/inf :hint "start cached executor")
+    (px/cached-executor :factory factory)))
 
-(defmethod ig/init-key ::wrk/netty-executor
-  [_ {:keys [threads]}]
-  (let [factory  (px/thread-factory :prefix "penpot/exec/")
-        nthreads (or threads (mth/round (/ (px/get-available-processors) 2)))
-        nthreads (max 2 nthreads)]
-    (l/inf :hint "start default executor" :threads nthreads)
-    (DefaultEventExecutorGroup. (int nthreads) ^ThreadFactory factory)))
-
-(defmethod ig/halt-key! ::wrk/netty-executor
+(defmethod ig/halt-key! ::wrk/executor
   [_ instance]
   (px/shutdown! instance))

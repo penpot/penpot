@@ -1165,8 +1165,8 @@ export interface Context {
 
   /**
    * Creates a Text shape with the specified text content. Requires `content:write` permission.
-   * @param text The text content for the Text shape.
-   * @return Returns the new created shape, if the shape wasn't created can return null.
+   * @param text The text content for the Text shape. Must be a non-empty string.
+   * @return Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
    *
    * @example
    * ```js
@@ -3670,6 +3670,11 @@ export interface ShapeBase extends PluginData {
   constraintsVertical: 'top' | 'bottom' | 'topbottom' | 'center' | 'scale';
 
   /**
+   * Indicates whether the shape stays fixed in place while scrolling.
+   */
+  fixedWhenScrolling: boolean;
+
+  /**
    * The border radius of the shape.
    */
   borderRadius: number;
@@ -3964,6 +3969,11 @@ export interface ShapeBase extends PluginData {
 
   /**
    * Adds a new interaction to the shape.
+   *
+   * If the interaction starts a flow (for example a `navigate-to` action) and
+   * the shape's board is not already part of any flow, a new flow starting at
+   * that board is created automatically, matching the behavior of the editor.
+   *
    * @param trigger defines the conditions under which the action will be triggered
    * @param action defines what will be executed when the trigger happens
    * @param delay for the type of trigger `after-delay` will specify the time after triggered. Ignored otherwise.
@@ -5127,11 +5137,18 @@ export interface TokenCatalog {
 
   /**
    * Creates a new TokenSet and adds it to the catalog.
+   *
+   * Newly created sets are **inactive** by default: only active sets
+   * affect shapes and reference resolution. Pass `active: true` to create
+   * an already-active set, or activate it later via `set.active = true` /
+   * `set.toggleActive()`.
    * @param name The name of the set (required). It may contain
    * a group path, separated by `/`.
+   * @param active Whether the set should be activated on creation.
+   * Defaults to `false`.
    * @return Returns the created TokenSet.
    */
-  addSet({ name }: { name: string }): TokenSet;
+  addSet({ name, active }: { name: string; active?: boolean }): TokenSet;
 
   /**
    * Retrieves a theme.
