@@ -35,6 +35,7 @@
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.render-wasm.process-objects-test]
@@ -67,7 +68,8 @@
     (.exit js/process 1)))
 
 (def test-namespaces
-  ['frontend-tests.basic-shapes-test
+  ['frontend-tests.plugins.text-test
+   'frontend-tests.basic-shapes-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.nitrate-test
