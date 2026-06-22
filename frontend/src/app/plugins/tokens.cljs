@@ -99,10 +99,12 @@
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
-        resolved-value  (-> resolved-tokens
-                            (dm/get-in [(:name token) :resolved-value])
-                            (ts/tokenscript-symbols->penpot-unit))]
-    resolved-value))
+        resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
+    (if (= :font-family (:type token))
+      ;; A fontFamilies token resolves to a list of families, not a scalar
+      ;; tokenscript unit, so the unit conversion does not apply.
+      resolved-value
+      (ts/tokenscript-symbols->penpot-unit resolved-value))))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -150,11 +152,21 @@
      (fn [_]
        (let [token (u/locate-token file-id set-id id)]
          (json/->js (:value token))))
-     :schema (let [token (u/locate-token file-id set-id id)]
-               (cfo/make-token-value-schema (:type token)))
+     :schema (let [token (u/locate-token file-id set-id id)
+                   base  (cfo/make-token-value-schema (:type token))]
+               ;; plugin-types declares the fontFamilies value as
+               ;; `string | string[]`, but the core schema only accepts a
+               ;; vector/ref; also accept a plain string (normalized in :set).
+               (if (= :font-family (:type token))
+                 [:or :string base]
+                 base))
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:value value})))}
+       (let [token (u/locate-token file-id set-id id)
+             value (cond-> value
+                     (= :font-family (:type token))
+                     (ctob/convert-dtcg-font-family))]
+         (st/emit! (dwtl/update-token set-id id {:value value}))))}
 
     :resolvedValue
     {:this true

@@ -269,3 +269,24 @@
       (t/is (= [theme-id theme-id] (mapv :id @captured)))
       (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
       (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))
+
+(t/deftest font-family-token-value-accepts-a-string
+  (let [file-id  (cthi/new-id! :file)
+        set-id   (cthi/new-id! :set)
+        token-id (cthi/new-id! :token)
+        captured (atom nil)]
+    (with-redefs [u/locate-token (constantly {:id token-id
+                                              :name "font.primary"
+                                              :type :font-family
+                                              :value ["Inter"]})
+                  dwtl/update-token (mock/stub (fn [set-id token-id attrs]
+                                                 (reset! captured {:set-id set-id
+                                                                   :token-id token-id
+                                                                   :attrs attrs})
+                                                 :update-token))
+                  st/emit! mock/noop]
+      (let [token (ptok/token-proxy "plugin-id" file-id set-id token-id)]
+        (set! (.-value token) "Inter, Arial")
+        (t/is (= set-id (:set-id @captured)))
+        (t/is (= token-id (:token-id @captured)))
+        (t/is (= ["Inter" "Arial"] (get-in @captured [:attrs :value])))))))
