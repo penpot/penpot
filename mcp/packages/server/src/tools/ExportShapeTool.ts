@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { Tool } from "../Tool";
-import { ImageContent, PNGImageContent, PNGResponse, TextContent, TextResponse, ToolResponse } from "../ToolResponse";
+import { ImageContent, PNGResponse, TextContent, TextResponse, ToolResponse } from "../ToolResponse";
 import "reflect-metadata";
 import { PenpotMcpServer } from "../PenpotMcpServer";
 import { ExecuteCodePluginTask } from "../tasks/ExecuteCodePluginTask";
+import { createLogger } from "../logger";
 import { FileUtils } from "../utils/FileUtils";
+import { Semaphore } from "../utils/Semaphore";
 import sharp from "sharp";
 
 /**
@@ -50,6 +52,38 @@ export class ExportShapeArgs {
  */
 export class ExportShapeTool extends Tool<ExportShapeArgs> {
     /**
+     * Maximum number of image-export operations that may run concurrently in multi-user mode.
+     * Configurable via the PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS environment variable;
+     * defaults to 0, meaning no limit.
+     *
+     * When set to a positive value (and combined with the plugin-side per-response cap
+     * MAX_TASK_RESPONSE_SIZE_REMOTE_MCP, ~15 MB JSON), this caps the in-flight memory
+     * footprint of image exports at roughly N x cap on the centrally hosted MCP server.
+     */
+    private static readonly MAX_PARALLEL_EXPORTS = parseInt(
+        process.env.PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS ?? "0",
+        10
+    );
+
+    /**
+     * Gates concurrent export operations across all tool instances (one per session in
+     * multi-user mode). Static because instances are per-session, but the bound has to
+     * apply across the whole process. Permits beyond the maximum queue in FIFO order.
+     * Undefined when MAX_PARALLEL_EXPORTS is non-positive, indicating no limit.
+     */
+    private static readonly parallelismSemaphore: Semaphore | undefined =
+        ExportShapeTool.MAX_PARALLEL_EXPORTS > 0
+            ? new Semaphore("ExportShapeTool", ExportShapeTool.MAX_PARALLEL_EXPORTS)
+            : undefined;
+
+    static {
+        createLogger("ExportShapeTool").info(
+            "Max parallel exports (multi-user mode): %d (0 = unbounded)",
+            ExportShapeTool.MAX_PARALLEL_EXPORTS
+        );
+    }
+
+    /**
      * Creates a new ExecuteCode tool instance.
      *
      * @param mcpServer - The MCP server instance
@@ -79,6 +113,25 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
     }
 
     protected async executeCore(args: ExportShapeArgs): Promise<ToolResponse> {
+        // bound concurrent exports in multi-user mode to keep peak server memory under control;
+        // in single-user mode (or when no limit is configured) the gate is irrelevant
+        // and the export runs directly
+        if (this.mcpServer.isMultiUserMode() && ExportShapeTool.parallelismSemaphore) {
+            return ExportShapeTool.parallelismSemaphore.withPermit(() => this.exportImage(args));
+        } else {
+            return this.exportImage(args);
+        }
+    }
+
+    /**
+     * Performs the actual image export: requests the image via the plugin and either
+     * returns it as a tool response or saves it to the requested file path. The bulk
+     * of the memory pressure (parsed plugin response, decoded image buffer, optional
+     * re-encoding via sharp) lives here, which is why executeCore gates the call.
+     *
+     * @param args - the validated tool arguments
+     */
+    private async exportImage(args: ExportShapeArgs): Promise<ToolResponse> {
         // check arguments
         if (args.filePath) {
             FileUtils.checkPathIsAbsolute(args.filePath);

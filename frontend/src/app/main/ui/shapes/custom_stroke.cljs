@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.custom-stroke
   (:require
@@ -480,7 +480,8 @@
 
         stroke-id     (dm/str (dm/fmt "strokes-%-%" prefix shape-id))
 
-        shape-blur    (get shape :blur)
+        shape-blur   (get shape :blur)
+
         shape-fills   (get shape :fills)
         shape-shadow  (get shape :shadow)
         shape-strokes (not-empty strokes)
@@ -498,6 +499,7 @@
 
         open-path?    (and ^boolean (cfh/path-shape? shape)
                            ^boolean (path/shape-with-open-path? shape))]
+
     (when-not ^boolean (cfh/frame-shape? shape)
       (when (and (some? shape-blur)
                  (not ^boolean (:hidden shape-blur)))

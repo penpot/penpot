@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.page
   "Page options menu entries."
@@ -32,10 +32,6 @@
   (-> (l/key :pixel-grid-opacity)
       (l/derived refs/workspace-page)))
 
-;; Default pixel grid color shown in the picker when the user hasn't
-;; set a custom one. Matches the legacy hardcoded CSS variable.
-(def ^:private default-pixel-grid-color "#0070E4")
-
 (mf/defc options*
   {::mf/wrap [mf/memo]}
   []
@@ -54,35 +50,42 @@
                      {:color (d/nilv background clr/canvas)
                       :opacity 1})
 
-        grid       (mf/with-memo [grid-color grid-alpha]
-                     {:color (d/nilv grid-color default-pixel-grid-color)
-                      :opacity (d/nilv grid-alpha 0.2)})]
+        grid-color (mf/with-memo [grid-color grid-alpha]
+                     {:color (d/nilv grid-color clr/default-pixel-grid-color)
+                      :opacity (d/nilv grid-alpha clr/default-pixel-grid-opacity)})]
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
-      [:> title-bar* {:collapsable false
-                      :title       (tr "workspace.options.canvas-background")
-                      :class       (stl/css :title-spacing-page)}]]
-     [:div {:class (stl/css :element-content)}
+    [:* [:div {:class (stl/css :element-set)}
+         [:div {:class (stl/css :element-title)}
+          [:> title-bar* {:collapsable false
+                          :title       (tr "workspace.options.canvas-background")
+                          :class       (stl/css :title-spacing-page)}]]
+         [:div {:class (stl/css :element-content)}
 
-      [:> color-row*
-       {:disable-gradient true
-        :disable-opacity true
-        :disable-image true
-        :title (tr "workspace.options.canvas-background")
-        :color color
-        :on-change on-change
-        :origin :canvas
-        :on-open on-open
-        :on-close on-close}]
+          [:> color-row*
+           {:disable-gradient true
+            :disable-opacity true
+            :disable-image true
+            :title (tr "workspace.options.canvas-background")
+            :color color
+            :on-change on-change
+            :origin :canvas
+            :on-open on-open
+            :on-close on-close}]]]
 
-      [:> color-row*
-       {:disable-gradient true
-        :disable-image true
-        :title "Pixel grid color"
-        :color grid
-        :on-change on-grid-change
-        :origin :pixel-grid
-        :on-open on-open
-        :on-close on-close}]]]))
+     [:div {:class (stl/css :element-set)}
+      [:div {:class (stl/css :element-title)}
+       [:> title-bar* {:collapsable false
+                       :title       (tr "workspace.options.pixel grid-color")
+                       :class       (stl/css :title-spacing-page)}]]
+      [:div {:class (stl/css :element-content)}
+
+       [:> color-row*
+        {:disable-gradient true
+         :disable-image true
+         :title (tr "workspace.options.pixel grid-color")
+         :color grid-color
+         :on-change on-grid-change
+         :origin :pixel-grid
+         :on-open on-open
+         :on-close on-close}]]]]))
 

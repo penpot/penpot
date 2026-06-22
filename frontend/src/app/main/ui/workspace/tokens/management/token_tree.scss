@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "ds/_borders.scss" as *;
 
@@ -13,6 +13,7 @@
   display: flex;
   flex-wrap: wrap;
   padding-inline-start: calc(var(--node-spacing));
+  gap: var(--sp-xs);
 
   & .node-parent {
     flex: 1 0 100%;

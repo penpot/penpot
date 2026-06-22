@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.settings.sidebar
   (:require-macros [app.main.style :as stl])
@@ -18,7 +18,6 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -52,14 +51,13 @@
 (defn- show-release-notes
   [event]
   (let [version (:main cf/version)]
-    (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+    (st/emit! (ev/event {::ev/name "show-release-notes" :version version}))
 
     (if (and (kbd/alt? event) (kbd/mod? event))
       (st/emit! (modal/show {:type :onboarding}))
       (st/emit! (modal/show {:type :release-notes :version version})))))
 
-(mf/defc sidebar-content
-  {::mf/props :obj}
+(mf/defc sidebar-content*
   [{:keys [profile section]}]
   (let [profile?       (= section :settings-profile)
         password?      (= section :settings-password)
@@ -136,12 +134,10 @@
           feedback-icon
           [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
-(mf/defc sidebar
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+(mf/defc sidebar*
+  {::mf/wrap [mf/memo]}
   [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
-   [:& sidebar-content {:profile profile
-                        :section section}]
+   [:> sidebar-content* {:profile profile
+                         :section section}]
    [:> profile-section* {:profile profile}]])
-

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.login
   (:require-macros [app.main.style :as stl])
@@ -191,9 +191,9 @@
                  (or (contains? cf/flags :login)
                      (contains? cf/flags :login-with-password)))
         [:div {:class (stl/css :fields-row :forgot-password)}
-         [:& lk/link {:action on-recovery-request
-                      :class (stl/css :forgot-pass-link)
-                      :data-testid "forgot-password"}
+         [:> lk/link* {:action on-recovery-request
+                       :class (stl/css :forgot-pass-link)
+                       :data-testid "forgot-password"}
           (tr "auth.forgot-password")]])
 
       [:div {:class (stl/css :buttons-stack)}
@@ -219,28 +219,28 @@
 
     [:div {:class (stl/css :auth-buttons)}
      (when (contains? cf/flags :login-with-google)
-       [:& bl/button-link {:on-click login-with-google
-                           :icon deprecated-icon/brand-google
-                           :label (tr "auth.login-with-google-submit")
-                           :class (stl/css :login-btn :btn-google-auth)}])
+       [:> bl/button-link* {:on-click login-with-google
+                            :icon deprecated-icon/brand-google
+                            :label (tr "auth.login-with-google-submit")
+                            :class (stl/css :login-btn :btn-google-auth)}])
 
      (when (contains? cf/flags :login-with-github)
-       [:& bl/button-link {:on-click login-with-github
-                           :icon deprecated-icon/brand-github
-                           :label (tr "auth.login-with-github-submit")
-                           :class (stl/css :login-btn :btn-github-auth)}])
+       [:> bl/button-link* {:on-click login-with-github
+                            :icon deprecated-icon/brand-github
+                            :label (tr "auth.login-with-github-submit")
+                            :class (stl/css :login-btn :btn-github-auth)}])
 
      (when (contains? cf/flags :login-with-gitlab)
-       [:& bl/button-link {:on-click login-with-gitlab
-                           :icon deprecated-icon/brand-gitlab
-                           :label (tr "auth.login-with-gitlab-submit")
-                           :class (stl/css :login-btn :btn-gitlab-auth)}])
+       [:> bl/button-link* {:on-click login-with-gitlab
+                            :icon deprecated-icon/brand-gitlab
+                            :label (tr "auth.login-with-gitlab-submit")
+                            :class (stl/css :login-btn :btn-gitlab-auth)}])
 
      (when (contains? cf/flags :login-with-oidc)
-       [:& bl/button-link {:on-click login-with-oidc
-                           :icon deprecated-icon/brand-openid
-                           :label (or (not-empty cf/oidc-name) (tr "auth.login-with-oidc-submit"))
-                           :class (stl/css :login-btn :btn-oidc-auth)}])]))
+       [:> bl/button-link* {:on-click login-with-oidc
+                            :icon deprecated-icon/brand-openid
+                            :label (or (not-empty cf/oidc-name) (tr "auth.login-with-oidc-submit"))
+                            :class (stl/css :login-btn :btn-oidc-auth)}])]))
 
 (mf/defc login-dialog*
   [{:keys [params] :as props}]
@@ -284,7 +284,7 @@
         [:div {:class (stl/css :register)}
          [:span {:class (stl/css :register-text)}
           (tr "auth.register") " "]
-         [:& lk/link {:action go-register
-                      :class (stl/css :register-link)
-                      :data-testid "register-submit"}
+         [:> lk/link* {:action go-register
+                       :class (stl/css :register-link)
+                       :data-testid "register-submit"}
           (tr "auth.register-submit")]])]]))

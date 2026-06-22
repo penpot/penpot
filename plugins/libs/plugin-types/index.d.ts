@@ -13,7 +13,7 @@ export interface Penpot extends Omit<
      *
      * @param name title of the plugin, it'll be displayed on the top of the modal
      * @param url of the plugin
-     * @param options height and width of the modal.
+     * @param options width and height of the modal and, optionally, a `hidden` flag to open the plugin without showing the modal.
      *
      * @example
      * ```js
@@ -23,19 +23,25 @@ export interface Penpot extends Omit<
     open: (
       name: string,
       url: string,
-      options?: { width: number; height: number; hidden: boolean },
+      options?: { width: number; height: number; hidden?: boolean },
     ) => void;
 
+    /**
+     * The current size of the modal, or `null` if the plugin UI is not open.
+     * @example
+     * ```js
+     * const size = penpot.ui.size;
+     * console.log(size);
+     * ```
+     */
     size: {
       /**
-       * Returns the size of the modal.
-       * @example
-       * ```js
-       * const size = penpot.ui.size;
-       * console.log(size);
-       * ```
+       * The width of the modal.
        */
       width: number;
+      /**
+       * The height of the modal.
+       */
       height: number;
     } | null;
 
@@ -54,22 +60,23 @@ export interface Penpot extends Omit<
      * Sends a message to the plugin UI.
      *
      * @param message content usually is an object
+     * @param throwOnError if true, throws an error when the message cannot be cloned instead of logging to console (default: false)
      *
      * @example
      * ```js
-     * this.sendMessage({ type: 'example-type', content: 'data we want to share' });
+     * penpot.ui.sendMessage({ type: 'example-type', content: 'data we want to share' });
      * ```
      */
-    sendMessage: (message: unknown) => void;
+    sendMessage: (message: unknown, throwOnError?: boolean) => void;
     /**
-     * This is usually used in the `plugin.ts` file in order to handle the data sent by our plugin
+     * This is usually used in the `plugin.ts` file in order to handle the messages sent from the plugin UI.
      *
-     @param callback - A function that will be called whenever a message is received.
+     * @param callback - A function that will be called whenever a message is received.
      * The function receives a single argument, `message`, which is of type `T`.
      *
      * @example
      * ```js
-     * penpot.ui.onMessage((message) => {if(message.type === 'example-type' { ...do something })});
+     * penpot.ui.onMessage((message) => { if (message.type === 'example-type') { ...do something } });
      * ```
      */
     onMessage: <T>(callback: (message: T) => void) => void;
@@ -101,7 +108,9 @@ export interface Penpot extends Omit<
    *  ```
    *  - selectionchange: event emitted when the current selection changes. The callback will receive the list of ids for the new selection
    *  - themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
-   *  - documentsaved: event emitted after the document is saved in the backend.
+   *  - filechange: event emitted when a different file is opened. The callback will receive the new file.
+   *  - contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+   *  - finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
    *
    * @param type The event type to listen for.
    * @param callback The callback function to execute when the event is triggered.
@@ -110,7 +119,7 @@ export interface Penpot extends Omit<
    *
    * @example
    * ```js
-   * penpot.on('pagechange', () => {...do something}).
+   * penpot.on('pagechange', () => {...do something});
    * ```
    */
   on<T extends keyof EventsMap>(
@@ -186,11 +195,6 @@ export interface Blur {
    */
   id?: string;
   /**
-   * The optional type of the blur effect.
-   * Currently, only 'layer-blur' is supported.
-   */
-  type?: 'layer-blur';
-  /**
    * The optional intensity value of the blur effect.
    */
   value?: number;
@@ -217,7 +221,7 @@ export interface Board extends ShapeBase {
   clipContent: boolean;
 
   /**
-   * WHen true the board will be displayed in the view mode
+   * When true the board will be displayed in the view mode
    */
   showInViewMode: boolean;
 
@@ -244,7 +248,7 @@ export interface Board extends ShapeBase {
   /**
    * The horizontal sizing behavior of the board.
    * It can be one of the following values:
-   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fix': The container has its own intrinsic fixed size.
    * - 'auto': The container fits the content.
    */
   horizontalSizing?: 'auto' | 'fix';
@@ -252,7 +256,7 @@ export interface Board extends ShapeBase {
   /**
    * The vertical sizing behavior of the board.
    * It can be one of the following values:
-   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fix': The container has its own intrinsic fixed size.
    * - 'auto': The container fits the content.
    */
   verticalSizing?: 'auto' | 'fix';
@@ -332,16 +336,19 @@ export interface Board extends ShapeBase {
    * grid.columnGap = 10;
    * grid.verticalPadding = 5;
    * grid.horizontalPadding = 5;
+   * ```
    */
   addGridLayout(): GridLayout;
 
   /**
-   * Creates a new ruler guide.
+   * Creates a new ruler guide attached to the board.
+   * @param orientation `horizontal` or `vertical`
+   * @param value the position of the guide relative to the board
    */
   addRulerGuide(orientation: RulerGuideOrientation, value: number): RulerGuide;
 
   /**
-   * Removes the `guide` from the current page.
+   * Removes the `guide` from the board.
    */
   removeRulerGuide(guide: RulerGuide): void;
 
@@ -368,7 +375,7 @@ export interface VariantContainer extends Board {
  */
 export interface Boolean extends ShapeBase {
   /**
-   * The type of the shape, which is always 'bool' for boolean operation shapes.
+   * The type of the shape, which is always 'boolean' for boolean operation shapes.
    */
   readonly type: 'boolean';
 
@@ -744,7 +751,7 @@ export interface CommonLayout {
   /**
    * The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fix': The container has its own intrinsic fixed size.
    * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
    * - 'auto': The container fits the content.
    */
@@ -752,7 +759,7 @@ export interface CommonLayout {
   /**
    * The `verticalSizing` property specifies the vertical sizing behavior of the container.
    * It can be one of the following values:
-   * - 'fix': The containers has its own intrinsic fixed size.
+   * - 'fix': The container has its own intrinsic fixed size.
    * - 'fill': The container fills the available space. Only can be set if it's inside another layout.
    * - 'auto': The container fits the content.
    */
@@ -978,9 +985,9 @@ export interface Context {
    * @example
    * ```js
    * const penpotShapesArray = penpot.selection;
-   * // We need to make sure that something is selected, and if the selected shape is a group,
-   * if (selected.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {
-   *   penpot.group(penpotShapesArray[0]);
+   * // We need to make sure that something is selected, and that the selected shape is a group
+   * if (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {
+   *   penpot.ungroup(penpotShapesArray[0]);
    * }
    * ```
    */
@@ -1158,8 +1165,8 @@ export interface Context {
 
   /**
    * Creates a Text shape with the specified text content. Requires `content:write` permission.
-   * @param text The text content for the Text shape.
-   * @return Returns the new created shape, if the shape wasn't created can return null.
+   * @param text The text content for the Text shape. Must be a non-empty string.
+   * @return Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
    *
    * @example
    * ```js
@@ -1179,8 +1186,8 @@ export interface Context {
 
   /**
    * Generates markup for the given shapes. Requires `content:read` permission
-   * @param shapes
-   * @param options
+   * @param shapes the shapes to generate the markup for
+   * @param options `type` of the markup to generate. Defaults to `'html'`.
    *
    * @example
    * ```js
@@ -1192,8 +1199,9 @@ export interface Context {
 
   /**
    * Generates styles for the given shapes. Requires `content:read` permission
-   * @param shapes
-   * @param options
+   * @param shapes the shapes to generate the styles for
+   * @param options `type` of the styles to generate (defaults to `'css'`), `withPrelude` to include the style prelude
+   * (defaults to `false`) and `includeChildren` to also generate the styles for the shape children (defaults to `true`).
    *
    * @example
    * ```js
@@ -1255,21 +1263,39 @@ export interface Context {
   openViewer(): void;
 
   /**
-   * Creates a new page. Requires `content:write` permission.
+   * Creates a new page and returns it. Requires `content:write` permission.
+   *
+   * IMPORTANT: creating a page does **not** make it the active page.
+   * To build content inside the new page, activate it first with
+   * {@link Context.openPage} (and `await` it) before mutate shapes:
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.name = 'New Page';
+   * await penpot.openPage(page); // make the new page active first
+   * const board = penpot.createBoard();
+   * board.resize(375, 812);
+   * page.root.appendChild(board);
+   * ```
    */
   createPage(): Page;
 
   /**
-   * Changes the current open page to given page. Requires `content:read` permission.
+   * Changes the current open page to the given page, making it the **active page**.
+   * The active page is the one all shape creation and structural operations
+   * (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+   * so call this (and `await` it) after {@link Context.createPage} before adding
+   * shapes to the newly created page. Requires `content:read` permission.
    * @param page the page to open (a Page object or a page UUID string)
    * @param newWindow if true opens the page in a new window, defaults to false
    *
    * @example
    * ```js
-   * context.openPage(page);
+   * await context.openPage(page);
    * ```
    */
-  openPage(page: Page | string, newWindow?: boolean): void;
+  openPage(page: Page | string, newWindow?: boolean): Promise<void>;
 
   /**
    * Aligning will move all the selected layers to a position relative to one
@@ -1488,6 +1514,9 @@ export interface Dissolve {
  * This interface extends `ShapeBase` and includes properties specific to ellipses.
  */
 export interface Ellipse extends ShapeBase {
+  /**
+   * The type of the shape, which is always 'ellipse' for ellipse shapes.
+   */
   type: 'ellipse';
 
   /**
@@ -1513,7 +1542,8 @@ export interface EventsMap {
    */
   pagechange: Page;
   /**
-   * The `filechange` event is triggered when there are changes in the current file.
+   * The `filechange` event is triggered when a different file is opened.
+   * The callback will receive the new file.
    */
   filechange: File;
   /**
@@ -1526,7 +1556,8 @@ export interface EventsMap {
    */
   themechange: Theme;
   /**
-   * The `finish` event is triggered when some operation is finished.
+   * The `finish` event is triggered when the current file is closed.
+   * The callback will receive the id of the closed file.
    */
   finish: string;
 
@@ -1537,7 +1568,7 @@ export interface EventsMap {
   shapechange: Shape;
 
   /**
-   * The `contentsave` event will trigger when the content file changes.
+   * The `contentsave` event will trigger after the file content is saved in the backend.
    */
   contentsave: void;
 }
@@ -1590,7 +1621,7 @@ export interface File extends PluginData {
    */
   pages: Page[];
 
-  /*
+  /**
    * Export the current file to an archive.
    * @param `exportType` indicates the type of file to generate.
    * - `'penpot'` will create a *.penpot file with a binary representation of the file
@@ -1600,7 +1631,6 @@ export interface File extends PluginData {
    * - `'all'` will include the libraries as external files that will be exported in a single bundle
    * - `'merge'` will add all the assets into the main file and only one file will be imported
    * - `'detach'` will unlink all the external assets and no libraries will be imported
-   * @param `progressCallback` for `zip` export can be pass this callback so a progress report is sent.
    *
    * @example
    * ```js
@@ -1651,7 +1681,7 @@ export interface FileVersion {
    */
   readonly isAutosave: boolean;
 
-  /*
+  /**
    * Restores the current version and replaces the content of the active file
    * for the contents of this version.
    * Requires the `content:write` permission.
@@ -1705,13 +1735,13 @@ export interface Fill {
 }
 
 /**
- * This subcontext allows the API o change certain defaults
+ * This subcontext allows the API to change certain defaults
  */
 export interface Flags {
   /**
-   * If `true` the .children property will be always sorted in the z-index ordering.
-   * Also, appendChild method will be append the children in the top-most position.
-   * The insertchild method is changed acordingly to respect this ordering.
+   * If `true` the .children property will always be sorted in the z-index ordering.
+   * Also, the appendChild method will append the children in the top-most position.
+   * The insertChild method is changed accordingly to respect this ordering.
    * Defaults to false
    */
   naturalChildOrdering: boolean;
@@ -2171,7 +2201,7 @@ export interface Group extends ShapeBase {
 export type Guide = GuideColumn | GuideRow | GuideSquare;
 
 /**
- * Represents a goard guide for columns in Penpot.
+ * Represents a board guide for columns in Penpot.
  * This interface includes properties for defining the type, visibility, and parameters of column guides within a board.
  */
 export interface GuideColumn {
@@ -2306,6 +2336,9 @@ export interface HistoryContext {
  * This interface extends `ShapeBase` and includes properties specific to image shapes.
  */
 export interface Image extends ShapeBase {
+  /**
+   * The type of the shape, which is always 'image' for image shapes.
+   */
   type: 'image';
 
   /**
@@ -2346,7 +2379,7 @@ export type ImageData = {
   keepAspectRatio?: boolean;
 
   /**
-   * Returns the imaged data as a byte array.
+   * Returns the image data as a byte array.
    */
   data(): Promise<Uint8Array>;
 };
@@ -2679,7 +2712,7 @@ export interface LibraryComponent extends LibraryElement {
   isVariant(): this is LibraryVariantComponent;
 
   /**
-   * Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a
+   * Creates a new Variant from this standard Component. It creates a VariantContainer, transforms this Component into a VariantComponent, duplicates it, and creates a
    * set of properties based on the component name and path.
    * Similar to doing it with the contextual menu or the shortcut on the Penpot interface
    */
@@ -2697,12 +2730,12 @@ export interface LibraryVariantComponent extends LibraryComponent {
   readonly variants: Variants | null;
 
   /**
-   * A list of the variants props of this VariantComponent. Each property have a key and a value
+   * A list of the variant props of this VariantComponent. Each property has a key and a value
    */
   readonly variantProps: { [property: string]: string };
 
   /**
-   * If this VariantComponent has an invalid name, that does't follow the structure [property]=[value], [property]=[value]
+   * If this VariantComponent has an invalid name, that doesn't follow the structure [property]=[value], [property]=[value]
    * this field stores that invalid name
    */
   variantError: string;
@@ -2714,8 +2747,9 @@ export interface LibraryVariantComponent extends LibraryComponent {
 
   /**
    * Sets the value of the variant property on the indicated position
+   * @param pos The position of the property to update
+   * @param value The new value of the property
    */
-
   setVariantProperty(pos: number, value: string): void;
 }
 
@@ -2914,7 +2948,7 @@ export interface LibraryTypography extends LibraryElement {
  * Proxy for the local storage. Only elements owned by the plugin
  * can be stored and accessed.
  * Warning: other plugins won't be able to access this information but
- * the user could potentialy access the data through the browser information.
+ * the user could potentially access the data through the browser information.
  */
 export interface LocalStorage {
   /**
@@ -2925,7 +2959,7 @@ export interface LocalStorage {
 
   /**
    * Set the data given the key. If the value already existed it
-   * will be overriden. The value will be stored in a string representation.
+   * will be overridden. The value will be stored in a string representation.
    * Requires the `allow:localstorage` permission.
    */
   setItem(key: string, value: unknown): void;
@@ -3055,7 +3089,7 @@ export interface Page extends PluginData {
   name: string;
 
   /**
-   * The ruler guides attached to the board
+   * The ruler guides attached to the page
    */
   readonly rulerGuides: RulerGuide[];
 
@@ -3078,7 +3112,7 @@ export interface Page extends PluginData {
 
   /**
    * Finds all shapes on the page.
-   * Optionaly it gets a criteria object to search for specific criteria
+   * Optionally it gets a criteria object to search for specific criteria
    * @param criteria
    * @example
    * ```js
@@ -3125,6 +3159,9 @@ export interface Page extends PluginData {
 
   /**
    * Creates a new ruler guide.
+   * @param orientation `horizontal` or `vertical`
+   * @param value the position of the guide in absolute coordinates
+   * @param board if provided, the guide will be attached to the board
    */
   addRulerGuide(
     orientation: RulerGuideOrientation,
@@ -3138,8 +3175,7 @@ export interface Page extends PluginData {
   removeRulerGuide(guide: RulerGuide): void;
 
   /**
-   * Creates a new comment thread in the `position`. Optionaly adds
-   * it into the `board`.
+   * Creates a new comment thread in the `position`.
    * Returns the thread created.
    * Requires the `comment:write` permission.
    */
@@ -3182,18 +3218,18 @@ export interface Path extends ShapeBase {
   toD(): string;
 
   /**
-   * The content of the boolean shape, defined as the path string.
+   * The content of the path shape, defined as the path string.
    * @deprecated Use either `d` or `commands`.
    */
   content: string;
 
   /**
-   * The content of the boolean shape, defined as the path string.
+   * The content of the path shape, defined as the path string.
    */
   d: string;
 
   /**
-   * The content of the boolean shape, defined as an array of path commands.
+   * The content of the path shape, defined as an array of path commands.
    */
   commands: Array<PathCommand>;
 
@@ -3433,7 +3469,7 @@ export interface Push {
   readonly duration: number;
 
   /**
-   * Function that the dissolve effect will follow for the interpolation.
+   * Function that the push effect will follow for the interpolation.
    * Defaults to `linear`
    */
   readonly easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
@@ -3466,8 +3502,8 @@ export interface RulerGuide {
   readonly orientation: RulerGuideOrientation;
 
   /**
-   * `position` is the position in the axis in absolute positioning. If this is a board
-   * guide will return the positioning relative to the board.
+   * `position` is the position in the axis in absolute coordinates. If this is a board
+   * guide it will return the position relative to the board.
    */
   position: number;
 
@@ -3478,7 +3514,7 @@ export interface RulerGuide {
 }
 
 /**
- *
+ * The possible orientations for a ruler guide: 'horizontal' or 'vertical'.
  */
 export type RulerGuideOrientation = 'horizontal' | 'vertical';
 
@@ -3594,12 +3630,12 @@ export interface ShapeBase extends PluginData {
   readonly height: number;
 
   /**
-   * @return Returns the bounding box surrounding the current shape
+   * The bounding box surrounding the current shape
    */
   readonly bounds: Bounds;
 
   /**
-   * @return Returns the geometric center of the shape
+   * The geometric center of the shape
    */
   readonly center: Point;
 
@@ -3632,6 +3668,11 @@ export interface ShapeBase extends PluginData {
    * The vertical constraints applied to the shape.
    */
   constraintsVertical: 'top' | 'bottom' | 'topbottom' | 'center' | 'scale';
+
+  /**
+   * Indicates whether the shape stays fixed in place while scrolling.
+   */
+  fixedWhenScrolling: boolean;
 
   /**
    * The border radius of the shape.
@@ -3695,6 +3736,13 @@ export interface ShapeBase extends PluginData {
   blur?: Blur;
 
   /**
+   * The background blur effect applied to the shape.
+   * Background blur creates a blur effect on the content behind the shape,
+   * rather than on the shape's own content.
+   */
+  backgroundBlur?: Blur;
+
+  /**
    * The export settings of the shape.
    */
   exports: Export[];
@@ -3730,7 +3778,7 @@ export interface ShapeBase extends PluginData {
   flipY: boolean;
 
   /**
-   * @return Returns the rotation in degrees of the shape with respect to it's center.
+   * The rotation in degrees of the shape with respect to its center.
    */
   rotation: number;
 
@@ -3831,13 +3879,16 @@ export interface ShapeBase extends PluginData {
   detach(): void;
 
   /**
-   * TODO
+   * Swaps the component instance for another component, keeping the overrides
+   * when possible. Similar to the "swap component" action on the Penpot interface.
+   * The current shape must be a component copy instance.
+   * @param component The new component to replace the current one
    */
   swapComponent(component: LibraryComponent): void;
 
   /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
-   * @param pos The position of the poroperty to update
+   * @param pos The position of the property to update
    * @param value The new value of the property
    */
   switchVariant(pos: number, value: string): void;
@@ -3872,7 +3923,7 @@ export interface ShapeBase extends PluginData {
   /**
    * Rotates the shape in relation with the given center.
    * @param angle Angle in degrees to rotate.
-   * @param center Center of the transform rotation. If not send will use the geometri center of the shapes.
+   * @param center Center of the transform rotation. If not sent it will use the geometric center of the shape.
    *
    * @example
    * ```js
@@ -3918,6 +3969,11 @@ export interface ShapeBase extends PluginData {
 
   /**
    * Adds a new interaction to the shape.
+   *
+   * If the interaction starts a flow (for example a `navigate-to` action) and
+   * the shape's board is not already part of any flow, a new flow starting at
+   * that board is created automatically, matching the behavior of the editor.
+   *
    * @param trigger defines the conditions under which the action will be triggered
    * @param action defines what will be executed when the trigger happens
    * @param delay for the type of trigger `after-delay` will specify the time after triggered. Ignored otherwise.
@@ -3951,7 +4007,7 @@ export interface ShapeBase extends PluginData {
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
    */
-  applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+  applyToken(token: Token, properties?: TokenProperty[]): void;
 
   /**
    * Creates a clone of the shape.
@@ -3995,7 +4051,7 @@ export interface Slide {
   readonly offsetEffect?: boolean;
 
   /**
-   * Function that the dissolve effect will follow for the interpolation.
+   * Function that the slide effect will follow for the interpolation.
    * Defaults to `linear`.
    */
   readonly easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
@@ -4067,6 +4123,9 @@ export type StrokeCap =
  * This interface extends `ShapeBase` and includes properties specific to raw SVG shapes.
  */
 export interface SvgRaw extends ShapeBase {
+  /**
+   * The type of the shape, which is always 'svg-raw' for raw SVG shapes.
+   */
   type: 'svg-raw';
 }
 
@@ -4153,7 +4212,7 @@ export interface Text extends ShapeBase {
   align: 'left' | 'center' | 'right' | 'justify' | 'mixed' | null;
 
   /**
-   * The vertical alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
+   * The vertical alignment of the text shape.
    */
   verticalAlign: 'top' | 'center' | 'bottom' | null;
 
@@ -4401,14 +4460,14 @@ export interface TokenBase {
    * and the value set to the attributes will depend on which sets are active
    * (and will change if different sets or themes are activated later).
    */
-  applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void;
+  applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
 
   /**
    * Applies this token to the currently selected shapes.
    *
    * Parameters and warnings are the same as above.
    */
-  applyToSelected(properties: TokenProperty[] | undefined): void;
+  applyToSelected(properties?: TokenProperty[]): void;
 }
 
 /**
@@ -4436,7 +4495,7 @@ export interface TokenBorderRadius extends TokenBase {
   readonly resolvedValue: number | undefined;
 }
 
-/*
+/**
  * The value of a TokenShadow in its composite form.
  */
 export interface TokenShadowValue {
@@ -4471,7 +4530,7 @@ export interface TokenShadowValue {
   blur: number;
 }
 
-/*
+/**
  * The value of a TokenShadow in its composite of strings form.
  */
 export interface TokenShadowValueString {
@@ -4556,8 +4615,10 @@ export interface TokenColor extends TokenBase {
   value: string;
 
   /**
-   * The value as defined in the token itself.
-   * It's a rgb color or a reference.
+   * The value calculated by finding all tokens with the same name in active sets
+   * and resolving the references.
+   *
+   * It's a rgb color, or undefined if no value has been found in active sets.
    */
   readonly resolvedValue: string | undefined;
 }
@@ -4895,7 +4956,7 @@ export interface TokenTextDecoration extends TokenBase {
   readonly resolvedValue: string | undefined;
 }
 
-/*
+/**
  * The value of a TokenTypography in its composite form.
  */
 export interface TokenTypographyValue {
@@ -4935,7 +4996,7 @@ export interface TokenTypographyValue {
   textDecoration: string;
 }
 
-/*
+/**
  * The value of a TokenTypography in its composite of strings form.
  */
 export interface TokenTypographyValueString {
@@ -4961,9 +5022,9 @@ export interface TokenTypographyValueString {
   fontWeight: string;
 
   /**
-   * The line height, as a number. Note that there not exists an individual
-   * token type line height, only part of a Typography token. If you need to
-   * put here a reference, use a NumberToken.
+   * The line height, as a number. Note that there is no individual line-height
+   * token type; it only exists as part of a Typography token. If you need to
+   * put a reference here, use a Number token.
    */
   lineHeight: string;
 
@@ -5009,12 +5070,18 @@ export interface TokenTypography extends TokenBase {
 
 /**
  * Any possible type of value field in a token.
+ *
+ * Token values are always stored as strings, including for numeric token
+ * types such as `spacing`, `dimension` or `borderRadius` (e.g. `"16"` or
+ * `"16px"`). A plain `number` is also accepted on input and coerced to its
+ * string representation.
  */
 export type TokenValueString =
   | TokenShadowValueString
   | TokenTypographyValueString
   | string
-  | string[];
+  | string[]
+  | number;
 
 /**
  * The supported Design Tokens in Penpot.
@@ -5054,8 +5121,8 @@ export interface TokenCatalog {
   readonly themes: TokenTheme[];
 
   /**
-   * The  list of sets in this catalog, in the order defined
-   * by the user. The order is important because then same token name
+   * The list of sets in this catalog, in the order defined
+   * by the user. The order is important because when the same token name
    * exists in several active sets, the latter has precedence.
    */
   readonly sets: TokenSet[];
@@ -5070,11 +5137,18 @@ export interface TokenCatalog {
 
   /**
    * Creates a new TokenSet and adds it to the catalog.
+   *
+   * Newly created sets are **inactive** by default: only active sets
+   * affect shapes and reference resolution. Pass `active: true` to create
+   * an already-active set, or activate it later via `set.active = true` /
+   * `set.toggleActive()`.
    * @param name The name of the set (required). It may contain
    * a group path, separated by `/`.
+   * @param active Whether the set should be activated on creation.
+   * Defaults to `false`.
    * @return Returns the created TokenSet.
    */
-  addSet({ name }: { name: string }): TokenSet;
+  addSet({ name, active }: { name: string; active?: boolean }): TokenSet;
 
   /**
    * Retrieves a theme.
@@ -5139,10 +5213,14 @@ export interface TokenSet {
 
   /**
    * Creates a new Token and adds it to the set.
-   * @param type Thetype of token.
+   * @param type The type of the token.
    * @param name The name of the token (required). It may contain
    * a group path, separated by `.`.
-   * @param value The value of the token (required), in the string form.
+   * @param value The value of the token (required), always in its string
+   * form. This applies to numeric token types too (e.g. `spacing`,
+   * `dimension`, `borderRadius`): use `"16"` or `"16px"` rather than `16`.
+   * For convenience a plain number is also accepted and coerced to its
+   * string representation (`16` becomes `"16"`).
    * @return Returns the created Token.
    */
   addToken({
@@ -5174,9 +5252,9 @@ export interface TokenSet {
  * sets that are _not_ in this theme, because they may have been
  * activated by other themes.
  *
- * Themes may be gruped. At any time only one of the themes in a group
+ * Themes may be grouped. At any time only one of the themes in a group
  * may be active. But there may be active themes in other groups. This
- * allows to define multiple "axis" for theming (e.g. color scheme,
+ * allows defining multiple "axis" for theming (e.g. color scheme,
  * density or brand).
  *
  * When a TokenSet is activated or deactivated directly, all themes
@@ -5191,13 +5269,13 @@ export interface TokenTheme {
   readonly id: string;
 
   /**
-   * Optional identifier that may exists if the theme was imported from an
+   * Optional identifier that may exist if the theme was imported from an
    * external tool that uses ids in the json file.
    */
   readonly externalId: string | undefined;
 
   /**
-   * The group name of the theme. Can be empt string.
+   * The group name of the theme. Can be an empty string.
    */
   group: string;
 
@@ -5465,7 +5543,10 @@ export interface User {
 }
 
 /**
- * TODO
+ * Represents a Variant in Penpot: the grouping of all the VariantComponents that
+ * belong to the same VariantContainer, together with their shared properties.
+ * This interface provides attributes and actions that affect the Variant as a
+ * whole (not a single VariantComponent).
  */
 export interface Variants {
   /**
@@ -5485,7 +5566,7 @@ export interface Variants {
   properties: string[];
 
   /**
-   * A list of all the values of a property along all the variantComponents of this Variant
+   * A list of all the values of a property across all the VariantComponents of this Variant
    * @param property The name of the property
    */
   currentValues(property: string): string[];

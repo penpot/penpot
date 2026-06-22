@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.shadow
   (:require-macros [app.main.style :as stl])
@@ -57,10 +57,13 @@
                      (update :token-value (fn [value]
                                             (->> (or value [])
                                                  (mapv (fn [shadow]
-                                                         (d/update-when shadow :inset #(cond
-                                                                                         (boolean? %) %
-                                                                                         (= "true" %) true
-                                                                                         :else false)))))))
+                                                         (-> shadow
+                                                             (d/update-when :inset #(cond
+                                                                                      (boolean? %) %
+                                                                                      (= "true" %) true
+                                                                                      :else false))
+                                                             (update :blur   #(if (str/blank? %) "0" %))
+                                                             (update :spread #(if (str/blank? %) "0" %))))))))
                      (assoc :validators [check-empty-shadow-token
                                          check-shadow-token-self-reference]))]
 
@@ -160,6 +163,7 @@
         {:aria-label (tr "workspace.tokens.shadow-blur")
          :placeholder (tr "workspace.tokens.shadow-blur")
          :name :blur
+         :nillable true
          :slot-start (mf/html [:span {:class (stl/css :visible-label)}
                                (str (tr "workspace.tokens.shadow-blur") ":")])
          :token blur-token
@@ -172,6 +176,7 @@
         {:aria-label (tr "workspace.tokens.shadow-spread")
          :placeholder (tr "workspace.tokens.shadow-spread")
          :name :spread
+         :nillable true
          :slot-start (mf/html [:span {:class (stl/css :visible-label)}
                                (str (tr "workspace.tokens.shadow-spread") ":")])
          :token spread-token
@@ -255,7 +260,7 @@
 
 ;; TODO: use cfo/make-schema:token-value and extend it with shadow and reference fields
 (defn- make-schema
-  [set-id token-id tokens-lib active-tab]
+  [current-token-path tokens-tree active-tab]
   (sm/schema
    [:and
     [:map
@@ -266,7 +271,8 @@
        (sm/update-properties cto/schema:token-name assoc
                              :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error")))
        [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
-        #(not (ctob/token-name-path-exists? % tokens-lib set-id token-id))]]]
+        #(not (ctob/token-name-path-exists? % (-> tokens-tree
+                                                  (d/dissoc-in current-token-path))))]]]
 
      [:value
       [:map
@@ -310,15 +316,14 @@
              ref-valid? (and reference (not (str/blank? reference)))
 
              shadows (get value :shadow)
-             ;; To be a valid shadow it must contain one on each valid values
+             ;; To be a valid shadow it must contain one on each valid values.
+             ;; blur and spread are optional and default to "0" when blank.
              valid-composite-shadow?
              (and (seq shadows)
                   (every?
-                   (fn [{:keys [offset-x offset-y blur spread color]}]
+                   (fn [{:keys [offset-x offset-y color]}]
                      (and (not (str/blank? offset-x))
                           (not (str/blank? offset-y))
-                          (not (str/blank? blur))
-                          (not (str/blank? spread))
                           (not (str/blank? color))))
                    shadows))]
 
@@ -333,14 +338,20 @@
 
     (vector? value)
     {:reference nil
-     :shadow   value}
+     :shadow   (mapv (fn [shadow]
+                       (-> shadow
+                           (update :blur   #(if (str/blank? %) "0" %))
+                           (update :spread #(if (str/blank? %) "0" %))))
+                     value)}
 
     :else
     {:reference nil
      :shadow   [default-token-shadow]}))
 
 (mf/defc form*
-  [{:keys [token token-type selected-token-set-id] :as props}]
+  [{:keys [token
+           token-type
+           current-token-path] :as props}]
   (let [token
         (mf/with-memo [token]
           (or token
@@ -351,12 +362,6 @@
                 {:type token-type
                  :value {:reference nil
                          :shadow   [default-token-shadow]}})))
-
-        make-schema
-        (mf/with-memo [selected-token-set-id token]
-          (partial make-schema selected-token-set-id (when (ctob/token? token)
-                                                       (ctob/get-id token))))
-
         initial
         (mf/with-memo [token]
           (let [raw-value (:value token)
@@ -369,7 +374,7 @@
         props (mf/spread-props props {:token token
                                       :token-type token-type
                                       :initial initial
-                                      :make-schema make-schema
+                                      :make-schema (partial make-schema current-token-path)
                                       :value-type :indexed
                                       :value-subfield :shadow
                                       :input-component tabs-wrapper*

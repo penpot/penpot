@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.page
   (:require
@@ -19,6 +19,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.repo :as rp]
    [app.main.router :as-alias rt]
    [app.main.store :as st]
@@ -28,10 +29,12 @@
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
    [app.plugins.shape :as shape]
+   [app.plugins.system-events :as se]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 (declare page-proxy)
 
@@ -69,7 +72,7 @@
      :get
      (fn [self]
        (when-let [frame (-> self u/proxy->flow :starting-frame)]
-         (shape/shape-proxy file-id page-id frame)))
+         (shape/shape-proxy plugin-id file-id page-id frame)))
      :set
      (fn [_ value]
        (cond
@@ -268,9 +271,19 @@
         (not (r/check-permission plugin-id "content:read"))
         (u/not-valid plugin-id :openPage "Plugin doesn't have 'content:read' permission")
 
+        (true? new-window)
+        (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+            (js/Promise.resolve nil))
+
         :else
-        (let [new-window (if (boolean? new-window) new-window false)]
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+        (js/Promise.
+         (fn [resolve _]
+           (->> st/stream
+                (rx/filter (ptk/type? ::dwpg/initialized))
+                (rx/filter #(= (deref %) id))
+                (rx/take 1)
+                (rx/subs! #(resolve nil)))
+           (st/emit! (dcm/go-to-workspace :page-id id))))))
 
     :createFlow
     (fn [name frame]
@@ -283,7 +296,9 @@
 
         :else
         (let [flow-id (uuid/next)]
-          (st/emit! (dwi/add-flow flow-id id name (obj/get frame "$id")))
+          (st/emit!
+           (dwi/add-flow flow-id id name (obj/get frame "$id"))
+           (se/event plugin-id "add-flow"))
           (flow-proxy plugin-id file-id id flow-id))))
 
     :removeFlow
@@ -293,7 +308,9 @@
         (u/not-valid plugin-id :removeFlow-flow flow)
 
         :else
-        (st/emit! (dwi/remove-flow id (obj/get flow "$id")))))
+        (st/emit!
+         (dwi/remove-flow id (obj/get flow "$id"))
+         (se/event plugin-id "remove-flow"))))
 
     :addRulerGuide
     (fn [orientation value board]
@@ -313,15 +330,19 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
+          (not (u/page-active? id))
+          (u/not-valid plugin-id :addRulerGuide "Cannot modify a page that is not currently active")
+
           :else
           (let [ruler-id (uuid/next)]
             (st/emit!
-             (dwgu/update-guides
-              (d/without-nils
-               {:id       ruler-id
-                :axis     (parser/orientation->axis orientation)
-                :position value
-                :frame-id (when board (obj/get board "$id"))})))
+             (-> (dwgu/update-guides
+                  (d/without-nils
+                   {:id       ruler-id
+                    :axis     (parser/orientation->axis orientation)
+                    :position value
+                    :frame-id (when board (obj/get board "$id"))}))
+                 (se/add-event plugin-id)))
             (rg/ruler-guide-proxy plugin-id file-id id ruler-id)))))
 
     :removeRulerGuide
@@ -333,9 +354,13 @@
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
 
+        (not (u/page-active? id))
+        (u/not-valid plugin-id :removeRulerGuide "Cannot modify a page that is not currently active")
+
         :else
         (let [guide (u/proxy->ruler-guide value)]
-          (st/emit! (dwgu/remove-guide guide)))))
+          (st/emit! (-> (dwgu/remove-guide guide)
+                        (se/add-event plugin-id))))))
 
     :addCommentThread
     (fn [content position board]
@@ -364,15 +389,15 @@
             (js/Promise.
              (fn [resolve]
                (st/emit!
-                (dc/create-thread-on-workspace
-                 {:file-id file-id
-                  :page-id id
-                  :position (gpt/point position)
-                  :content content}
-
-                 (fn [data]
-                   (resolve (pc/comment-thread-proxy plugin-id file-id id data)))
-                 false))))))))
+                (-> (dc/create-thread-on-workspace
+                     {:file-id file-id
+                      :page-id id
+                      :position (gpt/point position)
+                      :content content}
+                     (fn [data]
+                       (resolve (pc/comment-thread-proxy plugin-id file-id id data)))
+                     false)
+                    (se/add-event plugin-id)))))))))
 
     :removeCommentThread
     (fn [thread]

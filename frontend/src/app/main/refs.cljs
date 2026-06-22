@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.refs
   "A collection of derived refs."
@@ -110,7 +110,7 @@
 ;; DEPRECATED and all new code should not use it and old code should
 ;; be gradually migrated to more efficient approach
 (def libraries
-  "A derived state that contanins the currently loaded shared
+  "A derived state that contains the currently loaded shared
   libraries with all its content; including the current file"
   (l/derived (fn [state]
                (let [files   (get state :files)
@@ -586,6 +586,12 @@
    (fn [state]
      (some-> (dm/get-in state [:thumbnails object-id])
              (cf/resolve-media)))
+   st/state))
+
+(defn workspace-thumbnail-rendered-at
+  [object-id]
+  (l/derived
+   #(dm/get-in % [:thumbnails-meta object-id :rendered-at])
    st/state))
 
 (def workspace-text-modifier

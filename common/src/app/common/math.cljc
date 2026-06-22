@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.math
   "A collection of math utils."
@@ -183,7 +183,7 @@
      :clj (Math/log10 x)))
 
 (defn clamp [num from to]
-  (if (< num from)
+  (if (or (nan? num) (< num from))
     from
     (if (> num to) to num)))
 

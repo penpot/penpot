@@ -2,12 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.comments
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
@@ -31,11 +34,37 @@
 
         threads-map (mf/deref refs/threads)
 
+        ;; Active transform modifiers (e.g. while dragging a board). We use
+        ;; them to move comment bubbles live alongside their frame, instead of
+        ;; only repositioning them at drop time. The SVG (legacy) renderer keeps
+        ;; them in `:workspace-modifiers`, while the WASM renderer pushes them
+        ;; through the `wasm-modifiers` stream as plain transform matrices.
+        modifiers   (mf/deref refs/workspace-modifiers)
+        wasm-mods   (into {} (mf/deref refs/workspace-wasm-modifiers))
+        objects     (mf/deref refs/workspace-page-objects)
+
         threads
         (mf/with-memo [threads-map local profile page-id]
           (->> (vals threads-map)
                (filter #(= (:page-id %) page-id))
                (dcm/apply-filters local profile)))
+
+        ;; Returns the position translation matrix for a frame that is being
+        ;; transformed, or nil when the frame has no active modifier. The delta
+        ;; matches `move-frame-comment-threads` (frame top-left displacement) so
+        ;; the bubble does not jump when the modifier is committed.
+        frame-position-modifier
+        (fn [frame-id]
+          (when-let [frame (get objects frame-id)]
+            (let [frame'
+                  (if-let [modifier (get-in modifiers [frame-id :modifiers])]
+                    (gsh/transform-shape frame modifier)
+                    (when-let [transform (get wasm-mods frame-id)]
+                      (gsh/apply-transform frame transform)))]
+              (when (some? frame')
+                (let [delta (gpt/to-vec (gpt/point (:x frame) (:y frame))
+                                        (gpt/point (:x frame') (:y frame')))]
+                  (gmt/translate-matrix delta))))))
 
         viewport
         (assoc vport :offset-x pos-x :offset-y pos-y)
@@ -67,9 +96,11 @@
            (if group?
              [:> cmt/comment-floating-group* {:thread-group thread-group
                                               :zoom zoom
+                                              :position-modifier (frame-position-modifier (:frame-id thread))
                                               :key (:seqn thread)}]
              [:> cmt/comment-floating-bubble* {:thread thread
                                                :zoom zoom
+                                               :position-modifier (frame-position-modifier (:frame-id thread))
                                                :is-open (= (:id thread) (:open local))
                                                :key (:seqn thread)}])))
 
@@ -79,6 +110,7 @@
              [:> cmt/comment-floating-thread*
               {:thread thread
                :viewport viewport
+               :position-modifier (frame-position-modifier (:frame-id thread))
                :zoom zoom}])))
 
        (when-let [draft (:draft local)]

@@ -1,6 +1,7 @@
 #[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod error;
+mod globals;
 mod math;
 mod mem;
 mod performance;
@@ -8,6 +9,7 @@ mod render;
 mod shapes;
 mod state;
 mod tiles;
+mod ui;
 mod utils;
 mod uuid;
 mod view;
@@ -18,103 +20,22 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
+use crate::render::{FrameType, RenderFlag};
+
+use globals::{get_design_state, get_gpu_state, get_render_state};
+
 use macros::wasm_error;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
-use state::State;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
-
-pub(crate) static mut STATE: Option<Box<State>> = None;
-
-// FIXME: These with_state* macros should be using our CriticalError instead of expect.
-// But to do that, we need to not use them at domain-level (i.e. in business logic), just
-// in the context of the wasm call.
-#[macro_export]
-macro_rules! with_state_mut {
-    ($state:ident, $block:block) => {{
-        let $state = unsafe {
-            #[allow(static_mut_refs)]
-            STATE.as_mut()
-        }
-        .expect("Got an invalid state pointer");
-        $block
-    }};
-}
-
-#[macro_export]
-macro_rules! with_state {
-    ($state:ident, $block:block) => {{
-        let $state = unsafe {
-            #[allow(static_mut_refs)]
-            STATE.as_ref()
-        }
-        .expect("Got an invalid state pointer");
-        $block
-    }};
-}
-
-#[macro_export]
-macro_rules! with_current_shape_mut {
-    ($state:ident, |$shape:ident: &mut Shape| $block:block) => {
-        let $state = unsafe {
-            #[allow(static_mut_refs)]
-            STATE.as_mut()
-        }
-        .expect("Got an invalid state pointer");
-
-        $state.touch_current();
-
-        if let Some($shape) = $state.current_shape_mut() {
-            $block
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! with_current_shape {
-    ($state:ident, |$shape:ident: &Shape| $block:block) => {
-        let $state = unsafe {
-            #[allow(static_mut_refs)]
-            STATE.as_ref()
-        }
-        .expect("Got an invalid state pointer");
-        if let Some($shape) = $state.current_shape() {
-            $block
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! with_state_mut_current_shape {
-    ($state:ident, |$shape:ident: &Shape| $block:block) => {
-        let $state = unsafe {
-            #[allow(static_mut_refs)]
-            STATE.as_mut()
-        }
-        .expect("Got an invalid state pointer");
-        if let Some($shape) = $state.current_shape() {
-            $block
-        }
-    };
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
-    let state_box = Box::new(State::try_new(width, height)?);
-    unsafe {
-        STATE = Some(state_box);
-    }
-    Ok(())
-}
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_browser(browser: u8) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.set_browser(browser);
     });
     Ok(())
@@ -122,26 +43,10 @@ pub extern "C" fn set_browser(browser: u8) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn clean_up() -> Result<()> {
-    with_state_mut!(state, {
-        // Cancel the current animation frame if it exists so
-        // it won't try to render without context
-        let render_state = state.render_state_mut();
-        render_state.cancel_animation_frame();
-    });
-    unsafe { STATE = None }
-    mem::free_bytes()?;
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
-    with_state_mut!(state, {
-        let render_state = state.render_state_mut();
-        render_state.set_debug_flags(debug);
-        render_state.set_dpr(dpr)?;
-    });
+    let render_state = get_render_state();
+    render_state.set_debug_flags(debug);
+    render_state.set_dpr(dpr)?;
     Ok(())
 }
 
@@ -150,68 +55,46 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) -> Result<()> {
 pub extern "C" fn set_viewport_interest_area_threshold(
     viewport_interest_area_threshold: i32,
 ) -> Result<()> {
-    with_state_mut!(state, {
-        let render_state = state.render_state_mut();
-        render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold);
-    });
+    let render_state = get_render_state();
+    render_state.set_viewport_interest_area_threshold(viewport_interest_area_threshold);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_max_blocking_time_ms(max_blocking_time_ms: i32) -> Result<()> {
-    with_state_mut!(state, {
-        let render_state = state.render_state_mut();
-        render_state.set_max_blocking_time_ms(max_blocking_time_ms);
-    });
+    let render_state = get_render_state();
+    render_state.set_max_blocking_time_ms(max_blocking_time_ms);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_node_batch_threshold(node_batch_threshold: i32) -> Result<()> {
-    with_state_mut!(state, {
-        let render_state = state.render_state_mut();
-        render_state.set_node_batch_threshold(node_batch_threshold);
-    });
+    let render_state = get_render_state();
+    render_state.set_node_batch_threshold(node_batch_threshold);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_blur_downscale_threshold(blur_downscale_threshold: f32) -> Result<()> {
-    with_state_mut!(state, {
-        let render_state = state.render_state_mut();
-        render_state.set_blur_downscale_threshold(blur_downscale_threshold);
-    });
+    let render_state = get_render_state();
+    render_state.set_blur_downscale_threshold(blur_downscale_threshold);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
-    with_state_mut!(state, {
-        state.render_state_mut().set_antialias_threshold(threshold);
-    });
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn set_max_atlas_texture_size(max_px: i32) -> Result<()> {
-    with_state_mut!(state, {
-        state
-            .render_state_mut()
-            .surfaces
-            .set_max_atlas_texture_size(max_px);
-    });
+    get_render_state().set_antialias_threshold(threshold);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
         state.rebuild_tiles_shallow();
@@ -222,23 +105,74 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn render(_: i32) -> Result<()> {
-    with_state_mut!(state, {
+pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
+    with_state!(state, {
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
         // since the previous rAF. set_modifiers skips this work during
         // interactive_transform; we do it once here, with the current
         // modifier set, so the cost is paid once per rAF rather than
         // once per pointer move.
-        if state.render_state.options.is_interactive_transform() {
-            let ids = state.shapes.modifier_ids();
+        if get_render_state().options.is_interactive_transform() {
+            // Collect into an owned Vec to release the immutable borrow on
+            // `state.shapes` before the mutable `rebuild_modifier_tiles` call.
+            let ids = state.shapes.modifier_ids().to_vec();
             if !ids.is_empty() {
-                state.rebuild_modifier_tiles(ids)?;
+                state.rebuild_modifier_tiles(&ids)?;
             }
         }
-        state
-            .start_render_loop(performance::get_time())
-            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
+        let frame_type = if flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8 {
+            state
+                .continue_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        } else {
+            state
+                .start_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        };
+        return Ok(frame_type);
+    });
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_ui_only() -> Result<()> {
+    with_state!(state, {
+        state.render_ui_only();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_blurred_snapshot(blur_radius: f32) -> Result<()> {
+    with_state!(state, {
+        state.render_blurred_snapshot(blur_radius);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn clear_render_include_filter() -> Result<()> {
+    with_state!(state, {
+        state.clear_include_filter();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_render_include_filter() -> Result<()> {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        state.set_include_filter(entries);
     });
     Ok(())
 }
@@ -246,10 +180,10 @@ pub extern "C" fn render(_: i32) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_sync() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.rebuild_tiles();
         state
-            .render_sync(performance::get_time())
+            .render_sync(0)
             .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
     });
     Ok(())
@@ -258,7 +192,7 @@ pub extern "C" fn render_sync() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         state.use_shape(id);
 
@@ -275,7 +209,7 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
 
         state.rebuild_tiles_from(Some(&id));
         state
-            .render_sync_shape(&id, performance::get_time())
+            .render_sync_shape(&id, 0)
             .map_err(|e| Error::RecoverableError(e.to_string()))?;
     });
     Ok(())
@@ -284,10 +218,10 @@ pub extern "C" fn render_sync_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         // Don't cancel the animation frame — let the async render
         // continue populating the tile HashMap in the background.
-        // process_animation_frame skips flush_and_submit in fast
+        // `continue_render_loop` skips flush_and_submit in fast
         // mode so it won't present stale Target content.  The
         // tile HashMap is position-independent, so tiles rendered
         // for the old viewport can be reused by the next full
@@ -300,16 +234,14 @@ pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_preview_mode(enabled: bool) -> Result<()> {
-    with_state_mut!(state, {
-        state.render_state.set_preview_mode(enabled);
-    });
+    get_render_state().set_preview_mode(enabled);
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_preview() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.render_preview(performance::get_time());
     });
     Ok(())
@@ -319,7 +251,7 @@ pub extern "C" fn render_preview() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn begin_loading() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.loading = true;
     });
     Ok(())
@@ -330,7 +262,7 @@ pub extern "C" fn begin_loading() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn end_loading() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.loading = false;
     });
     Ok(())
@@ -345,49 +277,31 @@ pub extern "C" fn end_loading() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_loading_overlay() -> Result<()> {
-    with_state_mut!(state, {
-        state.render_state.render_loading_overlay();
-    });
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
-    let result = with_state_mut!(state, { state.process_animation_frame(timestamp) });
-    if let Err(err) = result {
-        eprintln!("process_animation_frame error: {}", err);
-    }
+    get_render_state().render_loading_overlay();
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn reset_canvas() -> Result<()> {
-    with_state_mut!(state, {
-        state.render_state_mut().reset_canvas();
-    });
+    get_render_state().reset_canvas();
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn resize_viewbox(width: i32, height: i32) -> Result<()> {
-    with_state_mut!(state, {
-        state.resize(width, height)?;
-    });
+    get_render_state().resize(width, height)?;
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) -> Result<()> {
-    with_state_mut!(state, {
-        performance::begin_measure!("set_view");
-        let render_state = state.render_state_mut();
-        render_state.set_view(zoom, x, y);
-        performance::end_measure!("set_view");
-    });
+    performance::begin_measure!("set_view");
+    let render_state = get_render_state();
+    render_state.set_view(zoom, x, y);
+    performance::end_measure!("set_view");
     Ok(())
 }
 
@@ -397,15 +311,13 @@ static mut VIEW_INTERACTION_START: i32 = 0;
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_start() -> Result<()> {
-    with_state_mut!(state, {
-        #[cfg(feature = "profile-macros")]
-        unsafe {
-            VIEW_INTERACTION_START = performance::get_time();
-        }
-        performance::begin_measure!("set_view_start");
-        state.render_state.options.set_fast_mode(true);
-        performance::end_measure!("set_view_start");
-    });
+    #[cfg(feature = "profile-macros")]
+    unsafe {
+        VIEW_INTERACTION_START = performance::get_time();
+    }
+    performance::begin_measure!("set_view_start");
+    get_render_state().options.set_fast_mode(true);
+    performance::end_measure!("set_view_start");
     Ok(())
 }
 
@@ -417,36 +329,30 @@ pub extern "C" fn set_view_start() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_view_end() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         performance::begin_measure!("set_view_end");
-        state.render_state.options.set_fast_mode(false);
-        state.render_state.cancel_animation_frame();
+        let render_state = get_render_state();
+        render_state.options.set_fast_mode(false);
+        render_state.tile_viewbox.update(&render_state.viewbox);
 
-        let scale = state.render_state.get_scale();
-        state
-            .render_state
-            .tile_viewbox
-            .update(state.render_state.viewbox, scale);
-
-        if state.render_state.options.is_profile_rebuild_tiles() {
+        if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
-        } else if state.render_state.zoom_changed() {
+        } else if render_state.zoom_changed() {
             // Zoom changed: tile sizes differ so all cached tile
             // textures are invalid (wrong scale).  Rebuild the tile
             // index and clear the tile texture cache, but *preserve*
             // the cache canvas so render_from_cache can show a scaled
             // preview of the old content while new tiles render.
-            state.render_state.rebuild_tile_index(&state.shapes);
-            state.render_state.surfaces.invalidate_tile_cache();
+            render_state.rebuild_tile_index(&state.shapes);
+            render_state.surfaces.invalidate_tile_cache();
         } else {
             // Pure pan at the same zoom level: tile contents have not
             // changed — only the viewport position moved. Update the
             // tile index (which tiles are in the interest area) but
             // keep cached tile textures so the render can blit them
             // instead of re-drawing every visible tile from scratch.
-            state.render_state.rebuild_tile_index(&state.shapes);
+            render_state.rebuild_tile_index(&state.shapes);
         }
-
         performance::end_measure!("set_view_end");
     });
     Ok(())
@@ -460,12 +366,11 @@ pub extern "C" fn set_view_end() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_modifiers_start() -> Result<()> {
-    with_state_mut!(state, {
-        performance::begin_measure!("set_modifiers_start");
-        state.render_state.options.set_fast_mode(true);
-        state.render_state.options.set_interactive_transform(true);
-        performance::end_measure!("set_modifiers_start");
-    });
+    performance::begin_measure!("set_modifiers_start");
+    let render_state = get_render_state();
+    render_state.options.set_fast_mode(true);
+    render_state.options.set_interactive_transform(true);
+    performance::end_measure!("set_modifiers_start");
     Ok(())
 }
 
@@ -476,20 +381,18 @@ pub extern "C" fn set_modifiers_start() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_modifiers_end() -> Result<()> {
-    with_state_mut!(state, {
-        performance::begin_measure!("set_modifiers_end");
-        state.render_state.options.set_fast_mode(false);
-        state.render_state.options.set_interactive_transform(false);
-        state.render_state.cancel_animation_frame();
-        performance::end_measure!("set_modifiers_end");
-    });
+    performance::begin_measure!("set_modifiers_end");
+    let render_state = get_render_state();
+    render_state.options.set_fast_mode(false);
+    render_state.options.set_interactive_transform(false);
+    performance::end_measure!("set_modifiers_end");
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clear_focus_mode() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.clear_focus_mode();
     });
     Ok(())
@@ -505,7 +408,7 @@ pub extern "C" fn set_focus_mode() -> Result<()> {
         .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
         .collect::<Result<Vec<Uuid>>>()?;
 
-    with_state_mut!(state, {
+    with_state!(state, {
         state.set_focus_mode(entries);
     });
     Ok(())
@@ -514,7 +417,7 @@ pub extern "C" fn set_focus_mode() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn init_shapes_pool(capacity: usize) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         state.init_shapes_pool(capacity);
     });
     Ok(())
@@ -523,7 +426,7 @@ pub extern "C" fn init_shapes_pool(capacity: usize) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         state.use_shape(id);
     });
@@ -532,8 +435,17 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
+pub extern "C" fn has_shape(a: u32, b: u32, c: u32, d: u32) -> Result<bool> {
+    with_state!(state, {
+        let id = uuid_from_u32_quartet(a, b, c, d);
+        return Ok(state.has_shape(id));
+    });
+}
+
+#[no_mangle]
+#[wasm_error]
 pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         state.touch_shape(shape_id);
     });
@@ -543,7 +455,7 @@ pub extern "C" fn touch_shape(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
         state.set_parent_for_current_shape(id);
     });
@@ -629,7 +541,7 @@ fn set_children_set(entries: Vec<Uuid>) -> Result<()> {
         }
     });
 
-    with_state_mut!(state, {
+    with_state!(state, {
         let Some(parent_id) = parent_id else {
             return Err(Error::RecoverableError(
                 "set_children_set: Parent ID not found".to_string(),
@@ -798,11 +710,9 @@ pub extern "C" fn is_image_cached(
     d: u32,
     is_thumbnail: bool,
 ) -> Result<bool> {
-    with_state_mut!(state, {
-        let id = uuid_from_u32_quartet(a, b, c, d);
-        let result = state.render_state().has_image(&id, is_thumbnail);
-        Ok(result)
-    })
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let result = get_render_state().has_image(&id, is_thumbnail);
+    Ok(result)
 }
 
 #[no_mangle]
@@ -864,7 +774,7 @@ pub extern "C" fn get_selection_rect() -> Result<*mut u8> {
         })
         .collect();
 
-    let result_bound = with_state_mut!(state, {
+    let result_bound = with_state!(state, {
         let bbs: Vec<_> = entries
             .iter()
             .flat_map(|id| state.shapes.get(id).map(|b| b.bounds()))
@@ -911,7 +821,7 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
         })
         .collect::<Result<Vec<_>>>()?;
 
-    with_state_mut!(state, {
+    with_state!(state, {
         let mut structure = HashMap::new();
         let mut scale_content = HashMap::new();
         for entry in entries {
@@ -950,16 +860,15 @@ pub extern "C" fn set_structure_modifiers() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn clean_modifiers() -> Result<()> {
-    with_state_mut!(state, {
+    with_state!(state, {
+        let render_state = get_render_state();
         let prev_modifier_ids = state.shapes.clean_all();
         // Skip the tile-cache cleanup during interactive transform: the
         // per-rAF `rebuild_modifier_tiles` in `render()` already evicts
         // the same tiles for the active modifier set, so the eviction
         // here is redundant and doubles the per-emission cost.
-        if !prev_modifier_ids.is_empty() && !state.render_state.options.is_interactive_transform() {
-            state
-                .render_state
-                .update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
+        if !prev_modifier_ids.is_empty() && !render_state.options.is_interactive_transform() {
+            render_state.update_tiles_shapes(&prev_modifier_ids, &mut state.shapes)?;
         }
     });
     Ok(())
@@ -982,11 +891,10 @@ pub extern "C" fn set_modifiers() -> Result<()> {
         ids.push(entry.id);
     }
 
-    with_state_mut!(state, {
+    with_state!(state, {
         state.set_modifiers(modifiers);
-        // TO CHECK
-        if !state.render_state.options.is_interactive_transform() {
-            state.rebuild_modifier_tiles(ids)?;
+        if !get_render_state().options.is_interactive_transform() {
+            state.rebuild_modifier_tiles(&ids)?;
         }
     });
     Ok(())
@@ -995,29 +903,34 @@ pub extern "C" fn set_modifiers() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn start_temp_objects() -> Result<()> {
-    unsafe {
-        #[allow(static_mut_refs)]
-        let mut state = STATE.take().ok_or(Error::CriticalError(
-            "Got an invalid state pointer".to_string(),
-        ))?;
-        state = Box::new(state.start_temp_objects()?);
-        STATE = Some(state);
-    }
+    get_design_state().start_temp_objects()?;
     Ok(())
 }
 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn end_temp_objects() -> Result<()> {
-    unsafe {
-        #[allow(static_mut_refs)]
-        let mut state = STATE.take().ok_or(Error::CriticalError(
-            "Got an invalid state pointer".to_string(),
-        ))?;
-        state = Box::new(state.end_temp_objects()?);
-        STATE = Some(state);
-    }
+    get_design_state().end_temp_objects()?;
     Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let Some(shape) = state.shapes.get(&id) else {
+            return Err(Error::CriticalError("Shape not found".to_string()));
+        };
+        let extrect = get_render_state().get_cached_extrect(shape, &state.shapes, 1.0);
+        let mut buf = Vec::with_capacity(16);
+        buf.extend_from_slice(&extrect.x().to_le_bytes());
+        buf.extend_from_slice(&extrect.y().to_le_bytes());
+        buf.extend_from_slice(&extrect.width().to_le_bytes());
+        buf.extend_from_slice(&extrect.height().to_le_bytes());
+        Ok(mem::write_bytes(buf))
+    })
 }
 
 #[no_mangle]
@@ -1035,7 +948,7 @@ pub extern "C" fn render_shape_pixels(
         return Err(Error::CriticalError("Scale is not finite".to_string()));
     }
 
-    with_state_mut!(state, {
+    with_state!(state, {
         let (data, width, height) =
             state.render_shape_pixels(&id, scale, performance::get_time())?;
 
@@ -1051,12 +964,33 @@ pub extern "C" fn render_shape_pixels(
 
 #[no_mangle]
 pub extern "C" fn render_stats() {
+    get_render_state().print_stats();
+}
+
+#[no_mangle]
+pub fn free_gpu_resources() {
+    get_render_state().free_gpu_resources();
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
     with_state!(state, {
-        state.render_state.print_stats();
+        let data = state.render_shape_pdf(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
     })
 }
 
-fn main() {
-    #[cfg(target_arch = "wasm32")]
-    init_gl!();
+pub fn main() {
+    // Why an empty main?
+    // Right now with the target `wasm32-unknown-emscripten` it is not possible
+    // to compile a rust project without a main and generate the necessary glue
+    // code. So the only option is to compile it with an empty main.
 }

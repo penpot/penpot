@@ -6,6 +6,7 @@ import {
   setupTypographyTokensFileRender,
   unfoldTokenType,
   createToken,
+  createSet,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -185,11 +186,8 @@ test.describe("Tokens: Apply token", () => {
 
     await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
-    const fontSizeInput = workspacePage.rightSidebar.getByRole("textbox", {
-      name: "Font Size",
-    });
-    await expect(fontSizeInput).toBeVisible();
-    await expect(fontSizeInput).toHaveValue("100");
+    const tokenRow = workspacePage.rightSidebar.getByLabel('Full');
+    await expect(tokenRow).toBeVisible();
   });
 
   test("User adds shadow token with multiple shadows and applies it to shape", async ({
@@ -1030,6 +1028,316 @@ test("BUG: 13930, Token colors are shown on selected colors section", async ({
   ).toBeVisible();
 });
 
+test("BUG: 14136 Apply grid layout padding token to a shape from the sidebar does not change values", async ({
+  page,
+}) => {
+  // Setup the workspace with token features enabled
+  const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+    await setupTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+
+  // Transform a rectangle into a grid container to expose gap properties
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+  const layoutSection = page.getByTestId("inspect-layout");
+  await expect(layoutSection).toBeVisible();
+
+  const addLayoutButton = layoutSection
+    .getByRole("button", { name: "Add layout" })
+    .first();
+  await addLayoutButton.click();
+  await page.getByText("Grid layout").click();
+
+  // Apply a dimension token to the vertical padding property
+  await layoutSection.getByLabel("Open token list").nth(2).click();
+  const tokenDimensionMd = layoutSection.getByRole("option", {
+    name: "dimension.md",
+  });
+  await expect(tokenDimensionMd).toBeVisible();
+  await tokenDimensionMd.click();
+
+  // Expand padding to all sides
+  await layoutSection
+    .getByRole("button", { name: "Show 4 sided padding options" })
+    .click();
+  const topPaddingSection = layoutSection.getByLabel("Top padding");
+  const bottomPaddingSection = layoutSection.getByLabel("Bottom padding");
+  await expect(topPaddingSection).toBeVisible();
+
+  // Check if token is still applied to top and bottom padding
+  await expect(topPaddingSection.getByLabel("Detach token")).toBeVisible();
+  await expect(bottomPaddingSection.getByLabel("Detach token")).toBeVisible();
+
+  // Check if the value of the attribute is still correct
+  await expect(
+    await topPaddingSection
+      .getByRole("button", { name: "dimension.md" })
+      .textContent(),
+  ).toBe("16");
+  await expect(
+    await bottomPaddingSection
+      .getByRole("button", { name: "dimension.md" })
+      .textContent(),
+  ).toBe("16");
+});
+
+test("BUG: 14200, Tokens in sets are applied when clicking on Save during creation", async ({
+  page,
+}) => {
+  // Setup the workspace with token features enabled
+  const {
+    workspacePage,
+    tokensSidebar,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+    tokenSetGroupItems,
+    tokensUpdateCreateModal,
+  } = await setupTokensFileRender(page, {
+    flags: ["enable-token-combobox", "enable-feature-token-input"],
+  });
+
+  // Select rectangle layer
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  // Create nested token set and activate it
+  await createSet(tokenThemesSetsSidebar, "set/first");
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "first" })
+    .getByRole("checkbox")
+    .click();
+
+  // Create token in nested set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+
+  // Create border token
+  const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: Border radius` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+
+  const nameField = tokensUpdateCreateModal.getByLabel("Name");
+  await nameField.fill("border");
+
+  const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+    name: "Value",
+  });
+  await valueField.fill("20");
+
+  const submitButton = tokensUpdateCreateModal.getByRole("button", {
+    name: "Save",
+  });
+  await submitButton.click();
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+  // Check "border" token is not applied while creating.
+
+  const borderRadiusSection = page.getByRole("region", {
+    name: "Border radius section",
+  });
+  await expect(borderRadiusSection).toBeVisible();
+
+  // Check if token pill is visible on design tab on right sidebar
+  const borderTokenPill = borderRadiusSection.getByRole("button", {
+    name: "border",
+    exact: true,
+  });
+  await expect(borderTokenPill).not.toBeVisible();
+
+  //Create new set and activate it
+
+  await createSet(tokenThemesSetsSidebar, "set/other");
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "other" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "other" })
+    .getByRole("checkbox")
+    .click();
+
+  //Create the same token in new set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await tokensTabPanel
+    .getByRole("button", { name: `Add Token: Border radius` })
+    .click();
+  await expect(tokensUpdateCreateModal).toBeVisible();
+  await nameField.fill("border");
+  await valueField.fill("50");
+  await valueField.press("Enter");
+  await expect(tokensUpdateCreateModal).not.toBeVisible();
+  await expect(borderRadiusSection).toBeVisible();
+  await expect(borderTokenPill).not.toBeVisible();
+});
+
+test("Check token application across sets", async ({ page }) => {
+  // Setup the workspace with token features enabled
+  const {
+    workspacePage,
+    tokensSidebar,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+    tokenSetGroupItems,
+    tokensUpdateCreateModal,
+  } = await setupTokensFileRender(page, {
+    flags: ["enable-token-combobox", "enable-feature-token-input"],
+  });
+
+  const createTokenInSet = async (tokenName, tokenValue) => {
+    await unfoldTokenType(tokensSidebar, "Border radius");
+
+    // Create border token
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: Border radius` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill(tokenName);
+
+    const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    await valueField.fill(tokenValue);
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await submitButton.click();
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+  };
+
+  // Select rectangle layer
+  await page.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click();
+
+  // Go to tokens tab
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  // Create nested token set, select it and activate it
+  await createSet(tokenThemesSetsSidebar, "device/desktop");
+  const desktopSetButton = tokenThemesSetsSidebar.getByRole("button", {
+    name: "desktop",
+  });
+  await desktopSetButton.click();
+  await desktopSetButton.getByRole("checkbox").click();
+
+  // Create token in nested set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+
+  // Create border token
+  await createTokenInSet("border-radius", "20");
+
+  // Check "border" token is not applied while creating.
+  const borderRadiusSection = page.getByRole("region", {
+    name: "Border radius section",
+  });
+  await expect(borderRadiusSection).toBeVisible();
+
+  // Check if token pill is visible on design tab on right sidebar
+  const borderTokenPill = borderRadiusSection.getByRole("button", {
+    name: "border-radius",
+    exact: true,
+  });
+  await expect(borderTokenPill).not.toBeVisible();
+
+  // Apply token to shape
+  await tokensSidebar
+    .getByRole("button", { name: "border-radius", exact: true })
+    .click();
+
+  await expect(borderTokenPill).toBeVisible();
+  await expect(borderTokenPill).toHaveText("20");
+
+  //Create new set, select it and activate it
+  await createSet(tokenThemesSetsSidebar, "device/mobile");
+  const mobileSetButton = tokenThemesSetsSidebar.getByRole("button", {
+    name: "mobile",
+  });
+  await mobileSetButton.click();
+  await mobileSetButton.getByRole("checkbox").click();
+
+  //Create the same token in new set with different value
+  await createTokenInSet("border-radius", "30");
+
+  //Check token is applied and value updated.
+  await expect(borderRadiusSection).toBeVisible();
+  await expect(borderTokenPill).toBeVisible();
+
+  await expect(borderTokenPill).toHaveText("30");
+});
+
+test("BUG: 14191, Apply tokens from different set", async ({ page }) => {
+  const {
+    workspacePage,
+    tokensSidebar,
+    tokenContextMenuForToken,
+    tokenThemesSetsSidebar,
+    tokenSetGroupItems,
+  } = await setupTokensFileRender(page);
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .first()
+    .click();
+
+  await page.getByRole("tab", { name: "Tokens" }).click();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  // Apply border radius token from core set
+  await tokensSidebar.getByRole("button", { name: "borderRadius.xl" }).click();
+
+  const borderRadiusSection = page.getByRole("region", {
+    name: "Border radius section",
+  });
+  await expect(borderRadiusSection).toBeVisible();
+
+  // Check if token pill is visible on design tab on right sidebar
+  const brTokenPillxl = borderRadiusSection.getByRole("button", {
+    name: "borderRadius.xl",
+  });
+  await expect(brTokenPillxl).toBeVisible();
+
+  // Change active token set
+  await expect(
+    tokenThemesSetsSidebar.getByRole("button", { name: "theme" }),
+  ).toBeVisible();
+
+  await tokenThemesSetsSidebar.getByRole("button", { name: "theme" }).click();
+  // Apply border radius token from theme set
+  await unfoldTokenType(tokensSidebar, "Border radius");
+
+  await tokensSidebar
+    .getByRole("button", { name: "card.borderRadius" })
+    .click();
+
+  const brTokenPillCard = borderRadiusSection.getByRole("button", {
+    name: "card.borderRadius",
+  });
+  await expect(brTokenPillCard).toBeVisible();
+});
+
 test.describe("Numeric Input and Token Integration Tests", () => {
   test("Token pill persists after blur in gap inputs", async ({ page }) => {
     // Setup the workspace with token features enabled
@@ -1432,4 +1740,37 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     });
     await expect(brokenPill).toHaveCount(2);
   });
+});
+
+test("BUG: 14234, Numeric input token filtering must be case sensitive", async ({
+  page,
+}) => {
+  const { workspacePage, tokensSidebar } = await setupTokensFileRender(page, {
+    flags: ["enable-token-combobox", "enable-feature-token-input"],
+  });
+
+  await page.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.layers.getByTestId("layer-row").nth(1).click();
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+  await unfoldTokenType(tokensSidebar, "dimensions");
+
+  await createToken(page, "Dimensions", "Dim-up", "Value", "combobox", "20");
+  await createToken(page, "Dimensions", "dim-up", "Value", "combobox", "10");
+  const measuresSection = page.getByRole("region", {
+    name: "shape-measures-section",
+  });
+  await expect(measuresSection).toBeVisible();
+  const widthInput = measuresSection.getByRole("textbox", {
+    name: "Width",
+  });
+  await widthInput.click();
+  await widthInput.type("{Dim");
+  await expect(
+    measuresSection.getByText("Dim-up", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    measuresSection.getByText("dim-up", { exact: true }),
+  ).not.toBeVisible();
 });

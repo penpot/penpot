@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns backend-tests.rpc-profile-test
   (:require
@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
@@ -90,17 +91,26 @@
           (t/is (not (contains? result :password))))))
 
     (t/testing "update profile"
-      (let [data (assoc profile
-                        ::th/type :update-profile
-                        ::rpc/profile-id (:id profile)
-                        :fullname "Full Name"
-                        :lang "en"
-                        :theme "dark")
-            out  (th/command! data)]
+      (with-redefs [app.config/flags #{:nitrate}]
+        (with-redefs [nitrate/add-nitrate-licence-to-profile
+                      (fn [_ profile]
+                        (assoc profile :subscription {:plan :pro}))]
+          (let [data (assoc profile
+                            ::th/type :update-profile
+                            ::rpc/profile-id (:id profile)
+                            :fullname "Full Name"
+                            :lang "en"
+                            :theme "dark")
+                out  (th/command! data)]
 
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (map? (:result out)))))
+            ;; (th/print-result! out)
+            (t/is (nil? (:error out)))
+            (t/is (map? (:result out)))
+            (t/is (= "Full Name" (get-in out [:result :fullname])))
+            (t/is (= "en" (get-in out [:result :lang])))
+            (t/is (= "dark" (get-in out [:result :theme])))
+            (t/is (= {:plan :pro}
+                     (:subscription (:result out))))))))
 
     (t/testing "query profile after update"
       (let [data {::th/type :get-profile
@@ -525,6 +535,65 @@
               out   (th/command! data)]
           (t/is (nil? (:error out)))
           (t/is (= 0 (:call-count @mock))))))))
+
+(t/deftest prepare-register-and-register-profile-disable-email-verification
+  ;; When disable-email-verification is set and the profile is inactive
+  ;; (e.g. created before the flag was set), re-registering should be
+  ;; rejected with :email-already-exists.
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-redefs [app.config/flags #{:registration :login-with-password}]
+      (let [current-token (atom nil)]
+        ;; PREPARE REGISTER: first attempt (no profile exists yet)
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :fullname "foobar"
+                     :password "foobar"}
+              out   (th/command! data)
+              token (get-in out [:result :token])]
+          (t/is (th/success? out))
+          (reset! current-token token))
+
+        ;; DO REGISTRATION: creates active profile (email-verification disabled)
+        (let [data  {::th/type :register-profile
+                     :token @current-token}
+              out   (th/command! data)
+              mdata (-> out :result meta)]
+          (t/is (nil? (:error out)))
+          ;; No verification email sent
+          (t/is (= 0 (:call-count @mock)))
+          ;; Session is minted
+          (t/is (seq (:app.rpc/response-transform-fns mdata))))
+
+        ;; Force the profile back to inactive to simulate the case where it was
+        ;; created before disable-email-verification was set
+        (th/db-update! :profile
+                       {:is-active false}
+                       {:email "hello@example.com"})
+
+        (th/reset-mock! mock)
+
+        ;; PREPARE REGISTER: second attempt (inactive profile exists)
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :fullname "foobar"
+                     :password "foobar"}
+              out   (th/command! data)
+              token (get-in out [:result :token])]
+          (t/is (th/success? out))
+          (reset! current-token token))
+
+        ;; DO REGISTRATION: second attempt should be rejected
+        (let [data  {::th/type :register-profile
+                     :token @current-token}
+              out   (th/command! data)
+              error (:error out)]
+          (t/is (th/ex-info? error))
+          (t/is (th/ex-of-type? error :validation))
+          (t/is (th/ex-of-code? error :email-already-exists))
+          ;; No email sent, profile remains inactive
+          (t/is (= 0 (:call-count @mock)))
+          (let [profile (th/db-get :profile {:email "hello@example.com"})]
+            (t/is (false? (:is-active profile)))))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
   ;; With email-verification ENABLED (the default), a brand-new
