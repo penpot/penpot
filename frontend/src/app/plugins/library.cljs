@@ -486,6 +486,27 @@
                         (assoc :text-transform value))]
            (st/emit! (dwl/update-typography typo file-id)))))}
 
+    :setFont
+    (fn [font variant]
+      (cond
+        (not (obj/type-of? font "FontProxy"))
+        (u/not-valid plugin-id :setFont font)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/not-valid plugin-id :setFont "Plugin doesn't have 'library:write' permission")
+
+        :else
+        ;; When a variant is given read the variant-specific fields from it;
+        ;; otherwise the FontProxy exposes the font's default variant fields.
+        (let [source (if (obj/type-of? variant "FontVariantProxy") variant font)
+              typo (-> (u/locate-library-typography file-id id)
+                       (assoc :font-id (obj/get font "fontId")
+                              :font-family (obj/get font "fontFamily")
+                              :font-variant-id (obj/get source "fontVariantId")
+                              :font-style (obj/get source "fontStyle")
+                              :font-weight (obj/get source "fontWeight")))]
+          (st/emit! (dwl/update-typography typo file-id)))))
+
     :remove
     (fn []
       (cond
