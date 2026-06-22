@@ -361,7 +361,10 @@
 
      :duplicate
      (fn []
-       (st/emit! (dwtl/duplicate-token-set id)))
+       (let [id-ref (atom nil)]
+         (st/emit! (dwtl/duplicate-token-set id {:id-ref id-ref}))
+         (when (some? @id-ref)
+           (token-set-proxy plugin-id file-id @id-ref))))
 
      :remove
      (fn []

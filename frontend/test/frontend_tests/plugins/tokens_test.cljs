@@ -12,14 +12,19 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.tokens :as ptok]
+   [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each {:before cthi/reset-idmap!})
+
+(def ^:private get-resolved-value @#'ptok/get-resolved-value)
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -226,3 +231,18 @@
         {:keys [errors resolved-value]} (get resolved (:name token))]
     (t/is (nil? resolved-value))
     (t/is (seq errors))))
+
+(t/deftest token-set-duplicate-returns-the-duplicated-set
+  (let [file-id (cthi/new-id! :file)
+        set-id  (cthi/new-id! :set)
+        dup-id  (cthi/new-id! :dup)
+        proxy   (ptok/token-set-proxy "plugin-id" file-id set-id)]
+    (with-redefs [dwtl/duplicate-token-set
+                  (mock/stub (fn [id {:keys [id-ref]}]
+                               (t/is (= set-id id))
+                               (reset! id-ref dup-id)
+                               :duplicate-token-set))
+                  st/emit! mock/noop]
+      (let [dup (.duplicate proxy)]
+        (t/is (ptok/token-set-proxy? dup))
+        (t/is (= (str dup-id) (.-id dup)))))))
