@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-13 06:01+0000\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -3999,6 +3999,7 @@ msgid "not-found.login.sent-recovery-check"
 msgstr "Controlla la tua email e clicca nel link per creare una nuova password."
 
 #: src/app/main/ui/static.cljs:167
+#, fuzzy
 msgid "not-found.login.signup-free"
 msgstr "Iscriviti gratuitamente"
 
@@ -4369,6 +4370,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "Qual è la dimensione della tua azienda?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "Parlaci del tuo lavoro"
 
