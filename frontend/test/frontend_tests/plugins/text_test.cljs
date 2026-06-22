@@ -75,3 +75,13 @@
       (t/is (= 1 (:start @captured)))
       (t/is (= 4 (:end @captured)))
       (t/is (= "font-id" (get-in @captured [:attrs :font-id]))))))
+
+(t/deftest text-range-shape-returns-a-shape-proxy
+  (let [file-id  (random-uuid)
+        page-id  (random-uuid)
+        shape-id (random-uuid)
+        range    (plugins.text/text-range-proxy plugin-id file-id page-id shape-id 0 3)]
+    (with-redefs [format/shape-proxy shape/shape-proxy]
+      (let [text-shape (.-shape range)]
+        (t/is (shape/shape-proxy? text-shape))
+        (t/is (= shape-id (aget text-shape "$id")))))))

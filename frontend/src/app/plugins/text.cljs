@@ -99,8 +99,7 @@
     :$end {:enumerable false :get (constantly end)}
 
     :shape
-    {:this true
-     :get #(-> % u/proxy->shape)}
+    {:get (fn [] (format/shape-proxy plugin-id file-id page-id id))}
 
     :characters
     {:this true
