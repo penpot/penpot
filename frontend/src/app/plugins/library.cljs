@@ -562,8 +562,8 @@
 
         :else
         (let [shape-id (obj/get range "$id")
-              start    (obj/get range "start")
-              end      (obj/get range "end")
+              start    (obj/get range "$start")
+              end      (obj/get range "$end")
               typography (u/locate-library-typography file-id id)
               attrs (-> typography
                         (assoc :typography-ref-file file-id)
