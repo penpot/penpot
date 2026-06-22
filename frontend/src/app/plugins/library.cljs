@@ -51,6 +51,7 @@
     :$file {:enumerable false :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
     :fileId {:get #(dm/str file-id)}
 
     :name
@@ -295,6 +296,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true
@@ -718,6 +720,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true
