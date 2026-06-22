@@ -1249,6 +1249,11 @@
                  :else
                  (st/emit! (dwg/unmask-group #{id})))))
 
+           :isMask
+           (fn []
+             (let [shape (u/locate-shape file-id page-id id)]
+               (boolean (cfh/mask-shape? shape))))
+
            ;; Only for path and bool shapes
            :toD
            (fn []
