@@ -335,7 +335,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -528,6 +530,10 @@
                                           :background background
                                           :on-shapes-ready
                                           (fn []
+                                            ;; The target page's shapes are now loaded; arm
+                                            ;; the transition so the next full frame (the one
+                                            ;; that actually shows this page) removes the blur.
+                                            (wasm.api/arm-page-transition-end!)
                                             (st/emit! (dw/update-page-position-data))))
             (reset! initialized? true))
 

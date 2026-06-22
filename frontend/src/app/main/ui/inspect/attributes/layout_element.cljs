@@ -61,7 +61,7 @@
           only-flex?
           "Flex element"
           only-grid?
-          "Flex element"
+          "Grid element"
           :else
           "Layout element")]
 

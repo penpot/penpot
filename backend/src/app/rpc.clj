@@ -27,8 +27,10 @@
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
+   [app.nitrate :as nitrate]
    [app.redis :as rds]
    [app.rpc.climit :as climit]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as cond]
    [app.rpc.doc :as doc]
    [app.rpc.helpers :as rph]
@@ -36,6 +38,7 @@
    [app.rpc.rlimit :as rlimit]
    [app.setup :as-alias setup]
    [app.storage :as-alias sto]
+   [app.util.cache :as cache]
    [app.util.inet :as inet]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
@@ -208,6 +211,74 @@
                         ::sm/explain (explain params)))))))
     f))
 
+
+(defonce ^:private org-sso-auth-cache
+  (cache/create :expire "15m" :max-size 1024))
+
+(defn invalidate-org-sso-cache-by-org!
+  "Invalidates all org-SSO authorization cache entries for the given organization-id."
+  [organization-id]
+  (cache/invalidate-if org-sso-auth-cache #(= (:organization-id %) organization-id)))
+
+(defn- wrap-nitrate-sso
+  "Enforce Nitrate organization SSO authentication for RPC handlers.
+
+   Resolves the team context from request params using priority order:
+   1. Explicit :team-id param
+   2. Explicit :project-id param → lookup project.team_id
+   3. Explicit :file-id param → lookup file's team via join
+   4. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
+
+   Once team-id is resolved, checks if the user is authorized within that org's SSO
+   session using nitrate/sso-session-authorized?. Results are cached by [profile-id cache-ref]
+   for 15 minutes to avoid repeated lookups.
+
+   Only activates when:
+   - Nitrate flag is enabled
+   - Endpoint requires authentication (::auth true by default)
+   - Endpoint is not marked with ::nitrate/org-sso false
+
+   Raises :nitrate-sso-required error if user is not authorized in the org."
+  [_ f mdata]
+  (if (and (contains? cf/flags :nitrate)
+           (::auth mdata true) ;; only for endpoints that needs auth
+           (::nitrate/sso mdata true))
+    (fn [cfg params]
+      ;; Resolve team/project/file from explicit keys or from :id via metadata
+      (let [id-type    (::id-type mdata)
+            id         (uuid/coerce (:id params))
+            team-id    (or (uuid/coerce (:team-id params))
+                           (when (= id-type :team) id))
+            project-id (or (uuid/coerce (:project-id params))
+                           (when (= id-type :project) id))
+            file-id    (or (uuid/coerce (:file-id params))
+                           (when (= id-type :file) id))]
+        (if (or team-id project-id file-id)
+          (let [cache-ref  (or team-id project-id file-id)
+                profile-id (::profile-id params)
+                cache-key  [profile-id cache-ref]
+                cached     (cache/get org-sso-auth-cache cache-key)
+                result     (if (some? cached)
+                             cached
+                             (let [team-id                  (or team-id
+                                                                (when project-id
+                                                                  (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                                                                (:id (teams/get-team-for-file cfg file-id)))
+                                   request                  (-> (meta params) (get ::http/request))
+                                   {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg team-id request)
+                                   entry                    {:authorized      authorized
+                                                             :organization-id (:organization-id sso)}]
+                               (when authorized
+                                 (cache/get org-sso-auth-cache cache-key (constantly entry)))
+                               entry))]
+            (if (:authorized result)
+              (f cfg params)
+              (ex/raise :type :authentication
+                        :code :nitrate-sso-required
+                        :hint "organization SSO authentication required")))
+          (f cfg params))))
+    f))
+
 (defn- wrap
   [cfg f mdata]
   (as-> f $
@@ -220,7 +291,8 @@
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)))
 
 (defn- wrap-management
   [cfg f mdata]
@@ -232,7 +304,10 @@
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)))
+
+
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]

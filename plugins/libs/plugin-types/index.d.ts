@@ -1165,8 +1165,8 @@ export interface Context {
 
   /**
    * Creates a Text shape with the specified text content. Requires `content:write` permission.
-   * @param text The text content for the Text shape.
-   * @return Returns the new created shape, if the shape wasn't created can return null.
+   * @param text The text content for the Text shape. Must be a non-empty string.
+   * @return Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
    *
    * @example
    * ```js
@@ -1263,12 +1263,30 @@ export interface Context {
   openViewer(): void;
 
   /**
-   * Creates a new page. Requires `content:write` permission.
+   * Creates a new page and returns it. Requires `content:write` permission.
+   *
+   * IMPORTANT: creating a page does **not** make it the active page.
+   * To build content inside the new page, activate it first with
+   * {@link Context.openPage} (and `await` it) before mutate shapes:
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.name = 'New Page';
+   * await penpot.openPage(page); // make the new page active first
+   * const board = penpot.createBoard();
+   * board.resize(375, 812);
+   * page.root.appendChild(board);
+   * ```
    */
   createPage(): Page;
 
   /**
-   * Changes the current open page to given page. Requires `content:read` permission.
+   * Changes the current open page to the given page, making it the **active page**.
+   * The active page is the one all shape creation and structural operations
+   * (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+   * so call this (and `await` it) after {@link Context.createPage} before adding
+   * shapes to the newly created page. Requires `content:read` permission.
    * @param page the page to open (a Page object or a page UUID string)
    * @param newWindow if true opens the page in a new window, defaults to false
    *
@@ -3652,6 +3670,11 @@ export interface ShapeBase extends PluginData {
   constraintsVertical: 'top' | 'bottom' | 'topbottom' | 'center' | 'scale';
 
   /**
+   * Indicates whether the shape stays fixed in place while scrolling.
+   */
+  fixedWhenScrolling: boolean;
+
+  /**
    * The border radius of the shape.
    */
   borderRadius: number;
@@ -3946,6 +3969,11 @@ export interface ShapeBase extends PluginData {
 
   /**
    * Adds a new interaction to the shape.
+   *
+   * If the interaction starts a flow (for example a `navigate-to` action) and
+   * the shape's board is not already part of any flow, a new flow starting at
+   * that board is created automatically, matching the behavior of the editor.
+   *
    * @param trigger defines the conditions under which the action will be triggered
    * @param action defines what will be executed when the trigger happens
    * @param delay for the type of trigger `after-delay` will specify the time after triggered. Ignored otherwise.
@@ -5042,12 +5070,18 @@ export interface TokenTypography extends TokenBase {
 
 /**
  * Any possible type of value field in a token.
+ *
+ * Token values are always stored as strings, including for numeric token
+ * types such as `spacing`, `dimension` or `borderRadius` (e.g. `"16"` or
+ * `"16px"`). A plain `number` is also accepted on input and coerced to its
+ * string representation.
  */
 export type TokenValueString =
   | TokenShadowValueString
   | TokenTypographyValueString
   | string
-  | string[];
+  | string[]
+  | number;
 
 /**
  * The supported Design Tokens in Penpot.
@@ -5103,11 +5137,18 @@ export interface TokenCatalog {
 
   /**
    * Creates a new TokenSet and adds it to the catalog.
+   *
+   * Newly created sets are **inactive** by default: only active sets
+   * affect shapes and reference resolution. Pass `active: true` to create
+   * an already-active set, or activate it later via `set.active = true` /
+   * `set.toggleActive()`.
    * @param name The name of the set (required). It may contain
    * a group path, separated by `/`.
+   * @param active Whether the set should be activated on creation.
+   * Defaults to `false`.
    * @return Returns the created TokenSet.
    */
-  addSet({ name }: { name: string }): TokenSet;
+  addSet({ name, active }: { name: string; active?: boolean }): TokenSet;
 
   /**
    * Retrieves a theme.
@@ -5175,7 +5216,11 @@ export interface TokenSet {
    * @param type The type of the token.
    * @param name The name of the token (required). It may contain
    * a group path, separated by `.`.
-   * @param value The value of the token (required), in the string form.
+   * @param value The value of the token (required), always in its string
+   * form. This applies to numeric token types too (e.g. `spacing`,
+   * `dimension`, `borderRadius`): use `"16"` or `"16px"` rather than `16`.
+   * For convenience a plain number is also accepted and coerced to its
+   * string representation (`16` becomes `"16"`).
    * @return Returns the created Token.
    */
   addToken({

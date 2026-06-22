@@ -201,7 +201,8 @@
    :enable-feature-render-wasm
    :enable-token-import-from-library
    :enable-render-switch
-   :enable-render-wasm-info])
+   :enable-render-wasm-info
+   :enable-available-viewer-wasm])
 
 (defn parse
   [& flags]

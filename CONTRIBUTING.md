@@ -175,26 +175,26 @@ Commit messages must follow this format:
 
 ### Commit types
 
-| Emoji                  | Description                |
-| ---------------------- | -------------------------- |
-| :bug:                  | Bug fix                    |
-| :sparkles:             | Improvement or enhancement |
-| :tada:                 | New feature                |
-| :recycle:              | Refactor                   |
-| :lipstick:             | Cosmetic changes           |
-| :ambulance:            | Critical bug fix           |
-| :books:                | Documentation              |
-| :construction:         | Work in progress           |
-| :boom:                 | Breaking change            |
-| :wrench:               | Configuration update       |
-| :zap:                  | Performance improvement    |
-| :whale:                | Docker-related change      |
-| :paperclip:            | Other non-relevant changes |
-| :arrow_up:             | Dependency update          |
-| :arrow_down:           | Dependency downgrade       |
-| :fire:                 | Removal of code or files   |
-| :globe_with_meridians: | Add or update translations |
-| :rocket:               | Epic or highlight          |
+| Emoji                  | Code                     | Description                |
+| ---------------------- | ------------------------ | -------------------------- |
+| :bug:                  | `:bug:`                  | Bug fix                    |
+| :sparkles:             | `:sparkles:`             | Improvement or enhancement |
+| :tada:                 | `:tada:`                 | New feature                |
+| :recycle:              | `:recycle:`              | Refactor                   |
+| :lipstick:             | `:lipstick:`             | Cosmetic changes           |
+| :ambulance:            | `:ambulance:`            | Critical bug fix           |
+| :books:                | `:books:`                | Documentation              |
+| :construction:         | `:construction:`         | Work in progress           |
+| :boom:                 | `:boom:`                 | Breaking change            |
+| :wrench:               | `:wrench:`               | Configuration update       |
+| :zap:                  | `:zap:`                  | Performance improvement    |
+| :whale:                | `:whale:`                | Docker-related change      |
+| :paperclip:            | `:paperclip:`            | Other non-relevant changes |
+| :arrow_up:             | `:arrow_up:`             | Dependency update          |
+| :arrow_down:           | `:arrow_down:`           | Dependency downgrade       |
+| :fire:                 | `:fire:`                 | Removal of code or files   |
+| :globe_with_meridians: | `:globe_with_meridians:` | Add or update translations |
+| :rocket:               | `:rocket:`               | Epic or highlight          |
 
 ### Rules
 

@@ -43,6 +43,13 @@
   (assert (uuid? id) "Shape not valid uuid")
   (dm/get-in (locate-page file-id page-id) [:objects id]))
 
+(defn page-active?
+  "Returns true if `page-id` is the currently active page. Plugin structural
+  operations only affect the active page, so callers use this to reject
+  attempts to modify shapes that live on a different page."
+  [page-id]
+  (= page-id (:current-page-id @st/state)))
+
 (defn locate-library-color
   [file-id id]
   (assert (uuid? id) "Color not valid uuid")

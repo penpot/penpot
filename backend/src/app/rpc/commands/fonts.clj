@@ -181,7 +181,7 @@
 (defn create-font-variant
   [{:keys [::sto/storage] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-missing [data]
-            (let [data (media/run {:cmd :generate-fonts :input data})]
+            (let [data (media/run cfg {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
                          (not (contains? data "font/ttf"))
                          (not (contains? data "font/woff"))

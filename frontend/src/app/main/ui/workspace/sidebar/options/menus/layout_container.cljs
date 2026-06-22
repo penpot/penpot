@@ -1280,7 +1280,9 @@
                      :on-click on-add-layout}
             (tr "labels.grid-layout")]]])]
 
-    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
+    [:section {:class (stl/css :element-set)
+               :aria-label "Layout container section"
+               :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:> title-bar*
        {:collapsable has-layout?
