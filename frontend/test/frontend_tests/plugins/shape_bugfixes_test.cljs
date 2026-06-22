@@ -152,3 +152,7 @@
               (t/is (contains? #{0 (dec n)} p1) "bringToFront moves to an extreme")
               (t/is (contains? #{0 (dec n)} p2) "sendToBack moves to an extreme")
               (t/is (not= p1 p2) "front and back are opposite extremes"))))))))
+
+(t/deftest is-variant-container-predicate-returns-boolean
+  (t/is (false? (ctk/is-variant-container? {})))
+  (t/is (true? (ctk/is-variant-container? {:is-variant-container true}))))
