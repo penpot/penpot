@@ -16,6 +16,9 @@ const config = {
     }
   },
   docs: {},
+  core: {
+    allowedHosts: ['all'],
+  },
 
   async viteFinal(config) {
     return defineConfig({
