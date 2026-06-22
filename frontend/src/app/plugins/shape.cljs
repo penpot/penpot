@@ -112,7 +112,7 @@
      :set
      (fn [_ value]
        (cond
-         (or (not (number? value)) (not (pos? value)))
+         (or (not (sm/valid-safe-int? value)) (neg? value))
          (u/not-valid plugin-id :delay value)
 
          :else
