@@ -101,7 +101,7 @@
 
            :else
            (st/emit! (dwi/update-interaction
-                      {:id shape-id}
+                      (u/locate-shape file-id page-id shape-id)
                       index
                       #(assoc % :event-type value)
                       {:page-id page-id})))))}
@@ -117,7 +117,7 @@
 
          :else
          (st/emit! (dwi/update-interaction
-                    {:id shape-id}
+                    (u/locate-shape file-id page-id shape-id)
                     index
                     #(assoc % :delay value)
                     {:page-id page-id}))))}
@@ -137,7 +137,7 @@
 
            :else
            (st/emit! (dwi/update-interaction
-                      {:id shape-id}
+                      (u/locate-shape file-id page-id shape-id)
                       index
                       #(d/patch-object % params)
                       {:page-id page-id})))))}
