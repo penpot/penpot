@@ -246,3 +246,26 @@
       (let [dup (.duplicate proxy)]
         (t/is (ptok/token-set-proxy? dup))
         (t/is (= (str dup-id) (.-id dup)))))))
+
+(t/deftest theme-add-set-and-remove-set-use-the-set-name
+  (let [file-id  (cthi/new-id! :file)
+        theme-id (cthi/new-id! :theme)
+        set-id   (cthi/new-id! :set)
+        set      (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
+        theme    (ptok/token-theme-proxy "plugin-id" file-id theme-id)
+        captured (atom [])]
+    (with-redefs [u/locate-token-theme
+                  (fn [_file _theme]
+                    (ctob/make-token-theme :id theme-id
+                                           :name "Theme"
+                                           :sets #{"Primitives"}))
+                  dwtl/update-token-theme
+                  (fn [id theme]
+                    (swap! captured conj {:id id :theme theme})
+                    :update-token-theme)
+                  st/emit! identity]
+      (.addSet theme set)
+      (.removeSet theme set)
+      (t/is (= [theme-id theme-id] (mapv :id @captured)))
+      (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
+      (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))

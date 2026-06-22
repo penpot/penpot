@@ -463,7 +463,7 @@
            ;; Guard against nil to prevent `enable-set` from conj'ing nil
            ;; into the theme's :sets — which would send `:sets #{nil}` to the
            ;; backend and crash the workspace.
-           (let [set-name (obj/get token-set :name)
+           (let [set-name (obj/get token-set "name")
                  theme    (u/locate-token-theme file-id id)]
              (when (and (some? set-name) (some? theme))
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
@@ -473,7 +473,7 @@
      :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            ;; Same nil guard as addSet — see comment above.
-           (let [set-name (obj/get token-set :name)
+           (let [set-name (obj/get token-set "name")
                  theme    (u/locate-token-theme file-id id)]
              (when (and (some? set-name) (some? theme))
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
