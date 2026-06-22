@@ -1767,7 +1767,7 @@
                         (let [id (obj/get self "$id")
                               value (parser/parse-frame-guides value)]
                           (cond
-                            (not (sm/validate [:vector ::ctg/grid] value))
+                            (not (sm/validate [:vector ctg/schema:grid] value))
                             (u/not-valid plugin-id :guides value)
 
                             (not (r/check-permission plugin-id "content:write"))
