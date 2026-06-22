@@ -66,3 +66,6 @@
           (set! (.-trigger interaction) "mouse-over")
           (t/is (= "mouse-over" (.-trigger interaction))
                 "the trigger setter updates the interaction event-type"))))))
+
+(t/deftest center-shapes-empty-input-returns-nil
+  (t/is (nil? (public-utils/centerShapes #js []))))
