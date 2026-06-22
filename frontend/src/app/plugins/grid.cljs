@@ -301,9 +301,13 @@
 
     :addRowAtIndex
     (fn [index type value]
-      (let [type (keyword type)]
+      (let [type (keyword type)
+            num-rows (-> (u/locate-shape file-id page-id id) :layout-grid-rows count)]
         (cond
           (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :addRowAtIndex-index index)
+
+          (or (< index 0) (> index num-rows))
           (u/not-valid plugin-id :addRowAtIndex-index index)
 
           (not (contains? ctl/grid-track-types type))
@@ -344,9 +348,13 @@
 
     :addColumnAtIndex
     (fn [index type value]
-      (let [type (keyword type)]
+      (let [type (keyword type)
+            num-columns (-> (u/locate-shape file-id page-id id) :layout-grid-columns count)]
         (cond
           (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :addColumnAtIndex-index index)
+
+          (or (< index 0) (> index num-columns))
           (u/not-valid plugin-id :addColumnAtIndex-index index)
 
           (not (contains? ctl/grid-track-types type))
@@ -367,39 +375,51 @@
 
     :removeRow
     (fn [index]
-      (cond
-        (not (sm/valid-safe-int? index))
-        (u/not-valid plugin-id :removeRow index)
+      (let [num-rows (-> (u/locate-shape file-id page-id id) :layout-grid-rows count)]
+        (cond
+          (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :removeRow index)
 
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :removeRow "Plugin doesn't have 'content:write' permission")
+          (or (< index 0) (>= index num-rows))
+          (u/not-valid plugin-id :removeRow index)
 
-        (not (u/page-active? page-id))
-        (u/not-valid plugin-id :removeRow "Cannot modify a page that is not currently active")
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :removeRow "Plugin doesn't have 'content:write' permission")
 
-        :else
-        (st/emit! (dwsl/remove-layout-track #{id} :row index))))
+          (not (u/page-active? page-id))
+          (u/not-valid plugin-id :removeRow "Cannot modify a page that is not currently active")
+
+          :else
+          (st/emit! (dwsl/remove-layout-track #{id} :row index)))))
 
     :removeColumn
     (fn [index]
-      (cond
-        (not (sm/valid-safe-int? index))
-        (u/not-valid plugin-id :removeColumn index)
+      (let [num-columns (-> (u/locate-shape file-id page-id id) :layout-grid-columns count)]
+        (cond
+          (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :removeColumn index)
 
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :removeColumn "Plugin doesn't have 'content:write' permission")
+          (or (< index 0) (>= index num-columns))
+          (u/not-valid plugin-id :removeColumn index)
 
-        (not (u/page-active? page-id))
-        (u/not-valid plugin-id :removeColumn "Cannot modify a page that is not currently active")
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :removeColumn "Plugin doesn't have 'content:write' permission")
 
-        :else
-        (st/emit! (dwsl/remove-layout-track #{id} :column index))))
+          (not (u/page-active? page-id))
+          (u/not-valid plugin-id :removeColumn "Cannot modify a page that is not currently active")
+
+          :else
+          (st/emit! (dwsl/remove-layout-track #{id} :column index)))))
 
     :setColumn
     (fn [index type value]
-      (let [type (keyword type)]
+      (let [type (keyword type)
+            num-columns (-> (u/locate-shape file-id page-id id) :layout-grid-columns count)]
         (cond
           (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :setColumn-index index)
+
+          (or (< index 0) (>= index num-columns))
           (u/not-valid plugin-id :setColumn-index index)
 
           (not (contains? ctl/grid-track-types type))
@@ -420,9 +440,13 @@
 
     :setRow
     (fn [index type value]
-      (let [type (keyword type)]
+      (let [type (keyword type)
+            num-rows (-> (u/locate-shape file-id page-id id) :layout-grid-rows count)]
         (cond
           (not (sm/valid-safe-int? index))
+          (u/not-valid plugin-id :setRow-index index)
+
+          (or (< index 0) (>= index num-rows))
           (u/not-valid plugin-id :setRow-index index)
 
           (not (contains? ctl/grid-track-types type))

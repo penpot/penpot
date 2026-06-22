@@ -33,3 +33,17 @@
         (.addColumnAtIndex grid 0 "fixed" 100)
         (t/is (= "fixed" (aget (aget (.-columns grid) 0) "type")))
         (t/is (= 100 (aget (aget (.-columns grid) 0) "value")))))))
+
+(t/deftest grid-track-methods-reject-out-of-range-indices
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [{:keys [store ^js grid]} (setup-grid)]
+        (swap! store assoc-in [:plugins :flags plugin-id :throw-validation-errors] true)
+        (.addRow grid "flex" 1)
+        (.addColumn grid "flex" 1)
+        (t/is (thrown? js/Error (.addRowAtIndex grid -1 "fixed" 10)))
+        (t/is (thrown? js/Error (.addColumnAtIndex grid 2 "fixed" 10)))
+        (t/is (thrown? js/Error (.setRow grid 1 "fixed" 10)))
+        (t/is (thrown? js/Error (.setColumn grid 1 "fixed" 10)))
+        (t/is (thrown? js/Error (.removeRow grid 1)))
+        (t/is (thrown? js/Error (.removeColumn grid 1)))))))
