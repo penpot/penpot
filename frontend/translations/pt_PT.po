@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -3022,10 +3022,11 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membros"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Lembra-te em incluir todos. Programadores, designers, gestores... "
-"acrescenta diversidade :)"
+"Lembra-te em incluir todos. Programadores, designers, gestores... acrescenta "
+"diversidade :)"
 
 #: src/app/main/ui/dashboard/team.cljs:258, src/app/main/ui/onboarding/team_choice.cljs:193
 msgid "onboarding.choice.team-up.roles"
