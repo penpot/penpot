@@ -592,7 +592,7 @@
                     :else
                     (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value)))))))}
 
-           :background-blur
+           :backgroundBlur
            {:this true
             :get #(-> % u/proxy->shape :background-blur format/format-blur)
             :set

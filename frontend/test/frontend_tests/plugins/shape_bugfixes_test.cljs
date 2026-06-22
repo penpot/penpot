@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.test-helpers.files :as cthf]
    [app.common.types.component :as ctk]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.variants :as dwv]
    [app.main.store :as st]
@@ -69,3 +70,16 @@
 
 (t/deftest center-shapes-empty-input-returns-nil
   (t/is (nil? (public-utils/centerShapes #js []))))
+
+(t/deftest background-blur-reads-background-blur-key
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        blur-id  (uuid/next)
+        proxy    (shape/shape-proxy plugin-id file-id page-id shape-id)]
+    (with-redefs [u/proxy->shape (constantly {:background-blur {:id blur-id
+                                                                :value 12
+                                                                :hidden false}})]
+      (let [blur (.-backgroundBlur proxy)]
+        (t/is (= (str blur-id) (aget blur "id")))
+        (t/is (= 12 (aget blur "value")))))))
