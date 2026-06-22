@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-10 23:01+0000\n"
-"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.6\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:173, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -3420,6 +3420,7 @@ msgid "not-found.login.sent-recovery-check"
 msgstr "Kontrollera din e-post och klicka på länken för att skapa ett nytt lösenord."
 
 #: src/app/main/ui/static.cljs:167
+#, fuzzy
 msgid "not-found.login.signup-free"
 msgstr "Registrera dig kostnadsfritt"
 
@@ -3662,6 +3663,7 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Bjud in medlemmar"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
+#, fuzzy
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Kom ihåg att inkludera alla. Utvecklare, designers, chefer... mångfald gör "
@@ -3792,6 +3794,7 @@ msgid "onboarding.questions.step3.question3"
 msgstr "Hur stort är ert företag?"
 
 #: src/app/main/ui/onboarding/questions.cljs:269
+#, fuzzy
 msgid "onboarding.questions.step3.title"
 msgstr "Berätta om ditt jobb"
 
