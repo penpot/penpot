@@ -4,29 +4,29 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@10.31.0+sha512.e3927388bfaa8078ceb79b748ffc1e8274e84d75163e67bc22e06c0d3aed43dd153151cbf11d7f8301ff4acb98c68bdc5cadf6989532801ffafe3b3e4a63c268",
+  "packageManager": "pnpm@11.5.3+sha512.7ac1c919341c213a34dc0d02afb7143c5c26ac26ee8c4782deea821b8ac64d2134a081fd8941dae6e29bbb48f58dfc2b7fbceeccc07cb2f09d219d342a4969ed",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "type": "module",
   "dependencies": {
-    "archiver": "7.0.1",
+    "@penpot/svgo": "penpot/svgo#3.3.0",
+    "archiver": "8.0.0",
     "cookies": "^0.9.1",
-    "date-fns": "^4.1.0",
+    "date-fns": "^4.4.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
-    "ioredis": "^5.10.1",
-    "playwright": "^1.60.0",
+    "ioredis": "^5.11.1",
+    "playwright": "^1.61.0",
     "raw-body": "^3.0.2",
     "source-map-support": "^0.5.21",
-    "svgo": "penpot/svgo#v3.1",
-    "undici": "^8.2.0",
+    "undici": "^8.5.0",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.2"
   },
   "devDependencies": {
-    "ws": "^8.20.1"
+    "ws": "^8.21.0"
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",

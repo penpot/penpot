@@ -593,6 +593,42 @@ PENPOT_AUTO_FILE_SNAPSHOT_TIIMEOUT: "1h"       # How often is an automatic save 
 
 Setting custom values for auto-file-snapshot does not change the behaviour for manual versions.
 
+### ImageMagick Resource Limits
+
+Penpot uses ImageMagick for image processing (thumbnail generation, MIME detection, dimension extraction).
+You can configure resource limits for ImageMagick child processes to prevent a single image operation
+from consuming unbounded server resources.
+
+These environment variables override the default resource limits passed to ImageMagick via `MAGICK_*`
+environment variables. They can make limits tighter than the Docker `policy.xml` but never looser.
+
+```bash
+# Backend
+PENPOT_IMAGEMAGICK_THREAD_LIMIT: 2
+PENPOT_IMAGEMAGICK_MEMORY_LIMIT: 256MiB
+PENPOT_IMAGEMAGICK_MAP_LIMIT: 512MiB
+PENPOT_IMAGEMAGICK_AREA_LIMIT: 128MP
+PENPOT_IMAGEMAGICK_DISK_LIMIT: 1GiB
+PENPOT_IMAGEMAGICK_TIME_LIMIT: 30
+PENPOT_IMAGEMAGICK_WIDTH_LIMIT:
+PENPOT_IMAGEMAGICK_HEIGHT_LIMIT:
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PENPOT_IMAGEMAGICK_THREAD_LIMIT` | `2` | Max threads per ImageMagick process |
+| `PENPOT_IMAGEMAGICK_MEMORY_LIMIT` | `256MiB` | Max heap memory per process |
+| `PENPOT_IMAGEMAGICK_MAP_LIMIT` | `512MiB` | Max memory-mapped area (disk-backed pixel cache) |
+| `PENPOT_IMAGEMAGICK_AREA_LIMIT` | `128MP` | Max total pixels (128 megapixels ≈ 11584×11096) |
+| `PENPOT_IMAGEMAGICK_DISK_LIMIT` | `1GiB` | Max pixel cache on disk |
+| `PENPOT_IMAGEMAGICK_TIME_LIMIT` | `30` | Max seconds per ImageMagick operation |
+| `PENPOT_IMAGEMAGICK_WIDTH_LIMIT` | *(not set)* | Max width in pixels |
+| `PENPOT_IMAGEMAGICK_HEIGHT_LIMIT` | *(not set)* | Max height in pixels |
+
+The Docker image also includes a `policy.xml` that acts as a hard ceiling — these env vars
+cannot exceed the limits set in `policy.xml`. The policy also blocks dangerous coders (PS,
+EPS, PDF, XPS) that invoke Ghostscript.
+
 ## Frontend
 
 In comparison with backend, frontend only has a small number of runtime configuration

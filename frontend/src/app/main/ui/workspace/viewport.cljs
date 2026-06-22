@@ -53,7 +53,9 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar* path-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
+                                                   path-edition-bar*
+                                                   view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -223,7 +225,9 @@
         on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
-        show-comments?           (= drawing-tool :comments)
+        comments-mode?           (= drawing-tool :comments)
+        show-comments?           (or comments-mode?
+                                     (contains? layout :display-comments))
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
@@ -537,33 +541,33 @@
               :bounds vbox}]]))
 
        (when show-padding?
-         [:& mfc/padding-control
+         [:> mfc/padding-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-padding?
-         [:& mfc/gap-control
+         [:> mfc/gap-control*
           {:frame first-shape
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?
+           :is-alt @alt?
+           :is-shift @shift?
            :on-move-selected on-move-selected
            :on-context-menu on-menu-selected}])
 
        (when show-margin?
-         [:& mfc/margin-control
+         [:> mfc/margin-control*
           {:shape first-shape
            :parent selected-frame
            :hover @frame-hover
            :zoom zoom
-           :alt? @alt?
-           :shift? @shift?}])
+           :is-alt @alt?
+           :is-shift @shift?}])
 
        [:> widgets/frame-titles*
         {:objects base-objects

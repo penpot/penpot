@@ -70,9 +70,9 @@
 ;; `penpot:wasm:tiles-complete`.
 ;;
 ;; - `page-transition?`: true while the overlay should be considered active.
-;; - `transition-image-url*`: URL used by the UI overlay (usually `blob:` from the
-;;   current WebGL canvas snapshot; on initial load it may be a tiny SVG data-url
-;;   derived from the page background color).
+;; - `transition-image*`: image shown by the UI overlay (usually an `ImageBitmap`
+;;   snapshot of the WebGL canvas; on initial load it may be a tiny SVG data-url
+;;   string derived from the page background color).
 ;; - `transition-epoch*`: monotonic counter used to ignore stale async work/events
 ;;   when the user clicks pages rapidly (A -> B -> C).
 ;; - `transition-tiles-handler*`: the currently installed DOM event handler for
@@ -83,7 +83,7 @@
 ;; rulers show through. False (page switch / context loss) keeps the snapshot's
 ;; baked-in rulers full-bleed to avoid a blank-strip flicker on canvas remount.
 (defonce transition-reveal-rulers? (atom false))
-(defonce transition-image-url* (atom nil))
+(defonce transition-image* (atom nil))
 (defonce transition-epoch* (atom 0))
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
@@ -100,13 +100,13 @@
 
 
 (defn set-transition-image-from-background!
-  "Sets `transition-image-url*` to a data URL representing a solid background color."
+  "Sets `transition-image*` to a data URL representing a solid background color."
   [background]
   (when (string? background)
     (let [svg (str "<svg xmlns='http://www.w3.org/2000/svg' width='1' height='1'>"
                    "<rect width='1' height='1' fill='" background "'/>"
                    "</svg>")]
-      (reset! transition-image-url*
+      (reset! transition-image*
               (str "data:image/svg+xml;charset=utf-8," (js/encodeURIComponent svg))))))
 
 (defn begin-page-transition!
@@ -120,7 +120,7 @@
   (when-let [prev @transition-tiles-handler*]
     (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
   (reset! transition-tiles-handler* nil)
-  (reset! transition-image-url* nil))
+  (reset! transition-image* nil))
 
 (defn- set-transition-tiles-complete-handler!
   "Installs a tiles-complete handler bound to the current transition epoch.
@@ -136,22 +136,36 @@
     (reset! transition-tiles-handler* handler)
     (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
 
+(defn arm-page-transition-end!
+  "Arms the end of an active page transition: installs a `tiles-complete` handler
+   (bound to the current epoch) that ends the transition on the next full frame.
+
+   Called once the target page's shapes have been loaded into WASM, so the
+   earlier/empty frames rendered while the previous page is still mounted and
+   while the fresh canvas re-initializes cannot dismiss the blur prematurely.
+   No-op when no transition is active."
+  []
+  (when @page-transition?
+    (set-transition-tiles-complete-handler! @transition-epoch* end-page-transition!)))
+
 (defn start-initial-load-transition!
   "Starts a page-transition workflow for initial file open.
 
    - Sets `page-transition?` to true
-   - Installs a tiles-complete handler to end the transition
-   - Uses a solid background-color placeholder as the transition image"
+   - Uses a solid background-color placeholder as the transition image
+   - The tiles-complete handler that ends the transition is armed later, once
+     the page's shapes are loaded (see `arm-page-transition-end!`)"
   [background]
   (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
   ;; ensure we still have a deterministic placeholder on initial load.
-  (when (or (not @page-transition?) (nil? @transition-image-url*))
+  (when (or (not @page-transition?) (nil? @transition-image*))
     (set-transition-image-from-background! background))
   (when-not @page-transition?
-    ;; Start transition + bind the tiles-complete handler to this epoch.
-    (let [epoch (begin-page-transition!)]
-      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+    ;; Start the transition. The tiles-complete → end handler is armed later,
+    ;; once the target page's shapes are loaded (see `arm-page-transition-end!`),
+    ;; so an earlier/empty frame can't dismiss the overlay prematurely.
+    (begin-page-transition!)))
 
 (defn- start-context-loss-overlay!
   []
@@ -161,7 +175,7 @@
   []
   (reset! context-loss-overlay? false)
   (when-not @page-transition?
-    (reset! transition-image-url* nil)))
+    (reset! transition-image* nil)))
 
 (defn listen-tiles-render-complete-once!
   "Registers a one-shot listener for `penpot:wasm:tiles-complete`, dispatched from WASM
@@ -173,12 +187,28 @@
                        (f))
                      #js {:once true}))
 
+(defn capture-canvas-snapshot
+  "Captures the viewport canvas into `wasm/canvas-snapshot` (an `ImageBitmap`)
+   and closes the replaced snapshot unless the transition overlay is still
+   showing it (a replaced snapshot can never become displayed again, so closing
+   it is safe). Returns a promise resolving to the bitmap (or nil)."
+  []
+  (let [^js prev wasm/canvas-snapshot]
+    (-> (webgl/capture-canvas-snapshot)
+        (p/then (fn [^js bitmap]
+                  (when (and (some? prev)
+                             (some? bitmap)
+                             (not (identical? prev bitmap))
+                             (not (identical? prev @transition-image*)))
+                    (.close prev))
+                  bitmap)))))
+
 (defonce ^:private schedule-canvas-snapshot-capture!
   (fns/debounce
    (fn []
      (when (and (initialized?)
                 (some? wasm/canvas))
-       (-> (webgl/capture-canvas-snapshot-url)
+       (-> (capture-canvas-snapshot)
            (p/catch (fn [_] nil)))))
    snapshot-capture-debounce-ms))
 
@@ -239,7 +269,6 @@
 (def ^:const TEXT_EDITOR_EVENT_NEEDS_LAYOUT 4)
 
 ;; Re-export public WebGL functions
-(def capture-canvas-snapshot-url webgl/capture-canvas-snapshot-url)
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
 
 ;; Re-export public text editor functions
@@ -432,7 +461,7 @@
 
 (defn render-blurred-snapshot!
   "Blurs the current page into the canvas so a following
-   `capture-canvas-snapshot-url` grabs an already-blurred transition frame."
+   `capture-canvas-snapshot` grabs an already-blurred transition frame."
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_blurred_snapshot" TRANSITION_BLUR_RADIUS)))
@@ -482,7 +511,14 @@
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
-                 (render ts)))]
+                 (try
+                   (render ts)
+                   (catch :default e
+                     ;; A failed render (e.g. a WASM panic) must not strand an
+                     ;; active page-transition. Force ending of it so the
+                     ;; workspace is shown without a blur.
+                     (end-page-transition!)
+                     (throw e)))))]
           (set! wasm/internal-frame-id frame-id))))))
 
 (defn- begin-shapes-loading!
@@ -944,12 +980,21 @@
 
 (defn set-shape-blur
   [blur]
-  (if (some? blur)
-    (let [type   (-> blur :type sr/translate-blur-type)
-          hidden (:hidden blur)
-          value  (:value blur)]
-      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-    (h/call wasm/internal-module "_clear_shape_blur")))
+  (let [type (sr/translate-blur-type :layer-blur)]
+    (if (some? blur)
+      (let [hidden (:hidden blur)
+            value  (:value blur)]
+        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+      (h/call wasm/internal-module "_clear_shape_blur" type))))
+
+(defn set-shape-background-blur
+  [background-blur]
+  (let [type (sr/translate-blur-type :background-blur)]
+    (if (some? background-blur)
+      (let [hidden (:hidden background-blur)
+            value  (:value background-blur)]
+        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+      (h/call wasm/internal-module "_clear_shape_blur" type))))
 
 (defn set-shape-corners
   [corners]
@@ -1331,6 +1376,7 @@
           bool-type    (get shape :bool-type)
           grow-type    (get shape :grow-type)
           blur         (get shape :blur)
+          background-blur (get shape :background-blur)
           svg-attrs    (get shape :svg-attrs)
           shadows      (get shape :shadow)]
 
@@ -1339,6 +1385,7 @@
       ;; Remaining properties that need separate calls (variable-length or conditional)
       (set-shape-children children)
       (set-shape-blur blur)
+      (set-shape-background-blur background-blur)
       (when (= type :group)
         (set-masked (boolean masked)))
       (when (= type :bool)
@@ -1417,6 +1464,24 @@
   [shape]
   (let [{:keys [thumbnails full]} (set-object shape)]
     (process-pending [shape] thumbnails full noop-fn)))
+
+(defn process-objects
+  "Like process-object but for multiple shapes at once. Accumulates all
+   pending font/image callbacks before calling process-pending, so that
+   update-text-layouts fires for all text shapes after fonts load — not
+   just the first shape that triggered the fetch."
+  [shapes]
+  (let [total-shapes (count shapes)
+        {:keys [thumbnails full]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+          (if (< index total-shapes)
+            (let [shape (nth shapes index)
+                  {:keys [thumbnails full]} (set-object shape)]
+              (recur (inc index)
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)))
+            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
+    (process-pending shapes thumbnails full noop-fn)))
 
 (defn- process-shapes-chunk
   "Process shapes starting at `start-index` until the time budget is exhausted.
@@ -1902,15 +1967,6 @@
     (h/call wasm/internal-module "_set_view_end")
     (reset! view-interaction-active? false)))
 
-(defn resize-offscreen-canvas!
-  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
-  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
-  design state (shape pool) is preserved so `set-objects` is not needed again."
-  [canvas new-physical-w new-physical-h]
-  (set! (.-width canvas) new-physical-w)
-  (set! (.-height canvas) new-physical-h)
-  (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr)))
-
 (defn- debug-flags
   []
   (cond-> 0
@@ -1920,6 +1976,22 @@
     (bit-or 2r00000000000000000000000000000100)
     (contains? cf/flags :render-wasm-info)
     (bit-or 2r00000000000000000000000000001000)))
+
+(defn set-render-options!
+  "Updates WASM render options with a new DPR value."
+  [new-dpr]
+  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
+
+(defn resize-offscreen-canvas!
+  "Resize a persistent OffscreenCanvas to new physical-pixel dimensions and
+  update the WASM render surfaces accordingly (via `_resize_viewbox`). The
+  design state (shape pool) is preserved so `set-objects` is not needed again."
+  [canvas new-physical-w new-physical-h]
+  (let [dpr (get-dpr)]
+    (set! (.-width canvas) new-physical-w)
+    (set! (.-height canvas) new-physical-h)
+    (set-render-options! dpr)
+    (resize-viewbox (/ new-physical-w dpr) (/ new-physical-h dpr))))
 
 (defn- wasm-get-numeric-value
   [name]
@@ -1934,11 +2006,6 @@
   (when-let [value (wasm-get-numeric-value param-name)]
     (let [setter-name (str/concat "_set_" (name param-name))]
       (h/call wasm/internal-module setter-name value))))
-
-(defn set-render-options!
-  "Updates WASM render options with a new DPR value."
-  [new-dpr]
-  (h/call wasm/internal-module "_set_render_options" (debug-flags) new-dpr))
 
 (defn- canvas-css-size
   "Return canvas size in CSS pixels.
@@ -1973,12 +2040,13 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; End any in-flight page transition
+  (end-page-transition!)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
-  (when-let [url wasm/canvas-snapshot-url]
-    (when (string? url)
-      (reset! transition-image-url* url)))
+  (when-let [snapshot wasm/canvas-snapshot]
+    (reset! transition-image* snapshot))
   (reset! wasm/context-lost? true)
   (st/async-emit!
    (ntf/show {:content (tr "webgl.webgl-context-lost.toast")
@@ -2222,6 +2290,35 @@
   (h/call wasm/internal-module "_hide_grid")
   (request-render "clear-grid"))
 
+;; Ruler guides ----------------------------------------------------------------
+
+(defn set-guides
+  "Serializes the page guides and sends them to the render engine.
+  `guides` is the page `:guides` map (id -> guide); `objects` is the page
+  objects map, used to resolve each guide's board clip range."
+  [guides objects]
+  (let [size    (sr/get-guides-byte-size guides)
+        offset  (mem/alloc->offset-32 size)
+        heapu32 (mem/get-heap-u32)
+        heapf32 (mem/get-heap-f32)]
+    (sr/write-guides guides objects heapu32 heapf32 offset)
+    (h/call wasm/internal-module "_set_guides")
+    (request-render "set-guides")))
+
+;; Screen-space hit tolerance for ruler guides. Must match
+;; `guide-active-area` in `app.main.ui.workspace.viewport.guides`.
+(def ^:private guide-active-area 16)
+
+(defn find-guide-at
+  "Returns the serialized guide index at `position` (viewport coordinates),
+  or -1 when no guide is within the hit tolerance."
+  [position zoom]
+  (h/call wasm/internal-module "_find_guide_at"
+          (:x position)
+          (:y position)
+          zoom
+          guide-active-area))
+
 (defn get-grid-coords
   [position]
   (let [offset  (h/call wasm/internal-module
@@ -2391,18 +2488,20 @@
 (defn apply-canvas-blur
   []
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
-  (let [already? @page-transition?
-        epoch    (begin-page-transition!)]
-    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+  (let [already? @page-transition?]
+    (begin-page-transition!)
+    ;; The tiles-complete → end handler is armed later, once the target page's
+    ;; shapes are loaded (see `arm-page-transition-end!`), so a frame rendered
+    ;; before the new page is drawn can't dismiss the blur prematurely.
+    ;;
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
     ;; the final target page finishes rendering. The caller (sitemap on-click) is
-    ;; responsible for ensuring `wasm/canvas-snapshot-url` was freshly captured
+    ;; responsible for ensuring `wasm/canvas-snapshot` was freshly captured
     ;; before invoking us.
     (when-not already?
-      (when-let [url wasm/canvas-snapshot-url]
-        (when (string? url)
-          (reset! transition-image-url* url))))))
+      (when-let [snapshot wasm/canvas-snapshot]
+        (reset! transition-image* snapshot)))))
 
 (defn render-shape-pixels
   [shape-id scale]
@@ -2441,6 +2540,25 @@
         (mem/free)
         {:x x :y y :width w :height h}))))
 
+(defn render-shape-pdf
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+
+        offset
+        (h/call wasm/internal-module "_render_shape_pdf"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 4) length)]
+    (mem/free)
+    result))
+
 (defn init-wasm-module
   [module]
   (let [default-fn (unchecked-get module "default")
@@ -2462,5 +2580,11 @@
                 (js/console.error cause)
                 (p/resolved false)))))
       (p/resolved false))))
+
+(defn preload-module!
+  "Starts downloading + compiling the WASM engine now instead of on first
+   viewport mount. Idempotent: the `delay` caches its in-flight promise."
+  []
+  @module)
 
 

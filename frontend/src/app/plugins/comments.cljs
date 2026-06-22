@@ -136,6 +136,9 @@
              (not (r/check-permission plugin-id "comment:write"))
              (u/not-valid plugin-id :position "Plugin doesn't have 'comment:write' permission")
 
+             (not (u/page-active? page-id))
+             (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
+
              :else
              (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
                  (swap! data* assoc :position (gpt/point position))))))}

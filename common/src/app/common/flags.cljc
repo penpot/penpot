@@ -195,12 +195,14 @@
    :enable-render-wasm-dpr
    :enable-token-color
    :enable-token-shadow
+   :enable-token-typography-row
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
    :enable-token-import-from-library
    :enable-render-switch
-   :enable-render-wasm-info])
+   :enable-render-wasm-info
+   :enable-available-viewer-wasm])
 
 (defn parse
   [& flags]

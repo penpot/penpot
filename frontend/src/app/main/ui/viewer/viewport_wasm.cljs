@@ -12,25 +12,19 @@
    [app.main.render-viewer-wasm :as rwv]
    [app.main.ui.viewer.shapes :as shapes]
    [app.main.ui.viewer.viewport-common :as vpc]
-   [app.util.object :as obj]
+   [app.render-wasm.api :as wasm.api]
    [rumext.v2 :as mf]))
 
 (defn- canvas-dimensions
+  "Physical canvas pixels (CSS layout size × DPR), matching the workspace WASM path."
   [scale size]
-  {:width (js/Math.round (* scale (:base-width size)))
-   :height (js/Math.round (* scale (:base-height size)))})
+  (let [css-w (js/Math.round (* scale (:base-width size)))
+        css-h (js/Math.round (* scale (:base-height size)))
+        dpr   (wasm.api/get-dpr)]
+    {:width  (js/Math.round (* css-w dpr))
+     :height (js/Math.round (* css-h dpr))}))
 
-(defn- frame-hotspots-props
-  "frame-hotspots* uses ::mf/wrap-props false and expects string keys."
-  [prepared prepared-all prepared-frame shape-filter]
-  (let [props #js {"objects" prepared
-                   "all-objects" prepared-all
-                   "frame" prepared-frame}]
-    (when shape-filter
-      (obj/set! props "shape-filter" shape-filter))
-    props))
-
-(mf/defc wasm-hotspots-svg
+(mf/defc wasm-hotspots-svg*
   [{:keys [vbox size class prepared prepared-all prepared-frame shape-filter]}]
   [:svg {:view-box vbox
          :width (:width size)
@@ -43,11 +37,15 @@
                  :top 0
                  :left 0}
          :class class}
-   [:& shapes/frame-hotspots*
-    (frame-hotspots-props prepared prepared-all prepared-frame shape-filter)]])
+   [:> shapes/frame-hotspots*
+    {:objects prepared
+     :all-objects prepared-all
+     :frame prepared-frame
+     :shape-filter shape-filter}]])
 
-(mf/defc wasm-layer
-  [{:keys [canvas-ref scale size vbox svg-props]}]
+(mf/defc wasm-layer*
+  [{:keys [canvas-ref scale size vbox
+           prepared prepared-all prepared-frame class shape-filter]}]
   (let [{:keys [width height]} (canvas-dimensions scale size)]
     [:div {:style {:position "absolute"
                    :top 0
@@ -56,7 +54,13 @@
                                                                    :height "100%"
                                                                    :background "transparent"
                                                                    :pointer-events "none"}}]
-     [:& wasm-hotspots-svg (assoc svg-props :vbox vbox :size size)]]))
+     [:> wasm-hotspots-svg* {:vbox vbox
+                             :size size
+                             :class class
+                             :prepared prepared
+                             :prepared-all prepared-all
+                             :prepared-frame prepared-frame
+                             :shape-filter shape-filter}]]))
 
 (defn- fixed-scroll-layer-ids
   [objects frame-id has-fixed?]
@@ -79,18 +83,12 @@
      :fixed-include-ids fixed-include-ids
      :fixed-clear-fills-ids fixed-clear-fills-ids}))
 
-(mf/defc viewport-wasm
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [page    (unchecked-get props "page")
-        frame   (unchecked-get props "frame")
-        base    (unchecked-get props "base")
-        offset  (unchecked-get props "offset")
-        size    (unchecked-get props "size")
-        delta   (or (unchecked-get props "delta") (gpt/point 0 0))
-        vbox    (:vbox size)
-        fixed?  (true? (unchecked-get props "fixed?"))
+(mf/defc viewport-wasm*
+  {::mf/wrap [mf/memo]}
+  [{:keys [page frame base offset size delta is-fixed]}]
+  (let [delta     (or delta (gpt/point 0 0))
+        vbox      (:vbox size)
+        is-fixed  (true? is-fixed)
 
         fixed-layer-ref      (mf/use-ref nil)
         not-fixed-wasm-ref   (mf/use-ref nil)
@@ -101,11 +99,11 @@
         scale    (vpc/viewer-scale size)
         page-id  (:id page)
 
-        frame   (cond-> frame fixed? (assoc :fixed-scroll true))
-        objects (cond-> objects fixed? (assoc-in [frame-id :fixed-scroll] true))
+        frame   (cond-> frame is-fixed (assoc :fixed-scroll true))
+        objects (cond-> objects is-fixed (assoc-in [frame-id :fixed-scroll] true))
 
         has-fixed?
-        (and (not fixed?)
+        (and (not is-fixed)
              (some #(cfh/fixed-scroll? (get objects %))
                    (cfh/get-children-ids objects frame-id)))
 
@@ -123,38 +121,43 @@
 
         prepared-frame (get prepared frame-id)
 
-        svg-base {:prepared prepared
-                  :prepared-all prepared-all
-                  :prepared-frame prepared-frame}]
+        not-fixed-props
+        (mf/props {:prepared prepared
+                   :prepared-all prepared-all
+                   :prepared-frame prepared-frame
+                   :canvas-ref not-fixed-wasm-ref
+                   :scale scale
+                   :size size
+                   :vbox vbox
+                   :class (if has-fixed?
+                            (stl/css :not-fixed)
+                            (when is-fixed (stl/css :fixed)))
+                   :shape-filter (when has-fixed?
+                                   #(not (contains? fixed-mask-set %)))})
+
+        fixed-props
+        (mf/props {:prepared prepared
+                   :prepared-all prepared-all
+                   :prepared-frame prepared-frame
+                   :canvas-ref fixed-wasm-ref
+                   :scale scale
+                   :size size
+                   :vbox vbox
+                   :class (stl/css :not-fixed)
+                   :shape-filter #(contains? fixed-mask-set %)})]
 
     (rwv/use-viewer-wasm-viewport!
      page-id objects size scale frame-id
      not-fixed-wasm-ref fixed-wasm-ref
      (when has-fixed? fixed-layer-ref)
-     not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids)
+     not-fixed-include-ids fixed-include-ids fixed-clear-fills-ids
+     delta)
 
     [:& (mf/provider shapes/base-frame-ctx) {:value (get prepared-all (:id base))}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
       [:*
-       [:& wasm-layer
-        {:canvas-ref not-fixed-wasm-ref
-         :scale scale
-         :size size
-         :vbox vbox
-         :svg-props (assoc svg-base
-                           :class (if has-fixed?
-                                    (stl/css :not-fixed)
-                                    (when fixed? (stl/css :fixed)))
-                           :shape-filter (when has-fixed?
-                                           #(not (contains? fixed-mask-set %))))}]
+       [:> wasm-layer* not-fixed-props]
 
        (when has-fixed?
          [:div {:ref fixed-layer-ref}
-          [:& wasm-layer
-           {:canvas-ref fixed-wasm-ref
-            :scale scale
-            :size size
-            :vbox vbox
-            :svg-props (assoc svg-base
-                              :class (stl/css :not-fixed)
-                              :shape-filter #(contains? fixed-mask-set %))}]])]]]))
+          [:> wasm-layer* fixed-props]])]]]))

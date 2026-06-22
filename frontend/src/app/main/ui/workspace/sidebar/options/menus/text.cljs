@@ -30,7 +30,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry*]]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -245,12 +245,52 @@
        (d/seek #(= (:id %) (uuid/uuid id)))))
 
 (defn- check-props [n-props o-props]
-  (and (identical? (unchecked-get n-props "ids")
-                   (unchecked-get o-props "ids"))
-       (identical? (unchecked-get n-props "appliedTokens")
-                   (unchecked-get o-props "appliedTokens"))
-       (identical? (unchecked-get n-props "values")
-                   (unchecked-get o-props "values"))))
+  (let [o-values (unchecked-get o-props "values")
+        n-values (unchecked-get n-props "values")]
+    (and (identical? (unchecked-get n-props "ids")
+                     (unchecked-get o-props "ids"))
+         (identical? (unchecked-get n-props "type")
+                     (unchecked-get o-props "type"))
+         (identical? (unchecked-get n-props "appliedTokens")
+                     (unchecked-get o-props "appliedTokens"))
+         (identical? (unchecked-get n-props "fileId")
+                     (unchecked-get o-props "fileId"))
+         (identical? (unchecked-get n-props "typographies")
+                     (unchecked-get o-props "typographies"))
+         (identical? (get o-values :fills)
+                     (get n-values :fills))
+         (identical? (get o-values :font-family)
+                     (get n-values :font-family))
+         (identical? (get o-values :font-id)
+                     (get n-values :font-id))
+         (identical? (get o-values :font-size)
+                     (get n-values :font-size))
+         (identical? (get o-values :font-style)
+                     (get n-values :font-style))
+         (identical? (get o-values :font-variant-id)
+                     (get n-values :font-variant-id))
+         (identical? (get o-values :font-weight)
+                     (get n-values :font-weight))
+         (identical? (get o-values :grow-type)
+                     (get n-values :grow-type))
+         (identical? (get o-values :letter-spacing)
+                     (get n-values :letter-spacing))
+         (identical? (get o-values :line-height)
+                     (get n-values :line-height))
+         (identical? (get o-values :text-align)
+                     (get n-values :text-align))
+         (identical? (get o-values :text-decoration)
+                     (get n-values :text-decoration))
+         (identical? (get o-values :text-direction)
+                     (get n-values :text-direction))
+         (identical? (get o-values :text-transform)
+                     (get n-values :text-transform))
+         (identical? (get o-values :typography-ref-file)
+                     (get n-values :typography-ref-file))
+         (identical? (get o-values :typography-ref-id)
+                     (get n-values :typography-ref-id))
+         (identical? (get o-values :vertical-align)
+                     (get n-values :vertical-align)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Main component
@@ -258,12 +298,9 @@
 
 (mf/defc text-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values applied-tokens]}]
+  [{:keys [ids type values applied-tokens libraries file-id typographies]}]
 
-  (let [file-id              (mf/use-ctx ctx/current-file-id)
-        typographies         (mf/deref refs/workspace-file-typography)
-        libraries            (mf/deref refs/files)
-        ;; --- UI state
+  (let [;; --- UI state
         menu-state*          (mf/use-state {:main-menu true
                                             :more-options false})
         menu-state           (deref menu-state*)
@@ -480,7 +517,15 @@
                             :aria-label        (tr "workspace.options.convert-to-typography")
                             :on-click          on-convert-to-typography
                             :tooltip-placement "top-left"
-                            :icon              i/add}])]]]
+                            :icon              i/add}])]]
+      (when (and token-typography-row-enabled? token-dropdown-open?)
+        [:> searchable-options-dropdown* {:on-click     on-option-click
+                                          :id           listbox-id
+                                          :options      (resolve-delay dropdown-options)
+                                          :selected     selected-token-id
+                                          :align        "right"
+                                          :placeholder  (tr "workspace.tokens.search-by-token")
+                                          :ref          set-option-ref}])]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -516,11 +561,11 @@
                              :icon       i/detach}]]
 
           typography
-          [:& typography-entry {:file-id    typography-file-id
-                                :typography typography
-                                :local?     (= typography-file-id file-id)
-                                :on-detach  handle-detach-typography
-                                :on-change  handle-change-typography}]
+          [:> typography-entry* {:file-id    typography-file-id
+                                 :typography typography
+                                 :is-local   (= typography-file-id file-id)
+                                 :on-detach  handle-detach-typography
+                                 :on-change  handle-change-typography}]
 
 
 
@@ -540,13 +585,4 @@
           [:div {:class (stl/css :text-decoration-options)}
            [:> vertical-align* common-props]
            [:> text-decoration-options* (mf/spread-props common-props {:token-applied current-token-name})]
-           [:> text-direction-options* common-props]])])
-
-     (when (and token-typography-row-enabled? token-dropdown-open?)
-       [:> searchable-options-dropdown* {:on-click     on-option-click
-                                         :id           listbox-id
-                                         :options      (resolve-delay dropdown-options)
-                                         :selected     selected-token-id
-                                         :align        "right"
-                                         :placeholder  (tr "workspace.tokens.search-by-token")
-                                         :ref          set-option-ref}])]))
+           [:> text-direction-options* common-props]])])]))

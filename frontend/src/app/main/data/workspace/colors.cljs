@@ -47,6 +47,20 @@
       (let [wglobal (:workspace-global state)]
         (layout/persist-layout-state! wglobal)))))
 
+(defn toggle-palette
+  "Toggle the palette tool and change the library it uses"
+  [selected]
+  (ptk/reify ::toggle-palette
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (layout/toggle-layout-flag :colorpalette)
+             (mbc/event colorpalette-selected-broadcast-key selected)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
+
 (defn start-picker
   []
   (ptk/reify ::start-picker

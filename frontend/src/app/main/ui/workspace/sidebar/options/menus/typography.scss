@@ -324,12 +324,16 @@
   justify-content: center;
   align-items: center;
   position: absolute;
-  top: 0;
+  top: calc(-1 * #{px2rem(18)});
   left: 0;
   right: 0;
   block-size: 100%;
   inline-size: 100%;
   z-index: var(--z-index-dropdown);
+}
+
+.fonts-on-modal {
+  top: 0;
 }
 
 .show-recent {
@@ -389,7 +393,7 @@
 }
 
 .font-selector-dropdown-full-size {
-  block-size: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
+  block-size: var(--sidebar-element-options-height);
   display: grid;
   grid-template-rows: auto 1fr;
   padding: var(--sp-xxs) var(--sp-m) var(--sp-m) var(--sp-m);

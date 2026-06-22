@@ -183,6 +183,7 @@
   ([props shape position render-id]
    (let [shape-fills  (get shape :fills)
          shape-shadow (get shape :shadow)
+
          shape-blur   (get shape :blur)
 
          svg-attrs    (get-svg-props shape render-id)

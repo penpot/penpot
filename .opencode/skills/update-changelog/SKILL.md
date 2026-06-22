@@ -48,7 +48,7 @@ python3 tools/gh.py issues "2.16.0" --exclude "release blocker,no changelog"
 **Exclusion rules (issue-level):**
 - `no changelog` label — Chore/refactor work that doesn't need a changelog entry
 - `release blocker` label — Blocked issues not yet ready for changelog
-- `Task` issue type — Internal chores are not user-facing; filter these out after fetching
+- `Task` issue type — Internal chores are not user-facing; automatically excluded by `gh.py`. Use `--include-tasks` to override.
 - **Rejected project status** — Issues with a "Rejected" status in the "Main" project board are automatically excluded by `gh.py`. This project-level status (independent of the GitHub issue `state`) indicates the issue was rejected from the release. Use `--include-rejected` to override.
 
 **Exclusion rules (PR-level):**
@@ -347,71 +347,233 @@ if closed:
 - <fix description> (by @contributor) [#<ISSUE>](https://github.com/penpot/penpot/issues/<ISSUE>) (PR: [#<PR>](https://github.com/penpot/penpot/pull/<PR>))
 ```
 
-### 10. Cross-reference milestone PRs against the changelog
+### 11. Generate anomaly report and save to CHANGES-ISSUES.md
 
-Issues can be fixed by PRs that aren't in the milestone, and merged PRs in
-the milestone may not close any tracked issue. After writing, run a full
-cross-reference to catch gaps:
+After all edits and cross-referencing are complete, generate a structured
+anomaly report and save it to `CHANGES-ISSUES.md` (overwriting if exists).
+This provides a persistent record of any discrepancies between the milestone
+and the changelog.
+
+Run this self-contained script:
 
 ```bash
-# List all merged PRs in the milestone
-python3 tools/gh.py prs --milestone "<MILESTONE>" --state merged > /tmp/milestone-prs.json
+python3 << 'PYEOF'
+import json, re, subprocess, sys
 
-# Extract PR numbers from the changelog section
-python3 -c "
-import json, re
+MILESTONE = "<MILESTONE>"
+CHANGES_MD = "CHANGES.md"
+OUTPUT = "CHANGES-ISSUES.md"
 
-with open('CHANGES.md') as f:
+# Fetch milestone issues (all states)
+result = subprocess.run(
+    ["python3", "tools/gh.py", "issues", MILESTONE, "--state", "all"],
+    capture_output=True, text=True)
+all_issues = json.loads(result.stdout)
+issue_by_num = {i['number']: i for i in all_issues}
+
+# Fetch milestone PRs (all states)
+result = subprocess.run(
+    ["python3", "tools/gh.py", "prs", "--milestone", MILESTONE, "--state", "all"],
+    capture_output=True, text=True)
+all_prs = json.loads(result.stdout)
+pr_by_num = {p['number']: p for p in all_prs}
+
+# Read changelog
+with open(CHANGES_MD) as f:
     content = f.read()
 
-# Extract the version section (adjust regex to match the actual version)
-match = re.search(r'## <MILESTONE> \(Unreleased\)\n(.*?)(?:\n## |\Z)', content, re.DOTALL)
-section = match.group(1)
+m = re.search(rf'## {MILESTONE} \(Unreleased\)\n(.*?)(?:\n## |\Z)', content, re.DOTALL)
+section = m.group(1) if m else ""
 
-# Collect all PR numbers referenced
+# Collect issue and PR references from the changelog section
+changelog_issues = set()
+for num in re.findall(r'\[#(\d+)\]\(https://github\.com/penpot/penpot/issues/\d+\)', section):
+    changelog_issues.add(int(num))
+for num in re.findall(r'\[Github #(\d+)\]', section):
+    changelog_issues.add(int(num))
+
 changelog_prs = set()
-for m in re.findall(r'\[#(\d+)\]\(https://github\.com/penpot/penpot/pull/\d+\)', section):
-    changelog_prs.add(int(m))
+for num in re.findall(r'\[#(\d+)\]\(https://github\.com/penpot/penpot/pull/\d+\)', section):
+    changelog_prs.add(int(num))
+for num in re.findall(r'PR:\[(\d+)\]', section):
+    changelog_prs.add(int(num))
 
-# Collect all milestone PRs (filtered)
-with open('/tmp/milestone-prs.json') as f:
-    milestone_prs = json.load(f)
+# Determine valid (non-excluded) milestone issues
+EXCLUDED_LABELS = {'release blocker', 'no changelog'}
+EXCLUDED_ISSUE_TYPES = {'Task'}
+EXCLUDED_PROJECT_STATUS = {'Rejected'}
 
-milestone_merged = {pr['number'] for pr in milestone_prs}
+valid_issues = []
+for issue in all_issues:
+    labels = set(issue.get('labels', []))
+    if issue.get('state') != 'CLOSED': continue
+    if issue.get('issue_type') in EXCLUDED_ISSUE_TYPES: continue
+    if issue.get('project_status') in EXCLUDED_PROJECT_STATUS: continue
+    if EXCLUDED_LABELS & labels: continue
+    valid_issues.append(issue)
+valid_nums = {i['number'] for i in valid_issues}
 
-# PRs in milestone but not in changelog
-missing = sorted(milestone_merged - changelog_prs)
-print(f'Milestone merged PRs: {len(milestone_merged)}')
-print(f'Changelog referenced PRs: {len(changelog_prs)}')
-print(f'PRs in milestone but NOT in changelog: {len(missing)}')
-for num in missing:
-    pr = next(p for p in milestone_prs if p['number'] == num)
-    print(f'  #{num} {pr[\"title\"][:80]}')
-"
+# --- Gather anomalies ---
+anomalies = []
+
+# Type 1: Entries in changelog that should be excluded
+for num in sorted(changelog_issues):
+    issue = issue_by_num.get(num)
+    if issue is None:
+        anomalies.append({
+            'type': 'should_remove',
+            'severity': 'HIGH',
+            'number': num,
+            'title': '',
+            'reason': 'Issue not found in milestone (deleted or moved)'
+        })
+        continue
+    labels = set(issue.get('labels', []))
+    reasons = []
+    if issue.get('state') != 'CLOSED':
+        reasons.append(f'state is "{issue["state"]}" (should be CLOSED)')
+    if 'release blocker' in labels:
+        reasons.append('has "release blocker" label')
+    if 'no changelog' in labels:
+        reasons.append('has "no changelog" label')
+    if issue.get('issue_type') == 'Task':
+        reasons.append(f'issue_type is Task (internal chore)')
+    if issue.get('project_status') == 'Rejected':
+        reasons.append('project_status is Rejected')
+    if reasons:
+        anomalies.append({
+            'type': 'should_remove',
+            'severity': 'MEDIUM' if issue.get('issue_type') == 'Task' else 'HIGH',
+            'number': num,
+            'title': issue.get('title', '')[:80],
+            'reason': '; '.join(reasons)
+        })
+
+# Type 2: Valid issues not in changelog
+for num in sorted(valid_nums - changelog_issues):
+    issue = issue_by_num[num]
+    info = {
+        'type': 'missing',
+        'severity': 'MEDIUM',
+        'number': num,
+        'title': issue['title'][:80],
+        'issue_type': issue['issue_type'],
+        'closing_prs': issue.get('closing_prs', []),
+        'note': ''
+    }
+    # Check for duplicate (same PR as existing entry)
+    existing = []
+    for pr_num in issue.get('closing_prs', []):
+        for cl_num in changelog_issues:
+            cl_issue = issue_by_num.get(cl_num)
+            if cl_issue and pr_num in cl_issue.get('closing_prs', []):
+                existing.append(f'#{cl_num}')
+    if existing:
+        info['note'] = f'DUPLICATE: same PR as existing entry(ies): {", ".join(existing)}'
+    # Check closing PRs not merged
+    unmerged = []
+    for pr_num in issue.get('closing_prs', []):
+        pr = pr_by_num.get(pr_num)
+        if pr is None:
+            unmerged.append(f'#{pr_num} (unknown)')
+        elif pr.get('state') != 'MERGED':
+            unmerged.append(f'#{pr_num} (state={pr["state"]})')
+    if unmerged:
+        info['note'] = (info['note'] + '; ' if info['note'] else '') + f'Closing PRs not merged: {", ".join(unmerged)}'
+    anomalies.append(info)
+
+# Type 3: PRs in changelog that are not merged
+for pr_num in sorted(changelog_prs):
+    pr = pr_by_num.get(pr_num)
+    if pr is None:
+        anomalies.append({
+            'type': 'unmerged_pr',
+            'severity': 'HIGH',
+            'number': pr_num,
+            'title': '',
+            'reason': 'PR not found in milestone PR list'
+        })
+    elif pr.get('state') != 'MERGED':
+        anomalies.append({
+            'type': 'unmerged_pr',
+            'severity': 'HIGH',
+            'number': pr_num,
+            'title': pr.get('title', '')[:80],
+            'reason': f'state={pr["state"]} (should be MERGED)'
+        })
+
+# --- Write report to CHANGES-ISSUES.md ---
+with open(OUTPUT, 'w') as f:
+    f.write(f'# Changelog Anomaly Report — {MILESTONE}\n\n')
+    f.write(f'Generated: {__import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M UTC")}\n\n')
+    f.write('---\n\n')
+
+    # Summary
+    n_remove = sum(1 for a in anomalies if a['type'] == 'should_remove')
+    n_missing = sum(1 for a in anomalies if a['type'] == 'missing')
+    n_pr = sum(1 for a in anomalies if a['type'] == 'unmerged_pr')
+    f.write(f'## Summary\n\n')
+    f.write(f'- **Issues to remove from changelog:** {n_remove}\n')
+    f.write(f'- **Valid issues missing from changelog:** {n_missing}\n')
+    f.write(f'- **Unmerged PRs referenced:** {n_pr}\n')
+    f.write(f'- **Total anomalies:** {len(anomalies)}\n\n')
+
+    if not anomalies:
+        f.write('✅ No anomalies found. The changelog is fully consistent with the milestone.\n\n')
+    else:
+        # Type 1
+        if n_remove:
+            f.write(f'## Issues to Remove\n\n')
+            f.write('These entries are in the changelog but should be excluded based on current issue metadata.\n\n')
+            for a in anomalies:
+                if a['type'] != 'should_remove': continue
+                badge = '🔴' if a['severity'] == 'HIGH' else '🟡'
+                f.write(f'{badge} **#{a["number"]}**')
+                if a.get('title'): f.write(f' — {a["title"]}')
+                f.write(f'\n  - Reason: {a["reason"]}\n\n')
+
+        # Type 2
+        if n_missing:
+            f.write(f'## Valid Issues Not in Changelog\n\n')
+            f.write('These issues are closed, non-excluded milestone items that lack a changelog entry.\n\n')
+            for a in anomalies:
+                if a['type'] != 'missing': continue
+                f.write(f'❓ **#{a["number"]}** — {a["title"]}\n')
+                f.write(f'  - Type: {a["issue_type"]}, Closing PRs: {a["closing_prs"]}\n')
+                if a.get('note'): f.write(f'  - Note: {a["note"]}\n')
+                f.write('\n')
+
+        # Type 3
+        if n_pr:
+            f.write(f'## Unmerged PRs Referenced in Changelog\n\n')
+            f.write('These PR numbers appear in the changelog but are not merged.\n\n')
+            for a in anomalies:
+                if a['type'] != 'unmerged_pr': continue
+                f.write(f'🔴 **#{a["number"]}**')
+                if a.get('title'): f.write(f' — {a["title"]}')
+                f.write(f'\n  - {a["reason"]}\n\n')
+
+    # Appendix: counts
+    f.write('---\n\n')
+    f.write(f'## Context\n\n')
+    f.write(f'- Milestone total issues (all states): {len(all_issues)}\n')
+    f.write(f'- Valid issues after exclusions: {len(valid_issues)}\n')
+    f.write(f'- Issues referenced in changelog: {len(changelog_issues)}\n')
+    f.write(f'- PRs referenced in changelog: {len(changelog_prs)}\n')
+
+print(f"Anomaly report written to {OUTPUT}")
+PYEOF
 ```
 
-For each missing PR found, decide whether it should be added to the
-changelog or is legitimately excluded (check its labels).
+This generates `CHANGES-ISSUES.md` with three sections:
+1. **Issues to Remove** — Entries in the changelog that should be excluded based
+   on current issue metadata (labels, type, project status, or deletion).
+2. **Valid Issues Not in Changelog** — Closed, non-excluded milestone issues
+   that lack a changelog entry (with notes on duplicates and unmerged closing PRs).
+3. **Unmerged PRs Referenced** — PRs in the changelog that are not merged.
 
-Also verify that no closed-unmerged PRs remain in the changelog:
-
-```bash
-python3 tools/gh.py prs --milestone "<MILESTONE>" --state all | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-closed = [p for p in data if p['state'] == 'CLOSED']
-if closed:
-    print('WARNING: CLOSED (unmerged) PRs in milestone:')
-    for p in closed:
-        print(f'  #{p[\"number\"]} {p[\"title\"][:80]}')
-"
-```
-
-**Post-edit audit checklist:**
-- ✅ All referenced PRs are merged (no closed-unmerged artifacts)
-- ✅ Every merged milestone PR is either in the changelog or excluded by label
-- ✅ PR and issue counts are internally consistent
-- ✅ No false-positive PR-to-issue associations
+The report is overwritten each time it's generated, reflecting the current
+state of the milestone and changelog.
 
 ## Key Principles
 

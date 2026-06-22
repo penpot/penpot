@@ -77,7 +77,6 @@ export JAVA_OPTS="\
        -Djdk.attach.allowAttachSelf \
        -Dlog4j2.configurationFile=log4j2-devenv.xml \
        -Djdk.tracePinnedThreads=full \
-       -Dim4java.useV7=true \
        -XX:+UnlockExperimentalVMOptions \
        -XX:+UseShenandoahGC \
        -XX:+UseCompactObjectHeaders \

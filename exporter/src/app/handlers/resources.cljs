@@ -7,7 +7,7 @@
 (ns app.handlers.resources
   "Temporal resources management."
   (:require
-   ["archiver$default" :as arc]
+   ["archiver" :as arc]
    ["node:fs" :as fs]
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
@@ -41,7 +41,7 @@
 
 (defn create-zip
   [& {:keys [resource on-complete on-progress on-error]}]
-  (let [^js zip  (arc/create "zip")
+  (let [^js zip  (new arc/ZipArchive)
         ^js out  (fs/createWriteStream (:path resource))
         on-complete (or on-complete (constantly nil))
         progress (atom 0)]

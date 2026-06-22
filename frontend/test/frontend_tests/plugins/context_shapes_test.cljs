@@ -132,6 +132,15 @@
             (t/is (= (.-constraintsVertical shape) "bottom"))
             (t/is (= (get-in @store (get-shape-path :constraints-v)) :bottom)))
 
+          (t/testing " - fixedWhenScrolling"
+            (set! (.-fixedWhenScrolling shape) true)
+            (t/is (= (.-fixedWhenScrolling shape) true))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) true))
+
+            (set! (.-fixedWhenScrolling shape) false)
+            (t/is (= (.-fixedWhenScrolling shape) false))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) false)))
+
           (t/testing " - borderRadius"
             (set! (.-borderRadius shape) 10)
             (t/is (= (.-borderRadius shape) 10))
@@ -190,7 +199,6 @@
 
           (t/testing " - blur"
             (set! (.-blur shape) #js {:value 10})
-            (t/is (= (-> (. shape -blur) (aget "type")) "layer-blur"))
             (t/is (= (-> (. shape -blur) (aget "value")) 10))
             (t/is (= (-> (. shape -blur) (aget "hidden")) false))
             (let [id (-> (. shape -blur) (aget "id") uuid/uuid)]
@@ -331,6 +339,10 @@
               (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
               (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
 
+        (t/testing "createText with empty string returns null"
+          (t/is (nil? (.createText context "")))
+          (t/is (some? (.createText context "Hello"))))
+
         (t/testing "Relative properties"
           (let [board (.createBoard context)]
             (set! (.-x board) 100)
@@ -370,3 +382,23 @@
           (t/is (pos? (thw/call-count :clean-modifiers)))
           (t/is (pos? (thw/call-count :set-structure-modifiers)))
           (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+
+(t/deftest test-array-properties-return-empty-array-when-no-items
+  ;; Array-typed properties must always return an array, never null,
+  ;; even when the shape has no items for that property.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
+            _           (set! st/state store)
+            ^js shape   (.createRectangle context)]
+
+        (t/testing " - exports (no exports set)"
+          (let [exports (.-exports shape)]
+            (t/is (array? exports))
+            (t/is (= 0 (.-length exports)))))
+
+        (t/testing " - shadows (no shadows set)"
+          (let [shadows (.-shadows shape)]
+            (t/is (array? shadows))
+            (t/is (= 0 (.-length shadows)))))))))

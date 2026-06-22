@@ -193,6 +193,7 @@
   [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity disable-image]}]
   (let [selected*        (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         selected         (deref selected*)
+        layout           (mf/deref refs/workspace-layout)
 
         view-mode*       (mf/use-state :grid)
         view-mode        (deref view-mode*)
@@ -250,7 +251,7 @@
            (r/set-resize-type! :bottom)
            (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
            (st/emit! (dw/remove-layout-flag :textpalette)
-                     (-> (mdc/show-palette selected)
+                     (-> (mdc/toggle-palette selected)
                          (vary-meta assoc ::ev/origin "workspace-colorpicker")))))
 
         toggle-view-mode
@@ -332,8 +333,9 @@
 
       [:> icon-button*
        {:variant    "ghost"
-        :aria-label (tr "workspace.libraries.colors.show-color-palette")
+        :aria-label (tr "workspace.libraries.colors.toggle-color-palette")
         :on-click   toggle-palette
+        :aria-pressed (boolean (contains? layout :colorpalette))
         :icon       i/swatches}]
 
       [:> icon-button*

@@ -78,7 +78,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.16}"
     restart: always
     ports:
       - 9001:8080
@@ -111,7 +111,7 @@ services:
       # PENPOT_DISABLE_IPV6_LISTEN: "true"
 
   penpot-backend:
-    image: "penpotapp/backend:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.16}"
     restart: always
 
     volumes:
@@ -180,13 +180,13 @@ services:
       PENPOT_SMTP_SSL: "false"
 
   penpot-mcp:
-    image: "penpotapp/mcp:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/mcp:${PENPOT_VERSION:-2.16}"
     restart: always
     networks:
       - penpot
 
   penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-2.15}"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.16}"
     restart: always
 
     depends_on:

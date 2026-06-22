@@ -309,6 +309,38 @@ For client-specific setup, use the shared section **Connect your MCP client**.
 
 For remote mode, use the URL shown in **Your account → Integrations → MCP Server**, which includes your `userToken`.
 
+### Setup videos
+
+<figure>
+  <iframe
+    width="672px"
+    height="378px"
+    src="https://www.youtube.com/embed/hBn1iutWSq4?rel=0"
+    title="Penpot MCP Server: Remote Setup in 5 Min | OpenCode + OpenRouter"
+    frameborder="0"
+    loading="lazy"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+  </iframe>
+  <figcaption>Penpot MCP Server – Remote setup with OpenCode and OpenRouter</figcaption>
+</figure>
+
+<figure>
+  <iframe
+    width="672px"
+    height="378px"
+    src="https://www.youtube.com/embed/QeSFO0h7GGY?rel=0"
+    title="Penpot MCP Server Remote Setup in 1 Minute | Cursor"
+    frameborder="0"
+    loading="lazy"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+  </iframe>
+  <figcaption>Penpot MCP Server – Remote setup with Cursor</figcaption>
+</figure>
+
 <a id="use-remote"></a>
 ### Use
 
@@ -390,6 +422,23 @@ Leave this terminal running while you use MCP.
 > Some Chromium-based browsers may block the connection from `https://design.penpot.app` to `http://localhost`. If that happens, explicitly allow local network access or use a browser like Firefox.
 
 For advanced or repository-based workflows, see the [MCP README](https://github.com/penpot/penpot/blob/main/mcp/README.md) in the Penpot repository.
+
+### Setup video
+
+<figure>
+  <iframe
+    width="672px"
+    height="378px"
+    src="https://www.youtube.com/embed/xfgf0kKGOoc?rel=0"
+    title="Penpot MCP Server Local Setup"
+    frameborder="0"
+    loading="lazy"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+  </iframe>
+  <figcaption>Penpot MCP Server – Local setup</figcaption>
+</figure>
 
 <a id="connect-local"></a>
 ### Connect

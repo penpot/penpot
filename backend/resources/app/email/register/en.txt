@@ -1,9 +1,11 @@
-Hello {{name|abbreviate:25}}!
+Hi {{name|abbreviate:25}},
 
-Thanks for signing up for your Penpot account! Please verify your email using the
-link below and get started building mockups and prototypes today!
+Welcome to Penpot!
+
+Please verify your email to get started with your first design and collaboration.
 
 {{ public-uri }}/#/auth/verify-token?token={{token}}
 
 Enjoy!
-The Penpot team.
+
+The Penpot team

@@ -271,17 +271,15 @@ test("Multiselection of text and typographies", async ({ page }) => {
   await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   // Select token typography text layer
-  // TODO: CHANGE WHEN TOKEN TYPOGRAPHY ROW IS READY
   await tokenTypographyTextLayerOne.click();
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Metrophobic")).toBeVisible();
+  await expect(textSection.getByLabel('token-typo-one')).toBeVisible();
 
   // Select two token typography text layer with different token typography
-  // TODO: CHANGE WHEN TOKEN TYPOGRAPHY ROW IS READY
   await tokenTypographyTextLayerTwo.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
   await expect(
-    textSection.getByTitle("Font family").getByText("Mixed Font Families"),
+    textSection.getByText('Mixed tokens'),
   ).toBeVisible();
 
   //Select plain text layer and typography text layer together

@@ -25,6 +25,7 @@ const TILE_DRAWABLE_RECT: IRect = IRect {
     right: TILE_MARGIN_SIZE + TILE_SIZE,
     bottom: TILE_MARGIN_SIZE + TILE_SIZE,
 };
+const DOC_ATLAS_MAX_DIM: i32 = 4096;
 
 pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
@@ -178,7 +179,10 @@ impl DocAtlas {
 
         // Compute atlas scale needed to fit within the fixed texture cap.
         // Keep the highest possible scale (closest to 1.0) that still fits.
-        let cap = gpu_state.max_texture_size().max(TILE_SIZE) as f32;
+        let cap = gpu_state
+            .max_texture_size()
+            .clamp(TILE_SIZE, DOC_ATLAS_MAX_DIM) as f32;
+
         let required_scale = (cap / doc_w).min(cap / doc_h).clamp(0.01, 1.0);
 
         // Never upscale the atlas (it would add blur and churn).
@@ -420,6 +424,7 @@ pub struct Surfaces {
     backbuffer: skia::Surface,
     // Atlas used to keep tiles.
     tile_atlas: skia::Surface,
+    tile_atlas_image: Option<skia::Image>,
 
     tiles: TileTextureCache,
     pub atlas: DocAtlas,
@@ -496,6 +501,7 @@ impl Surfaces {
             export,
             backbuffer,
             tile_atlas,
+            tile_atlas_image: None,
             tiles,
             atlas,
             sampling_options,
@@ -525,11 +531,17 @@ impl Surfaces {
         background: skia::Color,
     ) {
         self.tiles.update(viewbox, tile_viewbox);
-        let atlas_image = self.tile_atlas.image_snapshot();
+        if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
+            self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
+            self.tiles.snapshot();
+        }
+        let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
+            return;
+        };
         let canvas = self.backbuffer.canvas();
         canvas.clear(background);
         canvas.draw_atlas(
-            &atlas_image,
+            atlas_image,
             &self.tiles.transforms,
             &self.tiles.textures,
             None,
@@ -854,10 +866,17 @@ impl Surfaces {
 
     /// Copy the current `Backbuffer` contents into `Target`.
     /// This is a GPU→GPU copy via Skia (no ReadPixels).
-    pub fn copy_backbuffer_to_target(&mut self) {
+    ///
+    /// `Target` is cleared to `background` first so UI overlay pixels (guides,
+    /// grid) from the previous frame are fully erased. Without this, `SrcOver`
+    /// compositing would keep stale overlay pixels wherever the backbuffer is
+    /// transparent.
+    pub fn copy_backbuffer_to_target(&mut self, background: skia::Color) {
         let sampling_options = self.sampling_options;
+        let canvas = self.target.canvas();
+        canvas.clear(background);
         self.backbuffer.draw(
-            self.target.canvas(),
+            canvas,
             (0.0, 0.0),
             sampling_options,
             Some(&skia::Paint::default()),
@@ -1304,28 +1323,6 @@ impl Surfaces {
         let _ = self.atlas.clear_tile_in_atlas(gpu_state, tile);
     }
 
-    pub fn get_tile_image_from_tile_atlas(&mut self, tile: Tile) -> Option<skia::Image> {
-        let Some(tile_ref) = self.tiles.get(tile) else {
-            panic!("Tile not found {}:{}", tile.0, tile.1);
-        };
-
-        let rect = IRect::from_ltrb(
-            tile_ref.rect.left as i32,
-            tile_ref.rect.top as i32,
-            tile_ref.rect.right as i32,
-            tile_ref.rect.bottom as i32,
-        );
-        self.tile_atlas.image_snapshot_with_bounds(rect)
-    }
-
-    pub fn draw_cached_tile_into_backbuffer(&mut self, tile: Tile, rect: &Rect) {
-        if let Some(image) = self.get_tile_image_from_tile_atlas(tile) {
-            // let rect = tile.get_rect_with_offset(&offset);
-            let backbuffer_canvas = self.backbuffer.canvas();
-            backbuffer_canvas.draw_image_rect(&image, None, rect, &skia::Paint::default());
-        }
-    }
-
     /// Draws the current tile directly to the backbuffer and cache surfaces without
     /// creating a snapshot. This avoids GPU stalls from ReadPixels but doesn't
     /// populate the tile texture cache (suitable for one-shot renders like tests).
@@ -1392,6 +1389,7 @@ impl Surfaces {
     pub fn invalidate_tile_cache(&mut self) {
         self.tiles.clear();
         self.atlas.tile_doc_rects.clear();
+        self.tile_atlas_image = None;
     }
 
     pub fn gc(&mut self) {
@@ -1521,6 +1519,7 @@ impl TileAtlasTextureProvider {
 
 pub struct TileTextureCache {
     tile_size: f32,
+    is_updated: bool,
     provider: TileAtlasTextureProvider,
     transforms: Vec<skia::RSXform>,
     textures: Vec<skia::Rect>,
@@ -1532,6 +1531,7 @@ impl TileTextureCache {
     pub fn new(texture_size: i32, capacity: usize) -> Self {
         Self {
             tile_size: tiles::TILE_SIZE,
+            is_updated: false,
             provider: TileAtlasTextureProvider::new(texture_size, TILE_SIZE),
             transforms: Vec::with_capacity(capacity),
             textures: Vec::with_capacity(capacity),
@@ -1547,6 +1547,14 @@ impl TileTextureCache {
                 self.provider.deallocate(tile_ref);
             }
         }
+    }
+
+    pub fn needs_snapshot(&self) -> bool {
+        self.is_updated
+    }
+
+    pub fn snapshot(&mut self) {
+        self.is_updated = false;
     }
 
     fn gc_non_visible(&mut self, tile_viewbox: &TileViewbox) {
@@ -1599,6 +1607,10 @@ impl TileTextureCache {
                     continue;
                 };
 
+                if self.removed.contains(&tile) {
+                    continue;
+                }
+
                 self.transforms[index].tx = x as f32 * self.tile_size - offset.x;
                 self.transforms[index].ty = y as f32 * self.tile_size - offset.y;
 
@@ -1641,6 +1653,7 @@ impl TileTextureCache {
             self.removed.remove(tile);
         }
 
+        self.is_updated = true;
         tile_ref.clone()
     }
 
@@ -1657,6 +1670,7 @@ impl TileTextureCache {
                 self.textures[tile_ref.index].set_empty();
             }
         }
+        self.is_updated = true;
         self.removed.insert(tile);
     }
 
@@ -1664,5 +1678,6 @@ impl TileTextureCache {
         for k in self.grid.keys() {
             self.removed.insert(*k);
         }
+        self.is_updated = true;
     }
 }
