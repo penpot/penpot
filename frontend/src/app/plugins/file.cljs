@@ -64,7 +64,7 @@
            (user/user-proxy plugin-id user-data)))}
 
       :createdAt
-      {:get #(.toJSDate ^js (:created-at @data))}
+      {:get #(:created-at @data)}
 
       :isAutosave
       {:get #(= "system" (:created-by @data))}
