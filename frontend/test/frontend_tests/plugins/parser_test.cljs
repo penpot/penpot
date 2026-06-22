@@ -31,3 +31,15 @@
       (t/is (gpt/point? result))
       (t/is (= 0 (:x result)))
       (t/is (= 0 (:y result))))))
+
+(t/deftest test-parse-overlay-action-defaults-manual-position
+  (let [destination #js {"$id" (random-uuid)}
+        action      (parser/parse-action
+                     #js {:type "open-overlay"
+                          :destination destination
+                          :position "center"})]
+    (t/is (= :open-overlay (:action-type action)))
+    (t/is (= :center (:overlay-pos-type action)))
+    (t/is (gpt/point? (:overlay-position action)))
+    (t/is (= 0 (:x (:overlay-position action))))
+    (t/is (= 0 (:y (:overlay-position action))))))
