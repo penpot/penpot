@@ -110,6 +110,34 @@
               "textCase"       (:text-case m)
               "textDecoration" (:text-decoration m)}]))
 
+(defn- shadow-key->camel
+  "Renames a shadow composite field name (kebab string) to its public camelCase
+   member name. The shadow schema is closed; offset-x/offset-y are its only
+   multi-word fields, so the rest (blur, spread, color, inset) pass through."
+  [k]
+  (case k
+    "offset-x" "offsetX"
+    "offset-y" "offsetY"
+    k))
+
+(defn- shadow-entry->js
+  "Converts one resolved shadow entry (a JS Map of field name -> tokenscript
+   symbol) into a plain JS object using the public member names and the
+   unit-converted values."
+  [^js m]
+  (let [out #js {}]
+    (.forEach m (fn [sym k]
+                  (obj/set! out (shadow-key->camel k)
+                            (ts/tokenscript-symbols->penpot-unit sym))))
+    out))
+
+(defn- shadow-resolved-value->js
+  "Converts a resolved shadow composite (a sequence of shadow entries) into the
+   plugin's `TokenShadowValue[]` shape."
+  [entries]
+  (when (some? entries)
+    (into-array (map shadow-entry->js entries))))
+
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
@@ -124,6 +152,13 @@
       ;; A typography token resolves to a composite; expose it as the documented
       ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
       (typography-resolved-value->js
+       (ts/tokenscript-symbols->penpot-unit resolved-value))
+
+      (= :shadow (:type token))
+      ;; A shadow token resolves to a list of composites whose entries the
+      ;; tokenscript unit conversion leaves as raw symbols; expose them as the
+      ;; documented `TokenShadowValue[]`.
+      (shadow-resolved-value->js
        (ts/tokenscript-symbols->penpot-unit resolved-value))
 
       :else

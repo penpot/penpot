@@ -311,3 +311,21 @@
     (t/is (= 20 (aget entry "lineHeight")))
     (t/is (= "uppercase" (aget entry "textCase")))
     (t/is (= "underline" (aget entry "textDecoration")))))
+
+(t/deftest shadow-token-resolved-value-is-plugin-array-shape
+  (let [token (ctob/make-token
+               {:name "shadow.card"
+                :type :shadow
+                :value [{:offset-x "1px"
+                         :offset-y "2px"
+                         :blur "3px"
+                         :spread "4px"
+                         :color "#000000"
+                         :inset false}]})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (array? result))
+    (t/is (= 1 (aget entry "offsetX")))
+    (t/is (= 2 (aget entry "offsetY")))
+    (t/is (= 3 (aget entry "blur")))
+    (t/is (= 4 (aget entry "spread")))))
