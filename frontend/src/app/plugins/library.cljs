@@ -102,7 +102,8 @@
 
          :else
          (let [color (-> (u/proxy->library-color self)
-                         (assoc :color value))]
+                         (assoc :color value)
+                         (dissoc :gradient :image))]
            (st/emit! (dwl/update-color-data color file-id)))))}
 
     :opacity
@@ -137,7 +138,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :gradient value))]
+                           (assoc :gradient value)
+                           (dissoc :color :image))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :image
@@ -155,7 +157,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :image value))]
+                           (assoc :image value)
+                           (dissoc :color :gradient))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :remove
