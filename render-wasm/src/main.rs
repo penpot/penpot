@@ -107,13 +107,14 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 #[wasm_error]
 pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
     with_state!(state, {
+        let render_state = get_render_state();
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
         // since the previous rAF. set_modifiers skips this work during
         // interactive_transform; we do it once here, with the current
         // modifier set, so the cost is paid once per rAF rather than
         // once per pointer move.
-        if get_render_state().options.is_interactive_transform() {
+        if render_state.options.is_interactive_transform() {
             // Collect into an owned Vec to release the immutable borrow on
             // `state.shapes` before the mutable `rebuild_modifier_tiles` call.
             let ids = state.shapes.modifier_ids().to_vec();
@@ -121,7 +122,8 @@ pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
                 state.rebuild_modifier_tiles(&ids)?;
             }
         }
-        let frame_type = if flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8 {
+        let is_partial = flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8;
+        let frame_type = if is_partial && !render_state.preserve_target_during_render {
             state
                 .continue_render_loop(timestamp)
                 .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?

@@ -1631,15 +1631,13 @@ impl TileTextureCache {
     }
 
     pub fn add(&mut self, tile_viewbox: &TileViewbox, tile: &Tile) -> TileAtlasTextureRef {
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
-            // First we try to remove the obsolete tiles.
-            self.gc();
-        }
+        // Evict against the real slot count (`provider.length`), not the
+        // hardcoded capacity — otherwise the guard never fires and the atlas
+        // fills up until `allocate()` has no slot left.
+        let capacity = self.provider.length.min(TEXTURES_CACHE_CAPACITY);
 
-        // If we still have a texture capacity problem, then
-        // we try to remove all of those tiles that aren't
-        // visible.
-        if self.grid.len() > TEXTURES_CACHE_CAPACITY {
+        if self.grid.len() >= capacity {
+            self.gc();
             self.gc_non_visible(tile_viewbox);
         }
 
