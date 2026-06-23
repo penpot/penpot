@@ -108,16 +108,18 @@
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
-  (try
-    (let [profile (-> (get-profile pool profile-id)
-                      (strip-private-attrs)
-                      (update :props filter-props))]
-      (with-nitrate-licence profile cfg))
+  (if (nil? profile-id)
+    {:id uuid/zero :fullname "Anonymous User"}
+    (try
+      (let [profile (-> (get-profile pool profile-id)
+                        (strip-private-attrs)
+                        (update :props filter-props))]
+        (with-nitrate-licence profile cfg))
 
-    (catch Throwable cause
-      (if (= :not-found (-> cause ex-data :type))
-        {:id uuid/zero :fullname "Anonymous User"}
-        (throw cause)))))
+      (catch Throwable cause
+        (if (= :not-found (-> cause ex-data :type))
+          {:id uuid/zero :fullname "Anonymous User"}
+          (throw cause))))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
