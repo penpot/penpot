@@ -5601,15 +5601,53 @@ msgstr "Stop measurement"
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Shortcuts page"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
+#: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.edit"
 msgstr "Edit shortcut"
 
+#: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.reset"
 msgstr "Reset to default"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "There are no personalized shortcuts."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalized"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.not-assigned"
+msgstr "Not assigned"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.conflict"
+msgstr "Conflict"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Import/Export"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Press the key combination"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combination assigned to \"%s\". Saving will remove it there."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "Combination assigned to \"%s\" applied successfully"
 
 msgid "shortcuts.reset-all"
 msgstr "Reset all shortcuts"
@@ -5620,14 +5658,11 @@ msgstr "Edit shortcut"
 msgid "shortcuts.edit-modal.current"
 msgstr "Current shortcut"
 
-msgid "shortcuts.edit-modal.press-keys"
-msgstr "Press the desired key combination"
 
 msgid "shortcuts.edit-modal.recording"
 msgstr "Recording..."
 
-msgid "shortcuts.edit-modal.conflict"
-msgstr "This shortcut is already assigned to \"%s\". The old shortcut will be unbound."
+
 
 msgid "shortcuts.edit-modal.save"
 msgstr "Save"

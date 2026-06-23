@@ -95,11 +95,7 @@
 
 (defn- find-conflict
   [new-command all-shortcuts current-key]
-  (let [command-index (ds/build-command-index all-shortcuts)
-        _ (.log js/console "all-shortcuts" (clj->js all-shortcuts))
-        _ (.log js/console "command-index" (clj->js command-index))
-        _ (prn "new-command" new-command)
-        _ (prn "current-key" current-key)]
+  (let [command-index (ds/build-command-index all-shortcuts)]
     (when-let [conflicting-key (get command-index new-command)]
       (when (not= conflicting-key current-key)
         {:key  conflicting-key
@@ -233,60 +229,72 @@
         [command  comand-info] sc-by-translate
         content                (or (:show-command comand-info) (:command comand-info))
         customized?            (contains? custom-shortcuts command)
-        editing?               (mf/use-state false)
+        is-editing*            (mf/use-state false)
+        is-editing             (deref is-editing*)
+
         recording-ref          (mf/use-ref nil)
+
         display-parts*         (mf/use-state nil)
+        display-parts          (deref display-parts*)
 
         recorded-command*      (mf/use-state nil)
+        recorded-command       (deref recorded-command*)
+
         conflict*              (mf/use-state nil)
+        conflict               (deref conflict*)
+
+        clean-editing-state
+        (fn []
+          (reset! is-editing* false)
+          (reset! display-parts* nil)
+          (reset! recorded-command* nil)
+          (reset! conflict* nil))
 
         on-reset-shortcut
-        (mf/use-callback
+        (mf/use-fn
          (fn [shortcut-key]
            (st/emit! (customize/reset-custom-shortcut shortcut-key))
-           (reset! editing? false)
-           (reset! display-parts* nil)
-           (reset! recorded-command* nil)
-           (reset! conflict* nil)))
+           (clean-editing-state)))
 
         start-editing
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
-           (reset! editing? true)
+           (reset! is-editing* true)
            (reset! display-parts* nil)
            (reset! recorded-command* nil)
            (reset! conflict* nil)))
 
         stop-editing
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (reset! editing? false)
-           (reset! display-parts* nil)
-           (reset! recorded-command* nil)
-           (reset! conflict* nil)))
+           (clean-editing-state)))
 
         save-fn
-        (mf/use-callback
-         (mf/deps @recorded-command* @conflict* command)
+        (mf/use-fn
+         (mf/deps recorded-command conflict command)
          (fn [event]
            (dom/prevent-default event)
-           (when @recorded-command*
+           (when recorded-command
              (st/emit! (customize/set-custom-shortcut
                         command
-                        @recorded-command*
-                        (:key @conflict*))))
-           (reset! editing? false)
-           (reset! display-parts* nil)
-           (reset! recorded-command* nil)
-           (reset! conflict* nil)))]
+                        recorded-command
+                        (:key conflict))))
+           (clean-editing-state)))
 
-    (mf/with-effect [@editing?]
-      (when @editing?
+        on-editable-container-blur
+        (mf/use-fn
+         (fn [e]
+         (when-not (.contains (.-currentTarget e)
+                              (.-relatedTarget e))
+           (clean-editing-state))))]
+
+    (mf/with-effect [is-editing]
+      (when is-editing
         (some-> (mf/ref-val recording-ref) (dom/focus!))))
 
-    (mf/with-effect [@editing?]
-      (when @editing?
+    (mf/with-effect [is-editing]
+      (when is-editing
         (letfn [(on-keydown [^js event]
                   (.preventDefault event)
                   (.stopPropagation event)
@@ -298,43 +306,46 @@
                       (reset! conflict* (find-conflict recorded-command all-sc-raw command)))))]
           (->> (events/listen (mf/ref-val recording-ref) "keydown" on-keydown)
                (partial events/unlistenByKey)))))
+    
 
     [:li {:class (stl/css-case :shortcuts-name-editable true
-                               :shortcuts-editing @editing?
+                               :shortcuts-editing is-editing
                                :customized customized?)
           :key command-translate}
      [:button {:on-click start-editing
-               :disabled @editing?
+               :disabled is-editing
                :class (stl/css-case :shortcut-button-editable true
-                                    :shortcut-button-editing @editing?)}
+                                    :shortcut-button-editing is-editing)}
       [:span {:class (stl/css :command-name)}
        command-translate]
       [:div {:class (stl/css :shortcut-actions)}
        [:> shortcuts-keys* {:content content
                             :command command
                             :is-customized customized?}]]]
-     (when @editing?
-       [:div {:class (stl/css :shortcut-editing)}
-        [:div {:class (stl/css :shortcut-recording-area)
-               :ref recording-ref
-               :tab-index 0}
-         (if (nil? @display-parts*)
-           [:spann {:class (stl/css :shortcut-placeholder)} "Press the key combination"]
+     (when is-editing
+       [:div {:class (stl/css :shortcut-editing)
+              :ref recording-ref
+              :tab-index 0
+              :on-blur on-editable-container-blur}
+        [:div {:class (stl/css :shortcut-recording-area)}
+         (if (nil? display-parts)
+           [:spann {:class (stl/css :shortcut-placeholder)}
+            (tr "shortcuts.key-combo")]
            [:span {:class (stl/css :shortcut-recorded-keys)}
-            (for [mod (:modifiers @display-parts*)]
+            (for [mod (:modifiers display-parts)]
               [:span {:class (stl/css-case :key true
                                            :customized-key customized?) :key mod} mod])
-            (when (:final-key @display-parts*)
+            (when (:final-key display-parts)
               [:span {:class (stl/css-case :key true
-                                           :customized-key customized?)} (:final-key @display-parts*)])
-            (when-not (:finalized? @display-parts*)
+                                           :customized-key customized?)} (:final-key display-parts)])
+            (when-not (:finalized? display-parts)
               [:span {:class (stl/css :recording-ellipsis)} "..."])])]
-        (when @recorded-command*
-          (if @conflict*
+        (when recorded-command
+          (if conflict
             [:> context-notification* {:level :warning :class (stl/css :modal-error-msg)}
-             (dm/str "Conflict with " (:name @conflict*) " shortcut")]
+             (tr "shortcuts.edit-modal.conflict" (:name conflict))]
             [:> context-notification* {:level :success :class (stl/css :modal-success-msg)}
-             "Combination successfully."]))
+             (tr "shortcuts.edit-modal.success" command-translate)]))
         [:div {:class (stl/css :edit-buttons)}
          [:div {:class (stl/css :confirmation-buttons)}
           [:> icon-button* {:variant "secondary"
@@ -388,8 +399,6 @@
              [:> shortcuts-keys* {:content content
                                   :command command
                                   :is-customized customized?}]]])))]))
-
-
 
 (mf/defc section-title*
   [{:keys [name is-visible is-sub on-click]}]

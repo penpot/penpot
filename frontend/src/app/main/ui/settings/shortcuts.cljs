@@ -44,7 +44,7 @@
        :on-click on-restore-all
        :class (stl/css :restore-all-button)
        :icon i/at}
-      "Restore all"])])
+      (tr "dashboard.restore-all-deleted-button")])])
 
 (mf/defc restore-all-modal
   {::mf/register modal/components
@@ -170,7 +170,6 @@
                      :variant "primary"
                      :on-click handle-accept-dialog}
          "restore all"]]]]]))
-
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -318,7 +317,7 @@
                                   :show-restore-all? true
                                   :on-restore-all on-restore-all}]
       [:div {:class (stl/css :shortcuts-section)}
-       [:p "There are no personalized shortcuts."]])))
+       [:p (tr "shortcuts.no-personalized")]])))
 
 (mf/defc not-assigned-shortcuts-section*
   [{:keys [profile all-shortcuts all-sc-raw on-restore-all]}]
@@ -341,12 +340,12 @@
 
         tabs
         (mf/with-memo []
-          [{:label "All"
+          [{:label (tr "labels.all")
             :id "all"}
-           {:label "Personalized"
+           {:label (tr "shortcuts.personalized")
             :data-testid "personalized"
             :id "personalized"}
-           {:label "Not assigned"
+           {:label (tr "shortcuts.not-assigned")
             :data-testid "not-assigned"
             :id "not-assigned"}])
 
@@ -355,6 +354,7 @@
          (mf/deps)
          (fn [new-section]
            (reset! section* (keyword new-section))))
+
         custom-shortcuts           (get-in profile [:props :custom-shortcuts])
 
         workspace-shortcuts-custom (ds/apply-custom-overrides workspace-shortcuts-raw custom-shortcuts)
@@ -374,12 +374,11 @@
         viewer-shortcuts             (->> viewer-shortcuts-custom
                                           (ss/add-translation :sc)
                                           (into {}))
-        
+
         all-shortcuts-raw (merge workspace-shortcuts-custom dashboard-shortcuts-custom viewer-shortcuts-custom)
 
         {:keys [all-shortcuts all-sc-names all-sub-names all-section-names]}
         (ss/build-all-shortcuts workspace-shortcuts dashboard-shortcuts viewer-shortcuts)
-        _ (.log js/console "all-shortcuts" (clj->js all-shortcuts))
 
         all-item-names (concat all-sc-names all-sub-names all-section-names)
 
@@ -394,7 +393,7 @@
                                   :custom-shortcuts custom-shortcuts}))))]
 
     [:section {:class (stl/css :shortcuts-page)
-               :aria-label "Shortcuts page"}
+               :aria-label (tr "shortcuts.page")}
      [:div {:class (stl/css :shortcuts-content)}
       [:> heading* {:level 1
                     :typography t/title-large
@@ -437,20 +436,23 @@
          [:div {:class (stl/css :shortcuts-info-wrapper)}
           [:div {:class (stl/css :dot-wrapper)}
            [:div {:class (stl/css :shortcuts-customized-dot)}]]
-          [:p {:class (stl/css :shortcuts-text)} "Personalized"]]
-         
+          [:p {:class (stl/css :shortcuts-text)}
+           (tr "shortcuts.personalized")]]
+
          [:div {:class (stl/css :shortcuts-info-wrapper)}
           [:div {:class (stl/css :dot-wrapper)}
            [:div {:class (stl/css :shortcuts-conflict-dot)}]]
-          [:p {:class (stl/css :shortcuts-text)} "Conflict"]]
-         
+          [:p {:class (stl/css :shortcuts-text)}
+           (tr "shortcuts.conflict")]]
+
          [:div {:class (stl/css :shortcuts-info-wrapper)}
           [:> icon* {:class (stl/css :shortcuts-not-assigned-icon)
                      :icon-id i/detach}]
-          [:p {:class (stl/css :shortcuts-text)} "Not assigned"]]]
+          [:p {:class (stl/css :shortcuts-text)}
+           (tr "shortcuts.not-assigned")]]]
 
         [:> button* {:variant "secondary"
                      :on-click #()
                      :icon i/import-export
                      :icon-size "m"}
-         "Export/Import"]]]]]))
+         (tr "shortcuts.import-export")]]]]]))

@@ -5454,9 +5454,45 @@ msgstr "Terminar medida"
 msgid "shortcuts.thumbnail-set"
 msgstr "Activar miniaturas"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Página de atajos"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Atajos de teclado"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "No hay atajos personalizados"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalizados"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.not-assigned"
+msgstr "Sin asignar"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.conflict"
+msgstr "Con conflicto"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Importar/Exportar"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Pulsa la combinación de teclas deseada"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combinación usada en \"%s\". Guardar este atajo hará que se elimine allí."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "La combinación asignada a \"%s\" ha sido aplicada satisfactoriamente"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
 msgid "shortcuts.toggle-alignment"

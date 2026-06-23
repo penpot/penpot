@@ -100,7 +100,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
-  border: $b-1 solid var(--color-accent-primary);
+
+  &:focus-within {
+    border: $b-1 solid var(--color-accent-primary);
+  }
 }
 
 .shortcut-button-editable {
@@ -121,6 +124,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
+  outline: none;
 }
 
 .shortcut-recording-area {
