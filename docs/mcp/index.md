@@ -147,6 +147,27 @@ If you just want to try Penpot AI workflows quickly through the MCP, follow this
 
 Once all five steps are done, your AI client should list Penpot tools.
 
+### Keep the Penpot tab active
+
+The MCP plugin runs inside your Penpot browser tab. If the browser puts that tab to sleep, freezes it, or unloads it to save memory, the MCP server cannot run tasks in Penpot until the tab wakes up again.
+
+When this happens, MCP fails fast instead of waiting for a long task timeout:
+
+* In Chrome and Chromium-based browsers, the plugin can report when the tab is being frozen.
+* In Firefox, Safari, and other browsers that do not expose the same freeze event, MCP uses plugin heartbeats. If the browser stops running the plugin JavaScript, the heartbeat becomes stale and the MCP server reports that the Penpot tab appears to be suspended.
+* If the browser unloads the tab completely, the plugin disconnects and MCP reports that no Penpot plugin instance is connected.
+
+To recover, open or focus the Penpot tab again, wait until MCP reconnects, and retry the prompt.
+
+To reduce the chances of the browser putting Penpot to sleep during long MCP sessions:
+
+| Browser | Recommended setting |
+| --- | --- |
+| Chrome | Go to **Settings → Performance → Always keep these sites active** and add your Penpot site. Pinning the Penpot tab also helps prevent Chrome tab deactivation. |
+| Edge | Go to **Settings → System and performance** and add your Penpot site to the list of sites that should never be put to sleep, if that option is available in your Edge version. |
+| Firefox | Firefox does not provide the same per-site keep-awake control. If tab unloading is a problem, advanced users can disable tab unloading with `browser.tabs.unloadOnLowMemory=false` in `about:config`, but this can increase memory use. |
+| Safari | Safari does not provide a comparable per-site keep-awake setting. Keep the Penpot tab open and active during long MCP sessions. |
+
 ### First prompts to try
 
 After connecting, start with **read-only prompts** to confirm everything works and to understand what the agent can see:
