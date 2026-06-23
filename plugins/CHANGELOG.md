@@ -15,10 +15,13 @@
 - **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
+- **plugin-types**: Rename `LibraryTypography.fontFamilies` to `fontFamily` to match the runtime (it holds a single font family, not an array)
 - **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
 - **plugin-types:** `TokenCatalog.addSet` now accepts an optional `active` flag to create an already-active set (sets are inactive by default)
 - **plugin-runtime:** A `fontFamilies` token's `resolvedValue` now returns the documented `string[]` (the resolved family list) instead of leaking the raw tokenscript list symbol
 - **plugin-runtime:** Setting a `LibraryColor`'s `gradient` or `image` now clears the other color representations (solid/gradient/image are mutually exclusive), so the result is a valid color instead of being rejected with "expected valid color"
+- **plugin-types:** Mark members that have no runtime setter as `readonly`, fixing a mismatch where they were typed as writable: font metadata (`Font.*`, `FontVariant.*`, `FontsContext.all`), the `Ellipse`/`Image`/`SvgRaw` `type` discriminants (now consistent with the other shapes), `File.name`/`pages`/`revn`, `Page.root`, `TokenTheme.activeSets`, `Variants.properties`, `ImageData.*`, the board guide value objects (`GuideColumn`/`GuideRow`/`GuideSquare` and their params — `board.guides` returns a formatted snapshot, so reconfiguring means reassigning the whole array), the `Point` and `Bounds` value objects, the `Penpot.ui`/`Penpot.utils` subcontexts, the derived `Boolean` path data (`d`/`content`/`commands` are computed from the operands; `Boolean` is not editable like a `Path`), and the `EventsMap` event entries (a type-only event→callback map, never assigned). Members that do expose a setter stay writable: `Board.children`, `Path.d`/`content`/`commands` and `FileVersion.label`.
+- **plugin-types:** Deprecate the legacy `Image` shape interface — image shapes exist only for backward compatibility with old files; new images are embedded in a `Fill` via its `fillImage` (an `ImageData`).
 
 ## 1.4.2 (2026-01-21)
 
