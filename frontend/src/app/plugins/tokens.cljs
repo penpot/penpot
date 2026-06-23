@@ -96,14 +96,37 @@
                                :expand-with-children false})
            (se/add-event plugin-id))))))
 
+(defn- typography-resolved-value->js
+  "Converts a resolved typography composite (a Clojure map keyed by the
+   tokenscript field names) into the plugin's `TokenTypographyValue[]` shape: a
+   JS array with a single object using the public camelCase member names."
+  [m]
+  (when (map? m)
+    #js [#js {"fontFamilies"   (clj->js (:font-family m))
+              "fontSizes"      (:font-size m)
+              "fontWeights"    (some-> (:font-weight m) str)
+              "letterSpacing"  (:letter-spacing m)
+              "lineHeight"     (:line-height m)
+              "textCase"       (:text-case m)
+              "textDecoration" (:text-decoration m)}]))
+
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
         resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
-    (if (= :font-family (:type token))
+    (cond
+      (= :font-family (:type token))
       ;; A fontFamilies token resolves to a list of families, not a scalar
       ;; tokenscript unit, so the unit conversion does not apply.
       resolved-value
+
+      (= :typography (:type token))
+      ;; A typography token resolves to a composite; expose it as the documented
+      ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
+      (typography-resolved-value->js
+       (ts/tokenscript-symbols->penpot-unit resolved-value))
+
+      :else
       (ts/tokenscript-symbols->penpot-unit resolved-value))))
 
 (defn token-proxy? [p]

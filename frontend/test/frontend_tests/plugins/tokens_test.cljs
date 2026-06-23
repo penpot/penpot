@@ -290,3 +290,24 @@
         (t/is (= set-id (:set-id @captured)))
         (t/is (= token-id (:token-id @captured)))
         (t/is (= ["Inter" "Arial"] (get-in @captured [:attrs :value])))))))
+
+(t/deftest typography-token-resolved-value-is-plugin-array-shape
+  (let [token (ctob/make-token
+               {:name "type.body"
+                :type :typography
+                :value {:font-family ["Inter" "Arial"]
+                        :font-size "16px"
+                        :font-weight "600"
+                        :line-height "20px"
+                        :letter-spacing "1"
+                        :text-case "uppercase"
+                        :text-decoration "underline"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (array? result))
+    (t/is (= ["Inter" "Arial"] (vec (aget entry "fontFamilies"))))
+    (t/is (= 16 (aget entry "fontSizes")))
+    (t/is (= "600" (aget entry "fontWeights")))
+    (t/is (= 20 (aget entry "lineHeight")))
+    (t/is (= "uppercase" (aget entry "textCase")))
+    (t/is (= "underline" (aget entry "textDecoration")))))
