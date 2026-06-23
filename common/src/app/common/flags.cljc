@@ -203,7 +203,8 @@
    :enable-render-switch
    :enable-render-wasm-info
    :enable-available-viewer-wasm
-   :enable-background-blur])
+   :enable-background-blur
+   :enable-token-combobox])
 
 (defn parse
   [& flags]
