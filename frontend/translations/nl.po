@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-23 10:01+0000\n"
+"PO-Revision-Date: 2026-06-24 11:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
@@ -8853,3 +8853,41 @@ msgstr "Dit team behoort nu tot %s"
 #, unused
 msgid "dashboard.team-no-longer-belong-org"
 msgstr "Dit team behoort niet meer tot de organisatie %s"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Teamorganisatie"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Toevoegen aan een organisatie"
+
+#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr ""
+"Je hebt geen toestemming om dit team aan een van je organisaties toe te "
+"voegen."
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Teamorganisatie wijzigen"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Alleen mensen binnen je organisatie kunnen worden uitgenodigd."
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Dit team maakt geen deel uit van een organisatie"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Team uit organisatie verwijderen"
+
+#, unused
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Je bent geen lid meer van de organisatie %s"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
