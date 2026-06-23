@@ -30,16 +30,6 @@ impl Tile {
             tile_size,
         )
     }
-
-    #[inline(always)]
-    pub fn get_rect_with_offset(&self, offset: &skia::Point) -> skia::Rect {
-        skia::Rect::from_xywh(
-            self.0 as f32 * TILE_SIZE - offset.x,
-            self.1 as f32 * TILE_SIZE - offset.y,
-            TILE_SIZE,
-            TILE_SIZE,
-        )
-    }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]

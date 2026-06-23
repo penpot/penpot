@@ -24,7 +24,7 @@ pub fn uuid_from_u32(id: [u32; 4]) -> Uuid {
     uuid_from_u32_quartet(id[0], id[1], id[2], id[3])
 }
 
-pub fn get_image(image_id: &Uuid) -> Option<&Image> {
+pub fn get_image(image_id: &Uuid) -> Option<Image> {
     get_render_state().images.get(image_id)
 }
 

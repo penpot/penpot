@@ -27,13 +27,18 @@ fn draw_image_fill(
 
     let mut image_paint = skia::Paint::default();
     image_paint.set_anti_alias(antialias);
-    if let Some(filter) = shape.image_filter(1.) {
+    let filter = shape.image_filter(1.);
+    if let Some(ref filter) = filter {
         image_paint.set_image_filter(filter.clone());
     }
 
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
-    // Save the current canvas state
-    canvas.save_layer(&layer_rec);
+    let has_image_filter = filter.is_some();
+    if has_image_filter {
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
+        canvas.save_layer(&layer_rec);
+    } else {
+        canvas.save();
+    }
 
     // Set the clipping rectangle to the container bounds
     match &shape.shape_type {
@@ -87,7 +92,6 @@ fn draw_image_fill(
         paint,
     );
 
-    // Restore the canvas to remove the clipping
     canvas.restore();
 }
 

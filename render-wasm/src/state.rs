@@ -65,9 +65,9 @@ impl State {
         Ok(())
     }
 
-    pub fn render_from_cache(&mut self) {
-        get_render_state().render_from_cache(&self.shapes);
-    }
+    // pub fn render_from_cache(&mut self) {
+    //     get_render_state().render_from_cache(&self.shapes);
+    // }
 
     pub fn render_ui_only(&mut self) {
         get_render_state().render_ui_only(&self.shapes);
@@ -102,16 +102,18 @@ impl State {
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
         let render_state = get_render_state();
-        // If zoom changed (e.g. interrupted zoom render followed by pan), the
-        // tile index may be stale for the new viewport position. Rebuild the
-        // index so shapes are mapped to the correct tiles. We use
-        // rebuild_tile_index (NOT rebuild_tiles_shallow) to preserve the tile
-        // texture cache — otherwise cached tiles with shadows/blur would be
-        // cleared and re-rendered in fast mode without effects.
+
+        render_state.tile_viewbox.update(&render_state.viewbox);
+        render_state.rebuild_tile_index(&self.shapes);
         if render_state.zoom_changed() {
-            render_state.rebuild_tile_index(&self.shapes);
+            render_state.surfaces.invalidate_tile_cache();
         }
-        render_state.start_render_loop(None, &self.shapes, timestamp, false)
+        render_state.start_render_loop(
+            None,
+            &self.shapes,
+            timestamp,
+            false
+        )
     }
 
     pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {

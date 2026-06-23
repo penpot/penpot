@@ -26,6 +26,7 @@ pub struct FontStore {
     debug_font: Font,
     ui_font: Font,
     fallback_fonts: HashSet<String>,
+    registered_families: HashSet<String>,
 }
 
 impl FontStore {
@@ -55,6 +56,7 @@ impl FontStore {
             debug_font,
             ui_font,
             fallback_fonts: HashSet::new(),
+            registered_families: HashSet::new(),
         })
     }
 
@@ -105,7 +107,7 @@ impl FontStore {
         };
 
         self.font_provider.register_typeface(typeface, font_name);
-        self.font_collection.clear_caches();
+        self.registered_families.insert(font_name.to_string());
 
         if is_fallback {
             self.fallback_fonts.insert(alias);
@@ -121,11 +123,15 @@ impl FontStore {
         } else {
             alias.as_str()
         };
-        self.font_provider.family_names().any(|x| x == font_name)
+        self.registered_families.contains(font_name)
     }
 
     pub fn get_fallback(&self) -> &HashSet<String> {
         &self.fallback_fonts
+    }
+
+    pub fn flush_caches(&mut self) {
+        self.font_collection.clear_caches();
     }
 
     pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {

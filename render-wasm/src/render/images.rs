@@ -6,6 +6,7 @@ use crate::error::Result;
 use crate::get_gpu_state;
 use skia_safe::gpu::{surfaces, Budgeted, DirectContext};
 use skia_safe::{self as skia, Codec, ISize};
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 pub type Image = skia::Image;
@@ -60,8 +61,8 @@ enum StoredImage {
 }
 
 pub struct ImageStore {
-    images: HashMap<(Uuid, bool), StoredImage>,
-    context: Box<DirectContext>,
+    images: RefCell<HashMap<(Uuid, bool), StoredImage>>,
+    context: RefCell<Box<DirectContext>>,
 }
 
 /// Creates a Skia image from an existing WebGL texture.
@@ -148,8 +149,8 @@ impl ImageStore {
         let gpu_state = get_gpu_state();
         let context = &gpu_state.context;
         Self {
-            images: HashMap::with_capacity(2048),
-            context: Box::new(context.clone()),
+            images: RefCell::new(HashMap::new()),
+            context: RefCell::new(Box::new(context.clone())),
         }
     }
 
@@ -161,16 +162,18 @@ impl ImageStore {
     ) -> crate::error::Result<()> {
         let key = (id, is_thumbnail);
 
-        if self.images.contains_key(&key) {
+        if self.images.borrow().contains_key(&key) {
             return Ok(());
         }
 
-        let raw_data = image_data.to_vec();
-
-        if let Some(gpu_image) = decode_image(&mut self.context, &raw_data) {
-            self.images.insert(key, StoredImage::Gpu(gpu_image));
+        if let Some(gpu_image) = decode_image(&mut self.context.borrow_mut(), image_data) {
+            self.images
+                .borrow_mut()
+                .insert(key, StoredImage::Gpu(gpu_image));
         } else {
-            self.images.insert(key, StoredImage::Raw(raw_data));
+            self.images
+                .borrow_mut()
+                .insert(key, StoredImage::Raw(image_data.to_vec()));
         }
         Ok(())
     }
@@ -188,51 +191,49 @@ impl ImageStore {
     ) -> Result<()> {
         let key = (id, is_thumbnail);
 
-        if self.images.contains_key(&key) {
+        if self.images.borrow().contains_key(&key) {
             return Ok(());
         }
 
         // Create a Skia image from the existing GL texture
-        let image = create_image_from_gl_texture(&mut self.context, texture_id, width, height)?;
-        self.images.insert(key, StoredImage::Gpu(image));
+        let image = create_image_from_gl_texture(
+            &mut self.context.borrow_mut(),
+            texture_id,
+            width,
+            height,
+        )?;
+        self.images
+            .borrow_mut()
+            .insert(key, StoredImage::Gpu(image));
 
         Ok(())
     }
 
     pub fn contains(&self, id: &Uuid, is_thumbnail: bool) -> bool {
-        self.images.contains_key(&(*id, is_thumbnail))
+        self.images.borrow().contains_key(&(*id, is_thumbnail))
     }
 
-    pub fn get(&mut self, id: &Uuid) -> Option<&Image> {
-        // Try to get full image first, fallback to thumbnail
-        let has_full = self.images.contains_key(&(*id, false));
-        if has_full {
-            self.get_internal(id, false)
-        } else {
-            self.get_internal(id, true)
-        }
+    pub fn get(&mut self, id: &Uuid) -> Option<Image> {
+        self.get_internal(id, false)
+            .or_else(|| self.get_internal(id, true))
     }
 
     pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
-        let gpu_image = self.get(id)?.clone();
-        gpu_image.make_non_texture_image(self.context.as_mut())
+        let gpu_image = self.get(id)?;
+        gpu_image.make_non_texture_image(self.context.borrow_mut().as_mut())
     }
 
-    fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {
+    fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<Image> {
         let key = (*id, is_thumbnail);
-        // Use entry API to mutate the HashMap in-place if needed
-        if let Some(entry) = self.images.get_mut(&key) {
+        let mut images = self.images.borrow_mut();
+        if let Some(entry) = images.get_mut(&key) {
             match entry {
-                StoredImage::Gpu(ref img) => Some(img),
+                StoredImage::Gpu(ref img) => Some(img.clone()),
                 StoredImage::Raw(raw_data) => {
-                    let gpu_image = decode_image(&mut self.context, raw_data)?;
+                    let gpu_image = decode_image(&mut self.context.borrow_mut(), raw_data)?;
+                    let clone = gpu_image.clone();
                     *entry = StoredImage::Gpu(gpu_image);
-
-                    if let StoredImage::Gpu(ref img) = entry {
-                        Some(img)
-                    } else {
-                        None
-                    }
+                    Some(clone)
                 }
             }
         } else {

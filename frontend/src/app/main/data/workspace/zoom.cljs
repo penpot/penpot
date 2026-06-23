@@ -199,7 +199,6 @@
         (when (and (not (dwvw/render-context-lost? state))
                    (not (get-in state [:workspace-local :zooming])))
           (rx/concat
-           (rx/of (fn [s] (dwvw/maybe-view-interaction-start! s) s))
            (rx/of #(-> % (assoc-in [:workspace-local :zooming] true)))
            (->> stream
                 (rx/filter mse/pointer-event?)
@@ -215,7 +214,4 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :workspace-local dissoc :zooming)))
-    ptk/EffectEvent
-    (effect [_ state _]
-      (dwvw/maybe-view-interaction-end! state))))
+          (update :workspace-local dissoc :zooming)))))

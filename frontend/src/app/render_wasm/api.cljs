@@ -362,7 +362,7 @@
   ([]
    (internal-render 0))
   ([timestamp]
-   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render2" timestamp wasm/internal-frame-type))
    (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
      (request-render "frame-type-partial"))))
 
@@ -1297,13 +1297,13 @@
       (= result 1))
     false))
 
-(defn view-interaction-start!
+#_(defn view-interaction-start!
   []
   (when-not @view-interaction-active?
     (h/call wasm/internal-module "_set_view_start")
     (reset! view-interaction-active? true)))
 
-(defn view-interaction-end!
+#_(defn view-interaction-end!
   []
   (when @view-interaction-active?
     (perf/begin-measure "render-finish")
@@ -1311,33 +1311,35 @@
     (perf/end-measure "render-finish")
     (reset! view-interaction-active? false)))
 
-(def render-finish
-  (letfn [(do-render []
-            ;; Check if context is still initialized before executing
-            ;; to prevent errors when navigating quickly
-            (when (initialized?)
-              (view-interaction-end!)
-              ;; Use async _render: visible tiles render synchronously
-              ;; (no yield), interest-area tiles render progressively
-              ;; via rAF.  _set_view_end already rebuilt the tile
-              ;; index.  For pan, most tiles are cached so the render
-              ;; completes in the first frame.  For zoom, interest-
-              ;; area tiles (~3 tile margin) don't block the main
-              ;; thread.
-              (internal-render)))]
-    (fns/debounce do-render DEBOUNCE_DELAY_MS)))
+#_(def render-finish
+    (letfn [(do-render []
+              ;; Check if context is still initialized before executing
+              ;; to prevent errors when navigating quickly
+              (when (initialized?)
+                #_(view-interaction-end!)
+                ;; Use async _render: visible tiles render synchronously
+                ;; (no yield), interest-area tiles render progressively
+                ;; via rAF.  _set_view_end already rebuilt the tile
+                ;; index.  For pan, most tiles are cached so the render
+                ;; completes in the first frame.  For zoom, interest-
+                ;; area tiles (~3 tile margin) don't block the main
+                ;; thread.
+                (internal-render)))]
+      (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
   [zoom vbox]
   (perf/begin-measure "set-view-box")
-  (view-interaction-start!)
+  #_(view-interaction-start!)
   (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (perf/end-measure "set-view-box")
 
-  (perf/begin-measure "render-from-cache")
-  (h/call wasm/internal-module "_render_from_cache" 0)
-  (render-finish)
-  (perf/end-measure "render-from-cache"))
+  #_(perf/begin-measure "render-from-cache")
+  #_(h/call wasm/internal-module "_render_from_cache" 0)
+  #_(render-finish)
+  #_(view-interaction-end!)
+  (internal-render)
+  #_(perf/end-measure "render-from-cache"))
 
 (defn sync-workspace-local-viewport!
   "Pushes `[:workspace-local :zoom]` and `:vbox` into WASM."
