@@ -444,7 +444,7 @@
    ::doc/added "2.17"
    ::sm/params schema:add-team-to-organization
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id  team-id organization-id]}]
+  [cfg {:keys [::rpc/profile-id team-id organization-id]}]
 
   (assert-is-owner cfg profile-id team-id)
   (assert-not-default-team cfg team-id)
@@ -621,13 +621,17 @@
 
 
 (def ^:private schema:check-nitrate-sso
-  [:map {:title "AuthSsoParams"}
-   [:team-id ::sm/uuid]
-   [:url ::sm/uri]])
+  [:and
+   [:map {:title "AuthSsoParams"}
+    [:team-id {:optional true} ::sm/uuid]
+    [:organization-id {:optional true} ::sm/uuid]
+    [:url ::sm/uri]]
+   [::sm/contains-any #{:team-id :organization-id}]])
 
 (sv/defmethod ::check-nitrate-sso
   "Check if a user needs to login into the organization SSO.
-  Returns {:authorized true} when SSO is not active for the team.
+  Accepts either team-id (to look up the org via the team) or organization-id directly.
+  Returns {:authorized true} when SSO is not active.
   Returns {:authorized false :redirect-uri <url>} when SSO is active;
   the client must redirect there. The OIDC provider itself handles
   re-authentication transparently if the user already has an active SSO session."
@@ -635,22 +639,21 @@
    ::doc/added "2.19"
    ::sm/params schema:check-nitrate-sso
    ::nitrate/sso false}
-  [cfg {:keys [team-id url] :as params}]
+  [cfg {:keys [team-id organization-id url] :as params}]
   (if (contains? cf/flags :nitrate)
-    (let [request                   (rph/get-request params)
-          {:keys [authorized sso]}  (nitrate/sso-session-authorized? cfg team-id request)]
+    (let [request                  (rph/get-request params)
+          {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
       (if authorized
         {:authorized true}
         (if-let [issuer (or (:issuer sso) (:base-url sso))]
-          (let [oidc-provider   (oidc/prepare-org-sso-provider cfg sso)
-                organization-id (:organization-id sso)
-                state-token     (tokens/generate cfg {:iss             "oidc"
-                                                      :dest-url        url
-                                                      :team-id         team-id
-                                                      :organization-id organization-id
-                                                      :issuer          issuer
-                                                      :exp             (ct/in-future "4h")})
-                redirect-uri        (oidc/build-auth-redirect-uri oidc-provider state-token)]
+          (let [oidc-provider    (oidc/prepare-org-sso-provider cfg sso)
+                org-id           (or organization-id (:organization-id sso))
+                state-token      (tokens/generate cfg {:iss             "oidc"
+                                                       :dest-url        url
+                                                       :organization-id org-id
+                                                       :issuer          issuer
+                                                       :exp             (ct/in-future "4h")})
+                redirect-uri     (oidc/build-auth-redirect-uri oidc-provider state-token)]
             {:authorized false
              :redirect-uri redirect-uri})
           {:authorized false

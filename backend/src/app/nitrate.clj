@@ -437,6 +437,18 @@
    [:issuer [:maybe :string]]
    [:scopes [:maybe [::sm/set ::sm/text]]]])
 
+(defn- get-org-sso-api
+  "Fetches the SSO configuration for an organization from Nitrate."
+  [cfg {:keys [organization-id] :as params}]
+  (let [baseuri (cf/get :nitrate-backend-uri)]
+    (request-to-nitrate cfg :get
+                        (str baseuri
+                             "/api/organizations/"
+                             organization-id
+                             "/sso")
+                        schema:nitrate-sso
+                        params)))
+
 (defn- get-org-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
   (let [baseuri (cf/get :nitrate-backend-uri)]
@@ -487,6 +499,7 @@
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
      :get-org-sso-by-team          (partial get-org-sso-by-team-api cfg)
+     :get-org-sso                  (partial get-org-sso-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
@@ -499,11 +512,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn sso-session-authorized?
-  "Fetches the org-SSO config for the given team and checks whether
-  the HTTP request has a valid session entry for it. Returns a map
+  "Fetches the org-SSO config for the given organization or team and checks
+  whether the HTTP request has a valid session entry for it. Returns a map
   with :authorized and :sso keys."
-  [cfg team-id request]
-  (let [session (session/get-session request) sso (call cfg :get-org-sso-by-team {:team-id team-id})]
+  [cfg organization-id team-id request]
+  (let [session (session/get-session request)
+        sso     (if organization-id
+                  (call cfg :get-org-sso {:organization-id organization-id})
+                  (call cfg :get-org-sso-by-team {:team-id team-id}))]
     (if-not (:active sso)
       {:authorized true :sso sso}
       (if (or (:issuer sso) (:base-url sso))
