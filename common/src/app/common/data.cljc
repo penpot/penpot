@@ -9,7 +9,7 @@
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid max min regexp? array?])
+                            parse-uuid max min regexp? array? empty?])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -175,11 +175,17 @@
        (.isArray (class o))
        false)))
 
+(defn empty?
+  [val]
+  (if (or (coll? val) (string? val))
+    (clojure.core/empty? val)
+    (nil? val)))
+
 (defn not-empty?
-  [coll]
-  (if (coll? coll)
-    (boolean (seq coll))
-    (not (nil? coll))))
+  [val]
+  (if (or (coll? val) (string? val))
+    (boolean (seq val))
+    (some? val)))
 
 (defn editable-collection?
   [m]
