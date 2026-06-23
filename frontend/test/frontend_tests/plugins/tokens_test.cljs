@@ -329,3 +329,12 @@
     (t/is (= 2 (aget entry "offsetY")))
     (t/is (= 3 (aget entry "blur")))
     (t/is (= 4 (aget entry "spread")))))
+
+(t/deftest font-family-token-resolved-value-is-string-array
+  (let [token (ctob/make-token
+               {:name "font.primary"
+                :type :font-family
+                :value ["Inter" "Arial"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (array? result))
+    (t/is (= ["Inter" "Arial"] (vec result)))))

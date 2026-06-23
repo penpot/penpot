@@ -138,15 +138,25 @@
   (when (some? entries)
     (into-array (map shadow-entry->js entries))))
 
+(defn- font-families-resolved-value->js
+  "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
+   documented `string[]` shape rather than leaking the raw tokenscript structure."
+  [resolved-value]
+  (let [v (ts/tokenscript-symbols->penpot-unit resolved-value)]
+    (cond
+      (nil? v) nil
+      (sequential? v) (clj->js v)
+      :else #js [v])))
+
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
         resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
     (cond
       (= :font-family (:type token))
-      ;; A fontFamilies token resolves to a list of families, not a scalar
-      ;; tokenscript unit, so the unit conversion does not apply.
-      resolved-value
+      ;; A fontFamilies token resolves to a list of families; expose it as the
+      ;; documented `string[]` rather than the raw tokenscript list symbol.
+      (font-families-resolved-value->js resolved-value)
 
       (= :typography (:type token))
       ;; A typography token resolves to a composite; expose it as the documented
