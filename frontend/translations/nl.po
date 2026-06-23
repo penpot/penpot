@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2026-06-23 10:01+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4300,7 +4300,7 @@ msgstr "Aftrekken (Booleaans verschil)"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:87
 msgid "shortcuts.bool-exclude"
-msgstr "Uitsluiten"
+msgstr "Uitsluiting"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:88
 msgid "shortcuts.bool-intersection"
@@ -7620,7 +7620,7 @@ msgstr "Gebruikersinterface tonen/verbergen"
 
 #: src/app/main/ui/workspace/context_menu.cljs:466, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
 msgid "workspace.shape.menu.intersection"
-msgstr "Kruispunt"
+msgstr "Doorsnede"
 
 #: src/app/main/ui/workspace/context_menu.cljs:500, src/app/main/ui/workspace/sidebar/layer_item.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:324
 msgid "workspace.shape.menu.lock"
@@ -8705,3 +8705,151 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Controleer je e-mail!"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Je maakt nu deel uit van %s"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "We hebben een verificatie-e-mail gestuurd naar:"
+
+#: src/app/main/data/nitrate.cljs:165
+msgid "dasboard.leave-org.toast"
+msgstr "Je maakt geen deel meer uit van de organisatie %s."
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "TEAM VERPLAATSEN"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "Verplaatsen naar:"
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "Kies een organisatie"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"Projecten en bestanden blijven beschikbaar voor teamleden. Het team krijgt "
+"de configuratie van de nieuwe organisatie."
+
+#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "De organisatie van het team wijzigen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Ga naar het Beheerderspaneel"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:59
+msgid "nitrate.form.enterprise-feature-2"
+msgstr ""
+"Gecentraliseerde controle over wie wat doet en waar, vanuit een speciaal "
+"beheerderspaneel"
+
+#: src/app/main/ui/dashboard/import.cljs:505
+msgid "dashboard.import.import-error.check-error"
+msgstr "We konden dit bestand niet verifiëren."
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Dit bestand lijkt beschadigd te zijn."
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Er ging iets mis bij de verwerking van dit bestand."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Je hebt geen toestemming om mensen uit te nodigen om zich bij dit team aan "
+"te sluiten of om uitnodigingen te bewerken of te verwijderen."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "Org verlaten"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "Mijn teams"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr ""
+"Je hebt geen toestemming om teams toe te voegen aan een van je organisaties."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Je mag geen teams aanmaken binnen organisatie %s. Neem voor meer informatie "
+"contact op met de eigenaar van de organisatie."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Je mag geen teams verwijderen die deel uitmaken van organisatie %s. Neem "
+"voor meer informatie contact op met de eigenaar van de organisatie."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Je mag geen teams verplaatsen die deel uitmaken van organisatie %s. Neem "
+"voor meer informatie contact op met de eigenaar van de organisatie."
+
+#: src/app/main/data/dashboard.cljs:753
+msgid "dashboard.org-deleted"
+msgstr "De organisatie %s is verwijderd."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Org aanmaken"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Organizaties"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "TOEVOEGEN AAN ORGANISATIE"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "Kies een organisatie:"
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"\"%s\" staat alleen organisatieleden toe om zich bij zijn teams aan te "
+"sluiten. Eventuele openstaande uitnodigingen aan mensen buiten de "
+"organisatie worden ingetrokken."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "Uitstaande uitnodigingen aan externe gebruikers worden geannuleerd."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "Hier vind je al je organisaties waar je teams mag maken of toevoegen."
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "Kies een organisatie"
+
+#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "Team toevoegen aan een organisatie"
+
+#, unused
+msgid "dashboard.team-belong-org"
+msgstr "Dit team behoort nu tot %s"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Dit team behoort niet meer tot de organisatie %s"
