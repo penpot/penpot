@@ -507,7 +507,7 @@
                   (not text-editing?)
                   (not edition))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
+          {:shapes selected-shapes
            :zoom zoom}])
 
        (when show-measures?

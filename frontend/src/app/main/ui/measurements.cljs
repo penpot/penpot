@@ -187,34 +187,116 @@
                      :stroke hover-color
                      :stroke-width selection-rect-width}}]]))
 
+(defn- get-edge-for-badge
+  "For each rotation range, select the 'most horizontal' edge at the bottom,
+   as seen from the user's perspective."
+  [rotation]
+  (let [rot (mod rotation 360)]
+    (cond
+      (or (< rot 45) (>= rot 315)) :bottom
+      (< rot 135)                  :right
+      (< rot 225)                  :top
+      :else                        :left)))
+
+(defn- get-edge-points
+  "Get the points that define the selected side of a rectangle"
+  [points edge]
+  (let [[p0 p1 p2 p3] points]
+    (case edge
+      :bottom [p2 p3]
+      :right  [p1 p2]
+      :top    [p0 p1]
+      :left   [p3 p0])))
+
 (mf/defc selection-size-badge*
-  [{:keys [selrect zoom]}]
-  (let [{:keys [x y width height]} selrect
-        size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
-        badge-height (/ selection-badge-height zoom)
-        padding-x    (/ selection-badge-padding-x zoom)
-        gap          (/ selection-badge-vertical-gap zoom)
-        radius       (/ selection-badge-border-radius zoom)
-        text-width   (* (count size-label) (/ selection-badge-char-width zoom))
-        badge-width  (+ text-width (* 2 padding-x))
-        center-x     (+ x (/ width 2))
-        badge-x      (- center-x (/ badge-width 2))
-        badge-y      (+ y height gap)
-        text-y       (+ badge-y (/ badge-height 2))]
-    [:g.selection-size-badge {:pointer-events "none"}
-     [:rect {:x badge-x
-             :y badge-y
-             :width badge-width
-             :height badge-height
-             :rx radius
-             :ry radius
-             :style {:fill selection-badge-bg-color}}]
-     [:text {:class (stl/css :badge-text)
-             :x center-x
-             :y text-y
-             :text-anchor "middle"
-             :dominant-baseline "middle"}
-      size-label]]))
+  [{:keys [zoom shapes]}]
+  (let [badge-height     (/ selection-badge-height zoom)
+        badge-padding-x  (/ selection-badge-padding-x zoom)
+        badge-gap        (/ selection-badge-vertical-gap zoom)
+        badge-radius     (/ selection-badge-border-radius zoom)
+        badge-char-width (/ selection-badge-char-width zoom)
+
+        single-shape  (and (= (count shapes) 1) (first shapes))
+        rotation      (when single-shape (dm/get-prop single-shape :rotation))
+        has-rotation? (and rotation (not (mth/almost-zero? rotation)))
+
+        ;; Always compute the selrect from :points via shapes->rect.
+        ;; This gives the correct bounding box for all shape types,
+        ;; including component instances and shapes with transforms.
+        selrect (gsh/shapes->rect shapes)
+
+        ;; For single shapes we show the original dimensions,
+        ;; for multiple shapes show the bounding box
+        shape-width  (if single-shape
+                       (dm/get-prop single-shape :width)
+                       (:width selrect))
+        shape-height (if single-shape
+                       (dm/get-prop single-shape :height)
+                       (:height selrect))
+
+        text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
+
+        text-width   (* (count text) badge-char-width)
+        badge-width  (+ text-width (* 2 badge-padding-x))]
+
+    (if has-rotation?
+      (let [edge    (get-edge-for-badge rotation)
+            points  (dm/get-prop single-shape :points)
+
+            [ep1 ep2]  (get-edge-points points edge)
+
+            mid-point  (gpt/lerp ep1 ep2 0.5)
+            normal     (gpt/normal-right (gpt/subtract ep2 ep1))
+
+            rot-offset (case edge
+                         :bottom 0
+                         :right  270
+                         :top    180
+                         :left   90)
+            badge-rot  (+ rotation rot-offset)
+            offset     (+ badge-gap (/ badge-height 2))
+
+            badge-x    (- (/ badge-width 2))
+            badge-y    (- (/ badge-height 2))
+            badge-cx   (+ (:x mid-point) (* (:x normal) offset))
+            badge-cy   (+ (:y mid-point) (* (:y normal) offset))]
+
+        [:g.selection-size-badge {:pointer-events "none"
+                                  :transform (dm/str "translate(" badge-cx "," badge-cy ") rotate(" badge-rot ")")}
+         [:rect {:x badge-x
+                 :y badge-y
+                 :width badge-width
+                 :height badge-height
+                 :rx badge-radius
+                 :ry badge-radius
+                 :style {:fill selection-badge-bg-color}}]
+         [:text {:class (stl/css :badge-text)
+                 :x 0
+                 :y 0
+                 :text-anchor "middle"
+                 :dominant-baseline "middle"}
+          text]])
+
+      (let [badge-x    (- (/ badge-width 2))
+            badge-y    (- (/ badge-height 2))
+            badge-cx   (+ (:x selrect) (/ (:width selrect) 2))
+            badge-cy   (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))]
+
+        [:g.selection-size-badge {:pointer-events "none"
+                                  :transform (dm/str "translate(" badge-cx "," badge-cy ")")}
+         [:rect {:x badge-x
+                 :y badge-y
+                 :width badge-width
+                 :height badge-height
+                 :rx badge-radius
+                 :ry badge-radius
+                 :style {:fill selection-badge-bg-color}}]
+         [:text {:class (stl/css :badge-text)
+                 :x 0
+                 :y 0
+                 :text-anchor "middle"
+                 :dominant-baseline "middle"}
+          text]]))))
 
 (mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
