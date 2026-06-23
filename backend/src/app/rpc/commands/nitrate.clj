@@ -622,7 +622,7 @@
 
 (def ^:private schema:check-nitrate-sso
   [:and
-   [:map {:title "AuthSsoParams"}
+   [:map {:title "CheckNitrateSsoParams"}
     [:team-id {:optional true} ::sm/uuid]
     [:organization-id {:optional true} ::sm/uuid]
     [:url ::sm/uri]]

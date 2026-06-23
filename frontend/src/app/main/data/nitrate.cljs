@@ -264,7 +264,7 @@
               (fn [{:keys [authorized redirect-uri]}]
                 (if authorized
                   (->> (rp/cmd! ::add-team-to-organization {:team-id team-id :organization-id organization-id})
-                       (rx/mapcat (fn [_] (rx/of (modal/hide)))))
+                       (rx/map (fn [_] (modal/hide))))
                   (if redirect-uri
                     (do
                       (ss/save-pending-action! pending-id {:type            :add-team-to-organization
