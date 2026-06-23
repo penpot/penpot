@@ -178,9 +178,11 @@
         (keep (fn [[k node]]
                 (let [children (:children node)]
                   (cond
-                    (and (map? children) (seq children))
-                    (when-let [filtered-children (seq (filter-shortcuts-tree children shortcut-filter search-term))]
-                      [k (assoc node :children filtered-children)])
+                    (map? children)
+                    (let [filtered-children
+                          (filter-shortcuts-tree children shortcut-filter search-term)]
+                      (when (seq filtered-children)
+                        [k (assoc node :children filtered-children)]))
 
                     (shortcut-filter k node search-term)
                     [k node]))))
@@ -188,11 +190,19 @@
 
 (defn- collect-open-section-ids
   [tree]
-  (->> tree
-       vals
-       (tree-seq :children #(vals (:children %)))
-       (keep :id)
-       set))
+  (letfn [(walk [nodes]
+            (mapcat
+             (fn [node]
+               (let [children (:children node)]
+                 (concat
+                  (when (:children node)
+                    [(:id node)])
+                  (when (map? children)
+                    (walk (vals children))))))
+             nodes))]
+    (->> (walk (vals tree))
+         (remove nil?)
+         set)))
 
 (mf/defc shortcuts-list*
   [{:keys [shortcuts all-shortcuts all-sc-raw open-sections filter-term custom-shortcuts editable? manage-sections on-reset]}]
@@ -239,11 +249,11 @@
          (mf/deps all-shortcuts shortcut-filter)
          (fn [term]
            (reset! filter-term* term)
-           (if (str/blank? term)
-             (reset! open-sections* [[1]])
-             (->> (filter-shortcuts-tree all-shortcuts shortcut-filter term)
-                  collect-open-section-ids
-                  (reset! open-sections*)))))
+            (if (str/blank? term)
+              (reset! open-sections* [[1]])
+              (let [filtered-tree (filter-shortcuts-tree all-shortcuts shortcut-filter term)
+                    open-ids (collect-open-section-ids filtered-tree)]
+                (reset! open-sections* open-ids)))))
 
         on-search-clear-click
         (mf/use-fn
