@@ -1932,7 +1932,7 @@ test("User disables the current set but token still have resolved values shown i
 });
 
 test.describe("User can't create groups that clash with token names", () => {
-  const createBadToken = async (page, type, name, textFieldName, value) => {
+  const createBadToken = async (page, type, name, textFieldName, value, inputType) => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
     const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
@@ -1950,7 +1950,7 @@ test.describe("User can't create groups that clash with token names", () => {
     await nameField.fill(name);
 
     // Fill the value
-    const valueField = tokensUpdateCreateModal.getByRole("textbox", {
+    const valueField = tokensUpdateCreateModal.getByRole(inputType, {
       name: textFieldName,
     });
     await valueField.fill(value);
@@ -1981,7 +1981,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Border Radius", "rad1.bad", "Value", "10");
+    await createBadToken(page, "Border Radius", "rad1.bad", "Value", "10", "combobox");
   });
 
   test("User can't create Color token with group name that clashes with existing token", async ({
@@ -1996,7 +1996,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Color", "col1.bad", "Value", "red");
+    await createBadToken(page, "Color", "col1.bad", "Value", "red", "textbox");
   });
 
   test("User can't create Dimensions token with group name that clashes with existing token", async ({
@@ -2011,7 +2011,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Dimensions", "dim1.bad", "Value", "100");
+    await createBadToken(page, "Dimensions", "dim1.bad", "Value", "100", "combobox");
   });
 
   test("User can't create Font Size token with group name that clashes with existing token", async ({
@@ -2026,7 +2026,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Font Size", "fsiz1.bad", "Value", "16");
+    await createBadToken(page, "Font Size", "fsiz1.bad", "Value", "16", "combobox");
   });
 
   test("User can't create Font Weight token with group name that clashes with existing token", async ({
@@ -2041,7 +2041,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Font Weight", "wei1.bad", "Value", "400");
+    await createBadToken(page, "Font Weight", "wei1.bad", "Value", "400", "combobox");
   });
 
   test("User can't create Letter Spacing token with group name that clashes with existing token", async ({
@@ -2056,7 +2056,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Letter Spacing", "lspa1.bad", "Value", "1");
+    await createBadToken(page, "Letter Spacing", "lspa1.bad", "Value", "1", "combobox");
   });
 
   test("User can't create Number token with group name that clashes with existing token", async ({
@@ -2071,7 +2071,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Number", "num1.bad", "Value", "10");
+    await createBadToken(page, "Number", "num1.bad", "Value", "10", "combobox");
   });
 
   test("User can't create Rotation token with group name that clashes with existing token", async ({
@@ -2086,7 +2086,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Rotation", "rot1.bad", "Value", "90");
+    await createBadToken(page, "Rotation", "rot1.bad", "Value", "90", "combobox");
   });
 
   test("User can't create Sizing token with group name that clashes with existing token", async ({
@@ -2101,7 +2101,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Sizing", "siz1.bad", "Value", "100");
+    await createBadToken(page, "Sizing", "siz1.bad", "Value", "100", "combobox");
   });
 
   test("User can't create Spacing token with group name that clashes with existing token", async ({
@@ -2116,7 +2116,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Spacing", "spa1.bad", "Value", "10");
+    await createBadToken(page, "Spacing", "spa1.bad", "Value", "10", "combobox");
   });
 
   test("User can't create Stroke Width token with group name that clashes with existing token", async ({
@@ -2131,7 +2131,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Stroke Width", "str1.bad", "Value", "2");
+    await createBadToken(page, "Stroke Width", "str1.bad", "Value", "2", "combobox");
   });
 
   test("User can't create Text Case token with group name that clashes with existing token", async ({
@@ -2146,7 +2146,7 @@ test.describe("User can't create groups that clash with token names", () => {
 
     await createSet(tokenThemesSetsSidebar, "Second set");
 
-    await createBadToken(page, "Text Case", "cas1.bad", "Value", "uppercase");
+    await createBadToken(page, "Text Case", "cas1.bad", "Value", "uppercase", "combobox");
   });
 
   test("User can't create Text Decoration token with group name that clashes with existing token", async ({
@@ -2167,6 +2167,7 @@ test.describe("User can't create groups that clash with token names", () => {
       "dec1.bad",
       "Value",
       "strike-through",
+      "combobox"
     );
   });
 
@@ -2684,7 +2685,7 @@ test("BUG: 14262 Token pill must be highlighted when value references a token in
     "Border radius",
     "base-radius",
     "Value",
-    "textbox",
+    "combobox",
     "20",
   );
   await createToken(
@@ -2692,7 +2693,7 @@ test("BUG: 14262 Token pill must be highlighted when value references a token in
     "Border radius",
     "ref-base",
     "Value",
-    "textbox",
+    "combobox",
     "{base-radius}",
   );
 
@@ -2724,7 +2725,7 @@ test("BUG: 14262 Token pill must be highlighted when value references a token in
     "Border radius",
     "new-ref",
     "Value",
-    "textbox",
+    "combobox",
     "{base-radius}",
   );
 
