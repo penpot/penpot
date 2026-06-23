@@ -77,6 +77,12 @@
                (when (some? font-id)
                  (fonts/ensure-loaded! font-id variant-id))))))
 
+(defn- strip-text-node-line-height
+  "Line-height is paragraph-level in the DOM; ignore it on text nodes when
+  checking whether the editor changed the shape content."
+  [content]
+  (txt/transform-nodes txt/is-text-node? #(dissoc % :line-height) content))
+
 (defn- initialize-event-handlers
   "Internal editor events handler initializer/destructor"
   [shape-id content editor-ref canvas-ref container-ref text-color]
@@ -117,25 +123,29 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (let [state @st/state
-                  objects (dsh/lookup-page-objects state)
-                  shape (get objects shape-id)
-                  current-name (:name shape)
-                  generated-name (gen-name instance)
-                  ;; Update name if: (1) it's a new shape (nil original content), or
-                  ;; (2) the current name matches the generated name from original content
-                  ;; (meaning it was never manually renamed)
-                  update-name? (or (nil? original-content)
-                                   (and (some? current-name)
-                                        (some? original-content)
-                                        (= current-name (txt/generate-shape-name (txt/content->text original-content)))))]
-              (st/emit! (dwt/v2-update-text-shape-content shape-id content
-                                                          :update-name? update-name?
-                                                          :name generated-name
-                                                          :finalize? true
-                                                          ;; Single undo entry for the whole edit
-                                                          :save-undo? true
-                                                          :original-content original-content))))
+            (when (or (nil? original-content)
+                      (seq (txt/get-diff-attrs
+                            (strip-text-node-line-height original-content)
+                            (strip-text-node-line-height content))))
+              (let [state @st/state
+                    objects (dsh/lookup-page-objects state)
+                    shape (get objects shape-id)
+                    current-name (:name shape)
+                    generated-name (gen-name instance)
+                    ;; Update name if: (1) it's a new shape (nil original content), or
+                    ;; (2) the current name matches the generated name from original content
+                    ;; (meaning it was never manually renamed)
+                    update-name? (or (nil? original-content)
+                                     (and (some? current-name)
+                                          (some? original-content)
+                                          (= current-name (txt/generate-shape-name (txt/content->text original-content)))))]
+                (st/emit! (dwt/v2-update-text-shape-content shape-id content
+                                                            :update-name? update-name?
+                                                            :name generated-name
+                                                            :finalize? true
+                                                            ;; Single undo entry for the whole edit
+                                                            :save-undo? true
+                                                            :original-content original-content)))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))

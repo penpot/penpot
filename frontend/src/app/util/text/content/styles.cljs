@@ -6,6 +6,7 @@
 
 (ns app.util.text.content.styles
   (:require
+   [app.common.data :as d]
    [app.common.transit :as transit]
    [app.common.types.text :as txt]
    [cuerdas.core :as str]))
@@ -59,6 +60,12 @@
 
     (= k :font-family)
     (str/unquote (str/replace v ", var(--fallback-families)" ""))
+
+    (and (= k :line-height)
+         (string? v)
+         (not= v ""))
+    (let [parsed (d/parse-double v)]
+      (if (number? parsed) parsed v))
 
     :else
     v))

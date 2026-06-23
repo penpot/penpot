@@ -55,9 +55,12 @@
                 (assoc acc key (if (value-empty? value) (get defaults key) value))))
             {} attrs)))
 
+(def ^:private text-span-attrs
+  (vec (remove #{:line-height} txt/text-node-attrs)))
+
 (defn get-text-span-styles
   [element]
-  (get-attrs-from-styles element txt/text-node-attrs (txt/get-default-text-attrs)))
+  (get-attrs-from-styles element text-span-attrs (txt/get-default-text-attrs)))
 
 (defn get-paragraph-styles
   [element]
