@@ -907,17 +907,6 @@ impl Surfaces {
         self.tile_atlas.canvas().clear(skia::Color::TRANSPARENT);
     }
 
-    /// Seed `Backbuffer` from `Target` (last presented frame).
-    pub fn seed_backbuffer_from_target(&mut self) {
-        let sampling_options = self.sampling_options;
-        self.target.draw(
-            self.backbuffer.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            Some(&skia::Paint::default()),
-        );
-    }
-
     fn reset_from_target(&mut self, target: skia::Surface) -> Result<()> {
         let dim = (target.width(), target.height());
         self.target = target;
