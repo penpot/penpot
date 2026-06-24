@@ -2003,89 +2003,12 @@ impl RenderState {
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
-        let bg_color = self.background_color;
-
-        // During fast mode (pan/zoom), if a previous full-quality render still has pending tiles,
-        // always prefer the persistent atlas. The atlas is incrementally updated as tiles finish,
-        // and drawing from it avoids mixing a partially-updated Cache surface with missing tiles.
-        if self.options.is_fast_mode() && !self.surfaces.atlas.is_empty() {
-            self.surfaces
-                .draw_atlas_to_backbuffer(self.viewbox, bg_color);
-
-            self.present_frame(shapes);
-            performance::end_measure!("render_from_cache");
-            performance::end_timed_log!("render_from_cache", _start);
-            return;
-        }
-
-        // Check if we have a valid cached viewbox (non-zero dimensions indicate valid cache)
-        if self.cached_viewbox.area.width() > 0.0 {
-            // Scale and translate the target according to the cached data
-            let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
-
-            let interest = self.options.dpr_viewport_interest_area_threshold;
-            let TileRect(start_tile_x, start_tile_y, _, _) =
-                tiles::get_tiles_for_viewbox_with_interest(&self.cached_viewbox, interest);
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr;
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr;
-            let translate_x = (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x;
-            let translate_y = (start_tile_y as f32 * tiles::TILE_SIZE) - offset_y;
-
-            // For zoom-out, prefer cache only if it fully covers the viewport.
-            // Otherwise, atlas will provide a more correct full-viewport preview.
-            let zooming_out = self.viewbox.zoom < self.cached_viewbox.zoom;
-            if zooming_out {
-                let cache_dim = self.surfaces.cache_dimensions();
-                let cache_w = cache_dim.width as f32;
-                let cache_h = cache_dim.height as f32;
-
-                // Viewport in target pixels.
-                let vw = self.viewbox.dpr_width().max(1.0);
-                let vh = self.viewbox.dpr_height().max(1.0);
-
-                // Inverse-map viewport corners into cache coordinates.
-                // target = (cache * navigate_zoom) translated by (translate_x, translate_y) (in cache coords).
-                // => cache = (target / navigate_zoom) - translate
-                let inv = if navigate_zoom.abs() > f32::EPSILON {
-                    1.0 / navigate_zoom
-                } else {
-                    0.0
-                };
-
-                // let cx0 = (0.0 * inv) - translate_x;
-                // let cy0 = (0.0 * inv) - translate_y;
-                // NOTA: 0.0 * inv => siempre 0
-                let cx0 = -translate_x;
-                let cy0 = -translate_y;
-                let cx1 = (vw * inv) - translate_x;
-                let cy1 = (vh * inv) - translate_y;
-
-                let min_x = cx0.min(cx1);
-                let min_y = cy0.min(cy1);
-                let max_x = cx0.max(cx1);
-                let max_y = cy0.max(cy1);
-
-                let cache_covers =
-                    min_x >= 0.0 && min_y >= 0.0 && max_x <= cache_w && max_y <= cache_h;
-                if !cache_covers {
-                    // Early return only if atlas exists; otherwise keep cache path.
-                    if !self.surfaces.atlas.is_empty() {
-                        self.surfaces
-                            .draw_atlas_to_backbuffer(self.viewbox, bg_color);
-
-                        self.present_frame(shapes);
-                        performance::end_measure!("render_from_cache");
-                        performance::end_timed_log!("render_from_cache", _start);
-                        return;
-                    }
-                }
-            }
-
-            // Draw directly from cache surface, avoiding snapshot overhead
-            self.surfaces.draw_cache_to_backbuffer();
-
-            self.present_frame(shapes);
-        }
+        self.surfaces.draw_combined_atlas_to_backbuffer(
+            &self.viewbox,
+            &self.tile_viewbox,
+            self.background_color,
+        );
+        self.present_frame(shapes);
 
         performance::end_measure!("render_from_cache");
         performance::end_timed_log!("render_from_cache", _start);
