@@ -23,8 +23,8 @@ Two things to know up front:
 1. **Bring up one or more workspaces**[^cfg]:
 
    ```bash
-   ./manage.sh run-devenv-agentic              # ws0 (the live repo)
-   ./manage.sh run-devenv-agentic --ws 1       # ws1 (sibling clone)
+   ./manage.sh run-devenv --agentic              # ws0 (the live repo)
+   ./manage.sh run-devenv --agentic --ws 1       # ws1 (sibling clone)
    ```
 
    Add `--ws 2`, `--ws 3`, … for more parallel workspaces.
@@ -113,10 +113,10 @@ var penpotFlags = "enable-mcp";
 ```
 
 The file is gitignored and lives in the live repo only. On every
-`run-devenv-agentic` call it is read directly for ws0; for wsN (N ≥ 1) it is
+`run-devenv --agentic` call it is read directly for ws0; for wsN (N ≥ 1) it is
 copied into the workspace clone on the **initial** sync only - subsequent
 `--sync` passes leave the workspace's copy alone so per-workspace
-customisations survive. `run-devenv-agentic` refuses to start if the file is
+customisations survive. `run-devenv --agentic` refuses to start if the file is
 missing.
 
 **Browser remote debugging.** The Playwright MCP server drives a real
@@ -148,13 +148,13 @@ devenv image itself (add a tool, change a base layer):
 ./manage.sh build-devenv --local
 ```
 
-The default `run-devenv-agentic` flow pulls the published image
+The default `run-devenv --agentic` flow pulls the published image
 automatically, so regular users never run this.
 
 ### Bringing up workspaces
 
 ```bash
-./manage.sh run-devenv-agentic \
+./manage.sh run-devenv --agentic \
     [--ws N] [--sync] [--serena-context CTX] \
     [--git-user-name NAME] [--git-user-email EMAIL]
 ```
@@ -171,7 +171,7 @@ every bring-up so you don't compute offsets by hand. See the
 semantics, and stop ordering.
 
 **Git identity for agent commits.** Coding agents typically need to commit
-inside the devenv, so `run-devenv-agentic` wires a Git identity into the
+inside the devenv, so `run-devenv --agentic` wires a Git identity into the
 container's global config on every bring-up. By default it propagates the
 host's effective `git config user.{name,email}` (local repo override wins
 over `~/.gitconfig`, matching what `git commit` on the host would record).
@@ -189,7 +189,7 @@ the full mechanics.
 >
 > ```bash
 > ./manage.sh stop-devenv
-> ./manage.sh run-devenv-agentic
+> ./manage.sh run-devenv --agentic
 > ```
 
 ### Launching an AI client
@@ -198,7 +198,7 @@ The agentic environment supports any AI client, one just needs to set the right 
 see [manual configuration](#manual-ai-client-configuration) below. For some popular clients, the `manage.sh`
 CLI offers direct support through the following mechanism:
 
-Every `run-devenv-agentic` regenerates three MCP-client config files with
+Every `run-devenv --agentic` regenerates three MCP-client config files with
 the workspace's ports baked in; Codex is wired up at launch instead (see
 below):
 

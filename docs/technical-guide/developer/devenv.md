@@ -48,7 +48,7 @@ manage.sh script:
 ./manage.sh build-devenv --local # builds the local devenv docker image
 ./manage.sh start-devenv         # brings up the shared infra + ws0 in background
 ./manage.sh run-devenv           # ws0 with non-agentic tmux, attached (legacy alias)
-./manage.sh run-devenv-agentic   # one agentic instance; --ws to target ws1+; see below
+./manage.sh run-devenv --agentic   # one agentic instance; --ws to target ws1+; see below
 ./manage.sh attach-devenv        # re-attaches to the tmux session of a running instance
 ./manage.sh stop-devenv          # stops one instance (or --all); infra stops with the last
 ./manage.sh drop-devenv          # removes containers (data volumes preserved)
@@ -62,14 +62,14 @@ instance. `ws0` (a.k.a. `main`) binds the live repo; `ws1+` bind clones the
 developer maintains explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
 (default `~/.penpot/penpot_workspaces/`).
 
-Each call to `run-devenv-agentic` brings up one instance, and ws0 is always
+Each call to `run-devenv` brings up one instance, and ws0 is always
 running whenever any ws1+ is — `--ws N` (N≥1) auto-starts ws0 first if it
 isn't already up:
 
 ```bash
-./manage.sh run-devenv-agentic           # main (ws0)
-./manage.sh run-devenv-agentic --ws 1    # ws0 if needed, then ws1
-./manage.sh run-devenv-agentic --ws 2 --sync   # ws2, re-seeding from the live repo
+./manage.sh run-devenv           # main (ws0)
+./manage.sh run-devenv --ws 1    # ws0 if needed, then ws1
+./manage.sh run-devenv --ws 2 --sync   # ws2, re-seeding from the live repo
 ```
 
 Starting an instance that is already running is an error. `--sync` is only
@@ -102,12 +102,12 @@ Host ports are offset by `10000 × N`:
 | Serena MCP | `http://localhost:14181` | `http://localhost:24181` | `http://localhost:34181` |
 
 Container-internal ports stay fixed. Target a specific instance with
-`--ws N` on `attach-devenv`, `run-devenv-agentic`, `stop-devenv`,
+`--ws N` on `attach-devenv`, `run-devenv`, `stop-devenv`,
 `start-coding-agent`, `run-devenv-shell`, and `isolated-shell`. `--ws`
 accepts a **non-negative integer only** — `--ws main` or `--ws ws1` is
 rejected, keeping the flag shape uniform across commands. `run-devenv` is
-ws0-only and takes no workspace flag. `run-devenv-agentic` also accepts
-`--serena-context CTX` and `--git-user-name NAME` / `--git-user-email
+ws0-only and takes no workspace flag. `run-devenv` also accepts
+`--serena-context CTX` (used together with `--agentic`) and `--git-user-name NAME` / `--git-user-email
 EMAIL` (see below).
 
 Configuration lives in one tracked file, `docker/devenv/defaults.env` (the
@@ -116,7 +116,7 @@ derived and injected automatically, so there is no per-instance file to edit.
 
 ### Git identity inside the container
 
-`run-devenv-agentic` wires a Git author identity into the container's
+`run-devenv` wires a Git author identity into the container's
 **global** git config (`git config --global user.{name,email}`) so commits
 made from inside the devenv carry a real author/committer. Without this,
 the container would commit as the unconfigured `penpot@<container>`
@@ -130,7 +130,7 @@ returns at the working directory `manage.sh` is invoked from — local
 `git commit` on the host would record. If neither is available the script
 prints a warning and continues — commits will fail inside the container
 until you set an identity. The values are applied every time
-`run-devenv-agentic` brings an instance up (idempotent), so re-running
+`run-devenv` brings an instance up (idempotent), so re-running
 with different flags is the way to change the in-container identity.
 
 ### Shared state and workers
@@ -185,11 +185,10 @@ docker rm   penpotdev-postgres-1 penpotdev-minio-1 penpotdev-minio-setup-1 \
 docker network rm penpotdev_default 2>/dev/null
 
 # Bring up infra + ws0 under the new project layout.
-./manage.sh run-devenv-agentic
+./manage.sh run-devenv
 ```
 
-After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` /
-`run-devenv-agentic` commands work against the new layout. The legacy
+After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` work against the new layout. The legacy
 `penpotdev` compose project is no longer used.
 
 Having the container running and tmux opened inside the container,
