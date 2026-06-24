@@ -283,19 +283,19 @@
                              :each-fixtures (:each fixtures))
              summary  (volatile! {:test 0 :pass 0 :fail 0 :error 0 :type :summary})]
 
-    (t/set-env! env)
+         (t/set-env! env)
 
-    (t/run-block
-     (concat (t/test-vars-block vars)
-             [(fn []
-                (vswap! summary
+         (t/run-block
+          (concat (t/test-vars-block vars)
+                  [(fn []
+                     (vswap! summary
                              (partial merge-with +)
                              (:report-counters (t/get-and-clear-env!))))
-              (fn []
-                (t/set-env! env)
-                (t/report @summary)
-                (t/report (assoc @summary :type :end-run-tests))
-                (t/clear-env!))]))))
+                   (fn []
+                     (t/set-env! env)
+                     (t/report @summary)
+                     (t/report (assoc @summary :type :end-run-tests))
+                     (t/clear-env!))]))))
 
      (defn- run-focused-test!
        [focus]
