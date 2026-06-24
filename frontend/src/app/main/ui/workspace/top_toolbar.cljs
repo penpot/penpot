@@ -146,7 +146,7 @@
 
     (mf/with-effect [drawtool group]
       (reset! default-tool* (active-group-tool group drawtool)))
-    
+
     [:li {:class (stl/css :toolbar-group)
           :on-pointer-enter on-display-menu
           :on-pointer-leave on-hide-menu}
