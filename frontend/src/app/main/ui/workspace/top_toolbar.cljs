@@ -61,8 +61,8 @@
     :frame   (tr "workspace.toolbar.frame"   (sc/get-tooltip :draw-frame))
     :rect    (tr "workspace.toolbar.rect"    (sc/get-tooltip :draw-rect))
     :circle  (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-    :line    "Line"
-    :arrow   "Arrow"
+    :line    (tr "workspace.toolbar.line"    (sc/get-tooltip :draw-line))
+    :arrow   (tr "workspace.toolbar.arrow"   (sc/get-tooltip :draw-arrow))
     :text    (tr "workspace.toolbar.text"    (sc/get-tooltip :draw-text))
     :path    (tr "workspace.toolbar.path"    (sc/get-tooltip :draw-path))
     :image   (tr "workspace.toolbar.image"   (sc/get-tooltip :insert-image))
