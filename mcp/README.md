@@ -180,11 +180,22 @@ By default, the server runs on port 4401 and provides:
 - **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
 - **Legacy SSE endpoint**: `http://localhost:4401/sse`
 
-These endpoints can be used directly by MCP clients that support them.
+You can change the port by setting the `PENPOT_MCP_SERVER_PORT` environment variable
+before starting the server. These endpoints can be used directly by MCP clients that support them.
 Simply configure the client to connect the MCP server by providing the respective URL.
 
-When using a client that only supports stdio transport,
-a proxy like `mcp-remote` is required.
+#### Configuring your client
+
+The `penpot/mcp` package comes with a pre-configured [add-mcp](https://github.com/neon-solutions/add-mcp)
+command to simplify client configuration.
+Simply call `npx -y @penpot/mcp@latest add-mcp` and follow the interactive dialogue to configure the clients
+of your choice.
+The default config entry name is `penpot` (override it with `-n <name>`) and the URL will post
+to the http endpoint (respecting the `PENPOT_MCP_SERVER_PORT`).
+
+When using a client that only supports stdio transport like **Claude Desktop**,
+a proxy like [mcp-remote](https://github.com/geelen/mcp-remote) is required. 
+More information on connecting your client follows below.
 
 #### Using a Proxy for stdio Transport
 
@@ -231,12 +242,6 @@ After updating the configuration file, restart Claude Desktop completely for the
 
 After the restart, you should see the MCP server listed when clicking on the "Search and tools" icon at the bottom
 of the prompt input area.
-
-#### Example: Claude Code
-
-To add the Penpot MCP server to a Claude Code project, issue the command
-
-    claude mcp add penpot -t http http://localhost:4401/mcp
 
 ## Repository Structure
 

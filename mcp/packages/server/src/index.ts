@@ -1,8 +1,34 @@
 #!/usr/bin/env node
 
-import { PenpotMcpServer } from "./PenpotMcpServer";
 import { createLogger, logActiveTransports } from "./logger";
+import path from "node:path";
 
+import { spawn } from "node:child_process";
+import { BaseLogger } from "pino";
+import { fileURLToPath } from "url";
+
+async function runAddMcp(args: string[], logger: BaseLogger): Promise<never> {
+    const packageJsonUrl = import.meta.resolve("add-mcp/package.json");
+    const packageJsonPath = fileURLToPath(packageJsonUrl);
+    const packageRoot = path.dirname(packageJsonPath);
+
+    const addMcpBin = path.join(packageRoot, "dist", "index.js");
+
+    const child = spawn(process.execPath, [addMcpBin, ...args], {
+        stdio: "inherit",
+    });
+
+    child.on("error", (error) => {
+        logger.error(error, "Failed to run add-mcp");
+        process.exit(1);
+    });
+
+    child.on("exit", (code) => {
+        process.exit(code ?? 1);
+    });
+
+    return new Promise(() => {});
+}
 /**
  * Entry point for Penpot MCP Server
  *
@@ -14,11 +40,22 @@ import { createLogger, logActiveTransports } from "./logger";
 async function main(): Promise<void> {
     const logger = createLogger("main");
 
-    // announce active transports early so they appear before any potential errors
-    logActiveTransports(logger);
-
     try {
         const args = process.argv.slice(2);
+        if (args[0] === "add-mcp") {
+            let forwardedArgs = args.slice(1);
+            // We pass args with -- to avoid collisions with args that could be used by pnpm itself
+            if (forwardedArgs[0] === "--") {
+                forwardedArgs = forwardedArgs.slice(1);
+            }
+
+            const mcpPort = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401");
+            const addMcpArgs = ["-g", "-n", "penpot", `http://localhost:${mcpPort}/mcp`];
+            await runAddMcp([...addMcpArgs, ...forwardedArgs], logger);
+        }
+
+        // announce active transports early so they appear before any potential errors
+        logActiveTransports(logger);
         let multiUser = false; // default to single-user mode
 
         // parse command line arguments
@@ -26,16 +63,32 @@ async function main(): Promise<void> {
             if (args[i] === "--multi-user") {
                 multiUser = true;
             } else if (args[i] === "--help" || args[i] === "-h") {
-                logger.info("Usage: node dist/index.js [options]");
+                logger.info("Usage:");
+                logger.info("  node dist/index.js [options]");
+                logger.info("  node dist/index.js add-mcp [add-mcp options]");
+                logger.info("");
                 logger.info("Options:");
                 logger.info("  --multi-user           Enable multi-user mode (default: single-user)");
                 logger.info("  --help, -h             Show this help message");
+                logger.info("");
+                logger.info("Commands:");
+                logger.info("  add-mcp                Run the add-mcp interactive setup CLI");
+                logger.info("");
+                logger.info("Examples:");
+                logger.info("  node dist/index.js");
+                logger.info("  node dist/index.js --multi-user");
+                logger.info("  node dist/index.js add-mcp");
+                logger.info("  node dist/index.js add-mcp --help");
+                logger.info("");
+                logger.info("Any arguments after 'add-mcp' are forwarded to the add-mcp CLI.");
                 logger.info("");
                 logger.info("Note that configuration is mostly handled through environment variables.");
                 logger.info("Refer to the README for more information.");
                 process.exit(0);
             }
         }
+        // Importing after handling add-mcp since import triggers logs which pollute the add-mcp TUI
+        const { PenpotMcpServer } = await import("./PenpotMcpServer.js");
 
         const server = new PenpotMcpServer(multiUser);
         await server.start();
