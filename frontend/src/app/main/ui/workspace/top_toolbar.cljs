@@ -47,7 +47,9 @@
 (def grouped-tools
   {:shapes {:default-tool :rect
             :tools {:rect {:icon i/rectangle}
-                    :circle {:icon i/ellipse}}}
+                    :circle {:icon i/ellipse}
+                    :line {:icon i/easing-linear}
+                    :arrow {:icon i/stroke-arrow}}}
    :free-draw {:default-tool :path
                :tools {:path {:icon i/path}
                        :curve {:icon i/curve}}}})
@@ -59,6 +61,8 @@
     :frame   (tr "workspace.toolbar.frame"   (sc/get-tooltip :draw-frame))
     :rect    (tr "workspace.toolbar.rect"    (sc/get-tooltip :draw-rect))
     :circle  (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+    :line    (tr "workspace.toolbar.line"    (sc/get-tooltip :draw-line))
+    :arrow   (tr "workspace.toolbar.arrow"   (sc/get-tooltip :draw-arrow))
     :text    (tr "workspace.toolbar.text"    (sc/get-tooltip :draw-text))
     :path    (tr "workspace.toolbar.path"    (sc/get-tooltip :draw-path))
     :image   (tr "workspace.toolbar.image"   (sc/get-tooltip :insert-image))
@@ -109,11 +113,7 @@
         on-select-tool
         (mf/use-fn
          (fn [event]
-           (let [tool (-> (dom/get-current-target event)
-                          (dom/get-data "tool")
-                          (keyword))]
-             (reset! default-tool* tool)
-             (on-select-tool event))))
+           (on-select-tool event)))
 
         on-display-menu
         (mf/use-fn
@@ -143,6 +143,9 @@
       (fn []
         (cancel-timer! open-timer*)
         (cancel-timer! close-timer*)))
+
+    (mf/with-effect [drawtool group]
+      (reset! default-tool* (active-group-tool group drawtool)))
 
     [:li {:class (stl/css :toolbar-group)
           :on-pointer-enter on-display-menu
