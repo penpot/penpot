@@ -9398,6 +9398,9 @@ msgstr ""
 "Cambiar el nombre de este token romperá cualquier referencia a su nombre "
 "anterior."
 
+msgid "workspace.toolbar.arrow"
+msgstr "Flecha (%s)"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Recursos"
@@ -9434,6 +9437,9 @@ msgstr "Crear tablero. Click y arrastrar para definir el tamaño. (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:116, src/app/main/ui/workspace/top_toolbar.cljs:117
 msgid "workspace.toolbar.image"
 msgstr "Imagen (%s)"
+
+msgid "workspace.toolbar.line"
+msgstr "Línea (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
 msgid "workspace.toolbar.mcp"
