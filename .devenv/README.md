@@ -52,7 +52,7 @@ built fresh from `shared/codex.toml` + `templates/codex.toml` at launch.
   `manage.sh`.
 * **`mcp/`** (Claude Code, opencode) is the result of merging `shared/` with
   the port-substituted `templates/`. `manage.sh` writes these on every
-  `run-devenv-agentic` pass. Gitignored, dedicated paths with no developer
+  `run-devenv --agentic` pass. Gitignored, dedicated paths with no developer
   content — never edit by hand, your edits will be overwritten on the next
   reconcile.
 * **`.vscode/mcp.json`** is the same merge, but written to the path VS Code
