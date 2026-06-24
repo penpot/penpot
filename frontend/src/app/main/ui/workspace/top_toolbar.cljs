@@ -113,11 +113,7 @@
         on-select-tool
         (mf/use-fn
          (fn [event]
-           (let [tool (-> (dom/get-current-target event)
-                          (dom/get-data "tool")
-                          (keyword))]
-             (reset! default-tool* tool)
-             (on-select-tool event))))
+           (on-select-tool event)))
 
         on-display-menu
         (mf/use-fn
@@ -148,6 +144,9 @@
         (cancel-timer! open-timer*)
         (cancel-timer! close-timer*)))
 
+    (mf/with-effect [drawtool group]
+      (reset! default-tool* (active-group-tool group drawtool)))
+    
     [:li {:class (stl/css :toolbar-group)
           :on-pointer-enter on-display-menu
           :on-pointer-leave on-hide-menu}
