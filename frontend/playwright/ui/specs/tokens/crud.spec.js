@@ -8,6 +8,7 @@ import {
   testTokenCreationFlow,
   unfoldTokenType,
   createToken,
+  createSet,
 } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -94,6 +95,8 @@ test.describe("Tokens - creation", () => {
     await toggleDropdownButton.click();
     const option = page.getByRole("option", { name: "my-token" });
     await expect(option).toBeVisible();
+    const resolvedValue = option.getByText("3");
+    await expect(resolvedValue).toBeVisible();
     await option.click();
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 3"),
@@ -108,6 +111,80 @@ test.describe("Tokens - creation", () => {
     await expect(
       tokensUpdateCreateModal.getByText("Resolved value: 8"),
     ).toBeVisible();
+  });
+
+  test("User creates a token referencing another via combobox, replacing existing text", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page, {
+      flags: ["enable-token-combobox", "enable-feature-token-input"],
+    });
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: "Add Token: Border Radius",
+    });
+
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Create first token
+    await nameField.fill("my-token");
+    await valueField.fill("1 + 2");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "border radius");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token" }),
+    ).toBeEnabled();
+
+    // Create second token — type text first, then replace it via combobox
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-2");
+    await valueField.fill("4 + 4");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 8"),
+    ).toBeVisible();
+
+    const toggleDropdownButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Open token list",
+    });
+    await toggleDropdownButton.click();
+
+    const option = page.getByRole("option", { name: "my-token" });
+    await expect(option).toBeVisible();
+    await option.click();
+
+    // The typed text should have been replaced by {my-token}
+    await expect(valueField).toHaveValue("{my-token}");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 3"),
+    ).toBeVisible();
+
+    // Original text must no longer be present
+    await expect(valueField).not.toHaveValue("some text to replace");
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "border radius");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token-2" }),
+    ).toBeEnabled();
   });
 
   test("User creates dimensions token", async ({ page }) => {
@@ -917,6 +994,7 @@ test.describe("Tokens - creation", () => {
 
   test("User creates shadow token", async ({ page }) => {
     const emptyNameError = "Name should be at least 1 character";
+    const emptyFieldError = "This field cannot be empty";
 
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFileRender(page, {
@@ -994,6 +1072,14 @@ test.describe("Tokens - creation", () => {
 
     await expect(emptyNameErrorNode).toBeVisible();
     await expect(submitButton).toBeDisabled();
+
+    // 5. Empty fill -> disabled + error message
+    await offsetXField.fill("3"); // Fill should be touched in order to show the error message
+    await offsetXField.fill("");
+    const emptyFieldErrorNode =
+      tokensUpdateCreateModal.getByText(emptyFieldError);
+
+    await expect(emptyFieldErrorNode).toBeVisible();
 
     //
     // ------- SUCCESSFUL FIELDS -------
@@ -1100,9 +1186,31 @@ test.describe("Tokens - creation", () => {
     await expect(
       tokensTabPanel.getByRole("button", { name: "my-token-2" }),
     ).toBeEnabled();
+
+    //
+    // ------- THIRD TOKEN WITH EMPTY BLUR AND SPREAD -------
+    //
+    await addTokenButton.click();
+
+    await nameField.fill("my-token-3");
+    await colorField.fill("red");
+
+    // 1. Empty blur and spread
+
+    await blurField.fill("");
+
+    await spreadField.fill("");
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await unfoldTokenType(tokensTabPanel, "shadow");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "my-token-3" }),
+    ).toBeEnabled();
   });
 
-  test("User cant submit empty typography token or reference", async ({
+  test("User can't submit empty typography token or reference", async ({
     page,
   }) => {
     const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
@@ -1660,7 +1768,7 @@ test.describe("Tokens - creation", () => {
     await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
   });
 
-  test("User cant create regular token with value missing", async ({
+  test("User can't create regular token with value missing", async ({
     page,
   }) => {
     const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
@@ -1742,7 +1850,7 @@ test("User creates grouped color token", async ({ page }) => {
   await expect(tokensSidebar.getByLabel("primary")).toBeEnabled();
 });
 
-test("User cant create regular token with value missing", async ({ page }) => {
+test("User can't create regular token with value missing", async ({ page }) => {
   const { tokensUpdateCreateModal } = await setupEmptyTokensFileRender(page);
 
   const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -1794,22 +1902,408 @@ test("User duplicate color token", async ({ page }) => {
 test("User disables the current set but token still have resolved values shown in the sidebar", async ({
   page,
 }) => {
-  const { tokenThemesSetsSidebar, tokensSidebar } = await setupEmptyTokensFileRender(page);
+  const { tokenThemesSetsSidebar, tokensSidebar } =
+    await setupEmptyTokensFileRender(page);
 
   // Create color token
-  await createToken(page, "Color", "color.primary", "Value", "#ff0000");
+  await createToken(
+    page,
+    "Color",
+    "color.primary",
+    "Value",
+    "textbox",
+    "#ff0000",
+  );
   await unfoldTokenType(tokensSidebar, "color");
 
   // Deactivate current set
-  await tokenThemesSetsSidebar
-    .getByRole("checkbox")
-    .click();
+  await tokenThemesSetsSidebar.getByRole("checkbox").click();
 
   // Tokens tab panel should have a token with the color #ff0000 and correct resolved value in the tooltip
-  const colorTokenPill = tokensSidebar.getByRole("button", { name: "#ff0000 color.primary" });
+  const colorTokenPill = tokensSidebar.getByRole("button", {
+    name: "#ff0000 color.primary",
+  });
   await expect(colorTokenPill).toHaveCount(1);
-  await colorTokenPill.hover();  // Force title attribute to be attached to the button
-  await expect(colorTokenPill).toHaveAttribute("title", /Resolved value: #ff0000/);
+  await colorTokenPill.hover(); // Force title attribute to be attached to the button
+  await expect(colorTokenPill).toHaveAttribute(
+    "title",
+    /Resolved value: #ff0000/,
+  );
+});
+
+test.describe("User can't create groups that clash with token names", () => {
+  const createBadToken = async (page, type, name, textFieldName, value, inputType) => {
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    // Add a token of the given type
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: ${type}` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Fill the bad name
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill(name);
+
+    // Fill the value
+    const valueField = tokensUpdateCreateModal.getByRole(inputType, {
+      name: textFieldName,
+    });
+    await valueField.fill(value);
+
+    // Check that the value has an error
+    const errorNode = tokensUpdateCreateModal.getByText(
+      `Group name of ${name} conflicts with a token of the same name in another active set.`,
+    );
+
+    await expect(errorNode).toBeVisible();
+
+    // Check that the form cannot be saved
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeDisabled();
+  };
+
+  test("User can't create Border Radius token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Border Radius", "rad1.bad", "Value", "10", "combobox");
+  });
+
+  test("User can't create Color token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Color", "col1.bad", "Value", "red", "textbox");
+  });
+
+  test("User can't create Dimensions token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Dimensions", "dim1.bad", "Value", "100", "combobox");
+  });
+
+  test("User can't create Font Size token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Font Size", "fsiz1.bad", "Value", "16", "combobox");
+  });
+
+  test("User can't create Font Weight token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Font Weight", "wei1.bad", "Value", "400", "combobox");
+  });
+
+  test("User can't create Letter Spacing token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Letter Spacing", "lspa1.bad", "Value", "1", "combobox");
+  });
+
+  test("User can't create Number token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Number", "num1.bad", "Value", "10", "combobox");
+  });
+
+  test("User can't create Rotation token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Rotation", "rot1.bad", "Value", "90", "combobox");
+  });
+
+  test("User can't create Sizing token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Sizing", "siz1.bad", "Value", "100", "combobox");
+  });
+
+  test("User can't create Spacing token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Spacing", "spa1.bad", "Value", "10", "combobox");
+  });
+
+  test("User can't create Stroke Width token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Stroke Width", "str1.bad", "Value", "2", "combobox");
+  });
+
+  test("User can't create Text Case token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(page, "Text Case", "cas1.bad", "Value", "uppercase", "combobox");
+  });
+
+  test("User can't create Text Decoration token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    await createBadToken(
+      page,
+      "Text Decoration",
+      "dec1.bad",
+      "Value",
+      "strike-through",
+      "combobox"
+    );
+  });
+
+  test("User can't create Typography token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: Typography` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("typ1.bad");
+
+    const fontFamilyField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font family",
+    });
+    await fontFamilyField.fill("Arial");
+
+    const fontSizeField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font size",
+    });
+    await fontSizeField.fill("16");
+
+    const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Font weight",
+    });
+    await fontWeightField.fill("400");
+
+    const lineHeightField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Line height",
+    });
+    await lineHeightField.fill("1.5");
+
+    const letterSpacingField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Letter spacing",
+    });
+    await letterSpacingField.fill("0");
+
+    const textCaseField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text case",
+    });
+    await textCaseField.fill("none");
+
+    const textDecorationField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Text decoration",
+    });
+    await textDecorationField.fill("none");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const errorNode = tokensUpdateCreateModal.getByText(
+      "Group name of typ1.bad conflicts with a token of the same name in another active set.",
+    );
+    await expect(errorNode).toHaveCount(1);
+    await expect(submitButton).toBeDisabled();
+  });
+
+  test("User can't create Shadow token with group name that clashes with existing token", async ({
+    page,
+  }) => {
+    const { tokenThemesSetsSidebar, tokensSidebar } =
+      await setupTokensFileRender(page, {
+        file: "workspace/get-file-tokens-all-types.json",
+      });
+
+    await expect(tokensSidebar).toBeVisible();
+
+    await createSet(tokenThemesSetsSidebar, "Second set");
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      flags: ["enable-token-shadow"],
+    });
+
+    await tokensTabPanel
+      .getByRole("button", { name: `Add Token: Shadow` })
+      .click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.fill("sha1.bad");
+
+    const colorField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Color",
+    });
+    await colorField.fill("red");
+
+    const offsetXField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "X",
+    });
+    await offsetXField.fill("7");
+
+    const offsetYField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Y",
+    });
+    await offsetYField.fill("8");
+
+    const blurField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Blur",
+    });
+    await blurField.fill("5");
+
+    const spreadField = tokensUpdateCreateModal.getByRole("textbox", {
+      name: "Spread",
+    });
+    await spreadField.fill("1");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    const errorNode = tokensUpdateCreateModal.getByText(
+      "Group name of sha1.bad conflicts with a token of the same name in another active set.",
+    );
+    await expect(errorNode).toHaveCount(1);
+    await expect(submitButton).toBeDisabled();
+  });
 });
 
 test.describe("Tokens tab - edition", () => {
@@ -1854,10 +2348,19 @@ test.describe("Tokens tab - edition", () => {
 
     // Show error with line-height depending on invalid font-size
     await fontSizeField.fill("");
+    await page.keyboard.press("Enter");
     await expect(saveButton).toBeDisabled();
+    await expect(
+      tokensUpdateCreateModal.getByText(/Invalid token value:/),
+    ).not.toBeVisible();
+
+    await expect(
+      tokensUpdateCreateModal.getByText(/Line Height depends on Font Size/),
+    ).toBeVisible();
 
     // Fill in values for all fields and verify they persist when switching tabs
-    await fontSizeField.fill("16");
+    await fontSizeField.fill("16 + 3");
+
     await expect(saveButton).toBeEnabled();
 
     const fontWeightField = tokensUpdateCreateModal.getByRole("textbox", {
@@ -2010,6 +2513,139 @@ test.describe("Tokens tab - edition", () => {
     await valueSaturationSelector.click({ position: { x: 0, y: 0 } });
     await expect(valueField).toHaveValue(/^rgba(.*)$/);
   });
+
+  test("User sees self-reference error when editing a token to create a circular reference", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
+      await setupEmptyTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    // Create first token "base" with value "10"
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: "Add Token: Border Radius",
+    });
+    await addTokenButton.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+    await createToken(page, "Border radius", "base", "Value", "combobox", "10");
+
+    await unfoldTokenType(tokensTabPanel, "border radius");
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "base" }),
+    ).toBeEnabled();
+
+    // Create second token "linear" referencing "base"
+    await createToken(
+      page,
+      "Border radius",
+      "linear",
+      "Value",
+      "combobox",
+      "{base} * 0.25",
+    );
+
+    await expect(
+      tokensTabPanel.getByRole("button", { name: "linear" }),
+    ).toBeEnabled();
+
+    // Open the edit modal for "base"
+    const baseToken = tokensTabPanel.getByRole("button", { name: "base" });
+    await expect(baseToken).toBeVisible();
+    await baseToken.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+    const editOption = tokenContextMenuForToken
+      .getByRole("listitem")
+      .filter({ hasText: "Edit token" });
+    await expect(editOption).toBeVisible();
+    await editOption.click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    // Change value to reference "linear.0.25", creating a circular reference
+    const editValueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    await editValueField.fill("{linear}");
+
+    // The circular reference error should appear gracefully
+    const circularError = tokensUpdateCreateModal.getByText(
+      "Token has circular reference",
+    );
+    await expect(circularError).toBeVisible({ timeout: 5000 });
+
+    // Save button should be disabled
+    const editSubmitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(editSubmitButton).toBeDisabled();
+  });
+
+  test("User sees self-reference error for a three-step circular reference (A → B → C → A)", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokensSidebar, tokenContextMenuForToken } =
+      await setupEmptyTokensFileRender(page, {
+        flags: ["enable-token-combobox", "enable-feature-token-input"],
+      });
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+    // Create first token "a" with value "10"
+    const addTokenButton = tokensTabPanel.getByRole("button", {
+      name: "Add Token: Border Radius",
+    });
+
+    await createToken(
+      page,
+      "Border radius",
+      "First",
+      "Value",
+      "combobox",
+      "10",
+    );
+    await createToken(
+      page,
+      "Border radius",
+      "Second",
+      "Value",
+      "combobox",
+      "{First}",
+    );
+    await createToken(
+      page,
+      "Border radius",
+      "Third",
+      "Value",
+      "combobox",
+      "{Second}",
+    );
+
+    // Edit "First" to reference "Third", completing the cycle A → B → C → A
+    const tokenA = tokensTabPanel.getByRole("button", { name: "First" });
+    await tokenA.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+    await tokenContextMenuForToken.getByText("Edit token").click();
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const editValueField = tokensUpdateCreateModal.getByRole("combobox", {
+      name: "Value",
+    });
+    await editValueField.fill("{Third}");
+
+    // The circular reference error should appear gracefully
+    const circularError = tokensUpdateCreateModal.getByText(
+      "Token has circular reference",
+    );
+    await expect(circularError).toBeVisible({ timeout: 5000 });
+
+    // Save button should be disabled
+    const editSubmitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(editSubmitButton).toBeDisabled();
+  });
 });
 
 test.describe("Tokens tab - delete", () => {
@@ -2033,4 +2669,81 @@ test.describe("Tokens tab - delete", () => {
     await expect(tokenContextMenuForToken).not.toBeVisible();
     await expect(colorToken).not.toBeVisible();
   });
+});
+
+test("BUG: 14262 Token pill must be highlighted when value references a token in a disabled set", async ({
+  page,
+}) => {
+  const { tokensSidebar, tokenContextMenuForToken, tokenThemesSetsSidebar } =
+    await setupTokensFileRender(page);
+
+  await expect(tokensSidebar).toBeVisible();
+
+  await unfoldTokenType(tokensSidebar, "Border radius");
+  await createToken(
+    page,
+    "Border radius",
+    "base-radius",
+    "Value",
+    "combobox",
+    "20",
+  );
+  await createToken(
+    page,
+    "Border radius",
+    "ref-base",
+    "Value",
+    "combobox",
+    "{base-radius}",
+  );
+
+  const refTokenPill = tokensSidebar.getByRole("button", {
+    name: "ref-base",
+  });
+
+  await expect(refTokenPill).toBeVisible();
+
+  const CoreSetCheckbox = tokenThemesSetsSidebar
+    .getByRole("button", { name: "core" })
+    .getByRole("checkbox");
+  await CoreSetCheckbox.click();
+
+  // Pill is not highlighted if both tokens are on the same disabled set
+  const brokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Missing reference ref-base",
+  });
+  await expect(brokenTokenPill).not.toBeVisible();
+  await createSet(tokenThemesSetsSidebar, "New set");
+  await tokenThemesSetsSidebar.getByRole("button", { name: "New set" }).click();
+
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "New set" })
+    .getByRole("checkbox")
+    .click();
+  await createToken(
+    page,
+    "Border radius",
+    "new-ref",
+    "Value",
+    "combobox",
+    "{base-radius}",
+  );
+
+  // Pill is highlighted if the referenced token is in a different disabled set than the token with the reference
+  const newBrokenTokenPill = tokensSidebar.getByRole("button", {
+    name: "Missing reference new-ref",
+  });
+  await expect(newBrokenTokenPill).toBeVisible();
+  await tokenThemesSetsSidebar
+    .getByRole("button", { name: "core" })
+    .getByRole("checkbox")
+    .click();
+
+  // When the disabled set is activated again, pill is not highlighted anymore
+  await expect(
+    tokenThemesSetsSidebar
+      .getByRole("button", { name: "core" })
+      .getByRole("checkbox"),
+  ).toBeChecked();
+  await expect(newBrokenTokenPill).not.toBeVisible();
 });

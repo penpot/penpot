@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.flags
   "Flags parsing algorithm."
@@ -72,7 +72,11 @@
     :backend-worker
     ;; Only for development
     :component-thumbnails
-    ;; enables the default cors configuration that allows all domains (currently this configuration is only used for development).
+    ;; Enables CORS support for the RPC API. Requires an explicit
+    ;; allowlist of origins via PENPOT_ALLOWED_ORIGINS; if no allowlist
+    ;; is configured the middleware fails closed (a warning is logged
+    ;; and CORS headers are not emitted) to avoid CSRF / data
+    ;; exfiltration via origin reflection.
     :cors
     ;; Enables the templates dialog on Penpot dashboard.
     :dashboard-templates-section
@@ -148,10 +152,6 @@
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
 
-    ;; Used for designate features that will be available in the next
-    ;; release
-    :canary
-
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
     :sec-fetch-metadata-middleware
@@ -169,6 +169,7 @@
 
     :mcp
     :background-blur
+    :available-viewer-wasm
     :stroke-path})
 
 (def all-flags
@@ -194,10 +195,16 @@
    :enable-render-wasm-dpr
    :enable-token-color
    :enable-token-shadow
+   :enable-token-typography-row
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
-   :enable-token-import-from-library])
+   :enable-token-import-from-library
+   :enable-render-switch
+   :enable-render-wasm-info
+   :enable-available-viewer-wasm
+   :enable-background-blur
+   :enable-token-combobox])
 
 (defn parse
   [& flags]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard.templates
   (:require-macros [app.main.style :as stl])
@@ -23,7 +23,6 @@
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -40,10 +39,10 @@
   (letfn [(on-finish []
             (st/emit!
              (dd/fetch-recent-files team-id)
-             (ptk/event ::ev/event {::ev/name "import-template-finish"
-                                    ::ev/origin "dashboard"
-                                    :template (:name template)
-                                    :section section})
+             (ev/event {::ev/name "import-template-finish"
+                        ::ev/origin "dashboard"
+                        :template (:name template)
+                        :section section})
 
              (when-not (some? project-id)
                (dcm/go-to-dashboard-recent
@@ -51,10 +50,10 @@
                 :project-id default-project-id))))]
 
     (st/emit!
-     (ptk/event ::ev/event {::ev/name "import-template-launch"
-                            ::ev/origin "dashboard"
-                            :template (:name template)
-                            :section section})
+     (ev/event {::ev/name "import-template-launch"
+                ::ev/origin "dashboard"
+                :template (:name template)
+                :section section})
 
      (modal/show
       {:type :import
@@ -92,8 +91,7 @@
          [:span {:class (stl/css :title-icon)}
           arrow-icon]])]]))
 
-(mf/defc card-item
-  {::mf/wrap-props false}
+(mf/defc card-item*
   [{:keys [item index is-visible collapsed on-import]}]
   (let [id     (dm/str "card-container-" index)
         href   (u/join cf/public-uri (dm/str "images/thumbnails/template-" (:id item) ".jpg"))
@@ -135,8 +133,7 @@
           (:name item))]
        download-icon]]]))
 
-(mf/defc card-item-link
-  {::mf/wrap-props false}
+(mf/defc card-item-link*
   [{:keys [total is-visible collapsed section]}]
   (let [id (dm/str "card-container-" total)
 
@@ -144,9 +141,9 @@
         (mf/use-fn
          (mf/deps section)
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "dashboard"
-                                            :section section}))))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "dashboard"
+                                :section section}))))
 
         on-key-down
         (mf/use-fn
@@ -271,7 +268,7 @@
             :ref content-ref}
 
       (for [index (range (count templates))]
-        [:& card-item
+        [:> card-item*
          {:on-import on-import-template
           :item (nth templates index)
           :index index
@@ -279,7 +276,7 @@
           :is-visible true
           :collapsed collapsed}])
 
-      [:& card-item-link
+      [:> card-item-link*
        {:is-visible true
         :collapsed collapsed
         :section section

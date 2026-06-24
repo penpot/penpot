@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.frame-guides-test
   (:require
    [app.common.test-helpers.compositions :as ctho]
@@ -56,10 +56,13 @@
                ;; guide has moved
                (t/is (= (:position guide') 100))
 
-               ;; WASM mocks were exercised
-               (t/is (pos? (thw/call-count :clean-modifiers)))
-               (t/is (pos? (thw/call-count :set-structure-modifiers)))
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+               ;; WASM bridge was exercised. `dw/update-position`
+               ;; routes through `apply-wasm-modifiers`, which for
+               ;; translation-only updates calls only `clean-modifiers`
+               ;; and computes the per-descendant transforms in CLJS
+               ;; (skipping `set-structure-modifiers` and
+               ;; `propagate-modifiers`).
+               (t/is (pos? (thw/call-count :clean-modifiers)))))))))))
 
 
 

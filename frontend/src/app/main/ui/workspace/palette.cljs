@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.palette
   (:require-macros [app.main.style :as stl])
@@ -160,10 +160,11 @@
             width (obj/get dom "clientWidth")]
         (swap! state* assoc :width width)))
 
-    [:div {:class (stl/css :palette-wrapper)
-           :id "palette-wrapper"
-           :style  (calculate-palette-style rulers?)
-           :data-testid "palette"}
+    [:section {:class (stl/css :palette-wrapper)
+               :id "palette-wrapper"
+               :style  (calculate-palette-style rulers?)
+               :aria-label (tr "workspace.toolbar.palette-bar")
+               :data-testid "palette"}
      (when-not ^boolean read-only?
        [:div {:ref parent-ref
               :class (dm/str size-classname " " (stl/css-case :palettes true

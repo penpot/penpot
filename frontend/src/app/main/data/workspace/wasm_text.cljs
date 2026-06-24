@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.wasm-text
   "Helpers/events to resize wasm text shapes without depending on workspace.texts.
@@ -17,6 +17,7 @@
    [app.common.types.modifiers :as ctm]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
@@ -32,7 +33,10 @@
    (get-wasm-text-new-size shape (:content shape)))
 
   ([{:keys [id selrect grow-type] :as shape} content]
-   (when id
+   ;; Skip when the WASM context is not ready (e.g. switching renderer while a
+   ;; text shape is being edited): there is no design state to query, and
+   ;; returning nil makes callers skip the WASM resize/modifier path.
+   (when (and id (wasm.api/initialized?))
      (wasm.api/use-shape id)
      (wasm.api/set-shape-text-content id content)
      (wasm.api/set-shape-text-images id content)
@@ -180,20 +184,31 @@
                      (let [font-data (wasm.fonts/make-font-data font)]
                        (wasm.fonts/font-stored? font-data (:emoji? font-data))))))]
 
-         (if (not fonts-loaded?)
-           (->> (rx/of (resize-wasm-text-debounce id opts))
-                (rx/delay 20))
+         (if fonts-loaded?
            (let [pass-opts (when (or (some? undo-group) (some? undo-id))
                              (cond-> {}
                                (some? undo-group) (assoc :undo-group undo-group)
                                (some? undo-id) (assoc :undo-id undo-id)))]
-             (rx/of (resize-wasm-text-debounce-inner id pass-opts)))))))))
+             (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+
+           ;; Fonts not loaded; retry after 20 msecs
+           (->> (rx/of (resize-wasm-text-debounce id opts))
+                (rx/delay 20))))))))
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."
   [ids]
   (ptk/reify ::resize-wasm-text-all
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rx/from ids)
-           (rx/map resize-wasm-text-debounce)))))
+    (watch [_ state stream]
+      (let [resize-stream
+            (->> (rx/from ids)
+                 (rx/map resize-wasm-text-debounce))]
+        (if (::dwsh/update-shapes-buffer state)
+          ;; If we're in the middle of a token propagation we wait until is finished to
+          ;; recalculate the text sizes
+          (->> stream
+               (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
+               (rx/take 1)
+               (rx/mapcat (constantly resize-stream)))
+          resize-stream)))))

@@ -6,10 +6,10 @@
 
 @use "ds/typography.scss" as t;
 @use "ds/colors.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .org-avatar {
   position: relative;
-  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -19,18 +19,21 @@
 }
 
 .org-avatar-xxxl {
-  width: var(--sp-xxxl);
-  height: var(--sp-xxxl);
+  width: px2rem(30);
+  height: px2rem(30);
+  border-radius: px2rem(6);
 }
 
 .org-avatar-xxl {
   width: var(--sp-xxl);
   height: var(--sp-xxl);
+  border-radius: px2rem(5);
 }
 
 .org-avatar-xl {
-  width: var(--sp-xl);
-  height: var(--sp-xl);
+  width: px2rem(22);
+  height: px2rem(22);
+  border-radius: var(--sp-xs);
 }
 
 .org-avatar-bg {

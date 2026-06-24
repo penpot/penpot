@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.layer-item
   (:require-macros [app.main.style :as stl])
@@ -16,7 +16,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
@@ -49,7 +48,10 @@
        (let [{:keys [enter leave]} @sidebar-hover-queue
 
              enter (set/difference enter leave)
-             leave (set/difference leave enter)]
+             leave (set/difference leave enter)
+             search-match (get-in @st/state [:workspace-local :search-match-highlight])
+             leave (cond-> leave
+                     (some? search-match) (disj search-match))]
 
          (reset! sidebar-hover-queue {:enter #{} :leave #{}})
          (reset! sidebar-hover-pending? false)
@@ -441,20 +443,19 @@
         (mf/use-fn
          (mf/deps id objects)
          (fn [event]
-           (when (contains? cf/flags :canary)
-             (let [shift?    (kbd/shift? event)
-                   shape     (get objects id)
-                   parent    (get objects (:parent-id shape))
-                   siblings  (:shapes parent)
-                   pos       (d/index-of siblings id)]
-               (when (some? pos)
-                 (let [;; Layers render in reverse: Tab (visually down) = dec index,
-                       ;; Shift+Tab (visually up) = inc index
-                       target-id (if shift?
-                                   (get siblings (inc pos))
-                                   (get siblings (dec pos)))]
-                   (when (some? target-id)
-                     (st/emit! (dw/start-rename-shape target-id)))))))))]
+           (let [shift?    (kbd/shift? event)
+                 shape     (get objects id)
+                 parent    (get objects (:parent-id shape))
+                 siblings  (:shapes parent)
+                 pos       (d/index-of siblings id)]
+             (when (some? pos)
+               (let [;; Layers render in reverse: Tab (visually down) = dec index,
+                     ;; Shift+Tab (visually up) = inc index
+                     target-id (if shift?
+                                 (get siblings (inc pos))
+                                 (get siblings (dec pos)))]
+                 (when (some? target-id)
+                   (st/emit! (dw/start-rename-shape target-id))))))))]
 
     (mf/with-effect [is-selected selected]
       (let [single? (= (count selected) 1)

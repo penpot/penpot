@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.verify-token
   (:require
@@ -78,7 +78,7 @@
         ;;   :invalid-token   -> corrupted / unknown / fallback
         bad-token-reason (mf/use-state nil)]
 
-    (mf/with-effect []
+    (mf/with-effect [token]
       (dom/set-html-title (tr "title.default"))
       (->> (rp/cmd! :verify-token {:token token})
            (rx/subs!

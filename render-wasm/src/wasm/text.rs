@@ -7,7 +7,7 @@ use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
-use crate::{with_current_shape, with_current_shape_mut, with_state, with_state_mut, STATE};
+use crate::{with_current_shape, with_current_shape_mut, with_state};
 
 use crate::error::Error;
 
@@ -386,7 +386,7 @@ pub extern "C" fn update_shape_text_layout() {
 
 #[no_mangle]
 pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
-    with_state_mut!(state, {
+    with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         if let Some(shape) = state.shapes.get_mut(&shape_id) {
             update_text_layout(shape);

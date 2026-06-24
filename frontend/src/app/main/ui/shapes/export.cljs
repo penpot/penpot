@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.export
   "Components that generates penpot specific svg nodes with
@@ -24,19 +24,22 @@
 (def include-metadata-ctx
   (mf/create-context false))
 
-(mf/defc render-xml
-  [{{:keys [tag attrs content] :as node} :xml}]
-
+(mf/defc render-xml*
+  [{:keys [xml]}]
   (cond
-    (map? node)
-    (let [props (-> (csvg/attrs->props attrs)
+    (map? xml)
+    (let [{:keys [tag attrs content]}
+          xml
+
+          props (-> (csvg/attrs->props attrs)
                     (json/->js :key-fn name))]
+
       [:> (d/name tag) props
        (for [child content]
-         [:& render-xml {:xml child :key (swap! internal-counter inc)}])])
+         [:> render-xml* {:xml child :key (swap! internal-counter inc)}])])
 
-    (string? node)
-    node
+    (string? xml)
+    xml
 
     :else
     nil))
@@ -166,7 +169,7 @@
                (cond-> (some? display)
                  (obj/set! "penpot:display" (str display))))]))])))
 
-(mf/defc export-flows
+(mf/defc export-flows*
   [{:keys [flows]}]
   [:> "penpot:flows" #js {}
    (for [{:keys [id name starting-frame]} (vals flows)]
@@ -175,7 +178,7 @@
                             :name name
                             :starting-frame starting-frame}])])
 
-(mf/defc export-guides
+(mf/defc export-guides*
   [{:keys [guides]}]
   [:> "penpot:guides" #js {}
    (for [{:keys [position frame-id axis]} (vals guides)]
@@ -183,8 +186,7 @@
                              :frame-id frame-id
                              :axis (d/name axis)}])])
 
-(mf/defc export-page
-  {::mf/props :obj}
+(mf/defc export-page*
   [{:keys [page]}]
   (let [id     (get page :id)
         grids  (get page :grids)
@@ -197,10 +199,10 @@
          [:& export-grid-data {:grids grids}]))
 
      (when (d/not-empty? flows)
-       [:& export-flows {:flows flows}])
+       [:> export-flows* {:flows flows}])
 
      (when (d/not-empty? guides)
-       [:& export-guides {:guides guides}])]))
+       [:> export-guides* {:guides guides}])]))
 
 (defn- export-shadow-data [{:keys [shadow]}]
   (mf/html
@@ -273,7 +275,7 @@
          (for [[def-id def-xml] (:svg-defs shape)]
            [:> "penpot:svg-def" #js {:def-id def-id
                                      :key (swap! internal-counter inc)}
-            [:& render-xml {:xml def-xml}]])]))
+            [:> render-xml* {:xml def-xml}]])]))
 
     (when (= (:type shape) :svg-raw)
       (let [shape (-> shape (d/update-in-when [:content :attrs :style] str->style))
@@ -333,6 +335,8 @@
                   :penpot:stroke-opacity        (d/name (:stroke-opacity stroke))
                   :penpot:stroke-style          (d/name (:stroke-style stroke))
                   :penpot:stroke-width          (d/name (:stroke-width stroke))
+                  :penpot:stroke-dash           ((d/nilf str) (:stroke-dash stroke))
+                  :penpot:stroke-gap            ((d/nilf str) (:stroke-gap stroke))
                   :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
                   :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
                   :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))
@@ -476,7 +480,7 @@
            :penpot:layout-item-z-index layout-item-z-index}])))
 
 
-(mf/defc export-data
+(mf/defc export-data*
   [{:keys [shape]}]
   (let [props (-> (obj/create) (add-data shape) (add-library-refs shape))]
     [:> "penpot:shape" props

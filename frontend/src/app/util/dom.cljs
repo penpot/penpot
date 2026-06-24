@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.dom
   (:require
@@ -12,6 +12,7 @@
    [app.common.geom.rect :as grc]
    [app.common.logging :as log]
    [app.common.media :as cm]
+   [app.common.uri :as u]
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.webapi :as wapi]
@@ -299,6 +300,11 @@
   (when (some? node)
     (.-selectionStart node)))
 
+(defn selection-end
+  [^js node]
+  (when (some? node)
+    (.-selectionEnd node)))
+
 (defn set-selection-range!
   [^js node start end]
   (when (some? node)
@@ -330,6 +336,18 @@
    (create-text globals/document text))
   ([document ^js text]
    (.createTextNode document text)))
+
+(defn escape-html
+  "Escapes special HTML characters in a string so that it can be safely used
+  as innerHTML without risk of XSS."
+  [^js text]
+  (when (some? text)
+    (-> text
+        (str/replace "&" "&amp;")
+        (str/replace "<" "&lt;")
+        (str/replace ">" "&gt;")
+        (str/replace "\"" "&quot;")
+        (str/replace "'" "&#39;"))))
 
 (defn set-html!
   [^js el html]
@@ -830,14 +848,50 @@
   ([uri name]
    (open-new-window uri name "noopener,noreferrer"))
   ([uri name features]
-   (when-let [new-window (.open js/window (str uri) name features)]
-     (when (not= name "_blank")
-       (when-let [location (.-location new-window)]
-         (.reload location))))))
+   (when (exists? js/window)
+     (when-let [new-window (.open js/window (str uri) name features)]
+       (when (not= name "_blank")
+         (when-let [location (.-location new-window)]
+           (.reload location)))))))
 
 (defn browser-back
   []
-  (.back (.-history js/window)))
+  (.back (.-history globals/window)))
+
+(defn replace-history-state!
+  "Replace the current browser history entry URL without triggering navigation."
+  [url]
+  (.replaceState (.-history globals/window) nil "" url))
+
+(defn- update-query-params
+  "Apply `f` to the query-params map of `url`, returning the updated URL string.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url f]
+  (let [transform (fn [parsed]
+                    (update parsed :query
+                            (fn [q]
+                              (-> (u/query-string->map (or q ""))
+                                  f
+                                  u/map->query-string))))
+        parsed    (u/uri url)
+        fragment  (:fragment parsed)]
+    (if (str/blank? fragment)
+      (str (transform parsed))
+      (-> parsed
+          (assoc :fragment (str (transform (u/parse fragment))))
+          str))))
+
+(defn append-query-param
+  "Return a new URL string with the given query parameter added or replaced.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key value]
+  (update-query-params url #(assoc % key value)))
+
+(defn remove-query-param
+  "Return a new URL string with the given query parameter removed.
+  Handles both plain query strings and fragment-based (hash) URLs."
+  [url key]
+  (update-query-params url #(dissoc % key)))
 
 (defn reload-current-window
   ([]

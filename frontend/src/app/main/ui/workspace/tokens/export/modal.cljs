@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.export.modal
   (:require-macros [app.main.style :as stl])
@@ -13,7 +13,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.code-block :refer [code-block]]
+   [app.main.ui.components.code-block :refer [code-block*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -23,7 +23,6 @@
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [app.util.zip :as zip]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc export-tab*
@@ -61,13 +60,13 @@
          (mf/deps tokens-json)
          (fn []
            (when tokens-json
-             (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens" :type "single"}))
+             (st/emit! (ev/event {::ev/name "export-tokens" :type "single"}))
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
                   (dom/trigger-download "tokens.json")))))]
     [:> export-tab* {:is-disabled is-disabled
                      :on-export on-export}
      [:div {:class (stl/css :json-preview)}
-      [:> code-block {:code tokens-json :type "json"}]]]))
+      [:> code-block* {:code tokens-json :type "json"}]]]))
 
 (defn download-tokens-zip! [multi-file-entries]
   (let [writer (-> (zip/blob-writer {:mtype "application/zip"})
@@ -88,7 +87,7 @@
         (mf/use-fn
          (mf/deps files)
          (fn []
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens" :type "multiple"}))
+           (st/emit! (ev/event {::ev/name "export-tokens" :type "multiple"}))
            (download-tokens-zip! files)))]
     [:> export-tab* {:on-export on-export
                      :is-disabled is-disabled}

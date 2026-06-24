@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.viewport.actions
   (:require
@@ -196,10 +196,10 @@
              (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
+  [hover hover-ids selected hover-top-frame-id drawing-path? objects edition drawing-tool z? read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
+   (mf/deps @hover @hover-ids selected @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (when-not @z?
@@ -208,7 +208,16 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
 
-             {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
+             selected-id-under-cursor
+             (->> @hover-ids
+                  (filter selected)
+                  last)
+
+             {:keys [id type] :as shape}
+             (or (when selected-id-under-cursor
+                   (get objects selected-id-under-cursor))
+                 @hover
+                 (get objects (first @hover-ids)))
 
              editable? (contains? #{:text :rect :path :image :circle} type)
 
@@ -323,7 +332,8 @@
            editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
-                        (= "TEXTAREA" (obj/get target "tagName")))]
+                        (= "TEXTAREA" (obj/get target "tagName"))
+                        (true? (.-isContentEditable target)))]
 
        (when-not (.-repeat bevent)
          (st/emit! (kbd/->KeyboardEvent :down key shift? ctrl? alt? meta? mod? editing? event)))))))
@@ -342,7 +352,8 @@
            editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
-                        (= "TEXTAREA" (obj/get target "tagName")))]
+                        (= "TEXTAREA" (obj/get target "tagName"))
+                        (true? (.-isContentEditable target)))]
        (st/emit! (kbd/->KeyboardEvent :up key shift? ctrl? alt? meta? mod? editing? event))))))
 
 (defn on-pointer-move [move-stream]

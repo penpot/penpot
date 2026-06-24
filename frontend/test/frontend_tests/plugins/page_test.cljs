@@ -1,0 +1,150 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns frontend-tests.plugins.page-test
+  (:require
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as cths]
+   [app.main.data.workspace.pages :as dwpg]
+   [app.main.store :as st]
+   [app.plugins.api :as api]
+   [app.plugins.shape :as shape]
+   [app.util.object :as obj]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each
+  {:before (fn [] (thw/setup-wasm-mocks!))
+   :after  thw/teardown-wasm-mocks!})
+
+(defn- setup
+  "Creates a file with two pages (page1 as current) and a plugin context."
+  []
+  (let [file    (-> (cthf/sample-file :file1 :page-label :page1)
+                    (cthf/add-sample-page :page2)
+                    (cthf/switch-to-page :page1))
+        store   (ths/setup-store file)
+        _       (set! st/state store)
+        _       (set! st/stream (ptk/input-stream store))
+        context (api/create-context "00000000-0000-0000-0000-000000000000")]
+    {:file file :store store :context context}))
+
+(def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
+
+(defn- setup-with-board
+  "Creates a file with a board on the current page and a plugin context."
+  []
+  (let [file    (-> (cthf/sample-file :file1 :page-label :page1)
+                    (cths/add-sample-shape :board1 :type :frame))
+        store   (ths/setup-store file)
+        _       (set! st/state store)
+        _       (set! st/stream (ptk/input-stream store))
+        context (api/create-context plugin-id)]
+    {:file file :store store :context context :board-id (thi/id :board1)}))
+
+(t/deftest test-create-flow-starting-board-is-valid
+  ;; Regression: the flow proxy returned by createFlow (and obtained later via
+  ;; page.flows) must expose a valid board proxy for `startingBoard`, carrying
+  ;; the plugin id rather than a corrupted handle. See issue #10203.
+  (let [result          (setup-with-board)
+        ^js context     (:context result)
+        board-id        (:board-id result)
+        ^js page        (.-currentPage context)
+        ^js board       (.getShapeById page (str board-id))
+        ^js flow        (.createFlow page "flow1" board)
+        ^js sb          (.-startingBoard flow)]
+    (t/is (shape/shape-proxy? sb))
+    (t/is (= (str board-id) (.-id sb)))
+    (t/is (= plugin-id (obj/get sb "$plugin")))
+
+    ;; Re-fetching the flow through page.flows must yield the same valid board
+    (let [^js flow2 (aget (.-flows page) 0)
+          ^js sb2   (.-startingBoard flow2)]
+      (t/is (shape/shape-proxy? sb2))
+      (t/is (= (str board-id) (.-id sb2)))
+      (t/is (= plugin-id (obj/get sb2 "$plugin"))))))
+
+(defn- mock-page-initialized
+  "Simulates the two effects of initialize-page* without routing:
+  updates current-page-id in state, then emits the public ::dwpg/initialized event."
+  [store page-id]
+  (ptk/emit! store #(assoc % :current-page-id page-id))
+  (ptk/emit! store (ptk/data-event ::dwpg/initialized page-id)))
+
+(t/deftest test-open-page-returns-promise
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page2   (aget pages 1)]
+    (t/is (instance? js/Promise (.openPage context page2)))))
+
+(t/deftest test-open-page-new-window-returns-promise
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page2   (aget pages 1)]
+    (t/is (instance? js/Promise (.openPage context page2 true)))))
+
+(t/deftest test-open-page-invalid-arg-returns-nil
+  (let [^js context (:context (setup))]
+    (t/is (nil? (.openPage context "not-a-page")))))
+
+(t/deftest test-open-page-resolves-when-page-changes
+  (t/async done
+    (let [result                  (setup)
+          store                   (:store result)
+          ^js context             (:context result)
+          ^js pages               (.. context -currentFile -pages)
+          ^js page2               (aget pages 1)
+          page2-id                (obj/get page2 "$id")]
+
+      (-> (.openPage context page2)
+          (.then (fn [_]
+                   (t/is (= (:current-page-id @store) page2-id))
+                   (done))))
+
+      (mock-page-initialized store page2-id))))
+
+(t/deftest test-flows-returns-empty-array-when-no-flows
+  ;; page.flows must always return an array, even when the page has no flows
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page1   (aget pages 0)
+        ^js flows   (.-flows page1)]
+    (t/is (array? flows))
+    (t/is (= 0 (.-length flows)))))
+
+(t/deftest test-open-page-does-not-resolve-for-wrong-page
+  ;; Promise should not resolve when a different page is initialized
+  (t/async done
+    (let [result                  (setup)
+          store                   (:store result)
+          ^js context             (:context result)
+          ^js pages               (.. context -currentFile -pages)
+          ^js page1               (aget pages 0)
+          ^js page2               (aget pages 1)
+          page1-id                (obj/get page1 "$id")
+          page2-id                (obj/get page2 "$id")
+          resolved?               (atom false)]
+
+      (-> (.openPage context page2)
+          (.then (fn [_] (reset! resolved? true))))
+
+      ;; Initialize page1 (wrong page) — promise should not resolve
+      (mock-page-initialized store page1-id)
+
+      ;; Give microtasks a chance to run, then verify promise is still pending
+      (js/setTimeout
+       (fn []
+         (t/is (not @resolved?))
+         ;; Now initialize the correct page and confirm it resolves
+         (-> (.openPage context page2)
+             (.then (fn [_]
+                      (t/is (= (:current-page-id @store) page2-id))
+                      (done))))
+         (mock-page-initialized store page2-id))
+       0))))

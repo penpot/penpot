@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.logic.libraries
   #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
@@ -20,6 +20,7 @@
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -485,36 +486,41 @@
   that use assets of the given type in the given library.
 
   If an asset id is given, only shapes linked to this particular asset will
-  be synchronized."
-  [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (assert (contains? #{:colors :components :typographies} asset-type))
-  (assert (or (nil? asset-id) (uuid? asset-id)))
-  (assert (uuid? file-id))
-  (assert (uuid? library-id))
+  be synchronized.
 
-  (container-log :info asset-id
-                 :msg "Sync file with library"
-                 :asset-type asset-type
-                 :asset-id asset-id
-                 :file (pretty-file file-id libraries current-file-id)
-                 :library (pretty-file library-id libraries current-file-id))
+  If early-return? is true, stops as soon as the first change is generated."
+  ([changes file-id asset-type asset-id library-id libraries current-file-id]
+   (generate-sync-file changes file-id asset-type asset-id library-id libraries current-file-id false))
+  ([changes file-id asset-type asset-id library-id libraries current-file-id early-return?]
+   (assert (contains? #{:colors :components :typographies} asset-type))
+   (assert (or (nil? asset-id) (uuid? asset-id)))
+   (assert (uuid? file-id))
+   (assert (uuid? library-id))
 
-  (let [file          (get-in libraries [file-id :data])]
-    (loop [containers (ctf/object-containers-seq file)
-           changes    changes]
-      (if-let [container (first containers)]
-        (do
-          (recur (next containers)
-                 (pcb/concat-changes ;;TODO Remove concat changes
-                  changes
-                  (generate-sync-container (pcb/empty-changes nil)
-                                           asset-type
-                                           asset-id
-                                           library-id
-                                           container
-                                           libraries
-                                           current-file-id))))
-        changes))))
+   (container-log :info asset-id
+                  :msg "Sync file with library"
+                  :asset-type asset-type
+                  :asset-id asset-id
+                  :file (pretty-file file-id libraries current-file-id)
+                  :library (pretty-file library-id libraries current-file-id))
+
+   (let [file (get-in libraries [file-id :data])]
+     (loop [containers (ctf/object-containers-seq file)
+            changes    changes]
+       (let [container (first containers)]
+         (if (or (nil? container)
+                 (and early-return? (seq (:redo-changes changes))))
+           changes
+           (recur (next containers)
+                  (pcb/concat-changes ;;TODO Remove concat changes
+                   changes
+                   (generate-sync-container (pcb/empty-changes nil)
+                                            asset-type
+                                            asset-id
+                                            library-id
+                                            container
+                                            libraries
+                                            current-file-id)))))))))
 
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
@@ -522,35 +528,41 @@
   the given library.
 
   If an asset id is given, only shapes linked to this particular asset will
-  be synchronized."
-  [changes file-id asset-type asset-id library-id libraries current-file-id]
-  (assert (contains? #{:colors :components :typographies} asset-type))
-  (assert (or (nil? asset-id) (uuid? asset-id)))
-  (assert (uuid? file-id))
-  (assert (uuid? library-id))
+  be synchronized.
 
-  (container-log :info asset-id
-                 :msg "Sync local components with library"
-                 :asset-type asset-type
-                 :asset-id asset-id
-                 :file (pretty-file file-id libraries current-file-id)
-                 :library (pretty-file library-id libraries current-file-id))
+  If early-return? is true, stops as soon as the first change is generated."
+  ([changes file-id asset-type asset-id library-id libraries current-file-id]
+   (generate-sync-library changes file-id asset-type asset-id library-id libraries current-file-id false))
+  ([changes file-id asset-type asset-id library-id libraries current-file-id early-return?]
+   (assert (contains? #{:colors :components :typographies} asset-type))
+   (assert (or (nil? asset-id) (uuid? asset-id)))
+   (assert (uuid? file-id))
+   (assert (uuid? library-id))
 
-  (let [file          (get-in libraries [file-id :data])]
-    (loop [local-components (ctkl/components-seq file)
-           changes changes]
-      (if-let [local-component (first local-components)]
-        (recur (next local-components)
-               (pcb/concat-changes ;;TODO Remove concat changes
-                changes
-                (generate-sync-container  (pcb/empty-changes nil)
-                                          asset-type
-                                          asset-id
-                                          library-id
-                                          (cfh/make-container local-component :component)
-                                          libraries
-                                          current-file-id)))
-        changes))))
+   (container-log :info asset-id
+                  :msg "Sync local components with library"
+                  :asset-type asset-type
+                  :asset-id asset-id
+                  :file (pretty-file file-id libraries current-file-id)
+                  :library (pretty-file library-id libraries current-file-id))
+
+   (let [file (get-in libraries [file-id :data])]
+     (loop [local-components (ctkl/components-seq file)
+            changes          changes]
+       (let [local-component (first local-components)]
+         (if (or (nil? local-component)
+                 (and early-return? (seq (:redo-changes changes))))
+           changes
+           (recur (next local-components)
+                  (pcb/concat-changes ;;TODO Remove concat changes
+                   changes
+                   (generate-sync-container (pcb/empty-changes nil)
+                                            asset-type
+                                            asset-id
+                                            library-id
+                                            (cfh/make-container local-component :component)
+                                            libraries
+                                            current-file-id)))))))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
@@ -824,20 +836,30 @@
       changes)))
 
 (defn- find-main-container
-  "Find the container that has the main shape."
-  [container-inst shape-inst shape-main library component]
+  "Find the container that has the main shape.
+
+  When walking up through nested component copies, each intermediate component
+  may live in a different library/file. We resolve the right file-data for each
+  component via `ctf/find-component-file` so we can locate components that span
+  multiple libraries."
+  [container-inst shape-inst shape-main library file libraries component]
   (loop [shape-inst' shape-inst
-         component' component]
-    (let [container (ctf/get-component-container library component')] ; TODO: this won't work if some intermediate component is in a different library
-      (if (some? (ctn/get-shape container (:id shape-main)))          ;       for this to work we need to have access to the libraries list here
+         library'    library
+         component'  component]
+    (let [container (ctf/get-component-container library' component')]
+      (if (some? (ctn/get-shape container (:id shape-main)))
         container
-        (let [parent (ctn/get-shape container-inst (:parent-id shape-inst'))
+        (let [parent      (ctn/get-shape container-inst (:parent-id shape-inst'))
               shape-inst' (ctn/get-head-shape (:objects container-inst) parent)
-              component' (or (ctkl/get-component library (:component-id shape-inst'))
-                             (ctkl/get-deleted-component library (:component-id shape-inst')))]
+              next-file   (some-> shape-inst'
+                                  :component-file
+                                  (->> (ctf/find-component-file file libraries)))
+              next-data   (some-> next-file :data)
+              component'  (when next-data
+                            (or (ctkl/get-component next-data (:component-id shape-inst'))
+                                (ctkl/get-deleted-component next-data (:component-id shape-inst'))))]
           (if (some? component')
-            (recur shape-inst'
-                   component')
+            (recur shape-inst' next-data component')
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
@@ -883,7 +905,7 @@
             set-remote-synced?
             (change-remote-synced shape-inst container true))
 
-          component-container (find-main-container container shape-inst shape-main library component)
+          component-container (find-main-container container shape-inst shape-main library file libraries component)
 
           children-inst       (vec (ctn/get-direct-children container shape-inst))
           children-main       (vec (ctn/get-direct-children component-container shape-main))
@@ -1840,7 +1862,7 @@
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
                 ;; and attrs (bold, font, etc) are in the same attr :content.
-                ;; If only one of them is touched, we want to adress this case and
+                ;; If only one of them is touched, we want to address this case and
                 ;; only update the untouched one
                 text-content-change?
                 (and omit-touched?
@@ -2080,25 +2102,78 @@
            (or (:transform current-shape) (gmt/matrix)))))))
 
 
+(defn- switch-geom-change-value
+  [prev-shape current-shape attr]
+  ;; Composite geometry stores absolute coordinates. When preserving a size
+  ;; override across variants, keep the target variant's position and only carry
+  ;; the previous dimensions; otherwise :x/:y can disagree with :selrect/:points.
+  (let [prev-selrect (:selrect prev-shape)
+        current-selrect (:selrect current-shape)
+        final-width (:width prev-selrect)
+        final-height (:height prev-selrect)
+        x (:x current-selrect)
+        y (:y current-selrect)
+        selrect (assoc current-selrect
+                       :width final-width
+                       :height final-height
+                       :x x
+                       :y y
+                       :x1 x
+                       :y1 y
+                       :x2 (+ x final-width)
+                       :y2 (+ y final-height))]
+    (case attr
+      :selrect
+      selrect
+
+      :points
+      (-> selrect
+          (grc/rect->points)
+          (gsh/transform-points
+           (grc/rect->center selrect)
+           (or (:transform current-shape) (gmt/matrix)))))))
+
+
 (defn- equal-geometry?
   "Returns true when the value of `attr` in `shape` is considered equal
    to the corresponding value in `origin-shape`, ignoring positional
    displacement (x/y).
    For :selrect we compare width/height only;
    for :points we normalise each vector so the first point is the
-   origin before comparing."
+   origin before comparing.
+   For :content on path shapes we compare the bounding-box width/height
+   of the path segments, again ignoring absolute position.
+
+   Comparisons use `mth/close?` (and `gpt/close?` for points) rather than
+   exact `=` because `previous-shape` here may carry sub-pixel drift from
+   interactive transform modifiers (e.g. an alt-drag duplicate of a
+   variant whose children are component instances). Without tolerance
+   this guard would miss equivalent geometries and let the `:else` branch
+   in `update-attrs-on-switch` carry stale `:selrect`/`:points` from the
+   pre-switch shape onto the freshly instantiated target."
   [shape origin-shape attr]
   (or (and (= attr :selrect)
-           (= (-> shape :selrect :width)  (-> origin-shape :selrect :width))
-           (= (-> shape :selrect :height) (-> origin-shape :selrect :height)))
+           (mth/close? (-> shape :selrect :width)  (-> origin-shape :selrect :width))
+           (mth/close? (-> shape :selrect :height) (-> origin-shape :selrect :height)))
       (and (= attr :points)
            (let [normalize-pts (fn [pts]
                                  (when (seq pts)
                                    (let [f (first pts)]
-                                     (mapv #(gpt/subtract % f) pts))))]
-             (= (normalize-pts (get shape :points))
-                (normalize-pts (get origin-shape :points)))))))
-
+                                     (mapv #(gpt/subtract % f) pts))))
+                 a (normalize-pts (get shape :points))
+                 b (normalize-pts (get origin-shape :points))]
+             (and (= (count a) (count b))
+                  (every? identity (map gpt/close? a b)))))
+      (and (= attr :content)
+           (cfh/path-shape? shape)
+           (let [ca (:content shape)
+                 cb (:content origin-shape)]
+             (and (some? ca) (some? cb)
+                  (let [selrect-a (segment/content->selrect ca)
+                        selrect-b (segment/content->selrect cb)]
+                    (and (some? selrect-a) (some? selrect-b)
+                         (mth/close? (:width selrect-a) (:width selrect-b))
+                         (mth/close? (:height selrect-a) (:height selrect-b)))))))))
 
 (defn update-attrs-on-switch
   "Copy attributes that have changed in the shape previous to the switch
@@ -2119,8 +2194,8 @@
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched previous-shape)}]
-           uoperations (list {:type :set-touched :touched (:touched current-shape)})]
+           roperations []
+           uoperations '()]
       (if-let [attr (first attrs)]
         (let [sync-group
               (ctk/resolve-sync-group (:type previous-shape) attr)
@@ -2163,7 +2238,7 @@
 
               ;; On texts, both text (the actual letters)
               ;; and attrs (bold, font, etc) are in the same attr :content.
-              ;; If only one of them is touched, we want to adress this case and
+              ;; If only one of them is touched, we want to address this case and
               ;; only update the untouched one
               text-change?
               (and (not skip-operations?)
@@ -2228,6 +2303,10 @@
                        (contains? #{:points :selrect :width :height} attr))
                   (switch-fixed-layout-geom-change-value previous-shape current-shape origin-ref-shape attr)
 
+                  (and (contains? #{:points :selrect} attr)
+                       (not path-change?))
+                  (switch-geom-change-value previous-shape current-shape attr)
+
                   :else
                   (get previous-shape attr)))
 
@@ -2262,7 +2341,13 @@
 
         (let [updated-attrs (into #{} (comp (filter #(= :set (:type %)))
                                             (map :attr))
-                                  roperations)]
+                                  roperations)
+              updated-sync-groups (into #{}
+                                        (keep #(ctk/resolve-sync-group (:type previous-shape) %))
+                                        updated-attrs)
+              new-touched (set/union (or (:touched current-shape) #{}) updated-sync-groups)
+              roperations (into [{:type :set-touched :touched new-touched}] roperations)
+              uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
             (> (count roperations) 1)
             (-> (add-update-attr-changes current-shape container roperations uoperations)
@@ -2629,29 +2714,30 @@
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
     [new-shape all-parents changes]))
 
-(defn generate-sync-file-changes
-  [changes undo-group asset-type file-id asset-id library-id libraries current-file-id]
-  (let [sync-components?   (or (nil? asset-type) (= asset-type :components))
-        sync-colors?       (or (nil? asset-type) (= asset-type :colors))
-        sync-typographies? (or (nil? asset-type) (= asset-type :typographies))]
-    (cond-> changes
-      :always
-      (pcb/set-undo-group undo-group)
-      ;; library-changes
-      sync-components?
-      (generate-sync-library file-id :components asset-id library-id libraries current-file-id)
-      sync-colors?
-      (generate-sync-library file-id :colors asset-id library-id libraries current-file-id)
-      sync-typographies?
-      (generate-sync-library file-id :typographies asset-id library-id libraries current-file-id)
+(defn- maybe-sync
+  [c enabled? done? f]
+  (if (and enabled? (not (done? c)))
+    (f c)
+    c))
 
-      ;; file-changes
-      sync-components?
-      (generate-sync-file file-id :components asset-id library-id libraries current-file-id)
-      sync-colors?
-      (generate-sync-file file-id :colors asset-id library-id libraries current-file-id)
-      sync-typographies?
-      (generate-sync-file file-id :typographies asset-id library-id libraries current-file-id))))
+(defn generate-sync-file-changes
+  ([changes undo-group asset-type file-id asset-id library-id libraries current-file-id]
+   (generate-sync-file-changes changes undo-group asset-type file-id asset-id library-id libraries current-file-id false))
+  ([changes undo-group asset-type file-id asset-id library-id libraries current-file-id early-return?]
+   (let [sync-components?   (or (nil? asset-type) (= asset-type :components))
+         sync-colors?       (or (nil? asset-type) (= asset-type :colors))
+         sync-typographies? (or (nil? asset-type) (= asset-type :typographies))
+         done?              (fn [c] (and early-return? (seq (:redo-changes c))))]
+     (-> (pcb/set-undo-group changes undo-group)
+         ;; library-changes
+         (maybe-sync sync-components? done? #(generate-sync-library % file-id :components asset-id library-id libraries current-file-id early-return?))
+         (maybe-sync sync-colors? done? #(generate-sync-library % file-id :colors asset-id library-id libraries current-file-id early-return?))
+         (maybe-sync sync-typographies? done? #(generate-sync-library % file-id :typographies asset-id library-id libraries current-file-id early-return?))
+         ;; file-changes
+         (maybe-sync sync-components? done? #(generate-sync-file % file-id :components asset-id library-id libraries current-file-id early-return?))
+         (maybe-sync sync-colors? done? #(generate-sync-file % file-id :colors asset-id library-id libraries current-file-id early-return?))
+         (maybe-sync sync-typographies? done? #(generate-sync-file % file-id :typographies asset-id library-id libraries current-file-id early-return?))))))
+
 
 (defn generate-sync-head
   [changes file-full libraries container id reset?]

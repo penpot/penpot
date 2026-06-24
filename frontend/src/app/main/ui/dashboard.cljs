@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.dashboard
   (:require-macros [app.main.style :as stl])
@@ -41,12 +41,12 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.session-state :as ss]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc dashboard-content*
@@ -217,7 +217,7 @@
               (fn [plugin]
                 (if plugin
                   (do
-                    (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                    (st/emit! (ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
               (fn [_]
@@ -246,12 +246,12 @@
                                          (dd/fetch-recent-files team-id)
                                          (dd/fetch-projects team-id)
                                          (dd/clear-selected-files)
-                                         (ptk/event ::ev/event {::ev/name "install-template-from-link-finished"
-                                                                :name template-name
-                                                                :url template-url}))]
+                                         (ev/event {::ev/name "install-template-from-link-finished"
+                                                    :name template-name
+                                                    :url template-url}))]
             (if valid-url?
               (st/emit!
-               (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url})
+               (ev/event {::ev/name "install-template-from-link" :name template-name :url template-url})
                (modal/show
                 {:type :import
                  :project-id project-id
@@ -271,8 +271,22 @@
       (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
                 (dnt/show-nitrate-popup :nitrate-form)))))
 
+(defn- use-pending-action
+  "Consumes a pending dashboard action from session storage and resumes it"
+  [pending-action-id]
+  (mf/with-effect [pending-action-id]
+    (when (some? pending-action-id)
+      (dom/replace-history-state!
+       (dom/remove-query-param (rt/get-current-href) :pending-action-id))
+      (when-let [action (ss/consume-pending-action! (str pending-action-id))]
+        (case (:type action)
+          :add-team-to-organization
+          (st/emit! (dnt/add-team-to-organization {:team-id         (:team-id action)
+                                                   :organization-id (:organization-id action)}))
+          nil)))))
+
 (mf/defc dashboard*
-  [{:keys [profile project-id team-id search-term plugin-url template section]}]
+  [{:keys [profile project-id team-id search-term plugin-url template section pending-action-id]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
 
@@ -310,6 +324,7 @@
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
     (use-nitrate-entry-popup)
+    (use-pending-action pending-action-id)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]

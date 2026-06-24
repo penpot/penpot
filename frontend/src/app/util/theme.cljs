@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.theme
   (:require
@@ -14,6 +14,9 @@
 (defonce ^:private color-scheme-media-query
   (.matchMedia globals/window "(prefers-color-scheme: dark)"))
 
+(defonce ^:private color-scheme-listeners*
+  (atom #{}))
+
 (def ^:const default "dark")
 
 (defn get-system-theme
@@ -21,6 +24,18 @@
   (if ^boolean (.-matches color-scheme-media-query)
     "dark"
     "light"))
+
+(defn- notify-color-scheme-listeners!
+  []
+  (doseq [f @color-scheme-listeners*]
+    (f)))
+
+(defn add-color-scheme-listener!
+  "Registers `f` to run after each `body` color-scheme update in
+   `use-initialize` (profile theme or OS preference). Returns a dispose fn."
+  [f]
+  (swap! color-scheme-listeners* conj f)
+  (fn [] (swap! color-scheme-listeners* disj f)))
 
 (defn- set-color-scheme
   [^string color]
@@ -47,4 +62,5 @@
        (cond
          (= profile-theme "system") system-theme
          (= profile-theme "default") "dark"
-         :else (d/nilv profile-theme "dark"))))))
+         :else (d/nilv profile-theme "dark")))
+      (notify-color-scheme-listeners!))))

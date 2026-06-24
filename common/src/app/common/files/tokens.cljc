@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.tokens
   (:require
@@ -148,11 +148,9 @@
           (not (ctob/token-name-path-exists? % tokens-tree)))]])
 
 (defn make-node-token-name-schema
-  "Dynamically generates a schema to check a token node name, adding translated error messages
-   and two additional validations:
-    - Min and max length.
-    - Checks if other token with a path derived from the name already exists at `tokens-tree`.
-      e.g. it's not allowed to create a token `foo.bar` if a token `foo` already exists."
+  "Dynamically generates a schema to check the name of a token node, that may be a final token or a group.
+   This runs same checks as make-token-name-schema, but for all tokens that will be renamed by this change,
+   if the group already contains tokens."
   [active-tokens tokens-tree node]
   [:and
    [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
@@ -167,19 +165,62 @@
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
+(defn find-refs [value]
+  (prn value)
+  (cond
+    (string? value)
+    (cto/find-token-value-references value)
+
+    (map? value)
+    (->> (vals value)
+         (keep :reference)
+         (mapcat cto/find-token-value-references))
+
+    :else
+    nil))
+
+(defn token-circular-reference?
+  "Checks if the given `tokens` map contains a circular reference reachable from
+   `token-name`. Uses DFS with 3-color marking (:in-progress / :done) to detect
+   cycles without false positives on diamond dependencies (A->B, A->C, B->C).
+   Returns the token name that closes the cycle, or nil."
+  [tokens token-name]
+  (let [state (atom {})]
+    (letfn [(visit [name]
+              (let [mark (get @state name)]
+                (if (= mark :in-progress)
+                  name
+                  (when-not (= mark :done)
+                    (swap! state assoc name :in-progress)
+                    (let [token (get tokens name)
+                          result (when token
+                                   (let [refs (find-refs (:value token))]
+                                     (some visit refs)))]
+                      (swap! state assoc name :done)
+                      result)))))]
+      (let [token (get tokens token-name)]
+        (when token
+          (let [refs (find-refs (:value token))]
+            (some visit refs)))))))
 
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn make-token-schema
-  [tokens-tree token-type]
+  [tokens-tree token-type current-token-path]
   [:and
    (sm/merge
     cto/schema:token-attrs
     [:map
-     [:name (make-token-name-schema tokens-tree)]
+     [:name (make-token-name-schema (-> tokens-tree
+                                        (d/dissoc-in current-token-path)))]
      [:value (make-token-value-schema token-type)]
      [:description {:optional true} schema:token-description]])
+   [:fn {:error/field :value
+         :error/fn #(tr "errors.tokens.circular-reference")}
+    (fn [{:keys [name]}]
+      (when name
+        (not (token-circular-reference? tokens-tree name))))]
    [:fn {:error/field :value
          :error/fn #(tr "errors.tokens.self-reference")}
     (fn [{:keys [name value]}]
@@ -224,7 +265,7 @@
 
     (d/without-nils {:name name
                      :type type
-                     :value value
+                     :value (cond-> value (number? value) str)
                      :description description})))
 
 ;; Token set
@@ -287,12 +328,18 @@
 
 (defn make-token-theme-schema
   [tokens-lib group name theme-id]
-  (sm/merge
-   ctob/schema:token-theme-attrs
-   [:map
-    [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
-    [:name (make-token-theme-name-schema tokens-lib group theme-id)]
-    [:description {:optional true} schema:token-theme-description]]))
+  [:and
+   (sm/merge
+    ctob/schema:token-theme-attrs
+    [:map
+     [:group (make-token-theme-group-schema tokens-lib name theme-id)] ;; TODO how to keep error-fn from here?
+     [:name (make-token-theme-name-schema tokens-lib group theme-id)]
+     [:description {:optional true} schema:token-theme-description]])
+   [:fn {:error/field :sets
+         :error/fn #(tr "errors.token-theme-not-existing-sets" (str/join ", " (:sets (:value %))))}
+    (fn [{:keys [sets]}]
+      (or (nil? tokens-lib)
+          (every? #(ctob/get-set-by-name tokens-lib %) sets)))]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

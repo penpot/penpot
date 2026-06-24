@@ -1,0 +1,9 @@
+[
+    {
+        "~:id": "~u99e49e93-362f-80ef-8007-3450ea5204aa",
+        "~:email": "leia@example.com",
+        "~:name": "Leia Organa",
+        "~:fullname": "Leia Organa",
+        "~:is-active": true
+    }
+]

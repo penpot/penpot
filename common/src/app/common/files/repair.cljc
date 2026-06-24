@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.repair
   (:require
@@ -644,9 +644,10 @@
         (fn [shape]
           ;; Set the desired swap slot
           (let [slot (:swap-slot args)]
-            (when (some? slot)
-              (log/debug :hint (str "  -> set swap-slot to " slot))
-              (ctk/set-swap-slot shape slot))))]
+            (if (some? slot)
+              (do (log/debug :hint (str "  -> set swap-slot to " slot))
+                  (ctk/set-swap-slot shape slot))
+              shape)))]
 
     (log/dbg :hint "repairing shape :missing-slot" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)

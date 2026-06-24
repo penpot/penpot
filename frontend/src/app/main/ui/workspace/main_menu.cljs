@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.main-menu
   (:require-macros [app.main.style :as stl])
@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -23,6 +22,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.shortcuts :as sc]
@@ -30,6 +30,7 @@
    [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
@@ -63,43 +64,43 @@
   (let [nav-to-helpc-center
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-help-center-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-help-center-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://help.penpot.app")))
 
         nav-to-community
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-community-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-community-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://community.penpot.app")))
 
         nav-to-youtube
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-tutorials-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-tutorials-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://www.youtube.com/c/Penpot")))
 
         nav-to-templates
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
-                                            ::ev/origin "workspace"}))
+           (st/emit! (ev/event {::ev/name "explore-libraries-click"
+                                ::ev/origin "workspace"}))
            (dom/open-new-window "https://penpot.app/libraries-templates")))
 
         nav-to-github
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-github-repository-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-github-repository-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://github.com/penpot/penpot")))
 
         nav-to-terms
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-terms-service-click"
-                                            ::ev/origin "workspace-menu:in-app"}))
+           (st/emit! (ev/event {::ev/name "explore-terms-service-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://penpot.app/terms")))
 
         nav-to-feedback
@@ -108,7 +109,7 @@
         plugins?
         (features/active-feature? @st/state "plugins/runtime")
 
-        mcp?
+        mcp-enabled?
         (contains? cf/flags :mcp)
 
         show-shortcuts
@@ -120,14 +121,14 @@
 
            (st/emit!
             (-> (dw/toggle-layout-flag :shortcuts)
-                (vary-meta assoc ::ev/origin "workspace-header")))))
+                (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         show-release-notes
         (mf/use-fn
          (fn [event]
            (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
-                                              :version version}))
+             (st/emit! (ev/event {::ev/name "show-release-notes"
+                                  :version version}))
              (println version)
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
@@ -138,9 +139,9 @@
                         :on-close on-close
                         :class (stl/css-case :base-menu true
                                              :sub-menu true
-                                             :pos-final-5 (not (or plugins? mcp?))
-                                             :pos-final-6 (not= plugins? mcp?)
-                                             :pos-final-7 (and plugins? mcp?))}
+                                             :pos-final-5 (not (or plugins? mcp-enabled?))
+                                             :pos-final-6 (not= plugins? mcp-enabled?)
+                                             :pos-final-7 (and plugins? mcp-enabled?))}
      [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
                               :on-click    nav-to-helpc-center
                               :on-key-down (fn [event]
@@ -348,7 +349,7 @@
            (r/set-resize-type! :bottom)
            (st/emit! (dw/remove-layout-flag :textpalette)
                      (-> (dw/toggle-layout-flag :colorpalette)
-                         (vary-meta assoc ::ev/origin "workspace-menu")))))
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
 
         toggle-text-palette
         (mf/use-fn
@@ -356,7 +357,15 @@
            (r/set-resize-type! :bottom)
            (st/emit! (dw/remove-layout-flag :colorpalette)
                      (-> (dw/toggle-layout-flag :textpalette)
-                         (vary-meta assoc ::ev/origin "workspace-menu")))))]
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
+
+        toggle-comments-visibility
+        (mf/use-fn
+         (mf/deps on-close)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dwcm/toggle-comments-visibility {:origin "workspace:menu"}))
+           (on-close)))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :base-menu :sub-menu :pos-3)
@@ -400,6 +409,19 @@
        (if (contains? layout :lock-guides)
          (tr "workspace.header.menu.unlock-guides")
          (tr "workspace.header.menu.lock-guides"))]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    toggle-comments-visibility
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (toggle-comments-visibility event)))
+                              :data-testid "display-comments"
+                              :id          "file-menu-comments"}
+      [:span {:class (stl/css :item-name)}
+       (if (contains? layout :display-comments)
+         (tr "workspace.header.menu.hide-comments")
+         (tr "workspace.header.menu.show-comments"))]
+      [:> shortcuts* {:id :toggle-comments-visibility}]]
 
      (when-not ^boolean read-only?
        [:*
@@ -475,10 +497,10 @@
          #(st/emit! (dw/select-all)))
 
         find
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find {:force? true}))))
 
         find-and-replace
-        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace))))
+        (mf/use-fn (fn [] (on-close) (st/emit! (dw/open-layers-search :find-and-replace {:force? true}))))
 
         undo
         (mf/use-fn
@@ -630,7 +652,7 @@
          (mf/deps file)
          (fn [_]
            (st/emit! (-> (fexp/open-export-dialog [file])
-                         (with-meta {::ev/origin "workspace"})))))
+                         (with-meta {::ev/origin "workspace:menu"})))))
 
         on-export-file-key-down
         (mf/use-fn
@@ -756,10 +778,10 @@
                 (fn [event]
                   (if can-open?
                     (do
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?))
                     (dom/stop-propagation event))))
                on-key-down
@@ -768,10 +790,10 @@
                 (fn [event]
                   (when can-open?
                     (when (kbd/enter? event)
-                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                       ::ev/origin "workspace:menu"
-                                                       :name name
-                                                       :host host}))
+                      (st/emit! (ev/event {::ev/name "start-plugin"
+                                           ::ev/origin "workspace:menu"
+                                           :name name
+                                           :host host}))
                       (dp/open-plugin! manifest user-can-edit?)))))]
 
            [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
@@ -788,29 +810,21 @@
 
 (mf/defc mcp-menu*
   {::mf/private true}
-  [{:keys [on-close]}]
-  (let [plugins? (features/active-feature? @st/state "plugins/runtime")
+  [{:keys [on-close mcp]}]
+  (let [plugins-enabled? (features/use-feature "plugins/runtime")
+        has-valid-token? (get mcp :token-valid)
+        enabled?         (get mcp :enabled)
 
-        profile  (mf/deref refs/profile)
-        mcp      (mf/deref refs/mcp)
-        tokens   (mf/deref refs/access-tokens)
+        conn-status      (get mcp :connection-status)
+        connected?       (= conn-status "connected")
 
-        expires-at (some->> tokens
-                            (some #(when (= (:type %) "mcp") %))
-                            :expires-at)
-        expired?   (and (some? expires-at) (> (ct/now) expires-at))
-
-        mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-        mcp-connection (get mcp :connection-status)
-        mcp-connected? (= mcp-connection "connected")
-
-        show-enabled?   (and mcp-enabled? (false? expired?))
+        show-enabled?    (and enabled? has-valid-token?)
 
         on-nav-to-integrations
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "manage-mpc-option"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "manage-mpc-option"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "/#/settings/integrations")))
 
         on-nav-to-integrations-key-down
@@ -821,14 +835,15 @@
 
         on-toggle-mcp-plugin
         (mf/use-fn
+         (mf/deps connected?)
          (fn []
-           (if mcp-connected?
+           (if connected?
              (st/emit! (mcp/user-disconnect-mcp)
-                       (ptk/event ::ev/event {::ev/name "disconnect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"}))
+                       (ev/event {::ev/name "disconnect-mcp-plugin"
+                                  ::ev/origin "workspace:menu"}))
              (st/emit! (mcp/connect-mcp)
-                       (ptk/event ::ev/event {::ev/name "connect-mcp-plugin"
-                                              ::ev/origin "workspace-menu"})))))
+                       (ev/event {::ev/name "connect-mcp-plugin"
+                                  ::ev/origin "workspace:menu"})))))
 
         on-toggle-mcp-plugin-key-down
         (mf/use-fn
@@ -839,17 +854,18 @@
     [:> dropdown-menu* {:show true
                         :class (stl/css-case :base-menu true
                                              :sub-menu true
-                                             :pos-5 (not plugins?)
-                                             :pos-6 plugins?)
+                                             :pos-5 (not plugins-enabled?)
+                                             :pos-6 plugins-enabled?)
                         :on-close on-close}
 
-     (when (and show-enabled? (not expired?))
+
+     (when (and show-enabled? has-valid-token?)
        [:> dropdown-menu-item* {:id          "mcp-menu-toggle-mcp-plugin"
                                 :class       (stl/css :base-menu-item :submenu-item)
                                 :on-click    on-toggle-mcp-plugin
                                 :on-key-down on-toggle-mcp-plugin-key-down}
         [:span {:class (stl/css :item-name)}
-         (if mcp-connected?
+         (if connected?
            (tr "workspace.header.menu.mcp.plugin.status.disconnect")
            (tr "workspace.header.menu.mcp.plugin.status.connect"))]])
 
@@ -865,12 +881,12 @@
 (mf/defc menu*
   [{:keys [layout file]}]
   (let [profile            (mf/deref refs/profile)
-        mcp                (mf/deref refs/mcp)
 
         show-menu*         (mf/use-state false)
         show-menu?         (deref show-menu*)
         selected-sub-menu* (mf/use-state nil)
         selected-sub-menu  (deref selected-sub-menu*)
+        mcp                (mf/deref refs/mcp)
 
         toggle-menu
         (mf/use-fn
@@ -910,8 +926,8 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
-                                            ::ev/origin "workspace-menu"}))
+           (st/emit! (ev/event {::ev/name "explore-pricing-click"
+                                ::ev/origin "workspace:menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -923,7 +939,7 @@
                           (keyword))]
              (st/emit!
               (-> (dw/toggle-layout-flag flag)
-                  (vary-meta assoc ::ev/origin "workspace-menu")))
+                  (vary-meta assoc ::ev/origin "workspace:menu")))
              (reset! show-menu* false)
              (reset! selected-sub-menu* nil))))
 
@@ -939,11 +955,36 @@
          (fn [event]
            (dom/stop-propagation event)
            (let [renderer (or (-> profile :props :renderer) :svg)
-                 next-renderer (if (= renderer :wasm) :svg :wasm)]
-             (st/emit! (du/update-profile-props {:renderer next-renderer})
-                       (ntf/success (tr (if (= next-renderer :wasm)
-                                          "webgl.toast.webgl-render-enabled"
-                                          "webgl.toast.webgl-render-disabled")))))))
+                 next-renderer (if (= renderer :wasm) :svg :wasm)
+                 ev-name (if (= next-renderer :wasm)
+                           "enable-webgl-rendering"
+                           "disable-webgl-rendering")]
+
+             (if (cf/external-feature-flag "renderer-hard-reload" "test")
+               ;; Bare RPC + hard reload: skips `du/update-profile-props`, so
+               ;; `features/recompute-features` is not run here; bootstrap
+               ;; after reload resolves render-wasm/v1 from the saved profile.
+               (do
+                 (->> (rx/zip
+                       (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
+                       (rx/filter (ptk/type? ::ev/chunk-persisted) st/stream))
+                      (rx/timeout 2000 (rx/of :timeout))
+                      (rx/subs! (fn [_]
+                                  (dom/reload-current-window true))
+                                (fn [_]
+                                  (st/emit! (ntf/error (tr "errors.generic"))))))
+                 (st/emit! (ev/event {::ev/name ev-name
+                                      ::ev/origin "workspace:menu"})
+                           (ptk/data-event ::ev/force-persist {})))
+
+               ;; `update-profile-props` WatchEvent calls
+               ;; `features/recompute-features`.
+               (st/emit! (ev/event {::ev/name ev-name
+                                    ::ev/origin "workspace:menu"})
+                         (du/update-profile-props {:renderer next-renderer})
+                         (ntf/success (tr (if (= next-renderer :wasm)
+                                            "webgl.toast.webgl-render-enabled"
+                                            "webgl.toast.webgl-render-disabled"))))))))
 
         open-plugins-manager
         (mf/use-fn
@@ -952,8 +993,8 @@
            (reset! show-menu* false)
            (reset! selected-sub-menu* nil)
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "open-plugins-manager"
-                                   ::ev/origin "workspace:menu"})
+            (ev/event {::ev/name "open-plugins-manager"
+                       ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
         subscription           (:subscription (:props profile))
@@ -974,7 +1015,7 @@
                        :icon i/menu}]
 
      [:> dropdown-menu* {:show show-menu?
-                         :id "workspace-menu"
+                         :id "workspace:menu"
                          :on-close close-menu
                          :class (stl/css :base-menu :menu)}
       [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
@@ -1044,20 +1085,17 @@
                     :class (stl/css :item-arrow)}]])
 
       (when (contains? cf/flags :mcp)
-        (let [tokens   (mf/deref refs/access-tokens)
-              expires-at (some->> tokens
-                                  (some #(when (= (:type %) "mcp") %))
-                                  :expires-at)
-              expired?   (and (some? expires-at) (> (ct/now) expires-at))
+        (let [enabled?         (get mcp :enabled)
+              conn-status      (get mcp :connection-status)
+              has-valid-token? (get mcp :token-valid)
 
-              mcp-enabled?   (true? (-> profile :props :mcp-enabled))
-              mcp-connection (get mcp :connection-status)
-              mcp-connected? (= mcp-connection "connected")
-              mcp-error?     (= mcp-connection "error")
+              connected?       (= conn-status "connected")
+              error?           (= conn-status "error")
 
-              active?  (and mcp-enabled? mcp-connected?)
-              failed?  (or (and mcp-enabled? mcp-error?)
-                           (true? expired?))]
+
+              active?          (and enabled? connected?)
+              failed?          (or (and enabled? error?)
+                                   (not has-valid-token?))]
 
           [:> dropdown-menu-item* {:class (stl/css :base-menu-item :menu-item)
                                    :on-click    on-menu-click
@@ -1132,7 +1170,7 @@
                           :on-close close-sub-menu}]
 
        :mcp
-       [:> mcp-menu* {:on-close close-sub-menu}]
+       [:> mcp-menu* {:on-close close-sub-menu :mcp mcp}]
 
        :help-info
        [:> help-info-menu* {:layout layout

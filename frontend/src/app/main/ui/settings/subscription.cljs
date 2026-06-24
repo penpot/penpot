@@ -4,12 +4,12 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
+   [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -22,72 +22,122 @@
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
-   [potok.v2.core :as ptk]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc plan-card*
+  {::mf/wrap [mf/memo]}
   [{:keys [card-title
            card-title-icon
            price-value price-period
            cancel-at
            benefits-title benefits
-           cta-text
-           cta-link
-           cta-text-trial
-           cta-link-trial
-           cta-text-with-icon
-           cta-link-with-icon
-           show-activation-by-code
+           cta-text cta-link
+           cta-text-trial cta-link-trial
+           cta-text-with-icon cta-link-with-icon
+           code-action
            editors
            recommended
-           show-button-cta]}]
+           show-button-cta
+           inline-error]}]
 
-  [:div {:class (stl/css-case :plan-card true
-                              :plan-card-highlight recommended)}
-   [:div {:class (stl/css :plan-card-header)}
-    [:div {:class (stl/css :plan-card-title-container)}
-     (when card-title-icon
-       [:> icon* {:icon-id card-title-icon
-                  :class (stl/css :plan-title-icon)
-                  :size "s"}])
-     [:h4 {:class (stl/css :plan-card-title)} card-title]
-     (when recommended
-       [:& badge-notification {:content (tr "subscription.settings.recommended")
-                               :size :small
-                               :is-focus true}])
-     (when editors [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
-    (when (and price-value price-period)
-      [:div {:class (stl/css :plan-price)}
-       [:span {:class (stl/css :plan-price-value)} price-value]
-       [:span {:class (stl/css :plan-price-period)} " / " price-period]])
-    (when cancel-at
-      [:div {:class (stl/css :plan-cancel)}
-       [:span {:class (stl/css :plan-cancel-date)} cancel-at]])]
-   (when benefits-title [:h5 {:class (stl/css :benefits-title)} benefits-title])
-   [:ul {:class (stl/css :benefits-list)}
-    (for [benefit  benefits]
-      [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
-   (when (and cta-link cta-text show-button-cta)
-     [:> button* {:variant "primary"
-                  :type "button"
-                  :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
-                  :on-click cta-link} cta-text])
-   (when (and cta-link-trial cta-text-trial)
-     [:button {:class (stl/css :cta-button :bottom-link)
-               :on-click cta-link-trial} cta-text-trial])
-   (when (and cta-link-with-icon cta-text-with-icon)
-     [:button {:class (stl/css :cta-button :more-info)
-               :on-click cta-link-with-icon} cta-text-with-icon
-      [:> icon* {:icon-id "open-link"
-                 :size "s"}]])
-   (when (and cta-link cta-text (not show-button-cta))
-     [:button {:class (stl/css-case :cta-button true
-                                    :bottom-link (not (and cta-link-trial cta-text-trial)))
-               :on-click cta-link} cta-text])
-   (when show-activation-by-code
-     [:button {:class (stl/css :cta-button :activate-by-code)
-               :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
-      (tr "subscription.settings.activate-by-code")])])
+  (let [has-trial? (and cta-link-trial cta-text-trial)
+        has-cta-with-icon? (and cta-link-with-icon cta-text-with-icon)
+        has-cta-button (and cta-link cta-text show-button-cta)
+        has-cta-link (and cta-link cta-text (not show-button-cta))]
+    [:div {:class (stl/css-case :plan-card true
+                                :plan-card-highlight recommended)}
+     [:div {:class (stl/css :plan-card-header)}
+      [:div {:class (stl/css :plan-card-title-container)}
+       (when card-title-icon
+         [:span {:class (stl/css :plan-title-icon)}
+          [:> icon* {:icon-id card-title-icon
+                     :size "s"}]])
+       [:h4 {:class (stl/css :plan-card-title)} card-title]
+       (when recommended
+         [:& badge-notification {:content (tr "subscription.settings.recommended")
+                                 :size :small
+                                 :is-focus true}])
+       (when editors
+         [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
+      (when (and price-value price-period)
+        [:div {:class (stl/css :plan-price)}
+         [:span {:class (stl/css :plan-price-value)} price-value]
+         [:span {:class (stl/css :plan-price-period)} " / " price-period]])
+      (when cancel-at
+        [:div {:class (stl/css :plan-cancel)}
+         [:span {:class (stl/css :plan-cancel-date)} cancel-at]])]
+     (when benefits-title
+       [:h5 {:class (stl/css :benefits-title)} benefits-title])
+     [:ul {:class (stl/css :benefits-list)}
+      (for [benefit benefits]
+        [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
+
+     (when has-cta-button
+       [:> button* {:variant "primary"
+                    :type "button"
+                    :class (stl/css-case :bottom-button (not has-trial?))
+                    :on-click cta-link} cta-text])
+     (when has-trial?
+       [:button {:class (stl/css :cta-button :bottom-link)
+                 :on-click cta-link-trial} cta-text-trial])
+     (when has-cta-with-icon?
+       [:button {:class (stl/css :cta-button :more-info)
+                 :on-click cta-link-with-icon} cta-text-with-icon
+        [:> icon* {:icon-id "open-link"
+                   :size "s"}]])
+     (when has-cta-link
+       [:button {:class (stl/css-case :cta-button true
+                                      :bottom-link (not (or has-trial? code-action)))
+                 :on-click cta-link} cta-text])
+     (when code-action
+       (if (= code-action :activate)
+         [:button {:class (stl/css :cta-button :activate-by-code)
+                   :on-click #(st/emit! (modal/show {:type :nitrate-code-activation}))}
+          (tr "subscription.settings.activate-by-code")]
+
+         [:> button* {:variant "primary"
+                      :type "button"
+                      :class (stl/css :renew-by-code :bottom-link)
+                      :on-click #(st/emit! (modal/show :nitrate-code-activation {:renew? true}))}
+          (tr "nitrate.subscription.settings.renew-with-code")]))
+
+     (when inline-error
+       [:p {:class (stl/css :inline-error)} inline-error])]))
+
+(defn- get-subscription-name [subscription-type subscribe-to-trial?]
+  (if subscribe-to-trial?
+    (if (= subscription-type "unlimited")
+      (tr "subscription.settings.unlimited-trial")
+      (tr "subscription.settings.enterprise-trial"))
+    (case subscription-type
+      "professional" (tr "subscription.settings.professional")
+      "unlimited"    (tr "subscription.settings.unlimited")
+      "enterprise"   (tr "subscription.settings.enterprise"))))
+
+(mf/defc ^:private editors-section*
+  [{:keys [editors]}]
+  (let [show-editors-list* (mf/use-state false)
+        show-editors-list  (deref show-editors-list*)
+        handle-click       (mf/use-fn
+                            (fn [event]
+                              (dom/stop-propagation event)
+                              (swap! show-editors-list* not)))]
+    [:*
+     [:p {:class (stl/css :editors-text)}
+      (tr "subscription.settings.management.dialog.currently-editors-title" (c (count editors)))]
+     [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
+      (tr "subscription.settings.management.dialog.editors")
+      [:> icon* {:icon-id (if show-editors-list i/arrow-up i/arrow-down)
+                 :class (stl/css :icon-dropdown)
+                 :size "s"}]]
+     (when show-editors-list
+       [:*
+        [:p {:class (stl/css :editors-text :editors-list-warning)}
+         (tr "subscription.settings.management.dialog.editors-explanation")]
+        [:ul {:class (stl/css :editors-list)}
+         (for [editor editors]
+           [:li {:key (dm/str (:id editor)) :class (stl/css :team-name)} "- " (:name editor)])]])]))
 
 (defn- make-management-form-schema [min-editors]
   [:map {:title "SeatsForm"}
@@ -106,14 +156,7 @@
         (deref unlimited-modal-step*)
 
         subscription-name
-        (if subscribe-to-trial
-          (if (= subscription-type "unlimited")
-            (tr "subscription.settings.unlimited-trial")
-            (tr "subscription.settings.enterprise-trial"))
-          (case subscription-type
-            "professional" (tr "subscription.settings.professional")
-            "unlimited" (tr "subscription.settings.unlimited")
-            "enterprise" (tr "subscription.settings.enterprise")))
+        (get-subscription-name subscription-type subscribe-to-trial)
 
         min-editors
         (if (seq editors) (count editors) 1)
@@ -144,16 +187,16 @@
                                       add-payment-details? "&quantity="
                                       min-members "&returnUrl=" return-url)]
                (reset! form nil)
-               (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                :type "unlimited"
-                                                :quantity min-members})
+               (st/emit! (ev/event {::ev/name "create-trial-subscription"
+                                    :type "unlimited"
+                                    :quantity min-members})
                          (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                            :type "enterprise"}))
+           (st/emit! (ev/event {::ev/name "create-trial-subscription"
+                                :type "enterprise"}))
            (let [return-url (-> (rt/get-current-href) (rt/encode-url))
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
              (st/emit! (rt/nav-raw :href href)))))
@@ -173,20 +216,8 @@
         handle-close-dialog
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
+           (st/emit! (ev/event {::ev/name "close-subscription-modal"}))
            (modal/hide!)))
-
-        show-editors-list*
-        (mf/use-state false)
-
-        show-editors-list
-        (deref show-editors-list*)
-
-        handle-click
-        (mf/use-fn
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! show-editors-list* not)))
 
         on-submit
         (mf/use-fn
@@ -217,20 +248,7 @@
 
       [:div {:class (stl/css :modal-content)}
        (when (and (seq editors) (not= unlimited-modal-step 2))
-         [:* [:p {:class (stl/css :editors-text)}
-              (tr "subscription.settings.management.dialog.currently-editors-title" (c (count editors)))]
-          [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
-           (tr "subscription.settings.management.dialog.editors")
-           [:> icon* {:icon-id (if show-editors-list i/arrow-up i/arrow-down)
-                      :class (stl/css :icon-dropdown)
-                      :size "s"}]]
-          (when show-editors-list
-            [:*
-             [:p {:class (stl/css :editors-text :editors-list-warning)}
-              (tr "subscription.settings.management.dialog.editors-explanation")]
-             [:ul {:class (stl/css :editors-list)}
-              (for [editor editors]
-                [:li {:key (dm/str (:id editor)) :class (stl/css :team-name)} "- " (:name editor)])]])])
+         [:> editors-section* {:editors editors}])
 
        (when (and
               (or (and (= subscription-type "professional")
@@ -257,20 +275,20 @@
                              :class (stl/css :input-field)}]]
               [:div {:class (stl/css :editors-cost)}
                [:span {:class (stl/css :modal-text-medium)}
-                (when (> (get-in @form [:clean-data :min-members]) 25)
+                (when (> (dm/get-in @form [:clean-data :min-members]) 25)
                   [:> i18n/tr-html*
                    {:class (stl/css :modal-text-cap)
                     :tag-name "span"
                     :content (tr "subscription.settings.management.dialog.price-month" "175")}])
                 [:> i18n/tr-html*
-                 {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
+                 {:class (stl/css-case :text-strikethrough (> (dm/get-in @form [:clean-data :min-members]) 25))
                   :tag-name "span"
                   :content (tr "subscription.settings.management.dialog.price-month"
-                               (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
+                               (* 7 (or (dm/get-in @form [:clean-data :min-members]) 0)))}]]
                [:span {:class (stl/css :modal-text-medium)}
                 (tr "subscription.settings.management.dialog.payment-explanation")]]]
 
-             (when (get-in @form [:errors :min-members])
+             (when (dm/get-in @form [:errors :min-members])
                [:div {:class (stl/css :error-message)}
                 (tr "subscription.settings.management.dialog.input-error")])
 
@@ -335,7 +353,7 @@
   (let [profile              (mf/deref refs/profile)
         handle-close-dialog  (mf/use-fn
                               (fn []
-                                (st/emit! (ptk/event ::ev/event {::ev/name "subscription-success"}))
+                                (st/emit! (ev/event {::ev/name "subscription-success"}))
                                 (modal/hide!)))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -384,6 +402,30 @@
             (= params-subscription "subscribed-to-penpot-enterprise")
             (= params-subscription "subscribed-to-penpot-nitrate"))
 
+        nitrate-toast-message
+        (condp = params-subscription
+          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-finish-failed")
+          dnt/nitrate-checkout-cancelled-token    (tr "subscription.error.nitrate.checkout-cancelled")
+          nil)
+
+        nitrate-toast-level
+        (cond
+          (= params-subscription dnt/nitrate-checkout-cancelled-token) :info
+          (some? nitrate-toast-message)                                :error)
+
+        show-nitrate-start-error?
+        (= params-subscription dnt/nitrate-checkout-error-token)
+
+        nitrate-start-error*
+        (mf/use-state false)
+
+        nitrate-start-error?
+        (deref nitrate-start-error*)
+
+        nitrate-start-error-message
+        (when nitrate-start-error?
+          (tr "subscription.error.nitrate.checkout-failed"))
+
         success-modal-is-trial?
         (-> route :params :query :trial)
 
@@ -431,7 +473,7 @@
          (mf/deps subscription-editors nitrate-license)
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
-                                ::ev/origin "settings:in-app"}))
+                                ::ev/origin "settings"}))
            (if (= subscription-type "nitrate")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license}))
              (st/emit!
@@ -446,23 +488,55 @@
          (fn [current-subscription subscription-type]
            (if (= current-subscription "unlimited")
              (st/emit! (dnt/show-nitrate-popup :nitrate-dialog {:nitrate-license nitrate-license :show-contact-sales-option true}))
-             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))]
+             (st/emit! (modal/show :nitrate-contact-sales-dialog {:subscription-type subscription-type})))))
+
+        open-cancel-contact-sales-modal
+        (mf/use-fn
+         (fn []
+           (st/emit! (modal/show :nitrate-cancel-contact-sales-dialog {:email (:email profile)}))))
+
+        connectivity*
+        (mf/use-state nil)
+
+        connectivity
+        (deref connectivity*)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
 
+    (mf/with-effect [nitrate?]
+      (when nitrate?
+        (->> (dnt/fetch-connectivity)
+             (rx/subs! #(reset! connectivity* %)))))
+
     (mf/with-effect [authenticated?
                      show-subscription-success-modal?
                      show-trial-subscription-modal?
+                     show-nitrate-start-error?
                      success-modal-is-trial?
+                     nitrate-toast-message
+                     nitrate-toast-level
                      subscription]
       (when ^boolean authenticated?
+        (when ^boolean show-nitrate-start-error?
+          (reset! nitrate-start-error* true))
         (cond
+          (some? nitrate-toast-message)
+          (st/emit!
+           (ntf/show {:content nitrate-toast-message
+                      :type :toast
+                      :level nitrate-toast-level
+                      :timeout 7000})
+           (rt/nav :settings-subscription {} {::rt/replace true}))
+
+          ^boolean show-nitrate-start-error?
+          (st/emit! (rt/nav :settings-subscription {} {::rt/replace true}))
+
           ^boolean show-trial-subscription-modal?
 
           (st/emit!
-           (ptk/event ::ev/event {::ev/name "open-subscription-modal"
-                                  ::ev/origin "settings:from-pricing-page"})
+           (ev/event {::ev/name "open-subscription-modal"
+                      ::ev/origin "settings"})
            (modal/show :management-dialog
                        {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
                                              "unlimited"
@@ -495,7 +569,7 @@
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
          ;; TODO add translations for this texts when we have the definitive ones
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-b
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
@@ -503,16 +577,27 @@
                          :benefits ["Loren ipsum",
                                     "Loren ipsum",
                                     "Loren ipsum"]
-                         :cta-text-with-icon "Control Center"
-                         :cta-link-with-icon dnt/go-to-nitrate-cc
-                         :cta-text (tr "subscription.settings.manage-your-subscription")
-                         :cta-link dnt/go-to-nitrate-billing}]
+                         :cta-text-with-icon (when (not (:manual nitrate-license)) "Admin Console")
+                         :cta-link-with-icon (when (not (:manual nitrate-license)) dnt/go-to-nitrate-ac)
+                         :cta-text (if (and (:licenses connectivity) (not (:manual nitrate-license)))
+                                     (tr "subscription.settings.manage-your-subscription")
+                                     (tr "nitrate.subscription.settings.manual-cancel"))
+                         :cta-link (if (and (:licenses connectivity) (not (:manual nitrate-license)))
+                                     dnt/go-to-nitrate-billing
+                                     open-cancel-contact-sales-modal)
+                         :code-action (when (:manual nitrate-license) :renovate)}]
          (case subscription-type
            "professional"
            [:> plan-card* {:card-title (tr "subscription.settings.professional")
-                           :benefits [(tr "subscription.settings.professional.storage-benefit"),
-                                      (tr "subscription.settings.professional.autosave-benefit"),
-                                      (tr "subscription.settings.professional.teams-editors-benefit")]}]
+                           :benefits [(if cf/saas?
+                                        (tr "subscription.settings.professional.storage-benefit")
+                                        (tr "subscription.settings.professional.selfhost.control-over-data")),
+                                      (if cf/saas?
+                                        (tr "subscription.settings.professional.autosave-benefit")
+                                        (tr "subscription.settings.professional.selfhost.unlimited-users")),
+                                      (if cf/saas?
+                                        (tr "subscription.settings.professional.teams-editors-benefit")
+                                        (tr "subscription.settings.professional.selfhost.community-support"))]}]
 
            "unlimited"
            (if subscription-is-trial?
@@ -582,15 +667,25 @@
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
                          :price-period (tr "subscription.settings.price-editor-month")
-                         :benefits [(tr "subscription.settings.professional.storage-benefit"),
-                                    (tr "subscription.settings.professional.autosave-benefit"),
-                                    (tr "subscription.settings.professional.teams-editors-benefit")]
+                         :benefits [(if cf/saas?
+                                      (tr "subscription.settings.professional.storage-benefit")
+                                      (tr "subscription.settings.professional.selfhost.control-over-data")),
+                                    (if cf/saas?
+                                      (tr "subscription.settings.professional.autosave-benefit")
+                                      (tr "subscription.settings.professional.selfhost.unlimited-users")),
+                                    (if cf/saas?
+                                      (tr "subscription.settings.professional.teams-editors-benefit")
+                                      (tr "subscription.settings.professional.selfhost.community-support"))]
                          :cta-text (tr "subscription.settings.subscribe")
-                         :cta-link #(open-subscription-modal "professional")
+                         :cta-link (if (and (contains? cf/flags :nitrate) nitrate? (= subscription-type "nitrate"))
+                                     (if (and (:licenses connectivity) (not (:manual nitrate-license)))
+                                       dnt/go-to-nitrate-billing
+                                       open-cancel-contact-sales-modal)
+                                     go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-type "unlimited")
+       (when (and (not= subscription-type "unlimited") cf/saas?)
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
@@ -606,7 +701,7 @@
                          :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")}])
 
-       (when (and (not= subscription-type "enterprise") (not (contains? cf/flags :nitrate)))
+       (when (and (not= subscription-type "enterprise") cf/saas? (not (contains? cf/flags :nitrate)))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
@@ -623,25 +718,21 @@
 
        ;; TODO add translations for this texts when we have the definitive ones
        (when (and (contains? cf/flags :nitrate) (not nitrate?))
-         [:> plan-card* {:card-title "Business Nitrate"
+         [:> plan-card* {:card-title "Enterprise"
                          :card-title-icon i/character-n
                          :price-value "$25"
-                         :price-period "org member"
+                         :price-period (tr "subscription.settings.organization-member-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                          :benefits ["Crea organizaciones y añade personas, que usarán Penpot con las reglas que configures."
-                                    "Acceso exclusivo al Control Center"
+                                    "Acceso exclusivo a la Admin Console"
                                     "Lorem ipsum"]
                          :cta-text (if nitrate-license (tr "subscription.settings.subscribe") "Try 14 days for free")
                          :cta-link (if (= subscription-type "unlimited") #(open-contact-sales-modal subscription-type "Nitrate") #(open-subscription-modal "nitrate" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :show-activation-by-code true
-                         :show-button-cta (not nitrate-license)}])]]]))
-
-
-(def ^:private schema:nitrate-form
-  [:map {:title "NitrateForm"}
-   [:subscription [::sm/one-of #{:monthly :yearly}]]])
+                         :code-action :activate
+                         :show-button-cta (not nitrate-license)
+                         :inline-error nitrate-start-error-message}])]]]))
 
 (mf/defc subscribe-nitrate-dialog
   {::mf/register modal/components
@@ -649,73 +740,47 @@
   [{:keys [nitrate-license show-contact-sales-option] :as connectivity}]
   ;; TODO add translations for this texts when we have the definitive ones
   (let [online? (:licenses connectivity)
-        initial (mf/with-memo []
-                  {:subscription "yearly"})
-        form     (fm/use-form :schema schema:nitrate-form
-                              :initial initial)
-
         handle-close-dialog
         (mf/use-fn
          (fn []
            (modal/hide!)))
 
-        on-submit
+        on-subscribe-click
         (mf/use-fn
-         (mf/deps form)
          (fn []
-           (let [subscription (-> @form :clean-data :subscription name)
-                 return-url   (dm/str
-                               (rt/get-current-href)
-                               "?"
-                               (u/map->query-string
-                                {:subscription "subscribed-to-penpot-nitrate"}))]
-             (dnt/go-to-buy-nitrate-license subscription return-url))))]
+           (dnt/go-to-buy-nitrate-license "monthly" (rt/get-current-href))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
        [:> icon* {:icon-id "close"
                   :size "m"}]]
-      [:div {:class (stl/css :modal-title :subscription-title)}
-       "Subcribe to the Business Nitrate plan"]
+      [:div {:class (stl/css :modal-title :subscription-title :nitrate-subscription)}
+       "Subscribe to the Enterprise plan"]
 
       (if (and online? (not show-contact-sales-option))
         [:div {:class (stl/css :modal-content)}
 
+         [:*
+          [:div {:class (stl/css :modal-text :price-text)}
+           [:span {:class (stl/css :price-value)} "25$"]
+           (tr "nitrate.form.enterprise.price")]
+          [:div {:class (stl/css :modal-text)}
+           "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."]
 
+          [:div {:class (stl/css :modal-footer)}
+           [:div {:class (stl/css :action-buttons)}
+            [:input
+             {:class (stl/css :cancel-button)
+              :type "button"
+              :value (tr "ds.confirm-cancel")
+              :on-click handle-close-dialog}]
 
-         [:div {:class (stl/css :modal-text)}
-          "Lorem ipsum lorem ipsum:"]
-
-
-         [:& fm/form {:on-submit on-submit
-                      :class (stl/css :seats-form)
-                      :form form}
-
-          [:*
-           [:div {:class (stl/css :editors-wrapper)}
-            [:div {:class (stl/css :fields-row)}
-             [:& fm/radio-buttons
-              {:options [{:label "Price Tag Yearly (Discount)" :value "yearly"}
-                         {:label "Price Tag Montly" :value "monthly"}]
-               :name :subscription
-               :class (stl/css :radio-btns)}]]]
-           [:div {:class (stl/css :modal-text)}
-            "You won’t be charged right now. Payment will be processed at the end of the trial. Cancel anytime."]
-
-
-
-           [:div {:class (stl/css :modal-footer)}
-            [:div {:class (stl/css :action-buttons)}
-             [:input
-              {:class (stl/css :cancel-button)
-               :type "button"
-               :value (tr "ds.confirm-cancel")
-               :on-click handle-close-dialog}]
-
-             [:> fm/submit-button*
-              {:label (if nitrate-license (tr "subscription.settings.subscribe") "TRY 14 DAYS FOR FREE")
-               :class (stl/css :primary-button)}]]]]]]
+            [:input
+             {:class (stl/css :primary-button)
+              :type "button"
+              :value (if nitrate-license (tr "subscription.settings.subscribe") "TRY 14 DAYS FOR FREE")
+              :on-click on-subscribe-click}]]]]]
         [:div {:class (stl/css :modal-content :modal-contact-content)}
          [:div {:class (stl/css :modal-text)}
           "Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum Lorem ipsum lorem ipsum"]
@@ -740,8 +805,7 @@
        [:> icon* {:icon-id "close"
                   :size "m"}]]
       [:div {:class (stl/css :modal-title :subscription-title)}
-       (str "Switch to " subscription-type " plan?")]
-
+       (dm/str "Switch to " subscription-type " plan?")]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-text-medium)}
         "When you downgrade:"]
@@ -761,3 +825,40 @@ We’ll help you update your subscription and ensure everything is set up correc
                      :type "button"
                      :on-click #(dom/open-new-window "mailto:sales@penpot.app?subject=Switch%20to%20the%20Unlimited%20plan")} "Contact sales"]]]]]))
 
+(mf/defc nitrate-cancel-contact-sales-dialog
+  {::mf/register modal/components
+   ::mf/register-as :nitrate-cancel-contact-sales-dialog}
+  [{:keys [email]}]
+  (let [encoded-email
+        (js/encodeURIComponent email)
+
+        mailto-url
+        (dm/str "mailto:sales@penpot.net"
+                "?subject=Request%20to%20Cancel%20Nitrate%20Subscription"
+                "&body=Hello%2C%0A%0A"
+                "I%20would%20like%20to%20cancel%20my%20Enterprise%20subscription.%0A"
+                "Account%20email%3A%20" encoded-email ".%0A%0AThank%20you.")
+
+        handle-close-dialog
+        (mf/use-fn
+         (fn []
+           (modal/hide!)))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog}
+       [:> icon* {:icon-id "close"
+                  :size "m"}]]
+      [:div {:class (stl/css :modal-title :subscription-title)}
+       "Cancel subscription"]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-text-medium)}
+        "To cancel your Nitrate subscription, please contact us at:"]
+       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.net"}
+        "sales@penpot.net"]
+       [:div {:class (stl/css :action-buttons)}
+        [:> button* {:class (stl/css :button-full-width)
+                     :variant "primary"
+                     :type "button"
+                     :on-click #(dom/open-new-window mailto-url)} "Contact us"]]]]]))

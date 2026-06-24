@@ -7,7 +7,6 @@
 (ns app.main.ui.nitrate.nitrate-activation-success-modal
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
@@ -20,23 +19,24 @@
 
 (mf/defc nitrate-activation-success-modal*
   {::mf/register modal/components
-   ::mf/register-as :nitrate-activation-success
-   ::mf/wrap-props true}
-  [props]
+   ::mf/register-as :nitrate-activation-success}
+  []
 
-  (let [profile      (mf/deref refs/profile)
-        light?       (= "light" (:theme profile))
-        svg-id       (if light? "logo-subscription-light" "logo-subscription")
+  (let [profile         (mf/deref refs/profile)
+        light?          (= "light" (:theme profile))
+        svg-id          (if light? "logo-subscription-light" "logo-subscription")
 
-        cancel-at     (dm/get-in props [:subscription :cancel-at])
-        date-str      (when cancel-at
-                        (ct/format-inst cancel-at "d MMMM, yyyy"))
+        nitrate-license (:subscription profile)
+        cancel-at       (:cancel-at nitrate-license)
+        manual?         (:manual nitrate-license)
+        date-str        (when cancel-at
+                          (ct/format-inst cancel-at "d MMMM, yyyy"))
 
         on-create-org
         (mf/use-fn
          (fn []
            (modal/hide!)
-           (dnt/go-to-nitrate-cc-create-org)))]
+           (dnt/go-to-nitrate-ac-create-org)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -52,8 +52,9 @@
         [:div {:class (stl/css :modal-title)}
          (tr "nitrate.activation-success.title")]
 
-        [:p {:class (stl/css :modal-text-primary)}
-         (tr "nitrate.activation-success.active-until" date-str)]
+        (when (and manual? date-str)
+          [:p {:class (stl/css :modal-text-primary)}
+           (tr "nitrate.activation-success.active-until" date-str)])
 
         [:p {:class (stl/css :modal-text)}
          (tr "nitrate.activation-success.manage-info")]

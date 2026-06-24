@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.util.webapi
   "HTML5 web api helpers."
@@ -203,6 +203,24 @@
        (.observe ^js obs node)
        (fn []
          (.disconnect ^js obs))))))
+
+(defn on-dpr-change
+  "Registers a recurring listener for device-pixel-ratio changes (browser zoom).
+   Calls `f` with the new DPR each time it changes. Returns a 0-arity cancel fn."
+  [f]
+  (let [cancelled? (volatile! false)]
+    (letfn [(listen! []
+              (when-not @cancelled?
+                (let [dpr (.-devicePixelRatio ^js globals/window)
+                      mq  (.matchMedia globals/window (str "(resolution: " dpr "dppx)"))]
+                  (.addEventListener mq "change"
+                                     (fn [_]
+                                       (when-not @cancelled?
+                                         (f (.-devicePixelRatio ^js globals/window))
+                                         (listen!)))
+                                     #js {:once true}))))]
+      (listen!)
+      (fn [] (vreset! cancelled? true)))))
 
 (defn empty-png-size*
   [width height]

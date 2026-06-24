@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.main-errors-test
   "Unit tests for app.main.errors.
@@ -126,11 +126,11 @@
   ;; (e.g. the notification emit itself throws).
   ;; Without the re-entrancy guard this would recurse indefinitely.
   (when (= 1 @reentrant-call-count)
-    (errors/on-error {:type ::test-reentrant :hint "secondary"})))
+    (errors/on-error (ex-info "test" {:type ::test-reentrant :hint "secondary"}))))
 
 (t/deftest on-error-reentrancy-guard-prevents-recursion
   (t/testing "a second on-error call while handling an error is suppressed by the guard"
     (reset! reentrant-call-count 0)
-    (errors/on-error {:type ::test-reentrant :hint "first"})
+    (errors/on-error (ex-info "test" {:type ::test-reentrant :hint "first"}))
     ;; The guard must have allowed only the first invocation through.
     (t/is (= 1 @reentrant-call-count))))

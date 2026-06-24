@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace
   (:require
@@ -73,6 +73,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.wasm :as wasm-state]
@@ -187,9 +188,13 @@
                        (rx/merge
                         (->> (rx/from libraries)
                              (rx/merge-map
-                              (fn [{:keys [id synced-at]}]
+                              (fn [{:keys [id synced-at is-indirect]}]
                                 (->> (rp/cmd! :get-file {:id id :features features})
-                                     (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                                     (rx/map (fn [file]
+                                               (-> file
+                                                   (assoc :synced-at synced-at)
+                                                   (assoc :library-of file-id)
+                                                   (assoc :is-indirect is-indirect)))))))
                              (rx/mapcat resolve-file)
                              (rx/map library-resolved))
                         (->> (rx/from libraries)
@@ -202,6 +207,42 @@
               ;; This events marks that all the libraries have been resolved
               (rx/of (ptk/data-event ::all-libraries-resolved {:file-id file-id})))
              (rx/take-until stopper-s))))))
+
+
+(defn update-page-position-data
+  ([]
+   (update-page-position-data nil nil))
+  ([file-id page-id]
+   (ptk/reify ::update-page-position-data
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-id (or file-id (:current-file-id state))
+             page-id (or page-id (:current-page-id state))
+             changes
+             (reduce-kv
+              (fn [result _ shape]
+                (if (and (cfh/text-shape? shape)
+                         (nil? (:position-data shape)))
+                  (conj result
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :page-id page-id
+                         :operations
+                         [{:type :set
+                           :attr :position-data
+                           :val (wasm.api/calculate-position-data shape)
+                           :ignore-touched true
+                           :ignore-geometry true}]})
+                  result))
+              []
+              (dsh/lookup-page-objects state file-id page-id))]
+         (if (d/not-empty? changes)
+           (rx/of (dch/commit-changes
+                   {:redo-changes changes :undo-changes []
+                    :save-undo? false
+                    :origin it
+                    :tags #{:position-data}}))
+           (rx/empty)))))))
 
 (defn- workspace-initialized
   [file-id]
@@ -217,8 +258,12 @@
       (rx/merge
        (rx/of (dp/check-open-plugin)
               (fdf/fix-deleted-fonts-for-local-library file-id))
-       (when (contains? cf/flags :mcp)
-         (rx/of (mcp/init)))))))
+       (if (contains? cf/flags :mcp)
+         ;; We wait the plugin runtime to be ready before launch the
+         ;; mcp initialization
+         (->> (rx/from (preg/wait-for-runtime))
+              (rx/map (fn [_] (mcp/init))))
+         (rx/empty))))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -273,19 +318,6 @@
                                 :thumbnails thumbnails})))))
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
-
-;; FIXME: this need docstring
-(defn- process-wasm-object
-  [id]
-  (ptk/reify ::process-wasm-object
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            shape (get objects id)]
-        ;; Only process objects that exist in the current page
-        ;; This prevents errors when processing changes from other pages
-        (when shape
-          (wasm.api/process-object shape))))))
 
 (defn initialize-file
   [team-id file-id]
@@ -353,13 +385,10 @@
                  (rx/of (ntf/hide)
                         (dcmt/retrieve-comment-threads file-id)
                         (dcmt/fetch-profiles)
-                        (df/fetch-fonts team-id))
-
-                 (when (contains? cf/flags :mcp)
-                   (rx/of (du/fetch-access-tokens))))
+                        (df/fetch-fonts team-id)))
 
                 ;; Once the essential data is fetched, lets proceed to
-                ;; fetch teh file bunldle
+                ;; fetch the file bundle
                 (rx/of (initialize-file team-id file-id)))
 
                (->> stream
@@ -411,18 +440,6 @@
                       (rx/observe-on :async)
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
-
-               (->> stream
-                    (rx/filter dch/commit?)
-                    (rx/filter render-wasm-ready?)
-                    (rx/map deref)
-                    (rx/mapcat
-                     (fn [{:keys [redo-changes]}]
-                       (let [added (->> redo-changes
-                                        (filter #(= (:type %) :add-obj))
-                                        (map :id))]
-                         (->> (rx/from added)
-                              (rx/map process-wasm-object))))))
 
                (let [local-commits-s
                      (->> stream
@@ -493,8 +510,7 @@
                            (rx/of (dwu/append-undo entry stack-undo?)))
                          (rx/empty))))))
 
-              (rx/take-until stoper-s))
-         (rx/of (mcp/notify-other-tabs-disconnect)))))
+              (rx/take-until stoper-s)))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -1383,7 +1399,7 @@
         (rx/concat
          (rx/of (dch/commit-changes changes))
          (when (nil? annotation)
-           (rx/of (ptk/data-event ::ev/event {::ev/name "delete-component-annotation"}))))))))
+           (rx/of (ev/event {::ev/name "delete-component-annotation"}))))))))
 
 (defn set-annotations-expanded
   [expanded]
@@ -1405,7 +1421,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (some? id)
-        (rx/of (ptk/data-event ::ev/event {::ev/name "create-component-annotation"}))))))
+        (rx/of (ev/event {::ev/name "create-component-annotation"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes
@@ -1461,18 +1477,47 @@
     (update [_ state]
       (assoc-in state [:workspace-global :clipboard-style] style))))
 
-(defn open-layers-search
+(defn- layers-search-config
   [mode]
-  (ptk/reify ::open-layers-search
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :layers-panel-search] mode))))
+  {:open? true
+   :mode mode
+   :scope (if (= mode :find-and-replace) :canvas :layers)
+   :find-replace-mode? (= mode :find-and-replace)})
 
-(def clear-layers-search
-  (ptk/reify ::clear-layers-search
+(defn- layers-search-active?
+  [current target]
+  (and (:open? current false)
+       (= (:scope current) (:scope target))
+       (= (:find-replace-mode? current) (:find-replace-mode? target))))
+
+(defn open-layers-search
+  ([mode] (open-layers-search mode nil))
+  ([mode options]
+   (let [force? (boolean (:force? options))]
+     (ptk/reify ::open-layers-search
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [target  (layers-search-config mode)
+               current (get-in state [:workspace-local :layers-search])]
+           (if (and (not force?)
+                    (layers-search-active? current target))
+             (update state :workspace-local dissoc :layers-search)
+             (assoc-in state [:workspace-local :layers-search] target))))))))
+
+(def close-layers-search
+  (ptk/reify ::close-layers-search
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local dissoc :layers-panel-search))))
+      (update state :workspace-local dissoc :layers-search))))
+
+(defn update-layers-search-scope
+  [scope]
+  (ptk/reify ::update-layers-search-scope
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (get-in state [:workspace-local :layers-search])
+        (assoc-in state [:workspace-local :layers-search :scope] scope)
+        state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
@@ -1533,6 +1578,8 @@
 ;; Highlight
 (dm/export dwh/highlight-shape)
 (dm/export dwh/dehighlight-shape)
+(dm/export dwh/set-search-match-highlight)
+(dm/export dwh/clear-search-match-highlight)
 
 ;; Shape flags
 (dm/export dwsh/update-shape-flags)
@@ -1578,6 +1625,7 @@
 (dm/export dwv/initialize-viewport)
 (dm/export dwv/update-viewport-position)
 (dm/export dwv/update-viewport-size)
+(dm/export dwv/sync-wasm-workspace-viewport)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.color-selection
   (:require-macros [app.main.style :as stl])
@@ -90,7 +90,7 @@
                                     (d/without-nils))
         prev-color              (d/seek (partial get groups) prev-colors)
         color-operations-old    (get groups old-color)
-        color-operations-prev   (get groups prev-colors)
+        color-operations-prev   (get groups prev-color)
         color-operations        (or color-operations-prev color-operations-old)
         old-color               (or prev-color old-color)]
     [color-operations old-color]))
@@ -115,11 +115,17 @@
         ;;  TODO: Review if this is still necessary.
         prev-colors-ref  (mf/use-ref nil)
 
+        ;; Always keep this ref pointing to the latest groups so that on-change
+        ;; (which may be captured stale by the colorpicker's rx subscription) can
+        ;; still read the current groups and find the correct color operations.
+        groups-ref       (mf/use-ref nil)
+        _                (mf/set-ref-val! groups-ref groups)
+
         on-change
         (mf/use-fn
-         (mf/deps groups)
          (fn [old-color new-color from-picker?]
-           (let [prev-colors (mf/ref-val prev-colors-ref)
+           (let [groups (mf/ref-val groups-ref)
+                 prev-colors (mf/ref-val prev-colors-ref)
                  [color-operations old-color] (retrieve-color-operations groups old-color prev-colors)]
 
              ;;  TODO: Review if this is still necessary.

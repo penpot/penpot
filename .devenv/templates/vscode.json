@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "penpot": {
+      "type": "http",
+      "url": "http://localhost:${PENPOT_MCP_PORT}/mcp"
+    },
+    "serena-devenv": {
+      "type": "http",
+      "url": "http://localhost:${SERENA_MCP_PORT}/mcp"
+    }
+  }
+}

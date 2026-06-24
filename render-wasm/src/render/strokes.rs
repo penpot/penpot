@@ -12,7 +12,7 @@ use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
 #[allow(clippy::too_many_arguments)]
-fn draw_stroke_on_rect(
+pub(super) fn draw_stroke_on_rect(
     canvas: &skia::Canvas,
     stroke: &Stroke,
     rect: &Rect,
@@ -97,7 +97,7 @@ fn draw_stroke_on_rect(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn draw_stroke_on_circle(
+pub(super) fn draw_stroke_on_circle(
     canvas: &skia::Canvas,
     stroke: &Stroke,
     rect: &Rect,
@@ -288,7 +288,7 @@ fn handle_stroke_cap(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn handle_stroke_caps(
+pub(super) fn handle_stroke_caps(
     path: &skia::Path,
     stroke: &Stroke,
     canvas: &skia::Canvas,
@@ -299,6 +299,12 @@ fn handle_stroke_caps(
 ) {
     // Closed shapes don't have caps
     if !is_open {
+        return;
+    }
+
+    // When both ends share the same simple line cap, Skia already drew it
+    // natively via `PaintCap` on the stroke paint, so skip the manual overlay.
+    if stroke.to_skia_linecap().is_some() {
         return;
     }
 

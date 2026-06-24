@@ -2,17 +2,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "./profile" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .dashboard-settings {
   display: grid;
 }
 
 .form-container {
+  --menu-max-height-up: #{px2rem(180)};
+
   &:first-child {
     margin-block-end: var(--sp-xxxl);
   }
@@ -25,8 +28,8 @@
   grid-auto-rows: auto;
   gap: var(--sp-s);
   width: $sz-500;
-  margin-block: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
   padding-block-start: var(--sp-xxxl);
+  margin: var(--sp-xxxl) $sz-120; /* FIXME: this should be a proper token */
   border-block-start: $b-1 solid var(--color-background-quaternary);
   color: var(--color-foreground-primary);
 }

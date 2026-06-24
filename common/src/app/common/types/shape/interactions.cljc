@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.types.shape.interactions
   (:require
@@ -76,7 +76,10 @@
   [:map {:title "AnimationDisolve"}
    [:animation-type [:= :dissolve]]
    [:duration ::sm/safe-int]
-   [:easing [::sm/one-of easing-types]]])
+   [:easing [::sm/one-of easing-types]]
+   [:way {:optional true} [::sm/one-of way-types]]
+   [:offset-effect {:optional true} :boolean]
+   [:direction {:optional true} [::sm/one-of direction-types]]])
 
 (def schema:slide-animation
   [:map {:title "AnimationSlide"}

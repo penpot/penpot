@@ -269,8 +269,9 @@ Using library components:
   * create a new instance of the component on the current page:
     `const instance: Shape = component.instance();`
     This returns a `Shape` (often a `Board` containing child elements).
-    After instantiation, modify the instance's properties as desired.
-  * get the reference to the main component shape:
+      - After instantiation, modify the instance's properties as desired.
+      - Get a reference to the component an instance was created from via `instance.component()`.
+  * get the reference to the main instance (shape that serves as the source for new instances):
     `const mainShape: Shape = component.mainInstance();`
 
 Adding a component to a library:
@@ -295,6 +296,7 @@ Variants are a system for grouping related component versions along named proper
   - `properties: string[]` (ordered list of property names); `addProperty(): void`, `renameProperty(pos, name)`, `currentValues(property)`
   - `variantComponents(): LibraryVariantComponent[]` 
 * `LibraryVariantComponent` (extends `LibraryComponent`): full library component with metadata, for which `isVariant()` returns true.
+  - `variants: Variants`
   - `variantProps: { [property: string]: string }` (this component's value for each property)
   - `variantError` (non-null if e.g. two variants share the same combination of property values)
   - `setVariantProperty(pos, value)`
@@ -302,10 +304,30 @@ Variants are a system for grouping related component versions along named proper
 Properties are often addressed positionally: `pos` parameter in various methods = index in `Variants.properties`.
 
 **Creating a variant group**:
-- `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer`: Combines several main component instances into a new variant group. 
-  All components end up inside a single new container on the canvas.
-  The container's `Variants` instance is initialised with one property `Property 1`, with the property values set to the respective component's name.
-- After creation, edit properties using `variants.renameProperty(pos, name)`, `variants.addProperty()`, and `comp.setVariantProperty(pos, value)`.
+
+Use `penpotUtils.createVariantContainer(components)` — it handles the full multi-step workflow in one call:
+```js
+// Given three main components s, m, l (here: the first three main components on the page)
+const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3);
+// Single property:
+const container = penpotUtils.createVariantContainer([
+  { shape: s, properties: { Size: 'Small' } },
+  { shape: m, properties: { Size: 'Medium' } },
+  { shape: l, properties: { Size: 'Large' } },
+]);
+// Multiple properties:
+const container2 = penpotUtils.createVariantContainer([
+  { shape: s, properties: { Size: 'Small', State: 'Default' } },
+  { shape: m, properties: { Size: 'Medium', State: 'Default' } },
+  { shape: l, properties: { Size: 'Large', State: 'Hover' } },
+]);
+```
+
+If you must use the lower-level API, follow this exact order — skipping or reordering steps leaves the variant broken:
+1. `penpot.createVariantFromComponents(mainInstances: Board[]): VariantContainer` — combines several main component instances into a new variant group. All components end up inside a single new container on the canvas; always creates one property called `"Property 1"`.
+2. `container.variants.renameProperty(0, name)` — rename `Property 1`.
+3. For each extra property: `variants.addProperty()` then `variants.renameProperty(pos, name)`.
+4. For every component × every property: iterate `variants.variantComponents()` and call `comp.setVariantProperty(pos, value)`.
 
 **Adding a variant to an existing group**:
 Use `variantContainer.appendChild(mainInstance)` to move a component's main instance into the container, then set its position manually and assign property values via `setVariantProperty`.
@@ -313,6 +335,7 @@ Use `variantContainer.appendChild(mainInstance)` to move a component's main inst
 **Using Variants**:
 - `compInstance.switchVariant(pos, value)`: On a component instance, switches to the nearest variant that has the given value at property position `pos`, keeping all other property values the same.
 - To instantiate a specific variant, find the right `LibraryVariantComponent` by checking `variantProps`, then call `.instance()`.
+- Given a variant component instance, access the component it was instantiated from via `instance.component()` and the `Variants` instance via `instance.component().variants`.
 
 # Design Tokens
 
@@ -322,7 +345,7 @@ The token library: `penpot.library.local.tokens` (type: `TokenCatalog`)
   * `sets: TokenSet[]` - Token collections (order matters for precedence)
   * `themes: TokenTheme[]` - Presets that activate specific sets
   * `addSet({name: string}): TokenSet` - Create new set
-  * `addTheme(group: string, name: string): TokenTheme` - Create new theme
+  * `addTheme({group: string, name: string}): TokenTheme` - Create new theme
 
 `TokenSet` contains tokens with unique names:
   * `active: boolean` - Only active sets affect shapes; use `set.toggleActive()` to change: `if (!set.active) set.toggleActive();`

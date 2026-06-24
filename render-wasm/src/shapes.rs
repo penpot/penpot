@@ -188,6 +188,7 @@ pub struct Shape {
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
+    pub background_blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -291,6 +292,7 @@ impl Shape {
             opacity: 1.,
             hidden: false,
             blur: None,
+            background_blur: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
@@ -312,6 +314,10 @@ impl Shape {
 
         if let Some(blur) = self.blur.as_mut() {
             blur.scale_content(value);
+        }
+
+        if let Some(background_blur) = self.background_blur.as_mut() {
+            background_blur.scale_content(value);
         }
 
         self.layout_item
@@ -629,6 +635,15 @@ impl Shape {
     pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
         self.blur = blur;
+    }
+
+    pub fn set_background_blur(&mut self, blur: Option<Blur>) {
+        self.invalidate_extrect();
+        self.background_blur = blur;
+    }
+
+    pub fn visible_background_blur(&self) -> Option<Blur> {
+        self.background_blur.filter(|blur| !blur.hidden)
     }
 
     pub fn add_child(&mut self, id: Uuid) {
@@ -1015,6 +1030,7 @@ impl Shape {
     }
 
     pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+        // `scale` is forwarded to children but intentionally NOT part of the cache key.
         if let Some(cached_extrect) = *self.extrect_cache.borrow() {
             return cached_extrect;
         }
@@ -1074,6 +1090,15 @@ impl Shape {
 
     pub fn center(&self) -> Point {
         self.selrect.center()
+    }
+
+    // TODO: This can be used in more places
+    pub fn centered_transform(&self) -> Matrix {
+        let center = self.center();
+        let mut matrix = self.transform;
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+        matrix
     }
 
     pub fn clip(&self) -> bool {
@@ -1346,8 +1371,10 @@ impl Shape {
     pub fn get_skia_path(&self) -> Option<skia::Path> {
         if let Some(path) = self.shape_type.path() {
             let mut skia_path = path.to_skia_path(self.svg_attrs.as_ref());
-            if let Some(path_transform) = self.to_path_transform() {
-                skia_path = skia_path.make_transform(&path_transform);
+            if !math::identitish(&self.transform) {
+                if let Some(path_transform) = self.to_path_transform() {
+                    skia_path = skia_path.make_transform(&path_transform);
+                }
             }
             Some(skia_path)
         } else {
@@ -1355,7 +1382,122 @@ impl Shape {
         }
     }
 
+    /// Same `concat` applied around [`center`](Self::center) as in `render_shape` (non-text branch).
+    fn shape_document_transform(&self) -> Matrix {
+        let c = self.center();
+        let mut m = self.transform;
+        m.post_translate(c);
+        m.pre_translate(-c);
+        m
+    }
+
+    /// Fill silhouette only, document space (matches fill rendering).
+    fn drag_crop_fill_clip_path_skia(&self) -> Option<skia::Path> {
+        match &self.shape_type {
+            Type::Rect(r) => {
+                let p = Path::new(shape_to_path::rect_segments(self, r.corners));
+                Some(p.to_skia_path(self.svg_attrs.as_ref()))
+            }
+            Type::Circle => {
+                let p = Path::new(shape_to_path::circle_segments(self));
+                Some(p.to_skia_path(self.svg_attrs.as_ref()))
+            }
+            Type::Path(_) | Type::Bool(_) => {
+                let sk = self.get_skia_path()?;
+                Some(sk.make_transform(&self.shape_document_transform()))
+            }
+            _ => None,
+        }
+    }
+
+    /// Whether this shape may use the backbuffer crop fast path during interactive drag.
+    ///
+    /// Conservative: only effects and fills that match what we snapshot and clip in
+    /// [`drag_crop_clip_path`](Self::drag_crop_clip_path). Text is never safe (glyph layout,
+    /// no `drag_crop_clip_path`).
+    pub fn is_safe_for_drag_crop_cache(&self, shapes_pool: ShapesPoolRef) -> bool {
+        if matches!(self.shape_type, Type::Text(_)) {
+            return false;
+        }
+
+        // If a frame shows overflow (clip_content=false) and its visible content exceeds the
+        // frame bounds, a cached crop anchored to the frame can easily become incorrect while
+        // moving (children can extend beyond selrect). Be conservative and render live.
+        if matches!(self.shape_type, Type::Frame(_)) && !self.clip_content {
+            let extrect = self.extrect(shapes_pool, 1.0);
+            let sr = self.selrect;
+            let exceeds = extrect.left < sr.left
+                || extrect.top < sr.top
+                || extrect.right > sr.right
+                || extrect.bottom > sr.bottom;
+            if exceeds {
+                return false;
+            }
+        }
+
+        self.blur.is_none()
+            && self.background_blur.is_none()
+            && self.shadows.is_empty()
+            && (self.opacity - 1.0).abs() <= 1e-4
+            && self.blend_mode().0 == skia::BlendMode::SrcOver
+    }
+
+    /// Fill + visible strokes in **document space** for clipping interactive drag textures.
+    ///
+    /// The backbuffer crop uses an axis-aligned `extrect`; we clip the blit so backdrop pixels
+    /// outside the real silhouette (fill and stroke regions) are not smeared. Strokes use
+    /// [`stroke_to_path`](stroke_to_path) like the main renderer, then union with the fill path.
+    pub fn drag_crop_clip_path(&self) -> Option<skia::Path> {
+        let mut acc = self.drag_crop_fill_clip_path_skia()?;
+        if !self.has_visible_strokes() {
+            return Some(acc);
+        }
+
+        let shape_path = match &self.shape_type {
+            Type::Rect(r) => Path::new(shape_to_path::rect_segments(self, r.corners)),
+            Type::Circle => Path::new(shape_to_path::circle_segments(self)),
+            Type::Path(_) | Type::Bool(_) => self.shape_type.path()?.clone(),
+            _ => return Some(acc),
+        };
+
+        let path_transform = self.to_path_transform();
+        let apply_doc_transform = path_transform.is_some();
+
+        for stroke in self.visible_strokes() {
+            let Some(stroke_region) = stroke_to_path(
+                stroke,
+                &shape_path,
+                path_transform.as_ref(),
+                &self.selrect,
+                self.svg_attrs.as_ref(),
+                true,
+            ) else {
+                continue;
+            };
+            let mut sk = stroke_region.to_skia_path(self.svg_attrs.as_ref());
+            if apply_doc_transform {
+                sk = sk.make_transform(&self.shape_document_transform());
+            }
+            acc = acc.op(&sk, skia::PathOp::Union).unwrap_or(acc);
+        }
+
+        Some(acc)
+    }
+
     fn transform_selrect(&mut self, transform: &Matrix) {
+        if math::is_move_only_matrix(transform) {
+            let tx = transform.translate_x();
+            let ty = transform.translate_y();
+            // `self.transform` (rotation/scale around center) is unchanged by translation.
+            self.selrect = math::Rect::from_xywh(
+                self.selrect.left + tx,
+                self.selrect.top + ty,
+                self.selrect.width(),
+                self.selrect.height(),
+            );
+            return;
+        }
+
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 
@@ -1377,9 +1519,26 @@ impl Shape {
     pub fn apply_transform(&mut self, transform: &Matrix) {
         self.transform_selrect(transform);
 
-        // TODO: See if we can change this invalidation to a transformation
-        self.invalidate_extrect();
-        self.invalidate_bounds();
+        // Outsets (strokes, shadows, blur, children) are translation-invariant,
+        // so the cached extrect can be shifted instead of invalidated.
+        // The bounds cache must always be invalidated so that callers such as
+        // grid_cell_data get the updated position after a drag.
+        if math::is_move_only_matrix(transform) {
+            let tx = transform.translate_x();
+            let ty = transform.translate_y();
+            if let Some(rect) = self.extrect_cache.borrow_mut().as_mut() {
+                *rect = math::Rect::from_xywh(
+                    rect.left + tx,
+                    rect.top + ty,
+                    rect.width(),
+                    rect.height(),
+                );
+            }
+            self.invalidate_bounds();
+        } else {
+            self.invalidate_extrect();
+            self.invalidate_bounds();
+        }
 
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
@@ -1522,7 +1681,7 @@ impl Shape {
             return false;
         }
 
-        if self.blur.is_some() {
+        if self.blur.is_some() || self.background_blur.is_some() {
             return false;
         }
 
@@ -1571,6 +1730,16 @@ impl Shape {
         use crate::shapes::BlurType;
         match self.shape_type {
             Type::Frame(_) if self.clip_content => self.blur.filter(|blur| {
+                !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
+            }),
+            _ => None,
+        }
+    }
+
+    pub fn masked_group_layer_blur(&self) -> Option<Blur> {
+        use crate::shapes::BlurType;
+        match self.shape_type {
+            Type::Group(Group { masked: true }) => self.blur.filter(|blur| {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             }),
             _ => None,
@@ -1650,6 +1819,38 @@ mod tests {
             shape.fills.first(),
             Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
         )
+    }
+
+    #[test]
+    fn layer_blur_and_background_blur_can_coexist() {
+        let mut shape = any_shape();
+
+        let layer_blur = Blur::new(BlurType::LayerBlur, false, 4.0);
+        let background_blur = Blur::new(BlurType::BackgroundBlur, false, 8.0);
+
+        shape.set_blur(Some(layer_blur));
+        shape.set_background_blur(Some(background_blur));
+
+        assert_eq!(shape.blur, Some(layer_blur));
+        assert_eq!(shape.background_blur, Some(background_blur));
+        assert_eq!(shape.visible_background_blur(), Some(background_blur));
+
+        // Clearing one type must not affect the other.
+        shape.set_blur(None);
+        assert_eq!(shape.blur, None);
+        assert_eq!(shape.background_blur, Some(background_blur));
+
+        shape.set_blur(Some(layer_blur));
+        shape.set_background_blur(None);
+        assert_eq!(shape.blur, Some(layer_blur));
+        assert_eq!(shape.background_blur, None);
+    }
+
+    #[test]
+    fn hidden_background_blur_is_not_visible() {
+        let mut shape = any_shape();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, true, 8.0)));
+        assert_eq!(shape.visible_background_blur(), None);
     }
 
     #[test]

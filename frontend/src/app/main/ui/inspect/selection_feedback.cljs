@@ -2,13 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.inspect.selection-feedback
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.measurements :refer [size-display measurement]]
+   [app.main.ui.measurements :refer [size-display* measurement*]]
    [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
@@ -64,9 +64,9 @@
       [:g.selection-feedback {:pointer-events "none"}
        [:g.selected-shapes
         [:& selection-rect {:selrect selrect :zoom zoom}]
-        [:& size-display {:selrect selrect :zoom zoom}]]
+        [:> size-display* {:selrect selrect :zoom zoom}]]
 
-       [:& measurement {:bounds (assoc size :x 0 :y 0)
-                        :selected-shapes selected-shapes
-                        :hover-shape hover-shape
-                        :zoom zoom}]])))
+       [:> measurement* {:bounds (assoc size :x 0 :y 0)
+                         :selected-shapes selected-shapes
+                         :hover-shape hover-shape
+                         :zoom zoom}]])))

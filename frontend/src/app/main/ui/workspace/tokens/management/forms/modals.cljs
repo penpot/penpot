@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.tokens.management.forms.modals
   (:require-macros [app.main.style :as stl])
@@ -75,7 +75,7 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-id initial-errors] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position token-type)
         modal-size-large* (mf/use-state (or (= token-type :typography)
                                             (= token-type :color)
@@ -102,6 +102,7 @@
                           :action action
                           :selected-token-set-id selected-token-set-id
                           :token-type token-type
+                          :initial-errors initial-errors
                           :on-display-colorpicker update-modal-size}]]))
 
 ;; Modals ----------------------------------------------------------------------
@@ -118,33 +119,45 @@
   [properties]
   [:& token-update-create-modal properties])
 
-(mf/defc color-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/color}
-  [properties]
-  [:& token-update-create-modal properties])
-
-(mf/defc stroke-width-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/stroke-width}
-  [properties]
-  [:& token-update-create-modal properties])
-
 (mf/defc box-shadow-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/shadow}
   [properties]
   [:& token-update-create-modal properties])
 
-(mf/defc sizing-modal
+(mf/defc color-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/sizing}
+   ::mf/register-as :tokens/color}
   [properties]
   [:& token-update-create-modal properties])
 
 (mf/defc dimensions-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/dimensions}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc font-familiy-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-family}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc font-size-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-size}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc font-weight-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-weight}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc letter-spacing-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/letter-spacing}
   [properties]
   [:& token-update-create-modal properties])
 
@@ -172,6 +185,12 @@
   [properties]
   [:& token-update-create-modal properties])
 
+(mf/defc sizing-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/sizing}
+  [properties]
+  [:& token-update-create-modal properties])
+
 (mf/defc spacing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/spacing}
@@ -184,27 +203,9 @@
   [properties]
   [:& token-update-create-modal properties])
 
-(mf/defc typography-modal
+(mf/defc stroke-width-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/typography}
-  [properties]
-  [:& token-update-create-modal properties])
-
-(mf/defc font-size-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/font-size}
-  [properties]
-  [:& token-update-create-modal properties])
-
-(mf/defc letter-spacing-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/letter-spacing}
-  [properties]
-  [:& token-update-create-modal properties])
-
-(mf/defc font-familiy-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/font-family}
+   ::mf/register-as :tokens/stroke-width}
   [properties]
   [:& token-update-create-modal properties])
 
@@ -220,8 +221,8 @@
   [properties]
   [:& token-update-create-modal properties])
 
-(mf/defc font-weight-modal
+(mf/defc typography-modal
   {::mf/register modal/components
-   ::mf/register-as :tokens/font-weight}
+   ::mf/register-as :tokens/typography}
   [properties]
   [:& token-update-create-modal properties])

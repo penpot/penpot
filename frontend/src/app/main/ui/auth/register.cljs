@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
@@ -81,6 +81,7 @@
         on-error
         (mf/use-fn
          (fn [cause]
+           (reset! submitted? false)
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :email-does-not-match-invitation]
@@ -97,6 +98,9 @@
 
                [:restriction :email-has-complaints]
                (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+
+               [:validation :email-already-exists]
+               (st/emit! (ntf/error (tr "errors.email-already-exists")))
 
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]
@@ -208,17 +212,17 @@
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :account)}
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login params))
-                  :class (stl/css :account-link)
-                  :data-testid "login-here-link"}
+     [:> lk/link* {:action  #(st/emit! (rt/nav :auth-login params))
+                   :class (stl/css :account-link)
+                   :data-testid "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? cf/flags :demo-users)
       [:*
        [:hr {:class (stl/css :separator)}]
        [:div {:class (stl/css :demo-account)}
-        [:& lk/link {:action login/create-demo-profile
-                     :class (stl/css :demo-account-link)}
+        [:> lk/link* {:action login/create-demo-profile
+                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
 
@@ -230,8 +234,8 @@
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
      [:div {:class (stl/css :auth-title-wrapper)}
       [:h2 {:class (stl/css :auth-title)}
-       (tr "auth.check-mail")]
-      [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
+       (tr "auth.check-email")]
+      [:div {:class (stl/css :notification-text)} (tr "auth.verification-sent-email")]]
      [:div {:class (stl/css :notification-text-email)} email]]))
 
 (mf/defc terms-register*
@@ -351,6 +355,6 @@
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {}))
-                  :class (stl/css :go-back-link)}
+     [:> lk/link* {:action  #(st/emit! (rt/nav :auth-register {}))
+                   :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])

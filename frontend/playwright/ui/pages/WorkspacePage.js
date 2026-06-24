@@ -172,8 +172,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.ellipseShapeButton = page.getByRole("button", { name: "Ellipse (E)" });
+    this.textShapeButton = page.getByRole("button", { name: "Text (T)" });
     this.moveButton = page.getByRole("button", { name: "Move (V)" });
     this.boardButton = page.getByRole("button", { name: "Board (B)" });
+    this.pathButton = page.getByRole("button", { name: "Path (P)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });
@@ -444,6 +446,33 @@ export class WorkspacePage extends BaseWebSocketPage {
   async togglePages() {
     const pagesToggle = this.page.getByText("Pages");
     await pagesToggle.click();
+  }
+
+  async selectToolbarTool(workspacePage, toolName) {
+    await workspacePage.page
+      .getByRole("button", { name: toolName })
+      .first()
+      .click();
+  }
+
+  async selectToolFromFlyout(
+    workspacePage,
+    { triggerToolName, targetToolName },
+  ) {
+    const trigger = workspacePage.page
+      .getByRole("button", { name: triggerToolName })
+      .first();
+
+    const option = workspacePage.page
+      .getByRole("menuitemradio", { name: targetToolName })
+      .first();
+
+    await trigger.hover();
+    // Flyout opening is delayed by 350ms in the toolbar component.
+    await workspacePage.page.waitForTimeout(450);
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await option.waitFor({ state: "visible" });
+    await option.click();
   }
 
   async moveSelectionToShape(name) {

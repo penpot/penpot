@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.helpers.state
   (:require
@@ -10,7 +10,9 @@
    [app.common.schema :as sm]
    [app.common.test-helpers.files :as cthf]
    [app.main.data.workspace.layout :as layout]
+   [app.main.features :as features]
    [beicon.v2.core :as rx]
+   [cljs.test :as t]
    [potok.v2.core :as ptk]))
 
 (def ^private initial-state
@@ -18,11 +20,15 @@
    :workspace-global layout/default-global
    :current-file-id nil
    :current-page-id nil
-   :features-team #{"components/v2"}})
+   :features-team #{"components/v2"}
+   ;; With :render-switch enabled by default, render-wasm/v1 follows the
+   ;; profile renderer preference instead of the global feature flag alone.
+   :profile {:props {:renderer :wasm}}})
 
 (defn- on-error
   [cause]
-  (js/console.log "STORE ERROR" (.-stack cause))
+  (js/console.error "STORE ERROR" (.-stack cause))
+  (t/do-report {:type :error :message "Store error" :actual cause})
   (when-let [data (some-> cause ex-data ::sm/explain)]
     (pprint (sm/humanize-explain data))))
 
@@ -34,6 +40,9 @@
                          :permissions {:can-edit true}
                          :files {(:id file) file}))
         store (ptk/store {:state state :on-error on-error})]
+    ;; Unit tests skip team/workspace bootstrap; mirror team init so
+    ;; :features is populated the same way as features/initialize does in app.
+    (ptk/emit! store (features/initialize #{}))
     store))
 
 (defn run-store
@@ -50,10 +59,13 @@
           (rx/last)
           (rx/tap (fn [_]
                     (completed-cb @store)))
-          (rx/subs! (fn [_] (done))
+          (rx/subs! (fn [_] nil)
                     (fn [cause]
-                      (js/console.log "[error]:" cause))
+                      (done)
+                      (js/console.error "[error]:" cause)
+                      (t/do-report {:type :error :message "Stream error" :actual cause}))
                     (fn [_]
+                      (done)
                       #_(js/console.debug "[complete]"))))
 
      (doseq [event events]

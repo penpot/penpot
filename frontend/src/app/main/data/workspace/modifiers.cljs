@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.workspace.modifiers
   "Events related with shapes transformations"
@@ -30,7 +30,9 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
+   [app.main.streams :as ms]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -38,21 +40,26 @@
 (def ^:private xf:without-uuid-zero
   (remove #(= % uuid/zero)))
 
+;; Lets set-wasm-modifiers call clean-modifiers only on the
+;; non-translation→translation transition instead of every frame.
+(def ^:private wasm-structure-modifiers-active? (volatile! false))
+
 ;; Tracks whether the WASM renderer is currently in "interactive
 ;; transform" mode (a drag / resize / rotate gesture in progress).
 ;; Paired with `set-modifiers-start` / `set-modifiers-end` so the
 ;; native side only toggles once per gesture, regardless of how many
 ;; `set-wasm-modifiers` calls fire in between.
-(defonce ^:private interactive-transform-active? (atom false))
+;; State lives in `app.render-wasm.gesture` so `reload-renderer!` can reset it after
+;; `_clean_up` without an api ↔ modifiers circular dependency.
 
 (defn- ensure-interactive-transform-start!
   []
-  (when (compare-and-set! interactive-transform-active? false true)
+  (when (wasm-gesture/try-begin-interactive-transform!)
     (wasm.api/set-modifiers-start)))
 
 (defn- ensure-interactive-transform-end!
   []
-  (when (compare-and-set! interactive-transform-active? true false)
+  (when (wasm-gesture/try-end-interactive-transform!)
     (wasm.api/set-modifiers-end)))
 
 (def ^:private transform-attrs
@@ -66,6 +73,7 @@
     :r4
     :shadow
     :blur
+    :background-blur
     :strokes
     :width
     :height
@@ -302,6 +310,7 @@
         ;; skip shadows / blur).
         (ensure-interactive-transform-end!)
         (wasm.api/clean-modifiers)
+        (vreset! wasm-structure-modifiers-active? false)
         (set-wasm-props! (dsh/lookup-page-objects state) (:wasm-props state) [])))
 
     ptk/UpdateEvent
@@ -617,32 +626,56 @@
 (defn set-temporary-selrect
   [selrect]
   (ptk/reify ::set-temporary-selrect
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-selrect selrect))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/workspace-selrect selrect))))
 
 (defn set-temporary-modifiers
   [modifiers]
   (ptk/reify ::set-temporary-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :workspace-wasm-modifiers modifiers))))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (rx/push! ms/wasm-modifiers (into {} modifiers)))))
 
 (def ^:private xf:map-key (map key))
 
+(defn- translate-selrect
+  "Shift `selrect`'s center by (tx, ty). Width/height/transform are
+   invariant under pure translation, so only `:center` moves."
+  [selrect tx ty]
+  (update selrect :center
+          (fn [c] (gpt/point (+ (:x c) tx) (+ (:y c) ty)))))
+
+(defn- cached-translation-selrect
+  "Translation-only fast path for the live selection rect. Avoids a WASM
+   `get-selection-rect` call per drag frame by caching the gesture-start
+   base: on the first emission, ask WASM and back out the current delta
+   to recover the base; on every later emission, shift the cached base
+   by the new (tx, ty)."
+  [ids ^js first-matrix cache]
+  (let [tx (.-e first-matrix)
+        ty (.-f first-matrix)]
+    (if-let [base @cache]
+      (translate-selrect base tx ty)
+      (let [computed (wasm.api/get-selection-rect ids)]
+        (vreset! cache (translate-selrect computed (- tx) (- ty)))
+        computed))))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel
+                        subtree-ids-by-id selection-rect-cache]
                  :or {ignore-constraints false ignore-snap-pixel false}
                  :as params}]
   (ptk/reify ::set-wasm-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [property-changes
-            (extract-property-changes modif-tree)]
-        (-> state
-            (assoc :prev-wasm-props (:wasm-props state))
-            (assoc :wasm-props property-changes))))
+      (let [property-changes (extract-property-changes modif-tree)]
+        (if (d/not-empty? property-changes)
+          (-> state
+              (assoc :prev-wasm-props (:wasm-props state))
+              (assoc :wasm-props property-changes))
+          state)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -652,19 +685,33 @@
       ;; thread is not blocked. The pair is closed in
       ;; `clear-local-transform`.
       (ensure-interactive-transform-start!)
-      (wasm.api/clean-modifiers)
-      (let [prev-wasm-props (:prev-wasm-props state)
-            wasm-props      (:wasm-props state)
-            objects         (dsh/lookup-page-objects state)
-            snap-pixel?
-            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
-        (set-wasm-props! objects prev-wasm-props wasm-props)
-        (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+      (let [snap-pixel?  (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+            translation? (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
+
+        (if translation?
+          ;; Pure translation: no structure changes needed. If structure
+          ;; modifiers were active from a previous non-translation frame
+          ;; (e.g. shape hovered over a frame then dragged back out),
+          ;; clear them now so the shape is not clipped by the old frame.
+          (when @wasm-structure-modifiers-active?
+            (wasm.api/clean-modifiers)
+            (vreset! wasm-structure-modifiers-active? false))
+          (let [objects (dsh/lookup-page-objects state)]
+            (set-wasm-props! objects (:prev-wasm-props state) (:wasm-props state))
+            (wasm.api/clean-modifiers)
+            (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+            (vreset! wasm-structure-modifiers-active? true)))
         (let [geometry-entries (parse-geometry-modifiers modif-tree)
-              modifiers        (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+              root-modifiers   (into [] (map (fn [[id data]] [id (:transform data)])) geometry-entries)
+              modifiers
+              (if (and translation? (not snap-pixel?))
+                root-modifiers
+                (wasm.api/propagate-modifiers geometry-entries snap-pixel?))]
           (wasm.api/set-modifiers modifiers)
           (let [ids     (into [] xf:map-key geometry-entries)
-                selrect (wasm.api/get-selection-rect ids)]
+                selrect (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
+                          (cached-translation-selrect ids (second (first modifiers)) selection-rect-cache)
+                          (wasm.api/get-selection-rect ids))]
             (rx/of (set-temporary-selrect selrect)
                    (set-temporary-modifiers modifiers))))))))
 
@@ -693,92 +740,110 @@
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?]
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?
+                        subtree-ids-by-id]
                  :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
     (watch [_ state _]
-      (wasm.api/clean-modifiers)
-      (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree))
+      (let [translation?
+            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))]
+        (wasm.api/clean-modifiers)
+        (when-not translation?
+          (wasm.api/set-structure-modifiers (parse-structure-modifiers modif-tree)))
 
-      ;; Apply property changes (e.g. grow-type) to WASM shapes before
-      ;; propagating geometry, so propagate_modifiers sees the updated state.
-      (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
-        (when (= property :grow-type)
-          (wasm.api/use-shape id)
-          (wasm.api/set-shape-grow-type value)))
+        ;; Apply property changes (e.g. grow-type) to WASM shapes before
+        ;; propagating geometry, so propagate_modifiers sees the updated state.
+        (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
+          (when (= property :grow-type)
+            (wasm.api/use-shape id)
+            (wasm.api/set-shape-grow-type value)))
 
-      (let [objects          (dsh/lookup-page-objects state)
+        (let [objects (dsh/lookup-page-objects state)
 
-            geometry-entries
-            (parse-geometry-modifiers modif-tree)
+              geometry-entries
+              (parse-geometry-modifiers modif-tree)
 
-            snap-pixel?
-            (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+              snap-pixel?
+              (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
-            transforms
-            (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
+              transforms
+              (if (and translation? (not snap-pixel?))
+                ;; Mirror WASM `propagate_modifiers` in CLJS: splat the
+                ;; translation matrix onto every descendant. Without
+                ;; this step the commit would only touch the dragged
+                ;; primaries and descendants would snap back to their
+                ;; pre-drag positions on drop.
+                ;;
+                ;; Skipped when `snap-pixel?` is on: WASM applies
+                ;; per-shape pixel correction (different scale/translate
+                ;; per descendant) which we can't replicate cheaply on
+                ;; the CLJS side.
+                (reduce
+                 (fn [acc [id data]]
+                   (let [t (:transform data)
+                         subtree-ids
+                         (or (get subtree-ids-by-id id)
+                             (cfh/get-children-ids-with-self objects id))]
+                     (reduce (fn [a sid] (assoc a sid t)) acc subtree-ids)))
+                 {}
+                 geometry-entries)
+                (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
 
-            ;; Pure-translation gesture: every shape's modifier only
-            ;; contains `:move` operations (no resize/rotate/scale and
-            ;; no structural mutation)
-            translation?
-            (every? #(ctm/only-move? (:modifiers %)) (vals modif-tree))
+              ignore-tree
+              (calculate-ignore-tree-wasm transforms objects)
 
-            ignore-tree
-            (calculate-ignore-tree-wasm transforms objects)
+              options
+              (-> params
+                  (assoc :reg-objects? true)
+                  (assoc :ignore-tree ignore-tree)
+                  (assoc :translation? translation?)
+                  ;; Attributes that can change in the transform. This
+                  ;; way we don't have to check all the attributes
+                  (assoc :attrs transform-attrs))
 
-            options
-            (-> params
-                (assoc :reg-objects? true)
-                (assoc :ignore-tree ignore-tree)
-                (assoc :translation? translation?)
-                ;; Attributes that can change in the transform. This
-                ;; way we don't have to check all the attributes
-                (assoc :attrs transform-attrs))
+              modif-tree
+              (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
 
-            modif-tree
-            (propagate-structure-modifiers modif-tree (dsh/lookup-page-objects state))
+              ids
+              (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
-            ids
-            (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
+              update-shape
+              (fn [shape]
+                (let [shape-id  (dm/get-prop shape :id)
+                      transform (get transforms shape-id)
+                      modifiers (dm/get-in modif-tree [shape-id :modifiers])]
+                  (-> shape
+                      (gsh/apply-transform transform)
+                      (ctm/apply-structure-modifiers modifiers))))
 
-            update-shape
-            (fn [shape]
-              (let [shape-id    (dm/get-prop shape :id)
-                    transform   (get transforms shape-id)
-                    modifiers   (dm/get-in modif-tree [shape-id :modifiers])]
-                (-> shape
-                    (gsh/apply-transform transform)
-                    (ctm/apply-structure-modifiers modifiers))))
+              bool-ids
+              (into #{}
+                    (comp
+                     (mapcat (partial cfh/get-parents-with-self objects))
+                     (filter cfh/bool-shape?)
+                     (map :id))
+                    ids)
 
-            bool-ids
-            (into #{}
-                  (comp
-                   (mapcat (partial cfh/get-parents-with-self objects))
-                   (filter cfh/bool-shape?)
-                   (map :id))
-                  ids)
+              undo-id (js/Symbol)]
+          (rx/concat
+           (if undo-transation?
+             (rx/of (dwu/start-undo-transaction undo-id))
+             (rx/empty))
+           (rx/of
+            (clear-local-transform)
+            (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+            (ptk/event ::dwcm/move-frame-comment-threads transforms)
+            (dwsh/update-shapes ids update-shape options)
 
-            undo-id (js/Symbol)]
-        (rx/concat
-         (if undo-transation?
-           (rx/of (dwu/start-undo-transaction undo-id))
-           (rx/empty))
-         (rx/of
-          (clear-local-transform)
-          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
-          (ptk/event ::dwcm/move-frame-comment-threads transforms)
-          (dwsh/update-shapes ids update-shape options)
+            ;; The update to the bool path needs to be in a different operation because it
+            ;; needs to have the updated children info
+            (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
 
-          ;; The update to the bool path needs to be in a different operation because it
-          ;; needs to have the updated children info
-          (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
-
-         (if undo-transation?
-           (rx/of (dwu/commit-undo-transaction undo-id))
-           (rx/empty)))))))
+           (if undo-transation?
+             (rx/of (dwu/commit-undo-transaction undo-id))
+             (rx/empty))))))))
 
 (def ^:private
   xf-rotation-shape

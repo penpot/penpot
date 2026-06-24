@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer.login
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,7 @@
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
-   [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
+   [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
    [app.main.ui.auth.register :refer [register-methods* register-success-page* terms-register* register-validate-form*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -113,8 +113,8 @@
              (tr "labels.go-back")]]]]
 
          :recovery-request
-         [:& recovery-request-page {:go-back-callback go-back-to-login
-                                    :on-success-callback success-email-sent}]
+         [:> recovery-request-page* {:go-back-callback go-back-to-login
+                                     :on-success-callback success-email-sent}]
          :email-sent
          [:div {:class (stl/css :form-container)}
           [:> register-success-page* {:params {:email @user-email}}]])

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.shapes.filters
   (:require
@@ -26,7 +26,7 @@
                  (= :layer-blur (-> shape :blur :type))))
     (str/ffmt "url(#%)" filter-id)))
 
-(mf/defc color-matrix
+(mf/defc color-matrix*
   [{:keys [color]}]
   (let [{:keys [color opacity]} color
         [r g b a] (cc/hex->rgba color opacity)
@@ -35,7 +35,7 @@
      {:type "matrix"
       :values (str/ffmt "0 0 0 0 % 0 0 0 0 % 0 0 0 0 % 0 0 0 % 0" r g b a)}]))
 
-(mf/defc drop-shadow-filter
+(mf/defc drop-shadow-filter*
   [{:keys [filter-in filter-id params]}]
 
   (let [{:keys [color offset-x offset-y blur spread]} params]
@@ -56,13 +56,13 @@
 
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
-     [:& color-matrix {:color color}]
+     [:> color-matrix* {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 filter-in
                 :result filter-id}]]))
 
-(mf/defc inner-shadow-filter
+(mf/defc inner-shadow-filter*
   [{:keys [filter-in filter-id params]}]
 
   (let [{:keys [color offset-x offset-y blur spread]} params]
@@ -85,13 +85,13 @@
                     :k2 "-1"
                     :k3 "1"}]
 
-     [:& color-matrix {:color color}]
+     [:> color-matrix* {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 filter-in
                 :result filter-id}]]))
 
-(mf/defc background-blur-filter
+(mf/defc background-blur-filter*
   [{:keys [filter-id params]}]
   [:*
    [:feGaussianBlur {:in "BackgroundImage"
@@ -100,32 +100,32 @@
                   :operator "in"
                   :result filter-id}]])
 
-(mf/defc layer-blur-filter
+(mf/defc layer-blur-filter*
   [{:keys [filter-id params]}]
 
   [:feGaussianBlur {:stdDeviation (:value params)
                     :result filter-id}])
 
-(mf/defc image-fix-filter [{:keys [filter-id]}]
+(mf/defc image-fix-filter* [{:keys [filter-id]}]
   [:feFlood {:flood-opacity 0 :result filter-id}])
 
-(mf/defc blend-filters [{:keys [filter-id filter-in]}]
+(mf/defc blend-filters* [{:keys [filter-id filter-in]}]
   [:feBlend {:mode "normal"
              :in "SourceGraphic"
              :in2 filter-in
              :result filter-id}])
 
-(mf/defc filter-entry [{:keys [entry]}]
+(mf/defc filter-entry* [{:keys [entry]}]
   (let [props #js {:filter-id (:id entry)
                    :filter-in (:filter-in entry)
                    :params (:params entry)}]
     (case (:type entry)
-      :drop-shadow [:> drop-shadow-filter props]
-      :inner-shadow [:> inner-shadow-filter props]
-      :background-blur [:> background-blur-filter props]
-      :layer-blur [:> layer-blur-filter props]
-      :image-fix [:> image-fix-filter props]
-      :blend-filters [:> blend-filters props])))
+      :drop-shadow [:> drop-shadow-filter* props]
+      :inner-shadow [:> inner-shadow-filter* props]
+      :background-blur [:> background-blur-filter* props]
+      :layer-blur [:> layer-blur-filter* props]
+      :image-fix [:> image-fix-filter* props]
+      :blend-filters [:> blend-filters* props])))
 
 (defn change-filter-in
   "Adds the previous filter as `filter-in` parameter"
@@ -137,7 +137,7 @@
   (if (or (mth/close? 0.01 (:width selrect))
           (mth/close? 0.01 (:height selrect)))
 
-    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/heigth
+    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/height
     ;; From the SVG spec (https://www.w3.org/TR/SVG11/coords.html#ObjectBoundingBox
     ;; Keyword objectBoundingBox should not be used when the geometry of the applicable element
     ;; has no width or no height, such as the case of a horizontal or vertical line, even when
@@ -160,7 +160,7 @@
           filter-units  "objectBoundingBox"]
       [filter-x filter-y filter-width filter-height filter-units])))
 
-(mf/defc filters
+(mf/defc filters*
   [{:keys [filter-id shape]}]
 
   (let [shape'        (update shape :shadow reverse)
@@ -181,6 +181,6 @@
                 :filterUnits filter-units
                 :color-interpolation-filters "sRGB"}
        (for [[index entry] (d/enumerate filters)]
-         [:& filter-entry {:key (dm/str filter-id "-" index)
-                           :entry entry}])])))
+         [:> filter-entry* {:key (dm/str filter-id "-" index)
+                            :entry entry}])])))
 

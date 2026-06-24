@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC
+// Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
 @use "./ds/typography.scss" as t;
@@ -11,6 +11,50 @@
   width: 100%;
   height: 100%;
   background-color: var(--color-background-secondary);
+}
+
+.nitrate-unavailable-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-background-primary);
+  padding: var(--sp-xxxl);
+}
+
+.nitrate-unavailable-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxxl);
+}
+
+.nitrate-unavailable-logo {
+  inline-size: 146px;
+  block-size: 64px;
+  color: var(--color-foreground-primary);
+}
+
+.nitrate-unavailable-message {
+  @include t.use-typography("title-large");
+
+  margin: 0;
+  max-inline-size: 32rem;
+  text-align: center;
+  color: var(--color-foreground-primary);
+  font-weight: 500;
+}
+
+.nitrate-unavailable-footer {
+  @include t.use-typography("title-medium");
+
+  margin: 0;
+  text-align: center;
+  color: var(--color-foreground-secondary);
 }
 
 .deco-before,

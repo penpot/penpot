@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
@@ -21,12 +21,13 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
-   [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
+   [app.main.ui.auth.recovery-request :refer [recovery-request-page* recovery-sent-page*]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
@@ -42,8 +43,15 @@
 
 (mf/defc error-container*
   [{:keys [children]}]
-  (let [profile-id  (:profile-id @st/state)
-        on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
+  (let [profile     (mf/deref refs/profile)
+        profile-id  (:id profile)
+        on-nav-root (mf/use-fn
+                     (mf/deps profile-id profile)
+                     (fn []
+                       (if (and profile-id (some? (:default-team-id profile)))
+                         (st/emit! (dcm/go-to-dashboard-recent
+                                    :team-id (:default-team-id profile)))
+                         (st/emit! (rt/nav-root)))))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -193,12 +201,12 @@
           [:> register/register-success-page* {:params {:email @user-email :hide-logo true}}]]
 
          :recovery-request
-         [:& recovery-request-page {:go-back-callback set-section-login
-                                    :on-success-callback recovery-email-sent}]
+         [:> recovery-request-page* {:go-back-callback set-section-login
+                                     :on-success-callback recovery-email-sent}]
 
          :recovery-email-sent
          [:div {:class (stl/css :form-container)}
-          [:& recovery-sent-page {:email @user-email}]])]]]))
+          [:> recovery-sent-page* {:email @user-email}]])]]]))
 
 (mf/defc request-dialog*
   [{:keys [title content button-text on-button-click cancel-text on-close]}]
@@ -319,6 +327,16 @@
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
+
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
 
 (mf/defc webgl-context-lost*
   []
@@ -491,12 +509,8 @@
       :service-unavailable
       [:> service-unavailable*]
 
-      :wasm-error
-      (case (get data :code)
-        :webgl-context-lost
-        [:> webgl-context-lost*]
-
-        [:> internal-error* props])
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 
@@ -565,8 +579,10 @@
         auth-error? (= type :authentication)
         not-found?  (= type :not-found)
 
-        authenticated?
-        (is-authenticated? profile)
+        authenticated? (is-authenticated? profile)
+
+        ;; Keeps whether the user was authenticated when this component first mounted.
+        initial-authenticated? (mf/with-memo [] authenticated?)
 
         request-access?
         (and
@@ -582,13 +598,23 @@
 
 
     (if (or auth-error? not-found?)
-      (if (not authenticated?)
+      (cond
+        (not authenticated?)
         [:> context-wrapper*
          {:is-workspace workspace?
           :is-dashboard dashboard?
           :is-viewer view?
           :profile profile}
          [:> login-modal* {}]]
+
+        ;; The user was not authenticated when exception-page first
+        ;; mounted, but they have just logged in via the login modal.
+        ;; Show a loading indicator to prevent briefly flashing the
+        ;; "no permission" dialog.
+        (not initial-authenticated?)
+        [:> loader* {:title (tr "labels.loading") :overlay true}]
+
+        :else
         (when (get info :loaded false)
           (if request-access?
             [:> context-wrapper* {:is-workspace workspace?

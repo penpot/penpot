@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns common-tests.colors-test
   (:require
@@ -113,7 +113,7 @@
 
 (t/deftest ac-rgb-to-hsl
   ;; Black: h=0, s=0.0, l=0.0 (s is 0.0 not 0 on JVM, and ##NaN for white)
-  (let [[h s l] (c/rgb->hsl [0 0 0])]
+  (let [[h _s l] (c/rgb->hsl [0 0 0])]
     (t/is (= 0 h))
     (t/is (mth/close? l 0.0)))
   ;; White: h=0, s=##NaN (achromatic), l=1.0

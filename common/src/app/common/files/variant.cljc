@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns app.common.files.variant
   (:require
    [app.common.data.macros :as dm]
@@ -11,7 +11,7 @@
    [app.common.types.variant :as ctv]))
 
 (defn find-variant-components
-  "Find a list of the components thet belongs to this variant-id"
+  "Find a list of the components that belongs to this variant-id"
   ([data variant-id]
    (let [page-id (->> data
                       :components

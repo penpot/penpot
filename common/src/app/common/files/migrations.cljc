@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.common.files.migrations
   (:require
@@ -34,7 +34,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
-   [app.common.types.tokens-lib :as types.tokens-lib]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1599,7 +1599,7 @@
 
 (defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
   [data _]
-  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
+  (d/update-when data :tokens-lib ctob/fix-duplicate-token-set-ids))
 
 (defmethod migrate-data "0014-clear-components-nil-objects"
   [data _]
@@ -1805,6 +1805,75 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
+(defmethod migrate-data "0021-fix-shape-svg-attrs"
+  [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
+  (letfn [(update-object [object]
+            (-> object
+                (d/update-when :svg-attrs csvg/attrs->props)
+                (d/update-when :svg-viewbox grc/make-rect)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+;; Re-run the 0019 and 0020 fixers after normalizing :component-root.
+;; Migrations 0019 and 0020 missed shapes with an explicit :component-root
+;; false because subcopy-head? expects nil. Normalize first, then re-run.
+(defmethod migrate-data "0022-normalize-component-root-and-resync"
+  [data _]
+  (let [libraries (if (:libs data)
+                    (deref (:libs data))
+                    {})]
+    (-> data
+        (cfcp/normalize-component-root)
+        (cfcp/fix-missing-swap-slots libraries)
+        (cfcp/sync-component-id-with-ref-shape libraries))))
+
+(defmethod migrate-data "0023-repair-token-themes-with-inexistent-sets"
+  [data _]
+  (d/update-when data :tokens-lib ctob/fix-missing-sets-in-themes))
+
+;; This will fix incorrectly created strokes from SVG imports
+;; that have the stroke-cap at the shape level instead of at the stroke level
+(defmethod migrate-data "0024b-fix-stroke-cap-placement"
+  [data _]
+  (letfn [(check-strokes [strokes]
+            (->> strokes
+                 (mapv (fn [stroke]
+                         (cond-> stroke
+                           (string? (:stroke-cap-start stroke))
+                           (update :stroke-cap-start keyword)
+                           (string? (:stroke-cap-end stroke))
+                           (update :stroke-cap-end keyword))))))
+
+          (fix-shape [shape]
+            (let [cap-start (keyword (get shape :stroke-cap-start))
+                  cap-end   (keyword (get shape :stroke-cap-end))]
+              (if (or (some? cap-start) (some? cap-end))
+                (-> shape
+                    (dissoc :stroke-cap-start :stroke-cap-end)
+
+                    (cond-> (seq (:strokes shape))
+                      (update :strokes check-strokes)
+
+                      (and (some? cap-start) (seq (:strokes shape)))
+                      (assoc-in [:strokes 0 :stroke-cap-start] cap-start)
+
+                      (and (some? cap-end) (seq (:strokes shape)))
+                      (assoc-in [:strokes 0 :stroke-cap-end] cap-end)))
+                shape)))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals fix-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1882,4 +1951,8 @@
          "0017-fix-layout-flex-dir"
          "0018-remove-unneeded-objects-from-components"
          "0019-fix-missing-swap-slots"
-         "0020-sync-component-id-with-near-main"]))
+         "0020-sync-component-id-with-near-main"
+         "0021-fix-shape-svg-attrs"
+         "0022-normalize-component-root-and-resync"
+         "0023-repair-token-themes-with-inexistent-sets"
+         "0024b-fix-stroke-cap-placement"]))

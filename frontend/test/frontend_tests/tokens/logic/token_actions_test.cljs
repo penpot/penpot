@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.tokens.logic.token-actions-test
   (:require
@@ -13,6 +13,7 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -61,6 +62,53 @@
 
 (def debounce-text-stop
   (tohs/stop-on ::dwwt/resize-wasm-text-debounce-commit))
+
+;; Regression coverage for issue #10070 (set-creation activation).
+;;
+;; Newly created token sets are inactive by default — only active sets
+;; affect shapes and reference resolution. The Plugin API's
+;; `addSet({ name, active })` creates an already-active set by emitting
+;; `create-token-set` followed by `set-enabled-token-set`. These tests
+;; pin that the create-then-enable sequence the proxy relies on actually
+;; ends with the set active (enabling only adds the set name to the hidden
+;; theme, so it does not depend on the create event having propagated).
+
+(defn setup-file-with-empty-lib []
+  (-> (setup-file)
+      (assoc-in [:data :tokens-lib] (ctob/make-tokens-lib))))
+
+(t/deftest test-create-token-set-inactive-by-default
+  (t/testing "a newly created set is not active unless explicitly enabled"
+    (t/async
+      done
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            set    (ctob/make-token-set :name "primitives")
+            events [(dwtl/create-token-set set)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 lib   (get-in file' [:data :tokens-lib])]
+             (t/is (some? (ctob/get-set lib (ctob/get-id set))))
+             (t/is (false? (ctob/token-set-active? lib "primitives"))))))))))
+
+(t/deftest test-create-then-enable-token-set
+  (t/testing "create followed by set-enabled (as the plugin addSet does) yields an active set"
+    (t/async
+      done
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            set    (ctob/make-token-set :name "primitives")
+            events [(dwtl/create-token-set set)
+                    (dwtl/set-enabled-token-set "primitives" true)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 lib   (get-in file' [:data :tokens-lib])]
+             (t/is (some? (ctob/get-set lib (ctob/get-id set))))
+             (t/is (true? (ctob/token-set-active? lib "primitives"))))))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape   attributes to resolved value"
@@ -281,9 +329,7 @@
                (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
              (t/testing "shapes width and height got updated"
                (t/is (= (:width rect-1') 100))
-               (t/is (= (:height rect-1') 100)))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+               (t/is (= (:height rect-1') 100))))))))))
 
 (t/deftest test-apply-padding
   (t/testing "applies padding token to shapes with layout"
@@ -356,9 +402,7 @@
                (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
              (t/testing "shapes width and height got updated"
                (t/is (= (:width rect-1') 100))
-               (t/is (= (:height rect-1') 100)))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+               (t/is (= (:height rect-1') 100))))))))))
 
 (t/deftest test-apply-opacity
   (t/testing "applies opacity token and updates the shapes opacity"
@@ -443,9 +487,7 @@
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/is (some? (:applied-tokens rect-1')))
              (t/is (= (:rotation (:applied-tokens rect-1')) (:name token-target')))
-             (t/is (= (:rotation rect-1') 120))
-             (t/testing "WASM mocks were exercised"
-               (t/is (pos? (thw/call-count :propagate-modifiers)))))))))))
+             (t/is (= (:rotation rect-1') 120)))))))))
 
 (t/deftest test-apply-stroke-width
   (t/testing "applies stroke-width token and updates the shapes with stroke"

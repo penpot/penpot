@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.verify-token
   (:require
@@ -74,6 +74,11 @@
                   {:is-active true}
                   {:id (:id profile)}))
 
+    ;; NOTE: `claims` is returned verbatim (besides :profile). When the
+    ;; verify-email JWE was minted by `register-profile` for a not-yet-
+    ;; active profile that came from an invitation flow, `:invitation-
+    ;; token` will be present here and the frontend will use it to
+    ;; complete the team-invitation flow after login.
     (-> claims
         (rph/with-transform (session/create-fn cfg profile))
         (rph/with-meta {::audit/name "verify-profile-email"
@@ -180,7 +185,10 @@
         registration-disabled? (not (contains? cf/flags :registration))
 
         org-invitation?        (and (contains? cf/flags :nitrate) organization-id)
-        membership             (when org-invitation?
+        ;; Membership only makes sense for a logged-in profile; querying it for
+        ;; an anonymous recipient would call nitrate with a nil profile-id and
+        ;; mask the clean :invalid-token response with a generic error.
+        membership             (when (and profile org-invitation?)
                                  (nitrate/call cfg :get-org-membership {:profile-id profile-id
                                                                         :organization-id organization-id}))]
 
@@ -218,24 +226,22 @@
                      :role (:role claims)
                      :invitation-id (:id invitation)}]
 
-          (audit/submit!
-           cfg
-           (-> (audit/event-from-rpc-params params)
-               (assoc ::audit/name "accept-team-invitation")
-               (assoc ::audit/props props)))
+          (audit/submit cfg
+                        (-> (audit/event-from-rpc-params params)
+                            (assoc :name "accept-team-invitation")
+                            (assoc :props props)))
 
           ;; NOTE: Backward compatibility; old invitations can
           ;; have the `created-by` to be nil; so in this case we
           ;; don't submit this event to the audit-log
           (when-let [created-by (:created-by invitation)]
-            (audit/submit!
-             cfg
-             (-> (audit/event-from-rpc-params params)
-                 (assoc ::audit/profile-id created-by)
-                 (assoc ::audit/name "accept-team-invitation-from")
-                 (assoc ::audit/props (assoc props
-                                             :profile-id (:id profile)
-                                             :email (:email profile))))))
+            (audit/submit cfg
+                          (-> (audit/event-from-rpc-params params)
+                              (assoc :profile-id created-by)
+                              (assoc :name "accept-team-invitation-from")
+                              (assoc :props (assoc props
+                                                   :profile-id (:id profile)
+                                                   :email (:email profile))))))
 
           (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
             (cond-> (assoc claims :state :created)
@@ -244,13 +250,21 @@
               (:organization-id claims)
               (assoc :org-team-id accepted-team-id)))))
 
-      ;; If we have not logged-in user, and invitation comes with member-id we
-      ;; redirect user to login, if no memeber-id is present and  in the invitation
-      ;; token and registration is enabled, we redirect user the the register page.
-      {:invitation-token token
-       :iss :team-invitation
-       :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
-       :state :pending})))
+      (do
+        ;; If the user is not logged-in and the token is invalid we throw the error
+        ;; Taiga issue #14182
+        (when (nil? invitation)
+          (ex/raise :type :validation
+                    :code :invalid-token
+                    :hint "no invitation associated with the token"))
+
+        ;; If we have not logged-in user, and invitation comes with member-id we
+        ;; redirect user to login, if no member-id is present and  in the invitation
+        ;; token and registration is enabled, we redirect user the the register page.
+        {:invitation-token token
+         :iss :team-invitation
+         :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
+         :state :pending}))))
 
 ;; --- Default
 

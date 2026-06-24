@@ -67,17 +67,25 @@ export function createApi(
         return plugin.resizeModal(width, height);
       },
 
-      sendMessage(message: unknown) {
+      sendMessage(message: unknown, throwOnError = false) {
         let cloneableMessage: unknown;
 
         try {
           cloneableMessage = structuredClone(message);
         } catch (err) {
-          console.error(
+          const msg =
             'plugin sendMessage: the message could not be cloned. ' +
-              'Ensure the message does not contain functions, DOM nodes, or other non-serializable values.',
-            err,
-          );
+            'Ensure the message does not contain functions, DOM nodes, or other non-serializable values.';
+          if (throwOnError) {
+            throw new Error(
+              msg +
+                ' Original error: ' +
+                (err instanceof Error ? err.message : String(err)),
+              { cause: err },
+            );
+          } else {
+            console.error(msg, err);
+          }
           return;
         }
 
@@ -340,9 +348,9 @@ export function createApi(
       return plugin.context.createPage();
     },
 
-    openPage(page: Page | string, newWindow?: boolean): void {
+    openPage(page: Page | string, newWindow?: boolean): Promise<void> {
       checkPermission('content:read');
-      plugin.context.openPage(page, newWindow ?? false);
+      return plugin.context.openPage(page, newWindow ?? false);
     },
 
     alignHorizontal(

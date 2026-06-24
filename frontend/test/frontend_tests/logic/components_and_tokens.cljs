@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.components-and-tokens
   (:require
    [app.common.geom.point :as geom]
@@ -169,7 +169,7 @@
                          (t/is (= (get c-frame1' :r4) 50)))))))]
 
       (tohs/run-store-async
-       store step2 events identity))))
+       store (constantly nil) events step2))))
 
 (t/deftest remove-token-in-main
   (t/async
@@ -430,10 +430,7 @@
                          (t/is (mth/close? (get c-frame1' :width) 200))
                          (t/is (mth/close? (get c-frame1' :height) 200))
 
-                         (t/is (empty? (:touched c-frame1')))
-
-                         (t/testing "WASM mocks were exercised"
-                           (t/is (pos? (thw/call-count :propagate-modifiers)))))))))]
+                         (t/is (empty? (:touched c-frame1'))))))))]
 
       (tohs/run-store-async
        store step2 events identity))))

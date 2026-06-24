@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
@@ -43,7 +43,6 @@
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def menu-ref
@@ -226,8 +225,7 @@
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-svg")
                        :on-click handle-copy-svg}]
 
-      (when (and (some cfh/frame-shape? shapes)
-                 (contains? cf/flags :canary))
+      (when (some cfh/frame-shape? shapes)
         [:> menu-entry* {:title (tr "workspace.shape.menu.copy-as-image")
                          :disabled multiple?
                          :on-click handle-copy-as-image}])
@@ -710,7 +708,7 @@
                                :on-accept delete-fn}))
         do-duplicate #(st/emit!
                        (dw/duplicate-page id)
-                       (ptk/event ::ev/event {::ev/name "duplicate-page"}))
+                       (ev/event {::ev/name "duplicate-page"}))
         do-rename #(st/emit! (dw/start-rename-page-item id))]
 
     [:*

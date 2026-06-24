@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.plugins.utils
   "RPC for plugins runtime."
@@ -42,6 +42,13 @@
   [file-id page-id id]
   (assert (uuid? id) "Shape not valid uuid")
   (dm/get-in (locate-page file-id page-id) [:objects id]))
+
+(defn page-active?
+  "Returns true if `page-id` is the currently active page. Plugin structural
+  operations only affect the active page, so callers use this to reject
+  attempts to modify shapes that live on a different page."
+  [page-id]
+  (= page-id (:current-page-id @st/state)))
 
 (defn locate-library-color
   [file-id id]
@@ -276,13 +283,39 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
+(defn- flatten-error-map
+  "Walk an error map produced by `csm/interpret-schema-problem` and yield
+  `[path message]` pairs, where `path` is the dot-joined field path
+  (e.g. `:group` -> \"group\", `[:sets 0 :name]` -> \"sets.0.name\").
+
+  `interpret-schema-problem` calls `(assoc-in acc field {:message …})`, so
+  when the malli error path has more than one element the resulting map is
+  nested (e.g. `{:sets {0 {:name {:message \"…\"}}}}`); when the path has
+  a single element it is flat (`{:group {:message \"…\"}}`). The plugin
+  error-message renderer needs both cases reduced to per-leaf
+  `[path message]` pairs so it can produce one `plugins.validation.message`
+  string per actual validation problem."
+  ([m] (flatten-error-map [] m))
+  ([prefix m]
+   (mapcat
+    (fn [[k v]]
+      (let [segment (cond
+                      (keyword? k) (name k)
+                      (string?  k) k
+                      :else        (str k))
+            path    (conj prefix segment)]
+        (if (and (map? v) (not (contains? v :message)))
+          (flatten-error-map path v)
+          [[(str/join "." path) (:message v)]])))
+    m)))
+
 (defn error-messages
   [explain]
   (->> (:errors explain)
        (reduce csm/interpret-schema-problem {})
-       (mapcat (comp seq val))
-       (map (fn [[field {:keys [message]}]]
-              (tr "plugins.validation.message" (name field) message)))
+       (flatten-error-map)
+       (map (fn [[field message]]
+              (tr "plugins.validation.message" field message)))
        (str/join ". ")))
 
 (defn handle-error

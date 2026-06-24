@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.viewer
   (:require-macros [app.main.style :as stl])
@@ -32,7 +32,7 @@
    [app.main.ui.viewer.interactions :as interactions]
    [app.main.ui.viewer.login]
    [app.main.ui.viewer.share-link]
-   [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
+   [app.main.ui.viewer.thumbnails :refer [thumbnails-panel*]]
    [app.util.dom :as dom]
    [app.util.dom.normalize-wheel :as nw]
    [app.util.globals :as globals]
@@ -53,9 +53,9 @@
 
 (defn- calculate-size
   "Calculate the total size we must reserve for the frame, including possible paddings
-   added because shadows or blur."
+   added because shadows, blur, or strokes."
   [objects frame zoom]
-  (let [{:keys [x y width height]} (gsb/get-object-bounds objects frame)]
+  (let [{:keys [x y width height]} (gsb/get-object-bounds objects frame {:ignore-margin? false})]
     {:base-width  width
      :base-height height
      :x           x
@@ -186,7 +186,7 @@
                :style {:width (:width size)
                        :height (:height size)
                        :position "fixed"}}
-         [:& interactions/viewport
+         [:> interactions/viewport*
           {:frame overlay-frame
            :base-frame frame
            :frame-offset overlay-position
@@ -201,7 +201,7 @@
                       :height (:height size)
                       :left (* (:x overlay-position) zoom)
                       :top (* (:y overlay-position) zoom)}}
-        [:& interactions/viewport
+        [:> interactions/viewport*
          {:frame overlay-frame
           :base-frame frame
           :frame-offset overlay-position
@@ -236,7 +236,7 @@
                       :height (:height orig-size)
                       :position "relative"}}
 
-        [:& interactions/viewport
+        [:> interactions/viewport*
          {:frame orig-frame
           :base-frame orig-frame
           :frame-offset (gpt/point 0 0)
@@ -251,7 +251,7 @@
                     :height (:height size)
                     :position "relative"}}
 
-      [:& interactions/viewport
+      [:> interactions/viewport*
        {:frame frame
         :base-frame frame
         :frame-offset (gpt/point 0 0)
@@ -555,11 +555,11 @@
                 :class (stl/css-case :thumbnails-close true
                                      :invisible (not (:show-thumbnails local false)))}]
 
-      [:& thumbnails-panel {:frames frames
-                            :show? (:show-thumbnails local false)
-                            :page page
-                            :index index
-                            :thumbnail-data (:thumbnails file)}]
+      [:> thumbnails-panel* {:frames frames
+                             :show (:show-thumbnails local false)
+                             :page page
+                             :index index
+                             :thumbnail-data (:thumbnails file)}]
 
       [:section#viewer-section {:ref viewer-section-ref
                                 :data-viewer-section true

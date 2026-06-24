@@ -2,11 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.data.event
   (:require
-   ["ua-parser-js" :as ua]
+   ["@penpot/ua-parser" :as ua]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.json :as json]
@@ -23,8 +23,10 @@
    [app.util.object :as obj]
    [app.util.perf :as perf]
    [app.util.storage :as storage]
+   [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
+   [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [potok.v2.core :as ptk]))
 
@@ -64,22 +66,22 @@
 
 (defn- collect-context
   []
-  (let [uagent (new ua/UAParser)]
+  (let [result (ua/parse)]
     (merge
      {:version (:full cf/version)
       :locale i18n/*current-locale*}
-     (let [browser (.getBrowser uagent)]
+     (let [browser (.getBrowser result)]
        {:browser (obj/get browser "name")
         :browser-version (obj/get browser "version")})
-     (let [engine (.getEngine uagent)]
+     (let [engine (.getEngine result)]
        {:engine (obj/get engine "name")
         :engine-version (obj/get engine "version")})
-     (let [os      (.getOS uagent)
+     (let [os      (.getOS result)
            name    (obj/get os "name")
            version (obj/get os "version")]
        {:os (str name " " version)
         :os-version version})
-     (let [device (.getDevice uagent)]
+     (let [device (.getDevice result)]
        (if-let [type (obj/get device "type")]
          {:device-type type
           :device-vendor (obj/get device "vendor")
@@ -91,7 +93,7 @@
         :screen-height (obj/get screen "height")
         :screen-color-depth (obj/get screen "colorDepth")
         :screen-orientation (obj/get orientation "type")})
-     (let [cpu (.getCPU uagent)]
+     (let [cpu (.getCPU result)]
        {:device-arch (obj/get cpu "architecture")}))))
 
 (def context
@@ -215,7 +217,7 @@
       (rx/create
        (fn [subs]
          (let [start (perf/now)]
-           (js/requestAnimationFrame
+           (timers/raf
             #(.postTask js/scheduler
                         (fn []
                           (let [time (- (perf/now) start)]
@@ -376,83 +378,107 @@
 
         (l/debug :hint "event instrumentation initialized")
 
-        (->> (rx/merge
-              (->> (rx/from-atom buffer)
-                   (rx/filter #(pos? (count %)))
-                   (rx/debounce 2000))
-              (->> stream
-                   (rx/filter (ptk/type? :app.main.data.profile/logout))
-                   (rx/observe-on :async)))
-             (rx/map (fn [_]
-                       (into [] (take max-chunk-size) @buffer)))
-             (rx/with-latest-from profile)
-             (rx/mapcat (fn [[chunk profile-id]]
-                          (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
-                            (->> (persist-events events)
-                                 (rx/tap (fn [_]
-                                           (l/debug :hint "events chunk persisted" :total (count chunk))))
-                                 (rx/map (constantly chunk))))))
-             (rx/take-until stopper)
-             (rx/subs! (fn [chunk]
-                         (swap! buffer remove-from-buffer (count chunk)))
-                       (fn [cause]
-                         (l/error :hint "unexpected error on audit persistence" :cause cause))
-                       (fn []
-                         (l/debug :hint "audit persistence terminated"))))
-
-        (->> (rx/merge
-              (->> stream
-                   (rx/with-latest-from profile)
-                   (rx/map make-event))
-
-              (->> (user-input-observer)
-                   (rx/with-latest-from profile)
-                   (rx/map make-performance-event)
-                   (rx/debounce debounce-browser-event-time))
-
-              (->> (longtask-observer)
-                   (rx/with-latest-from profile)
-                   (rx/map make-performance-event)
-                   (rx/debounce debounce-longtask-time))
-
-              (if (and (exists? js/globalThis)
-                       (exists? (.-requestAnimationFrame js/globalThis))
-                       (exists? (.-scheduler js/globalThis))
-                       (exists? (.-postTask (.-scheduler js/globalThis))))
-                (->> stream
+        ;; Fetch backend flags and only start event collection if
+        ;; :audit-log or :telemetry is enabled. On RPC failure, proceed
+        ;; with event collection anyway (backend will reject if truly disabled).
+        (->> (rp/cmd! :get-enabled-flags)
+             (rx/catch (fn [cause]
+                         (l/debug :hint "unable to fetch backend flags, proceeding with event collection" :cause cause)
+                         (rx/of #{:telemetry})))
+             (rx/mapcat (fn [flags]
+                          (if (or (contains? flags :audit-log)
+                                  (contains? flags :telemetry))
+                            (do
+                              (l/debug :hint "event collection enabled" :flags (str/join " " (map name flags)))
+                              (rx/of true))
+                            (do
+                              (l/debug :hint "event collection disabled (no audit-log or telemetry flag)")
+                              (rx/empty)))))
+             (rx/take 1)
+             (rx/subs!
+              (fn [_]
+                ;; Start the event collection pipeline
+                (->> (rx/merge
+                      (rx/filter (ptk/type? ::force-persist) stream)
+                      (->> (rx/from-atom buffer)
+                           (rx/filter #(pos? (count %)))
+                           (rx/debounce 2000))
+                      (->> stream
+                           (rx/filter (ptk/type? :app.main.data.profile/logout))
+                           (rx/observe-on :async)))
+                     (rx/map (fn [_]
+                               (into [] (take max-chunk-size) @buffer)))
                      (rx/with-latest-from profile)
-                     (rx/merge-map process-performance-event)
-                     (rx/debounce debounce-performance-event-time))
-                (rx/empty)))
+                     (rx/mapcat (fn [[chunk profile-id]]
+                                  (let [events (filterv #(= profile-id (:profile-id %)) chunk)]
+                                    (->> (persist-events events)
+                                         (rx/tap (fn [_]
+                                                   (l/debug :hint "events chunk persisted" :total (count chunk))))
+                                         (rx/map (constantly chunk))))))
+                     (rx/take-until stopper)
+                     (rx/subs! (fn [chunk]
+                                 (st/emit! (ptk/data-event ::chunk-persisted {:chunk chunk}))
+                                 (swap! buffer remove-from-buffer (count chunk)))
+                               (fn [cause]
+                                 (l/error :hint "unexpected error on audit persistence" :cause cause))
+                               (fn []
+                                 (l/debug :hint "audit persistence terminated"))))
 
-             (rx/filter :profile-id)
-             (rx/map (fn [event]
-                       (let [session* (or @session (ct/now))
-                             context  (-> @context
-                                          (merge (:context event))
-                                          (assoc :session session*)
-                                          (assoc :session-id cf/session-id)
-                                          (assoc :external-session-id (cf/external-session-id))
-                                          (add-external-context-info)
-                                          (d/without-nils))]
-                         (reset! session session*)
-                         (-> event
-                             (assoc :timestamp (ct/now))
-                             (assoc :context context)))))
+                (->> (rx/merge
+                      (->> stream
+                           (rx/with-latest-from profile)
+                           (rx/map make-event))
 
-             (rx/tap (fn [event]
-                       (l/debug :hint "event enqueued")
-                       (swap! buffer append-to-buffer event)))
+                      (->> (user-input-observer)
+                           (rx/with-latest-from profile)
+                           (rx/map make-performance-event)
+                           (rx/debounce debounce-browser-event-time))
 
-             (rx/switch-map #(rx/timer session-timeout))
-             (rx/take-until stopper)
-             (rx/subs! (fn [_]
-                         (l/debug :hint "session reinitialized")
-                         (reset! session nil))
-                       (fn [cause]
-                         (l/error :hint "error on event batching stream" :cause cause))
-                       (fn []
-                         (l/debug :hitn "events batching stream terminated"))))))))
+                      (->> (longtask-observer)
+                           (rx/with-latest-from profile)
+                           (rx/map make-performance-event)
+                           (rx/debounce debounce-longtask-time))
+
+                      (if (and (exists? js/globalThis)
+                               (exists? (.-requestAnimationFrame js/globalThis))
+                               (exists? (.-scheduler js/globalThis))
+                               (exists? (.-postTask (.-scheduler js/globalThis))))
+                        (->> stream
+                             (rx/with-latest-from profile)
+                             (rx/merge-map process-performance-event)
+                             (rx/debounce debounce-performance-event-time))
+                        (rx/empty)))
+
+                     (rx/filter :profile-id)
+                     (rx/map (fn [event]
+                               (let [session* (or @session (ct/now))
+                                     context  (-> @context
+                                                  (merge (:context event))
+                                                  (assoc :session session*)
+                                                  (assoc :session-id cf/session-id)
+                                                  (assoc :external-session-id (cf/external-session-id))
+                                                  (add-external-context-info)
+                                                  (d/without-nils))]
+                                 (reset! session session*)
+                                 (-> event
+                                     (assoc :timestamp (ct/now))
+                                     (assoc :context context)))))
+
+                     (rx/tap (fn [event]
+                               (l/debug :hint "event enqueued")
+                               (swap! buffer append-to-buffer event)))
+
+                     (rx/switch-map #(rx/timer session-timeout))
+                     (rx/take-until stopper)
+                     (rx/subs! (fn [_]
+                                 (l/debug :hint "session reinitialized")
+                                 (reset! session nil))
+                               (fn [cause]
+                                 (l/error :hint "error on event batching stream" :cause cause))
+                               (fn []
+                                 (l/debug :hint "events batching stream terminated")))))
+              (fn [cause]
+                (l/warn :hint "unexpected error during event collection initialization" :cause cause))))))))
 
 (defn event
   [props]

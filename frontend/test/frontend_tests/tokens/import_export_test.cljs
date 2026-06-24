@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.tokens.import-export-test
   (:require
@@ -22,11 +22,16 @@
                      (json/encode {:type :json-verbose}))]
         (->> (rx/of json)
              (dwti/import-file-stream "core")
+             (rx/take 1)
              (rx/subs! (fn [tokens-lib]
                          (t/is (instance? ctob/TokensLib tokens-lib))
                          (t/is (= "red" (-> tokens-lib
                                             (ctob/get-token-by-name "core" "color")
-                                            (:value))))
+                                            (:value)))))
+                       (fn [err]
+                         (t/do-report {:type :error :message "Stream error" :actual err})
+                         (done))
+                       (fn []
                          (done))))))))
 
 (t/deftest reference-errors-test
