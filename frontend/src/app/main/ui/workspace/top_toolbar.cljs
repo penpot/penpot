@@ -318,11 +318,9 @@
            (let [tool (-> (dom/get-current-target event)
                           (dom/get-data "tool")
                           (keyword))]
-             (st/emit! :interrupt (dw/clear-edition-mode))
-
-             ;; Delay so anything that launched :interrupt can finish
-             (ts/schedule 100
-                          #(st/emit! (dw/select-for-drawing tool))))))
+             (st/emit! :interrupt
+                       (dw/clear-edition-mode)
+                       (dw/select-for-drawing tool)))))
 
         on-toggle-toolbar
         (mf/use-fn

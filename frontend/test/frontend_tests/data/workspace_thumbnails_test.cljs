@@ -187,8 +187,8 @@
             event   (#'thumbnails/clear-thumbnail-batch)]
         (ptk/update event state)
         (mock/with-mocks
-          {#'app.main.repo/cmd!              mock/rpc-cmd!-mock
-           #'app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
+          {app.main.repo/cmd!              mock/rpc-cmd-mock
+           app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
           (fn [done']
             (->> (ptk/watch event state nil)
                  (rx/reduce conj [])
@@ -211,8 +211,8 @@
             event   (#'thumbnails/clear-thumbnail-batch)]
         (ptk/update event state)
         (mock/with-mocks
-          {#'app.main.repo/cmd!              mock/rpc-cmd!-mock
-           #'app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
+          {app.main.repo/cmd!              mock/rpc-cmd-mock
+           app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
           (fn [done']
             (->> (ptk/watch event state nil)
                  (rx/reduce conj [])
@@ -242,9 +242,9 @@
             event   (#'thumbnails/clear-thumbnail-batch)]
         (ptk/update event state)
         (mock/with-mocks
-          {#'app.main.repo/cmd!              (fn [_ _] (rx/of nil))
-           #'app.util.webapi/revoke-uri      mock/revoke-uri-mock
-           #'app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
+          {app.main.repo/cmd!              (fn [_ _] (rx/of nil))
+           app.util.webapi/revoke-uri      mock/revoke-uri-mock
+           app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
           (fn [done']
             (->> (ptk/watch event state nil)
                  (rx/reduce conj [])
@@ -262,8 +262,8 @@
             state {}]
         (ptk/update event state)
         (mock/with-mocks
-          {#'app.main.repo/cmd!              mock/rpc-cmd!-mock
-           #'app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
+          {app.main.repo/cmd!              mock/rpc-cmd-mock
+           app.util.timers/schedule-on-idle mock/schedule-on-idle-mock}
           (fn [done']
             (->> (ptk/watch event state nil)
                  (rx/reduce conj [])
@@ -284,7 +284,7 @@
             event     (thumbnails/clear-thumbnail file-id object-id)]
         (ptk/update event state)
         (mock/with-mocks
-          {#'beicon.v2.core/timer mock/timer-mock}
+          {beicon.v2.core/timer mock/timer-mock}
           (fn [done']
             (->> (ptk/watch event state nil)
                  (rx/reduce conj [])
