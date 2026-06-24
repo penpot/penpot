@@ -16,7 +16,12 @@
    [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each
+  {:before (fn [] (thw/setup-wasm-mocks!))
+   :after  thw/teardown-wasm-mocks!})
 
 (defn- setup
   "Creates a file with two pages (page1 as current) and a plugin context."
@@ -47,11 +52,13 @@
   ;; Regression: the flow proxy returned by createFlow (and obtained later via
   ;; page.flows) must expose a valid board proxy for `startingBoard`, carrying
   ;; the plugin id rather than a corrupted handle. See issue #10203.
-  (let [{:keys [context board-id]} (setup-with-board)
-        ^js page  (.-currentPage context)
-        ^js board (.getShapeById page (str board-id))
-        ^js flow  (.createFlow page "flow1" board)
-        ^js sb    (.-startingBoard flow)]
+  (let [result          (setup-with-board)
+        ^js context     (:context result)
+        board-id        (:board-id result)
+        ^js page        (.-currentPage context)
+        ^js board       (.getShapeById page (str board-id))
+        ^js flow        (.createFlow page "flow1" board)
+        ^js sb          (.-startingBoard flow)]
     (t/is (shape/shape-proxy? sb))
     (t/is (= (str board-id) (.-id sb)))
     (t/is (= plugin-id (obj/get sb "$plugin")))
@@ -71,24 +78,26 @@
   (ptk/emit! store (ptk/data-event ::dwpg/initialized page-id)))
 
 (t/deftest test-open-page-returns-promise
-  (let [{:keys [context]} (setup)
-        ^js pages         (.. context -currentFile -pages)
-        ^js page2         (aget pages 1)]
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page2   (aget pages 1)]
     (t/is (instance? js/Promise (.openPage context page2)))))
 
 (t/deftest test-open-page-new-window-returns-promise
-  (let [{:keys [context]} (setup)
-        ^js pages         (.. context -currentFile -pages)
-        ^js page2         (aget pages 1)]
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page2   (aget pages 1)]
     (t/is (instance? js/Promise (.openPage context page2 true)))))
 
 (t/deftest test-open-page-invalid-arg-returns-nil
-  (let [{:keys [context]} (setup)]
+  (let [^js context (:context (setup))]
     (t/is (nil? (.openPage context "not-a-page")))))
 
 (t/deftest test-open-page-resolves-when-page-changes
   (t/async done
-    (let [{:keys [store context]} (setup)
+    (let [result                  (setup)
+          store                   (:store result)
+          ^js context             (:context result)
           ^js pages               (.. context -currentFile -pages)
           ^js page2               (aget pages 1)
           page2-id                (obj/get page2 "$id")]
@@ -102,17 +111,19 @@
 
 (t/deftest test-flows-returns-empty-array-when-no-flows
   ;; page.flows must always return an array, even when the page has no flows
-  (let [{:keys [context]} (setup)
-        ^js pages         (.. context -currentFile -pages)
-        ^js page1         (aget pages 0)
-        ^js flows         (.-flows page1)]
+  (let [^js context (:context (setup))
+        ^js pages   (.. context -currentFile -pages)
+        ^js page1   (aget pages 0)
+        ^js flows   (.-flows page1)]
     (t/is (array? flows))
     (t/is (= 0 (.-length flows)))))
 
 (t/deftest test-open-page-does-not-resolve-for-wrong-page
   ;; Promise should not resolve when a different page is initialized
   (t/async done
-    (let [{:keys [store context]} (setup)
+    (let [result                  (setup)
+          store                   (:store result)
+          ^js context             (:context result)
           ^js pages               (.. context -currentFile -pages)
           ^js page1               (aget pages 0)
           ^js page2               (aget pages 1)

@@ -21,8 +21,6 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(log/set-level! :trace)
-
 (def global-enabled-features
   (cfeat/get-enabled-features cf/flags))
 

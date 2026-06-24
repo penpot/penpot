@@ -2187,7 +2187,6 @@ impl RenderState {
             // quality pass completes.
             self.surfaces
                 .reset_interactive_transform(self.background_color);
-            self.surfaces.seed_backbuffer_from_target();
             self.interactive_target_seeded = false;
         } else {
             self.reset_canvas();

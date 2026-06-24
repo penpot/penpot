@@ -332,8 +332,9 @@
    (defn setup!
      [{:as config}]
      (run! (fn [[logger level]]
-             (let [logger (if (keyword? logger) (name logger) logger)]
-               (l/set-level! logger level)))
+             (let [logger (if (keyword? logger) (name logger) logger)
+                   level  (level->int level)]
+               (.set ^js/Map loggers logger level)))
            config)))
 
 (defmacro raw!

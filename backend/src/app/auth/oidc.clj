@@ -805,9 +805,8 @@
         ;; Org SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
         (if-let [dest-url (:dest-url state)]
-          (let [team-id         (:team-id state)
-                organization-id (:organization-id state)
-                sso             (nitrate/call cfg :get-org-sso-by-team {:team-id team-id})
+          (let [organization-id (:organization-id state)
+                sso             (nitrate/call cfg :get-org-sso {:organization-id organization-id})
                 provider        (prepare-org-sso-provider cfg sso)
                 ;; verify token or throw error
                 _info           (get-info cfg provider state code)

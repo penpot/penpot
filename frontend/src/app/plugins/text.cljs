@@ -33,7 +33,7 @@
 
 (def ^:private font-size-re #"^\d*\.?\d*$")
 (def ^:private line-height-re #"^\d*\.?\d*$")
-(def ^:private letter-spacing-re #"^\d*\.?\d*$")
+(def ^:private letter-spacing-re #"^-?\d*\.?\d*$")
 (def ^:private text-transform-re #"uppercase|capitalize|lowercase|none")
 (def ^:private text-decoration-re #"underline|line-through|none")
 (def ^:private text-direction-re #"ltr|rtl")
