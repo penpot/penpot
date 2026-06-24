@@ -19,7 +19,7 @@ pub fn render_shape_pixels(
     let saved_export_context = render_state.export_context;
     let saved_render_area = render_state.render_area;
     let saved_render_area_with_margins = render_state.render_area_with_margins;
-    let saved_current_tile = render_state.tile.current_tile;
+    let saved_current_tile = render_state.tile.current;
     let saved_pending_nodes = std::mem::take(&mut render_state.pending_nodes);
     let saved_nested_fills = std::mem::take(&mut render_state.nested_fills);
     let saved_nested_blurs = std::mem::take(&mut render_state.nested_blurs);
@@ -77,7 +77,7 @@ pub fn render_shape_pixels(
     render_state.export_context = saved_export_context;
     render_state.render_area = saved_render_area;
     render_state.render_area_with_margins = saved_render_area_with_margins;
-    render_state.tile.current_tile = saved_current_tile;
+    render_state.tile.current = saved_current_tile;
     render_state.pending_nodes = saved_pending_nodes;
     render_state.nested_fills = saved_nested_fills;
     render_state.nested_blurs = saved_nested_blurs;
@@ -86,7 +86,7 @@ pub fn render_shape_pixels(
     render_state.preview_mode = saved_preview_mode;
 
     let workspace_scale = render_state.get_scale();
-    if let Some(tile) = render_state.tile.current_tile {
+    if let Some(tile) = render_state.tile.current {
         render_state.update_render_context(tile);
     } else if !render_state.render_area.is_empty() {
         render_state

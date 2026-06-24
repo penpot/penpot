@@ -66,13 +66,17 @@ pub struct Surfaces {
     export: skia::Surface,
     // Persistent viewport-sized surface used to keep the last presented frame.
     backbuffer: skia::Surface,
+
     // Atlas used to keep tiles.
     tile_atlas: skia::Surface,
     tile_atlas_image: Option<skia::Image>,
     tiles: TileTextureCache,
+
     sampling_options: skia::SamplingOptions,
     atlas_sampling_options: skia::SamplingOptions,
+
     pub margins: skia::ISize,
+
     // Tracks which surfaces have content (dirty flag bitmask)
     dirty_surfaces: u32,
     extra_tile_dims: skia::ISize,

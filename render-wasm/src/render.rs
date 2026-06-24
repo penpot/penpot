@@ -67,17 +67,11 @@ pub enum RenderFlag {
 }
 
 pub struct TileRenderState {
-    pub current_tile: Option<tiles::Tile>,
-    /// True if the current tile had shapes assigned to it when we
-    /// started rendering it. Lets us distinguish a genuinely empty
-    /// tile (skip composite, just clear) from a tile whose walker
-    /// finished its work in a previous PAF and is now being resumed
-    /// (must composite to present the work). Reset when current_tile
-    /// changes.
-    pub current_tile_had_shapes: bool,
-    pub tile_viewbox: tiles::TileViewbox,
+    pub current: Option<tiles::Tile>,
+    pub current_had_shapes: bool,
+    pub viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
-    pub pending_tiles: PendingTiles,
+    pub pending: PendingTiles,
 }
 
 pub(crate) struct RenderState {
@@ -96,6 +90,8 @@ pub(crate) struct RenderState {
     // render_area expanded by surface margins — used for visibility checks so that
     // shapes in the margin zone are rendered (needed for background blur sampling).
     pub render_area_with_margins: Rect,
+    // This is an structure that keeps all the necessary state
+    // for tile rendering.
     pub tile: TileRenderState,
     // nested_fills maintains a stack of group  fills that apply to nested shapes
     // without their own fill definitions. This is necessary because in SVG, a group's `fill`
@@ -164,14 +160,14 @@ impl RenderState {
             render_area: Rect::new_empty(),
             render_area_with_margins: Rect::new_empty(),
             tile: TileRenderState {
-                current_tile: None,
-                current_tile_had_shapes: false,
+                current: None,
+                current_had_shapes: false,
                 tiles,
-                tile_viewbox: tiles::TileViewbox::new_with_interest(
+                viewbox: tiles::TileViewbox::new_with_interest(
                     &viewbox,
                     options.dpr_viewport_interest_area_threshold,
                 ),
-                pending_tiles: PendingTiles::new(),
+                pending: PendingTiles::new(),
             },
             nested_fills: vec![],
             nested_blurs: vec![],
@@ -267,7 +263,7 @@ impl RenderState {
         // Only when this function returns true (it means the value
         // was properly changed) the rest of the functions is called.
         if self.options.set_dpr(dpr) {
-            self.tile.tile_viewbox
+            self.tile.viewbox
                 .set_interest(self.options.dpr_viewport_interest_area_threshold);
             self.resize(
                 self.viewbox.width().floor() as i32,
@@ -291,7 +287,7 @@ impl RenderState {
             // The TileViewbox stores its own copy of `interest` (set at
             // construction). Without propagating, options change wouldn't
             // affect pending_tiles generation.
-            self.tile.tile_viewbox
+            self.tile.viewbox
                 .set_interest(self.options.dpr_viewport_interest_area_threshold);
         }
     }
@@ -321,7 +317,7 @@ impl RenderState {
         let dpr_height = (height as f32 * self.options.dpr).floor() as i32;
         self.surfaces.resize(dpr_width, dpr_height)?;
         self.viewbox.set_wh(width as f32, height as f32);
-        self.tile.tile_viewbox.update(&self.viewbox);
+        self.tile.viewbox.update(&self.viewbox);
 
         Ok(())
     }
@@ -387,6 +383,7 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
+        println!("reset_canvas");
         self.surfaces.reset(self.background_color);
         self.surfaces.clear_backbuffer(self.background_color);
         self.surfaces.clear_target(self.background_color);
@@ -566,6 +563,18 @@ impl RenderState {
             | innershadows_surface_id as u32
             | text_drop_shadows_surface_id as u32;
 
+        // NOTE: We don't need to perform all these operations
+        // unless the shape is rotated.
+        let mut matrix = shape.get_transform();
+
+        // Apply the additional transformation matrix if exists
+        if let Some(offset) = offset {
+            matrix.pre_translate(offset);
+        } else {
+            // NOTE: I think this could be updated.
+            // println!("No offset");
+        }
+
         // Only save canvas state if we have clipping or transforms
         // For simple shapes without clipping, skip expensive save/restore
         let needs_save =
@@ -594,6 +603,7 @@ impl RenderState {
                 !blur.hidden && blur.blur_type == BlurType::LayerBlur && blur.value > 0.0
             });
 
+        // TODO: I'm not sure if this is necessary at all.
         let can_render_directly = apply_to_current_surface
             && clip_bounds.is_none()
             && offset.is_none()
@@ -609,13 +619,48 @@ impl RenderState {
                 Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
             )
             && !(shape.fills.is_empty() && has_nested_fills)
-            && !shape
-                .svg_attrs
-                .as_ref()
-                .is_some_and(|attrs| attrs.fill_none)
             && target_surface != SurfaceId::Export;
 
+        // println!("can_render_directly {}\n
+        // \tapply_to_current_surface {}\n
+        // \tclip_bounds.is_none {}\n
+        // \toffset.is_none {}\n
+        // \tparent_shadows {}\n
+        // \t!shape.needs_layer {}\n
+        // \tshape.blur.is_none {}\n
+        // \tshape.background_blur.is_none {}\n
+        // \thas_inherited_blur {}\n
+        // \tshape.shadows.is_empty {}\n
+        // \tshape.transform.is_identity {}\n
+        // \tmatches!(shape.shape_type, Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)) {}\n
+        // \t!(shape.fills.is_empty() && has_nested_fills) {}\n
+        // \t!shape.svg_attrs.as_ref().is_some_and(|attrs| attrs.fill_none) {}\n
+        // \ttarget_surface != SurfaceId::Export {}\n",
+        //     can_render_directly,
+        //     apply_to_current_surface,
+        //     clip_bounds.is_none(),
+        //     offset.is_none(),
+        //     parent_shadows.is_none(),
+        //     !shape.needs_layer(),
+        //     shape.blur.is_none(),
+        //     shape.background_blur.is_none(),
+        //     !has_inherited_blur,
+        //     shape.shadows.is_empty(),
+        //     shape.transform.is_identity(),
+        //     matches!(
+        //         shape.shape_type,
+        //         Type::Rect(_) | Type::Circle | Type::Path(_) | Type::Bool(_)
+        //     ),
+        //     !(shape.fills.is_empty() && has_nested_fills),
+        //     !shape
+        //         .svg_attrs
+        //         .as_ref()
+        //         .is_some_and(|attrs| attrs.fill_none),
+        //     target_surface != SurfaceId::Export
+        // );
+
         if can_render_directly {
+            println!("can_render_directly");
             let scale = self.get_scale_fast();
             let translation = self
                 .surfaces
@@ -628,7 +673,20 @@ impl RenderState {
                 canvas.translate(translation);
             });
 
-            fills::render(self, shape, &shape.fills, antialias, target_surface, None)?;
+            if !shape
+                .svg_attrs
+                .as_ref()
+                .is_some_and(|attrs| attrs.fill_none) {
+                fills::render(
+                    self,
+                    shape,
+                    &shape.fills,
+                    antialias,
+                    target_surface,
+                    None
+                )?;
+            }
+
             // Pass strokes in natural order; stroke merging handles top-most ordering internally.
             let visible_strokes: Vec<&Stroke> = shape.visible_strokes().collect();
             strokes::render(
@@ -685,15 +743,15 @@ impl RenderState {
 
                 // This renders a red line around clipped
                 // shapes (frames).
-                if self.options.is_debug_visible() {
-                    let mut paint = skia::Paint::default();
-                    paint.set_style(skia::PaintStyle::Stroke);
-                    paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                    paint.set_stroke_width(4.);
-                    self.surfaces
-                        .canvas(fills_surface_id)
-                        .draw_rect(bounds, &paint);
-                }
+                // if self.options.is_debug_visible() {
+                //     let mut paint = skia::Paint::default();
+                //     paint.set_style(skia::PaintStyle::Stroke);
+                //     paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                //     paint.set_stroke_width(4.);
+                //     self.surfaces
+                //         .canvas(fills_surface_id)
+                //         .draw_rect(bounds, &paint);
+                // }
 
                 // Uncomment to debug the render_position_data
                 // if let Type::Text(text_content) = &shape.shape_type {
@@ -751,16 +809,6 @@ impl RenderState {
         } else {
             None
         };
-
-        let center = shape.center();
-        let mut matrix = shape.transform;
-        matrix.post_translate(center);
-        matrix.pre_translate(-center);
-
-        // Apply the additional transformation matrix if exists
-        if let Some(offset) = offset {
-            matrix.pre_translate(offset);
-        }
 
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
@@ -1073,8 +1121,7 @@ impl RenderState {
                 let shape = &shape;
 
                 if shape.fills.is_empty()
-                    && !matches!(shape.shape_type, Type::Group(_))
-                    && !matches!(shape.shape_type, Type::Frame(_))
+                    && !matches!(shape.shape_type, Type::Group(_) | Type::Frame(_))
                     && !shape
                         .svg_attrs
                         .as_ref()
@@ -1165,7 +1212,7 @@ impl RenderState {
     }
 
     pub fn update_render_context(&mut self, tile: tiles::Tile) {
-        self.tile.current_tile = Some(tile);
+        self.tile.current = Some(tile);
         let scale = self.get_scale();
         self.render_area = tiles::get_tile_rect(tile, scale);
         let margins = self.surfaces.margins();
@@ -1214,17 +1261,26 @@ impl RenderState {
         Ok(())
     }
 
+    fn populate_pending_nodes(&mut self) {
+
+    }
+
     /// Clears all the necessary vecs and hashmaps.
     /// Also garbage collects surfaces.
     fn clear(&mut self, tree: ShapesPoolRef) {
         #[cfg(feature = "stats")]
         self.stats.clear();
 
+        // We clear the backbuffer and the target.
         self.surfaces.clear_backbuffer(self.background_color);
         self.surfaces.clear_target(self.background_color);
 
+        // We clear the pending nodes and
+        // we generate the pending nodes.
         self.pending_nodes.clear();
         self.pending_nodes.reserve(tree.len());
+
+        self.populate_pending_nodes();
 
         // Clear nested state stacks to avoid residual fills/blurs from previous renders
         // being incorrectly applied to new frames
@@ -1234,7 +1290,7 @@ impl RenderState {
         self.nested_shadows.clear();
 
         // reorder by distance to the center.
-        self.tile.current_tile = None;
+        self.tile.current = None;
 
         self.empty_grid_frame_ids.clear();
         if self.show_grid.is_some() {
@@ -1268,7 +1324,7 @@ impl RenderState {
             }
         }
 
-        self.tile.tile_viewbox.update(&self.viewbox);
+        self.tile.viewbox.update(&self.viewbox);
 
         self.rebuild_tile_index();
         if self.viewbox.is_updated(ViewboxUpdated::Zoom as u32) {
@@ -1327,8 +1383,8 @@ impl RenderState {
 
         performance::begin_measure!("tile_cache");
         let only_visible = self.options.is_interactive_transform();
-        self.tile.pending_tiles
-            .update(&self.tile.tile_viewbox, &self.surfaces, only_visible);
+        self.tile.pending
+            .update(&self.tile.viewbox, &self.surfaces, only_visible);
         performance::end_measure!("tile_cache");
 
         performance::end_timed_log!("tile_cache_update", _tile_start);
@@ -1372,7 +1428,7 @@ impl RenderState {
         // if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
-                &self.tile.tile_viewbox
+                &self.tile.viewbox
             );
         // }
 
@@ -1406,7 +1462,7 @@ impl RenderState {
         if !self.viewer_masked_pass() {
             self.surfaces.draw_tile_atlas_to_backbuffer(
                 &self.viewbox,
-                &self.tile.tile_viewbox
+                &self.tile.viewbox
             );
         }
 
@@ -1438,8 +1494,8 @@ impl RenderState {
         // popping in sequentially. Only yield once all visible work is
         // done and we are processing the interest-area pre-render.
         if self.options.is_interactive_transform() {
-            if let Some(tile) = self.tile.current_tile {
-                if self.tile.tile_viewbox.is_visible(&tile) {
+            if let Some(tile) = self.tile.current {
+                if self.tile.viewbox.is_visible(&tile) {
                     return false;
                 }
             }
@@ -1556,7 +1612,7 @@ impl RenderState {
     /// consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Result<Rect> {
         Ok(self.get_aligned_tile_bounds(
-            self.tile.current_tile
+            self.tile.current
                 .ok_or(Error::CriticalError("Current tile not found".to_string()))?,
         ))
     }
@@ -1910,7 +1966,7 @@ impl RenderState {
         };
 
         while !should_stop {
-            if let Some(current_tile) = self.tile.current_tile {
+            if let Some(current_tile) = self.tile.current {
                 // println!("current_tile {:?}", current_tile);
                 // NOTE: For now we don't need to cover the case where the tile
                 // is not cached because everything will be handled from draw_atlas.
@@ -1932,12 +1988,12 @@ impl RenderState {
                     // the tile has unfinished work from a previous PAF
                     // (`current_tile_had_shapes` was set when we populated pending_nodes
                     // for this tile).
-                    if !is_empty || self.tile.current_tile_had_shapes {
+                    if !is_empty || self.tile.current_had_shapes {
                         let tile_rect = self.get_current_aligned_tile_bounds()?;
 
                         let current_tile = *self
                             .tile
-                            .current_tile
+                            .current
                             .as_ref()
                             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
 
@@ -1966,13 +2022,13 @@ impl RenderState {
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
-            if let Some(next_tile) = self.tile.pending_tiles.pop() {
+            if let Some(next_tile) = self.tile.pending.pop() {
                 self.update_render_context(next_tile);
                 // Reset for the new tile. We'll flip it to true if the
                 // tile has shapes, so a later "is_empty=true" reflects
                 // a resumed-from-yield case rather than a genuinely
                 // empty tile.
-                self.tile.current_tile_had_shapes = false;
+                self.tile.current_had_shapes = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 
@@ -2017,7 +2073,7 @@ impl RenderState {
                 }
 
                 if !valid_ids.is_empty() {
-                    self.tile.current_tile_had_shapes = true;
+                    self.tile.current_had_shapes = true;
                 }
 
                 self.pending_nodes
@@ -2059,7 +2115,7 @@ impl RenderState {
         let extrect = shape.extrect(tree, scale);
         let tile_size = tiles::get_tile_size(scale);
         let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
-        let interest_rect = &self.tile.tile_viewbox.interest_rect;
+        let interest_rect = &self.tile.viewbox.interest_rect;
         // Calculate the intersection of shape_tiles with interest_rect
         // This returns only the tiles that are both in the shape and in the interest area
         let intersection_x1 = shape_tiles.x1().max(interest_rect.x1());

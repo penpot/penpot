@@ -179,6 +179,7 @@ pub struct Shape {
     pub children: Vec<Uuid>,
     pub selrect: math::Rect,
     pub transform: Matrix,
+    transform_centered: Option<Matrix>,
     pub rotation: f32,
     pub constraint_h: Option<ConstraintH>,
     pub constraint_v: Option<ConstraintV>,
@@ -281,6 +282,7 @@ impl Shape {
             children: Vec::new(),
             selrect: math::Rect::new_empty(),
             transform: Matrix::default(),
+            transform_centered: None,
             rotation: 0.,
             constraint_h: None,
             constraint_v: None,
@@ -417,9 +419,27 @@ impl Shape {
         self.invalidate_extrect();
     }
 
+    pub fn is_rotated(&self) -> bool {
+        self.rotation != 0.0
+    }
+
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         self.transform = Matrix::new_all(a, c, e, b, d, f, 0.0, 0.0, 1.0);
+        if self.transform_centered.is_none() && self.is_rotated() {
+            let center= self.center();
+            let mut matrix = self.transform;
+            matrix.post_translate(center);
+            matrix.pre_translate(-center);
+            self.transform_centered = Some(matrix);
+        }
         self.invalidate_extrect();
+    }
+
+    pub fn get_transform(&self) -> Matrix {
+        let Some(transform) = self.transform_centered else {
+            return self.transform;
+        };
+        transform
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {

@@ -69,7 +69,7 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
 }
 
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
-    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile.tile_viewbox.interest_rect;
+    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile.viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::RED);
