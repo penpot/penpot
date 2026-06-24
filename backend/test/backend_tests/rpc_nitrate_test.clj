@@ -6,12 +6,15 @@
 
 (ns backend-tests.rpc-nitrate-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.email :as eml]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.nitrate]
+   [app.rpc.commands.teams :as teams]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -815,3 +818,118 @@
         (t/is (not (th/success? out)))
         (t/is (= :validation (th/ex-type (:error out))))
         (t/is (= :not-valid-teams (th/ex-code (:error out))))))))
+
+(defn- add-team-to-org-nitrate-mock
+  [{:keys [org-id org-summary org-perms owner-id team-id sso-active?]}]
+  (fn [_cfg method params]
+    (case method
+      :get-org-membership (if (= (:profile-id params) owner-id)
+                            {:is-member true :organization-id org-id}
+                            {:is-member false :organization-id org-id})
+      :get-org-members [owner-id]
+      :get-team-org {:organization nil}
+      :get-org-permissions org-perms
+      :set-team-org {:id team-id}
+      :get-org-sso {:active sso-active?}
+      :get-org-summary (assoc org-summary :teams [{:id team-id}])
+      :add-profile-to-org {:is-member true}
+      nil)))
+
+(t/deftest add-team-to-organization-sends-sso-emails-to-new-members-and-invitees
+  (let [owner      (th/create-profile* 301 {:is-active true
+                                            :fullname "Owner"
+                                            :email "owner301@example.com"})
+        member     (th/create-profile* 302 {:is-active true
+                                            :fullname "Member"
+                                            :email "member302@example.com"})
+        team       (th/create-team* 301 {:profile-id (:id owner)})
+        _          (th/create-team-role* {:team-id (:id team)
+                                           :profile-id (:id member)
+                                           :role :editor})
+        org-id     (uuid/random)
+        org-name   "SSO Org"
+        org-summary {:id org-id
+                     :name org-name
+                     :owner-id (:id owner)
+                     :teams []}
+        org-perms  {:owner-id (:id owner)
+                    :permissions {:create-teams "any"
+                                  :move-teams "always"
+                                  :new-team-members "members"}}
+        sent       (atom [])]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "external301@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (add-team-to-org-nitrate-mock
+                                {:org-id org-id
+                                 :org-summary org-summary
+                                 :org-perms org-perms
+                                 :owner-id (:id owner)
+                                 :team-id (:id team)
+                                 :sso-active? true})
+                  teams/initialize-user-in-nitrate-org (fn [& _] nil)
+                  eml/send! (fn [params] (swap! sent conj params))]
+      (let [out (th/command! {::th/type :add-team-to-organization
+                              ::rpc/profile-id (:id owner)
+                              :team-id (:id team)
+                              :organization-id org-id})]
+        (t/is (th/success? out))))
+
+    (let [emails (->> @sent (map :to) set)]
+      (t/is (= 2 (count @sent)))
+      (t/is (= #{"member302@example.com" "external301@example.com"} emails))
+      (doseq [email-params @sent]
+        (t/is (= org-name (:organization-name email-params)))
+        (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest add-team-to-organization-skips-sso-emails-when-sso-inactive
+  (let [owner      (th/create-profile* 303 {:is-active true :email "owner303@example.com"})
+        member     (th/create-profile* 304 {:is-active true :email "member304@example.com"})
+        team       (th/create-team* 303 {:profile-id (:id owner)})
+        _          (th/create-team-role* {:team-id (:id team)
+                                           :profile-id (:id member)
+                                           :role :editor})
+        org-id     (uuid/random)
+        org-summary {:id org-id
+                     :name "No SSO Org"
+                     :owner-id (:id owner)
+                     :teams []}
+        org-perms  {:owner-id (:id owner)
+                    :permissions {:create-teams "any"
+                                  :move-teams "always"
+                                  :new-team-members "members"}}
+        sent       (atom [])]
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "external303@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    (with-redefs [cf/flags (conj cf/flags :nitrate)
+                  nitrate/call (add-team-to-org-nitrate-mock
+                                {:org-id org-id
+                                 :org-summary org-summary
+                                 :org-perms org-perms
+                                 :owner-id (:id owner)
+                                 :team-id (:id team)
+                                 :sso-active? false})
+                  teams/initialize-user-in-nitrate-org (fn [& _] nil)
+                  eml/send! (fn [params] (swap! sent conj params))]
+      (let [out (th/command! {::th/type :add-team-to-organization
+                              ::rpc/profile-id (:id owner)
+                              :team-id (:id team)
+                              :organization-id org-id})]
+        (t/is (th/success? out))
+        (t/is (empty? @sent))))))

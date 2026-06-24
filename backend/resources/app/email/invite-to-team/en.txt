@@ -1,6 +1,11 @@
 Hello!
 
-{{invited-by|abbreviate:25}} has invited you to join the team "{{ team|abbreviate:25 }}"{% if organization %}, part of the organization "{{ organization|abbreviate:25 }}"{% endif %}.
+{{invited-by|abbreviate:25}} has invited you to join the team "{{ team|abbreviate:25 }}"{% if organization %}, part of the organization "{{ organization.name|abbreviate:50 }}"{% endif %}.
+
+{% if organization.sso-active %}
+"{{ organization.name|abbreviate:50 }}" has set up single sign-on (SSO) in Penpot. Access to its teams and files goes
+through your organization's identity provider. If you can't get in, your account probably isn't in the directory yet. To get access, contact the organization owner.
+{% endif %}
 
 Accept invitation using this link:
 

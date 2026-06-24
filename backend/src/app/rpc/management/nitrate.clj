@@ -29,6 +29,8 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
+   [app.rpc.nitrate.emails-helper :as neh]
+   [app.rpc.nitrate.organization-helper :as noh]
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
@@ -485,23 +487,6 @@ RETURNING id, deleted_at;")
 
 ;; API: get-org-invitations
 
-(def ^:private sql:get-org-invitations
-  "SELECT DISTINCT ON (email_to)
-          ti.id,
-          ti.org_id AS organization_id,
-          ti.email_to AS email,
-          ti.created_at AS sent_at,
-          p.fullname AS name,
-          p.id AS profile_id,
-          p.photo_id
-     FROM team_invitation AS ti
-LEFT JOIN profile AS p
-       ON p.email = ti.email_to
-      AND p.deleted_at IS NULL
-    WHERE ti.valid_until >= now()
-      AND (ti.org_id = ? OR ti.team_id = ANY(?))
-    ORDER BY ti.email_to, ti.valid_until DESC, ti.created_at DESC;")
-
 (def ^:private schema:get-org-invitations-params
   [:map
    [:organization-id ::sm/uuid]])
@@ -523,18 +508,13 @@ LEFT JOIN profile AS p
    ::sm/params schema:get-org-invitations-params
    ::sm/result schema:get-org-invitations-result}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (->> (:teams org-summary)
-                         (map :id)
-                         (filter uuid?)
-                         (into []))]
+  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
-                   (let [ids-array (db/create-array conn "uuid" team-ids)]
-                     (->> (db/exec! conn [sql:get-org-invitations organization-id ids-array])
-                          (mapv (fn [{:keys [photo-id] :as invitation}]
-                                  (cond-> (dissoc invitation :photo-id)
-                                    photo-id
-                                    (assoc :photo-url (files/resolve-public-uri photo-id)))))))))))
+                   (->> (noh/get-org-invitations conn organization-id team-ids)
+                        (mapv (fn [{:keys [photo-id] :as invitation}]
+                                (cond-> (dissoc invitation :photo-id)
+                                  photo-id
+                                  (assoc :photo-url (files/resolve-public-uri photo-id))))))))))
 
 
 ;; API: delete-org-invitations
@@ -554,12 +534,8 @@ LEFT JOIN profile AS p
   {::doc/added "2.16"
    ::sm/params schema:delete-org-invitations-params}
   [cfg {:keys [organization-id email]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        clean-email (profile/clean-email email)
-        team-ids    (->> (:teams org-summary)
-                         (map :id)
-                         (filter uuid?)
-                         (into []))]
+  (let [clean-email (profile/clean-email email)
+        team-ids    (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-org-invitations clean-email organization-id ids-array]))))
@@ -585,9 +561,7 @@ LEFT JOIN profile AS p
    ::sm/params schema:delete-all-org-invitations-params
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (->> (:teams org-summary)
-                         (map :id))]
+  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
@@ -826,17 +800,19 @@ LEFT JOIN profile AS p
 
 
 ;; ---- API: notify-org-sso-change
-
 (sv/defmethod ::notify-org-sso-change
   "Nitrate notifies that an organization sso values have changed"
   {::doc/added "2.19"
    ::sm/params [:map
                 [:organization-id ::sm/uuid]
-                [:updated-props ::sm/boolean]]
+                [:updated-props ::sm/boolean]
+                [:became-active ::sm/boolean]]
    ::rpc/auth false}
-  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props]}]
+  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props became-active]}]
   (when updated-props
     (rpc/invalidate-org-sso-cache-by-org! organization-id)
     (session/clear-org-sso-sessions! pool organization-id))
   (notifications/notify-organization-change-sso cfg organization-id)
+  (when became-active
+    (neh/send-organization-setup-sso-emails! cfg organization-id))
   nil)
