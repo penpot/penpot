@@ -40,6 +40,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
    [app.util.dom :as dom]
@@ -704,6 +705,12 @@
         show-orgs-menu?
         (deref show-orgs-menu*)
 
+        orgs-rect*
+        (mf/use-state nil)
+
+        orgs-portal-container
+        (hooks/use-portal-container :popup)
+
         show-org-options-menu*
         (mf/use-state false)
 
@@ -723,6 +730,7 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
+           (reset! orgs-rect* (dom/get-bounding-rect (dom/get-current-target event)))
            (swap! show-orgs-menu* not)))
 
         on-show-orgs-keydown
@@ -773,13 +781,22 @@
 
 
        ;; Orgs Dropdown
-       [:> organizations-selector-dropdown* {:show show-orgs-menu?
-                                             :on-close close-orgs-menu
-                                             :id "organizations-list"
-                                             :class (stl/css :dropdown :teams-dropdown)
-                                             :organization current-org
-                                             :profile profile
-                                             :organizations (vals orgs)}]
+       (when show-orgs-menu?
+         (let [rect (deref orgs-rect*)]
+           (mf/portal
+            (mf/html
+             [:div {:style {:position "fixed"
+                            :top (dm/str (:top rect) "px")
+                            :left (dm/str (:left rect) "px")
+                            :width (dm/str (:width rect) "px")}}
+              [:> organizations-selector-dropdown* {:show true
+                                                    :on-close close-orgs-menu
+                                                    :id "organizations-list"
+                                                    :class (stl/css :dropdown :teams-dropdown)
+                                                    :organization current-org
+                                                    :profile profile
+                                                    :organizations (vals orgs)}]])
+            orgs-portal-container)))
        ;; Orgs options
        [:> org-options-dropdown* {:show show-org-options-menu?
                                   :on-close close-org-options-menu

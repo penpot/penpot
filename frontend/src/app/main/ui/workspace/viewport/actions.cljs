@@ -332,7 +332,8 @@
            editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
-                        (= "TEXTAREA" (obj/get target "tagName")))]
+                        (= "TEXTAREA" (obj/get target "tagName"))
+                        (true? (.-isContentEditable target)))]
 
        (when-not (.-repeat bevent)
          (st/emit! (kbd/->KeyboardEvent :down key shift? ctrl? alt? meta? mod? editing? event)))))))
@@ -351,7 +352,8 @@
            editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
-                        (= "TEXTAREA" (obj/get target "tagName")))]
+                        (= "TEXTAREA" (obj/get target "tagName"))
+                        (true? (.-isContentEditable target)))]
        (st/emit! (kbd/->KeyboardEvent :up key shift? ctrl? alt? meta? mod? editing? event))))))
 
 (defn on-pointer-move [move-stream]

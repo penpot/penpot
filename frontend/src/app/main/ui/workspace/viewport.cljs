@@ -398,7 +398,7 @@
         [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
       (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:page page}])
+        [:> use/export-page* {:page page}])
 
       ;; We need a "real" background shape so layer transforms work properly in firefox
       [:rect {:width (:width vbox 0)
@@ -454,8 +454,8 @@
            [:& editor-v2/text-editor {:shape editing-shape
                                       :canvas-ref canvas-ref
                                       :modifiers modifiers}]
-           [:& editor-v1/text-editor-svg {:shape editing-shape
-                                          :modifiers modifiers}]))
+           [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                           :modifiers modifiers}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
