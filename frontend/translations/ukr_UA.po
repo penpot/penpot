@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"PO-Revision-Date: 2026-06-25 21:01+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -8618,3 +8618,271 @@ msgstr "Автозбережені версії зберігатимуться �
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Перевірте поштову скриньку!"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "Відтепер Ви учасник %s"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "Лист було надіслано на:"
+
+#: src/app/main/data/nitrate.cljs:165
+msgid "dasboard.leave-org.toast"
+msgstr "Ви більше не є учасником організації %s."
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "ПЕРЕМІСТИТИ КОМАНДУ"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "Перемістити до:"
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "Обрати організацію"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr ""
+"Проєкти та файли залишаться доступними до учасників команди. Ця команда "
+"отримає сповіщення від нової."
+
+#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "Змінити організацію команди"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "Перейти до Адмін. Панелі"
+
+#: src/app/main/ui/dashboard/import.cljs:505
+msgid "dashboard.import.import-error.check-error"
+msgstr "Не вдалось перевірити файл."
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Файл здається пошкодженим."
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "Щось пішло не так під час обробки файлу."
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr ""
+"Ви не маєте дозволів на створення, редагування чи видалення запрошень до "
+"команди."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "Лишити організацію"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "Мої команди"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "Ви не маєте дозволів додавати команди до жодної з власних організацій."
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr ""
+"Ви не маєте дозволів на створення команд у організації %s. Для подробиць "
+"зверніться до її власника."
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr ""
+"Ви не маєте дозволів на видалення команд що є частиною організації %s. Для "
+"подробить зверніться до її власника."
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr ""
+"Ви не маєте дозволів переміщати команди, що належать організації %s. Для "
+"подробиць зверніться до її власника."
+
+#: src/app/main/data/dashboard.cljs:753
+msgid "dashboard.org-deleted"
+msgstr "Організація %s видалена."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ Створити орг"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "Організації"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "ДОДАТИ ДО ОРГАНІЗАЦІЇ"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "Оберіть організацію:"
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr ""
+"Лише учасники \"%s\" можуть приєднуватись до команд організації. Будь-які "
+"запрошення у процесі розгляду будуть відхилені."
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr ""
+"Запрошення сторонніх користувачів, що у процесі розгляду, буде відхилено."
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr ""
+"Тут можна знайти усі організації, де Вам дозволено створювати чи додавати "
+"команди."
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "Оберіть організацію"
+
+#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "Додати команду до організації"
+
+#, unused
+msgid "dashboard.team-belong-org"
+msgstr "Ця команда тепер у %s"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "Ця команда більше не в організації %s"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "Команда організації"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "Додати до організації"
+
+#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "Ви не маєте дозволів на додавання команди до будь-якої з організацій."
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "Змінити команду організації"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "Лише люди з вашої організації можуть отримати запрошення."
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "Ця команда не належить до жодної з організацій"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "Вилучити команду з організації"
+
+#, unused
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "Ви більше не учасник організації %s"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Бета"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"Відмальовування WebGL може покращити швидкодію, проте функція в беті, тому є "
+"менш стабільною. Можуть зʼявлятись візуальні відмінності між полотном, "
+"експортами (SVG/PDF) та режимом перегляду."
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "Вимкнено"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "Увімкнено"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "Зворотній звʼязок"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "Стан"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "Відмальовування WebGL"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr ""
+"API буферу обміну недоступне. Надайте доступ до Penpot через HTTPS, щоб "
+"увімкнути доступ"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr ""
+"Відмовлено у доступі до буферу обміну. Надайте дозвіл на використання буферу "
+"обміну у Вашому бровзері аби вставити вміст"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr ""
+"Імʼя сімейства шрифтів може мати лише літери, числа, пробіли, дефіси, нижні "
+"підкреслювання та крапки."
+
+#: src/app/main/ui/static.cljs:89
+msgid "errors.invite-email-mismatch"
+msgstr ""
+"Це запрошення для іншої поштової адреси. Вийдіть та зайдіть через запрошений "
+"обліковий запис, або попросіть у власника команди нове."
+
+#: src/app/main/ui/static.cljs:93
+msgid "errors.invite-expired"
+msgstr "Запрошення протерміноване. Запитайте власника команди про нове."
+
+#, unused
+msgid "errors.org-leave.no-valid-teams"
+msgstr "Сталась проблема під час виходу з організації. Спробуйте знову."
+
+#: src/app/main/ui/settings/integrations.cljs:581
+msgid "integrations.mcp-server.mcp-keys.info"
+msgstr ""
+"Це URL серверу, для якого потрібно налаштувати MCP клієнт для того щоб "
+"зʼєднати його з сервером MCP Penpot'у."
+
+#: src/app/main/ui/settings/integrations.cljs:561
+msgid "integrations.mcp-server.mcp-keys.regenerate"
+msgstr "Регенерувати ключ MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:554
+msgid "integrations.mcp-server.mcp-keys.title"
+msgstr "Ключ MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:562
+msgid "integrations.mcp-server.mcp-keys.tootip"
+msgstr "MCP ключ потрібен для налаштування клієнту MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:517
+msgid "integrations.mcp-server.status"
+msgstr "Стан"
+
+#: src/app/main/ui/settings/integrations.cljs:537
+msgid "integrations.mcp-server.status.disabled"
+msgstr "Вимкнено"
+
+#: src/app/main/ui/settings/integrations.cljs:536
+msgid "integrations.mcp-server.status.enabled"
+msgstr "Увімкнено"
