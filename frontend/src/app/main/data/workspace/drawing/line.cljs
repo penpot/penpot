@@ -116,7 +116,7 @@
             :stroke-style :solid
             :stroke-alignment :center
             :stroke-width 1}]
-    arrow? (update-in [0] assoc :stroke-cap-end :triangle-arrow)))
+    arrow? (update 0 assoc :stroke-cap-end :triangle-arrow)))
 
 (defn handle-drawing
   "Runs the click-and-drag interaction for :line or :arrow. Produces
