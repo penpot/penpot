@@ -1563,11 +1563,11 @@
          (fn []
            (st/emit! (dnt/show-remove-team-from-org-modal {:team-id (:id team)}))))
 
-        on-add-team-to-org
+        on-add-team-to-organization
         (mf/use-fn
          (mf/deps team)
          (fn []
-           (st/emit! (dnt/show-add-team-to-org-modal {:team-id (:id team)}))))
+           (st/emit! (dnt/show-add-team-to-organization-modal {:team-id (:id team)}))))
 
         on-change-team-org
         (mf/use-fn
@@ -1644,7 +1644,7 @@
                (when can-add-to-organization?
                  [:div {:class (stl/css :block-content)}
                   [:span {:class (stl/css :block-text)}
-                   [:a {:on-click on-add-team-to-org} (tr "dashboard.team-organization.add")]]])]))])
+                   [:a {:on-click on-add-team-to-organization} (tr "dashboard.team-organization.add")]]])]))])
 
        [:div {:class (stl/css :block)}
         [:div {:class (stl/css :block-label)}
