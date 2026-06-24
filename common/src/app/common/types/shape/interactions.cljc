@@ -78,7 +78,7 @@
    [:duration ::sm/safe-int]
    [:easing [::sm/one-of easing-types]]
    [:way {:optional true} [::sm/one-of way-types]]
-   [:offset-effect :boolean]
+   [:offset-effect {:optional true} :boolean]
    [:direction {:optional true} [::sm/one-of direction-types]]])
 
 (def schema:slide-animation
