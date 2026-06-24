@@ -557,6 +557,7 @@ impl RenderState {
     ) -> Result<()> {
         #[cfg(feature = "stats")]
         self.stats.count(shape.id);
+        println!("render_shape");
 
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
@@ -660,7 +661,6 @@ impl RenderState {
         // );
 
         if can_render_directly {
-            println!("can_render_directly");
             let scale = self.get_scale_fast();
             let translation = self
                 .surfaces
@@ -821,6 +821,7 @@ impl RenderState {
                     .concat(&matrix);
 
                 if let Some(svg) = shape.svg.as_ref() {
+                    println!("Never passes");
                     svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
@@ -1420,7 +1421,7 @@ impl RenderState {
         //     std::ptr::addr_of!(tree),
         // );
         let frame_type =
-            self.render_shape_tree_tiled( tree, timestamp, allow_stop)?;
+            self.render_shape_tree_tiled(tree, timestamp, allow_stop)?;
 
         // `draw_atlas` needs a snapshot of the tile atlas. Partial frames are not
         // presented (only flushed), so defer composition to the final frame and
@@ -1644,7 +1645,6 @@ impl RenderState {
 
     pub fn render_shape_tree_tile(
         &mut self,
-        tree: ShapesPoolRef,
         timestamp: i32,
         allow_stop: bool,
         export: bool,
@@ -1655,6 +1655,9 @@ impl RenderState {
         if export {
             target_surface = SurfaceId::Export;
         }
+
+        let design_state = get_design_state();
+        let tree = &design_state.shapes;
 
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let node_id = node_render_state.id;
@@ -1673,10 +1676,25 @@ impl RenderState {
             let scale = self.get_scale_fast();
             let mut extrect: Option<Rect> = None;
 
+            let Some(current_tile) = self.tile.current else {
+                println!("There's no current_tile");
+                continue;
+            };
+
+            // let element_tile_rect = element.get_tile_rect(&self.viewbox);
+            // if !element_tile_rect.contains(&current_tile) {
+            //     continue;
+            // }
+
+            // println!("element_tile_rect {:?}", element_tile_rect);
+            // if !self.tile.tiles.has_shape_at(current_tile, node_id) {
+            //     continue;
+            // }
+
             // If the shape is not in the tile set, then we add them.
-            if self.tile.tiles.get_tiles_of(node_id).is_none() {
-                self.add_shape_tiles(element, tree);
-            }
+            // if self.tile.tiles.get_tiles_of(node_id).is_none() {
+            //     self.add_shape_tiles(element, tree);
+            // }
 
             if visited_children {
                 if !node_render_state.flattened {
@@ -1976,7 +1994,7 @@ impl RenderState {
                 {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) = self
-                        .render_shape_tree_tile(tree, timestamp, allow_stop, false)?;
+                        .render_shape_tree_tile(timestamp, allow_stop, false)?;
 
                     if early_return {
                         self.viewer_render_root = None;
@@ -1991,11 +2009,12 @@ impl RenderState {
                     if !is_empty || self.tile.current_had_shapes {
                         let tile_rect = self.get_current_aligned_tile_bounds()?;
 
-                        let current_tile = *self
-                            .tile
-                            .current
-                            .as_ref()
-                            .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
+                        // NOTE: Unnecessary code
+                        // let current_tile = *self
+                        //     .tile
+                        //     .current
+                        //     .as_ref()
+                        //     .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
 
                         self.surfaces.draw_current_tile_into_tile_atlas(
                             &current_tile,
@@ -2095,6 +2114,10 @@ impl RenderState {
         self.viewer_render_root = None;
 
         Ok(FrameType::Full)
+    }
+
+    pub fn render_shape_tree() {
+
     }
 
     /*

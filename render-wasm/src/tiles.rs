@@ -37,8 +37,17 @@ pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
 #[allow(dead_code)]
 impl TileRect {
-    pub fn empty() -> Self {
+    pub fn new_empty() -> Self {
         Self(0, 0, 0, 0)
+    }
+
+    pub fn from_scaled(other: &TileRect, scale: f32) -> Self {
+        Self (
+            (other.0 as f32 * scale).trunc() as i32,
+            (other.1 as f32 * scale).trunc() as i32,
+            (other.2 as f32 * scale).trunc() as i32,
+            (other.3 as f32 * scale).trunc() as i32,
+        )
     }
 
     #[inline(always)]
@@ -119,6 +128,13 @@ impl TileRect {
             && tile.y() >= self.top()
             && tile.x() <= self.right()
             && tile.y() <= self.bottom()
+    }
+
+    pub fn set_from_tile_bounds(&mut self, l: f32, t: f32, r: f32, b: f32, tile_size: f32) {
+        self.0 = (l / tile_size) as i32;
+        self.1 = (t / tile_size) as i32;
+        self.2 = (r / tile_size) as i32;
+        self.3 = (b / tile_size) as i32;
     }
 
     pub fn iter(self, inclusive: bool) -> TileRectIter {
@@ -269,6 +285,13 @@ impl TileHashMap {
         true
     }
 
+    pub fn has_shape_at(&self, tile: Tile, id: Uuid) -> bool {
+        let Some(shapes) = self.grid.get(&tile) else {
+            return false;
+        };
+        shapes.contains(&id)
+    }
+
     pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {
         self.grid.get(&tile)
     }
@@ -409,7 +432,7 @@ impl PendingTiles {
         Self {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             spiral: TileSpiral::new(),
-            spiral_rect: TileRect::empty(),
+            spiral_rect: TileRect::new_empty(),
             visible_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),

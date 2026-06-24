@@ -2,7 +2,9 @@ use skia_safe::{self as skia};
 
 use indexmap::IndexSet;
 
+use crate::tiles::{self, TileRect};
 use crate::uuid::Uuid;
+use crate::view::Viewbox;
 use std::borrow::Cow;
 use std::cell::{OnceCell, RefCell};
 use std::collections::HashSet;
@@ -51,7 +53,7 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
-use crate::math::{self, Bounds, Matrix, Point};
+use crate::math::{self, Bounds, Matrix, Point, IRect};
 
 use crate::state::ShapesPoolRef;
 
@@ -200,6 +202,7 @@ pub struct Shape {
     pub extrect_cache: RefCell<Option<math::Rect>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
+    pub tile_rect: TileRect,
     deleted: bool,
 }
 
@@ -303,6 +306,7 @@ impl Shape {
             extrect_cache: RefCell::new(None),
             svg_transform: None,
             ignore_constraints: false,
+            tile_rect: TileRect::new_empty(),
             deleted: false,
         }
     }
@@ -402,6 +406,7 @@ impl Shape {
             text.update_layout(self.selrect);
             text.set_xywh(left, top, self.selrect.width(), self.selrect.height());
         }
+        self.tile_rect.set_from_tile_bounds(left, top, right, bottom, tiles::TILE_SIZE);
     }
 
     pub fn set_masked(&mut self, masked: bool) {
@@ -440,6 +445,10 @@ impl Shape {
             return self.transform;
         };
         transform
+    }
+
+    pub fn get_tile_rect(&self, viewbox: &Viewbox) -> TileRect {
+        TileRect::from_scaled(&self.tile_rect, viewbox.get_scale())
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {

@@ -56,7 +56,7 @@ pub fn render_shape_pixels(
             mask: false,
             flattened: false,
         });
-        render_state.render_shape_tree_tile(tree, timestamp, false, true)?;
+        render_state.render_shape_tree_tile( timestamp, false, true)?;
     }
 
     render_state.export_context = None;

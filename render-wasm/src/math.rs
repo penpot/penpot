@@ -3,6 +3,7 @@ use skia_safe as skia;
 pub mod bools;
 
 pub type Rect = skia::Rect;
+pub type IRect = skia::IRect;
 pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
 pub type Point = skia::Point;
