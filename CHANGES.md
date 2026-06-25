@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.16.2
+
+### :bug: Bugs fixed
+
+- Fix error 500 when submitting the contact form [#10178](https://github.com/penpot/penpot/issues/10178) (PR: [#10419](https://github.com/penpot/penpot/pull/10419))
+- Fix text editor modifying content and detaching applied typography tokens [#10389](https://github.com/penpot/penpot/issues/10389) (PR: [#10402](https://github.com/penpot/penpot/pull/10402))
+
 ## 2.16.1
 
 ### :sparkles: New features & Enhancements
