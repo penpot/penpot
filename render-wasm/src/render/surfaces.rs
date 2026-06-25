@@ -590,6 +590,57 @@ impl Surfaces {
         canvas.restore();
     }
 
+    /// Fast pan/zoom preview: draw the doc atlas as backdrop, then overlay HQ
+    /// cached tile textures placed via their stored document rects (pan + scale).
+    pub fn draw_combined_atlas_to_backbuffer(
+        &mut self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+        background: skia::Color,
+    ) {
+        self.draw_atlas_to_backbuffer(*viewbox, background);
+
+        // Tile textures are keyed by grid index but positioned in document space.
+        // Without `tile_doc_rects` we cannot displace/scale them correctly (e.g.
+        // right after zoom invalidation); the atlas backdrop alone is enough.
+        if self.atlas.tile_doc_rects.is_empty() {
+            return;
+        }
+
+        let batch = self.tiles.build_atlas_draw_batch_for_doc_rects(
+            viewbox,
+            tile_viewbox,
+            &self.atlas.tile_doc_rects,
+        );
+        if batch.is_empty() {
+            return;
+        }
+
+        if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
+            self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
+            self.tiles.snapshot();
+        }
+        let Some(atlas_image) = self.tile_atlas_image.as_ref() else {
+            return;
+        };
+
+        let canvas = self.backbuffer.canvas();
+        canvas.save();
+        canvas.reset_matrix();
+
+        canvas.draw_atlas(
+            atlas_image,
+            &batch.transforms,
+            &batch.textures,
+            None,
+            skia::BlendMode::SrcOver,
+            self.atlas_sampling_options,
+            None,
+            None,
+        );
+        canvas.restore();
+    }
+
     pub fn margins(&self) -> skia::ISize {
         self.margins
     }
@@ -713,18 +764,6 @@ impl Surfaces {
             (0.0, 0.0),
             sampling_options,
             paint,
-        );
-    }
-
-    /// Draws the cache surface directly to the backbuffer canvas.
-    /// This avoids creating an intermediate snapshot, reducing GPU stalls.
-    pub fn draw_cache_to_backbuffer(&mut self) {
-        let sampling_options = self.sampling_options;
-        self.cache.draw(
-            self.backbuffer.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            Some(&skia::Paint::default()),
         );
     }
 
@@ -1516,6 +1555,17 @@ pub struct TileTextureCache {
     removed: HashSet<Tile>,
 }
 
+pub struct AtlasDrawBatch {
+    pub transforms: Vec<skia::RSXform>,
+    pub textures: Vec<skia::Rect>,
+}
+
+impl AtlasDrawBatch {
+    pub fn is_empty(&self) -> bool {
+        self.transforms.is_empty()
+    }
+}
+
 impl TileTextureCache {
     pub fn new(texture_size: i32, capacity: usize) -> Self {
         Self {
@@ -1612,6 +1662,76 @@ impl TileTextureCache {
 
                 index += 1;
             }
+        }
+    }
+
+    pub fn build_atlas_draw_batch_for_doc_rects(
+        &self,
+        viewbox: &Viewbox,
+        tile_viewbox: &TileViewbox,
+        tile_doc_rects: &HashMap<Tile, skia::Rect>,
+    ) -> AtlasDrawBatch {
+        let mut transforms = Vec::new();
+        let mut textures = Vec::new();
+
+        let s = viewbox.get_scale();
+        let view_doc = viewbox.area;
+
+        for y in tile_viewbox.visible_rect.top()..=tile_viewbox.visible_rect.bottom() {
+            for x in tile_viewbox.visible_rect.left()..=tile_viewbox.visible_rect.right() {
+                let tile = Tile(x, y);
+
+                let Some(tile_ref) = self.grid.get(&tile) else {
+                    continue;
+                };
+
+                if self.removed.contains(&tile) {
+                    continue;
+                }
+
+                let doc_rect = tile_doc_rects
+                    .get(&tile)
+                    .copied()
+                    .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+                if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
+                    continue;
+                }
+
+                let scos = doc_rect.width() * s / self.tile_size;
+                let tx = (doc_rect.left + viewbox.pan.x) * s;
+                let ty = (doc_rect.top + viewbox.pan.y) * s;
+
+                transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
+                textures.push(tile_ref.rect);
+            }
+        }
+
+        // Cached tiles from a previous zoom level use indices outside visible_rect;
+        // place them via their stored document rect, not the current grid walk above.
+        for (&tile, tile_ref) in &self.grid {
+            if tile_viewbox.is_visible(&tile) || self.removed.contains(&tile) {
+                continue;
+            }
+
+            let doc_rect = tile_doc_rects
+                .get(&tile)
+                .copied()
+                .unwrap_or_else(|| tiles::get_tile_rect(tile, s));
+            if doc_rect.is_empty() || !doc_rect.intersects(view_doc) {
+                continue;
+            }
+
+            let tx = (doc_rect.left + viewbox.pan.x) * s;
+            let ty = (doc_rect.top + viewbox.pan.y) * s;
+            let scos = doc_rect.width() * s / self.tile_size;
+
+            transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
+            textures.push(tile_ref.rect);
+        }
+
+        AtlasDrawBatch {
+            transforms,
+            textures,
         }
     }
 
