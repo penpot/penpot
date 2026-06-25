@@ -13,7 +13,7 @@ use super::fonts::FontStore;
 use crate::state::RulerState;
 use crate::view::Viewbox;
 
-const RULER_AREA_SIZE: f32 = 22.0;
+pub const RULER_AREA_SIZE: f32 = 22.0;
 const RULER_TICK_OFFSET: f32 = 15.0;
 const RULER_TICK_LEN: f32 = 4.0;
 const RULER_TICK_GAP: f32 = 2.0;
