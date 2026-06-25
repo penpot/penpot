@@ -676,18 +676,24 @@
   [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
 
-        ;; Find the "your-penpot" teams, and transform them in orgs
-        orgs  (mf/with-memo [teams]
-                (->> teams
-                     vals
-                     (filter :is-default)
-                     (map dtm/team->organization)
-                     (d/index-by :id)))
+        current-org (dtm/team->organization team)
+
+        ;; Find the "your-penpot" teams, and transform them in orgs. When
+        ;; the selected team is directly accessible but not listed in
+        ;; membership teams, include only its org so the org selector can
+        ;; show the current selection without leaking the team into the
+        ;; teams dropdown.
+        orgs  (mf/with-memo [teams current-org]
+                (cond-> (->> teams
+                             vals
+                             (filter :is-default)
+                             (map dtm/team->organization)
+                             (d/index-by :id))
+                  (:id current-org)
+                  (assoc (:id current-org) current-org)))
 
         show-dropdown? (or (dnt/is-valid-license? profile)
                            (> (count orgs) 1))
-
-        current-org (dtm/team->organization team)
 
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
@@ -1446,4 +1452,3 @@
    [:> profile-section*
     {:profile profile
      :team team}]])
-
