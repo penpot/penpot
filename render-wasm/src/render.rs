@@ -2103,7 +2103,7 @@ impl RenderState {
                 // fast_mode skips cache updates and regardless of atlas coverage.
                 self.interactive_target_seeded = true;
             }
-        } else if preserve_target || self.zoom_changed() {
+        } else if preserve_target || self.zoom_changed() || !self.surfaces.atlas.is_empty() {
             // Shape updates or zoom-end: keep the last presented frame on screen
             // while tiles are re-rendered asynchronously. During zoom the
             // preview from render_from_cache stays visible until the full-
@@ -2217,6 +2217,13 @@ impl RenderState {
         acc
     }
 
+    fn visible_grid_complete(&self) -> bool {
+        self.tile_viewbox
+            .visible_rect
+            .iter(true)
+            .all(|tile| self.tiles.is_empty_at(tile) || self.surfaces.has_cached_tile_surface(tile))
+    }
+
     pub fn continue_render_loop(
         &mut self,
         base_object: Option<&Uuid>,
@@ -2232,11 +2239,18 @@ impl RenderState {
         // presented (only flushed), so defer composition to the final frame and
         // avoid re-snapshotting up to 4096² on every rAF during async tile work.
         if !self.options.is_interactive_transform() && matches!(frame_type, FrameType::Full) {
-            self.surfaces.draw_tile_atlas_to_backbuffer(
-                &self.viewbox,
-                &self.tile_viewbox,
-                self.background_color,
-            );
+            // If some visible tiles are still missing, show the uniform DocAtlas
+            // preview until the grid is complete
+            if self.visible_grid_complete() || self.surfaces.atlas.is_empty() {
+                self.surfaces.draw_tile_atlas_to_backbuffer(
+                    &self.viewbox,
+                    &self.tile_viewbox,
+                    self.background_color,
+                );
+            } else {
+                self.surfaces
+                    .draw_atlas_to_backbuffer(self.viewbox, self.background_color);
+            }
         }
 
         match frame_type {
@@ -3606,6 +3620,9 @@ impl RenderState {
                         if ids.contains(root_id) {
                             valid_ids.push(*root_id);
                         }
+                    }
+                    if valid_ids.is_empty() && !ids.is_empty() {
+                        valid_ids.extend(root_ids.iter().copied());
                     }
                 }
 

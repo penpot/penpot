@@ -1586,6 +1586,7 @@ impl TileTextureCache {
                 self.provider.deallocate(tile_ref);
             }
         }
+        self.removed.clear();
     }
 
     pub fn needs_snapshot(&self) -> bool {
