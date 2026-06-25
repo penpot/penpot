@@ -7,6 +7,7 @@
 (ns app.rpc.nitrate.emails-helper
   "Helpers for organization SSO notification emails triggered by Nitrate integration."
   (:require
+   [app.common.data :as d]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
@@ -33,20 +34,22 @@
   (when (contains? cf/flags :nitrate)
     (true? (:active (nitrate/call cfg :get-org-sso {:organization-id organization-id})))))
 
+(def ^:private xf:map-email (map :email))
+
 (defn- recipients-by-emails
   "Build `{:email :user-name :profile}` maps for a deduplicated email list."
   [conn emails]
   (let [profiles (if (seq emails)
-                   (let [emails-array (db/create-array conn "text" (vec emails))]
+                   (let [emails-array (db/create-array conn "text" emails)]
                      (db/exec! conn [sql:get-profiles-by-emails emails-array]))
                    [])
-        profile-by-email (into {} (map (fn [profile] [(str/lower (:email profile)) profile]) profiles))]
-    (mapv (fn [email]
-            (let [profile (get profile-by-email (str/lower email))]
-              {:email email
-               :user-name (:fullname profile)
-               :profile profile}))
-          emails)))
+        profile-by-email (d/index-by (comp str/lower :email) profiles)]
+    (map (fn [email]
+           (let [profile (get profile-by-email (str/lower email))]
+             {:email email
+              :user-name (:fullname profile)
+              :profile profile}))
+         emails)))
 
 (defn- send-organization-setup-sso-email!
   "Send the organization SSO setup email to a single recipient, when allowed."
@@ -63,7 +66,7 @@
 (defn- get-org-sso-notify-recipients
   "Unique org members and pending org/team invitees for SSO activation emails."
   [conn cfg organization-id org-summary]
-  (let [member-ids    (vec (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+  (let [member-ids    (nitrate/call cfg :get-org-members {:organization-id organization-id})
         team-ids      (neh/get-org-team-ids org-summary)
         member-emails (if (seq member-ids)
                         (let [ids-array (db/create-array conn "uuid" member-ids)]
@@ -71,19 +74,17 @@
                         #{})
         invite-emails (into #{} (map :email
                                      (neh/get-org-invitations conn organization-id team-ids)))
-        emails        (vec (into member-emails invite-emails))]
+        emails        (into #{} (concat member-emails invite-emails))]
     (recipients-by-emails conn emails)))
 
 (defn- get-team-sso-notify-recipients
   "Team members who are not in `org-member-ids`, plus pending team invitations."
   [conn team-id org-member-ids]
-  (let [team-members  (teams/get-team-members conn team-id)
-        member-emails (->> team-members
-                           (remove #(contains? org-member-ids (:id %)))
-                           (map :email))
-        invite-emails (map :email (neh/get-team-invitation-emails conn team-id))
-        emails        (vec (into #{} (concat member-emails invite-emails)))]
-    (recipients-by-emails conn emails)))
+  (let [team-members (->> (teams/get-team-members conn team-id)
+                          (remove #(contains? org-member-ids (:id %))))
+        invitations  (neh/get-team-invitation-emails conn team-id)]
+    (->> (sequence xf:map-email (concat team-members invitations))
+         (recipients-by-emails conn))))
 
 (defn send-organization-setup-sso-emails!
   "Notify all org members and pending org/team invitees that SSO is active."

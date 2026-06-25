@@ -844,8 +844,8 @@
                                             :email "member302@example.com"})
         team       (th/create-team* 301 {:profile-id (:id owner)})
         _          (th/create-team-role* {:team-id (:id team)
-                                           :profile-id (:id member)
-                                           :role :editor})
+                                          :profile-id (:id member)
+                                          :role :editor})
         org-id     (uuid/random)
         org-name   "SSO Org"
         org-summary {:id org-id
@@ -895,8 +895,8 @@
         member     (th/create-profile* 304 {:is-active true :email "member304@example.com"})
         team       (th/create-team* 303 {:profile-id (:id owner)})
         _          (th/create-team-role* {:team-id (:id team)
-                                           :profile-id (:id member)
-                                           :role :editor})
+                                          :profile-id (:id member)
+                                          :role :editor})
         org-id     (uuid/random)
         org-summary {:id org-id
                      :name "No SSO Org"
