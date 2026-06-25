@@ -603,8 +603,7 @@
 
        (when show-pixel-grid?
          [:> widgets/pixel-grid* {:vbox vbox
-                                  :zoom zoom
-                                  :clip-rulers false}])
+                                  :zoom zoom}])
 
        (when show-snap-points?
          [:> snap-points/snap-points*

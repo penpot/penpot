@@ -851,7 +851,9 @@
           {:zoom zoom
            :selected selected
            :transform transform
-           :focus focus}])
+           :focus focus
+           :vbox vbox
+           :clip-rulers show-rulers?}])
 
        (when show-pixel-grid?
          [:> widgets/pixel-grid* {:vbox vbox
