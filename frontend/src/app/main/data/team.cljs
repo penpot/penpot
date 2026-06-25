@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.nitrate-permissions :as nitrate-perms]
@@ -16,6 +15,7 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.media :as di]
    [app.main.data.modal :as modal]
    [app.main.data.profile :as dp]
@@ -66,6 +66,18 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
+
+(defn- update-team-data
+  [state team-id f & args]
+  (cond
+    (contains? (:teams state) team-id)
+    (apply update-in state [:teams team-id] f args)
+
+    (= team-id (dm/get-in state [:current-team :id]))
+    (apply update state :current-team f args)
+
+    :else
+    state))
 
 (defn with-refreshed-team
   "Fetches fresh team data from the server to ensure up-to-date org
@@ -197,7 +209,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:teams team-id] assoc :members members)
+          (update-team-data team-id assoc :members members)
           (update :profiles merge (d/index-by :id members))))))
 
 (defn fetch-members
@@ -223,7 +235,7 @@
   (ptk/reify ::invitations-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:teams team-id] assoc :invitations invitations))))
+      (update-team-data state team-id assoc :invitations invitations))))
 
 (defn fetch-invitations
   []
@@ -239,15 +251,24 @@
   (ptk/reify ::team-initialized
     ptk/WatchEvent
     (watch [_ state _]
-      (let [teams (get state :teams)
-            team  (get teams team-id)]
-        (if (not team)
-          (rx/throw (ex/error :type :authentication))
+      (let [team (dsh/lookup-team state team-id)]
+        (if team
           (let [permissions (get team :permissions)
                 features    (get team :features)]
-            (rx/of #(assoc % :permissions permissions)
+            (rx/of #(-> %
+                        (assoc :current-team team)
+                        (assoc :permissions permissions))
                    (features/initialize features)
-                   (fetch-members team-id))))))
+                   (fetch-members team-id)))
+          (->> (rp/cmd! :get-team {:id team-id})
+               (rx/mapcat (fn [team]
+                            (let [permissions (get team :permissions)
+                                  features    (get team :features)]
+                              (rx/of #(-> %
+                                          (assoc :current-team team)
+                                          (assoc :permissions permissions))
+                                     (features/initialize features)
+                                     (fetch-members team-id)))))))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -258,7 +279,9 @@
   (ptk/reify ::initialize-team
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :current-team-id team-id))
+      (-> state
+          (assoc :current-team-id team-id)
+          (dissoc :current-team)))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -279,6 +302,7 @@
         (if (= team-id' team-id)
           (-> state
               (dissoc :current-team-id)
+              (dissoc :current-team)
               (dissoc :shared-files)
               (dissoc :fonts))
           state)))))
@@ -330,7 +354,7 @@
   (ptk/reify ::stats-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:teams team-id] assoc :stats stats))))
+      (update-team-data state team-id assoc :stats stats))))
 
 (defn fetch-stats
   []
@@ -346,7 +370,7 @@
   (ptk/reify ::webhooks-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:teams team-id] assoc :webhooks webhooks))))
+      (update-team-data state team-id assoc :webhooks webhooks))))
 
 (defn fetch-webhooks
   []
@@ -776,4 +800,3 @@
 (defn team->organization [team]
   (when-let [org (:organization team)]
     (assoc org :default-team-id (:id team))))
-
