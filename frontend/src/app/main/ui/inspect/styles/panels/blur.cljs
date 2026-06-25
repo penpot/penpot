@@ -23,13 +23,13 @@
             blue-value-raw (get-in shape [:blur :value])
             blur-value-detail (format-blur blue-value-raw)
             blur-property-name (cmm/get-css-rule-humanized blur-property)
-            blur-property-value (css/format-css-property [blur-property blur-value-detail] {})
+            blur-property-value (css/format-css-property [blur-property blue-value-raw] {})
 
             background-blur-property :backdrop-filter
             background-blur-value-raw (get-in shape [:background-blur :value])
             background-blur-value-detail (format-blur background-blur-value-raw)
             background-blur-property-name (cmm/get-css-rule-humanized background-blur-property)
-            background-blur-property-value (css/format-css-property [background-blur-property background-blur-value-detail] {})]
+            background-blur-property-value (css/format-css-property [background-blur-property background-blur-value-raw] {})]
         [:div
          (when blue-value-raw
            [:> properties-row* {:key (dm/str "blur-property-" blur-property)
