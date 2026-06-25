@@ -123,6 +123,9 @@ pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
             }
         }
         let is_partial = flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8;
+        if flags & RenderFlag::SyncTiles as u8 != 0 {
+            render_state.preserve_target_during_render = true;
+        }
         let frame_type = if is_partial && !render_state.preserve_target_during_render {
             state
                 .continue_render_loop(timestamp)
@@ -354,6 +357,10 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // keep cached tile textures so the render can blit them
             // instead of re-drawing every visible tile from scratch.
             render_state.rebuild_tile_index(&state.shapes);
+        }
+        // Avoid `reset_canvas` on the post-gesture render (pan at stable zoom).
+        if !render_state.options.is_profile_rebuild_tiles() {
+            render_state.preserve_target_during_render = true;
         }
         performance::end_measure!("set_view_end");
     });
