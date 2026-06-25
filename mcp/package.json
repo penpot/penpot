@@ -15,7 +15,8 @@
     "bootstrap": "pnpm -r install && pnpm run build && pnpm run start",
     "bootstrap:multi-user": "pnpm -r install && pnpm run build && pnpm run start:multi-user",
     "fmt": "prettier --write packages/",
-    "fmt:check": "prettier --check packages/"
+    "fmt:check": "prettier --check packages/",
+    "test": "pnpm -r run test"
   },
   "repository": {
     "type": "git",
