@@ -11,31 +11,35 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
+   [app.util.code-gen.style-css-formats :refer [format-blur]]
    [rumext.v2 :as mf]))
 
 (mf/defc blur-panel*
-  [{:keys [shapes objects]}]
+  [{:keys [shapes]}]
   [:div {:class (stl/css :blur-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class (stl/css :blur-shape)}
       (let [blur-property :filter
-            blur-value (css/get-css-value objects shape blur-property)
-            background-blur-property :backdrop-filter
+            blue-value-raw (get-in shape [:blur :value])
+            blur-value-detail (format-blur blue-value-raw)
             blur-property-name (cmm/get-css-rule-humanized blur-property)
-            blur-property-value (css/get-css-property objects shape blur-property)
-            background-blur-value (css/get-css-value objects shape background-blur-property)
+            blur-property-value (css/format-css-property [blur-property blur-value-detail] {})
+
+            background-blur-property :backdrop-filter
+            background-blur-value-raw (get-in shape [:background-blur :value])
+            background-blur-value-detail (format-blur background-blur-value-raw)
             background-blur-property-name (cmm/get-css-rule-humanized background-blur-property)
-            background-blur-property-value (css/get-css-property objects shape background-blur-property)]
+            background-blur-property-value (css/format-css-property [background-blur-property background-blur-value-detail] {})]
         [:div
-         (when blur-property-value
+         (when blue-value-raw
            [:> properties-row* {:key (dm/str "blur-property-" blur-property)
                                 :term blur-property-name
-                                :detail (dm/str blur-value)
+                                :detail blur-value-detail
                                 :property blur-property-value
                                 :copiable true}])
-         (when background-blur-property-value
+         (when background-blur-value-raw
            [:> properties-row* {:key (dm/str "blur-property-" background-blur-property)
                                 :term background-blur-property-name
-                                :detail (dm/str background-blur-value)
+                                :detail background-blur-value-detail
                                 :property background-blur-property-value
                                 :copiable true}])])])])
