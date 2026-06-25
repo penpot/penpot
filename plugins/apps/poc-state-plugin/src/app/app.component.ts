@@ -48,6 +48,13 @@ import type { Shape } from '@penpot/plugin-types';
         <button
           type="button"
           data-appearance="secondary"
+          (click)="throwValidation()"
+        >
+          Throw validation error
+        </button>
+        <button
+          type="button"
+          data-appearance="secondary"
           (click)="loremIpsum()"
         >
           Lorem Ipsum
@@ -302,6 +309,10 @@ export class AppComponent {
   resizeH() {
     const id = this.#selection()[0].id;
     this.#sendMessage({ content: 'resize-h', data: { id } });
+  }
+
+  throwValidation() {
+    this.#sendMessage({ content: 'throw-validation' });
   }
 
   loremIpsum() {

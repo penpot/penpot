@@ -1749,7 +1749,8 @@ export interface Flags {
   /**
    * If `true` the validation errors will throw an exception instead of displaying an
    * error in the debugger console.
-   * Defaults to false
+   * Defaults to `true` for plugins whose manifest declares `"version": 2` (or higher)
+   * and to `false` for v1 plugins (or manifests that omit the version field).
    */
   throwValidationErrors: boolean;
 }

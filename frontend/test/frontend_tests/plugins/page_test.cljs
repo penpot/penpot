@@ -32,6 +32,7 @@
         store   (ths/setup-store file)
         _       (set! st/state store)
         _       (set! st/stream (ptk/input-stream store))
+        _       (ptk/emit! store #(assoc-in % [:plugins :flags "00000000-0000-0000-0000-000000000000" :throw-validation-errors] true))
         context (api/create-context "00000000-0000-0000-0000-000000000000")]
     {:file file :store store :context context}))
 
@@ -89,9 +90,11 @@
         ^js page2   (aget pages 1)]
     (t/is (instance? js/Promise (.openPage context page2 true)))))
 
-(t/deftest test-open-page-invalid-arg-returns-nil
+(t/deftest test-open-page-invalid-arg-throws
+  ;; With throwValidationErrors enabled an invalid argument surfaces as an
+  ;; exception instead of being silently logged.
   (let [^js context (:context (setup))]
-    (t/is (nil? (.openPage context "not-a-page")))))
+    (t/is (thrown? js/Error (.openPage context "not-a-page")))))
 
 (t/deftest test-open-page-resolves-when-page-changes
   (t/async done
