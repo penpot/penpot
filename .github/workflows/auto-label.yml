@@ -14,7 +14,7 @@ jobs:
         id: triage-app-token
         uses: actions/create-github-app-token@v1
         with:
-          app-id: ${{ secrets.TRAIGE_APP_ID }}
+          app-id: ${{ secrets.TRIAGE_APP_ID }}
           private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
