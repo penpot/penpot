@@ -21,6 +21,8 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.nitrate.emails-helper :as neh]
+   [app.rpc.nitrate.organization-helper :as noh]
    [app.rpc.notifications :as notifications]
    [app.tokens :as tokens]
    [app.util.services :as sv]))
@@ -394,12 +396,6 @@
   (notifications/notify-team-change cfg {:id team-id :organization {:name organization-name}} "dashboard.team-no-longer-belong-org")
   nil)
 
-(def ^:private sql:get-team-invitation-emails
-  "SELECT email_to
-     FROM team_invitation
-    WHERE team_id = ?
-      AND valid_until > now()")
-
 (def ^:private sql:delete-team-external-invitations
   "DELETE FROM team_invitation
     WHERE team_id = ?
@@ -421,8 +417,7 @@
         allows-anybody (nitrate-perms/allowed? :add-anybody-to-team {:org-perms org-perms})]
     (if allows-anybody
       {:allows-anybody true :external-emails []}
-      (let [invitation-emails (db/exec! conn [sql:get-team-invitation-emails team-id])
-            emails            (map :email-to invitation-emails)]
+      (let [emails (map :email (noh/get-team-invitation-emails conn team-id))]
         (if (empty? emails)
           {:allows-anybody false :external-emails []}
           (let [emails-array    (db/create-array conn "text" (vec emails))
@@ -451,7 +446,8 @@
   (assert-membership cfg profile-id organization-id)
 
   (when (contains? cf/flags :nitrate)
-    (let [team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
+    (let [org-member-ids-before (into #{} (nitrate/call cfg :get-org-members {:organization-id organization-id}))
+          team-with-org         (nitrate/call cfg :get-team-org {:team-id team-id})
           source-org-id         (get-in team-with-org [:organization :id])
           source-org-perms      (when source-org-id
                                   (nitrate/call cfg :get-org-permissions
@@ -487,26 +483,32 @@
                                          :profile-id profile-id})
         (ex/raise :type :validation
                   :code :not-allowed
-                  :hint "You are not allowed to add teams in this organization")))
+                  :hint "You are not allowed to add teams in this organization"))
 
-    (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})]
       ;; Add teammates to the org if needed
-      (doseq [{member-id :profile-id} team-members
-              :when (not= member-id profile-id)]
-        (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
+      (let [team-members (db/query cfg :team-profile-rel {:team-id team-id})
+            new-member-ids (->> team-members
+                                (map :profile-id)
+                                (remove #{profile-id})
+                                (remove org-member-ids-before))]
+        (doseq [member-id new-member-ids]
+          (teams/initialize-user-in-nitrate-org cfg member-id organization-id)))
 
-    ;; Api call to nitrate
-    (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+      ;; Api call to nitrate
+      (let [team (nitrate/call cfg :set-team-org {:team-id team-id :organization-id organization-id :is-default false})]
+        ;; Notify connected users
+        (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
 
-      ;; Notify connected users
-      (notifications/notify-team-change cfg team "dashboard.team-belong-org"))
+      ;; Delete pending invitations for users who are not members of the target organization
+      (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
+        (when (and (not allows-anybody) (seq external-emails))
+          (let [conn         (::db/conn cfg)
+                emails-array (db/create-array conn "text" external-emails)]
+            (db/exec! conn [sql:delete-team-external-invitations team-id emails-array]))))
 
-    ;; Delete pending invitations for users who are not members of the target organization
-    (let [{:keys [allows-anybody external-emails]} (get-external-invitation-info cfg team-id organization-id)]
-      (when (and (not allows-anybody) (seq external-emails))
-        (let [conn         (::db/conn cfg)
-              emails-array (db/create-array conn "text" external-emails)]
-          (db/exec! conn [sql:delete-team-external-invitations team-id emails-array])))))
+      ;; Send warnings via email if the org has sso
+      (neh/send-organization-setup-sso-emails-for-team!
+       cfg organization-id team-id org-member-ids-before)))
 
   nil)
 
