@@ -8,11 +8,12 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar]]
+   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar schema:nitrate-sso]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
@@ -878,6 +879,23 @@ RETURNING id, deleted_at;")
                                   photo-id       (assoc :photo-url       (files/resolve-public-uri photo-id))
                                   owner-photo-id (assoc :owner-photo-url (files/resolve-public-uri owner-photo-id))))))))))))
 
+;; ---- API: check-organization-sso
+
+(def ^:private schema:check-organization-sso-result
+  [:map
+   [:valid ::sm/boolean]])
+
+(sv/defmethod ::check-organization-sso
+  "Validate an organization SSO configuration by generating a login redirect URL.
+  Nitrate calls this while configuring SSO to verify client credentials and OIDC
+  discovery before saving the settings."
+  {::doc/added "2.20"
+   ::sm/params schema:nitrate-sso
+   ::sm/result schema:check-organization-sso-result
+   ::rpc/auth false}
+  [cfg params]
+  {:valid (oidc/is-organization-sso-config-valid? cfg params)})
+
 ;; ---- API: notify-org-sso-change
 (sv/defmethod ::notify-org-sso-change
   "Nitrate notifies that an organization sso values have changed"
@@ -895,3 +913,4 @@ RETURNING id, deleted_at;")
   (when became-active
     (neh/send-organization-setup-sso-emails! cfg organization-id))
   nil)
+
