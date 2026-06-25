@@ -10,10 +10,18 @@ jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App token
+        id: triage-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.TRAIGE_APP_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
       - name: Process Issue or PR
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          github-token: ${{ steps.triage-app-token.outputs.token }}
           script: |
             // === 1. CONFIGURATION ===
             const PROJECT_NUMBER = 8; // <--- Replace with your project board number
