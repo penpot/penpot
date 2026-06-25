@@ -23,6 +23,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -32,7 +33,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid*
-  [{:keys [vbox zoom]}]
+  [{:keys [vbox zoom clip-rulers]}]
   (let [page         (mf/deref refs/workspace-page)
         custom-color (:pixel-grid-color page)
         custom-alpha (:pixel-grid-opacity page)
@@ -44,7 +45,9 @@
         opacity      (cond
                        debug?              1
                        (some? custom-alpha) custom-alpha
-                       :else               0.2)]
+                       :else               0.2)
+        ;; Width of the ruler bars in document coordinates.
+        ruler-size   (/ rulers/ruler-area-size zoom)]
     [:g.pixel-grid
      [:defs
       [:pattern {:id "pixel-grid"
@@ -56,12 +59,21 @@
                :style {:fill "none"
                        :stroke stroke
                        :stroke-opacity opacity
-                       :stroke-width (str (/ 1 zoom))}}]]]
+                       :stroke-width (str (/ 1 zoom))}}]]
+      ;; In the wasm render, rulers are drawn on the canvas, so we need to clip
+      ;; this grid overlay
+      (when clip-rulers
+        [:clipPath {:id "clip-pixel-grid"}
+         [:rect {:x (+ (:x vbox) ruler-size)
+                 :y (+ (:y vbox) ruler-size)
+                 :width (max 0 (- (:width vbox) ruler-size))
+                 :height (max 0 (- (:height vbox) ruler-size))}]])]
      [:rect {:x (:x vbox)
              :y (:y vbox)
              :width (:width vbox)
              :height (:height vbox)
              :fill (str "url(#pixel-grid)")
+             :clip-path (when clip-rulers "url(#clip-pixel-grid)")
              :style {:pointer-events "none"}}]]))
 
 (mf/defc cursor-tooltip*
