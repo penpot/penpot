@@ -22,15 +22,26 @@
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [clojure.core :as c]
+   [clojure.string :as str]
    [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- join-path-segments
+  "Build a single relative path from Nitrate URI segments, normalizing slashes."
+  [segments]
+  (let [path (->> segments (map str) (str/join "/"))]
+    (->> (str/split path #"/")
+         (remove str/blank?)
+         (str/join "/"))))
+
 (defn- join-base-uri
+  "Join path segments to a base URI."
   [base-uri & segments]
-  (apply u/join (u/ensure-path-slash base-uri) segments))
+  (u/join (u/ensure-path-slash base-uri)
+          (join-path-segments segments)))
 
 (defn- generate-nitrate-uri
   "Joins relative path segments to the Nitrate backend URI.

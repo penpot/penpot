@@ -94,7 +94,9 @@
      [:id ::sm/uuid]
      [:name :string]
      [:initials [:maybe :string]]
-     [:logo ::sm/uri]]]
+     [:logo ::sm/uri]
+     [:avatar-bg-url [:maybe ::sm/uri]]
+     [:sso-active [:maybe ::sm/boolean]]]]
    [:profile
     [:map
      [:id ::sm/uuid]
@@ -246,7 +248,7 @@
                           :to email
                           :invited-by (:fullname profile)
                           :team (:name team)
-                          :organization (dm/get-in team [:organization :name])
+                          :organization (:organization team)
                           :token itoken
                           :extra-data ptoken})))
 

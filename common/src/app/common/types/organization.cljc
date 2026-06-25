@@ -61,4 +61,5 @@
    [:name ::sm/text]
    [:initials [:maybe :string]]
    [:logo [:maybe ::sm/uri]]
-   [:avatar-bg-url [:maybe ::sm/uri]]])
+   [:avatar-bg-url [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe :boolean]]])
