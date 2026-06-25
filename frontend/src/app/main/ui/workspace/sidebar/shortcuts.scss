@@ -5,26 +5,31 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .shortcuts {
   display: grid;
   grid-template-rows: auto auto 1fr;
 
   // TODO: Fix this once we start implementing the DS.
-  //       We should not be doign these hardcoded calc's.
-  height: calc(100vh - #{deprecated.$s-60});
+  //       We should not be doing these hardcoded calc's.
+  block-size: calc(100vh - #{px2rem(60)});
 }
 
 .search-field {
   display: flex;
   align-items: center;
-  gap: deprecated.$s-4;
-  margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
+  gap: var(--sp-xs);
+  margin: var(--sp-l) var(--sp-m) var(--sp-xs) var(--sp-m);
 
   // The search bar should fill available space; the reset-all button sits at the end
   & > :first-child {
     flex: 1;
-    min-width: 0;
+    min-inline-size: 0;
   }
 }
 
@@ -33,18 +38,19 @@
 }
 
 .shortcuts-list {
+  @include t.use-typography("body-small");
+
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: deprecated.$s-12;
+  block-size: 100%;
+  padding: var(--sp-m);
   overflow-y: auto;
-  font-size: deprecated.$fs-12;
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-secondary);
 }
 
 .not-found {
-  @include deprecated.body-small-typography;
+  @include t.use-typography("body-small");
 
-  color: var(--empty-message-foreground-color);
-  margin: deprecated.$s-12;
+  color: var(--color-foreground-secondary);
+  margin: var(--sp-m);
 }

@@ -37,7 +37,7 @@
 
   .subsection-name,
   .section-name {
-    padding-left: var(--sp-xs);
+    padding-inline-start: var(--sp-xs);
   }
 
   &:hover {
@@ -47,25 +47,25 @@
 
 .subsection-title {
   text-transform: none;
-  padding-left: var(--sp-m);
+  padding-inline-start: var(--sp-m);
 }
 
 .subsection-menu {
-  margin-bottom: var(--sp-s);
+  margin-block-end: var(--sp-s);
 }
 
 .sub-menu {
-  margin-bottom: var(--sp-s);
+  margin-block-end: var(--sp-s);
 }
 
 .shortcuts-name {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  min-height: $sz-32;
+  inline-size: 100%;
+  min-block-size: $sz-32;
   padding: px2rem(6);
-  margin-bottom: var(--sp-s);
+  margin-block-end: var(--sp-s);
   border-radius: $br-8;
   background-color: var(--color-background-tertiary);
 }
@@ -73,20 +73,20 @@
 .command-name {
   @include t.use-typography("body-small");
 
-  margin-left: var(--sp-xxs);
+  margin-inline-start: var(--sp-xxs);
   color: var(--color-foreground-primary);
   flex: 1;
-  min-width: 0;
+  min-inline-size: 0;
   text-align: start;
 }
 
 // Editable rows
 
 .shortcuts-name-editable {
-  width: 100%;
-  min-height: $sz-32;
+  inline-size: 100%;
+  min-block-size: $sz-32;
   padding: px2rem(6);
-  margin-bottom: var(--sp-s);
+  margin-block-end: var(--sp-s);
   border-radius: $br-8;
   background-color: var(--color-background-tertiary);
 
@@ -113,7 +113,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
+  inline-size: 100%;
 }
 
 .shortcut-button-editing {
@@ -128,7 +128,7 @@
 }
 
 .shortcut-recording-area {
-  width: 100%;
+  inline-size: 100%;
   padding: px2rem(24);
   display: flex;
   align-items: center;
@@ -173,7 +173,7 @@
   justify-content: center;
   align-items: center;
   text-transform: capitalize;
-  height: px2rem(20);
+  block-size: px2rem(20);
   padding: px2rem(2) px2rem(6);
   border-radius: $br-6;
   color: var(--color-foreground-primary);
