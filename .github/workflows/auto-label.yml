@@ -16,7 +16,7 @@ jobs:
         with:
           app-id: ${{ secrets.TRIAGE_APP_ID }}
           private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
+          owner: penpot
 
       - name: Process Issue or PR
         uses: actions/github-script@v7
