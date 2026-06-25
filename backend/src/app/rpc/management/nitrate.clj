@@ -892,10 +892,7 @@ LEFT JOIN profile AS p
    ::sm/result schema:get-teams-detail-result}
   [cfg {:keys [organization-id]}]
   (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (->> (:teams org-summary)
-                         (map :id)
-                         (filter uuid?)
-                         (into []))]
+        team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams org-summary))]
     (if (empty? team-ids)
       []
       (db/run! cfg
