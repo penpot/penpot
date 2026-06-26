@@ -24,7 +24,6 @@
    [app.rpc.nitrate.emails-helper :as neh]
    [app.rpc.nitrate.organization-helper :as noh]
    [app.rpc.notifications :as notifications]
-   [app.tokens :as tokens]
    [app.util.services :as sv]))
 
 
@@ -647,17 +646,11 @@
           {:keys [authorized sso]} (nitrate/sso-session-authorized? cfg organization-id team-id request)]
       (if authorized
         {:authorized true}
-        (if-let [issuer (or (:issuer sso) (:base-url sso))]
-          (let [oidc-provider    (oidc/prepare-org-sso-provider cfg sso)
-                org-id           (or organization-id (:organization-id sso))
-                state-token      (tokens/generate cfg {:iss             "oidc"
-                                                       :dest-url        url
-                                                       :organization-id org-id
-                                                       :issuer          issuer
-                                                       :exp             (ct/in-future "4h")})
-                redirect-uri     (oidc/build-auth-redirect-uri oidc-provider state-token)]
-            {:authorized false
-             :redirect-uri redirect-uri})
+        (if (oidc/org-sso-discovery-uri sso)
+          {:authorized false
+           :redirect-uri (oidc/build-org-sso-auth-redirect-uri cfg sso
+                                                               :dest-url url
+                                                               :organization-id organization-id)}
           {:authorized false
            :redirect-uri nil})))
     {:authorized true}))

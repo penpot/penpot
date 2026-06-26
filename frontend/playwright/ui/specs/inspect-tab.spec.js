@@ -284,6 +284,53 @@ test.describe("Inspect tab - Styles", () => {
     await setupFile(workspacePage);
 
     await selectLayer(workspacePage, shapeToLayerName.blur);
+
+    await openInspectTab(workspacePage);
+
+    const panel = await getPanelByTitle(workspacePage, "Blur");
+    await expect(panel).toBeVisible();
+
+    const propertyRow = panel.getByTestId("property-row");
+    const propertyRowCount = await propertyRow.count();
+
+    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+  });
+
+  test("Shape - Blur on not svg compatible shape", async ({ page }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
+
+    await selectLayer(workspacePage, shapeToLayerName.blur);
+
+    await workspacePage.page.getByTestId("add-stroke").click();
+    await workspacePage.page.getByTestId("stroke.alignment").click();
+    await workspacePage.page.getByRole("option", { name: "Center" }).click();
+
+    await openInspectTab(workspacePage);
+
+    const panel = await getPanelByTitle(workspacePage, "Blur");
+    await expect(panel).toBeVisible();
+
+    const propertyRow = panel.getByTestId("property-row");
+    const propertyRowCount = await propertyRow.count();
+
+    expect(propertyRowCount).toBeGreaterThanOrEqual(1);
+  });
+
+  test("Shape - Background Blur on not svg compatible shape", async ({
+    page,
+  }) => {
+    const workspacePage = new WasmWorkspacePage(page);
+    await setupFile(workspacePage);
+
+    await selectLayer(workspacePage, shapeToLayerName.blur);
+
+    await workspacePage.page.getByRole('combobox', { name: 'Blur type select' }).click();
+    await workspacePage.page.getByRole('option', { name: 'Background blur' }).click();
+    await workspacePage.page.getByTestId("add-stroke").click();
+    await workspacePage.page.getByTestId("stroke.alignment").click();
+    await workspacePage.page.getByRole("option", { name: "Center" }).click();
+
     await openInspectTab(workspacePage);
 
     const panel = await getPanelByTitle(workspacePage, "Blur");

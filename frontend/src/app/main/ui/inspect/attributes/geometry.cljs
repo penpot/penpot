@@ -39,7 +39,7 @@
             [:div {:class (stl/css :button-children)} value]]]])))])
 
 
-(mf/defc geometry-panel
+(mf/defc geometry-panel*
   [{:keys [objects shapes]}]
   [:div {:class (stl/css :attributes-block)}
    [:> inspect-title-bar*
