@@ -104,17 +104,19 @@
   (into []
         (keep-indexed
          (fn [idx stroke]
-           (let [content (wasm.api/stroke-to-path (:id shape) idx)]
-             (when (some? content)
+           (let [result (wasm.api/stroke-to-path (:id shape) idx)]
+             (when (some? result)
                (cts/setup-shape
-                {:type      :path
-                 :id        (uuid/next)
-                 :name      (str (:name shape) " (stroke)")
-                 :parent-id parent-id
-                 :frame-id  frame-id
-                 :content   content
-                 :fills     [(stroke->fill stroke)]
-                 :strokes   []})))))
+                (cond-> {:type      :path
+                         :id        (uuid/next)
+                         :name      (str (:name shape) " (stroke)")
+                         :parent-id parent-id
+                         :frame-id  frame-id
+                         :content   (:content result)
+                         :fills     [(stroke->fill stroke)]
+                         :strokes   []}
+                  (:even-odd? result)
+                  (assoc :svg-attrs {:fillRule "evenodd"})))))))
         (:strokes shape)))
 
 (defn convert-selected-strokes-to-path
