@@ -72,7 +72,6 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
@@ -352,10 +351,8 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            ;; since render-wasm/v1 can be hot-toggled by the user, we need to query it
-            ;; from the state with active-feature?
-            render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
-            render-wasm-ready?   #(and (render-wasm-enabled?)
+            render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
+            render-wasm-ready?   #(and render-wasm-enabled?
                                        wasm-state/context-initialized?
                                        (not @wasm-state/context-lost?))]
 
@@ -368,7 +365,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean (render-wasm-enabled?)
+                 (if ^boolean render-wasm-enabled?
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
