@@ -119,6 +119,13 @@
         recent-fonts (mf/with-memo [state recent-fonts]
                        (filter-fonts state recent-fonts))
 
+        ;; When the active font is not in the filtered results, pre-select
+        ;; the first match visually so the user can confirm it with Enter —
+        ;; without live-applying it on every keystroke.
+        effective-selected
+        (if (and (seq fonts) (not (d/seek #(= (:id %) (:id @selected)) fonts)))
+          (first fonts)
+          @selected)
 
         full-size?   (boolean (and full-size show-recent))
 
@@ -140,13 +147,18 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps fonts)
+         (mf/deps fonts on-select on-close)
          (fn [event]
            (cond
              (kbd/up-arrow? event)   (select-prev event)
              (kbd/down-arrow? event) (select-next event)
              (kbd/esc? event)        (on-close)
-             (kbd/enter? event)      (on-close)
+             (kbd/enter? event)
+             (let [first-result (when-not (d/seek #(= (:id %) (:id @selected)) fonts)
+                                  (first fonts))]
+               (if first-result
+                 (do (on-select first-result) (on-close))
+                 (on-close)))
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
@@ -161,7 +173,7 @@
            (on-select font)
            (on-close)))]
 
-    (mf/with-effect [fonts]
+    (mf/with-effect [fonts on-key-down]
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
@@ -202,7 +214,7 @@
                             :font font
                             :style {}
                             :on-click on-select-and-close
-                            :is-current (= (:id font) (:id @selected))}])])]
+                            :is-current (= (:id font) (:id effective-selected))}])])]
 
       [:div {:class (stl/css-case :fonts-list true
                                   :fonts-list-full-size full-size?)}
@@ -210,7 +222,7 @@
         (fn [props]
           (let [width  (unchecked-get props "width")
                 height (unchecked-get props "height")
-                render #(row-renderer fonts @selected on-select-and-close %)]
+                render #(row-renderer fonts effective-selected on-select-and-close %)]
             (mf/html
              [:> rvt/List #js {:height height
                                :ref flist
