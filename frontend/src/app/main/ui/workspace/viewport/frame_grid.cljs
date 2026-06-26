@@ -15,6 +15,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [rumext.v2 :as mf]))
 
 (mf/defc square-grid* [{:keys [frame zoom grid]}]
@@ -165,12 +166,15 @@
 
 (mf/defc frame-grid*
   {::mf/wrap [mf/memo]}
-  [{:keys [zoom transform selected focus]}]
+  [{:keys [zoom transform selected focus vbox clip-rulers] :or {clip-rulers false}}]
   (let [frames        (->> (mf/deref refs/workspace-frames)
                            (filter has-grid?))
         transforming  (when (some? transform) selected)]
 
-    [:g.grid-display {:style {:pointer-events "none"}}
+    [:g.grid-display {:style {:pointer-events "none"}
+                      :clip-path (when clip-rulers "url(#clip-frame-grid)")}
+     (when clip-rulers
+       [:> rulers/rulers-clip-path* {:id "clip-frame-grid" :vbox vbox :zoom zoom}])
      (for [frame frames]
        (when (and #_(not (is-transform? frame))
               (not (ctst/rotated-frame? frame))

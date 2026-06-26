@@ -851,11 +851,14 @@
           {:zoom zoom
            :selected selected
            :transform transform
-           :focus focus}])
+           :focus focus
+           :vbox vbox
+           :clip-rulers show-rulers?}])
 
        (when show-pixel-grid?
          [:> widgets/pixel-grid* {:vbox vbox
-                                  :zoom zoom}])
+                                  :zoom zoom
+                                  :clip-rulers show-rulers?}])
 
        (when show-snap-points?
          [:> snap-points/snap-points*
