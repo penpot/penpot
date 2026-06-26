@@ -24,6 +24,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
@@ -155,6 +156,12 @@
                      :pointer-events "none"
                      :clip-path clip-path}}])))
 
+;; Minimum loading time (ms) before the viewport pencil loader is shown.
+;; Loads shorter than this never display the loader, avoiding a flash.
+;; Page switches use a longer threshold since they're usually quick.
+(def ^:private viewport-loader-delay 300)
+(def ^:private viewport-loader-delay-page-switch 2000)
+
 (mf/defc viewport*
   [{:keys [selected wglobal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
@@ -210,6 +217,7 @@
         space?               (mf/use-state false)
         z?                   (mf/use-state false)
         cursor               (mf/use-state (utils/get-cursor :pointer-inner))
+        show-loader?         (mf/use-state false)
         hover-ids            (mf/use-state nil)
         hover                (mf/use-state nil)
         measure-hover        (mf/use-state nil)
@@ -219,6 +227,7 @@
         active-frames        (mf/use-state #{})
         canvas-init?         (mf/use-state false)
         initialized?         (mf/use-state false)
+        page-switch?*        (mf/use-ref false)
         dragging-guide-id*   (mf/use-state nil)
         guide-hover-axis*    (mf/use-state nil)
 
@@ -433,7 +442,27 @@
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))
         shapes-loading? (mf/deref wasm.api/shapes-loading?)
-        transition-image (mf/deref wasm.api/transition-image*)]
+        transition-image (mf/deref wasm.api/transition-image*)
+        loading?         (or page-transition? context-loss-overlay? shapes-loading?)]
+
+    (mf/with-effect []
+      (when page-transition?
+        (mf/set-ref-val! page-switch?* true))
+      nil)
+
+    (mf/with-effect [page-transition?]
+      (when-not page-transition?
+        (mf/set-ref-val! page-switch?* false))
+      nil)
+
+    (mf/with-effect [loading?]
+      (if loading?
+        (let [delay      (if (mf/ref-val page-switch?*)
+                           viewport-loader-delay-page-switch
+                           viewport-loader-delay)
+              timeout-id (js/setTimeout #(reset! show-loader? true) delay)]
+          (fn [] (js/clearTimeout timeout-id)))
+        (reset! show-loader? false)))
 
     ;; NOTE: We need this page-id dependency to react to it and reset the
     ;;       canvas, even though we are not using `page-id` inside the hook.
@@ -673,6 +702,9 @@
                         (dm/str "inset(" strip "px 0 0 " strip "px round "
                                 rulers/canvas-border-radius "px)")))}])
 
+     (when @show-loader?
+       [:> loader* {:class (stl/css :viewport-loader)
+                    :overlay true}])
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"

@@ -940,41 +940,6 @@ impl RenderState {
         self.surfaces.invalidate_tile_cache();
     }
 
-    /// NOTE:
-    /// This is currently not being used, but it's set there for testing purposes on
-    /// upcoming tasks
-    pub fn render_loading_overlay(&mut self) {
-        let canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
-        let skia::ISize { width, height } = canvas.base_layer_size();
-
-        canvas.save();
-
-        // Full-screen background rect
-        let rect = skia::Rect::from_wh(width as f32, height as f32);
-        let mut bg_paint = skia::Paint::default();
-        bg_paint.set_color(self.background_color);
-        bg_paint.set_style(skia::PaintStyle::Fill);
-        canvas.draw_rect(rect, &bg_paint);
-
-        // Centered "Loading…" text
-        let mut text_paint = skia::Paint::default();
-        text_paint.set_color(skia::Color::GRAY);
-        text_paint.set_anti_alias(true);
-
-        let font = self.fonts.debug_font();
-        // FIXME
-        let text = "Loading…";
-        let (text_width, _) = font.measure_str(text, None);
-        let metrics = font.metrics();
-        let text_height = metrics.1.cap_height;
-        let x = (width as f32 - text_width) / 2.0;
-        let y = (height as f32 + text_height) / 2.0;
-        canvas.draw_str(text, skia::Point::new(x, y), font, &text_paint);
-
-        canvas.restore();
-        self.flush_and_submit();
-    }
-
     pub fn apply_render_to_final_canvas(&mut self) -> Result<()> {
         // During interactive transforms we render tiles directly into Target; updating the cache
         // (snapshot -> atlas blit -> tiles.add) can force GPU stalls. Defer cache rebuild until

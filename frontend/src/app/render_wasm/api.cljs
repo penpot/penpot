@@ -1712,9 +1712,6 @@
        (do
          (begin-shapes-loading!)
          (h/call wasm/internal-module "_begin_loading")
-         ;; NOTE: to render a loading overlay in the future
-         ;;  (when-not on-shapes-ready
-         ;;    (h/call wasm/internal-module "_render_loading_overlay"))
          (try
            (-> (set-objects-async shapes render-callback on-shapes-ready)
                (p/catch (fn [error]

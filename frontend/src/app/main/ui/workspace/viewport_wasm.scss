@@ -33,6 +33,28 @@
   z-index: 10;
 }
 
+.viewport-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  background-color: var(--color-background-secondary);
+  opacity: 0.35;
+}
+
+@keyframes viewport-loader-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.35;
+  }
+}
+
 .context-lost {
   position: fixed;
   inset: 0;

@@ -273,19 +273,6 @@ pub extern "C" fn end_loading() -> Result<()> {
     Ok(())
 }
 
-/// Draw a full-screen loading overlay (background + "Loading…" text).
-/// Called from CLJS right after begin_loading so the user sees
-/// immediate feedback while shapes are being processed.
-/// NOTE:
-/// This is currently not being used, but it's set there for testing purposes on
-/// upcoming tasks
-#[no_mangle]
-#[wasm_error]
-pub extern "C" fn render_loading_overlay() -> Result<()> {
-    get_render_state().render_loading_overlay();
-    Ok(())
-}
-
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn reset_canvas() -> Result<()> {
