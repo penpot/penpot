@@ -14,6 +14,8 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps.
   *After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
+- Align `let` binding values: when a `let` form has multiple bindings spanning
+  several lines, align the value forms to the same column with spaces.
 - If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files,
   fix them with `tools/paren-repair.bb` BEFORE running lint/format checks.
   See `mem:tools/paren-repair` for usage.
