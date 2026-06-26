@@ -10,6 +10,7 @@
    [app.common.geom.rect :as grc]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.viewport-wasm :as dwvw]
    [potok.v2.core :as ptk]))
 
 (defn hover-grid-cell
@@ -104,7 +105,11 @@
                             y     (+ y (/ height 2) (- (/ (:height vport) 2 zoom)))
                             srect (grc/make-rect x y width height)]
                         (-> local
-                            (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))))
+                            (update :vbox merge (select-keys srect [:x :y :x1 :x2 :y1 :y2])))))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (dwvw/maybe-sync-workspace-local-viewport! state))))
 
 (defn select-track-cells
   [grid-id type index]
