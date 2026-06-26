@@ -53,12 +53,16 @@
                           :team-id (:default-team-id profile))
                          (dp/update-profile-props {:welcome-file-id nil}))
 
-                  (let [teams   (into #{} (map :id) teams)
-                        team-id (dtm/get-last-team-id)
-                        team-id (if (and team-id (contains? teams team-id))
-                                  team-id
-                                  (:default-team-id profile))]
-                    (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))]
+                  (let [default-team-id (:default-team-id profile)
+                        team-ids        (into #{} (map :id) teams)
+                        team-id         (dtm/get-last-team-id)
+                        team-id         (if (and team-id (contains? team-ids team-id))
+                                          team-id
+                                          default-team-id)]
+                    (->> (dtm/resolve-login-team-id {:team-id team-id
+                                                     :default-team-id default-team-id})
+                         (rx/mapcat (fn [team-id]
+                                      (rx/of (dcm/go-to-dashboard-recent {:team-id team-id}))))))))))]
 
     (ptk/reify ::logged-in
       ptk/WatchEvent
