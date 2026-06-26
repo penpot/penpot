@@ -2,8 +2,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.i18n :refer [tr]]
+   [app.common.json :as json]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as ds]
@@ -12,16 +12,20 @@
    [app.main.data.workspace.shortcuts]
    [app.main.data.workspace.shortcuts.customize :as customize]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.product.empty-state :refer [empty-state*]]
    [app.main.ui.shortcuts :as ss]
    [app.util.dom :as dom]
    [app.util.strings :refer [matches-search]]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -45,131 +49,6 @@
        :class (stl/css :restore-all-button)
        :icon i/at}
       (tr "dashboard.restore-all-deleted-button")])])
-
-(mf/defc restore-all-modal
-  {::mf/register modal/components
-   ::mf/register-as :restore-all-modal}
-  [{:keys [custom-shortcuts]}]
-  (let [handle-close-dialog (mf/use-fn
-                             (mf/deps)
-                             (fn [event]
-                               (dom/stop-propagation event)
-                               (st/emit! (modal/hide))))
-
-        handle-accept-dialog (mf/use-fn
-                              (mf/deps)
-                              (fn [event]
-                                (dom/stop-propagation event)
-                                (st/emit! (customize/reset-all-custom-shortcuts))
-                                (st/emit! (modal/hide))))]
-
-    [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)}
-      [:> icon-button* {:class (stl/css :close-btn)
-                        :variant "ghost"
-                        :aria-label  (tr "labels.close")
-                        :on-click handle-close-dialog
-                        :icon i/close}]
-      [:div {:class (stl/css :modal-title)}
-       "Restore default configuration"]
-
-      [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css :modal-content-text)}
-        "The following shortcuts will be restored to their default values."]
-
-       [:table {:class (stl/css :shortcuts-table)}
-        [:thead
-         [:tr {:class (stl/css :shortcuts-list-header)}
-          [:th {:class (stl/css :shortcut-header-name)}
-           "Shortcut name"]
-          [:th {:class (stl/css :shortcut-header-command)}
-           "Current"]
-          [:th {:class (stl/css :shortcut-header-command)}
-           "Default"]]]
-        [:tbody {:class (stl/css :shortcuts-list-body)}
-         (for [shortcut-key (keys custom-shortcuts)]
-           (let [default-command (:command (get workspace-shortcuts-raw shortcut-key))
-
-                 default-managed-list    (if (coll? default-command)
-                                           default-command
-                                           (conj () default-command))
-
-                 default-chars-list      (map ds/split-sc default-managed-list)
-
-                 default-last-element    (last default-chars-list)
-
-                 default-short-char-list (if (= 1 (count default-chars-list))
-                                           default-chars-list
-                                           (drop-last default-chars-list))
-
-                 default-penultimate     (last default-short-char-list)
-
-                 current-command (or (get custom-shortcuts shortcut-key) default-command)
-                 current-managed-list    (if (coll? current-command)
-                                           current-command
-                                           (conj () current-command))
-
-                 current-chars-list      (map ds/split-sc current-managed-list)
-
-                 current-last-element    (last current-chars-list)
-
-                 current-short-char-list (if (= 1 (count current-chars-list))
-                                           current-chars-list
-                                           (drop-last current-chars-list))
-
-                 current-penultimate     (last current-short-char-list)]
-             [:tr {:key (name shortcut-key)
-                   :class (stl/css :shortcuts-list-item)}
-              [:td {:class (stl/css :shortcut-name)}
-               (ss/translation-keyname :sc shortcut-key)]
-              [:td {:class (stl/css :shortcut-command)}
-               (for [chars current-short-char-list]
-                 [:* {:key (str/join chars)}
-                  (for [char chars]
-                    [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                             :char char
-                                             :class (stl/css :default-command)
-                                             :command shortcut-key}])
-                  (when (not= chars current-penultimate) [:span {:class (stl/css :space)} ","])])
-               (when (not= current-last-element current-penultimate)
-                 [:*
-                  [:span {:class (stl/css :space)} (tr "shortcuts.or")]
-                  (for [char current-last-element]
-                    [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                             :char char
-                                             :class (stl/css :default-command)
-                                             :command shortcut-key}])])]
-
-              [:td {:class (stl/css :shortcut-command)}
-               (for [chars default-short-char-list]
-                 [:* {:key (str/join chars)}
-                  (for [char chars]
-                    [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                             :class (stl/css :default-command)
-                                             :char char
-                                             :command shortcut-key}])
-                  (when (not= chars default-penultimate) [:span {:class (stl/css :space)} ","])])
-               (when (not= default-last-element default-penultimate)
-                 [:*
-                  [:span {:class (stl/css :space)} (tr "shortcuts.or")]
-                  (for [char default-last-element]
-                    [:> ss/converted-chars* {:key (dm/str char "-" (name shortcut-key))
-                                             :class (stl/css :default-command)
-                                             :char char
-                                             :command shortcut-key}])])]]))]]]
-
-      [:div {:class (stl/css :modal-footer)}
-       [:div {:class (stl/css :action-buttons)}
-        [:> button* {:class (stl/css :cancel-button)
-                     :variant "secondary"
-                     :type "button"
-                     :on-click modal/hide!}
-         (tr "labels.cancel")]
-        [:> button* {:class (stl/css :cancel-button)
-                     :type "button"
-                     :variant "primary"
-                     :on-click handle-accept-dialog}
-         "restore all"]]]]]))
 
 (defn- filter-shortcuts-tree
   [tree shortcut-filter search-term]
@@ -224,10 +103,12 @@
                                    :on-reset on-reset}]))]))
 
 (mf/defc shortcuts-tab-section*
-  [{:keys [profile all-shortcuts all-sc-raw shortcut-filter show-restore-all? on-restore-all]}]
+  [{:keys [all-shortcuts all-sc-raw shortcut-filter show-restore-all? on-restore-all empty-str custom-shortcuts]}]
   (let [open-sections*   (mf/use-state [[1]])
+        open-sections    (deref open-sections*)
+
         filter-term*     (mf/use-state "")
-        custom-shortcuts (get-in profile [:props :custom-shortcuts])
+        filter-term      (deref filter-term*)
 
         section-has-content?
         (fn [section]
@@ -236,11 +117,11 @@
               (seq (:children (:none children)))
               (seq children))))
 
-        all-shortcuts (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts))
-        filtered-shortcuts (filter-shortcuts-tree all-shortcuts shortcut-filter @filter-term*)
-        search-open-sections (collect-open-section-ids filtered-shortcuts)
-        effective-open-sections (if (str/blank? @filter-term*)
-                                  @open-sections*
+        all-shortcuts           (into {} (filter (fn [[_ v]] (section-has-content? v)) all-shortcuts))
+        filtered-shortcuts      (filter-shortcuts-tree all-shortcuts shortcut-filter filter-term)
+        search-open-sections    (collect-open-section-ids filtered-shortcuts)
+        effective-open-sections (if (str/blank? filter-term)
+                                  open-sections
                                   search-open-sections)
 
         on-search-term-change
@@ -248,11 +129,11 @@
          (mf/deps all-shortcuts shortcut-filter)
          (fn [term]
            (reset! filter-term* term)
-            (if (str/blank? term)
-              (reset! open-sections* [[1]])
-              (let [filtered-tree (filter-shortcuts-tree all-shortcuts shortcut-filter term)
-                    open-ids (collect-open-section-ids filtered-tree)]
-                (reset! open-sections* open-ids)))))
+           (if (str/blank? term)
+             (reset! open-sections* [[1]])
+             (let [filtered-tree (filter-shortcuts-tree all-shortcuts shortcut-filter term)
+                   open-ids (collect-open-section-ids filtered-tree)]
+               (reset! open-sections* open-ids)))))
 
         on-search-clear-click
         (mf/use-fn
@@ -269,74 +150,54 @@
         (fn [item]
           (fn [event]
             (dom/stop-propagation event)
-            (let [is-present? (some #(= % item) @open-sections*)
+            (let [is-present? (some #(= % item) open-sections)
                   new-value (if is-present?
-                              (filterv (fn [element] (not= element item)) @open-sections*)
-                              (conj @open-sections* item))]
+                              (filterv (fn [element] (not= element item)) open-sections)
+                              (conj open-sections item))]
               (reset! open-sections* new-value))))]
 
     [:div {:class (stl/css :shortcuts-section)}
-     [:> search-section* {:filter-term @filter-term*
+     [:> search-section* {:filter-term filter-term
                           :on-search-term-change on-search-term-change
                           :on-search-clear-click on-search-clear-click
                           :on-restore-all on-restore-all
                           :show-restore-all? show-restore-all?
                           :has-custom-shortcuts (seq custom-shortcuts)}]
-     [:> shortcuts-list* {:shortcuts filtered-shortcuts
-                          :all-shortcuts all-shortcuts
-                          :all-sc-raw all-sc-raw
-                          :open-sections effective-open-sections
-                          :filter-term filter-term*
-                          :custom-shortcuts custom-shortcuts
-                          :editable? true
-                          :manage-sections manage-sections
-                          :on-reset on-reset-shortcut}]]))
+     (if (seq filtered-shortcuts)
+       [:> shortcuts-list* {:shortcuts filtered-shortcuts
+                            :all-shortcuts all-shortcuts
+                            :all-sc-raw all-sc-raw
+                            :open-sections effective-open-sections
+                            :filter-term filter-term*
+                            :custom-shortcuts custom-shortcuts
+                            :editable? true
+                            :manage-sections manage-sections
+                            :on-reset on-reset-shortcut}]
 
-(mf/defc all-shortcuts-section*
-  [{:keys [profile all-shortcuts all-sc-raw on-restore-all]}]
-  [:> shortcuts-tab-section* {:profile profile
-                              :all-shortcuts all-shortcuts
-                              :all-sc-raw all-sc-raw
-                              :shortcut-filter (fn [_ shortcut search-term]
-                                                 (or (str/blank? search-term)
-                                                     (matches-search (:translation shortcut) search-term)))
-                              :show-restore-all? true
-                              :on-restore-all on-restore-all}])
-
-(mf/defc personalized-shortcuts-section*
-  [{:keys [profile all-shortcuts all-sc-raw on-restore-all]}]
-  (let [custom-shortcuts (get-in profile [:props :custom-shortcuts])]
-    (if (seq custom-shortcuts)
-      [:> shortcuts-tab-section* {:profile profile
-                                  :all-shortcuts all-shortcuts
-                                  :all-sc-raw all-sc-raw
-                                  :shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                     (and (contains? custom-shortcuts shortcut-key)
-                                                          (or (str/blank? search-term)
-                                                              (matches-search (:translation shortcut) search-term))))
-                                  :show-restore-all? true
-                                  :on-restore-all on-restore-all}]
-      [:div {:class (stl/css :shortcuts-section)}
-       [:p (tr "shortcuts.no-personalized")]])))
-
-(mf/defc not-assigned-shortcuts-section*
-  [{:keys [profile all-shortcuts all-sc-raw on-restore-all]}]
-  [:> shortcuts-tab-section* {:profile profile
-                              :all-shortcuts all-shortcuts
-                              :all-sc-raw all-sc-raw
-                              :shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                 (and (not (seq (:command shortcut)))
-                                                      (not (contains? (get-in profile [:props :custom-shortcuts]) shortcut-key))
-                                                      (or (str/blank? search-term)
-                                                          (matches-search (:translation shortcut) search-term))))
-                              :show-restore-all? true
-                              :on-restore-all on-restore-all}])
-
+       [:> empty-state* {:text empty-str
+                         :class (stl/css :shortcuts-empty-state)}])]))
 
 (mf/defc shortcuts-page*
   [{:keys [profile]}]
   (let [section*        (mf/use-state :all)
         section         (deref section*)
+
+        show-menu* (mf/use-state false)
+        show-menu? (deref show-menu*)
+
+        open-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* true)))
+
+        close-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)))
+
+        input-ref (mf/use-ref nil)
 
         tabs
         (mf/with-memo []
@@ -351,7 +212,6 @@
 
         handle-change-tab
         (mf/use-fn
-         (mf/deps)
          (fn [new-section]
            (reset! section* (keyword new-section))))
 
@@ -363,34 +223,67 @@
                                         (ss/add-translation :sc)
                                         (into {}))
 
-        dashboard-shortcuts-custom     (ds/apply-custom-overrides app.main.data.dashboard.shortcuts/shortcuts custom-shortcuts)
+        dashboard-shortcuts-custom (ds/apply-custom-overrides app.main.data.dashboard.shortcuts/shortcuts custom-shortcuts)
 
-        dashboard-shortcuts          (->> dashboard-shortcuts-custom
-                                          (ss/add-translation :sc)
-                                          (into {}))
+        dashboard-shortcuts        (->> dashboard-shortcuts-custom
+                                        (ss/add-translation :sc)
+                                        (into {}))
 
-        viewer-shortcuts-custom     (ds/apply-custom-overrides app.main.data.viewer.shortcuts/shortcuts custom-shortcuts)
+        viewer-shortcuts-custom    (ds/apply-custom-overrides app.main.data.viewer.shortcuts/shortcuts custom-shortcuts)
 
-        viewer-shortcuts             (->> viewer-shortcuts-custom
-                                          (ss/add-translation :sc)
-                                          (into {}))
+        viewer-shortcuts           (->> viewer-shortcuts-custom
+                                        (ss/add-translation :sc)
+                                        (into {}))
 
         all-shortcuts-raw (merge workspace-shortcuts-custom dashboard-shortcuts-custom viewer-shortcuts-custom)
 
-        {:keys [all-shortcuts all-sc-names all-sub-names all-section-names]}
+        {:keys [all-shortcuts]}
         (ss/build-all-shortcuts workspace-shortcuts dashboard-shortcuts viewer-shortcuts)
-
-        all-item-names (concat all-sc-names all-sub-names all-section-names)
-
 
         on-restore-all
         (mf/use-fn
-         (mf/deps)
+         (mf/deps custom-shortcuts)
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (modal/show :restore-all-modal
                                  {:type :restore-all-modal
-                                  :custom-shortcuts custom-shortcuts}))))]
+                                  :custom-shortcuts custom-shortcuts}))))
+
+        on-import-file
+        (mf/use-fn
+         (fn [_]
+           (dom/click (mf/ref-val input-ref))))
+
+        shortcuts-json
+        (mf/with-memo
+          [custom-shortcuts]
+          (some-> custom-shortcuts
+                  (json/encode :key-fn d/name :indent 2)))
+
+        on-export
+        (mf/use-fn
+         (mf/deps shortcuts-json)
+         (fn []
+           (->> (wapi/create-blob (or shortcuts-json "{}") "application/json")
+                (dom/trigger-download "penpot-shortcuts.json"))))
+
+        on-file-selected
+        (mf/use-fn
+         (mf/deps all-shortcuts)
+         (fn [event]
+           (let [file (-> (dom/get-target event)
+                          (dom/get-files)
+                          (first))]
+             (->> (wapi/read-file-as-text file)
+                  (rx/subs!
+                   (fn [content]
+                     (let [shortcuts (js->clj (.parse js/JSON content)
+                                              :keywordize-keys true)]
+                       (st/emit!
+                        (ss/import-custom-shortcuts shortcuts all-shortcuts))))))
+
+             (-> (mf/ref-val input-ref)
+                 (dom/set-value! "")))))]
 
     [:section {:class (stl/css :shortcuts-page)
                :aria-label (tr "shortcuts.page")}
@@ -401,36 +294,47 @@
        (tr "label.shortcuts")]
 
       [:div {:class (stl/css :shortcuts-content)}
-
-
        [:> tab-switcher* {:tabs tabs
                           :selected (name section)
                           :on-change handle-change-tab
                           :class (stl/css :shortcuts-switcher)}
         (case section
           :all
-          [:> all-shortcuts-section*
-           {:profile profile
-            :all-shortcuts all-shortcuts
-            :all-sc-raw all-shortcuts-raw
-            :all-item-names all-item-names
-            :on-restore-all on-restore-all}]
+          [:> shortcuts-tab-section* {:all-shortcuts all-shortcuts
+                                      :all-sc-raw all-shortcuts-raw
+                                      :shortcut-filter (fn [_ shortcut search-term]
+                                                         (or (str/blank? search-term)
+                                                             (matches-search (:translation shortcut) search-term)))
+                                      :show-restore-all? true
+                                      :empty-str (tr "shortcuts.no-shortcuts")
+                                      :on-restore-all on-restore-all
+                                      :custom-shortcuts custom-shortcuts}]
 
           :personalized
-          [:> personalized-shortcuts-section*
-           {:profile profile
-            :all-shortcuts all-shortcuts
-            :all-sc-raw all-shortcuts-raw
-            :all-item-names all-item-names
-            :on-restore-all on-restore-all}]
+          [:> shortcuts-tab-section* {:all-shortcuts all-shortcuts
+                                      :all-sc-raw all-shortcuts-raw
+                                      :shortcut-filter (fn [shortcut-key shortcut search-term]
+                                                         (and (contains? custom-shortcuts shortcut-key)
+                                                              (or (str/blank? search-term)
+                                                                  (matches-search (:translation shortcut) search-term))))
+                                      :show-restore-all? true
+                                      :empty-str (tr "shortcuts.no-personalized")
+                                      :on-restore-all on-restore-all
+                                      :custom-shortcuts custom-shortcuts}]
 
           :not-assigned
-          [:> not-assigned-shortcuts-section*
-           {:profile profile
-            :all-shortcuts all-shortcuts
-            :all-sc-raw all-shortcuts-raw
-            :all-item-names all-item-names
-            :on-restore-all on-restore-all}])]
+          [:> shortcuts-tab-section* {:all-shortcuts all-shortcuts
+                                      :all-sc-raw all-shortcuts-raw
+                                      :shortcut-filter (fn [shortcut-key shortcut search-term]
+                                                         (and (not (seq (:command shortcut)))
+                                                              (not (contains? custom-shortcuts shortcut-key))
+                                                              (or (str/blank? search-term)
+                                                                  (matches-search (:translation shortcut) search-term))))
+                                      :show-restore-all? true
+                                      :empty-str (tr "shortcuts.no-not-assigned")
+                                      :on-restore-all on-restore-all
+                                      :custom-shortcuts custom-shortcuts}])]
+
        [:div {:class (stl/css :shortcuts-page-footer)}
         [:div {:class (stl/css :shortcuts-info)}
          [:div {:class (stl/css :shortcuts-info-wrapper)}
@@ -451,8 +355,28 @@
           [:p {:class (stl/css :shortcuts-text)}
            (tr "shortcuts.not-assigned")]]]
 
-        [:> button* {:variant "secondary"
-                     :on-click #()
-                     :icon i/import-export
-                     :icon-size "m"}
-         (tr "shortcuts.import-export")]]]]]))
+        [:div {:class (stl/css :export-wrapper)}
+
+         [:> button* {:variant "secondary"
+                      :on-click open-menu
+                      :icon i/import-export
+                      :icon-size "m"}
+          (tr "shortcuts.import-export")]
+         [:> dropdown-menu* {:show show-menu?
+                             :on-close close-menu
+                             :id "tokens-menu"
+                             :class (stl/css :import-export-menu)}
+          [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                                   :on-click on-import-file}
+           [:div {:class (stl/css :import-menu-item)}
+            [:div (tr "labels.import")]]]
+          [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                                   :on-click on-export}
+           (tr "labels.export")]]
+
+         [:input
+          {:type "file"
+           :accept ".json,application/json"
+           :ref input-ref
+           :style {:display "none"}
+           :on-change on-file-selected}]]]]]]))

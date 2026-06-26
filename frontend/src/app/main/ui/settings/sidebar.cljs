@@ -108,7 +108,7 @@
        [:li {:class (stl/css-case :current shortcuts?
                                   :settings-item true)
              :on-click go-settings-shortcuts}
-        [:span {:class (stl/css :element-title)} "shortcuts"]]
+        [:span {:class (stl/css :element-title)} (tr "labels.shortcuts")]]
 
        [:li {:class (stl/css-case :current options?
                                   :settings-item true)

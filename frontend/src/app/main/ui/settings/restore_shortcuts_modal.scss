@@ -1,0 +1,131 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
+}
+
+.modal-dialog {
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  display: grid;
+  grid-template-rows: 0 auto 1fr;
+  gap: var(--sp-xxxl);
+  min-inline-size: $sz-364;
+  min-block-size: $sz-192;
+  max-block-size: $sz-520;
+  inline-size: $sz-500;
+  max-inline-size: $sz-712;
+}
+
+.modal-title {
+  @include t.use-typography("headline-medium");
+
+  color: var(--color-foreground-primary);
+  block-size: px2rem(26);
+}
+
+.close-btn {
+  position: absolute;
+  inset-block-start: px2rem(8);
+  inset-inline-end: px2rem(6);
+  block-size: $sz-32;
+  inline-size: $sz-28;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  block-size: fit-content;
+}
+
+.modal-content-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-footer {
+  justify-self: end;
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-s);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.shortcuts-table {
+  inline-size: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.shortcuts-list-item,
+.shortcuts-list-header {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  display: grid;
+  grid-template-columns: 40% 30% 30%;
+}
+
+.shortcuts-list-header {
+  border-block-end: $b-1 solid var(--color-foreground-secondary);
+  block-size: $sz-32;
+  text-align: start;
+  padding-block-end: var(--sp-s);
+}
+
+.shortcuts-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.shortcuts-list-item {
+  color: var(--color-foreground-primary);
+}
+
+.shortcuts-list-item:first-child {
+  padding-block-start: var(--sp-s);
+}
+
+.shortcut-header-name,
+.shortcut-header-command {
+  text-align: start;
+}
+
+.shortcut-command {
+  display: flex;
+  gap: var(--sp-s);
+  align-items: center;
+  justify-content: start;
+  text-align: start;
+  flex-wrap: wrap;
+}

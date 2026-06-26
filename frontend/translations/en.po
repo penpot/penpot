@@ -3421,6 +3421,10 @@ msgstr "Sets"
 msgid "labels.settings"
 msgstr "Settings"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shortcuts"
+msgstr "Shortcuts"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:34, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:233
 msgid "labels.shadow"
 msgstr "Shadow"
@@ -5619,7 +5623,15 @@ msgstr "Reset to default"
 
 #: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.no-personalized"
-msgstr "There are no personalized shortcuts."
+msgstr "Head to All to start customizing your shortcuts."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-not-assigned"
+msgstr "Your shortcuts are all set."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "There are no shortcuts that match your search"
 
 #: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.personalized"

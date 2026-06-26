@@ -3317,6 +3317,10 @@ msgstr "Sets"
 msgid "labels.settings"
 msgstr "Configuración"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shortcuts"
+msgstr "Atajos"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:34, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:233
 msgid "labels.shadow"
 msgstr "Sombra"
@@ -5464,7 +5468,15 @@ msgstr "Atajos de teclado"
 
 #: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.no-personalized"
-msgstr "No hay atajos personalizados"
+msgstr "Dirígete a TODO para personalizar tus atajos."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-not-assigned"
+msgstr "Todos tus atajos estan todos asignados."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "No hay atajos que coincidan con tu búsqueda."
 
 #: src/app/main/ui/settings/shortcuts.cljs
 msgid "shortcuts.personalized"

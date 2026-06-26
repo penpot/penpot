@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.shortcuts.customize :as customize]
    [app.main.store :as st]
@@ -100,6 +101,26 @@
       (when (not= conflicting-key current-key)
         {:key  conflicting-key
          :name (translation-keyname :sc conflicting-key)}))))
+
+(defn import-custom-shortcuts
+  [shortcuts all-shortcuts]
+  (let [current-customs (get-in shortcuts
+                                [:profile :props :custom-shortcuts]
+                                {})
+
+        new-customs
+        (reduce
+         (fn [customs [command recorded-command]]
+           (let [conflict (find-conflict recorded-command
+                                         all-shortcuts
+                                         command)]
+             (cond-> (assoc customs command recorded-command)
+               (:key conflict)
+               (assoc (:key conflict) ""))))
+         current-customs
+         shortcuts)]
+
+    (du/update-profile-props {:custom-shortcuts new-customs})))
 
 (defn add-translation
   [type item]
@@ -329,7 +350,7 @@
               :on-blur on-editable-container-blur}
         [:div {:class (stl/css :shortcut-recording-area)}
          (if (nil? display-parts)
-           [:spann {:class (stl/css :shortcut-placeholder)}
+           [:span {:class (stl/css :shortcut-placeholder)}
             (tr "shortcuts.key-combo")]
            [:span {:class (stl/css :shortcut-recorded-keys)}
             (for [mod (:modifiers display-parts)]

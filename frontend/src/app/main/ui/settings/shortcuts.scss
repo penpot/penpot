@@ -42,6 +42,8 @@
 
 .restore-all-button {
   min-inline-size: px2rem(130);
+  max-inline-size: px2rem(200);
+  inline-size: fit-content;
 }
 
 // RESTORE ALL MODAL
@@ -243,4 +245,58 @@
 
 .shortcuts-not-assigned-icon {
   margin-inline-end: var(--sp-xs);
+}
+
+.export-wrapper {
+  position:relative;
+}
+
+.import-export-menu {
+  box-shadow: 0 0 12px 0 var(--menu-shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  padding: 4px;
+  border-radius: $br-8;
+  z-index: 2;
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  top: -6px;
+  right: 0;
+  translate: 0 -100%;
+  width: 192px;
+  margin: 0;
+}
+
+.import-export-menu-item {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color-hover);
+  }
+}
+
+.import-export-menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcuts-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(250);
 }
