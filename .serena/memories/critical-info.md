@@ -14,6 +14,9 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Issues are also managed on Taiga. Read issues using the `read_taiga_issue` tool.
 - Before writing code, analyze the task in depth and describe your plan. If the task is complex, break it down into atomic steps.
   *After making changes, run the applicable lint and format checks for the affected module before considering the work done (per example `mem:backend/core` or `mem:frontend/core`).
+- If you introduce delimiter errors (mismatched parens/brackets) in Clojure/CLJS files,
+  fix them with `tools/paren-repair.bb` BEFORE running lint/format checks.
+  See `mem:tools/paren-repair` for usage.
 - Never run anything that destroys data without explicit permission, including `drop-devenv`, `docker compose down -v`, `docker volume rm ...`. The user's real work lives in the volumes of the shared infra.
 
 # Project modules
@@ -39,6 +42,9 @@ module. You can read it from `mem:<MODULE>/core`
    When working on devenv startup, compose layout, instance config (`defaults.env`),
    tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
    `*-devenv` commands, read `mem:devenv/core`.
+- `tools/` contains standalone dev utilities: `nrepl-eval.mjs` (backend REPL eval),
+  `paren-repair.bb` (delimiter-error fixer, see `mem:tools/paren-repair`), and
+  `taiga.py` / `gh.py` (issue management helpers).
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
 
