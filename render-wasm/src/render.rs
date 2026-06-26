@@ -54,7 +54,8 @@ pub enum FrameType {
 pub enum RenderFlag {
     None = 0,
     Partial = 1,
-    Full = 2,
+    /// Rebuilds the tile index without leaving fast mode.
+    SyncTiles = 4,
 }
 
 #[derive(Debug)]
@@ -2092,6 +2093,10 @@ impl RenderState {
         let preserve_target = self.preserve_target_during_render;
         self.preserve_target_during_render = false;
 
+        if preserve_target && self.options.is_fast_mode() {
+            self.rebuild_tile_index(tree);
+        }
+
         if self.options.is_interactive_transform() {
             // Keep `Target` as the previous frame and overwrite only the tiles
             // that changed. This avoids clearing + redrawing an atlas backdrop
@@ -3899,7 +3904,11 @@ impl RenderState {
         let mut all_tiles = HashSet::<tiles::Tile>::new();
 
         let ids = std::mem::take(&mut self.touched_ids);
-        self.preserve_target_during_render = !ids.is_empty();
+        // Pan release sets `preserve_target` in `set_view_end`; don't reset it
+        // here when no shapes changed, or the next render clears the canvas.
+        if !ids.is_empty() {
+            self.preserve_target_during_render = true;
+        }
 
         for shape_id in ids.iter() {
             if let Some(shape) = tree.get(shape_id) {

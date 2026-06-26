@@ -4,19 +4,21 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .assets-list {
-  padding: 0 0 0 deprecated.$s-4;
+  padding: 0 0 0 var(--sp-xs);
 }
 
 .drop-space {
-  height: deprecated.$s-12;
+  block-size: $sz-12;
 }
 
 .grid-placeholder {
-  height: deprecated.$s-2;
-  width: 100%;
+  block-size: px2rem(2);
+  inline-size: 100%;
   background-color: var(--color-accent-primary);
 }
 
@@ -24,18 +26,19 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: deprecated.$s-4;
-  border-radius: deprecated.$br-8;
-  background-color: var(--assets-item-background-color);
+  margin-block-end: var(--sp-xs);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  inline-size: var(--options-width);
 }
 
 .dragging {
   position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
-  border-radius: deprecated.$s-8;
-  background-color: var(--assets-item-background-color-drag);
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  border: $b-2 solid var(--color-accent-primary-muted);
+  border-radius: $br-8;
+  background-color: transparent;
 }

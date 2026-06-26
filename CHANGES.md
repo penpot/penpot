@@ -127,6 +127,13 @@
 - Fix open overlay board mispositioned with repeated image artifacts in viewer WebGL [#10180](https://github.com/penpot/penpot/issues/10180) (PR: [#10191](https://github.com/penpot/penpot/pull/10191))
 - Fix color picker preview when browser has non-100% zoom level [#10265](https://github.com/penpot/penpot/issues/10265) (PR: [#10305](https://github.com/penpot/penpot/pull/10305))
 
+## 2.16.2
+
+### :bug: Bugs fixed
+
+- Fix error 500 when submitting the contact form [#10178](https://github.com/penpot/penpot/issues/10178) (PR: [#10419](https://github.com/penpot/penpot/pull/10419))
+- Fix text editor modifying content and detaching applied typography tokens [#10389](https://github.com/penpot/penpot/issues/10389) (PR: [#10402](https://github.com/penpot/penpot/pull/10402))
+
 ## 2.16.1
 
 ### :sparkles: New features & Enhancements
