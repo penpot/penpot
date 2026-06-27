@@ -356,12 +356,15 @@
 (def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
 (def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
 (def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+(def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
 
 (defn- internal-render
   ([]
    (internal-render 0))
   ([timestamp]
-   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (internal-render timestamp wasm/internal-frame-type))
+  ([timestamp flags]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
    (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
      (request-render "frame-type-partial"))))
 
@@ -1310,20 +1313,27 @@
     (perf/end-measure "render-finish")
     (reset! view-interaction-active? false)))
 
+(defn- view-gesture-active?
+  "True while a pointer-driven pan or zoom gesture is in progress."
+  []
+  (let [local (get @st/state :workspace-local)]
+    (or (:panning local) (:zooming local))))
+
+(defn finalize-view-interaction!
+  "Ends the view interaction and triggers a full-quality render."
+  []
+  (view-interaction-end!)
+  (internal-render 0 0))
+
 (def render-finish
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when (initialized?)
-              (view-interaction-end!)
-              ;; Use async _render: visible tiles render synchronously
-              ;; (no yield), interest-area tiles render progressively
-              ;; via rAF.  _set_view_end already rebuilt the tile
-              ;; index.  For pan, most tiles are cached so the render
-              ;; completes in the first frame.  For zoom, interest-
-              ;; area tiles (~3 tile margin) don't block the main
-              ;; thread.
-              (internal-render)))]
+              (if (view-gesture-active?)
+                ;; Pan/zoom pause: render without ending the interaction.
+                (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box

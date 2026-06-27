@@ -10,6 +10,12 @@ You have access to two tools for finding errors in Clojure source code (which yo
 The latter is needed because syntax errors in parentheses give an uninformative compiler error, and the second
 tool can often find the exact location of such errors.
 
+When delimiter errors are detected (typically from lint or compiler output),
+fix the affected files with `tools/paren-repair.bb`. The `clj_check_parentheses`
+MCP tool can also pinpoint the error location when available, but it is not
+required — standard build errors are usually enough.
+See `mem:tools/paren-repair`.
+
 ## Runtime patching with `set!`
 
 Some frontend vars are deliberately mutable escape hatches for runtime instrumentation or circular-dependency patching. 
