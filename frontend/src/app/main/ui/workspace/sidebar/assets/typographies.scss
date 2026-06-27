@@ -7,7 +7,14 @@
 @use "refactor/common-refactor.scss" as deprecated;
 
 .assets-list {
+  box-sizing: border-box;
+  width: 100%;
   padding: 0 0 0 deprecated.$s-4;
+}
+
+.typographies-group {
+  min-width: 0;
+  width: 100%;
 }
 
 .drop-space {
@@ -24,9 +31,16 @@
   position: relative;
   display: flex;
   align-items: center;
+  min-width: 0;
+  width: 100%;
   margin-bottom: deprecated.$s-4;
   border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color);
+
+  > * {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 }
 
 .dragging {
