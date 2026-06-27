@@ -42,6 +42,7 @@
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -1007,6 +1008,11 @@
 
                :else
                (st/emit! (dwsh/delete-shapes #{id}))))
+
+           :waitForLayoutUpdate
+           (fn [timeout]
+             ;; Resolve once this shape's pending reflow work has settled.
+             (wrf/wait-for-layout-update id timeout))
 
            ;; Plugin data
            :getPluginData

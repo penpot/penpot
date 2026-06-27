@@ -28,6 +28,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.pages :as dwpg]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -699,4 +700,9 @@
                             (se/add-event plugin-id)))
               (shape/shape-proxy plugin-id variant-id))
 
-            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))))
+            (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
+
+    :waitForLayoutUpdate
+    (fn [timeout]
+      ;; Resolve once every shape with reflow work in flight has settled.
+      (wrf/wait-for-layout-update timeout))))

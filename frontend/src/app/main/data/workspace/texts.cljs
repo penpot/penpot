@@ -27,6 +27,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
@@ -58,6 +59,8 @@
 (declare v2-update-text-shape-content)
 (declare v2-update-text-editor-styles)
 (declare v2-sync-wasm-text-layout)
+
+(def ^:private ^:const stuck-timeout 10000)
 
 ;; -- Content helpers
 
@@ -391,11 +394,12 @@
                         (update-content-range start end attrs))]
     (assoc shape :content new-content)))
 
+
 (defn update-text-range
   [id start end attrs]
   (ptk/reify ::update-text-range
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ state stream]
       (let [objects   (dsh/lookup-page-objects state)
             shape     (get objects id)
 
@@ -412,7 +416,17 @@
          (rx/of (dwsh/update-shapes shape-ids update-fn))
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwwt/resize-wasm-text-debounce id))
-           (rx/empty)))))))
+           (when (contains? attrs :font-id)
+             (wrf/mark-pending! :font [id])
+             (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
+               (->> stream
+                    (rx/filter (ptk/type? ::commit-position-data))
+                    (rx/take 1)
+                    ;; Timeout so the shape cannot stay pending forever
+                    (rx/timeout stuck-timeout (rx/of :timeout))
+                    (rx/take-until stopper)
+                    (rx/finalize #(wrf/mark-done! :font [id]))
+                    (rx/ignore))))))))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]
@@ -808,13 +822,6 @@
              (rx/of (update-position-data id position-data))))
           (rx/empty))))))
 
-(defn font-loaded-event?
-  [font-id]
-  (fn [event]
-    (and
-     (= :font-loaded (ptk/type event))
-     (= (:font-id (deref event)) font-id))))
-
 (defn update-attrs
   [id attrs]
   (ptk/reify ::update-attrs
@@ -844,7 +851,7 @@
                       (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
 
-           (when (features/active-feature? state "render-wasm/v1")
+           (if (features/active-feature? state "render-wasm/v1")
              (rx/concat
               ;; Apply style to selected spans and sync content
               (let [has-selection? (wasm.api/text-editor-has-selection?)]
@@ -858,12 +865,45 @@
                                   :update-name? true))))))))
               ;; Resize (with delay for font-id changes)
               (if (contains? attrs :font-id)
-                (->> stream
-                     (rx/filter (font-loaded-event? (:font-id attrs)))
-                     (rx/take 1)
-                     (rx/observe-on :async)
-                     (rx/map #(dwwt/resize-wasm-text id)))
-                (rx/of (dwwt/resize-wasm-text id)))))))))
+                (let [objects (dsh/lookup-page-objects state)
+                      shape   (get objects id)]
+                  (if (and (cfh/text-shape? shape)
+                           (not= :fixed (:grow-type shape)))
+                    ;; Auto-height/auto-width: mark the shape pending immediately so
+                    ;; waitForLayoutUpdate detects pending work. Dispatch resize to
+                    ;; trigger font loading (set-shape-text-content → store-fonts),
+                    ;; then re-dispatch after font-loaded for correct final geometry.
+                    ;; This path doesn't go through the resize debounce pipeline, so
+                    ;; it owns its own mark-pending!/mark-done! pair.
+                    (do
+                      (wrf/mark-pending! :font [id])
+                      (rx/concat
+                       (rx/of (dwwt/resize-wasm-text id))
+                       (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
+                         (->> fonts/font-loaded-stream
+                              (rx/filter #(= % (:font-id attrs)))
+                              (rx/take 1)
+                              ;; Timeout if the font load doesn't arrive eventually
+                              (rx/timeout stuck-timeout (rx/of :timeout))
+                              (rx/take-until stopper)
+                              (rx/observe-on :async)
+                              (rx/map #(dwwt/resize-wasm-text id))
+                              (rx/finalize #(wrf/mark-done! :font [id]))))))
+                    ;; Fixed: geometry doesn't change with font; no need to wait.
+                    (rx/of (dwwt/resize-wasm-text id))))
+                (rx/of (dwwt/resize-wasm-text id))))
+
+             (when (contains? attrs :font-id)
+               (wrf/mark-pending! :font [id])
+               (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
+                 (->> stream
+                      (rx/filter (ptk/type? ::commit-position-data))
+                      (rx/take 1)
+                      ;; Timeout so the shape cannot stay pending forever
+                      (rx/timeout stuck-timeout (rx/of :timeout))
+                      (rx/take-until stopper)
+                      (rx/finalize #(wrf/mark-done! :font [id]))
+                      (rx/ignore)))))))))
 
     ptk/EffectEvent
     (effect [_ state _]

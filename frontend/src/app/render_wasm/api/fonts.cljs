@@ -17,12 +17,12 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [lambdaisland.uri :as u]
-   [okulary.core :as l]
-   [potok.v2.core :as ptk]))
+   [okulary.core :as l]))
 
 (def ^:private fonts
   (l/derived :fonts st/state))
@@ -130,7 +130,7 @@
           mem  (js/Uint8Array. (.-buffer heap) ptr size)]
 
       (.set mem (js/Uint8Array. font-array-buffer))
-      (st/emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+      (rx/push! fonts/font-loaded-stream (:font-id font-data))
       (h/call wasm/internal-module "_store_font"
               (aget font-id-buffer 0)
               (aget font-id-buffer 1)
@@ -213,7 +213,10 @@
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (font-stored? font-data emoji?)]
       (if font-stored?
-        (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+        ;; Defer so the consumer (which subscribes to font-loaded-stream after
+        ;; dispatching the resize that triggers this store) is listening when
+        ;; the already-stored font is reported as loaded.
+        (tm/schedule #(rx/push! fonts/font-loaded-stream (:font-id font-data)))
         (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style

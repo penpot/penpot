@@ -9,12 +9,15 @@
    [app.common.math :as m]
    [app.common.test-helpers.files :as cthf]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.shape :as shape]
    [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.wasm :as thw]))
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
 
 (t/deftest test-common-shape-properties
   (thw/with-wasm-mocks*
@@ -402,3 +405,139 @@
           (let [shadows (.-shadows shape)]
             (t/is (array? shadows))
             (t/is (= 0 (.-length shadows)))))))))
+
+;; ---- waitForLayoutUpdate tests ------------------------------------------
+;;
+;; `waitForLayoutUpdate` resolves once the shapes with reflow work in flight
+;; have drained from the `app.main.data.workspace.reflow` pending refcount map.
+;; The tests drive that map directly with `mark-pending!` / `mark-done!` instead
+;; of replaying internal pipeline events. A minimal store is still installed so
+;; `create-context` / `shape-proxy` can resolve the global st/state.
+
+(def ^:private original-st-state st/state)
+(def ^:private original-st-stream st/stream)
+(def ^:private zero-id "00000000-0000-0000-0000-000000000000")
+
+(t/use-fixtures :each
+  {:before wrf/reset-pending!
+   :after (fn []
+            (wrf/reset-pending!)
+            (set! st/state original-st-state)
+            (set! st/stream original-st-stream))})
+
+(defn- make-test-store
+  "Creates a minimal potok store with an empty state map and installs it as the
+  global st/state and st/stream for the duration of the calling test."
+  []
+  (let [test-store (ptk/store {:state {} :on-error (fn [e] (js/console.error e))})]
+    (set! st/state test-store)
+    (set! st/stream (ptk/input-stream test-store))
+    test-store))
+
+(t/deftest test-wait-for-layout-update-no-pending
+  ;; When nothing is pending the promise resolves immediately via the fast path
+  ;; (the behavior-subject replays the empty map on subscribe).
+  (t/async done
+    (make-test-store)
+    (let [^js ctx (api/create-context zero-id)]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn []
+                   (t/is true "resolved with no pending work")
+                   (done)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err))
+                    (done)))))))
+
+(t/deftest test-wait-for-layout-update-pending
+  ;; While a shape is pending the context promise stays unresolved; it resolves
+  ;; once that shape is marked done.
+  (t/async done
+    (make-test-store)
+    (wrf/mark-pending! :layout [(uuid/next)])
+    (let [^js ctx (api/create-context zero-id)
+          resolved (atom false)]
+      (-> (.waitForLayoutUpdate ctx)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must not resolve while a shape is pending")
+         ;; Draining everything resolves the context wait.
+         (wrf/reset-pending!)
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once nothing is pending")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-per-shape
+  ;; `shape.waitForLayoutUpdate()` only waits for that shape: draining another
+  ;; shape must not resolve it; draining its own id does.
+  (t/async done
+    (make-test-store)
+    (let [id-a (uuid/next)
+          id-b (uuid/next)
+          ^js shape-a (shape/shape-proxy zero-id uuid/zero uuid/zero id-a)
+          resolved (atom false)]
+      (wrf/mark-pending! :layout [id-a id-b])
+      (-> (.waitForLayoutUpdate shape-a)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      ;; Draining the other shape leaves A pending.
+      (wrf/mark-done! :layout [id-b])
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "shape A wait must stay pending while A is pending")
+         (wrf/mark-done! :layout [id-a])
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once shape A drains")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-refcount
+  ;; Two overlapping operations on the same shape: a single mark-done! must not
+  ;; resolve the wait while the second operation is still in flight.
+  (t/async done
+    (make-test-store)
+    (let [id (uuid/next)
+          ^js shape (shape/shape-proxy zero-id uuid/zero uuid/zero id)
+          resolved (atom false)]
+      (wrf/mark-pending! :layout [id])
+      (wrf/mark-pending! :layout [id])
+      (-> (.waitForLayoutUpdate shape)
+          (.then (fn [] (reset! resolved true)))
+          (.catch (fn [err]
+                    (t/is false (str "unexpected rejection: " err)))))
+      ;; First operation finishes; second is still pending.
+      (wrf/mark-done! :layout [id])
+      (js/setTimeout
+       (fn []
+         (t/is (false? @resolved) "must not resolve while a second op is in flight")
+         (wrf/mark-done! :layout [id])
+         (js/setTimeout
+          (fn []
+            (t/is (true? @resolved) "resolves once both operations drain")
+            (done))
+          20))
+       20))))
+
+(t/deftest test-wait-for-layout-update-timeout
+  ;; When the optional timeout fires before the shape drains the promise should
+  ;; reject with an Error whose message mentions "timeout".
+  (t/async done
+    (make-test-store)
+    (wrf/mark-pending! :layout [(uuid/next)])
+    (let [^js ctx (api/create-context zero-id)]
+      (-> (.waitForLayoutUpdate ctx 20)
+          (.then (fn []
+                   (t/is false "expected rejection but promise resolved")
+                   (done)))
+          (.catch (fn [^js err]
+                    (t/is (instance? js/Error err) "rejection value should be an Error")
+                    (t/is (some? (re-find #"timeout" (.-message err))) "error message should mention timeout")
+                    (done)))))))
