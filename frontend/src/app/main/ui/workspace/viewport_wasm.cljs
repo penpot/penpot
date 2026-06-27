@@ -180,6 +180,7 @@
 
         permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
+        profile           (mf/deref refs/profile)
 
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
@@ -203,6 +204,18 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
+
+        selected-selrect  (mf/with-memo [selected-shapes]
+                            (when (some? selected-shapes)
+                              (gsh/shapes->rect selected-shapes)))
+
+        selection-badge-component
+        (mf/with-memo [objects-modified selected-shapes]
+          (msr/selection-badge-component-selection? objects-modified selected-shapes))
+
+        selection-badge-theme
+        (msr/selection-badge-theme (:theme profile))
+
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -767,13 +780,17 @@
            :zoom zoom}])
 
        (when (and (seq selected-shapes)
-                  (not transform)
+                  (not (#{:move :rotate} transform))
                   (not text-editing?)
                   (not edition)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
-           :zoom zoom}])
+          {:selrect selected-selrect
+           :selected-shapes selected-shapes
+           :zoom zoom
+           :bounds vbox
+           :component-selection selection-badge-component
+           :theme selection-badge-theme}])
 
        (when show-measures?
          [:> msr/measurement*
@@ -781,7 +798,9 @@
            :selected-shapes selected-shapes
            :frame selected-frame
            :hover-shape @measure-hover
-           :zoom zoom}])
+           :zoom zoom
+           :component-selection selection-badge-component
+           :theme selection-badge-theme}])
 
        (when show-padding?
          [:> mfc/padding-control*

@@ -13,8 +13,11 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
    [app.main.ui.formats :as fmt]
+   [app.util.theme :as theme]
    [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
@@ -44,10 +47,14 @@
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
 
-(def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-normal-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-component-bg-color "var(--assets-component-hightlight)")
+(def ^:private ^:const selection-badge-text-color-dark "var(--app-black)")
+(def ^:private ^:const selection-badge-text-color-light "var(--app-white)")
 (def ^:private ^:const selection-badge-height 16)
 (def ^:private ^:const selection-badge-padding-x 6)
 (def ^:private ^:const selection-badge-vertical-gap 8)
+(def ^:private ^:const selection-badge-handle-clearance 8)
 (def ^:private ^:const selection-badge-border-radius 2)
 (def ^:private ^:const selection-badge-char-width 6.5)
 
@@ -99,6 +106,45 @@
           (and (neg? ee) (pos? ss))
           (and (pos? ee) (< ee es)))
       (conj [from-e (+ from-e ee)]))))
+
+(defn selection-badge-theme
+  [profile-theme]
+  (cond
+    (= profile-theme "system")
+    (theme/get-system-theme)
+
+    (= profile-theme "default")
+    theme/default
+
+    :else
+    (d/nilv profile-theme theme/default)))
+
+(defn selection-badge-component-selection?
+  [objects shapes]
+  (let [shapes (seq shapes)]
+    (and (some? shapes)
+         (every? #(or (ctn/in-any-component? objects %)
+                      (ctk/is-variant-container? %))
+                 shapes))))
+
+(defn- selection-badge-display-selrect
+  [selrect selected-shapes]
+  (if (and (= (count selected-shapes) 1)
+           (some? (:selrect (first selected-shapes))))
+    (:selrect (first selected-shapes))
+    selrect))
+
+(defn- selection-badge-background-color
+  [component-selection]
+  (if ^boolean component-selection
+    selection-badge-component-bg-color
+    selection-badge-normal-bg-color))
+
+(defn- selection-badge-text-color
+  [theme]
+  (if (= theme "light")
+    selection-badge-text-color-light
+    selection-badge-text-color-dark))
 
 ;; ------------------------------------------------
 ;; COMPONENTS
@@ -188,33 +234,47 @@
                      :stroke-width selection-rect-width}}]]))
 
 (mf/defc selection-size-badge*
-  [{:keys [selrect zoom]}]
+  [{:keys [selrect selected-shapes zoom bounds component-selection theme]}]
   (let [{:keys [x y width height]} selrect
-        size-label   (dm/str (fmt/format-number width) " x " (fmt/format-number height))
+        display-rect (selection-badge-display-selrect selrect selected-shapes)
+        size-label   (dm/str (fmt/format-number (:width display-rect))
+                             " x "
+                             (fmt/format-number (:height display-rect)))
         badge-height (/ selection-badge-height zoom)
         padding-x    (/ selection-badge-padding-x zoom)
         gap          (/ selection-badge-vertical-gap zoom)
+        clearance    (/ selection-badge-handle-clearance zoom)
         radius       (/ selection-badge-border-radius zoom)
         text-width   (* (count size-label) (/ selection-badge-char-width zoom))
         badge-width  (+ text-width (* 2 padding-x))
         center-x     (+ x (/ width 2))
         badge-x      (- center-x (/ badge-width 2))
-        badge-y      (+ y height gap)
-        text-y       (+ badge-y (/ badge-height 2))]
-    [:g.selection-size-badge {:pointer-events "none"}
-     [:rect {:x badge-x
-             :y badge-y
-             :width badge-width
-             :height badge-height
-             :rx radius
-             :ry radius
-             :style {:fill selection-badge-bg-color}}]
-     [:text {:class (stl/css :badge-text)
-             :x center-x
-             :y text-y
-             :text-anchor "middle"
-             :dominant-baseline "middle"}
-      size-label]]))
+        below-y      (+ y height gap)
+        bounds-bottom (when (some? bounds)
+                        (+ (:y bounds) (:height bounds)))
+        badge-y      (if (and (some? bounds-bottom)
+                              (> (+ below-y badge-height) bounds-bottom))
+                       (- y gap badge-height)
+                       below-y)
+        text-y       (+ badge-y (/ badge-height 2))
+        bg-color     (selection-badge-background-color component-selection)
+        text-color   (selection-badge-text-color theme)]
+    (when (>= height (+ badge-height gap clearance))
+      [:g.selection-size-badge {:pointer-events "none"}
+       [:rect {:x badge-x
+               :y badge-y
+               :width badge-width
+               :height badge-height
+               :rx radius
+               :ry radius
+               :style {:fill bg-color}}]
+       [:text {:class (stl/css :badge-text)
+               :x center-x
+               :y text-y
+               :text-anchor "middle"
+               :dominant-baseline "middle"
+               :style {:fill text-color}}
+        size-label]])))
 
 (mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
@@ -268,7 +328,7 @@
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
 (mf/defc measurement*
-  [{:keys [bounds frame selected-shapes hover-shape zoom]}]
+  [{:keys [bounds frame selected-shapes hover-shape zoom component-selection theme]}]
   (let [selected-ids          (into #{} (map :id) selected-shapes)
         selected-selrect      (gsh/shapes->rect selected-shapes)
         hover-selrect         (-> hover-shape :points grc/points->rect)
@@ -281,7 +341,12 @@
                               :bounds bounds
                               :zoom zoom}]
        [:> size-display* {:selrect selected-selrect :zoom zoom}]
-       [:> selection-size-badge* {:selrect selected-selrect :zoom zoom}]
+       [:> selection-size-badge* {:selrect selected-selrect
+                                  :selected-shapes selected-shapes
+                                  :zoom zoom
+                                  :bounds bounds
+                                  :component-selection component-selection
+                                  :theme theme}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
@@ -297,4 +362,3 @@
           [:> selection-rect* {:type :hover :selrect hover-selrect :zoom zoom}]
           [:> size-display* {:selrect hover-selrect :zoom zoom}]
           [:> distance-display* {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
-

@@ -106,6 +106,7 @@
 
         permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
+        profile           (mf/deref refs/profile)
 
         ;; DEREFS
         drawing           (mf/deref refs/workspace-drawing)
@@ -127,6 +128,17 @@
         selected-shapes   (->> selected
                                (into [] (keep (d/getf objects-modified)))
                                (not-empty))
+
+        selected-selrect  (mf/with-memo [selected-shapes]
+                            (when (some? selected-shapes)
+                              (gsh/shapes->rect selected-shapes)))
+
+        selection-badge-component
+        (mf/with-memo [objects-modified selected-shapes]
+          (msr/selection-badge-component-selection? objects-modified selected-shapes))
+
+        selection-badge-theme
+        (msr/selection-badge-theme (:theme profile))
 
         ;; STATE
         alt?               (mf/use-state false)
@@ -501,12 +513,16 @@
            :modifiers modifiers}])
 
        (when (and (seq selected-shapes)
-                  (not transform)
+                  (not (#{:move :rotate} transform))
                   (not text-editing?)
                   (not edition))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
-           :zoom zoom}])
+          {:selrect selected-selrect
+           :selected-shapes selected-shapes
+           :zoom zoom
+           :bounds vbox
+           :component-selection selection-badge-component
+           :theme selection-badge-theme}])
 
        (when show-measures?
          [:> msr/measurement*
@@ -514,7 +530,9 @@
            :selected-shapes selected-shapes
            :frame selected-frame
            :hover-shape @measure-hover
-           :zoom zoom}])
+           :zoom zoom
+           :component-selection selection-badge-component
+           :theme selection-badge-theme}])
 
        ;; Show distances during movement with ALT
        (when (and (= transform :move) @alt? (seq selected-shapes))
@@ -523,7 +541,9 @@
            :selected-shapes selected-shapes
            :frame selected-frame
            :hover-shape @hover
-           :zoom zoom}])
+           :zoom zoom
+           :component-selection selection-badge-component
+           :theme selection-badge-theme}])
 
        ;; Reactive subscription to duplication relation (safe)
        (let [state-var (mf/use-var (resolve 'app.main.store/state))
