@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2026-06-28 10:01+0000\n"
+"Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -425,7 +425,7 @@ msgstr "导入一个 .penpot 文件"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:44
 msgid "dashboard.empty-project.start"
-msgstr "开始构建令人惊奇的材料"
+msgstr "开始打造惊人的作品"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:281
 msgid "dashboard.export-binary-multi"
@@ -683,7 +683,7 @@ msgstr "没有找到“%s”的匹配项"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1103
 msgid "dashboard.no-projects-placeholder"
-msgstr "被钉住的项目会显示在这儿"
+msgstr "被固定的项目将会显示在这里"
 
 #: src/app/main/ui/dashboard/comments.cljs:89
 msgid "dashboard.notifications"
@@ -743,7 +743,7 @@ msgstr "你现在是此团队的查看人员。"
 
 #: src/app/main/ui/dashboard/pin_button.cljs:22, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
-msgstr "钉到侧边栏/取消钉住"
+msgstr "固定到侧边栏/取消固定"
 
 #: src/app/main/ui/dashboard.cljs:223
 msgid "dashboard.plugins.bad-url"
@@ -1028,7 +1028,7 @@ msgstr "取消"
 
 #: src/app/main/ui/confirm.cljs:43, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:102
 msgid "ds.confirm-ok"
-msgstr "OK"
+msgstr "Ok"
 
 #: src/app/main/ui/confirm.cljs:41, src/app/main/ui/confirm.cljs:45
 msgid "ds.confirm-title"
@@ -3175,7 +3175,7 @@ msgstr "参与到社区中"
 
 #, unused
 msgid "onboarding-v2.welcome.desc3"
-msgstr "在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
+msgstr "在这里，您将了解如何参与翻译、提出功能需求、贡献核心代码、修复BUG等…"
 
 #, unused
 msgid "onboarding-v2.welcome.desc3.title"
@@ -3359,7 +3359,7 @@ msgstr "你的团队有多少人？"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "告诉我们您的工作"
+msgstr "请告诉我们您的工作？"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -4300,7 +4300,6 @@ msgid "subscription.settings.success.dialog.title"
 msgstr "你是 %s！"
 
 #: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "您自从 %s 一直支持我们的这个计划"
 
@@ -6766,7 +6765,7 @@ msgstr "遮罩"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "搜索图层"
+msgstr "搜索…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:639, src/app/main/ui/workspace/sidebar/layers.cljs:733
 msgid "workspace.sidebar.layers.shapes"
@@ -7010,7 +7009,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s 个活跃集"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "原始值：%s"
 
@@ -7032,7 +7030,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "参考错误： "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "解析的值：%s"
 
@@ -7071,7 +7068,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "主题列表"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "描述"
 
@@ -7385,3 +7381,416 @@ msgstr "打开版本菜单"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "请检查您的邮箱！"
+
+#: src/app/main/ui/auth/verify_token.cljs:53
+msgid "auth.notifications.org-invitation-accepted"
+msgstr "你现在的进度为 %s"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "我们已经发送了一封验证邮件到："
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr "没有可用的颜色变量。检查激活的集合/主题或添加新的颜色变量。"
+
+#: src/app/main/data/nitrate.cljs:165
+msgid "dasboard.leave-org.toast"
+msgstr "你不再是 %s 组织的一员。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "你将要恢复 %s。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "恢复文件"
+
+#, unused
+msgid "dashboard.change-org-modal.accept"
+msgstr "移动团队"
+
+#, unused
+msgid "dashboard.change-org-modal.choose"
+msgstr "移动到："
+
+#, unused
+msgid "dashboard.change-org-modal.select"
+msgstr "选择一个组织"
+
+#, unused
+msgid "dashboard.change-org-modal.text"
+msgstr "项目和文件仍将对团队成员开放。团队将从新组织处获得配置。"
+
+#: src/app/main/data/nitrate.cljs:399, src/app/main/ui/dashboard/team_form.cljs:157
+msgid "dashboard.change-org-modal.title"
+msgstr "更改团队的组织"
+
+#: src/app/main/ui/dashboard/deleted.cljs:316
+msgid "dashboard.clear-trash-button"
+msgstr "清理回收站"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:371
+msgid "dashboard.create-new-org"
+msgstr "创建新组织"
+
+#: src/app/main/ui/dashboard/deleted.cljs:265
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "您确定要永久删除所有已删除的项目和文件吗？此操作不可逆。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "您确定要永久删除 %s 吗？此操作不可逆。"
+
+#: src/app/main/data/dashboard.cljs:861
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s 文件已被成功删除。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:53, src/app/main/ui/dashboard/deleted.cljs:55, src/app/main/ui/dashboard/deleted.cljs:264, src/app/main/ui/dashboard/deleted.cljs:266, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "永久删除"
+
+#: src/app/main/ui/dashboard/deleted.cljs:86
+msgid "dashboard.delete-project-button"
+msgstr "删除项目"
+
+#: src/app/main/ui/dashboard/deleted.cljs:54
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr ""
+"您确定要永久删除 %s 项目吗？您将永久删除该项目及其包含的所有文件。此操作不可"
+"逆。"
+
+#: src/app/main/data/dashboard.cljs:860, src/app/main/data/dashboard.cljs:894
+msgid "dashboard.delete-success-notification"
+msgstr "%s 已被成功删除。"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "颜色变量"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:268
+msgid "workspace.options.more-token-colors"
+msgstr "更多颜色变量"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "{%s} 不属于任何活跃集，或者值无效。"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:302, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:232
+msgid "errors.field-max-length"
+msgstr "最多可包含 %s 个字符。"
+
+#: src/app/main/data/common.cljs:82
+msgid "notifications.by-code.upgrade-version"
+msgstr "有新版本可用。"
+
+#: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:292
+msgid "workspace.tokens.edit-token"
+msgstr "编辑 %s token"
+
+#: src/app/main/ui/dashboard/deleted.cljs:330
+msgid "dashboard.deleted.empty-state-description"
+msgstr "你的回收站是空的，删除的文件和项目将会出现在这里。"
+
+#: src/app/main/ui/dashboard/grid.cljs:247
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "%s 将会删除"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "删除 %s 的时候出现了一个错误。"
+
+#: src/app/main/data/dashboard.cljs:864
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "删除文件的时候出现了一个错误。"
+
+#: src/app/main/data/dashboard.cljs:897
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "删除项目 %s 的时候出现了一个错误。"
+
+#: src/app/main/data/dashboard.cljs:992, src/app/main/ui/dashboard/file_menu.cljs:202
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "恢复 %s 的时候出现了一个错误。"
+
+#: src/app/main/data/dashboard.cljs:993
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "恢复文件的时候出现了一个错误。"
+
+#: src/app/main/data/dashboard.cljs:1025
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "恢复项目 %s 及其文件的时候出现了一个错误。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:267
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "删除文件"
+msgstr[1] "删除文件"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "恢复文件"
+msgstr[1] "恢复文件"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:376
+msgid "dashboard.go-to-admin-console"
+msgstr "转到管理员面板"
+
+#: src/app/main/ui/dashboard/import.cljs:505
+msgid "dashboard.import.import-error.check-error"
+msgstr "我们没有验证这个文件。"
+
+#: src/app/main/ui/dashboard/import.cljs:509
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "这个文件似乎已损坏。"
+
+#: src/app/main/ui/dashboard/import.cljs:512
+msgid "dashboard.import.import-error.unknown-error"
+msgstr "处理该文件的时候出错了。"
+
+#: src/app/main/ui/dashboard/team.cljs:851
+msgid "dashboard.invitation-modal.delete"
+msgstr "您将删除以下邀请："
+
+#: src/app/main/ui/dashboard/team.cljs:852
+msgid "dashboard.invitation-modal.resend"
+msgstr "您将重新发送邀请至："
+
+#: src/app/main/ui/dashboard/team.cljs:842
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "删除邀请"
+
+#: src/app/main/ui/dashboard/team.cljs:843
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "重新发送邀请"
+
+#: src/app/main/ui/dashboard/team.cljs:831, src/app/main/ui/dashboard/team.cljs:1136
+msgid "dashboard.invitations.no-permission"
+msgstr "您没有权限邀请他人加入此团队，也没有权限编辑或删除邀请。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:671
+msgid "dashboard.leave-org"
+msgstr "离开组织"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
+msgid "dashboard.my-teams"
+msgstr "我的团队"
+
+#: src/app/main/ui/dashboard/team_form.cljs:156
+msgid "dashboard.no-org-allows-create-team.message"
+msgstr "您没有权限将团队添加到你的任何组织。"
+
+#: src/app/main/ui/dashboard/team_form.cljs:152
+msgid "dashboard.no-permission-create-team.message"
+msgstr "你无权在 %s 组织内创建团队。如需更多信息，请联系该组织的负责人。"
+
+#: src/app/main/ui/dashboard/team_form.cljs:154
+msgid "dashboard.no-permission-delete-team.message"
+msgstr "你无权在 %s 组织内删除团队。如需更多信息，请联系该组织的负责人。"
+
+#: src/app/main/ui/dashboard/team_form.cljs:158
+msgid "dashboard.no-permission-move-team.message"
+msgstr "你无权在 %s 组织内移动团队。如需更多信息，请联系该组织的负责人。"
+
+#: src/app/main/ui/dashboard/team.cljs:1158
+msgid "dashboard.order-invitations-by-role"
+msgstr "按角色排序"
+
+#: src/app/main/ui/dashboard/team.cljs:1167
+msgid "dashboard.order-invitations-by-status"
+msgstr "按状态排序"
+
+#: src/app/main/data/dashboard.cljs:753
+msgid "dashboard.org-deleted"
+msgstr "%s 组织已被删除。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "dashboard.plus-create-new-org"
+msgstr "+ 创建组织"
+
+#: src/app/main/data/dashboard.cljs:805
+msgid "dashboard.progress-notification.deleting-files"
+msgstr "删除文件中…"
+
+#: src/app/main/data/dashboard.cljs:926
+msgid "dashboard.progress-notification.restoring-files"
+msgstr "恢复文件中…"
+
+#: src/app/main/data/dashboard.cljs:806
+msgid "dashboard.progress-notification.slow-delete"
+msgstr "删除速度出乎意料地慢"
+
+#: src/app/main/data/dashboard.cljs:927
+msgid "dashboard.progress-notification.slow-restore"
+msgstr "恢复速度出乎意料地慢"
+
+#: src/app/main/ui/dashboard/deleted.cljs:277
+msgid "dashboard.restore-all-confirmation.description"
+msgstr "您将恢复您所有的项目和文件。这可能需要一些时间。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:276
+msgid "dashboard.restore-all-confirmation.title"
+msgstr "恢复所有的项目及其文件"
+
+#: src/app/main/ui/dashboard/deleted.cljs:311
+msgid "dashboard.restore-all-deleted-button"
+msgstr "恢复所有"
+
+#: src/app/main/data/dashboard.cljs:986
+msgid "dashboard.restore-files-success-notification"
+msgstr "%s 文件已被成功恢复。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:83
+msgid "dashboard.restore-project-button"
+msgstr "恢复项目"
+
+#: src/app/main/ui/dashboard/deleted.cljs:43
+msgid "dashboard.restore-project-confirmation.description"
+msgstr "您将恢复 %s 项目及其包含的所有文件。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:42
+msgid "dashboard.restore-project-confirmation.title"
+msgstr "恢复项目"
+
+#: src/app/main/data/dashboard.cljs:958, src/app/main/data/dashboard.cljs:985, src/app/main/data/dashboard.cljs:1022, src/app/main/ui/dashboard/file_menu.cljs:199
+msgid "dashboard.restore-success-notification"
+msgstr "%s 已被成功恢复。"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:354
+msgid "dashboard.section.organizations"
+msgstr "组织"
+
+#, unused
+msgid "dashboard.select-org-modal.accept"
+msgstr "添加到组织"
+
+#, unused
+msgid "dashboard.select-org-modal.choose"
+msgstr "选择一个组织："
+
+#: src/app/main/ui/dashboard/team.cljs:975
+msgid "dashboard.select-org-modal.external-invitations-warning"
+msgstr "“%s” 仅允许组织成员加入其团队。任何发送给组织外部人员的邀请都将被撤销。"
+
+#: src/app/main/ui/dashboard/team.cljs:971
+msgid "dashboard.select-org-modal.external-invitations-will-be-canceled"
+msgstr "已发出的外部用户邀请将被取消。"
+
+#, unused
+msgid "dashboard.select-org-modal.permission-info"
+msgstr "在这里您可以找到所有允许您创建或添加团队的组织。"
+
+#, unused
+msgid "dashboard.select-org-modal.select"
+msgstr "选择一个组织"
+
+#: src/app/main/data/nitrate.cljs:342, src/app/main/ui/dashboard/team_form.cljs:155
+msgid "dashboard.select-org-modal.title"
+msgstr "添加一个团队到一个组织"
+
+#, unused
+msgid "dashboard.team-belong-org"
+msgstr "这个团队现在属于 %s"
+
+#, unused
+msgid "dashboard.team-no-longer-belong-org"
+msgstr "这个团队不再属于 %s 组织"
+
+#: src/app/main/ui/dashboard/team.cljs:1609
+msgid "dashboard.team-organization"
+msgstr "团队组织"
+
+#: src/app/main/ui/dashboard/team.cljs:1643
+msgid "dashboard.team-organization.add"
+msgstr "添加到一个组织"
+
+#: src/app/main/data/nitrate.cljs:341, src/app/main/data/nitrate.cljs:398
+msgid "dashboard.team-organization.add.no-valid-orgs"
+msgstr "您没有权限将此团队添加到您的任何组织中。"
+
+#: src/app/main/ui/dashboard/team.cljs:1632
+msgid "dashboard.team-organization.change"
+msgstr "改变团队的组织"
+
+#: src/app/main/ui/dashboard/team.cljs:905
+msgid "dashboard.team-organization.disabled-org-tooltip"
+msgstr "只有组织内部人员才能被邀请。"
+
+#: src/app/main/ui/dashboard/team.cljs:1639
+msgid "dashboard.team-organization.none"
+msgstr "这个团队不属于任何组织"
+
+#: src/app/main/ui/dashboard/team.cljs:1635
+msgid "dashboard.team-organization.remove"
+msgstr "从组织中删除团队"
+
+#: src/app/main/ui/dashboard/deleted.cljs:301
+msgid "dashboard.trash-info-text-part1"
+msgstr "已删除的文件将保留在回收站中"
+
+#: src/app/main/ui/dashboard/deleted.cljs:303
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s 天. "
+
+#: src/app/main/ui/dashboard/deleted.cljs:304
+msgid "dashboard.trash-info-text-part3"
+msgstr "之后，它们将被永久删除。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:306
+msgid "dashboard.trash-info-text-part4"
+msgstr "如果你改变主意，可以在每个文件的菜单中恢复或永久删除它们。"
+
+#: src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:678
+msgid "subscription.settings.professional.selfhost.community-support"
+msgstr "所有设计和原型制作功能均由社区提供支持。"
+
+#: src/app/main/ui/workspace/tokens/remapping_modal.cljs
+#, unused
+msgid "workspace.tokens.no-remap-needed"
+msgstr "该令牌目前未用于您的设计，因此无需重新映射。"
+
+#, unused
+msgid "dashboard.user-no-longer-belong-org"
+msgstr "您已不再是 %s 组织的成员"
+
+#: src/app/main/ui/settings/options.cljs:109
+msgid "dashboard.webgl-switch.beta"
+msgstr "Beta"
+
+#: src/app/main/ui/settings/options.cljs:110
+msgid "dashboard.webgl-switch.description"
+msgstr ""
+"WebGL渲染可以提升性能，但目前仍处于测试阶段，稳定性可能较差。画布、导出文件（"
+"SVG/PDF）和视图模式之间可能会出现一些视觉差异。"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.disabled"
+msgstr "已关闭"
+
+#: src/app/main/ui/settings/options.cljs:113
+msgid "dashboard.webgl-switch.enabled"
+msgstr "已开启"
+
+#: src/app/main/ui/settings/options.cljs:116
+msgid "dashboard.webgl-switch.feedback"
+msgstr "提供反馈"
+
+#: src/app/main/ui/settings/options.cljs:112
+msgid "dashboard.webgl-switch.status"
+msgstr "状态"
+
+#: src/app/main/ui/settings/options.cljs:108
+msgid "dashboard.webgl-switch.title"
+msgstr "WebGL渲染"
+
+#: src/app/main/data/workspace/clipboard.cljs:327, src/app/main/data/workspace/clipboard.cljs:535
+msgid "errors.clipboard-api-unavailable"
+msgstr "剪贴板API不可用。请通过HTTPS启动Penpot以启用剪贴板访问"
+
+#: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
+msgid "errors.clipboard-permission-denied"
+msgstr "剪贴板访问被拒绝。请在浏览器中允许剪贴板权限以粘贴内容。"
