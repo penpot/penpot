@@ -48,16 +48,16 @@
 .title {
   pointer-events: all;
   width: px2rem(420);
-  inset-block-start: calc(-1 * $sz-40);
+  inset-block-start: calc(-1 * px2rem(44)); 
   text-align: right;
-  height: px2rem(56);
+  height: px2rem(44);                        
   position: absolute;
 }
 
 .title-btn {
   border: none;
   cursor: pointer;
-  height: px2rem(56);
+  height: px2rem(44);                        
   display: inline-flex;
   align-items: center;
   border-start-start-radius: $br-8;
@@ -66,6 +66,12 @@
   z-index: var(--z-index-auto);
   background-color: var(--color-background-tertiary);
   width: 100%;
+  border-block-end: $b-2 solid transparent;
+  transition: border-color 200ms;
+
+  &:hover {
+    border-block-end-color: var(--color-accent-primary);
+  }
 }
 
 .title-text {
