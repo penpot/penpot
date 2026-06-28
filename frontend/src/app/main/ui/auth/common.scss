@@ -29,7 +29,7 @@
 
 .separator {
   border-color: var(--modal-separator-background-color);
-  margin: 0;
+  margin: deprecated.$s-16 0;
 }
 
 .auth-title {
