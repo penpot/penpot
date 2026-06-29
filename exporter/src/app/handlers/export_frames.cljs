@@ -48,7 +48,7 @@
     (handle-export exchange (assoc params :exports exports))))
 
 (defn handle-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports name profile-id is-wasm] :as params}]
+  [{:keys [:request/auth-token :request/auth-scheme] :as exchange} {:keys [exports name profile-id is-wasm] :as params}]
   (let [topic       (str profile-id)
         file-id     (-> exports first :file-id)
 
@@ -95,14 +95,14 @@
 
         procs
         (->> (seq exports)
-             (map #(rd/render (assoc % :is-wasm is-wasm) on-object)))]
+             (map #(rd/render (assoc % :is-wasm is-wasm :token-scheme auth-scheme) on-object)))]
 
     (->> (p/all procs)
          (p/fmap (fn [] @result-cache))
          (p/mcat (partial join-pdf file-id))
          (p/mcat (partial move-file resource))
          (p/fmap (constantly resource))
-         (p/mcat (partial rsc/upload-resource auth-token))
+         (p/mcat (partial rsc/upload-resource auth-token auth-scheme))
          (p/mcat (fn [resource]
                    (->> (sh/stat (:path resource))
                         (p/fmap #(merge resource %)))))

@@ -1285,6 +1285,15 @@ impl Shape {
             })
     }
 
+    /// Font families used by this shape (the text spans' families), or an
+    /// empty vec for non-text shapes.
+    pub fn font_families(&self) -> Vec<FontFamily> {
+        match &self.shape_type {
+            Type::Text(content) => content.font_families(),
+            _ => Vec::new(),
+        }
+    }
+
     #[allow(dead_code)]
     pub fn mask_filter(&self, scale: f32) -> Option<skia::MaskFilter> {
         self.blur

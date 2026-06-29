@@ -7,6 +7,8 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
+pub mod raster;
+mod resources;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
@@ -34,10 +36,11 @@ use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
-use crate::{get_gpu_state, performance};
+use crate::{get_gpu_state, get_resources, performance};
 
 pub use fonts::*;
 pub use images::*;
+pub(crate) use resources::RenderResources;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -348,15 +351,12 @@ pub(crate) struct RenderState {
     pub options: RenderOptions,
     stats: RenderStats,
     pub surfaces: Surfaces,
-    pub fonts: FontStore,
     pub viewbox: Viewbox,
     pub cached_viewbox: Viewbox,
-    pub images: ImageStore,
     pub background_color: skia::Color,
     // Stack of nodes pending to be rendered.
     pending_nodes: Vec<NodeRenderState>,
     pub current_tile: Option<tiles::Tile>,
-    pub sampling_options: skia::SamplingOptions,
     pub render_area: Rect,
     // render_area expanded by surface margins — used for visibility checks so that
     // shapes in the margin zone are rendered (needed for background blur sampling).
@@ -546,19 +546,18 @@ impl RenderState {
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
         // This needs to be done once per WebGL context.
-        let sampling_options =
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest);
+        let sampling_options = get_resources().sampling_options;
 
-        let fonts = FontStore::try_new()?;
         let surfaces = Surfaces::try_new(
             (width, height),
             sampling_options,
             tiles::get_tile_dimensions(),
         )?;
 
-        // This is used multiple times everywhere so instead of creating new instances every
-        // time we reuse this one.
+        Self::assemble(width, height, surfaces)
+    }
 
+    fn assemble(width: i32, height: i32, surfaces: Surfaces) -> Result<RenderState> {
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
         let options = RenderOptions::default();
@@ -567,14 +566,11 @@ impl RenderState {
             options,
             stats: RenderStats::new(),
             surfaces,
-            fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
-            images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
             pending_nodes: vec![],
             current_tile: None,
-            sampling_options,
             render_area: Rect::new_empty(),
             render_area_with_margins: Rect::new_empty(),
             tiles,
@@ -778,35 +774,6 @@ impl RenderState {
         Ok(result)
     }
 
-    pub fn fonts(&self) -> &FontStore {
-        &self.fonts
-    }
-
-    pub fn fonts_mut(&mut self) -> &mut FontStore {
-        &mut self.fonts
-    }
-
-    pub fn add_image(&mut self, id: Uuid, is_thumbnail: bool, image_data: &[u8]) -> Result<()> {
-        self.images.add(id, is_thumbnail, image_data)
-    }
-
-    /// Adds an image from an existing WebGL texture, avoiding re-decoding
-    pub fn add_image_from_gl_texture(
-        &mut self,
-        id: Uuid,
-        is_thumbnail: bool,
-        texture_id: u32,
-        width: i32,
-        height: i32,
-    ) -> Result<()> {
-        self.images
-            .add_image_from_gl_texture(id, is_thumbnail, texture_id, width, height)
-    }
-
-    pub fn has_image(&self, id: &Uuid, is_thumbnail: bool) -> bool {
-        self.images.contains(id, is_thumbnail)
-    }
-
     pub fn set_debug_flags(&mut self, debug: u32) {
         self.options.flags = debug;
     }
@@ -821,7 +788,7 @@ impl RenderState {
                 self.viewbox.width().floor() as i32,
                 self.viewbox.height().floor() as i32,
             )?;
-            self.fonts.set_scale_debug_font(dpr);
+            get_resources().fonts.set_scale_debug_font(dpr);
             self.viewbox.set_dpr(dpr);
             self.surfaces.set_dpr(dpr);
         }
@@ -969,7 +936,7 @@ impl RenderState {
         text_paint.set_color(skia::Color::GRAY);
         text_paint.set_anti_alias(true);
 
-        let font = self.fonts.debug_font();
+        let font = get_resources().fonts.debug_font();
         // FIXME
         let text = "Loading…";
         let (text_width, _) = font.measure_str(text, None);
@@ -1398,7 +1365,7 @@ impl RenderState {
         }
 
         match &shape.shape_type {
-            Type::SVGRaw(_) => {
+            Type::SVGRaw(sr) => {
                 if let Some(svg_transform) = shape.svg_transform() {
                     matrix.pre_concat(&svg_transform);
                 }
@@ -1410,7 +1377,18 @@ impl RenderState {
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
-                    panic!("SVG should be available");
+                    let font_manager =
+                        skia::FontMgr::from(get_resources().fonts.font_provider().clone());
+                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
+                    match dom_result {
+                        Ok(dom) => {
+                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
+                            shape.to_mut().set_svg(dom);
+                        }
+                        Err(e) => {
+                            eprintln!("Error parsing SVG. Error: {}", e);
+                        }
+                    }
                 }
             }
 
@@ -2987,7 +2965,7 @@ impl RenderState {
                 surface.draw(
                     drop_canvas,
                     (0.0, 0.0),
-                    self.sampling_options,
+                    get_resources().sampling_options,
                     Some(&drop_paint),
                 );
                 drop_canvas.restore();
@@ -2997,7 +2975,7 @@ impl RenderState {
                 surface.draw(
                     drop_canvas,
                     (0.0, 0.0),
-                    self.sampling_options,
+                    get_resources().sampling_options,
                     Some(&drop_paint),
                 );
                 drop_canvas.restore();

@@ -120,10 +120,17 @@
         (p/catch (fn [cause] (on-error cause exchange))))))
 
 (defn- wrap-auth
+  "Resolves the auth token from the session cookie and records its scheme
+  (`:request/auth-scheme` is always `:cookie` here) so downstream backend
+  calls can forward it appropriately. Header-based API authentication is
+  deliberately NOT accepted on this branch — external access to /api/export
+  ships separately (export-api branch)."
   [handler cookie-name]
   (fn [{:keys [:request/cookies] :as exchange}]
     (let [token (.get ^js cookies cookie-name)]
-      (handler (cond-> exchange token (assoc :request/auth-token token))))))
+      (handler (cond-> exchange
+                 (not (str/blank? token)) (-> (assoc :request/auth-token token)
+                                              (assoc :request/auth-scheme :cookie)))))))
 
 (defn- wrap-health
   "Add /healthz entry point intercept."

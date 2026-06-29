@@ -62,15 +62,18 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children is-wasm] :as params}]
+  [{:keys [:request/auth-token :request/auth-scheme] :as exchange} {:keys [export name skip-children is-wasm] :as params}]
   (let [resource (rsc/create (:type export) (or name (:name export)))
-        export   (assoc export :skip-children skip-children :is-wasm (boolean is-wasm))]
+        export   (assoc export
+                        :skip-children skip-children
+                        :is-wasm (boolean is-wasm)
+                        :token-scheme auth-scheme)]
 
     (->> (rd/render export
                     (fn [{:keys [path] :as object}]
                       (sh/move! path (:path resource))))
          (p/fmap (constantly resource))
-         (p/mcat (partial rsc/upload-resource auth-token))
+         (p/mcat (partial rsc/upload-resource auth-token auth-scheme))
          (p/fmap (fn [resource]
                    (dissoc resource :path)))
          (p/fmap (fn [resource]
@@ -81,7 +84,7 @@
                    (p/rejected cause))))))
 
 (defn- handle-multiple-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports wait profile-id name is-wasm] :as params}]
+  [{:keys [:request/auth-token :request/auth-scheme] :as exchange} {:keys [exports wait profile-id name is-wasm] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -112,11 +115,11 @@
                       (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (->> exports
-                         (map (fn [export] (rd/render (assoc export :is-wasm (boolean is-wasm)) append)))
+                         (map (fn [export] (rd/render (assoc export :is-wasm (boolean is-wasm) :token-scheme auth-scheme) append)))
                          (p/all)
                          (p/mcat (fn [_] (rsc/close-zip zip)))
                          (p/fmap (constantly resource))
-                         (p/mcat (partial rsc/upload-resource auth-token))
+                         (p/mcat (partial rsc/upload-resource auth-token auth-scheme))
                          (p/fmap (fn [resource]
                                    (let [data {:type :export-update
                                                :name (:name resource)

@@ -4,7 +4,7 @@ use macros::wasm_error;
 use crate::emscripten::init_gl;
 
 use crate::mem;
-use crate::render::{gpu_state::GpuState, RenderState};
+use crate::render::{gpu_state::GpuState, RenderResources, RenderState};
 use crate::state::{State, TextEditorState, UIState};
 
 static mut DESIGN_STATE: *mut State = std::ptr::null_mut();
@@ -23,7 +23,12 @@ static mut GPU_STATE: *mut GpuState = std::ptr::null_mut();
 #[inline(always)]
 pub(crate) fn get_gpu_state() -> &'static mut GpuState {
     unsafe {
-        debug_assert!(!GPU_STATE.is_null(), "GPU State is null");
+        // `assert!` (not `debug_assert!`): a headless instance never inits GPU
+        // state, so an interactive call must fail-fast rather than deref null.
+        assert!(
+            !GPU_STATE.is_null(),
+            "GPU State is null (headless instance?)"
+        );
         &mut *GPU_STATE
     }
 }
@@ -36,6 +41,26 @@ pub(crate) fn get_render_state() -> &'static mut RenderState {
     unsafe {
         debug_assert!(!RENDER_STATE.is_null(), "Render State is null");
         &mut *RENDER_STATE
+    }
+}
+
+/// Whether the global render state has been initialized. The headless export
+/// path (`init_headless`) boots without a GPU render state, so tile and
+/// interaction bookkeeping (which only exists to drive incremental on-screen
+/// rendering) must be skipped when this is false.
+#[inline(always)]
+pub(crate) fn has_render_state() -> bool {
+    unsafe { !RENDER_STATE.is_null() }
+}
+
+/// GPU-free resources for the headless export path
+static mut RENDER_RESOURCES: *mut RenderResources = std::ptr::null_mut();
+
+#[inline(always)]
+pub(crate) fn get_resources() -> &'static mut RenderResources {
+    unsafe {
+        debug_assert!(!RENDER_RESOURCES.is_null(), "Render Resources is null");
+        &mut *RENDER_RESOURCES
     }
 }
 
@@ -113,6 +138,23 @@ fn render_init(width: i32, height: i32) {
     }
 }
 
+/// Initializes the interactive RenderResources (GPU image store).
+fn resources_init() {
+    unsafe {
+        let resources = RenderResources::try_new().expect("Cannot initialize RenderResources");
+        RENDER_RESOURCES = Box::into_raw(Box::new(resources));
+    }
+}
+
+/// Initializes GPU-free RenderResources for the headless export path.
+fn resources_init_headless() {
+    unsafe {
+        let resources = RenderResources::try_new_headless()
+            .expect("Cannot initialize headless RenderResources");
+        RENDER_RESOURCES = Box::into_raw(Box::new(resources));
+    }
+}
+
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
@@ -143,10 +185,24 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     #[cfg(target_arch = "wasm32")]
     init_gl!();
     gpu_init();
+    resources_init();
     render_init(width, height);
     text_editor_init();
     design_init();
     ui_init();
+    Ok(())
+}
+
+/// Boots the engine for headless export with no GPU/WebGL context: only
+/// `RenderResources` (GPU-free) + the design state. The export (raster/PDF)
+/// paths render onto their own surface; the interactive render loop is not
+/// available on an instance initialized this way. `width`/`height` are kept for
+/// API symmetry with `init` but unused — the export sizes from shape bounds.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn init_headless(_width: i32, _height: i32) -> Result<()> {
+    resources_init_headless();
+    design_init();
     Ok(())
 }
 
