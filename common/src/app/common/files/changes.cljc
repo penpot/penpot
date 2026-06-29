@@ -405,12 +405,6 @@
      [:theme-ids [:set ::sm/uuid]]
      [:set-ids [:set ::sm/uuid]]]]
 
-   ;; TODO deprecate this once everyone uses set-tokens-status
-   [:set-active-token-themes
-    [:map {:title "SetActiveTokenThemes"}
-     [:type [:= :set-active-token-themes]]
-     [:theme-paths [:set :string]]]]
-
    [:rename-token-set-group
     [:map {:title "RenameTokenSetGroup"}
      [:type [:= :rename-token-set-group]]
@@ -1054,11 +1048,6 @@
   [data {:keys [theme-ids set-ids]}]
   (-> (cfo/ensure-tokens-lib data)
       (cfo/update-tokens-status ctos/set-tokens-status theme-ids set-ids)))
-
-(defmethod process-change :set-active-token-themes
-  [data {:keys [theme-paths]}]
-  (-> (cfo/ensure-tokens-lib data)
-      (cfo/update-tokens-lib ctob/set-active-themes theme-paths)))
 
 (defmethod process-change :rename-token-set-group
   [data {:keys [set-group-path set-group-fname]}]

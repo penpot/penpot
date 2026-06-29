@@ -100,9 +100,14 @@
                                                               :sets #{"set-b"}))
                        (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme-3)
                                                               :name "theme-3"
-                                                              :sets #{"set-c" "set-d"}))
-                       (ctob/set-active-themes #{"/theme-1" "/theme-2"}))
+                                                              :sets #{"set-c" "set-d"})))
+        ;; Build a legacy tokens lib to test migration
+        tokens-lib (ctob/map->tokens-lib {:sets (.-sets tokens-lib)
+                                          :themes (.-themes tokens-lib)
+                                          :active-themes #{"/theme-1" "/theme-2"}})
+
         tokens-status (cfo/make-tokens-status-from-lib tokens-lib)]
+
     (t/is (ctos/tokens-status? tokens-status))
     (t/is (ctos/check-tokens-status tokens-status))
     (t/is (= (count (ctos/get-active-theme-ids tokens-status)) 2))
