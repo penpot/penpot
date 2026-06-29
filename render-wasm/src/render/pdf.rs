@@ -4,8 +4,8 @@ use crate::error::Result;
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
-use super::vector::{self, VectorTarget};
-use super::RenderState;
+use super::vector;
+use super::RenderResources;
 
 /// Renders a shape tree to a PDF document and returns the raw PDF bytes.
 ///
@@ -16,7 +16,7 @@ use super::RenderState;
 /// pixel-based (blur, shadows with blur) are rasterised internally by Skia's
 /// PDF backend
 pub fn render_to_pdf(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     id: &Uuid,
     tree: ShapesPoolRef,
     scale: f32,
@@ -45,7 +45,7 @@ pub fn render_to_pdf(
         let page_canvas = on_page.canvas();
         page_canvas.scale((scale, scale));
         page_canvas.translate((-bounds.left(), -bounds.top()));
-        vector::render_tree(shared, page_canvas, id, tree, scale, VectorTarget::Pdf)?;
+        vector::render_tree(shared, page_canvas, id, tree, scale)?;
     }
 
     let document = on_page.end_page();

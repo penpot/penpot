@@ -1,6 +1,6 @@
 use macros::{wasm_error, ToJs};
 
-use crate::get_render_state;
+use crate::get_resources;
 use crate::mem;
 use crate::shapes::{FontFamily, FontStyle};
 use crate::utils::uuid_from_u32_quartet;
@@ -45,8 +45,8 @@ pub extern "C" fn store_font(
     let font_style = RawFontStyle::from(style);
 
     let family = FontFamily::new(id, weight, font_style.into());
-    let _ = get_render_state()
-        .fonts_mut()
+    let _ = get_resources()
+        .fonts
         .add(family, &font_bytes, is_emoji, is_fallback);
 
     mem::free_bytes()?;
@@ -66,7 +66,5 @@ pub extern "C" fn is_font_uploaded(
     let id = uuid_from_u32_quartet(a, b, c, d);
     let font_style = RawFontStyle::from(style);
     let family = FontFamily::new(id, weight, font_style.into());
-    let res = get_render_state().fonts().has_family(&family, is_emoji);
-
-    res
+    get_resources().fonts.has_family(&family, is_emoji)
 }

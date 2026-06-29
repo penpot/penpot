@@ -2,6 +2,7 @@ use skia_safe::{self as skia, Paint, RRect};
 
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
+use crate::get_resources;
 use crate::render::get_source_rect;
 use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
@@ -13,7 +14,7 @@ fn draw_image_fill(
     antialias: bool,
     surface_id: SurfaceId,
 ) {
-    let Some(image) = render_state.images.get(&image_fill.id()) else {
+    let Some(image) = get_resources().images.get(&image_fill.id()) else {
         return;
     };
 
@@ -83,7 +84,7 @@ fn draw_image_fill(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        render_state.sampling_options,
+        get_resources().sampling_options,
         paint,
     );
 
