@@ -331,8 +331,8 @@
                             (fn [modifiers]
                               (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
                                 (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))]
-                        ;; Sample to cap sync React commits (bursts can hit React's update
-                        ;; limit); the trailing rx/last keeps the dropped final frame exact.
+                        ;; Throttle the live preview to limit re-renders; the trailing
+                        ;; rx/last applies the exact final frame.
                         (rx/merge
                          (->> resize-events-stream
                               (rx/sample 16)
@@ -534,8 +534,8 @@
 
           (let [emit-modifiers
                 (fn [angle] (dwm/set-rotation-modifiers angle shapes group-center))]
-            ;; Sample to cap sync React commits (bursts can hit React's update
-            ;; limit); the trailing rx/last keeps the dropped final frame exact.
+            ;; Throttle the live preview to limit re-renders; the trailing
+            ;; rx/last applies the exact final frame.
             (rx/concat
              (rx/merge
               (->> angle-stream
@@ -839,7 +839,7 @@
 
                (rx/merge
                 (->> modifiers-stream
-                     ;; Sample to cap sync React commits; bursts can hit React's update limit.
+                     ;; Throttle the live preview to limit re-renders.
                      (rx/sample 16)
                      (rx/map
                       (fn [[modifiers snap-ignore-axis]]
@@ -867,7 +867,7 @@
                       (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                         (let [undo-id (js/Symbol)]
                           (rx/of (dwu/start-undo-transaction undo-id)
-                                 ;; Commit the exact last modifiers; sampling may drop the final frame.
+                                 ;; Apply the exact final modifiers; the preview may drop the last frame.
                                  (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})
                                  (dwm/apply-modifiers {:undo-transation? false})
                                  (move-shapes-to-frame ids target-frame drop-index drop-cell)

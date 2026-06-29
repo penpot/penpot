@@ -8,9 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
@@ -18,39 +15,16 @@
    [app.main.ui.comments :as cmt]
    [rumext.v2 :as mf]))
 
-;; Translation matrix from a frame to its transformed copy, matching
-;; `move-frame-comment-threads` so the bubble doesn't jump when committed.
-(defn- frame-translate-modifier
-  [frame frame']
-  (gmt/translate-matrix
-   (gpt/to-vec (gpt/point (:x frame) (:y frame))
-               (gpt/point (:x frame') (:y frame')))))
-
-;; Position modifier for a frame transformed by the SVG (legacy) renderer.
-(defn- svg-position-modifier
-  [objects modifiers frame-id]
-  (when-let [frame (get objects frame-id)]
-    (when-let [modifier (get-in modifiers [frame-id :modifiers])]
-      (frame-translate-modifier frame (gsh/transform-shape frame modifier)))))
-
-;; Position modifier for a frame transformed by the WASM renderer.
-(defn- wasm-position-modifier
-  [objects wasm-mods frame-id]
-  (when-let [frame (get objects frame-id)]
-    (when-let [transform (get wasm-mods frame-id)]
-      (frame-translate-modifier frame (gsh/apply-transform frame transform)))))
-
-;; Per-frame subscription to the active transform modifiers, so a bubble moves
-;; live with its frame during a drag. Scoped per frame to avoid re-rendering
-;; the whole layer at animation-frame rate. Only one renderer is active, so at
-;; most one of the two sources yields a modifier.
+;; Pin transform for the bubble's frame so it follows the frame during a drag,
+;; scoped per frame to avoid re-rendering the whole layer each tick.
 (defn- use-frame-position-modifier
   [frame-id]
   (let [modifiers (mf/deref refs/workspace-modifiers)
         wasm-mods (mf/deref refs/workspace-wasm-modifiers)
         objects   (mf/deref refs/workspace-page-objects)]
-    (or (svg-position-modifier objects modifiers frame-id)
-        (wasm-position-modifier objects wasm-mods frame-id))))
+    (dwcm/frame-pin-transform (get objects frame-id)
+                              (get-in modifiers [frame-id :modifiers])
+                              (get wasm-mods frame-id))))
 
 (mf/defc comment-floating-bubble-wrapper*
   {::mf/private true}

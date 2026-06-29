@@ -6,12 +6,13 @@
 
 (ns frontend-tests.ui.comments-position-modifier-test
   (:require
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.main.ui.workspace.viewport.comments :as vc]
+   [app.main.data.workspace.comments :as dwcm]
    [cljs.test :as t :include-macros true]))
 
 (defn- frame
@@ -19,28 +20,41 @@
   (cts/setup-shape {:id id :type :frame :name "Board"
                     :x 100 :y 100 :width 200 :height 150}))
 
-(t/deftest svg-position-modifier
-  (let [frame-id (uuid/next)
-        objects  {frame-id (frame frame-id)}]
-    (t/testing "yields the frame translation from the legacy modifiers"
-      (let [modifiers {frame-id {:modifiers (ctm/move-modifiers (gpt/point 10 20))}}]
-        (t/is (= (gmt/translate-matrix (gpt/point 10 20))
-                 (#'vc/svg-position-modifier objects modifiers frame-id)))))
+(defn- close-point?
+  [a b]
+  (and (mth/close? (:x a) (:x b))
+       (mth/close? (:y a) (:y b))))
 
-    (t/testing "nil when the frame has no active modifier"
-      (t/is (nil? (#'vc/svg-position-modifier objects {} frame-id))))
+(t/deftest frame-pin-transform-move
+  (let [f    (frame (uuid/next))
+        mods (ctm/move-modifiers (gpt/point 10 20))
+        m    (dwcm/frame-pin-transform f mods nil)]
+    (t/testing "the comment follows the frame translation"
+      (t/is (close-point? (gpt/point 160 170)
+                          (gpt/transform (gpt/point 150 150) m))))))
 
-    (t/testing "nil when the frame does not exist"
-      (let [modifiers {frame-id {:modifiers (ctm/move-modifiers (gpt/point 10 20))}}]
-        (t/is (nil? (#'vc/svg-position-modifier {} modifiers frame-id)))))))
+(t/deftest frame-pin-transform-rotation
+  (let [f      (frame (uuid/next))
+        center (gsh/shape->center f)
+        mods   (ctm/rotation (ctm/empty) center 90)
+        m      (dwcm/frame-pin-transform f mods nil)
+        p      (gpt/point 150 150)]
+    (t/testing "the comment rotates around the frame center"
+      (t/is (close-point? (gpt/transform p (ctm/modifiers->transform mods))
+                          (gpt/transform p m))))))
 
-(t/deftest wasm-position-modifier
-  (let [frame-id (uuid/next)
-        objects  {frame-id (frame frame-id)}]
-    (t/testing "yields the frame translation from the wasm transform"
-      (let [wasm-mods {frame-id (gmt/translate-matrix (gpt/point 10 20))}]
-        (t/is (= (gmt/translate-matrix (gpt/point 10 20))
-                 (#'vc/wasm-position-modifier objects wasm-mods frame-id)))))
+(t/deftest frame-pin-transform-resize
+  (let [f    (frame (uuid/next))
+        mods (ctm/resize (ctm/empty) (gpt/point 2 2) (gpt/point 100 100))
+        m    (dwcm/frame-pin-transform f mods nil)
+        p    (gpt/point 150 150)]
+    (t/testing "the comment keeps its position without scaling"
+      (t/is (close-point? p (gpt/transform p m))))
+    (t/testing "the comment is not scaled along with the frame"
+      (t/is (not (close-point? (gpt/transform p (ctm/modifiers->transform mods))
+                               (gpt/transform p m)))))))
 
-    (t/testing "nil when the frame has no active transform"
-      (t/is (nil? (#'vc/wasm-position-modifier objects {} frame-id))))))
+(t/deftest frame-pin-transform-without-transform
+  (let [f (frame (uuid/next))]
+    (t/testing "no active transform yields no matrix"
+      (t/is (nil? (dwcm/frame-pin-transform f nil nil))))))
