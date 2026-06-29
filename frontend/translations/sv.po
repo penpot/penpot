@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
-"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-06-30 05:01+0000\n"
+"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,14 +18,14 @@ msgstr "Har du redan ett konto?"
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
 #, unused
 msgid "auth.check-mail"
-msgstr "Kontrollera din e-post"
+msgstr "Kolla din e-post"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
 msgstr ""
-"Kontrollera din e-post och klicka på länken för att verifiera och börja "
-"använda Penpot."
+"Kolla din e-post och klicka på länken för att verifiera och börja använda "
+"Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -2414,7 +2414,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Aktiva teman"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Kopiera CSS-förkortning till urklipp"
 
@@ -4504,7 +4503,7 @@ msgstr "Vi har skickat ett återställningsmail till"
 
 #: src/app/main/ui/auth/recovery_request.cljs:116
 msgid "not-found.login.sent-recovery-check"
-msgstr "Kontrollera din e-post och klicka på länken för att skapa ett nytt lösenord."
+msgstr "Kolla din e-post och klicka på länken för att skapa ett nytt lösenord."
 
 #: src/app/main/ui/static.cljs:174
 msgid "not-found.login.signup-free"
@@ -4623,7 +4622,7 @@ msgstr "Profilen sparades!"
 
 #: src/app/main/ui/settings/change_email.cljs:46
 msgid "notifications.validation-email-sent"
-msgstr "Verifiering e-post skickas till %s. Kontrollera din e-post!"
+msgstr "Verifieringsmejl skickas till %s. Kolla din e-post!"
 
 #, unused
 msgid "onboarding-v2.before-start.desc1"
@@ -6064,7 +6063,6 @@ msgid "subscription.settings.success.dialog.title"
 msgstr "Du är %!"
 
 #: src/app/main/ui/settings/subscription.cljs:655
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Du har stöttat oss med detta abonnemang sedan: %s"
 
@@ -9361,7 +9359,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s aktiva uppsättningar"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Ursprungligt värde: %s"
 
@@ -9432,7 +9429,6 @@ msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Dina tokens kommer automatiskt att byta namn till %s.(suffix).(tokenName)"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Uträknat värde: %s"
 
@@ -9565,7 +9561,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Temalista"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beskrivning"
 
@@ -10005,3 +10000,131 @@ msgstr "Autosparade versioner sparas i %s dagar."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Kolla din e-post!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "Vi har skickat ett verifieringsmejl till:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "errors.tokens.circular-reference"
+msgstr "Token har en cirkulär referens"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs:30, src/app/main/ui/inspect/styles/style_box.cljs:32, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:262, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:274
+msgid "labels.blur-effects"
+msgstr "Oskärpaeffekter"
+
+#: src/app/main/ui/onboarding/questions.cljs:222
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101 - 500"
+
+#: src/app/main/ui/onboarding/questions.cljs:220
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2 - 100"
+
+#: src/app/main/ui/onboarding/questions.cljs:224
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501 - 1000"
+
+#: src/app/main/ui/onboarding/questions.cljs:218
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Bara jag"
+
+#: src/app/main/ui/onboarding/questions.cljs:228
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5001+"
+
+#: src/app/main/ui/dashboard/subscription.cljs:229
+msgid "subscription.dashboard.banner.renew"
+msgstr "Förnya"
+
+#: src/app/main/ui/dashboard/subscription.cljs:216
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Förnya din prenumeration"
+
+#: src/app/main/ui/dashboard/subscription.cljs:222
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Din Enterprise-prenumeration löper ut om %s dagar (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:220
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Din Enterprise-prenumeration har löpt ut. (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:421
+msgid "workspace.header.menu.hide-comments"
+msgstr "Dölj kommentarer"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.show-comments"
+msgstr "Visa kommentarer"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:354
+msgid "workspace.libraries.colors.add-library-color"
+msgstr "Lägg till färg i biblioteket"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:371, src/app/main/ui/workspace/colorpicker/libraries.cljs:387
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "Det finns inga nya färger ännu"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:336
+msgid "workspace.libraries.colors.toggle-color-palette"
+msgstr "Växla färgpalett"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#, unused
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Oskärpaeffekter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:273
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Grupposkärpaeffekter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:272
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Oskärpaeffekter för val"
+
+#: src/app/main/ui/onboarding/questions.cljs:226
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1001 - 5000"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:144
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Oskärpatyp"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:153
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr ""
+"Bakgrundsoskärpa stöds endast i den nya renderingsmotorn. Växla över till "
+"den nya renderingsmotorn i Inställningar-menyn för att använda den här "
+"effekten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Visa/dölj fler alternativ"
+
+#, unused
+msgid "workspace.toast.comments-hidden"
+msgstr "Kommentarer dolda"
+
+#, unused
+msgid "workspace.toast.comments-visible"
+msgstr "Kommentarer synliga"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:87
+msgid "workspace.toolbar.mcp-connect-here"
+msgstr "Anslut här"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:84
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP ansluten"
+
+#: src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.palette-bar"
+msgstr "Palett"
