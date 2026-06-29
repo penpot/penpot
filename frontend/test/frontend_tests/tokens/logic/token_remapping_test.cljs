@@ -13,6 +13,7 @@
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.remapping :as dwtr]
    [cljs.test :as t :include-macros true]))
 
@@ -27,19 +28,20 @@
                      :name "color.secondary"
                      :value "{color.primary}"
                      :type :color}]
-    (-> (cthf/sample-file :file-1 :page-label :page-1)
-        (ctho/add-rect :rect-1)
-        (ctho/add-rect :rect-2)
-        (assoc-in [:data :tokens-lib]
-                  (-> (ctob/make-tokens-lib)
-                      (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                      (ctob/set-active-themes #{"/Theme A"})
+    (-> (ctht/sample-file-with-tokens
+         :lib-fn #(-> %
                       (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
                                                          :name "Set A"))
+                      (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                             :name "Theme A"
+                                                             :sets #{"Set A"}))
                       (ctob/add-token (cthi/id :set-a)
                                       (ctob/make-token color-token))
                       (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token alias-token))))
+                                      (ctob/make-token alias-token)))
+         :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
+        (ctho/add-rect :rect-1)
+        (ctho/add-rect :rect-2)
         ;; Apply the token to rect-1
         (ctht/apply-token-to-shape :rect-1 "color.primary" [:fill] [:fill] "#FF0000"))))
 
@@ -132,22 +134,23 @@
                          :name "color.secondary"
                          :value "#00FF00"
                          :type :color}]
-    (-> (cthf/sample-file :file-1 :page-label :page-1)
+    (-> (ctht/sample-file-with-tokens
+         :lib-fn #(-> %
+                      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
+                                                         :name "Set A"))
+                      (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                             :name "Theme A"
+                                                             :sets #{"Set A"}))
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token color-primary))
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token color-secondary)))
+         :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
         (ctho/add-simple-component-with-copy :component1
                                              :main-root
                                              :main-child
                                              :copy-root
                                              :copy-root-params {:children-labels [:copy-child]})
-        (assoc-in [:data :tokens-lib]
-                  (-> (ctob/make-tokens-lib)
-                      (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                      (ctob/set-active-themes #{"/Theme A"})
-                      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
-                                                         :name "Set A"))
-                      (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token color-primary))
-                      (ctob/add-token (cthi/id :set-a)
-                                      (ctob/make-token color-secondary))))
         (ctht/apply-token-to-shape :main-child "color.primary" [:fill] [:fill] "#FF0000")
         (ctht/apply-token-to-shape :copy-child "color.primary" [:fill] [:fill] "#FF0000"))))
 

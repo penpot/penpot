@@ -8,7 +8,9 @@
   (:require
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.tokens :as ctho]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [cljs.test :as t :include-macros true]
@@ -25,11 +27,12 @@
 
 (defn setup-file-with-token-lib
   []
-  (-> (setup-file)
-      (assoc-in [:data :tokens-lib]
-                (-> (ctob/make-tokens-lib)
-                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
-                                                       :name "Set A"))))))
+  (ctho/sample-file-with-tokens
+   :file-id :file-1
+   :page-label :page-1
+   :lib-fn #(ctob/add-set % (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                 :name "Set A"))
+   :status-fn #(ctos/set-tokens-status % #{} #{cthi/id :test-token-set})))
 
 (t/deftest add-set
   (t/async
