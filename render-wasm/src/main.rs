@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::render::{FrameType, RenderFlag};
 
-use globals::{get_design_state, get_gpu_state, get_render_state, get_resources};
+use globals::{get_design_state, get_gpu_state, get_render_state, get_resources, has_render_state};
 
 use macros::wasm_error;
 use math::{Bounds, Matrix};
@@ -992,6 +992,36 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());
         buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+/// PNG via CPU raster (no GPU/WebGL). Returns `[len][width][height][png]` (LE),
+/// same layout as `render_shape_pixels`.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_raster(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    scale: f32,
+) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    if !scale.is_finite() {
+        return Err(Error::CriticalError("Scale is not finite".to_string()));
+    }
+
+    with_state!(state, {
+        let (data, width, height) = state.render_shape_raster(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(12 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&width.to_le_bytes());
+        buf.extend_from_slice(&height.to_le_bytes());
         buf.extend_from_slice(&data);
         Ok(mem::write_bytes(buf))
     })

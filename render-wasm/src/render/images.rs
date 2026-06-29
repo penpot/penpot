@@ -154,6 +154,16 @@ impl ImageStore {
         }
     }
 
+    /// GPU-free image store for the headless export path: no GPU context, so
+    /// images are kept as encoded bytes and decoded on the CPU at draw time
+    /// (see `get_cpu_image`).
+    pub fn new_without_gpu() -> Self {
+        Self {
+            images: HashMap::with_capacity(16),
+            context: None,
+        }
+    }
+
     pub fn add(
         &mut self,
         id: Uuid,

@@ -45,7 +45,7 @@ pub fn render_to_pdf(
         let page_canvas = on_page.canvas();
         page_canvas.scale((scale, scale));
         page_canvas.translate((-bounds.left(), -bounds.top()));
-        vector::render_tree(shared, page_canvas, id, tree, scale)?;
+        vector::render_tree_pdf(shared, page_canvas, id, tree, scale)?;
     }
 
     let document = on_page.end_page();

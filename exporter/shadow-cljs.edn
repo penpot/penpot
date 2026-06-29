@@ -1,5 +1,10 @@
 {:deps {:aliases [:dev]}
- :source-paths ["src" "vendor" "../common"]
+ ;; ../frontend/src is on the path so the exporter can reuse the *portable*
+ ;; render-wasm serialization leaves (app.render-wasm.{wasm,mem,helpers,
+ ;; serializers,api.shapes,...}). shadow-cljs compiles only the required
+ ;; dependency graph, so the browser-coupled namespaces (api, api.webgl,
+ ;; api.fonts) are never pulled in — the workspace build is unaffected.
+ :source-paths ["src" "vendor" "../common" "../frontend/src"]
 
  :builds
  {:main

@@ -119,11 +119,37 @@
     (-> (p/do (handler exchange))
         (p/catch (fn [cause] (on-error cause exchange))))))
 
+(defn- parse-authorization-header
+  "Parses an `Authorization` header into `{:token :scheme}`, accepting both
+  `Bearer <token>` (session) and `Token <token>` (access token) schemes,
+  case-insensitive. Returns nil when the header is absent."
+  [headers]
+  (when-let [auth (get headers "authorization")]
+    (let [auth   (str/trim auth)
+          lower  (str/lower auth)
+          parsed (cond
+                   (str/starts-with? lower "bearer ") {:token (str/trim (subs auth 7)) :scheme :bearer}
+                   (str/starts-with? lower "token ")  {:token (str/trim (subs auth 6)) :scheme :token}
+                   :else                              {:token auth :scheme :bearer})]
+      ;; Ignore an empty/whitespace credential instead of forwarding "Bearer ".
+      (when-not (str/blank? (:token parsed))
+        parsed))))
+
 (defn- wrap-auth
+  "Resolves the auth token from the `Authorization` header first, falling back
+  to the session cookie. This lets API clients authenticate with an access
+  token header instead of a browser cookie. Stores both `:request/auth-token`
+  (the bare token) and `:request/auth-scheme` (:token | :bearer | :cookie) so
+  downstream backend calls can forward the matching scheme."
   [handler cookie-name]
-  (fn [{:keys [:request/cookies] :as exchange}]
-    (let [token (.get ^js cookies cookie-name)]
-      (handler (cond-> exchange token (assoc :request/auth-token token))))))
+  (fn [{:keys [:request/cookies :request/headers] :as exchange}]
+    (let [{:keys [token scheme]}
+          (or (parse-authorization-header headers)
+              (when-let [t (.get ^js cookies cookie-name)]
+                {:token t :scheme :cookie}))]
+      (handler (cond-> exchange
+                 (not (str/blank? token)) (-> (assoc :request/auth-token token)
+                                              (assoc :request/auth-scheme scheme)))))))
 
 (defn- wrap-health
   "Add /healthz entry point intercept."
