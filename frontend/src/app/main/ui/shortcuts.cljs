@@ -306,9 +306,9 @@
         on-editable-container-blur
         (mf/use-fn
          (fn [e]
-         (when-not (.contains (.-currentTarget e)
-                              (.-relatedTarget e))
-           (clean-editing-state))))]
+           (when-not (.contains (.-currentTarget e)
+                                (.-relatedTarget e))
+             (clean-editing-state))))]
 
     (mf/with-effect [is-editing]
       (when is-editing
@@ -327,7 +327,7 @@
                       (reset! conflict* (find-conflict recorded-command all-sc-raw command)))))]
           (->> (events/listen (mf/ref-val recording-ref) "keydown" on-keydown)
                (partial events/unlistenByKey)))))
-    
+
 
     [:li {:class (stl/css-case :shortcuts-name-editable true
                                :shortcuts-editing is-editing
@@ -340,9 +340,14 @@
       [:span {:class (stl/css :command-name)}
        command-translate]
       [:div {:class (stl/css :shortcut-actions)}
-       [:> shortcuts-keys* {:content content
-                            :command command
-                            :is-customized customized?}]]]
+       (if (and customized? (str/blank? command))
+         [:> icon* {:icon-id i/detach
+                    :size "s"
+                    :class (stl/css :shortcut-detach-icon)}]
+
+         [:> shortcuts-keys* {:content content
+                              :command command
+                              :is-customized customized?}])]]
      (when is-editing
        [:div {:class (stl/css :shortcut-editing)
               :ref recording-ref

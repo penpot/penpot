@@ -314,7 +314,8 @@
           [:> shortcuts-tab-section* {:all-shortcuts all-shortcuts
                                       :all-sc-raw all-shortcuts-raw
                                       :shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                         (and (contains? custom-shortcuts shortcut-key)
+                                                         (and (some? (get custom-shortcuts shortcut-key))
+                                                              (not (str/blank? (get custom-shortcuts shortcut-key)))
                                                               (or (str/blank? search-term)
                                                                   (matches-search (:translation shortcut) search-term))))
                                       :show-restore-all? true
@@ -326,8 +327,8 @@
           [:> shortcuts-tab-section* {:all-shortcuts all-shortcuts
                                       :all-sc-raw all-shortcuts-raw
                                       :shortcut-filter (fn [shortcut-key shortcut search-term]
-                                                         (and (not (seq (:command shortcut)))
-                                                              (not (contains? custom-shortcuts shortcut-key))
+                                                         (and (contains? custom-shortcuts shortcut-key)
+                                                              (str/blank? (get custom-shortcuts shortcut-key))
                                                               (or (str/blank? search-term)
                                                                   (matches-search (:translation shortcut) search-term))))
                                       :show-restore-all? true
