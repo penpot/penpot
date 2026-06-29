@@ -10,9 +10,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cfo]
-   [app.common.logic.tokens :as clt]
    [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -250,10 +250,15 @@
 
 (defn- make-lib-with-theme
   [theme sets]
-  (let [tlib (-> (ctob/make-tokens-lib)
-                 (ctob/add-theme theme))
-        tlib (reduce ctob/add-set tlib sets)]
-    (ctob/activate-theme tlib (ctob/get-id theme))))
+  (as-> (ctob/make-tokens-lib) $
+    (ctob/add-theme $ theme)
+    (reduce ctob/add-set $ sets)))
+
+(defn- make-status-with-theme
+  [tokens-lib theme]
+  (let [sets (map #(ctob/get-set-by-name tokens-lib %) (:sets theme))]
+    (ctos/make-tokens-status :active-theme-ids #{(:id theme)}
+                             :active-set-ids (into #{} (map ctob/get-id sets)))))
 
 (mf/defc edit-create-theme*
   [{:keys [change-view theme on-save is-editing has-prev-view]}]
@@ -263,7 +268,8 @@
 
         current-theme* (mf/use-state theme)
         current-theme (deref current-theme*)
-        lib (make-lib-with-theme current-theme ordered-token-sets)
+        lib-with-theme (make-lib-with-theme current-theme ordered-token-sets)
+        status-with-theme (make-status-with-theme lib-with-theme current-theme)
 
         ;; Form / Modal handlers
         on-back (mf/use-fn
@@ -307,15 +313,15 @@
         ;; Sets tree handlers
         token-set-group-active?
         (mf/use-fn
-         (mf/deps current-theme)
+         (mf/deps status-with-theme lib-with-theme)
          (fn [group-path]
-           (ctob/sets-at-path-all-active? lib group-path)))
+           (cfo/sets-at-path-all-active? status-with-theme lib-with-theme group-path)))
 
         token-set-active?
         (mf/use-fn
-         (mf/deps current-theme)
-         (fn [name]
-           (contains? (:sets current-theme) name)))
+         (mf/deps status-with-theme)
+         (fn [id]
+           (ctos/set-active? status-with-theme id)))
 
         on-toggle-token-set
         (mf/use-fn
@@ -328,14 +334,22 @@
          (mf/deps current-theme ordered-token-sets)
          (fn [group-path]
            (swap! current-theme* (fn [theme']
-                                   (let [lib' (make-lib-with-theme theme' ordered-token-sets)]
-                                     (clt/toggle-token-set-group group-path lib' theme'))))))
+                                   ; TODOstatus ver si se puede añadir una función en files.tokens o types.tokens
+                                   ; según si necesitamos al final el status o no (que creo que no)
+                                   (let [lib' (make-lib-with-theme theme' ordered-token-sets)
+                                         status' (make-status-with-theme lib' theme')
+                                         active? (cfo/sets-at-path-all-active? status' lib' group-path)
+                                         sets-at-path (ctob/get-sets-at-path lib' group-path)
+                                         set-names (into #{} (map ctob/get-name) sets-at-path)]
+                                     (if (contains? #{:all :partial} active?)
+                                       (ctob/disable-sets theme' set-names)
+                                       (ctob/enable-sets theme' set-names)))))))
 
         on-click-token-set
         (mf/use-fn
          (mf/deps on-toggle-token-set)
          (fn [set-id]
-           (let [set (ctob/get-set lib set-id)]
+           (let [set (ctob/get-set lib-with-theme set-id)]
              (on-toggle-token-set (ctob/get-name set)))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}

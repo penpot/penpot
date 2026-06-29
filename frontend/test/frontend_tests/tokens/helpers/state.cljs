@@ -6,6 +6,7 @@
 
 (ns frontend-tests.tokens.helpers.state
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
@@ -30,8 +31,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [data (dsh/lookup-file-data state)]
-        (->> (get data :tokens-lib)
-             (ctob/get-tokens-in-active-sets)
+        (->> (cfo/get-tokens-in-active-sets
+              (cfo/get-tokens-status data)
+              (cfo/get-tokens-lib data))
              (sd/resolve-tokens)
              (rx/mapcat #(rx/of (end))))))))
 

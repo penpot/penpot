@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -31,11 +32,20 @@
   (let [tokens-lib
         (mf/use-ctx ctx/tokens-lib)
 
+        tokens-status
+        (mf/use-ctx ctx/tokens-status)
+
         token-sets
         (some-> tokens-lib (ctob/get-set-tree))
 
         can-edit?
         (mf/use-ctx ctx/can-edit?)
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps tokens-status)
+         (fn [set-id]
+           (ctos/set-active? tokens-status set-id)))
 
         token-set-group-active?
         (mf/use-fn
@@ -62,6 +72,7 @@
      {:tokens-lib tokens-lib
       :token-sets token-sets
 
+      :is-token-set-active token-set-active?
       :is-token-set-group-active token-set-group-active?
       :on-select on-select-token-set-click
 

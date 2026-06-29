@@ -313,6 +313,7 @@
 (mf/defc token-sets-tree*
   [{:keys [is-draggable
            selected
+           is-token-set-active
            is-token-set-group-active
            on-start-edition
            on-reset-edition
@@ -420,7 +421,7 @@
             :set token-set
             :label (peek path)
             :is-editing (= edition-id id)
-            :is-active (ctos/set-active? tokens-status id)
+            :is-active (is-token-set-active id)
             :is-selected (= selected id)
             :is-draggable is-draggable
             :is-new false
@@ -442,6 +443,7 @@
            selected
            on-update-token-set
            on-update-token-set-group
+           is-token-set-active
            is-token-set-group-active
            on-create-token-set
            on-toggle-token-set
@@ -453,6 +455,7 @@
            new-path
            edition-id]}]
 
+  (assert (fn? is-token-set-active) "expected a function for `is-token-set-active` prop")
   (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
 
   (let [theme-modal? (= origin "theme-modal")
@@ -492,6 +495,7 @@
          :token-sets token-sets
          :selected selected
          :on-select on-select
+         :is-token-set-active is-token-set-active
          :is-token-set-group-active is-token-set-group-active
          :on-toggle-set on-toggle-token-set
          :on-toggle-set-group on-toggle-token-set-group
