@@ -2395,21 +2395,25 @@
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
-   Returns the stroke outline as PathData content."
+   Returns a map {:content <PathData> :even-odd? <boolean>}, or nil when the
+   stroke produces no geometry. The buffer carries two header words ahead of
+   the segments: [even-odd flag][length] (the flat segment list can't encode
+   the fill rule itself)."
   [id stroke-index]
   (use-shape id)
   (try
-    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                     (mem/->offset-32))
-          heap   (mem/get-heap-u32)
-          length (aget heap offset)]
+    (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                        (mem/->offset-32))
+          heap      (mem/get-heap-u32)
+          even-odd? (not (zero? (aget heap offset)))
+          length    (aget heap (inc offset))]
       (if (pos? length)
         (let [data    (mem/slice heap
-                                 (+ offset 1)
+                                 (+ offset 2)
                                  (* length path.impl/SEGMENT-U32-SIZE))
               content (path/from-bytes data)]
           (mem/free)
-          content)
+          {:content content :even-odd? even-odd?})
         (do (mem/free)
             nil)))
     (catch :default cause
