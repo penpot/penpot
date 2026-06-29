@@ -78,7 +78,7 @@
               taking?   (or taking? (and (<= from start) (< start to)))
               text      (subs text (max 0 (- start acc)) (- end acc))
               result    (cond-> result
-                          (and taking? (d/not-empty? text))
+                          (and taking? (seq text))
                           (conj (assoc node-style :text text)))
               continue? (or (> from end) (>= end to))]
           (recur (when continue? (rest styles)) taking? to result))
@@ -95,10 +95,11 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :$page {:enumerable false :get (constantly page-id)}
+    :$start {:enumerable false :get (constantly start)}
+    :$end {:enumerable false :get (constantly end)}
 
     :shape
-    {:this true
-     :get #(-> % u/proxy->shape)}
+    {:get (fn [] (format/shape-proxy plugin-id file-id page-id id))}
 
     :characters
     {:this true

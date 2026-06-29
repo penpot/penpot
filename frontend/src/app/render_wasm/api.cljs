@@ -1074,66 +1074,75 @@
 
 (defn set-grid-layout-rows
   [entries]
-  (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero rows.
+  (when (seq entries)
+    (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
-            offset
-            entries)
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_rows")))
+  (h/call wasm/internal-module "_set_grid_rows"))
 
 (defn set-grid-layout-columns
   [entries]
-  (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
-        offset (mem/alloc size)
-        dview  (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero columns.
+  (when (seq entries)
+    (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
+          offset (mem/alloc size)
+          dview  (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-            offset
-            entries)
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_columns")))
+  (h/call wasm/internal-module "_set_grid_columns"))
 
 (defn set-grid-layout-cells
   [cells]
-  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are cells; an empty collection would alloc 0
+  ;; bytes. The wasm side reads an empty buffer as zero cells.
+  (when (seq cells)
+    (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce-kv (fn [offset _ cell]
-                 (let [shape-id  (-> (get cell :shapes) first)]
-                   (-> offset
-                       (mem/write-i32 dview (get cell :row))
-                       (mem/write-i32 dview (get cell :row-span))
-                       (mem/write-i32 dview (get cell :column))
-                       (mem/write-i32 dview (get cell :column-span))
+      (reduce-kv (fn [offset _ cell]
+                   (let [shape-id  (-> (get cell :shapes) first)]
+                     (-> offset
+                         (mem/write-i32 dview (get cell :row))
+                         (mem/write-i32 dview (get cell :row-span))
+                         (mem/write-i32 dview (get cell :column))
+                         (mem/write-i32 dview (get cell :column-span))
 
-                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
-                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+                         (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
+                         (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; padding
-                       (+ 2)
+                         ;; padding
+                         (+ 2)
 
-                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
-                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
+                         (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                         (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
-               offset
-               cells)
+                 offset
+                 cells)))
 
-    (h/call wasm/internal-module "_set_grid_cells")))
+  (h/call wasm/internal-module "_set_grid_cells"))
 
 (defn set-grid-layout
   [shape]

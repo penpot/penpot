@@ -317,6 +317,11 @@
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
         (u/not-valid plugin-id :group-shapes shapes)
 
+        ;; A group cannot be created from no shapes; per the documented contract
+        ;; return null instead of a proxy pointing at a shape that never exists.
+        (zero? (alength shapes))
+        nil
+
         (some #(not (u/page-active? (obj/get % "$page"))) shapes)
         (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
 
@@ -664,8 +669,13 @@
         (u/not-valid plugin-id :flatten-shapes "Not valid shapes")
 
         :else
-        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/convert-selected-to-path ids)))))
+        ;; convert-selected-to-path converts the shapes in place (keeping their
+        ;; ids), so return proxies for the same ids, now resolving as paths.
+        (let [file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)
+              ids (mapv #(obj/get % "$id") shapes)]
+          (st/emit! (dw/convert-selected-to-path (into #{} ids)))
+          (apply array (map #(shape/shape-proxy plugin-id file-id page-id %) ids)))))
 
     :createVariantFromComponents
     (fn [shapes]

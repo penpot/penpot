@@ -27,12 +27,19 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.format-test]
+   [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
+   [frontend-tests.plugins.library-test]
+   [frontend-tests.plugins.local-storage-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.shape-bugfixes-test]
+   [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.render-wasm.process-objects-test]
@@ -65,7 +72,8 @@
     (.exit js/process 1)))
 
 (def test-namespaces
-  ['frontend-tests.basic-shapes-test
+  ['frontend-tests.plugins.text-test
+   'frontend-tests.basic-shapes-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.nitrate-test
@@ -89,11 +97,20 @@
    'frontend-tests.logic.groups-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.comments-test
+   'frontend-tests.plugins.file-test
+   'frontend-tests.plugins.format-test
+   'frontend-tests.plugins.grid-test
+   'frontend-tests.plugins.interactions-test
+   'frontend-tests.plugins.library-test
+   'frontend-tests.plugins.local-storage-test
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.interactions-test
    'frontend-tests.plugins.format-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.shape-bugfixes-test
+   'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.svg-fills-test
