@@ -22,7 +22,7 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::render::{FrameType, RenderFlag};
 
-use globals::{get_design_state, get_gpu_state, get_render_state};
+use globals::{get_design_state, get_gpu_state, get_render_state, get_resources};
 
 use macros::wasm_error;
 use math::{Bounds, Matrix};
@@ -720,7 +720,7 @@ pub extern "C" fn is_image_cached(
     is_thumbnail: bool,
 ) -> Result<bool> {
     let id = uuid_from_u32_quartet(a, b, c, d);
-    let result = get_render_state().has_image(&id, is_thumbnail);
+    let result = get_resources().images.contains(&id, is_thumbnail);
     Ok(result)
 }
 
