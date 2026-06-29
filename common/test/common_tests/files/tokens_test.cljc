@@ -13,6 +13,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/deftest test-parse-token-value
@@ -102,12 +103,55 @@
 ;; Tokens lib
 
 (t/deftest test-ensure-tokens-lib
-  (t/testing "ensure-tokens-lib should add a tokens-lib and tokens-status to the file data if they are missing, and should not modify them if they already exist"
+  (t/testing "ensure-tokens-lib should add a tokens-lib and tokens-status to the file data if they are missing"
     (let [file       (thf/sample-file :file1)
           file-data  (ctf/file-data file)
           file-data' (cfo/ensure-tokens-lib file-data)]
       (t/is (contains? file-data' :tokens-lib))
       (t/is (ctob/tokens-lib? (:tokens-lib file-data')))
+      (t/is (contains? file-data' :tokens-status))
+      (t/is (ctos/tokens-status? (:tokens-status file-data')))))
+
+  (t/testing "ensure-tokens-lib should add a tokens-lib to the file data if it's missing"
+    (let [tokens-status (ctos/make-tokens-status)
+          file          (-> (thf/sample-file :file1)
+                            (assoc-in [:data :tokens-status] tokens-status))
+          file-data     (ctf/file-data file)
+          file-data'    (cfo/ensure-tokens-lib file-data)]
+      (t/is (contains? file-data' :tokens-lib))
+      (t/is (ctob/tokens-lib? (:tokens-lib file-data')))
+      (t/is (= tokens-status (:tokens-status file-data')))))
+
+  (t/testing "ensure-tokens-lib should add a tokens-status to the file data if it's missing"
+    (let [tokens-lib (ctob/make-tokens-lib)
+          file       (-> (thf/sample-file :file1)
+                         (assoc-in [:data :tokens-lib] tokens-lib))
+          file-data  (ctf/file-data file)
+          file-data' (cfo/ensure-tokens-lib file-data)]
+      (t/is (= tokens-lib (:tokens-lib file-data')))
+      (t/is (contains? file-data' :tokens-status))
+      (t/is (ctos/tokens-status? (:tokens-status file-data')))))
+
+  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-file"
+    (let [tokens-file   (uuid/next)
+          tokens-status (ctos/make-tokens-status)
+          file          (-> (thf/sample-file :file1)
+                            (assoc-in [:data :tokens-file] tokens-file)
+                            (assoc-in [:data :tokens-status] tokens-status))
+          file-data     (ctf/file-data file)
+          file-data'    (cfo/ensure-tokens-lib file-data)]
+      (t/is (not (contains? file-data' :tokens-lib)))
+      (t/is (= tokens-file (:tokens-file file-data')))
+      (t/is (= tokens-status (:tokens-status file-data')))))
+  
+  (t/testing "ensure-tokens-lib should not add a tokens-lib if there is a tokens-file, but should add a tokens-status if it's missing"
+    (let [tokens-file (uuid/next)
+          file        (-> (thf/sample-file :file1)
+                          (assoc-in [:data :tokens-file] tokens-file))
+          file-data   (ctf/file-data file)
+          file-data'  (cfo/ensure-tokens-lib file-data)]
+      (t/is (not (contains? file-data' :tokens-lib)))
+      (t/is (= tokens-file (:tokens-file file-data')))
       (t/is (contains? file-data' :tokens-status))
       (t/is (ctos/tokens-status? (:tokens-status file-data'))))))
 

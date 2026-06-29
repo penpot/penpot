@@ -10,8 +10,10 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.test-helpers.tokens :as ctht]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.remapping :as remap]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -31,17 +33,22 @@
 
 (defn- attach-token-set [file tokens]
   (let [set-id (cthi/new-id! :token-set)
-        tokens-lib (reduce
-                    (fn [lib token]
-                      (ctob/add-token lib set-id (ctob/make-token token)))
-                    (-> (ctob/make-tokens-lib)
-                        (ctob/add-set (ctob/make-token-set :id set-id
-                                                           :name token-set-name))
-                        (ctob/add-theme (ctob/make-token-theme :name token-theme-name
-                                                               :sets #{token-set-name}))
-                        (ctob/set-active-themes #{(str "/" token-theme-name)}))
-                    tokens)]
-    (assoc-in file [:data :tokens-lib] tokens-lib)))
+        theme-id (cthi/new-id! :theme)]
+    (-> file
+        (ctht/add-tokens-lib)
+        (ctht/update-tokens-lib
+         #(reduce
+           (fn [lib token]
+             (ctob/add-token lib set-id (ctob/make-token token)))
+           (-> %
+               (ctob/add-set (ctob/make-token-set :id set-id
+                                                  :name token-set-name))
+               (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                      :name token-theme-name
+                                                      :sets #{token-set-name})))
+           tokens))
+        (ctht/update-tokens-status
+         #(ctos/set-tokens-status % #{theme-id} #{set-id})))))
 
 (defn- tokens-lib [file]
   (get-in file [:data :tokens-lib]))
