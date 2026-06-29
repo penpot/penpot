@@ -2,9 +2,10 @@ use skia_safe::{self as skia, Color4f};
 
 use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::globals::get_ui_state;
-use crate::render::{grid_layout, rulers};
+use crate::render::grid_layout;
 use crate::shapes::{Layout, Type};
 pub mod guides;
+pub mod rulers;
 
 pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let canvas = render_state.surfaces.canvas(SurfaceId::UI);
