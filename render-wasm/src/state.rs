@@ -14,7 +14,7 @@ use crate::error::{Error, Result};
 use crate::render::FrameType;
 use crate::shapes::{grid_layout::grid_cell_data, Shape};
 use crate::uuid::Uuid;
-use crate::{get_render_state, tiles};
+use crate::{get_render_state, get_resources, tiles};
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -97,7 +97,7 @@ impl State {
     }
 
     pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
-        crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
+        crate::render::pdf::render_to_pdf(get_resources(), id, &self.shapes, scale)
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
@@ -266,7 +266,7 @@ impl State {
     }
 
     pub fn font_collection(&self) -> &FontCollection {
-        get_render_state().fonts().font_collection()
+        get_resources().fonts.font_collection()
     }
 
     pub fn get_grid_coords(&self, pos_x: f32, pos_y: f32) -> Option<(i32, i32)> {

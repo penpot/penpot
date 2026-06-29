@@ -9,18 +9,8 @@ use crate::uuid::Uuid;
 
 use super::shape_renderer::ShapeRenderer;
 use super::text;
-use super::RenderState;
+use super::RenderResources;
 use super::{get_dest_rect, get_source_rect};
-
-// ---------------------------------------------------------------------------
-// VectorTarget — vector export backend selector
-// ---------------------------------------------------------------------------
-
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum VectorTarget {
-    Pdf,
-}
 
 // ---------------------------------------------------------------------------
 // VectorRenderer — implements ShapeRenderer for canvas-based vector export
@@ -29,23 +19,16 @@ pub(super) enum VectorTarget {
 /// Canvas-based vector render backend (CPU Skia canvas, no GPU surfaces).
 pub(super) struct VectorRenderer<'a> {
     canvas: &'a Canvas,
-    shared: &'a mut RenderState,
+    shared: &'a mut RenderResources,
     scale: f32,
-    _target: VectorTarget,
 }
 
 impl<'a> VectorRenderer<'a> {
-    pub fn new(
-        canvas: &'a Canvas,
-        shared: &'a mut RenderState,
-        scale: f32,
-        target: VectorTarget,
-    ) -> Self {
+    pub fn new(canvas: &'a Canvas, shared: &'a mut RenderResources, scale: f32) -> Self {
         Self {
             canvas,
             shared,
             scale,
-            _target: target,
         }
     }
 }
@@ -366,12 +349,11 @@ impl ShapeRenderer for VectorRenderer<'_> {
 
 /// Depth-first render of the shape tree rooted at `id`.
 pub(super) fn render_tree(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     id: &Uuid,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
 ) -> Result<()> {
     let Some(element) = tree.get(id) else {
         return Ok(());
@@ -383,10 +365,10 @@ pub(super) fn render_tree(
 
     match &element.shape_type {
         Type::Group(group) => {
-            render_group(shared, canvas, element, group.masked, tree, scale, target)?;
+            render_group(shared, canvas, element, group.masked, tree, scale)?;
         }
         Type::Frame(_) => {
-            render_frame(shared, canvas, element, tree, scale, target)?;
+            render_frame(shared, canvas, element, tree, scale)?;
         }
         // Leaf types listed explicitly (no `_`) so a new Type must be handled.
         Type::Rect(_)
@@ -395,7 +377,7 @@ pub(super) fn render_tree(
         | Type::Bool(_)
         | Type::Text(_)
         | Type::SVGRaw(_) => {
-            render_leaf(shared, canvas, element, scale, target)?;
+            render_leaf(shared, canvas, element, scale)?;
         }
     }
 
@@ -407,13 +389,12 @@ pub(super) fn render_tree(
 // ---------------------------------------------------------------------------
 
 fn render_group(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     masked: bool,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
 ) -> Result<()> {
     // A group has no geometry of its own and does NOT propagate a transform to
     // its children: child shapes are stored in absolute coordinates and each
@@ -422,7 +403,7 @@ fn render_group(
     canvas.save();
 
     // Group drop shadow: subtree silhouette, below the opacity/clip layer.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, false)?;
+    render_container_drop_shadows(shared, canvas, element, tree, scale, false)?;
 
     // Layer for opacity / blend mode (and group-level layer blur)
     let needs_layer = element.needs_layer();
@@ -455,21 +436,21 @@ fn render_group(
         canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
 
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree(shared, canvas, child_id, tree, scale)?;
         }
 
         if let Some(mask_id) = element.mask_id() {
             let mut mask_paint = Paint::default();
             mask_paint.set_blend_mode(skia::BlendMode::DstIn);
             canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
-            render_tree(shared, canvas, mask_id, tree, scale, target)?;
+            render_tree(shared, canvas, mask_id, tree, scale)?;
             canvas.restore(); // mask layer
         }
 
         canvas.restore(); // composition layer
     } else {
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree(shared, canvas, child_id, tree, scale)?;
         }
     }
 
@@ -485,12 +466,11 @@ fn render_group(
 // ---------------------------------------------------------------------------
 
 fn render_frame(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
 ) -> Result<()> {
     // A frame's own geometry (background, clip, strokes) is placed by its
     // `centered_transform`, but — like groups — it does NOT propagate that
@@ -503,7 +483,7 @@ fn render_frame(
 
     // Frame drop shadow: background + subtree silhouette, below the clip layer
     // so it extends outside the frame bounds.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, true)?;
+    render_container_drop_shadows(shared, canvas, element, tree, scale, true)?;
 
     let needs_layer = element.needs_layer();
 
@@ -542,7 +522,7 @@ fn render_frame(
     if !element.fills.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale);
         renderer.draw_fills(element, &element.fills)?;
         renderer.draw_fill_inner_shadows(element)?;
         canvas.restore();
@@ -551,7 +531,7 @@ fn render_frame(
     // Children (absolute coords, no frame transform).
     let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
     for child_id in &children {
-        render_tree(shared, canvas, child_id, tree, scale, target)?;
+        render_tree(shared, canvas, child_id, tree, scale)?;
     }
 
     // Strokes over children (clipped frames), in the frame's space.
@@ -559,7 +539,7 @@ fn render_frame(
     if !visible_strokes.is_empty() {
         canvas.save();
         canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+        let mut renderer = VectorRenderer::new(canvas, shared, scale);
         renderer.draw_strokes(element, &visible_strokes)?;
         canvas.restore();
     }
@@ -575,12 +555,11 @@ fn render_frame(
 /// layer (its alpha becomes the shadow). `draw_fills` includes the frame
 /// background in the silhouette.
 fn render_container_drop_shadows(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     tree: ShapesPoolRef,
     scale: f32,
-    target: VectorTarget,
     draw_fills: bool,
 ) -> Result<()> {
     for shadow in element.drop_shadows_visible() {
@@ -592,13 +571,13 @@ fn render_container_drop_shadows(
         canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
 
         if draw_fills && !element.fills.is_empty() {
-            let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale);
             renderer.draw_fills(element, &element.fills)?;
         }
 
         let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
         for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
+            render_tree(shared, canvas, child_id, tree, scale)?;
         }
 
         canvas.restore();
@@ -611,11 +590,10 @@ fn render_container_drop_shadows(
 // ---------------------------------------------------------------------------
 
 fn render_leaf(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     element: &Shape,
     scale: f32,
-    target: VectorTarget,
 ) -> Result<()> {
     let needs_layer = element.needs_layer();
 
@@ -633,7 +611,7 @@ fn render_leaf(
         canvas.save_layer(&layer_rec);
     }
 
-    let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
+    let mut renderer = VectorRenderer::new(canvas, shared, scale);
 
     // Layer blur (non-text shapes)
     let blur_layer = if !matches!(element.shape_type, Type::Text(_)) {
@@ -695,7 +673,7 @@ fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shap
 // ---------------------------------------------------------------------------
 
 fn draw_image_fill(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     canvas: &Canvas,
     shape: &Shape,
     image_fill: &crate::shapes::ImageFill,
@@ -737,7 +715,7 @@ fn draw_image_fill(
 
 fn draw_single_stroke(
     canvas: &Canvas,
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
@@ -848,7 +826,7 @@ fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint
 /// CPU image over it with `SrcIn` so only the stroke area shows the image.
 fn draw_image_stroke(
     canvas: &Canvas,
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
