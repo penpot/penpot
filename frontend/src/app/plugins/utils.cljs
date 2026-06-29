@@ -70,6 +70,11 @@
   (let [file (locate-file file-id)]
     (->> file :data :tokens-lib)))
 
+(defn locate-tokens-status
+  [file-id]
+  (let [file (locate-file file-id)]
+    (->> file :data :tokens-status)))
+
 (defn locate-token-theme
   [file-id id]
   (let [tokens-lib (locate-tokens-lib file-id)]
