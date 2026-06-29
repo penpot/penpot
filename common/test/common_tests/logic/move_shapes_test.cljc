@@ -14,6 +14,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -141,24 +142,27 @@
 
 (t/deftest test-relocate-shape-out-of-layout-with-tokens
   (let [;; ==== Setup
-        file (-> (thf/sample-file :file1)
-                 (tht/add-tokens-lib)
-                 (tht/update-tokens-lib #(-> %
-                                             (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
-                                                                                :name "test-token-set"))
-                                             (ctob/add-theme (ctob/make-token-theme :name "test-theme"
-                                                                                    :sets #{"test-token-set"}))
-                                             (ctob/set-active-themes #{"/test-theme"})
-                                             (ctob/add-token (thi/id :test-token-set)
-                                                             (ctob/make-token :id (thi/new-id! :token-sizing)
-                                                                              :name "token-sizing"
-                                                                              :type :sizing
-                                                                              :value 10))
-                                             (ctob/add-token (thi/id :test-token-set)
-                                                             (ctob/make-token :id (thi/new-id! :token-spacing)
-                                                                              :name "token-spacing"
-                                                                              :type :spacing
-                                                                              :value 30))))
+        file (-> (tht/sample-file-with-tokens
+                  :lib-fn #(-> %
+                               (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
+                                                                  :name "test-token-set"))
+                               (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :test-theme)
+                                                                      :name "test-theme"
+                                                                      :sets #{"test-token-set"}))
+                               (ctob/add-token (thi/id :test-token-set)
+                                               (ctob/make-token :id (thi/new-id! :token-sizing)
+                                                                :name "token-sizing"
+                                                                :type :sizing
+                                                                :value 10))
+                               (ctob/add-token (thi/id :test-token-set)
+                                               (ctob/make-token :id (thi/new-id! :token-spacing)
+                                                                :name "token-spacing"
+                                                                :type :spacing
+                                                                :value 30)))
+                  :status-fn #(-> %
+                                  (ctos/set-tokens-status #{(thi/id :test-theme)}
+                                                          #{(thi/id :test-token-set)})))
+                 ;; Sync tokens-status from lib's internal active-themes
                  (tho/add-frame :frame-1
                                 :layout                 :flex     ;; TODO: those values come from main.data.workspace.shape_layout/default-layout-params
                                 :layout-flex-dir        :row      ;;       it should be good to use it directly, but first it should be moved to common.logic

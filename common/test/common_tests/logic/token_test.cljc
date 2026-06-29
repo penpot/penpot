@@ -19,66 +19,80 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (t/deftest generate-toggle-token-set-test
-  (t/testing "toggling an active set will switch to hidden theme without user sets"
-    (let [file (tht/sample-file-with-tokens
+  (t/testing "toggling an active set will deactivate it"
+    (let [theme-id (uuid/next)
+          set-id (thi/new-id! :foo-bar)
+          file (tht/sample-file-with-tokens
                 :lib-fn #(-> %
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                             (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                    :sets #{"foo/bar"}))
-                             (ctob/set-active-themes #{"/theme"})))
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "foo/bar"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
+                      (clt/generate-toggle-token-set tokens-status tokens-lib "foo/bar"))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: set is deactivated, theme stays active
+      (t/is (ctos/theme-active? redo-status theme-id))
+      (t/is (not (ctos/set-active? redo-status set-id)))
+      ;; Undo: set is active again
+      (t/is (ctos/theme-active? undo-status theme-id))
+      (t/is (ctos/set-active? undo-status set-id))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
-
-  (t/testing "toggling an inactive set will switch to hidden theme without user sets"
-    (let [file (tht/sample-file-with-tokens
+  (t/testing "toggling an inactive set will activate it"
+    (let [theme-id (uuid/next)
+          set-id (thi/new-id! :foo-bar)
+          file (tht/sample-file-with-tokens
                 :lib-fn #(-> %
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                             (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                    :sets #{"foo/bar"}))
-                             (ctob/set-active-themes #{"/theme"})))
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "foo/bar"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
+                      (clt/generate-toggle-token-set tokens-status tokens-lib "foo/bar"))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: set is activated, theme stays active
+      (t/is (ctos/theme-active? redo-status theme-id))
+      (t/is (ctos/set-active? redo-status set-id))
+      ;; Undo: set is inactive again
+      (t/is (ctos/theme-active? undo-status theme-id))
+      (t/is (not (ctos/set-active? undo-status set-id)))))
 
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
-
-  (t/testing "toggling an set with hidden theme already active will toggle set in hidden theme"
-    (let [file (tht/sample-file-with-tokens
+  (t/testing "toggling a set group toggles its sets in status"
+    (let [set-id (thi/new-id! :foo-bar)
+          file (tht/sample-file-with-tokens
                 :lib-fn #(-> %
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                             (ctob/add-theme (ctob/make-hidden-theme))
-                             (ctob/set-active-themes #{ctob/hidden-theme-path})))
+                             (ctob/add-set (ctob/make-token-set :id set-id :name "foo/bar"))))
 
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo"]))
+                      (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo"]))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= (ctob/get-active-theme-paths redo-lib) (ctob/get-active-theme-paths undo-lib)))
-
-      (t/is (= #{"foo/bar"} (:sets (ctob/get-hidden-theme redo-lib)))))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: set is activated
+      (t/is (ctos/set-active? redo-status set-id))
+      ;; Undo: set is deactivated
+      (t/is (not (ctos/set-active? undo-status set-id))))))
 
 (t/deftest set-token-theme-test
   (t/testing "delete token theme"
@@ -298,50 +312,69 @@
 
 (t/deftest generate-toggle-token-set-group-test
   (t/testing "toggling set group with no active sets inside will activate all child sets"
-    (let [file (tht/sample-file-with-tokens
+    (let [set-bar-id (thi/new-id! :foo-bar)
+          set-baz-id (thi/new-id! :foo-bar-baz)
+          set-child-id (thi/new-id! :baz-child)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
                 :lib-fn #(-> %
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
-                             (ctob/add-theme (ctob/make-token-theme :name "theme"))
-                             (ctob/set-active-themes #{"/theme"})))
+                             (ctob/add-set (ctob/make-token-set :id set-bar-id :name "foo/bar"))
+                             (ctob/add-set (ctob/make-token-set :id set-baz-id :name "foo/bar/baz"))
+                             (ctob/add-set (ctob/make-token-set :id set-child-id :name "foo/bar/baz/baz-child"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id :name "theme")))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{}))
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
+                      (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-      (t/is (= #{"foo/bar/baz" "foo/bar/baz/baz-child"} (:sets (ctob/get-hidden-theme redo-lib))))
-
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib)))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: all child sets activated, theme stays active
+      (t/is (ctos/theme-active? redo-status theme-id))
+      (t/is (ctos/set-active? redo-status set-baz-id))
+      (t/is (ctos/set-active? redo-status set-child-id))
+      ;; Undo: child sets deactivated
+      (t/is (ctos/theme-active? undo-status theme-id))
+      (t/is (not (ctos/set-active? undo-status set-baz-id)))
+      (t/is (not (ctos/set-active? undo-status set-child-id)))))
 
   (t/testing "toggling set group with partially active sets inside will deactivate all child sets"
-    (let [file (tht/sample-file-with-tokens
+    (let [set-bar-id (thi/new-id! :foo-bar)
+          set-baz-id (thi/new-id! :foo-bar-baz)
+          set-child-id (thi/new-id! :baz-child)
+          theme-id (uuid/next)
+          file (tht/sample-file-with-tokens
                 :lib-fn #(-> %
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar"))
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
-                             (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
-                             (ctob/add-theme (ctob/make-token-theme :name "theme"
-                                                                    :sets #{"foo/bar/baz"}))
-                             (ctob/set-active-themes #{"/theme"})))
+                             (ctob/add-set (ctob/make-token-set :id set-bar-id :name "foo/bar"))
+                             (ctob/add-set (ctob/make-token-set :id set-baz-id :name "foo/bar/baz"))
+                             (ctob/add-set (ctob/make-token-set :id set-child-id :name "foo/bar/baz/baz-child"))
+                             (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                    :name "theme"
+                                                                    :sets #{"foo/bar/baz"})))
+                :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-baz-id}))
 
+          tokens-status (tht/get-tokens-status file)
+          tokens-lib (tht/get-tokens-lib file)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (clt/generate-toggle-token-set-group (tht/get-tokens-lib file) ["foo" "bar"]))
+                      (clt/generate-toggle-token-set-group tokens-status tokens-lib ["foo" "bar"]))
 
           redo (thf/apply-changes file changes)
-          redo-lib (tht/get-tokens-lib redo)
+          redo-status (tht/get-tokens-status redo)
           undo (thf/apply-undo-changes redo changes)
-          undo-lib (tht/get-tokens-lib undo)]
-      (t/is (= #{} (:sets (ctob/get-hidden-theme redo-lib))))
-      (t/is (= #{ctob/hidden-theme-path} (ctob/get-active-theme-paths redo-lib)))
-
-      ;; Undo
-      (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib))))))
+          undo-status (tht/get-tokens-status undo)]
+      ;; Redo: all child sets deactivated, theme stays active
+      (t/is (ctos/theme-active? redo-status theme-id))
+      (t/is (not (ctos/set-active? redo-status set-baz-id)))
+      (t/is (not (ctos/set-active? redo-status set-child-id)))
+      ;; Undo: restores previous state
+      (t/is (ctos/theme-active? undo-status theme-id))
+      (t/is (ctos/set-active? undo-status set-baz-id))
+      (t/is (not (ctos/set-active? undo-status set-child-id))))))
 
 (t/deftest generate-move-token-set-test
   (t/testing "Ignore dropping set to the same position:"

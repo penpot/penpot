@@ -8,10 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as ctt]
-   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
@@ -188,26 +188,28 @@
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens-tree (-> (dsh/lookup-tokens-lib state)
-                                 (ctob/get-tokens-in-active-sets))]
-        (->> (if (contains? cf/flags :tokenscript)
-               (rx/of (-> (ts/resolve-tokens tokens-tree)
-                          (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
-               (sd/resolve-tokens tokens-tree))
-             (rx/mapcat
-              (fn [sd-tokens]
-                (let [undo-id (js/Symbol)]
-                  (rx/concat
-                   (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+      (let [tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)]
+        (when (and tokens-lib tokens-status)
+          (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
+            (->> (if (contains? cf/flags :tokenscript)
+                   (rx/of (-> (ts/resolve-tokens tokens-tree)
+                              (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+                   (sd/resolve-tokens tokens-tree))
+                 (rx/mapcat
+                  (fn [sd-tokens]
+                    (let [undo-id (js/Symbol)]
+                      (rx/concat
+                       (rx/of (dwu/start-undo-transaction undo-id :timeout false))
 
-                   ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                   ;; into a single commit-changes. This is not really the best way, the token application
-                   ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                   ;; of creating lots of `update-shapes`.
-                   (rx/of (dwsh/update-shapes-buffer-start))
-                   (->> (propagate-tokens state sd-tokens)
-                        (rx/catch #(rx/concat
-                                    (rx/of (dwsh/update-shapes-buffer-stop))
-                                    (rx/throw %))))
-                   (rx/of (dwsh/update-shapes-buffer-stop))
-                   (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+                       ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
+                       ;; into a single commit-changes. This is not really the best way, the token application
+                       ;; should be done with a changes_builder and sending only one `commit-changes` instead
+                       ;; of creating lots of `update-shapes`.
+                       (rx/of (dwsh/update-shapes-buffer-start))
+                       (->> (propagate-tokens state sd-tokens)
+                            (rx/catch #(rx/concat
+                                        (rx/of (dwsh/update-shapes-buffer-stop))
+                                        (rx/throw %))))
+                       (rx/of (dwsh/update-shapes-buffer-stop))
+                       (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))

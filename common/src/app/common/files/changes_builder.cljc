@@ -1037,18 +1037,6 @@
          (update :undo-changes conj {:type :set-tokens-status :theme-ids prev-theme-ids :set-ids prev-set-ids})
          (apply-changes-local)))))
 
-(defn set-active-token-themes
-  [changes active-theme-paths]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-active-theme-paths (d/nilv (some-> (get library-data :tokens-lib)
-                                                (ctob/get-active-theme-paths))
-                                        #{})]
-    (-> changes
-        (update :redo-changes conj {:type :set-active-token-themes :theme-paths active-theme-paths})
-        (update :undo-changes conj {:type :set-active-token-themes :theme-paths prev-active-theme-paths})
-        (apply-changes-local))))
-
 (defn rename-token-set-group
   [changes set-group-path set-group-fname]
   (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)

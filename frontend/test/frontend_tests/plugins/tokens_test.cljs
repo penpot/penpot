@@ -6,11 +6,13 @@
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.tokenscript :as ts]
    [app.main.store :as st]
    [app.plugins.api :as api]
@@ -103,24 +105,25 @@
     done
     (let [set-id    (cthi/new-id! :token-set)
           token-id  (cthi/new-id! :spacing-token)
-          file      (-> (cthf/sample-file :file1 :page-label :page1)
-                        (ctho/add-frame :frame1 {:layout :flex})
-                        (ctht/add-tokens-lib)
-                        (ctht/update-tokens-lib
-                         #(-> %
-                              (ctob/add-set
-                               (ctob/make-token-set :id set-id
-                                                    :name "spacing"))
-                              (ctob/add-theme
-                               (ctob/make-token-theme :name "theme"
-                                                      :sets #{"spacing"}))
-                              (ctob/set-active-themes #{"/theme"})
-                              (ctob/add-token
-                               set-id
-                               (ctob/make-token :id token-id
-                                                :name "spacing.medium"
-                                                :type :spacing
-                                                :value 16)))))
+          theme-id  (cthi/new-id! :theme)
+          file      (-> (ctht/sample-file-with-tokens
+                         :file-id :file1
+                         :lib-fn #(-> %
+                                      (ctob/add-set
+                                       (ctob/make-token-set :id set-id
+                                                            :name "spacing"))
+                                      (ctob/add-theme
+                                       (ctob/make-token-theme :id theme-id
+                                                              :name "theme"
+                                                              :sets #{"spacing"}))
+                                      (ctob/add-token
+                                       set-id
+                                       (ctob/make-token :id token-id
+                                                        :name "spacing.medium"
+                                                        :type :spacing
+                                                        :value 16)))
+                         :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+                        (ctho/add-frame :frame1 {:layout :flex}))
           store     (ths/setup-store file)
           _         (set! st/state store)
           _         (set! st/stream (ptk/input-stream store))
@@ -187,10 +190,11 @@
   ;; Demonstrates the bug: resolving the new token against active sets
   ;; only leaves the reference unresolved.
   (let [tokens-lib (inactive-set-library)
+        tokens-status (cfo/make-tokens-status-from-lib tokens-lib)
         token (ctob/make-token {:name "color.bg.default"
                                 :value "{color.gray.50}"
                                 :type :color})
-        tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+        tokens-tree (-> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
                         (assoc (:name token) token))
         resolved (ts/resolve-tokens tokens-tree)
         {:keys [errors resolved-value]} (get resolved (:name token))]
