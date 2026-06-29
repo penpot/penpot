@@ -41,8 +41,9 @@
   (ctf/update-file-data file #(cfo/update-tokens-status % f)))
 
 (defn sample-file-with-tokens
-  [& {:keys [lib-fn status-fn file-id] :or {lib-fn identity status-fn identity file-id :file1}}]
-  (-> (thf/sample-file file-id)
+  [& {:keys [lib-fn status-fn file-id] :as params
+      :or {lib-fn identity status-fn identity file-id :file1}}]
+  (-> (thf/sample-file file-id (dissoc params :lib-fn :status-fn))
       (add-tokens-lib)
       (update-tokens-lib lib-fn)
       (update-tokens-status status-fn)))

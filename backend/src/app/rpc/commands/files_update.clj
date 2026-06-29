@@ -106,7 +106,6 @@
     :set-token
     :set-token-set
     :set-token-theme
-    :set-active-token-themes
     :rename-token-set-group
     :move-token-set
     :move-token-set-group

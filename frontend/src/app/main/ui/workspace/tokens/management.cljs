@@ -2,6 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.path-names :as cpn]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.tokens-lib :as ctob]
@@ -49,15 +50,16 @@
 
 (mf/defc selected-set-info*
   {::mf/private true}
-  [{:keys [tokens-lib selected-token-set-id]}]
+  [{:keys [tokens-lib tokens-status selected-token-set-id]}]
   (let [selected-token-set
         (mf/with-memo [tokens-lib selected-token-set-id]
           (when selected-token-set-id
             (some-> tokens-lib (ctob/get-set selected-token-set-id))))
 
         active-token-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
+        (mf/with-memo [tokens-status tokens-lib]
+          (when (and tokens-status tokens-lib)
+            (cfo/get-active-set-names tokens-status tokens-lib)))
 
         token-set-active?
         (mf/use-fn
