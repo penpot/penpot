@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.shared.token-option :as to]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
@@ -25,31 +26,46 @@
         token (->> (:typography active-tokens)
                    (d/seek #(= (:name %) token-name)))
 
-        has-errors (some? (:errors token))
         display-name (or (:name token) token-name)
 
         resolved-value (:resolved-value token)
-        not-active (or (nil? token)
-                       (empty? (:typography active-tokens)))
         on-detach
         (mf/use-fn
          (mf/deps display-name)
          (fn []
            (detach-token display-name)))
 
+        all-tokens-map (mf/deref refs/workspace-all-tokens-map)
+
+        token-exists? (contains? all-tokens-map token-name)
+        has-errors (and token-exists?
+                        (some? (:errors token)))
+
+        not-active (and
+                    token-exists?
+                    (or (nil? token)
+                        (empty? (:typography active-tokens))))
+
+        broken-state (or (not token-exists?)
+                         has-errors
+                         not-active)
         tooltip-content (cond
                           not-active
-                          (tr "options.deleted-token")
+                          (tr "ds.inputs.token-field.no-active-token-option" token-name)
+
+                          (not token-exists?)
+                          (tr "options.deleted-token-with-name" token-name)
+
                           has-errors
-                          (tr "not-active-token.no-name")
+                          (tr "workspace.tokens.ref-not-valid")
+
                           :else
                           (mf/html [:> to/resolved-value-tooltip* {:token-name token-name
                                                                    :resolved-value resolved-value}]))]
 
     [:div {:class (stl/css-case :token-typography-row true
-                                :token-typography-row-with-errors has-errors
-                                :token-typography-row-not-active not-active)}
-     (when (or has-errors not-active)
+                                :token-typography-row-with-errors broken-state)}
+     (when broken-state
        [:div {:class (stl/css :error-dot)}])
      [:> icon* {:icon-id i/text-typography
                 :class (stl/css :icon)}]
