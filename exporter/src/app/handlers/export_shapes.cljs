@@ -6,6 +6,7 @@
 
 (ns app.handlers.export-shapes
   (:require
+   ["node:fs/promises" :as fsp]
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -46,9 +47,15 @@
 (s/def ::exports
   (s/coll-of ::export :kind vector? :min-count 1))
 
+;; `:external` flags a request coming from outside the Penpot UI (public API,
+;; scripts, plugins). Such callers want the rendered file bytes returned
+;; synchronously in the response body instead of the resource being uploaded
+;; to storage (single) or streamed via redis progress (multiple).
+(s/def ::external ::us/boolean)
+
 (s/def ::params
   (s/keys :req-un [::exports ::profile-id]
-          :opt-un [::wait ::name ::skip-children ::force-multiple ::is-wasm]))
+          :opt-un [::wait ::name ::skip-children ::force-multiple ::is-wasm ::external]))
 
 (defn handler
   [{:keys [:request/auth-token] :as exchange} {:keys [exports force-multiple] :as params}]
@@ -62,32 +69,51 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [export name skip-children is-wasm] :as params}]
+  [{:keys [:request/auth-token :request/auth-scheme] :as exchange} {:keys [export name skip-children is-wasm external] :as params}]
   (let [resource (rsc/create (:type export) (or name (:name export)))
-        export   (assoc export :skip-children skip-children :is-wasm (boolean is-wasm))]
+        export   (assoc export
+                        :skip-children skip-children
+                        :is-wasm (boolean is-wasm)
+                        :token-scheme auth-scheme)]
 
     (->> (rd/render export
                     (fn [{:keys [path] :as object}]
                       (sh/move! path (:path resource))))
-         (p/fmap (constantly resource))
-         (p/mcat (partial rsc/upload-resource auth-token))
-         (p/fmap (fn [resource]
-                   (dissoc resource :path)))
-         (p/fmap (fn [resource]
-                   (assoc exchange :response/body resource)))
+         (p/mcat
+          (fn [_]
+            (if external
+              ;; Stream the rendered file straight back instead of uploading it
+              ;; to storage. The response body is the raw bytes (Buffer), which
+              ;; `wrap-response-format` passes through untouched.
+              (->> (fsp/readFile (:path resource))
+                   (p/fmap (fn [buffer]
+                             (-> exchange
+                                 (assoc :response/status 200)
+                                 (assoc :response/body buffer)
+                                 (assoc :response/headers
+                                        {"content-type" (:mtype resource)
+                                         "content-disposition"
+                                         (str "attachment; filename=\"" (:filename resource) "\"")})))))
+              (->> (rsc/upload-resource auth-token auth-scheme resource)
+                   (p/fmap (fn [resource] (dissoc resource :path)))
+                   (p/fmap (fn [resource] (assoc exchange :response/body resource)))))))
          (p/merr (fn [cause]
                    (l/error :hint "unexpected error on single export"
                             :cause cause)
                    (p/rejected cause))))))
 
 (defn- handle-multiple-export
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports wait profile-id name is-wasm] :as params}]
+  [{:keys [:request/auth-token :request/auth-scheme] :as exchange} {:keys [exports wait profile-id name is-wasm external] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
 
+        ;; External callers get the zip bytes synchronously in the response
+        ;; body, so they don't observe the redis progress stream.
+        stream?     external
+
         on-progress (fn [{:keys [done]}]
-                      (when-not wait
+                      (when-not (or wait stream?)
                         (let [data {:type :export-update
                                     :resource-id (:id resource)
                                     :status "running"
@@ -97,7 +123,7 @@
 
         on-error    (fn [cause]
                       (l/error :hint "unexpected error on multiple export" :cause cause)
-                      (if wait
+                      (if (or wait stream?)
                         (p/rejected cause)
                         (redis/pub! topic {:type :export-update
                                            :resource-id (:id resource)
@@ -111,26 +137,46 @@
         append      (fn [{:keys [filename path] :as resource}]
                       (rsc/add-to-zip zip path (str/replace filename sanitize-file-regex "_")))
 
-        proc        (->> exports
-                         (map (fn [export] (rd/render (assoc export :is-wasm (boolean is-wasm)) append)))
+        build-zip   (->> exports
+                         (map (fn [export] (rd/render (assoc export :is-wasm (boolean is-wasm) :token-scheme auth-scheme) append)))
                          (p/all)
-                         (p/mcat (fn [_] (rsc/close-zip zip)))
-                         (p/fmap (constantly resource))
-                         (p/mcat (partial rsc/upload-resource auth-token))
-                         (p/fmap (fn [resource]
-                                   (let [data {:type :export-update
-                                               :name (:name resource)
-                                               :filename (:filename resource)
-                                               :resource-id (:id resource)
-                                               :resource-uri (:uri resource)
-                                               :mtype (:mtype resource)
-                                               :status "ended"}]
-                                     (p/do (redis/pub! topic data)
-                                           (assoc exchange :response/body resource)))))
-                         (p/merr on-error))]
-    (if wait
-      (p/then proc #(assoc exchange :response/body (dissoc % :path)))
-      (assoc exchange :response/body (dissoc resource :path)))))
+                         (p/mcat (fn [_] (rsc/close-zip zip))))]
+
+    (if stream?
+      ;; Stream the zip bytes straight back instead of uploading it to
+      ;; storage. Used by external API callers that want the file content
+      ;; in the response body. The UI never sets `:external`, so its
+      ;; upload + redis-progress flow below is unchanged.
+      (->> build-zip
+           (p/mcat (fn [_] (fsp/readFile (:path resource))))
+           (p/fmap (fn [buffer]
+                     (-> exchange
+                         (assoc :response/status 200)
+                         (assoc :response/body buffer)
+                         (assoc :response/headers
+                                {"content-type" (:mtype resource)
+                                 "content-disposition"
+                                 (str "attachment; filename=\"" (:filename resource) "\"")}))))
+           (p/merr (fn [cause]
+                     (l/error :hint "unexpected error on multiple export" :cause cause)
+                     (p/rejected cause))))
+      (let [proc (->> build-zip
+                      (p/fmap (constantly resource))
+                      (p/mcat (partial rsc/upload-resource auth-token auth-scheme))
+                      (p/fmap (fn [resource]
+                                (let [data {:type :export-update
+                                            :name (:name resource)
+                                            :filename (:filename resource)
+                                            :resource-id (:id resource)
+                                            :resource-uri (:uri resource)
+                                            :mtype (:mtype resource)
+                                            :status "ended"}]
+                                  (p/do (redis/pub! topic data)
+                                        (assoc exchange :response/body resource)))))
+                      (p/merr on-error))]
+        (if wait
+          (p/then proc #(assoc exchange :response/body (dissoc % :path)))
+          (assoc exchange :response/body (dissoc resource :path)))))))
 
 (defn- assoc-file-name
   "A transducer that assocs a candidate filename and avoid duplicates"

@@ -72,6 +72,12 @@ export PENPOT_USER_FEEDBACK_DESTINATION="support@example.com"
 
 export PENPOT_NITRATE_BACKEND_URI=http://localhost:3000/admin-console
 
+# Headless WASM export: render `:is-wasm` exports via the in-process Skia/WASM
+# pipeline (no browser). Reads the render-wasm artifact from PENPOT_WASM_DIR,
+# defaulting to ../frontend/resources/public/js (render-wasm.js/.wasm).
+export PENPOT_WASM_HEADLESS=true
+# export PENPOT_WASM_DIR=../frontend/resources/public/js
+
 export JAVA_OPTS="\
        -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -Djdk.attach.allowAttachSelf \

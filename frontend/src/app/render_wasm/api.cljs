@@ -14,7 +14,6 @@
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
-   [app.common.math :as mth]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
@@ -33,7 +32,9 @@
    [app.main.store :as st]
    [app.main.ui.shapes.text]
    [app.render-wasm.api.fonts :as f]
+   [app.render-wasm.api.props :as props]
    [app.render-wasm.api.shapes :as shapes]
+   [app.render-wasm.serialize-shape :as serialize-shape]
    [app.render-wasm.api.texts :as t]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
@@ -249,8 +250,6 @@
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
-
-(def ^:const MAX_BUFFER_CHUNK_SIZE (* 256 1024))
 
 (def ^:const DEBOUNCE_DELAY_MS 100)
 
@@ -617,7 +616,7 @@
 
 (defn set-masked
   [masked]
-  (h/call wasm/internal-module "_set_shape_masked_group" masked))
+  (props/set-masked masked))
 
 (defn set-shape-selrect
   [selrect]
@@ -711,10 +710,6 @@
         (h/call wasm/internal-module "_set_children"))))
   (perf/end-measure "set-shape-children")
   nil)
-
-(defn- get-string-length
-  [string]
-  (+ (count string) 1))
 
 
 (defn- get-texture-id-for-gl-object
@@ -816,32 +811,20 @@
 
 (defn set-shape-fills
   [shape-id fills thumbnail?]
-  (if (empty? fills)
-    (h/call wasm/internal-module "_clear_shape_fills")
-    (let [fills  (types.fills/coerce fills)
-          image-ids (types.fills/get-image-ids fills)
-          offset (mem/alloc->offset-32 (types.fills/get-byte-size fills))
-          heap   (mem/get-heap-u32)]
-
-      ;; write fills to the heap
-      (types.fills/write-to fills heap offset)
-
-      ;; send fills to wasm
-      (h/call wasm/internal-module "_set_shape_fills")
-
-      ;; load images for image fills if not cached
-      (keep (fn [id]
-              (let [buffer        (uuid/get-u32 id)
-                    cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                          (aget buffer 0)
-                                          (aget buffer 1)
-                                          (aget buffer 2)
-                                          (aget buffer 3)
-                                          thumbnail?)]
-                (when (zero? cached-image?)
-                  (fetch-image shape-id id thumbnail?))))
-
-            image-ids))))
+  ;; Record write is shared with the headless exporter; the image fetch below is
+  ;; browser-only (WebGL textures).
+  (when-let [fills (props/write-shape-fills! fills)]
+    (keep (fn [id]
+            (let [buffer        (uuid/get-u32 id)
+                  cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                        (aget buffer 0)
+                                        (aget buffer 1)
+                                        (aget buffer 2)
+                                        (aget buffer 3)
+                                        thumbnail?)]
+              (when (zero? cached-image?)
+                (fetch-image shape-id id thumbnail?))))
+          (types.fills/get-image-ids fills))))
 
 (defn set-shape-strokes
   [shape-id strokes thumbnail?]
@@ -899,41 +882,16 @@
 
 (defn set-shape-svg-attrs
   [attrs]
-  (let [style (:style attrs)
-        fill-rule       (-> (or (:fillRule style) (:fillRule attrs)) sr/translate-fill-rule)
-        stroke-linecap  (-> (or (:strokeLinecap style) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
-        stroke-linejoin (-> (or (:strokeLinejoin style) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
-        fill-none       (= "none" (or (:fill style) (:fill attrs)))]
-    (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
+  (props/set-shape-svg-attrs attrs))
 
 (defn set-shape-path-content
   "Upload path content in chunks to WASM."
   [content]
-  (let [chunk-size (quot MAX_BUFFER_CHUNK_SIZE 4)
-        buffer-size (path/get-byte-size content)
-        padded-size (* 4 (mth/ceil (/ buffer-size 4)))
-        buffer (js/Uint8Array. padded-size)]
-    (path/write-to content (.-buffer buffer) 0)
-    (h/call wasm/internal-module "_start_shape_path_buffer")
-    (let [heapu32 (mem/get-heap-u32)]
-      (loop [offset 0]
-        (when (< offset padded-size)
-          (let [end (min padded-size (+ offset (* chunk-size 4)))
-                chunk (.subarray buffer offset end)
-                chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
-                offset-size (.-length chunk-u32)
-                heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
-            (.set heapu32 chunk-u32 heap-offset)
-            (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
-            (recur end)))))
-    (h/call wasm/internal-module "_set_shape_path_buffer")))
+  (props/set-shape-path-content content))
 
 (defn set-shape-svg-raw-content
   [content]
-  (let [size (get-string-length content)
-        offset (mem/alloc size)]
-    (h/call wasm/internal-module "stringToUTF8" content offset size)
-    (h/call wasm/internal-module "_set_shape_svg_raw_content")))
+  (props/set-shape-svg-raw-content content))
 
 (defn set-shape-blend-mode
   [blend-mode]
@@ -978,25 +936,15 @@
 
 (defn set-shape-bool-type
   [bool-type]
-  (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
+  (props/set-shape-bool-type bool-type))
 
 (defn set-shape-blur
   [blur]
-  (let [type (sr/translate-blur-type :layer-blur)]
-    (if (some? blur)
-      (let [hidden (:hidden blur)
-            value  (:value blur)]
-        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-      (h/call wasm/internal-module "_clear_shape_blur" type))))
+  (props/set-shape-blur blur))
 
 (defn set-shape-background-blur
   [background-blur]
-  (let [type (sr/translate-blur-type :background-blur)]
-    (if (some? background-blur)
-      (let [hidden (:hidden background-blur)
-            value  (:value background-blur)]
-        (h/call wasm/internal-module "_set_shape_blur" type hidden value))
-      (h/call wasm/internal-module "_clear_shape_blur" type))))
+  (props/set-shape-background-blur background-blur))
 
 (defn set-shape-corners
   [corners]
@@ -1213,27 +1161,7 @@
 
 (defn set-shape-shadows
   [shadows]
-  (h/call wasm/internal-module "_clear_shape_shadows")
-
-  (run! (fn [shadow]
-          (let [color  (get shadow :color)
-                blur   (get shadow :blur)
-                rgba   (sr-clr/hex->u32argb (get color :color)
-                                            (get color :opacity))
-                hidden (get shadow :hidden)
-                x      (get shadow :offset-x)
-                y      (get shadow :offset-y)
-                spread (get shadow :spread)
-                style  (get shadow :style)]
-            (h/call wasm/internal-module "_add_shape_shadow"
-                    rgba
-                    blur
-                    spread
-                    x
-                    y
-                    (sr/translate-shadow-style style)
-                    hidden)))
-        shadows))
+  (props/set-shape-shadows shadows))
 
 (defn fonts-from-text-content [content fallback-fonts-only?]
   (let [paragraph-set (first (get content :children))
@@ -1272,7 +1200,7 @@
 
 (defn set-shape-grow-type
   [grow-type]
-  (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
+  (props/set-shape-grow-type grow-type))
 
 (defn get-text-dimensions
   ([id]
@@ -1381,45 +1309,22 @@
           id           (dm/get-prop shape :id)
           type         (dm/get-prop shape :type)
 
-          masked       (get shape :masked-group)
-
           fills        (get shape :fills)
           strokes      (if (= type :group)
                          [] (get shape :strokes))
-          children     (get shape :shapes)
           content      (let [content (get shape :content)]
                          (if (= type :text)
                            (ensure-text-content content)
-                           content))
-          bool-type    (get shape :bool-type)
-          grow-type    (get shape :grow-type)
-          blur         (get shape :blur)
-          background-blur (get shape :background-blur)
-          svg-attrs    (get shape :svg-attrs)
-          shadows      (get shape :shadow)]
+                           content))]
 
-      (shapes/set-shape-base-props shape)
+      ;; Host-independent properties (base props, children, blur, background
+      ;; blur, shadows, svg attrs, mask, bool type, path geometry, grow type),
+      ;; shared with the headless exporter so the two can't drift.
+      (serialize-shape/serialize-shape! shape)
 
-      ;; Remaining properties that need separate calls (variable-length or conditional)
-      (set-shape-children children)
-      (set-shape-blur blur)
-      (set-shape-background-blur background-blur)
-      (when (= type :group)
-        (set-masked (boolean masked)))
-      (when (= type :bool)
-        (set-shape-bool-type bool-type))
-      (when (and (some? content)
-                 (or (= type :path)
-                     (= type :bool)))
-        (set-shape-path-content content))
-      (when (some? svg-attrs)
-        (set-shape-svg-attrs svg-attrs))
+      ;; Browser-only: svg-raw markup (needs React) + workspace layout.
       (when (and (some? content) (= type :svg-raw))
         (set-shape-svg-raw-content (get-static-markup shape)))
-      (set-shape-shadows shadows)
-      (when (= type :text)
-        (set-shape-grow-type grow-type))
-
       (set-shape-layout shape)
       (set-layout-data shape)
       (let [is-text? (= type :text)

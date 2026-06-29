@@ -44,6 +44,15 @@ pub(crate) fn get_render_state() -> &'static mut RenderState {
     }
 }
 
+/// Whether the global render state has been initialized. The headless export
+/// path (`init_headless`) boots without a GPU render state, so tile and
+/// interaction bookkeeping (which only exists to drive incremental on-screen
+/// rendering) must be skipped when this is false.
+#[inline(always)]
+pub(crate) fn has_render_state() -> bool {
+    unsafe { !RENDER_STATE.is_null() }
+}
+
 /// GPU-free resources for the headless export path
 static mut RENDER_RESOURCES: *mut RenderResources = std::ptr::null_mut();
 
@@ -137,6 +146,15 @@ fn resources_init() {
     }
 }
 
+/// Initializes GPU-free RenderResources for the headless export path.
+fn resources_init_headless() {
+    unsafe {
+        let resources = RenderResources::try_new_headless()
+            .expect("Cannot initialize headless RenderResources");
+        RENDER_RESOURCES = Box::into_raw(Box::new(resources));
+    }
+}
+
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
@@ -172,6 +190,19 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     text_editor_init();
     design_init();
     ui_init();
+    Ok(())
+}
+
+/// Boots the engine for headless export with no GPU/WebGL context: only
+/// `RenderResources` (GPU-free) + the design state. The export (raster/PDF)
+/// paths render onto their own surface; the interactive render loop is not
+/// available on an instance initialized this way. `width`/`height` are kept for
+/// API symmetry with `init` but unused — the export sizes from shape bounds.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn init_headless(_width: i32, _height: i32) -> Result<()> {
+    resources_init_headless();
+    design_init();
     Ok(())
 }
 

@@ -1,9 +1,12 @@
-{:paths ["src" "vendor" "resources" "test"]
+{:paths ["src" "vendor" "resources" "test" "../frontend/src" "../frontend/resources"]
  :deps
  {penpot/common       {:local/root "../common"}
   org.clojure/clojure {:mvn/version "1.12.2"}
   binaryage/devtools  {:mvn/version "1.0.7"}
   metosin/reitit-core {:mvn/version "0.9.1"}
+  ;; Needed by the shared render-wasm font namespaces reused from ../frontend/src
+  ;; (the font db uses an okulary atom so the editor keeps its reactivity).
+  funcool/okulary     {:mvn/version "2022.04.11-16"}
   }
  :aliases
  {:outdated

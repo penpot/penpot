@@ -6,164 +6,17 @@
 
 (ns app.render-wasm.api.texts
   (:require
-   [app.common.data :as d]
-   [app.common.types.fills.impl :as types.fills.impl]
-   [app.common.uuid :as uuid]
    [app.render-wasm.api.fonts :as f]
-   [app.render-wasm.helpers :as h]
-   [app.render-wasm.mem :as mem]
-   [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]))
-
-(def ^:const PARAGRAPH-ATTR-U8-SIZE 12)
-(def ^:const SPAN-ATTR-U8-SIZE 64)
-(def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
-
-(defn- encode-text
-  "Into an UTF8 buffer. Returns an ArrayBuffer instance"
-  [text]
-  (let [encoder (js/TextEncoder.)]
-    (.encode encoder text)))
-
-(defn- write-span-fills
-  [offset dview fills]
-  (let [new-ofset (reduce (fn [offset fill]
-                            (let [opacity  (get fill :fill-opacity 1.0)
-                                  color    (get fill :fill-color)
-                                  gradient (get fill :fill-color-gradient)
-                                  image    (get fill :fill-image)]
-
-                              (cond
-                                (some? color)
-                                (types.fills.impl/write-solid-fill offset dview opacity color)
-
-                                (some? gradient)
-                                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-
-                                (some? image)
-                                (types.fills.impl/write-image-fill offset dview opacity image))))
-
-                          offset
-                          fills)
-        padding-fills (max 0 (- MAX-TEXT-FILLS (count fills)))]
-    (+ new-ofset (* padding-fills types.fills.impl/FILL-U8-SIZE))))
-
-
-(defn- write-paragraph
-  [offset dview paragraph]
-  (let [text-align      (sr/translate-text-align (get paragraph :text-align))
-        text-direction  (sr/translate-text-direction (get paragraph :text-direction))
-        text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
-        text-transform  (sr/translate-text-transform (get paragraph :text-transform))
-        line-height     (f/serialize-line-height (get paragraph :line-height))
-        letter-spacing  (f/serialize-letter-spacing (get paragraph :letter-spacing))]
-
-    (-> offset
-        (mem/write-u8 dview text-align)
-        (mem/write-u8 dview text-direction)
-        (mem/write-u8 dview text-decoration)
-        (mem/write-u8 dview text-transform)
-
-        (mem/write-f32 dview line-height)
-        (mem/write-f32 dview letter-spacing)
-
-        (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
-
-(defn- write-spans
-  [offset dview spans paragraph]
-  (let [paragraph-font-size (get paragraph :font-size)
-        paragraph-font-weight (-> paragraph :font-weight f/serialize-font-weight)
-        paragraph-line-height (f/serialize-line-height (get paragraph :line-height))]
-    (reduce (fn [offset span]
-              (let [font-style  (sr/translate-font-style (get span :font-style "normal"))
-                    font-size   (get span :font-size paragraph-font-size)
-                    font-size   (f/serialize-font-size font-size)
-
-                    line-height     (f/serialize-line-height (get span :line-height) paragraph-line-height)
-                    letter-spacing  (f/serialize-letter-spacing (get span :letter-spacing))
-
-                    font-weight (get span :font-weight paragraph-font-weight)
-                    font-weight (f/serialize-font-weight font-weight)
-
-                    font-id     (f/normalize-font-id (get span :font-id "sourcesanspro"))
-                    font-family (hash (get span :font-family "sourcesanspro"))
-
-                    text-buffer (encode-text (get span :text ""))
-                    text-length (mem/size text-buffer)
-                    fills       (take MAX-TEXT-FILLS (get span :fills []))
-
-                    font-variant-id
-                    (get span :font-variant-id)
-
-                    font-variant-id
-                    (if (uuid? font-variant-id)
-                      font-variant-id
-                      uuid/zero)
-
-                    text-decoration
-                    (or (sr/translate-text-decoration (:text-decoration span))
-                        (sr/translate-text-decoration (:text-decoration paragraph))
-                        (sr/translate-text-decoration "none"))
-
-                    text-transform
-                    (or (sr/translate-text-transform (:text-transform span))
-                        (sr/translate-text-transform (:text-transform paragraph))
-                        (sr/translate-text-transform "none"))
-
-                    text-direction
-                    (or (sr/translate-text-direction (:text-direction span))
-                        (sr/translate-text-direction (:text-direction paragraph))
-                        (sr/translate-text-direction "ltr"))]
-
-                (-> offset
-                    (mem/write-u8 dview font-style)
-                    (mem/write-u8 dview text-decoration)
-                    (mem/write-u8 dview text-transform)
-                    (mem/write-u8 dview text-direction)
-
-                    (mem/write-f32 dview font-size)
-                    (mem/write-f32 dview line-height)
-                    (mem/write-f32 dview letter-spacing)
-                    (mem/write-u32 dview font-weight)
-
-                    (mem/write-uuid dview font-id)
-                    (mem/write-i32 dview font-family)
-                    (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
-
-                    (mem/write-i32 dview text-length)
-                    (mem/write-i32 dview (count fills))
-                    (mem/assert-written offset SPAN-ATTR-U8-SIZE)
-
-                    (write-span-fills dview fills))))
-            offset
-            spans)))
+   [app.render-wasm.text-content :as tc]))
 
 (defn write-shape-text
-  ;; buffer has the following format:
-  ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text>]
+  "Workspace text serialization: the byte writing is shared via
+  `app.render-wasm.text-content`; font resolution is the workspace's (fonts DB)."
   [spans paragraph text]
-  (let [normalized-paragraph (f/normalize-paragraph-font paragraph)
-        normalized-spans (map #(f/normalize-span-font % normalized-paragraph) spans)
-        num-spans    (count normalized-spans)
-        fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
-        metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
-                         (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
-
-        text-buffer   (encode-text text)
-        text-size     (mem/size text-buffer)
-
-        total-size    (+ 4 metadata-size text-size)
-        heapu8        (mem/get-heap-u8)
-        dview         (mem/get-data-view)
-        offset        (mem/alloc total-size)]
-
-    (-> offset
-        (mem/write-u32 dview num-spans)
-        (write-paragraph dview normalized-paragraph)
-        (write-spans dview normalized-spans normalized-paragraph)
-        (mem/write-buffer heapu8 text-buffer))
-
-    (h/call wasm/internal-module "_set_shape_text_content")))
+  (tc/write-shape-text! spans paragraph text
+                        {:normalize-font-id   f/normalize-font-id
+                         :normalize-paragraph f/normalize-paragraph-font
+                         :normalize-span      f/normalize-span-font}))
 
 (def ^:private emoji-pattern
   #"(?:\uD83C[\uDDE6-\uDDFF]\uD83C[\uDDE6-\uDDFF])|(?:\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDEFF])|(?:\uD83E[\uDD00-\uDDFF])|(?:\uD83D[\uDE80-\uDEFF]|\uD83E[\uDC00-\uDCFF])|(?:\uD83E[\uDE70-\uDFFF])|[\u2600-\u26FF\u2700-\u27BF\u2300-\u23FF\u2B00-\u2BFF]")

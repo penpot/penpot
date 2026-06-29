@@ -28,4 +28,16 @@ impl RenderResources {
             ),
         })
     }
+
+    /// Headless export resources: CPU-only image store, no GPU/WebGL.
+    pub fn try_new_headless() -> Result<Self> {
+        Ok(Self {
+            fonts: FontStore::try_new()?,
+            images: ImageStore::new_without_gpu(),
+            sampling_options: skia::SamplingOptions::new(
+                skia::FilterMode::Linear,
+                skia::MipmapMode::Nearest,
+            ),
+        })
+    }
 }

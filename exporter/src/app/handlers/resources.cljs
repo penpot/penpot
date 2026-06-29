@@ -7,7 +7,7 @@
 (ns app.handlers.resources
   "Temporal resources management."
   (:require
-   ["archiver" :as arc]
+   ["archiver" :refer [ZipArchive]]
    ["node:fs" :as fs]
    ["node:fs/promises" :as fsp]
    ["node:path" :as path]
@@ -17,6 +17,7 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.util.auth :as auth]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [cljs.core :as c]
@@ -41,7 +42,7 @@
 
 (defn create-zip
   [& {:keys [resource on-complete on-progress on-error]}]
-  (let [^js zip  (new arc/ZipArchive)
+  (let [^js zip  (new ZipArchive #js {})
         ^js out  (fs/createWriteStream (:path resource))
         on-complete (or on-complete (constantly nil))
         progress (atom 0)]
@@ -65,15 +66,17 @@
               (.finalize ^js zip))))
 
 (defn upload-resource
-  [auth-token resource]
-  (->> (fsp/readFile (:path resource))
+  ([auth-token resource]
+   (upload-resource auth-token :bearer resource))
+  ([auth-token auth-scheme resource]
+   (->> (fsp/readFile (:path resource))
        (p/fmap (fn [buffer]
                  (new js/Blob #js [buffer] #js {:type (:mtype resource)})))
        (p/mcat (fn [blob]
                  (let [fdata  (new http/FormData)
                        agent  (new http/Agent #js {:connect #js {:rejectUnauthorized false}})
                        headers #js {"X-Shared-Key" (str "exporter " cf/management-key)
-                                    "Authorization" (str "Bearer " auth-token)}
+                                    "Authorization" (auth/header-value auth-token auth-scheme)}
 
                        request #js {:headers headers
                                     :method "POST"
@@ -95,4 +98,4 @@
                    (.text response))))
        (p/fmap t/decode-str)
        (p/fmap (fn [result]
-                 (merge resource (dissoc result :id))))))
+                 (merge resource (dissoc result :id)))))))
