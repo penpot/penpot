@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
@@ -220,6 +221,32 @@
            (rx/map sync-comment-thread-position)
            (rx/take-until stopper)))))
 
+(defn frame-pin-transform
+  "Matrix that moves a comment pinned inside `frame` as the frame is transformed,
+   following its translation and rotation but not its resize scale."
+  [frame modifiers transform]
+  (when (and (some? frame) (or (some? modifiers) (some? transform)))
+    (let [frame' (cond-> frame
+                   (some? modifiers) (gsh/transform-shape modifiers)
+                   (some? transform) (gsh/apply-transform transform))
+
+          c   (gsh/shape->center frame)
+          c'  (gsh/shape->center frame')
+          tfi (or (:transform-inverse frame) (gmt/matrix))
+          tf' (or (:transform frame') (gmt/matrix))
+          sr  (:selrect frame)
+          sr' (:selrect frame')
+          d   (gpt/point (- (:x sr') (:x sr))
+                         (- (:y sr') (:y sr)))]
+      (-> (gmt/matrix)
+          (gmt/translate! c')
+          (gmt/multiply! tf')
+          (gmt/translate! (gpt/negate c'))
+          (gmt/translate! d)
+          (gmt/translate! c)
+          (gmt/multiply! tfi)
+          (gmt/translate! (gpt/negate c))))))
+
 ;; Move comment threads that are inside a frame when that frame is moved"
 
 (defn- move-frame-comment-threads
@@ -242,25 +269,18 @@
 
             build-move-event
             (fn [comment-thread]
-              (let [frame-id (:frame-id comment-thread)
+              (let [frame-id  (:frame-id comment-thread)
                     frame     (get objects frame-id)
                     modifiers (get-in object-modifiers [frame-id :modifiers])
                     transform (get transforms frame-id)
 
-                    frame'
-                    (cond-> frame
-                      (some? modifiers)
-                      (gsh/transform-shape modifiers)
+                    matrix    (frame-pin-transform frame modifiers transform)
 
-                      (some? transform)
-                      (gsh/apply-transform transform))
-
-                    moved     (gpt/to-vec (gpt/point (:x frame) (:y frame))
-                                          (gpt/point (:x frame') (:y frame')))
                     position  (get-in threads-position-map [(:id comment-thread) :position])
-                    new-x     (+ (:x position) (:x moved))
-                    new-y     (+ (:y position) (:y moved))]
-                (update-comment-thread-position comment-thread [new-x new-y] (:id frame))))]
+                    position' (cond-> position
+                                (some? matrix)
+                                (gpt/transform matrix))]
+                (update-comment-thread-position comment-thread [(:x position') (:y position')] frame-id)))]
 
         (->> (:comment-threads state)
              (vals)
