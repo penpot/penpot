@@ -27,7 +27,7 @@ pub mod walk;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::{HashSet};
+use std::collections::{HashMap, HashSet};
 
 use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
@@ -41,9 +41,9 @@ use crate::globals::get_design_state;
 use crate::shapes::{
     Blur, BlurType, Fill, Frame, Layout, Shadow, Shape, Stroke, StrokeKind, TextContent, Type, all_with_ancestors,
 };
-use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
-use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
+use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
+use crate::tiles::{self, PendingTiles, Tile, TileRect, TileViewbox, TileHashMap};
 use crate::view::{Viewbox, ViewboxUpdated};
 use crate::wapi;
 use crate::{get_gpu_state, performance};
@@ -66,12 +66,62 @@ pub enum RenderFlag {
     Full = 2,
 }
 
+#[derive(Debug)]
+#[repr(u8)]
+pub enum TileDisplayPhase {
+    Enter = 0,
+    Exit = 1,
+}
+
+#[derive(Debug)]
+pub struct TileDisplayItem {
+    pub id: Uuid,
+    pub phase: TileDisplayPhase,
+}
+
+impl TileDisplayItem {
+    pub fn get_display_list(shapes: ShapesPoolRef, viewbox: &Viewbox, root_id: Uuid, output: &mut HashMap<Tile, Vec<Self>>) {
+        Self::dfs(shapes, viewbox, root_id, output);
+    }
+
+    // Recursive helper that pushes to the output vector
+    fn dfs(shapes: ShapesPoolRef, viewbox: &Viewbox, id: Uuid, output: &mut HashMap<Tile, Vec<Self>>) {
+        if id.is_nil() {
+            let shape = shapes.get(&id).unwrap();
+            for shape_id in shape.children_ids(false) {
+                Self::dfs(shapes, viewbox, shape_id, output);
+            }
+            return;
+        }
+
+        let shape = shapes.get(&id).unwrap();
+        let tile_rect = shape.get_tile_rect(&viewbox);
+        for tile in tile_rect.iter(true) {
+            let _ = output.entry(tile).or_insert_with(Vec::new);
+            output.get_mut(&tile).unwrap().push(Self::enter(shape.id));
+            for shape_id in shape.children_ids(false) {
+                Self::dfs(shapes, viewbox, shape_id, output);
+            }
+            output.get_mut(&tile).unwrap().push(Self::exit(shape.id));
+        }
+    }
+
+    pub fn enter(id: Uuid) -> Self {
+        Self { id, phase: TileDisplayPhase::Enter }
+    }
+
+    pub fn exit(id: Uuid) -> Self {
+        Self { id, phase: TileDisplayPhase::Exit }
+    }
+}
+
 pub struct TileRenderState {
-    pub current: Option<tiles::Tile>,
+    pub current: Option<Tile>,
     pub current_had_shapes: bool,
-    pub viewbox: tiles::TileViewbox,
-    pub tiles: tiles::TileHashMap,
+    pub viewbox: TileViewbox,
+    pub tiles: TileHashMap,
     pub pending: PendingTiles,
+    pub display_list: HashMap<Tile, Vec<TileDisplayItem>>,
 }
 
 pub(crate) struct RenderState {
@@ -168,6 +218,7 @@ impl RenderState {
                     options.dpr_viewport_interest_area_threshold,
                 ),
                 pending: PendingTiles::new(),
+                display_list: HashMap::new(),
             },
             nested_fills: vec![],
             nested_blurs: vec![],
@@ -591,7 +642,7 @@ impl RenderState {
         // gestures + pan/zoom). AA edge sampling is per-pixel and adds
         // up across many shapes; reverts to full quality on commit.
         let antialias = true;
-            // && shape.should_use_antialias(self.get_scale_fast(), self.options.antialias_threshold);
+            // && shape.should_use_antialias(self.viewbox.get_scale(), self.options.antialias_threshold);
         let skip_effects = false;
 
         let has_nested_fills = self
@@ -661,7 +712,7 @@ impl RenderState {
         // );
 
         if can_render_directly {
-            let scale = self.get_scale_fast();
+            let scale = self.viewbox.get_scale();
             let translation = self
                 .surfaces
                 .get_render_context_translation(self.render_area, scale);
@@ -717,7 +768,7 @@ impl RenderState {
 
         // set clipping
         if let Some(clips) = clip_bounds.as_ref() {
-            let scale = self.get_scale_fast();
+            let scale = self.viewbox.get_scale();
             for (mut bounds, corners, transform, _inverse_transform) in clips.iter() {
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(transform);
@@ -858,7 +909,7 @@ impl RenderState {
                 let count_inner_strokes = shape.count_visible_inner_strokes();
                 // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
                 let text_fill_inset =
-                    (count_inner_strokes > 0).then(|| 1.0 / self.get_scale_fast());
+                    (count_inner_strokes > 0).then(|| 1.0 / self.viewbox.get_scale());
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
@@ -1262,8 +1313,22 @@ impl RenderState {
         Ok(())
     }
 
-    fn populate_pending_nodes(&mut self) {
+    fn populate_tile_pending_nodes(&mut self) -> Result<()> {
+        println!("populate_tile_pending_nodes");
+        let design_state = get_design_state();
+        let tree = &design_state.shapes;
 
+        // Clears tile pending nodes.
+        self.tile.display_list.clear();
+        TileDisplayItem::get_display_list(
+            tree,
+            &self.viewbox,
+            Uuid::nil(),
+            &mut self.tile.display_list
+        );
+
+        // println!("display_list {:?}", self.tile.display_list);
+        Ok(())
     }
 
     /// Clears all the necessary vecs and hashmaps.
@@ -1281,8 +1346,6 @@ impl RenderState {
         self.pending_nodes.clear();
         self.pending_nodes.reserve(tree.len());
 
-        self.populate_pending_nodes();
-
         // Clear nested state stacks to avoid residual fills/blurs from previous renders
         // being incorrectly applied to new frames
         self.nested_fills.clear();
@@ -1292,6 +1355,9 @@ impl RenderState {
 
         // reorder by distance to the center.
         self.tile.current = None;
+
+        // WIP: Generamos la lista de nodos pendientes por cada tile.
+        self.populate_tile_pending_nodes();
 
         self.empty_grid_frame_ids.clear();
         if self.show_grid.is_some() {
@@ -1545,6 +1611,7 @@ impl RenderState {
         }
     }
 
+    #[inline(always)]
     pub fn render_shape_enter(
         &mut self,
         element: &Shape,
@@ -1555,7 +1622,7 @@ impl RenderState {
         enter_exit::render_shape_enter(self, element, mask, clip_bounds, target_surface)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn render_shape_exit(
         &mut self,
         element: &Shape,
@@ -1647,6 +1714,51 @@ impl RenderState {
         &mut self,
         timestamp: i32,
         allow_stop: bool,
+        export:  bool,
+    ) -> Result<(bool, bool)> {
+        // Redirects writings.
+        let mut target_surface = SurfaceId::Current;
+        if export {
+            target_surface = SurfaceId::Export;
+        }
+
+        let design_state = get_design_state();
+        let tree = &design_state.shapes;
+
+        let Some(current_tile) = self.tile.current else {
+            return Ok((true, true));
+        };
+
+        let Some(display_list) = self.tile.display_list.get_mut(&current_tile) else {
+            return Ok((true, true));
+        };
+
+        let len = display_list.len();
+        for index in 0..len {
+            let display_item = &display_list[index];
+            let Some(shape) = tree.get(&display_item.id) else {
+                continue;
+            };
+
+            match display_item.phase {
+                TileDisplayPhase::Enter => {
+                    let mut paint = skia::Paint::default();
+                    paint.set_color(skia::Color::BLACK);
+                    self.surfaces.canvas(SurfaceId::Backbuffer).draw_rect(shape.selrect, &paint);
+                }
+                TileDisplayPhase::Exit => {
+
+                }
+            }
+        }
+        Ok((false, false))
+    }
+
+    /*
+    pub fn render_shape_tree_tile(
+        &mut self,
+        timestamp: i32,
+        allow_stop: bool,
         export: bool,
     ) -> Result<(bool, bool)> {
         let mut is_empty = true;
@@ -1673,7 +1785,7 @@ impl RenderState {
                 // Skip it for this pass; a subsequent render will pick it up once present.
                 continue;
             };
-            let scale = self.get_scale_fast();
+            let scale = self.viewbox.get_scale();
             let mut extrect: Option<Rect> = None;
 
             let Some(current_tile) = self.tile.current else {
@@ -1957,6 +2069,7 @@ impl RenderState {
 
         Ok((is_empty, false))
     }
+    */
 
     pub fn render_shape_tree_tiled(
         &mut self,
@@ -2019,18 +2132,8 @@ impl RenderState {
                         self.surfaces.draw_current_tile_into_tile_atlas(
                             &current_tile,
                         );
-
-                        if self.options.is_debug_visible() {
-                            debug::render_workspace_current_tile(
-                                self,
-                                "".to_string(),
-                                current_tile,
-                                tile_rect,
-                            );
-                        }
                     }
                 } else if self.tile.tiles.is_empty_at(current_tile) {
-                    // println!("self.tile.tiles.is_empty_at({:?}", current_tile);
                     self.surfaces.remove_cached_tile_surface(current_tile);
                 }
             }
@@ -2063,6 +2166,7 @@ impl RenderState {
                     continue;
                 }
 
+                /*
                 // Check if any shape on this tile has a background blur.
                 // If so, we need ALL root shapes rendered (not just those
                 // assigned to this tile) because the blur snapshots Current
@@ -2104,6 +2208,7 @@ impl RenderState {
                         mask: false,
                         flattened: false,
                     }));
+                */
             } else {
                 // If there are no more pending tiles, stop.
                 should_stop = true;
@@ -2114,10 +2219,6 @@ impl RenderState {
         self.viewer_render_root = None;
 
         Ok(FrameType::Full)
-    }
-
-    pub fn render_shape_tree() {
-
     }
 
     /*
@@ -2273,7 +2374,7 @@ impl RenderState {
         let design_state = get_design_state();
         let tree = &design_state.shapes;
 
-        let zoom_changed = self.zoom_changed();
+        let zoom_changed = self.viewbox.is_zoom_changed();
         performance::begin_measure!("rebuild_tile_index");
         let mut nodes = Vec::<Uuid>::with_capacity(64);
         nodes.push(Uuid::nil());
@@ -2304,7 +2405,7 @@ impl RenderState {
         // Zoom changes world tile size: a partial cache update would mix scales in the
         // mosaic and glitch. Same zoom as last finished render (typical pan): drop only
         // tile textures and keep the cache canvas for render_from_cache.
-        if !self.zoom_changed() {
+        if !self.viewbox.is_zoom_changed() {
             self.surfaces.invalidate_tile_cache();
         }
 
@@ -2436,17 +2537,6 @@ impl RenderState {
             return export_scale;
         }
         self.viewbox.get_scale()
-    }
-
-    /// Hot-path variant that skips the export_context check.
-    /// Use in render_shape / walk loops where export is never active.
-    #[inline]
-    pub fn get_scale_fast(&self) -> f32 {
-        self.viewbox.get_scale()
-    }
-
-    pub fn zoom_changed(&self) -> bool {
-        self.viewbox.is_zoom_changed()
     }
 
     pub fn mark_touched(&mut self, uuid: Uuid) {

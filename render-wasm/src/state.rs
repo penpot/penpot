@@ -21,7 +21,7 @@ use crate::{get_render_state, tiles};
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State {
+pub(crate) struct DesignState {
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
     pub shapes: ShapesPool,
@@ -30,7 +30,7 @@ pub(crate) struct State {
     pub loading: bool,
 }
 
-impl State {
+impl DesignState {
     pub fn new() -> Self {
         Self {
             current_id: None,
@@ -317,4 +317,5 @@ impl State {
             render_state.mark_touched(id);
         }
     }
+
 }
