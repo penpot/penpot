@@ -162,11 +162,7 @@ impl Surfaces {
         self.dpr = dpr;
     }
 
-    pub fn draw_tile_atlas_to_backbuffer(
-        &mut self,
-        viewbox: &Viewbox,
-        tile_viewbox: &TileViewbox,
-    ) {
+    pub fn draw_tile_atlas_to_backbuffer(&mut self, viewbox: &Viewbox, tile_viewbox: &TileViewbox) {
         self.tiles.update(viewbox, tile_viewbox);
         if self.tiles.needs_snapshot() || self.tile_atlas_image.is_none() {
             self.tile_atlas_image = Some(self.tile_atlas.image_snapshot());
@@ -218,11 +214,7 @@ impl Surfaces {
         Ok(general_purpose::STANDARD.encode(encoded_image.as_bytes()))
     }
 
-    pub fn base64_snapshot_rect(
-        &mut self,
-        id: SurfaceId,
-        irect: IRect,
-    ) -> Result<Option<String>> {
+    pub fn base64_snapshot_rect(&mut self, id: SurfaceId, irect: IRect) -> Result<Option<String>> {
         let surface = self.get_mut(id);
         if let Some(image) = surface.image_snapshot_with_bounds(irect) {
             let mut context = surface.direct_context();
@@ -356,11 +348,7 @@ impl Surfaces {
         f(self.get_mut(surface_id));
     }
 
-    pub fn get_render_context_translation(
-        &mut self,
-        render_area: Rect,
-        scale: f32,
-    ) -> (f32, f32) {
+    pub fn get_render_context_translation(&mut self, render_area: Rect, scale: f32) -> (f32, f32) {
         (
             -render_area.left() + self.margins.width as f32 / scale,
             -render_area.top() + self.margins.height as f32 / scale,
@@ -438,12 +426,8 @@ impl Surfaces {
 
     pub fn copy_backbuffer_to_target(&mut self) {
         let sampling_options = self.sampling_options;
-        self.backbuffer.draw(
-            self.target.canvas(),
-            (0.0, 0.0),
-            sampling_options,
-            None,
-        );
+        self.backbuffer
+            .draw(self.target.canvas(), (0.0, 0.0), sampling_options, None);
     }
 
     pub fn clear_target(&mut self, color: skia::Color) {
@@ -652,10 +636,7 @@ impl Surfaces {
         self.clear_all_dirty();
     }
 
-    pub fn draw_current_tile_into_tile_atlas(
-        &mut self,
-        tile: &Tile,
-    ) {
+    pub fn draw_current_tile_into_tile_atlas(&mut self, tile: &Tile) {
         let rect = TILE_DRAWABLE_RECT;
 
         let tile_image_opt = self.current.image_snapshot_with_bounds(rect);
@@ -688,7 +669,6 @@ impl Surfaces {
     /// so that `render_from_cache` can still show a scaled preview of the old
     /// content while new tiles are being rendered.
     pub fn invalidate_tile_cache(&mut self) {
-        println!("invalidate_tile_cache");
         self.tiles.clear();
         self.tile_atlas_image = None;
     }
@@ -761,9 +741,7 @@ impl TileAtlasTextureProvider {
             let bottom = top + tile_size as f32;
             rects.push(Rect::new(left, top, right, bottom));
         }
-        Self {
-            rects,
-        }
+        Self { rects }
     }
 
     pub fn available(&self) -> usize {
@@ -776,7 +754,10 @@ impl TileAtlasTextureProvider {
 
     pub fn deallocate(&mut self, rect: Rect) -> bool {
         println!("Deallocating {:?}", rect);
-        debug_assert!(!self.rects.contains(&rect), "Deallocating an already deallocated rect");
+        debug_assert!(
+            !self.rects.contains(&rect),
+            "Deallocating an already deallocated rect"
+        );
         self.rects.push(rect);
         true
     }
@@ -831,10 +812,8 @@ impl TileTextureCache {
         }
 
         if self.textures.len() != tile_viewbox.visible_rect.len() as usize {
-            self.textures.resize(
-                tile_viewbox.visible_rect.len() as usize,
-                Rect::new_empty(),
-            );
+            self.textures
+                .resize(tile_viewbox.visible_rect.len() as usize, Rect::new_empty());
         }
 
         for texture in self.textures.iter_mut() {
@@ -892,15 +871,12 @@ impl TileTextureCache {
     }
 
     pub fn remove(&mut self, tile: Tile) {
-        println!("remove {:?}", tile);
         self.is_updated = true;
         self.removed.insert(tile);
     }
 
     pub fn clear(&mut self) {
-        println!("clear");
         for k in self.grid.keys() {
-            println!("{:?}", k);
             self.removed.insert(*k);
         }
         self.is_updated = true;

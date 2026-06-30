@@ -20,7 +20,10 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
-use crate::{render::{FrameType, RenderFlag}, shapes::Frame};
+use crate::{
+    render::{FrameType, RenderFlag},
+    shapes::Frame,
+};
 
 use globals::{get_design_state, get_gpu_state, get_render_state};
 
@@ -115,22 +118,17 @@ pub extern "C" fn render2(timestamp: i32, flags: u8) -> Result<FrameType> {
             // si el render es sync o no y que esto no permita
             let allow_stop = true;
             render_state
-                .continue_render_loop(
-                    timestamp,
-                    allow_stop
-                )
+                .continue_render_loop(timestamp, allow_stop)
                 .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
         } else {
             let sync_render = false;
-            render_state.start_render_loop(
-                timestamp,
-                sync_render
-            ).map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+            render_state
+                .start_render_loop(timestamp, sync_render)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
         };
         render_state.end_render_loop(&frame_type);
         return Ok(frame_type);
     });
-
 }
 
 /*

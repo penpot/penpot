@@ -53,7 +53,7 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
-use crate::math::{self, Bounds, Matrix, Point, IRect};
+use crate::math::{self, Bounds, IRect, Matrix, Point};
 
 use crate::state::ShapesPoolRef;
 
@@ -202,7 +202,6 @@ pub struct Shape {
     pub extrect_cache: RefCell<Option<math::Rect>>,
     pub svg_transform: Option<Matrix>,
     pub ignore_constraints: bool,
-    pub tile_rect: TileRect,
     deleted: bool,
 }
 
@@ -306,7 +305,6 @@ impl Shape {
             extrect_cache: RefCell::new(None),
             svg_transform: None,
             ignore_constraints: false,
-            tile_rect: TileRect::new_empty(),
             deleted: false,
         }
     }
@@ -406,7 +404,6 @@ impl Shape {
             text.update_layout(self.selrect);
             text.set_xywh(left, top, self.selrect.width(), self.selrect.height());
         }
-        self.tile_rect.set_from_tile_bounds(left, top, right, bottom, tiles::TILE_SIZE);
     }
 
     pub fn set_masked(&mut self, masked: bool) {
@@ -431,7 +428,7 @@ impl Shape {
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
         self.transform = Matrix::new_all(a, c, e, b, d, f, 0.0, 0.0, 1.0);
         if self.transform_centered.is_none() && self.is_rotated() {
-            let center= self.center();
+            let center = self.center();
             let mut matrix = self.transform;
             matrix.post_translate(center);
             matrix.pre_translate(-center);
@@ -445,10 +442,6 @@ impl Shape {
             return self.transform;
         };
         transform
-    }
-
-    pub fn get_tile_rect(&self, viewbox: &Viewbox) -> TileRect {
-        TileRect::from_scaled(&self.tile_rect, viewbox.get_scale())
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {

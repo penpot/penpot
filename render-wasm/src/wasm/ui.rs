@@ -108,7 +108,7 @@ pub extern "C" fn set_guides() -> Result<()> {
     // Guides are drawn on the UI overlay composited onto `Target`. Refresh the
     // presented frame immediately so removed guides do not linger as stale pixels.
     with_state!(state, {
-        get_render_state().present_frame(&state.shapes);
+        get_render_state().present_frame();
     });
 
     Ok(())

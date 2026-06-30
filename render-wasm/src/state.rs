@@ -11,6 +11,7 @@ pub use text_editor::*;
 pub use ui::UIState;
 
 use crate::error::{Error, Result};
+use crate::globals::get_tile_render_state;
 use crate::render::FrameType;
 use crate::shapes::{grid_layout::grid_cell_data, Shape};
 use crate::uuid::Uuid;
@@ -21,7 +22,7 @@ use crate::{get_render_state, tiles};
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State {
+pub(crate) struct DesignState {
     pub current_id: Option<Uuid>,
     pub current_browser: u8,
     pub shapes: ShapesPool,
@@ -30,7 +31,7 @@ pub(crate) struct State {
     pub loading: bool,
 }
 
-impl State {
+impl DesignState {
     pub fn new() -> Self {
         Self {
             current_id: None,
@@ -171,16 +172,17 @@ impl State {
             //
             // Instead, remove the shape from *all* tiles where it was indexed, and
             // drop cached tiles for those entries.
-            let indexed_tiles: Vec<tiles::Tile> = render_state
-                .tile
+            let tile_render_state = get_tile_render_state();
+            let indexed_tiles: Vec<tiles::Tile> = tile_render_state
                 .tiles
                 .get_tiles_of(shape.id)
                 .map(|t| t.iter().copied().collect())
                 .unwrap_or_default();
 
+            let tile_render_state = get_tile_render_state();
             for tile in indexed_tiles {
                 render_state.remove_cached_tile(tile);
-                render_state.tile.tiles.remove_shape_at(tile, shape.id);
+                tile_render_state.tiles.remove_shape_at(tile, shape.id);
             }
 
             if let Some(shape_to_delete) = self.shapes.get(&id) {

@@ -15,7 +15,7 @@ use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry,
     TransformEntrySource, Type,
 };
-use crate::state::{ShapesPoolRef, State};
+use crate::state::{DesignState, ShapesPoolRef};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
@@ -176,7 +176,7 @@ fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
 fn propagate_transform(
     entry: TransformEntry,
     pixel_precision: bool,
-    state: &State,
+    state: &DesignState,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
     modifiers: &mut HashMap<Uuid, Matrix>,
@@ -324,7 +324,7 @@ fn propagate_transform(
 #[allow(clippy::too_many_arguments)]
 fn propagate_reflow(
     id: &Uuid,
-    state: &State,
+    state: &DesignState,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
     layout_reflows: &mut HashSet<Uuid>,
@@ -380,7 +380,7 @@ fn propagate_reflow(
 
 fn reflow_shape(
     id: &Uuid,
-    state: &State,
+    state: &DesignState,
     reflown: &mut HashSet<Uuid>,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
@@ -409,7 +409,7 @@ fn reflow_shape(
 }
 
 pub fn propagate_modifiers(
-    state: &State,
+    state: &DesignState,
     modifiers: &[TransformEntry],
     pixel_precision: bool,
 ) -> Result<Vec<TransformEntry>> {

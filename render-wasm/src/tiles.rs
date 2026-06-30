@@ -1,14 +1,134 @@
-use crate::render::Surfaces;
+use crate::globals::{get_design_state, get_render_state, get_tile_render_state};
+use crate::shapes::Shape;
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
+use crate::{render::Surfaces, state::ShapesPoolRef};
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
+
+#[derive(Debug)]
+#[repr(u8)]
+pub enum TileDisplayPhase {
+    Enter = 0,
+    Exit = 1,
+}
+
+#[derive(Debug)]
+pub struct TileDisplayItem {
+    pub id: Uuid,
+    pub phase: TileDisplayPhase,
+}
+
+impl TileDisplayItem {
+    pub fn enter(id: Uuid) -> Self {
+        Self {
+            id,
+            phase: TileDisplayPhase::Enter,
+        }
+    }
+
+    pub fn exit(id: Uuid) -> Self {
+        Self {
+            id,
+            phase: TileDisplayPhase::Exit,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TileDisplayList {
+    output: HashMap<Tile, Vec<TileDisplayItem>>,
+}
+
+impl TileDisplayList {
+    pub fn new() -> Self {
+        Self {
+            output: HashMap::new()
+        }
+    }
+
+    pub fn compute_from(&mut self, root_id: Uuid) {
+        self.output.clear();
+        self.dfs(root_id);
+    }
+
+    pub fn get(&self, tile: Tile) -> Option<&Vec<TileDisplayItem>> {
+        self.output.get(&tile)
+    }
+
+    // Recursive helper that pushes to the output vector
+    fn dfs(
+        &mut self,
+        id: Uuid,
+    ) {
+        let design_state = get_design_state();
+        let render_state = get_render_state();
+        let tile_render_state= get_tile_render_state();
+
+        let shapes = &design_state.shapes;
+        if id.is_nil() {
+            let shape = shapes.get(&id).unwrap();
+            for shape_id in shape.children_ids(false) {
+                self.dfs(shape_id);
+            }
+            return;
+        }
+
+        let shape = shapes.get(&id).unwrap();
+        let tile_rect = TileRect::from_shape_and_viewbox(shape, render_state.viewbox);
+        let intersection_rect = tile_render_state.viewbox.interest_rect.intersection(&tile_rect);
+        if intersection_rect.is_degenerate() {
+            return;
+        }
+
+        for tile in intersection_rect.iter(true) {
+            let _ = self.output.entry(tile).or_insert_with(Vec::new);
+            self.output.get_mut(&tile).unwrap().push(TileDisplayItem::enter(shape.id));
+        }
+
+        for shape_id in shape.children_ids(false) {
+            self.dfs(shape_id);
+        }
+
+        for tile in intersection_rect.iter(true) {
+            self.output.get_mut(&tile).unwrap().push(TileDisplayItem::exit(shape.id));
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TileRenderState {
+    pub current: Option<Tile>,
+    pub current_had_shapes: bool,
+    pub viewbox: TileViewbox,
+    pub tiles: TileHashMap,
+    pub pending: PendingTiles,
+    pub display_list: TileDisplayList,
+}
+
+impl TileRenderState {
+    pub fn new() -> Self {
+        Self {
+            current: None,
+            current_had_shapes: false,
+            tiles: TileHashMap::new(),
+            viewbox: TileViewbox::new(),
+            pending: PendingTiles::new(),
+            display_list: TileDisplayList::new(),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
 impl Tile {
     pub fn from(x: i32, y: i32) -> Self {
-        Tile(x, y)
+        Self(x, y)
+    }
+
+    pub fn new_empty() -> Self {
+        Self(0, 0)
     }
 
     #[inline(always)]
@@ -32,6 +152,14 @@ impl Tile {
     }
 }
 
+fn itrunc(x: f32) -> f32 {
+    if x < 0.0 {
+        x.floor()
+    } else {
+        x.ceil()
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct TileRect(pub i32, pub i32, pub i32, pub i32);
 
@@ -42,11 +170,30 @@ impl TileRect {
     }
 
     pub fn from_scaled(other: &TileRect, scale: f32) -> Self {
+        Self(
+            itrunc(other.0 as f32 * scale) as i32,
+            itrunc(other.1 as f32 * scale) as i32,
+            itrunc(other.2 as f32 * scale) as i32,
+            itrunc(other.3 as f32 * scale) as i32,
+        )
+    }
+
+    pub fn from_shape(shape: &Shape, scale: f32) -> Self {
+        let tile_rect = get_tiles_for_rect(shape.selrect, TILE_SIZE);
+        Self::from_scaled(&tile_rect, scale)
+    }
+
+    pub fn from_shape_and_viewbox(shape: &Shape, viewbox: Viewbox) -> Self {
+        Self::from_shape(shape,  viewbox.get_scale())
+    }
+
+    #[inline(always)]
+    pub fn intersection(&self, other: &Self) -> Self {
         Self (
-            (other.0 as f32 * scale).trunc() as i32,
-            (other.1 as f32 * scale).trunc() as i32,
-            (other.2 as f32 * scale).trunc() as i32,
-            (other.3 as f32 * scale).trunc() as i32,
+            self.left().max(other.left()),
+            self.top().max(other.top()),
+            self.right().min(other.right()),
+            self.bottom().min(other.bottom()),
         )
     }
 
@@ -181,7 +328,7 @@ impl Iterator for TileRectIter {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct TileViewbox {
     pub visible_rect: TileRect,
     pub interest_rect: TileRect,
@@ -190,6 +337,15 @@ pub struct TileViewbox {
 }
 
 impl TileViewbox {
+    pub fn new() -> Self {
+        Self {
+            visible_rect: TileRect::new_empty(),
+            interest_rect: TileRect::new_empty(),
+            interest: 0,
+            center: Tile::new_empty(),
+        }
+    }
+
     pub fn new_with_interest(viewbox: &Viewbox, interest: i32) -> Self {
         Self {
             visible_rect: get_tiles_for_viewbox(viewbox),
@@ -265,6 +421,7 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
 }
 
 // This structure is useful to keep all the shape uuids by shape id.
+#[derive(Debug, Clone)]
 pub struct TileHashMap {
     grid: HashMap<Tile, HashSet<Uuid>>,
     index: HashMap<Uuid, HashSet<Tile>>,
@@ -330,7 +487,7 @@ const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = VIEWPORT_DEFAULT_CAPACITY;
 /// Cached spiral of tile offsets for a given grid size.
 ///
 /// Offsets are centered at (0,0) and must be translated by the desired origin/center tile.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TileSpiral {
     offsets: Vec<Tile>,
     columns: usize,
@@ -417,6 +574,7 @@ impl TileSpiral {
 
 // This structure keeps the list of tiles that are in the pending list, the
 // ones that are going to be rendered.
+#[derive(Debug, Clone)]
 pub struct PendingTiles {
     pub list: Vec<Tile>,
     pub spiral: TileSpiral,

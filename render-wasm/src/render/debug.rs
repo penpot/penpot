@@ -6,6 +6,7 @@ use macros::wasm_error;
 
 #[cfg(target_arch = "wasm32")]
 use crate::get_render_state;
+use crate::globals::get_tile_render_state;
 
 use skia_safe::{self as skia, Rect};
 
@@ -69,7 +70,8 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
 }
 
 pub fn render_debug_tiles_for_viewbox(render_state: &mut RenderState) {
-    let tiles::TileRect(sx, sy, ex, ey) = render_state.tile.viewbox.interest_rect;
+    let tile_render_state = get_tile_render_state();
+    let tiles::TileRect(sx, sy, ex, ey) = tile_render_state.viewbox.interest_rect;
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
     let mut paint = skia::Paint::default();
     paint.set_color(skia::Color::RED);

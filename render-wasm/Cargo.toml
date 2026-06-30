@@ -9,7 +9,7 @@ description = "Wasm-based canvas renderer for Penpot"
 build = "build.rs"
 
 [features]
-default = []
+default = ["profile"]
 stats = []
 
 profile = ["profile-macros", "profile-raf"]

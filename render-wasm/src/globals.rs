@@ -5,12 +5,13 @@ use crate::emscripten::init_gl;
 
 use crate::mem;
 use crate::render::{gpu_state::GpuState, RenderState};
-use crate::state::{State, TextEditorState, UIState};
+use crate::state::{DesignState, TextEditorState, UIState};
+use crate::tiles::TileRenderState;
 
-static mut DESIGN_STATE: *mut State = std::ptr::null_mut();
+static mut DESIGN_STATE: *mut DesignState = std::ptr::null_mut();
 
 /// Design State.
-pub(crate) fn get_design_state() -> &'static mut State {
+pub(crate) fn get_design_state() -> &'static mut DesignState {
     unsafe {
         debug_assert!(!DESIGN_STATE.is_null(), "Design State is null");
         &mut *DESIGN_STATE
@@ -36,6 +37,16 @@ pub(crate) fn get_render_state() -> &'static mut RenderState {
     unsafe {
         debug_assert!(!RENDER_STATE.is_null(), "Render State is null");
         &mut *RENDER_STATE
+    }
+}
+
+static mut TILE_RENDER_STATE: *mut TileRenderState = std::ptr::null_mut();
+
+#[inline(always)]
+pub(crate) fn get_tile_render_state() -> &'static mut TileRenderState {
+    unsafe {
+        debug_assert!(!TILE_RENDER_STATE.is_null(), "Tile Render State is null");
+        &mut *TILE_RENDER_STATE
     }
 }
 
@@ -113,10 +124,16 @@ fn render_init(width: i32, height: i32) {
     }
 }
 
+fn tile_render_init() {
+    unsafe {
+        TILE_RENDER_STATE = Box::into_raw(Box::new(TileRenderState::new()));
+    }
+}
+
 /// Initializes DesignState.
 fn design_init() {
     unsafe {
-        let design_state = State::new();
+        let design_state = DesignState::new();
         DESIGN_STATE = Box::into_raw(Box::new(design_state));
     }
 }
@@ -144,6 +161,7 @@ pub extern "C" fn init(width: i32, height: i32) -> Result<()> {
     init_gl!();
     gpu_init();
     render_init(width, height);
+    tile_render_init();
     text_editor_init();
     design_init();
     ui_init();

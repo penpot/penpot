@@ -2,13 +2,13 @@ use crate::error::{Error, Result};
 use crate::get_render_state;
 use crate::mem;
 use crate::shapes::Fill;
-use crate::state::State;
+use crate::state::DesignState;
 use crate::uuid::Uuid;
 use crate::with_state;
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 use macros::wasm_error;
 
-fn touch_shapes_with_image(state: &mut State, image_id: Uuid) {
+fn touch_shapes_with_image(state: &mut DesignState, image_id: Uuid) {
     let ids: Vec<Uuid> = state
         .shapes
         .iter()

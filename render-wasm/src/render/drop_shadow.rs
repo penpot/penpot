@@ -335,7 +335,8 @@ pub fn render_element_drop_shadows_and_composite(
     }
 
     if let Some(clips) = clip_bounds.as_ref() {
-        let antialias = element.should_use_antialias(scale, render_state.options.antialias_threshold);
+        let antialias =
+            element.should_use_antialias(scale, render_state.options.antialias_threshold);
         render_state.surfaces.canvas(target_surface).save();
         render_state.clip_target_surface_to_stack(clips, target_surface, scale, antialias);
         render_state
