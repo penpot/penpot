@@ -245,7 +245,7 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
+    await workspace.mockConfigFlags([tokenInputFlag]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 
@@ -283,7 +283,7 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
+    await workspace.mockConfigFlags([tokenInputFlag]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 
@@ -321,7 +321,7 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-background-blur", tokenInputFlag]);
+    await workspace.mockConfigFlags([tokenInputFlag]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 
@@ -356,7 +356,8 @@ test.describe("Background blur", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    // No enable-background-blur flag
+    // background-blur flag is active by default; disable it explicitly here
+    await workspace.mockConfigFlags(["disable-background-blur"]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("render-wasm/get-file-background-blur.json");
 

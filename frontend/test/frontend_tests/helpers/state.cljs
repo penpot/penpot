@@ -12,6 +12,7 @@
    [app.main.data.workspace.layout :as layout]
    [app.main.features :as features]
    [beicon.v2.core :as rx]
+   [cljs.test :as t]
    [potok.v2.core :as ptk]))
 
 (def ^private initial-state
@@ -26,7 +27,8 @@
 
 (defn- on-error
   [cause]
-  (js/console.log "STORE ERROR" (.-stack cause))
+  (js/console.error "STORE ERROR" (.-stack cause))
+  (t/do-report {:type :error :message "Store error" :actual cause})
   (when-let [data (some-> cause ex-data ::sm/explain)]
     (pprint (sm/humanize-explain data))))
 
@@ -57,10 +59,13 @@
           (rx/last)
           (rx/tap (fn [_]
                     (completed-cb @store)))
-          (rx/subs! (fn [_] (done))
+          (rx/subs! (fn [_] nil)
                     (fn [cause]
-                      (js/console.log "[error]:" cause))
+                      (done)
+                      (js/console.error "[error]:" cause)
+                      (t/do-report {:type :error :message "Stream error" :actual cause}))
                     (fn [_]
+                      (done)
                       #_(js/console.debug "[complete]"))))
 
      (doseq [event events]

@@ -36,11 +36,7 @@
   (l/derived (l/key :current-page-id) st/state))
 
 (def team
-  (l/derived (fn [state]
-               (let [team-id (:current-team-id state)
-                     teams   (:teams state)]
-                 (get teams team-id)))
-             st/state))
+  (l/derived dsh/lookup-team st/state))
 
 (def project
   (l/derived (fn [state]
@@ -584,14 +580,9 @@
   [object-id]
   (l/derived
    (fn [state]
-     (some-> (dm/get-in state [:thumbnails object-id])
-             (cf/resolve-media)))
-   st/state))
-
-(defn workspace-thumbnail-rendered-at
-  [object-id]
-  (l/derived
-   #(dm/get-in % [:thumbnails-meta object-id :rendered-at])
+     (when-let [entry (dm/get-in state [:thumbnails object-id])]
+       (cond-> entry
+         (:uri entry) (update :uri cf/resolve-media))))
    st/state))
 
 (def workspace-text-modifier

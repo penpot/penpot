@@ -81,8 +81,10 @@
            (when-not composing?
              (reset! composing? true))
 
+           ;; IME cancel (e.g. Escape on Linux ibus-mozc) fires compositionupdate
+           ;; with an empty string; that must reach WASM to clear the preview text.
            (let [data (.-data event)]
-             (when data
+             (when (some? data)
                (text-editor/text-editor-composition-update data)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render "text-composition"))
@@ -93,13 +95,12 @@
         (mf/use-fn
          (fn [^js event]
            (reset! composing? false)
-           (let [data (.-data event)]
-             (when data
-               (text-editor/text-editor-composition-end data)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-composition"))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+           (let [data (or (.-data event) "")]
+             (text-editor/text-editor-composition-end data)
+             (sync-wasm-text-editor-content!)
+             (wasm.api/request-render "text-composition"))
+           (when-let [node (mf/ref-val contenteditable-ref)]
+             (set! (.-textContent node) ""))))
 
         on-paste
         (mf/use-fn

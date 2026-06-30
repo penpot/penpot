@@ -95,3 +95,23 @@ pub fn write_vec<T: SerializableResult>(result: Vec<T>) -> *mut u8 {
 
     write_bytes(result_bytes)
 }
+
+/*
+  Like `write_vec`, but prepends an extra u32 header word before the
+  length. Layout: [header u32][length u32][items...]
+*/
+pub fn write_vec_with_header<T: SerializableResult>(header: u32, result: Vec<T>) -> *mut u8 {
+    let elem_size = size_of::<T::BytesType>();
+    let bytes_len = 8 + result.len() * elem_size;
+    let mut result_bytes = vec![0; bytes_len];
+
+    result_bytes[0..4].clone_from_slice(&header.to_le_bytes());
+    result_bytes[4..8].clone_from_slice(&result.len().to_le_bytes());
+
+    for (i, item) in result.iter().enumerate() {
+        let base = 8 + i * elem_size;
+        item.clone_to_slice(&mut result_bytes[base..base + elem_size]);
+    }
+
+    write_bytes(result_bytes)
+}

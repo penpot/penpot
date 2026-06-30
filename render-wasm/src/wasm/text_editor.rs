@@ -324,7 +324,7 @@ pub extern "C" fn text_editor_composition_start() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_end() -> Result<()> {
-    let bytes = crate::mem::bytes();
+    let bytes = crate::mem::bytes_or_empty();
     let text = match String::from_utf8(bytes) {
         Ok(text) => text,
         Err(_) => return Ok(()),
@@ -380,7 +380,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn text_editor_composition_update() -> Result<()> {
-    let bytes = crate::mem::bytes();
+    let bytes = crate::mem::bytes_or_empty();
     let text = match String::from_utf8(bytes) {
         Ok(text) => text,
         Err(_) => return Ok(()),

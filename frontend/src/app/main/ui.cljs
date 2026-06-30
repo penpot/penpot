@@ -229,11 +229,12 @@
         :dashboard-settings
         :dashboard-deleted)
        (let [params        (get params :query)
-             team-id       (some-> params :team-id uuid/parse*)
-             project-id    (some-> params :project-id uuid/parse*)
-             search-term   (some-> params :search-term)
-             plugin-url    (some-> params :plugin)
-             template      (some-> params :template)]
+             team-id             (some-> params :team-id uuid/parse*)
+             project-id          (some-> params :project-id uuid/parse*)
+             search-term         (some-> params :search-term)
+             plugin-url          (some-> params :plugin)
+             template            (some-> params :template)
+             pending-action-id   (some-> params :pending-action-id uuid/parse*)]
          [:?
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.5"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
@@ -257,7 +258,8 @@
                                 :search-term search-term
                                 :plugin-url plugin-url
                                 :project-id project-id
-                                :template template}]]])
+                                :template template
+                                :pending-action-id pending-action-id}]]])
 
        :workspace
        (let [params     (get params :query)

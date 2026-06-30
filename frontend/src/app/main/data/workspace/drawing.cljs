@@ -14,6 +14,7 @@
    [app.main.data.workspace.drawing.box :as box]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
+   [app.main.data.workspace.drawing.line :as line]
    [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.path :as path]
    [beicon.v2.core :as rx]
@@ -101,8 +102,10 @@
     (watch [_ _ _]
       (rx/of
        (case type
-         :path (path/handle-drawing)
+         :path  (path/handle-drawing)
          :curve (curve/handle-drawing)
+         :line  (line/handle-drawing :line)
+         :arrow (line/handle-drawing :arrow)
          (box/handle-drawing type))))))
 
 (defn change-orientation
