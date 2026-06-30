@@ -142,12 +142,18 @@
         on-key-down
         (mf/use-fn
          (fn [^js event]
+           ;; Detect IME composition from the browser event instead of our own
+           ;; `composing?` state.
+           ;; On macOS the key that commits a composition (e.g. Enter in Japanese)
+           ;; dispatches its keydown before `compositionend`. Also, in the first
+           ;; keystroke of a composition, `isComposing` is reported as false, but
+           ;; we do get a 229 keycode (IME handling signal).
            (when (and (text-editor/text-editor-has-focus?)
-                      (not @composing?))
+                      (not (.-isComposing (.-nativeEvent event)))
+                      (not (= 229 (.-keyCode event))))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
                    shift? (.-shiftKey event)]
-
                (cond
                  ;; Escape: finalize and stop
                  (= key "Escape")
