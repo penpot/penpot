@@ -56,7 +56,8 @@
                         :copy-data (copy-color-data (:color shadow) color-format*)
                         :on-change-format on-change-format}]]))
 
-(mf/defc shadow-panel [{:keys [shapes]}]
+(mf/defc shadow-panel*
+  [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]
 
     (when (and (seq shapes) (> (count shapes) 0))

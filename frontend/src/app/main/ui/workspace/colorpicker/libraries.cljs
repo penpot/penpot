@@ -195,7 +195,7 @@
         selected         (deref selected*)
         layout           (mf/deref refs/workspace-layout)
 
-        view-mode*       (mf/use-state :grid)
+        view-mode*       (h/use-persisted-state ::view-mode :grid)
         view-mode        (deref view-mode*)
 
         file-id          (mf/use-ctx ctx/current-file-id)

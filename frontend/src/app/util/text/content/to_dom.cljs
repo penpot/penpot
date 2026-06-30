@@ -94,9 +94,8 @@
 
 (defn get-text-span-styles
   [inline paragraph]
-  (let [node (if (= "" (:text inline)) paragraph inline)
-        styles (get-styles-from-attrs node txt/text-node-attrs txt/default-text-attrs)]
-    (dissoc styles :line-height)))
+  (let [node (if (= "" (:text inline)) paragraph inline)]
+    (get-styles-from-attrs node txt/text-span-attrs txt/default-text-attrs)))
 
 (defn normalize-spaces
   "Add zero-width spaces after forward slashes to enable word breaking"

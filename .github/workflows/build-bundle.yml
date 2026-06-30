@@ -37,6 +37,10 @@ on:
         required: false
         default: 'yes'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.gh_ref }}
+  cancel-in-progress: true
+
 jobs:
   build-bundle:
     name: Build and Upload Penpot Bundle

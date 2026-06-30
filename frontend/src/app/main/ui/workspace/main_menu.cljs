@@ -45,6 +45,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc shortcuts*
@@ -958,17 +959,24 @@
                  ev-name (if (= next-renderer :wasm)
                            "enable-webgl-rendering"
                            "disable-webgl-rendering")]
+
              (if (cf/external-feature-flag "renderer-hard-reload" "test")
                ;; Bare RPC + hard reload: skips `du/update-profile-props`, so
                ;; `features/recompute-features` is not run here; bootstrap
                ;; after reload resolves render-wasm/v1 from the saved profile.
                (do
-                 (st/emit! (ev/event {::ev/name ev-name
-                                      ::ev/origin "workspace:menu"}))
-                 (->> (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
-                      (rx/subs! (fn [_] (dom/reload-current-window true))
+                 (->> (rx/zip
+                       (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
+                       (rx/filter (ptk/type? ::ev/chunk-persisted) st/stream))
+                      (rx/timeout 2000 (rx/of :timeout))
+                      (rx/subs! (fn [_]
+                                  (dom/reload-current-window true))
                                 (fn [_]
-                                  (st/emit! (ntf/error (tr "errors.generic")))))))
+                                  (st/emit! (ntf/error (tr "errors.generic"))))))
+                 (st/emit! (ev/event {::ev/name ev-name
+                                      ::ev/origin "workspace:menu"})
+                           (ptk/data-event ::ev/force-persist {})))
+
                ;; `update-profile-props` WatchEvent calls
                ;; `features/recompute-features`.
                (st/emit! (ev/event {::ev/name ev-name

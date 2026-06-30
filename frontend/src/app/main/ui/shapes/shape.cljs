@@ -130,9 +130,9 @@
        ;; The filters for frames should be setup inside the container.
        (when-not (cfh/frame-shape? shape)
          [:*
-          [:& filters/filters        {:shape shape :filter-id filter-id}]
-          [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
-          [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]])
+          [:> filters/filters*       {:shape shape :filter-id filter-id}]
+          [:> filters/filters*       {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
+          [:> filters/filters*       {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]])
 
        [:& frame/frame-clip-def   {:shape shape :render-id render-id}]
 
