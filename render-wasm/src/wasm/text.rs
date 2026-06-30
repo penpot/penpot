@@ -370,8 +370,11 @@ pub extern "C" fn intersect_position_in_shape(
     false
 }
 
-fn update_text_layout(shape: &mut Shape) {
+fn update_text_layout(shape: &mut Shape, force: bool) {
     if let Type::Text(text_content) = &mut shape.shape_type {
+        if force {
+            text_content.force_next_layout_update();
+        }
         text_content.update_layout(shape.selrect);
         shape.invalidate_extrect();
     }
@@ -380,7 +383,7 @@ fn update_text_layout(shape: &mut Shape) {
 #[no_mangle]
 pub extern "C" fn update_shape_text_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        update_text_layout(shape);
+        update_text_layout(shape, false);
     });
 }
 
@@ -389,7 +392,18 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
     with_state!(state, {
         let shape_id = uuid_from_u32_quartet(a, b, c, d);
         if let Some(shape) = state.shapes.get_mut(&shape_id) {
-            update_text_layout(shape);
+            update_text_layout(shape, false);
+        }
+        state.touch_shape(shape_id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn force_update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
+    with_state!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        if let Some(shape) = state.shapes.get_mut(&shape_id) {
+            update_text_layout(shape, true);
         }
         state.touch_shape(shape_id);
     });
