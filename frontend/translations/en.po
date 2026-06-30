@@ -5028,6 +5028,11 @@ msgstr "Penpot"
 msgid "options.deleted-token"
 msgstr "This token does not exists or has been deleted."
 
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "{%s} does not exists or has been deleted."
+
 #: src/app/plugins/utils.cljs:318
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"

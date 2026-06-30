@@ -4897,6 +4897,10 @@ msgstr "Penpot"
 msgid "options.deleted-token"
 msgstr "Este token no existe o ha sido borrado."
 
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "{%s} no existe o ha sido borrado."
+
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
 msgstr "Ir al login"

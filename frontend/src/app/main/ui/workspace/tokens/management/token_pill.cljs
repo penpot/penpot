@@ -290,7 +290,7 @@
                       :token-pill-disabled disabled?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
-                      :token-pill-invalid-applied (and full-applied? errors? can-edit?)
+                      :token-pill-invalid-applied (and (or half-applied? full-applied?) errors? can-edit?)
                       :token-pill-viewer is-viewer?
                       :token-pill-applied-viewer (and is-viewer? has-selected?
                                                       (or half-applied? full-applied?))
