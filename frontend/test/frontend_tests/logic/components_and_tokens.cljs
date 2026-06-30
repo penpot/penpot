@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.components-and-tokens
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as geom]
    [app.common.math :as mth]
    [app.common.test-helpers.components :as cthc]
@@ -13,7 +14,9 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
@@ -35,29 +38,31 @@
 
 (defn- setup-base-file
   []
-  (-> (cthf/sample-file :file1)
-      (ctht/add-tokens-lib)
-      (ctht/update-tokens-lib #(-> %
-                                   (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
-                                                                      :name "test-token-set"))
-                                   (ctob/add-theme (ctob/make-token-theme :name "test-theme"
-                                                                          :sets #{"test-token-set"}))
-                                   (ctob/set-active-themes #{"/test-theme"})
-                                   (ctob/add-token (cthi/id :test-token-set)
-                                                   (ctob/make-token :id (cthi/new-id! :test-token-1)
-                                                                    :name "test-token-1"
-                                                                    :type :border-radius
-                                                                    :value 25))
-                                   (ctob/add-token (cthi/id :test-token-set)
-                                                   (ctob/make-token :id (cthi/new-id! :test-token-2)
-                                                                    :name "test-token-2"
-                                                                    :type :border-radius
-                                                                    :value 50))
-                                   (ctob/add-token (cthi/id :test-token-set)
-                                                   (ctob/make-token :id (cthi/new-id! :test-token-3)
-                                                                    :name "test-token-3"
-                                                                    :type :border-radius
-                                                                    :value 75))))
+  (-> (ctht/sample-file-with-tokens
+       :lib-fn #(-> %
+                    (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                       :name "test-token-set"))
+                    (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :test-theme)
+                                                           :name "test-theme"
+                                                           :sets #{"test-token-set"}))
+                    (ctob/add-token (cthi/id :test-token-set)
+                                    (ctob/make-token :id (cthi/new-id! :test-token-1)
+                                                     :name "test-token-1"
+                                                     :type :border-radius
+                                                     :value 25))
+                    (ctob/add-token (cthi/id :test-token-set)
+                                    (ctob/make-token :id (cthi/new-id! :test-token-2)
+                                                     :name "test-token-2"
+                                                     :type :border-radius
+                                                     :value 50))
+                    (ctob/add-token (cthi/id :test-token-set)
+                                    (ctob/make-token :id (cthi/new-id! :test-token-3)
+                                                     :name "test-token-3"
+                                                     :type :border-radius
+                                                     :value 75)))
+       :status-fn #(-> %
+                       (ctos/set-tokens-status #{(cthi/id :test-theme)}
+                                               #{(cthi/id :test-token-set)})))
       (ctho/add-frame :frame1)
       (ctht/apply-token-to-shape :frame1 "test-token-1" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 25)))
 
@@ -323,44 +328,44 @@
   (t/async
     done
     (let [;; ==== Setup
-          file  (-> (cthf/sample-file :file1)
-                    (ctht/add-tokens-lib)
-                    (ctht/update-tokens-lib #(-> %
-                                                 (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
-                                                                                    :name "test-token-set"))
-                                                 (ctob/add-theme (ctob/make-token-theme :name "test-theme"
-                                                                                        :sets #{"test-token-set"}))
-                                                 (ctob/set-active-themes #{"/test-theme"})
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-radius)
-                                                                                  :name "token-radius"
-                                                                                  :type :border-radius
-                                                                                  :value 10))
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-rotation)
-                                                                                  :name "token-rotation"
-                                                                                  :type :rotation
-                                                                                  :value 30))
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-opacity)
-                                                                                  :name "token-opacity"
-                                                                                  :type :opacity
-                                                                                  :value 0.7))
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-stroke-width)
-                                                                                  :name "token-stroke-width"
-                                                                                  :type :stroke-width
-                                                                                  :value 2))
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-color)
-                                                                                  :name "token-color"
-                                                                                  :type :color
-                                                                                  :value "#00ff00"))
-                                                 (ctob/add-token (cthi/id :test-token-set)
-                                                                 (ctob/make-token :id (cthi/new-id! :token-dimensions)
-                                                                                  :name "token-dimensions"
-                                                                                  :type :dimensions
-                                                                                  :value 100))))
+          file  (-> (ctht/sample-file-with-tokens
+                     :lib-fn #(-> %
+                                  (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                                     :name "test-token-set"))
+                                  (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :test-theme)
+                                                                         :name "test-theme"
+                                                                         :sets #{"test-token-set"}))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-radius)
+                                                                   :name "token-radius"
+                                                                   :type :border-radius
+                                                                   :value 10))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-rotation)
+                                                                   :name "token-rotation"
+                                                                   :type :rotation
+                                                                   :value 30))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-opacity)
+                                                                   :name "token-opacity"
+                                                                   :type :opacity
+                                                                   :value 0.7))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-stroke-width)
+                                                                   :name "token-stroke-width"
+                                                                   :type :stroke-width
+                                                                   :value 2))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-color)
+                                                                   :name "token-color"
+                                                                   :type :color
+                                                                   :value "#00ff00"))
+                                  (ctob/add-token (cthi/id :test-token-set)
+                                                  (ctob/make-token :id (cthi/new-id! :token-dimensions)
+                                                                   :name "token-dimensions"
+                                                                   :type :dimensions
+                                                                   :value 100)))
+                     :status-fn #(ctos/set-tokens-status % #{(cthi/id :test-theme)} #{(cthi/id :test-token-set)}))
                     (ctho/add-frame :frame1)
                     (ctht/apply-token-to-shape :frame1 "token-radius" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
                     (ctht/apply-token-to-shape :frame1 "token-rotation" [:rotation] [:rotation] 30)

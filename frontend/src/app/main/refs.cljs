@@ -10,9 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
+   [app.common.files.tokens :as cfo]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
@@ -454,7 +456,10 @@
 ;; ---- Token refs
 
 (def tokens-lib
-  (l/derived :tokens-lib workspace-data))
+  (l/derived dsh/lookup-tokens-lib st/state))
+
+(def tokens-status
+  (l/derived dsh/lookup-tokens-status st/state))
 
 (def workspace-token-theme-groups
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
@@ -491,26 +496,32 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
+;; TODOstatus cambiar para que sean ids en todas partes
 (def workspace-active-theme-paths
-  (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
+  (l/derived (d/nilf ctos/get-active-theme-ids) tokens-status))
 
 (def workspace-all-tokens-map
   (l/derived (d/nilf ctob/get-all-tokens-map) tokens-lib))
 
+;; TODOstatus ver una forma eficiente de hacer un derived de lib y status a la vez
 (defn token-sets-at-path-all-active
   [group-path]
   (l/derived
-   (fn [lib]
-     (when lib
-       (ctob/sets-at-path-all-active? lib group-path)))
-   tokens-lib))
+   (fn [status]
+     (when status
+       (cfo/sets-at-path-all-active? status @(l/derived identity tokens-lib) group-path)))
+   tokens-status))
 
 (def workspace-active-theme-paths-no-hidden
-  (l/derived #(disj % ctob/hidden-theme-path) workspace-active-theme-paths))
+  workspace-active-theme-paths)
 
 ;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
-  (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
+  (l/derived (fn [[status lib]]
+               (if (and status lib)
+                 (cfo/get-tokens-in-active-sets status lib)
+                 {}))
+             [tokens-status tokens-lib]))
 
 (def workspace-token-in-selected-set
   (fn [token-id]

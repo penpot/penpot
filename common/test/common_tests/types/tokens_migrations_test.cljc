@@ -7,9 +7,10 @@
 (ns common-tests.types.tokens-migrations-test
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.time :as ct]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [clojure.datafy :refer [datafy]]
    [clojure.test :as t]))
 
@@ -80,3 +81,38 @@
       (t/is (= (ctob/get-id theme2') (ctob/get-id theme2)))
       (t/is (= (ctob/get-name theme2') (ctob/get-name theme2)))
       (t/is (= (ctob/get-description theme2') (ctob/get-description theme2))))))
+
+(t/deftest make-tokens-status-from-tokens-lib
+  (let [tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-a)
+                                                          :name "set-a"))
+                       (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-b)
+                                                          :name "set-b"))
+                       (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-c)
+                                                          :name "set-c"))
+                       (ctob/add-set (ctob/make-token-set :id (thi/new-id! :set-d)
+                                                          :name "set-d"))
+                       (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme-1)
+                                                              :name "theme-1"
+                                                              :sets #{"set-a" "set-b"}))
+                       (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme-2)
+                                                              :name "theme-2"
+                                                              :sets #{"set-b"}))
+                       (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :theme-3)
+                                                              :name "theme-3"
+                                                              :sets #{"set-c" "set-d"})))
+        ;; Build a legacy tokens lib to test migration
+        tokens-lib (ctob/map->tokens-lib {:sets (.-sets tokens-lib)
+                                          :themes (.-themes tokens-lib)
+                                          :active-themes #{"/theme-1" "/theme-2"}})
+
+        tokens-status (cfo/make-tokens-status-from-lib tokens-lib)]
+
+    (t/is (ctos/tokens-status? tokens-status))
+    (t/is (ctos/check-tokens-status tokens-status))
+    (t/is (= (count (ctos/get-active-theme-ids tokens-status)) 2))
+    (t/is (ctos/theme-active? tokens-status (thi/id :theme-1)))
+    (t/is (ctos/theme-active? tokens-status (thi/id :theme-2)))
+    (t/is (= 2 (count (ctos/get-active-set-ids tokens-status))))
+    (t/is (ctos/set-active? tokens-status (thi/id :set-a)))
+    (t/is (ctos/set-active? tokens-status (thi/id :set-b)))))

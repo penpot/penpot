@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -312,8 +313,8 @@
 (mf/defc token-sets-tree*
   [{:keys [is-draggable
            selected
-           is-token-set-group-active
            is-token-set-active
+           is-token-set-group-active
            on-start-edition
            on-reset-edition
            on-edit-submit-set
@@ -326,7 +327,9 @@
            new-path
            edition-id]}]
 
-  (let [collapsed-paths* (mf/use-state #{})
+  (let [tokens-status (mf/use-ctx ctx/tokens-status)
+
+        collapsed-paths* (mf/use-state #{})
         collapsed-paths  (deref collapsed-paths*)
 
         collapsed?
@@ -418,7 +421,7 @@
             :set token-set
             :label (peek path)
             :is-editing (= edition-id id)
-            :is-active (is-token-set-active (ctob/get-name token-set))
+            :is-active (is-token-set-active id)
             :is-selected (= selected id)
             :is-draggable is-draggable
             :is-new false
@@ -452,8 +455,8 @@
            new-path
            edition-id]}]
 
-  (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
   (assert (fn? is-token-set-active) "expected a function for `is-token-set-active` prop")
+  (assert (fn? is-token-set-group-active) "expected a function for `is-token-set-group-active` prop")
 
   (let [theme-modal? (= origin "theme-modal")
         can-edit?    (mf/use-ctx ctx/can-edit?)

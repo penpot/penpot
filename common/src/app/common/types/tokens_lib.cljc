@@ -18,6 +18,7 @@
    [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.core.protocols :as cp]
    [clojure.datafy :refer [datafy]]
@@ -584,8 +585,7 @@
   (disable-sets [_ set-names] "disable several sets in theme")
   (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
   (update-set-name [_ prev-set-name set-name] "update set-name when it exists")
-  (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
-  (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
+  (theme-matches-group-name [_ group name] "if a theme matches the given group & name"))
 
 (def hidden-theme-id
   uuid/zero)
@@ -659,10 +659,12 @@
 
   (theme-matches-group-name [this group name]
     (and (= (:group this) group)
-         (= (:name this) name)))
+         (= (:name this) name))))
 
-  (hidden-theme? [this]
-    (theme-matches-group-name this hidden-theme-group hidden-theme-name)))
+(defn hidden-theme?
+  "Check if a theme is the hidden temporary theme."
+  [theme]
+  (theme-matches-group-name theme hidden-theme-group hidden-theme-name))
 
 (defmethod pp/simple-dispatch TokenTheme
   [^TokenTheme obj]
@@ -755,11 +757,15 @@
 
 (def ^:private theme-separator "/")
 
-(defn- join-theme-path [group name]
-  (cpn/join-path [group name] :separator theme-separator :with-spaces? false))
+(defn- join-theme-path [group name with-spaces?]
+  (let [path (if (and (str/empty? group) with-spaces?) [name] [group name])]
+    (cpn/join-path path :separator theme-separator :with-spaces? with-spaces?)))
 
-(defn get-theme-path [theme]
-  (join-theme-path (:group theme) (:name theme)))
+(defn get-theme-path
+  ([theme]
+   (get-theme-path theme false))
+  ([theme with-spaces?]
+   (join-theme-path (:group theme) (:name theme) with-spaces?)))
 
 (defn split-theme-path [path]
   (cpn/split-group-name path
@@ -767,7 +773,7 @@
                         :with-spaces? false))
 
 (def hidden-theme-path
-  (join-theme-path hidden-theme-group hidden-theme-name))
+  (join-theme-path hidden-theme-group hidden-theme-name false))
 
 ;; === TokenThemes (collection)
 
@@ -778,18 +784,12 @@
   (delete-theme [_ id] "delete a theme in the library")
   (theme-count [_] "get the total number if themes in the library")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
+  (get-theme-tree-no-hidden [_] "get a nested tree of all themes in the library except the hidden theme")
   (get-themes [_] "get an ordered sequence of all themes in the library")
+  (get-themes-in-group [_ group] "get an ordered sequence of the themes in the group")
   (get-theme [_ id] "get one theme looking for id")
   (get-theme-by-name [_ group name] "get one theme looking for group and name")
-  (get-theme-groups [_] "get a sequence of group names by order")
-  (get-active-theme-paths [_] "get the active theme paths")
-  (get-active-themes [_] "get an ordered sequence of active themes in the library")
-  (set-active-themes  [_ active-themes] "set active themes in library")
-  (theme-active? [_ id] "predicate if token theme is active")
-  (activate-theme [_ id] "adds theme from the active-themes")
-  (deactivate-theme [_ id] "removes theme from the active-themes")
-  (toggle-theme-active [_ id] "toggles theme in the active-themes")
-  (get-hidden-theme [_] "get the hidden temporary theme"))
+  (get-theme-groups [_] "get a sequence of group names by order"))
 
 (def schema:token-themes
   [:and
@@ -930,18 +930,10 @@
   (update-token [_ set-id token-id f] "update a token in a set")
   (delete-token [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ theme-id set-name] "toggle a set used / not used in a theme")
-  (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
-  (token-set-active? [_ set-name] "if a set is active in any of the active themes")
-  (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
-Will return a value that matches this schema:
-`:none`    None of the nested sets are active
-`:all`     All of the nested sets are active
-`:partial` Mixed active state of nested sets")
-  (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
-  (get-tokens-in-active-sets-force [_ force-set-id] "same as above but forcing a set to be active, even if it's not in the active themes")
   (get-all-tokens [_] "all tokens in the lib, as a sequence")
   (get-all-tokens-map [_] "all tokens in the lib, as a map name -> token")
-  (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
+  (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name")
+  (get-legacy-active-themes [_] "only for legacy compatibility; return active themes inside library"))
 
 (declare parse-multi-set-dtcg-json)
 (declare read-multi-set-dtcg)
@@ -1177,7 +1169,7 @@ Will return a value that matches this schema:
                               (d/dissoc-in [group name])))
                         (if same-path?
                           active-themes
-                          (disj active-themes (join-theme-path group name)))))))
+                          (disj active-themes (join-theme-path group name false)))))))
       this))
 
   (delete-theme [this id]
@@ -1186,11 +1178,14 @@ Will return a value that matches this schema:
       (if theme
         (TokensLib. sets
                     (d/dissoc-in themes [group name])
-                    (disj active-themes (join-theme-path group name)))
+                    (disj active-themes (join-theme-path group name false)))
         this)))
 
   (get-theme-tree [_]
     themes)
+
+  (get-theme-tree-no-hidden [_]
+    (d/dissoc-in themes [hidden-theme-group hidden-theme-name]))
 
   (get-theme-groups [_]
     (into [] (comp
@@ -1202,6 +1197,10 @@ Will return a value that matches this schema:
     (->> (tree-seq d/ordered-map? vals themes)
          (filter (partial instance? TokenTheme))))
 
+  (get-themes-in-group [_ group]
+    (->> (get themes group)
+         (map (comp get-id val))))
+
   (theme-count [this]
     (count (get-themes this)))
 
@@ -1212,60 +1211,12 @@ Will return a value that matches this schema:
   (get-theme-by-name [_ group name]
     (dm/get-in themes [group name]))
 
-  (set-active-themes [_ active-themes]
-    (TokensLib. sets
-                themes
-                active-themes))
-
-  (activate-theme [this id]
-    (if-let [theme (get-theme this id)]
-      (let [group (:group theme)
-            group-themes (->> (get themes group)
-                              (map (comp get-theme-path val))
-                              (into #{}))
-            active-themes' (-> (set/difference active-themes group-themes)
-                               (conj (get-theme-path theme)))]
-        (TokensLib. sets
-                    themes
-                    active-themes'))
-      this))
-
-  (deactivate-theme [this id]
-    (if-let [theme (get-theme this id)]
-      (TokensLib. sets
-                  themes
-                  (disj active-themes (get-theme-path theme)))
-      this))
-
-  (theme-active? [this id]
-    (when-let [theme (get-theme this id)]
-      (contains? active-themes (get-theme-path theme))))
-
-  (toggle-theme-active [this id]
-    (if (theme-active? this id)
-      (deactivate-theme this id)
-      (activate-theme this id)))
-
-  (get-active-theme-paths [_]
-    active-themes)
-
-  (get-active-themes [this]
-    (into
-     (list)
-     (comp
-      (filter (partial instance? TokenTheme))
-      (filter #(theme-active? this (get-id %))))
-     (tree-seq d/ordered-map? vals themes)))
-
-  (get-hidden-theme [this]
-    (get-theme this hidden-theme-id))
-
   ITokensLib
   (empty-lib? [this]
     (and (empty? sets)
          (or (empty? themes)
              (and (= (theme-count this) 1)
-                  (get-hidden-theme this)))))
+                  (get-theme this hidden-theme-id)))))
 
   (set-path-exists? [_ set-path]
     (some? (get-in sets (set-full-path->set-prefixed-full-path set-path))))
@@ -1300,58 +1251,6 @@ Will return a value that matches this schema:
                   active-themes)
       this))
 
-  (get-active-themes-set-names [this]
-    (into #{}
-          (mapcat :sets)
-          (get-active-themes this)))
-
-  (token-set-active? [this set-name]
-    (let [set-names (get-active-themes-set-names this)]
-      (contains? set-names set-name)))
-
-  (sets-at-path-all-active? [this group-path]
-    (let [active-set-names (get-active-themes-set-names this)
-          prefixed-path-str (set-group-path->set-group-prefixed-path-str group-path)]
-
-      (if (seq active-set-names)
-        (let [path-active-set-names (some->> (get-in sets (split-set-name prefixed-path-str))
-                                             (tree-seq d/ordered-map? vals)
-                                             (filter (partial instance? TokenSet))
-                                             (map get-name)
-                                             (into #{}))
-              difference (set/difference path-active-set-names active-set-names)]
-          (cond
-            (empty? difference) :all
-            (seq (set/intersection path-active-set-names active-set-names)) :partial
-            :else :none))
-        :none)))
-
-  (get-tokens-in-active-sets [this]
-    (let [theme-set-names  (get-active-themes-set-names this)
-          all-set-names    (get-set-names this)
-          active-set-names (filter theme-set-names all-set-names)
-          tokens           (reduce (fn [tokens set-name]
-                                     (let [set (get-set-by-name this set-name)]
-                                       (merge tokens (get-tokens- set))))
-                                   (d/ordered-map)
-                                   active-set-names)]
-      tokens))
-
-  (get-tokens-in-active-sets-force [this force-set-id]
-    (let [theme-set-names  (get-active-themes-set-names this)
-          all-set-names    (get-set-names this)
-          force-set        (get-set this force-set-id)
-          active-set-names (cond-> (filter theme-set-names all-set-names)
-                             (some? force-set)
-                             (conj (get-name force-set)))
-
-          tokens           (reduce (fn [tokens set-name]
-                                     (let [set (get-set-by-name this set-name)]
-                                       (merge tokens (get-tokens- set))))
-                                   (d/ordered-map)
-                                   active-set-names)]
-      tokens))
-
   (get-all-tokens [this]
     (mapcat #(vals (get-tokens- %))
             (get-sets this)))
@@ -1367,6 +1266,9 @@ Will return a value that matches this schema:
     (some-> this
             (get-set set-id)
             (get-tokens-)))
+
+  (get-legacy-active-themes [_]
+    active-themes)
 
   IValidation
   (valid? [this]
@@ -1424,6 +1326,12 @@ Will return a value that matches this schema:
   [o]
   (and (tokens-lib? o) (valid? o)))
 
+(defn get-theme-by-path
+  "Get a theme by its path string (e.g. \"/Theme Name\" or \"group/Theme Name\")."
+  [tokens-lib path]
+  (let [[group name] (split-theme-path path)]
+    (get-theme-by-name tokens-lib group name)))
+
 (defn- ensure-hidden-theme
   "A helper that is responsible to ensure that the hidden theme always
   exists on the themes data structure"
@@ -1451,10 +1359,6 @@ Will return a value that matches this schema:
       (update :active-themes #(or % #{hidden-theme-path}))
       (check-tokens-lib-map)
       (map->tokens-lib)))
-
-(defn ensure-tokens-lib
-  [tokens-lib]
-  (or tokens-lib (make-tokens-lib)))
 
 (def schema:tokens-lib
   (sm/type-schema
@@ -1924,11 +1828,22 @@ Will return a value that matches this schema:
         library
         (reduce add-theme library themes)
 
+        ;; Activate themes by directly manipulating the internal active-themes field
+        ;; (since activate-theme is being removed from the protocol)
         library
         (reduce (fn [library theme-path]
                   (let [[group name] (split-theme-path theme-path)
                         theme        (get-theme-by-name library group name)]
-                    (activate-theme library (get-id theme))))
+                    (if theme
+                      (let [group-themes (->> (get themes group)
+                                              (map (comp get-theme-path val))
+                                              (into #{}))
+                            active-themes' (-> (set/difference (.-active-themes ^TokensLib library) group-themes)
+                                               (conj (get-theme-path theme)))]
+                        (TokensLib. (.-sets ^TokensLib library)
+                                    (.-themes ^TokensLib library)
+                                    active-themes'))
+                      library)))
                 library
                 active-theme-names)]
 
@@ -2033,82 +1948,183 @@ Will return a value that matches this schema:
 
 (defn- dtcg-export-themes
   "Extract themes for a dtcg json export."
-  [tokens-lib]
-  (let [themes-xform
-        (comp
-         (filter #(and (instance? TokenTheme %)
-                       (not (hidden-theme? %))))
-         (map (fn [token-theme]
-                ;; NOTE: this probaly can be implemented as type method
-                (d/without-nils
-                 {"id" (:external-id token-theme)
-                  "name" (:name token-theme)
-                  "group" (:group token-theme)
-                  "description" (:description token-theme)
-                  "isSource" (:is-source token-theme)
-                  "selectedTokenSets" (reduce #(assoc %1 %2 "enabled") {} (:sets token-theme))}))))
+  ([tokens-lib]
+   ;; Backward-compatible version for print/serialization without tokens-status
+   (let [themes-xform
+         (comp
+          (filter #(and (instance? TokenTheme %)
+                        (not (hidden-theme? %))))
+          (map (fn [token-theme]
+                 ;; NOTE: this probaly can be implemented as type method
+                 (d/without-nils
+                  {"id" (:external-id token-theme)
+                   "name" (:name token-theme)
+                   "group" (:group token-theme)
+                   "description" (:description token-theme)
+                   "isSource" (:is-source token-theme)
+                   "selectedTokenSets" (reduce #(assoc %1 %2 "enabled") {} (:sets token-theme))}))))
 
-        themes
-        (->> (get-theme-tree tokens-lib)
-             (tree-seq d/ordered-map? vals)
-             (into [] themes-xform))
+         themes
+         (->> (get-theme-tree tokens-lib)
+              (tree-seq d/ordered-map? vals)
+              (into [] themes-xform))
 
-        ;; Active themes without exposing hidden penpot theme
-        active-themes
-        (-> (get-active-theme-paths tokens-lib)
-            (disj hidden-theme-path))]
-    [themes active-themes]))
+         ;; Active themes without exposing hidden penpot theme
+         active-themes
+         (-> (.-active-themes ^TokensLib tokens-lib)
+             (disj hidden-theme-path))]
+     [themes active-themes]))
+  ([tokens-lib active-theme-ids]
+   ;; Version with explicit active-theme-ids from TokensStatus
+   (let [themes-xform
+         (comp
+          (filter #(and (instance? TokenTheme %)
+                        (not (hidden-theme? %))))
+          (map (fn [token-theme]
+                 (d/without-nils
+                  {"id" (:external-id token-theme)
+                   "name" (:name token-theme)
+                   "group" (:group token-theme)
+                   "description" (:description token-theme)
+                   "isSource" (:is-source token-theme)
+                   "selectedTokenSets" (reduce #(assoc %1 %2 "enabled") {} (:sets token-theme))}))))
+
+         themes
+         (->> (get-theme-tree tokens-lib)
+              (tree-seq d/ordered-map? vals)
+              (into [] themes-xform))
+
+         ;; Convert theme ids to theme paths, excluding hidden theme
+         active-themes
+         (into #{}
+               (comp (map #(get-theme tokens-lib %))
+                     (filter some?)
+                     (map get-theme-path)
+                     (filter #(not= % hidden-theme-path)))
+               active-theme-ids)]
+     [themes active-themes])))
 
 (defn export-dtcg-multi-file
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi json files each encoded in DTCG format."
-  [tokens-lib]
-  (let [[themes active-themes]
-        (dtcg-export-themes tokens-lib)
+  ([tokens-lib]
+   ;; Backward-compatible version for print/serialization without tokens-status
+   (let [[themes active-themes]
+         (dtcg-export-themes tokens-lib)
 
-        sets
-        (->> (get-sets tokens-lib)
-             (map (fn [token-set]
-                    (let [name   (get-name token-set)
-                          tokens (get-tokens- token-set)]
-                      [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
-             (into {}))]
+         sets
+         (->> (get-sets tokens-lib)
+              (map (fn [token-set]
+                     (let [name   (get-name token-set)
+                           tokens (get-tokens- token-set)]
+                       [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
+              (into {}))]
 
-    (-> sets
-        (assoc "$themes.json" themes)
-        (assoc "$metadata.json"
-               {"tokenSetOrder" (get-set-names tokens-lib)
-                "activeThemes" active-themes
-                "activeSets" (get-active-themes-set-names tokens-lib)}))))
+     (-> sets
+         (assoc "$themes.json" themes)
+         (assoc "$metadata.json"
+                {"tokenSetOrder" (get-set-names tokens-lib)
+                 "activeThemes" active-themes
+                 ;; For backward compat, use internal active-themes field
+                 "activeSets" (into #{}
+                                    (comp (filter #(and (instance? TokenTheme %)
+                                                        (contains? (.-active-themes ^TokensLib tokens-lib)
+                                                                   (get-theme-path %))))
+                                          (mapcat :sets))
+                                    (get-themes tokens-lib))}))))
+  ([tokens-lib tokens-status]
+   ;; Version with tokens-status for real exports
+   (let [active-theme-ids (ctos/get-active-theme-ids tokens-status)
+         [themes active-themes]
+         (dtcg-export-themes tokens-lib active-theme-ids)
+
+         sets
+         (->> (get-sets tokens-lib)
+              (map (fn [token-set]
+                     (let [name   (get-name token-set)
+                           tokens (get-tokens- token-set)]
+                       [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
+              (into {}))
+
+         active-set-ids (ctos/get-active-set-ids tokens-status)
+         active-set-names (into #{}
+                                (comp (filter #(contains? active-set-ids (get-id %)))
+                                      (map get-name))
+                                (get-sets tokens-lib))]
+
+     (-> sets
+         (assoc "$themes.json" themes)
+         (assoc "$metadata.json"
+                {"tokenSetOrder" (get-set-names tokens-lib)
+                 "activeThemes" active-themes
+                 "activeSets" active-set-names})))))
 
 (defn export-dtcg-json
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
-  [tokens-lib]
-  (let [[themes active-themes]
-        (dtcg-export-themes tokens-lib)
+  ([tokens-lib]
+   ;; Backward-compatible version for print/serialization without tokens-status
+   (let [[themes active-themes]
+         (dtcg-export-themes tokens-lib)
 
-        name-set-tuples
-        (->> (get-set-tree tokens-lib)
-             (tree-seq d/ordered-map? vals)
-             (filter (partial instance? TokenSet))
-             (map (fn [set]
-                    [(get-name set)
-                     (tokens-tree (get-tokens- set) :update-token-fn token->dtcg-token)])))
+         name-set-tuples
+         (->> (get-set-tree tokens-lib)
+              (tree-seq d/ordered-map? vals)
+              (filter (partial instance? TokenSet))
+              (map (fn [set]
+                     [(get-name set)
+                      (tokens-tree (get-tokens- set) :update-token-fn token->dtcg-token)])))
 
-        ordered-set-names
-        (mapv first name-set-tuples)
+         ordered-set-names
+         (mapv first name-set-tuples)
 
-        sets
-        (into {} name-set-tuples)
+         sets
+         (into {} name-set-tuples)
 
-        active-set-names
-        (get-active-themes-set-names tokens-lib)]
+         ;; For backward compat, use internal active-themes field
+         active-set-names (into #{}
+                                (comp (filter #(and (instance? TokenTheme %)
+                                                    (contains? (.-active-themes ^TokensLib tokens-lib)
+                                                               (get-theme-path %))))
+                                      (mapcat :sets))
+                                (get-themes tokens-lib))]
 
-    (when-not (empty-lib? tokens-lib)
-      (-> sets
-          (assoc "$themes" themes)
-          (assoc "$metadata" {"tokenSetOrder" ordered-set-names
-                              "activeThemes" active-themes
-                              "activeSets" active-set-names})))))
+     (when-not (empty-lib? tokens-lib)
+       (-> sets
+           (assoc "$themes" themes)
+           (assoc "$metadata" {"tokenSetOrder" ordered-set-names
+                               "activeThemes" active-themes
+                               "activeSets" active-set-names})))))
+  ([tokens-lib tokens-status]
+   ;; Version with tokens-status for real exports
+   (let [active-theme-ids (ctos/get-active-theme-ids tokens-status)
+         [themes active-themes]
+         (dtcg-export-themes tokens-lib active-theme-ids)
+
+         name-set-tuples
+         (->> (get-set-tree tokens-lib)
+              (tree-seq d/ordered-map? vals)
+              (filter (partial instance? TokenSet))
+              (map (fn [set]
+                     [(get-name set)
+                      (tokens-tree (get-tokens- set) :update-token-fn token->dtcg-token)])))
+
+         ordered-set-names
+         (mapv first name-set-tuples)
+
+         sets
+         (into {} name-set-tuples)
+
+         active-set-ids (ctos/get-active-set-ids tokens-status)
+         active-set-names (into #{}
+                                (comp (filter #(contains? active-set-ids (get-id %)))
+                                      (map get-name))
+                                (get-sets tokens-lib))]
+
+     (when-not (empty-lib? tokens-lib)
+       (-> sets
+           (assoc "$themes" themes)
+           (assoc "$metadata" {"tokenSetOrder" ordered-set-names
+                               "activeThemes" active-themes
+                               "activeSets" active-set-names}))))))
 
 (defn get-tokens-of-unknown-type
   "Search for all tokens in the decoded json file that have a type that is not currently

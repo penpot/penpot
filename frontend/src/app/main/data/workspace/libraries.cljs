@@ -12,10 +12,12 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.tokens :as clo]
    [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.time :as ct]
@@ -1482,6 +1484,47 @@
 
                (rx/take-until stopper-s)))))))
 
+(defn sync-tokens-status-with-lib
+  []
+  (ptk/reify ::sync-tokens-status-with-lib
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)]
+        (when (and tokens-lib tokens-status)
+          (let [data    (dsh/lookup-file-data state)
+                changes (-> (pcb/empty-changes)
+                            (pcb/with-library-data data)
+                            (clo/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
+            (rx/of (dch/commit-changes changes))))))))
+
+(defn watch-token-changes
+  "Watch the state for changes that affect the tokens library. If a change is detected,
+   launches a sync-tokens-status event so the tokens-status is kept in sync with the library."
+  []
+  (ptk/reify ::watch-token-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper-s
+            (->> stream
+                 (rx/map ptk/type)
+                 (rx/filter (fn [event-type]
+                              (or (= ::dwpg/finalize-page event-type)
+                                  (= ::watch-token-changes event-type)))))
+
+            changes-s
+            (->> stream
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
+                 (rx/filter #(= :local (:source %)))
+                 (rx/observe-on :async))]
+
+        (->> changes-s
+             (rx/filter (comp ch/tokens-lib-changed? :changes))
+             (rx/debounce 5000)
+             (rx/map (fn [_] (sync-tokens-status-with-lib)))
+             (rx/take-until stopper-s))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1527,6 +1570,21 @@
                    (map #(assoc % :library-of file-id))
                    (d/index-by :id))))))
 
+(defn- initialize-tokens-status
+  [library-id]
+  (ptk/reify ::initialize-tokens-status
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [library (dm/get-in state [:files library-id])
+            library-data (ctf/file-data library)]
+        (when (some? (cfo/get-tokens-lib library-data))
+          (when-let [tokens-status (cfo/get-tokens-status library-data)]
+            (let [changes (-> (pcb/empty-changes it)
+                              (pcb/with-library-data library-data)
+                              (pcb/set-tokens-status tokens-status))]
+              (rx/of
+               (dch/commit-changes changes)))))))))
+
 (defn- load-library-file
   [file-id library-id]
   (ptk/reify ::load-library-file
@@ -1536,8 +1594,10 @@
         (rx/merge
          (->> (rp/cmd! :get-file {:id library-id :features features})
               (rx/merge-map fpmap/resolve-file)
-              (rx/map (fn [file]
-                        (libraries-fetched file-id [file]))))
+              (rx/mapcat (fn [file]
+                           (rx/of
+                            (libraries-fetched file-id [file])
+                            (initialize-tokens-status library-id)))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -1545,16 +1605,17 @@
 
 (defn link-file-to-library
   [file-id library-id]
-  (ptk/reify ::attach-library
+  (ptk/reify ::link-file-to-library
     ev/Event
     (-data [_]
-      {::ev/name "attach-library"
+      {::ev/name "link-file-to-library"
        :file-id file-id
        :library-id library-id})
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [libraries        (:shared-files state)
+      (let [file-data        (dm/get-in state [:files file-id :data])
+            libraries        (:shared-files state)
             library          (get libraries library-id)
             variants-count   (-> library :library-summary :variants count)
 
@@ -1565,18 +1626,21 @@
                                   (map first)
                                   set)]
         (rx/concat
-         (rx/merge
-          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-               (rx/merge-map (fn [libraries-to-load]
-                               (as-> libraries-to-load $
-                                 (remove loaded-libraries $)
-                                 (conj $ library-id)
-                                 (map #(load-library-file file-id %) $))))))
-         (rx/of (ptk/reify ::attach-library-finished))
+         (when (contains? cf/flags :token-lib-sync)
+           (rx/of (dch/commit-changes (-> (pcb/empty-changes nil)
+                                          (pcb/with-file-data file-data)
+                                          (pcb/set-tokens-file library-id)))))
+         (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+              (rx/merge-map (fn [libraries-to-load]
+                              (as-> libraries-to-load $
+                                (remove loaded-libraries $)
+                                (conj $ library-id)
+                                (map #(load-library-file file-id %) $)))))
+         (rx/of (ptk/reify ::link-file-to-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ev/event {::ev/name "attach-library-variants"
+                          (ev/event {::ev/name "link-file-to-library-variants"
                                      :file-id file-id
                                      :library-id library-id
                                      :variants-count variants-count

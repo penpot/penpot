@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.constants :refer [left-sidebar-default-max-width
@@ -22,7 +23,7 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as muc]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -119,7 +120,7 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file tokens-lib active-tokens resolved-active-tokens]}]
+  [{:keys [layout file tokens-lib tokens-status active-tokens resolved-active-tokens]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -177,7 +178,7 @@
         (mf/with-memo []
           (mf/html [:> collapse-button* {}]))]
 
-    [:> (mf/provider muc/sidebar) {:value :left}
+    [:> (mf/provider ctx/sidebar) {:value :left}
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
               :data-testid "left-sidebar"
@@ -222,6 +223,7 @@
             :tokens
             [:> tokens-sidebar-tab*
              {:tokens-lib tokens-lib
+              :tokens-status tokens-status
               :active-tokens active-tokens
               :resolved-active-tokens resolved-active-tokens}]
 
@@ -320,8 +322,8 @@
         (mf/with-memo [active-tokens]
           (delay (ctob/group-by-type active-tokens)))]
 
-    [:> (mf/provider muc/sidebar) {:value :right}
-     [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+    [:> (mf/provider ctx/sidebar) {:value :right}
+     [:> (mf/provider ctx/active-tokens-by-type) {:value active-tokens-by-type}
       [:aside
        {:class (stl/css-case :right-settings-bar true
                              :not-expand (not can-be-expanded?)
@@ -368,19 +370,22 @@
   (let [tokens-lib
         (mf/deref refs/tokens-lib)
 
+        tokens-status
+        (mf/deref refs/tokens-status)
+
         active-tokens
-        (mf/with-memo [tokens-lib]
-          (if tokens-lib
-            (ctob/get-tokens-in-active-sets tokens-lib)
+        (mf/with-memo [tokens-status tokens-lib]
+          (if (and tokens-status tokens-lib)
+            (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
             {}))
 
         selected-token-set-id
         (mf/deref refs/selected-token-set-id)
 
         active-tokens-force-set
-        (mf/with-memo [tokens-lib selected-token-set-id]
-          (if (and tokens-lib selected-token-set-id)
-            (ctob/get-tokens-in-active-sets-force tokens-lib selected-token-set-id)
+        (mf/with-memo [tokens-status tokens-lib selected-token-set-id]
+          (if (and tokens-status tokens-lib selected-token-set-id)
+            (cfo/get-tokens-in-active-sets-force tokens-status tokens-lib selected-token-set-id)
             {}))
 
         tokenscript? (contains? cf/flags :tokenscript)
@@ -399,25 +404,27 @@
         resolved-active-tokens-force-set
         (sd/use-resolved-tokens* active-tokens-force-set)]
 
-    [:*
-     (if (:collapse-left-sidebar layout)
-       [:> collapsed-button*]
-       [:> left-sidebar* {:layout layout
+    [:> (mf/provider ctx/tokens-lib) {:value tokens-lib}
+     [:> (mf/provider ctx/tokens-status) {:value tokens-status}
+      (if (:collapse-left-sidebar layout)
+        [:> collapsed-button*]
+        [:> left-sidebar* {:layout layout
+                           :file file
+                           :page-id page-id
+                           :tokens-lib tokens-lib
+                           :tokens-status tokens-status
+                           :active-tokens active-tokens-force-set
+                           :resolved-active-tokens (if tokenscript?
+                                                     tokenscript-resolved-active-tokens-force-set
+                                                     resolved-active-tokens-force-set)}])
+      [:> right-sidebar* {:section section
+                          :selected selected
+                          :drawing-tool drawing-tool
+                          :layout layout
                           :file file
+                          :file-id file-id
                           :page-id page-id
                           :tokens-lib tokens-lib
-                          :active-tokens active-tokens-force-set
-                          :resolved-active-tokens (if tokenscript?
-                                                    tokenscript-resolved-active-tokens-force-set
-                                                    resolved-active-tokens-force-set)}])
-     [:> right-sidebar* {:section section
-                         :selected selected
-                         :drawing-tool drawing-tool
-                         :layout layout
-                         :file file
-                         :file-id file-id
-                         :page-id page-id
-                         :tokens-lib tokens-lib
-                         :active-tokens (if tokenscript?
-                                          tokenscript-resolved-active-tokens
-                                          resolved-active-tokens)}]]))
+                          :active-tokens (if tokenscript?
+                                           tokenscript-resolved-active-tokens
+                                           resolved-active-tokens)}]]]))
