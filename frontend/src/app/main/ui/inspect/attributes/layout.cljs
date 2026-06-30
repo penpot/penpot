@@ -49,7 +49,7 @@
           [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} value]]]]))))
 
-(mf/defc layout-panel
+(mf/defc layout-panel*
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter ctl/any-layout?))]
 

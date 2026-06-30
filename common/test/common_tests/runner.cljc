@@ -168,6 +168,10 @@
      (if (cljs.test/successful? m)
        (.exit js/process 0)
        (.exit js/process 1))))
+#?(:cljs
+   (defmethod t/report [:cljs.test/default :begin-test-var] [m]
+     (let [v (:var m)]
+       (println (str "  ▸ " (:ns (meta v)) "/" (:name (meta v)))))))
 
 #?(:cljs
    (do
@@ -278,16 +282,18 @@
                              :once-fixtures (:once fixtures)
                              :each-fixtures (:each fixtures))
              summary  (volatile! {:test 0 :pass 0 :fail 0 :error 0 :type :summary})]
+
+         (t/set-env! env)
+
          (t/run-block
-          (concat [(fn [] (t/set-env! env))]
-                  (t/test-vars-block vars)
+          (concat (t/test-vars-block vars)
                   [(fn []
                      (vswap! summary
                              (partial merge-with +)
                              (:report-counters (t/get-and-clear-env!))))
                    (fn []
                      (t/set-env! env)
-                     (t/do-report @summary)
+                     (t/report @summary)
                      (t/report (assoc @summary :type :end-run-tests))
                      (t/clear-env!))]))))
 

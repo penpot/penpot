@@ -174,7 +174,7 @@
        (map #(format-shadow->css % options))
        (str/join ", ")))
 
-(defn- format-blur
+(defn format-blur
   [value]
   (dm/fmt "blur(%)" (fmt/format-pixels value)))
 

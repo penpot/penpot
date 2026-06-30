@@ -35,6 +35,19 @@
 ;;   RULERS
 ;; ----------------
 
+(mf/defc rulers-clip-path*
+  "Defines a clip path (referenced by `id`) that excludes the ruler bars from the
+   given `vbox`. Used to keep SVG overlays from painting over the rulers that are
+   drawn by the wasm render engine on the canvas."
+  [{:keys [id vbox zoom]}]
+  (let [ruler-size (/ ruler-area-size zoom)]
+    [:defs
+     [:clipPath {:id id}
+      [:rect {:x (+ (:x vbox) ruler-size)
+              :y (+ (:y vbox) ruler-size)
+              :width (max 0 (- (:width vbox) ruler-size))
+              :height (max 0 (- (:height vbox) ruler-size))}]]]))
+
 (defn- calculate-step-size
   [zoom]
   (cond

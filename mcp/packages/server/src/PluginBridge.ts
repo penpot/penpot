@@ -9,10 +9,56 @@ import type { RedisBridge } from "./RedisBridge";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
 
-interface ClientConnection {
+/**
+ * Maximum plugin heartbeat age before a connection is stale.
+ *
+ * This uses plugin heartbeats rather than WebSocket pongs because the browser can answer
+ * protocol pings while the tab's JavaScript event loop is frozen.
+ */
+export const HEARTBEAT_STALE_THRESHOLD_MS = 30000;
+
+/**
+ * Observable liveness state of a plugin connection.
+ */
+export interface PluginLivenessState {
+    /** timestamp of the last plugin message, in ms since epoch. */
+    lastHeartbeat: number;
+    /** whether the plugin reported a browser freeze. */
+    frozen: boolean;
+}
+
+interface ClientConnection extends PluginLivenessState {
     socket: WebSocket;
     userToken: string | null;
     pingInterval: NodeJS.Timeout;
+}
+
+/**
+ * Throws if the plugin tab cannot currently run tasks.
+ *
+ * A socket can stay open while the page event loop is paused, so task dispatch must check
+ * plugin-level liveness before sending work.
+ */
+export function assertPluginResponsive(
+    state: PluginLivenessState,
+    now: number,
+    staleThresholdMs: number = HEARTBEAT_STALE_THRESHOLD_MS
+): void {
+    if (state.frozen) {
+        throw new Error(
+            `The Penpot plugin tab has been frozen by the browser and cannot run tasks. ` +
+                `Please click/focus the Penpot tab to wake it, then retry.`
+        );
+    }
+
+    const heartbeatAge = now - state.lastHeartbeat;
+    if (heartbeatAge > staleThresholdMs) {
+        throw new Error(
+            `The Penpot plugin tab appears to be suspended by the browser (no heartbeat for ` +
+                `${Math.round(heartbeatAge / 1000)}s). Please click/focus the Penpot tab to wake it, ` +
+                `then retry.`
+        );
+    }
 }
 
 /**
@@ -79,7 +125,13 @@ export class PluginBridge {
             }, KEEP_ALIVE_TIME);
 
             // register the client connection with both indexes
-            const connection: ClientConnection = { socket: ws, userToken, pingInterval };
+            const connection: ClientConnection = {
+                socket: ws,
+                userToken,
+                pingInterval,
+                lastHeartbeat: Date.now(),
+                frozen: false,
+            };
             this.connectedClients.set(ws, connection);
             if (userToken) {
                 // ensure only one connection per userToken
@@ -107,8 +159,20 @@ export class PluginBridge {
             ws.on("message", (data: Buffer) => {
                 this.logger.debug("Received WebSocket message: %s", data.toString());
                 try {
-                    const response: PluginTaskResponse<any> = JSON.parse(data.toString());
-                    this.handlePluginTaskResponse(response);
+                    // any plugin message proves the page event loop is running
+                    connection.lastHeartbeat = Date.now();
+
+                    const message = JSON.parse(data.toString());
+                    if (message?.type === "freeze") {
+                        connection.frozen = true;
+                        this.logger.info("Plugin tab reported it is being frozen by the browser");
+                        return;
+                    }
+                    connection.frozen = false;
+                    if (message?.type === "heartbeat") {
+                        return;
+                    }
+                    this.handlePluginTaskResponse(message as PluginTaskResponse<any>);
                 } catch (error) {
                     this.logger.error(error, "Failure while processing WebSocket message");
                 }
@@ -292,6 +356,9 @@ export class PluginBridge {
                 // WebSocket is not open
                 throw new Error(`Plugin instance is disconnected. Task could not be sent.`);
             }
+
+            // the socket can be open while browser-throttled plugin JS cannot run tasks
+            assertPluginResponsive(target, Date.now());
 
             // register the task for result correlation, then send over the socket
             this.pendingTasks.set(task.id, task);

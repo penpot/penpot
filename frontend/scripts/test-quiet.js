@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 
 const BUILD_STEPS = [
-  { label: "Building wasm", cmd: "pnpm", args: ["run", "build:wasm"] },
   { label: "Building test bundle", cmd: "pnpm", args: ["run", "build:test"] },
 ];
 

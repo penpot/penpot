@@ -65,13 +65,19 @@ pub fn render(render_state: &mut RenderState, shapes: ShapesPoolRef) {
     let viewbox = render_state.viewbox;
     let ruler_state = render_state.rulers;
     rulers::render(canvas, viewbox, &render_state.fonts, &ruler_state);
-    // TODO: pass guides data here
+
+    // Width of the ruler bars in document coordinates.
+    // Note that when rulers are hidden, guides are not shown either, so we
+    // can use a fixed value here.
+    let ruler_width = rulers::RULER_AREA_SIZE / viewbox.zoom;
+
     let (horizontal, vertical) = get_ui_state().guides();
     guides::render(
         canvas,
         zoom,
         render_state.options.dpr,
         viewbox.area,
+        ruler_width,
         horizontal,
         vertical,
     );

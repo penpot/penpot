@@ -328,19 +328,18 @@
         (mf/with-memo [file-id page-id root-id]
           (thc/fmt-object-id file-id page-id root-id "component"))
 
-        thumbnail-uri*
+        thumbnail-data*
         (mf/with-memo [object-id]
           (refs/workspace-thumbnail-by-id object-id))
 
+        thumbnail-data
+        (mf/deref thumbnail-data*)
+
         thumbnail-uri
-        (mf/deref thumbnail-uri*)
+        (:uri thumbnail-data)
 
-        rendered-at*
-        (mf/with-memo [object-id]
-          (refs/workspace-thumbnail-rendered-at object-id))
-
-        rendered-at
-        (mf/deref rendered-at*)
+        thumbnail-rendered-at
+        (:rendered-at thumbnail-data)
 
         modified-at
         (some-> (:modified-at component) (.getTime))
@@ -349,9 +348,9 @@
         ;; or the component was modified after the last render
         stale?
         (and (some? thumbnail-uri)
-             (or (nil? rendered-at)
+             (or (nil? thumbnail-rendered-at)
                  (and (some? modified-at)
-                      (> modified-at rendered-at))))
+                      (> modified-at thumbnail-rendered-at))))
 
         on-error
         (mf/use-fn
