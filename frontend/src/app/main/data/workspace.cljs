@@ -438,6 +438,9 @@
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
+               ;; Keep comment thread positions in sync on undo/redo
+               (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
+
                (let [local-commits-s
                      (->> stream
                           (rx/filter dch/commit?)

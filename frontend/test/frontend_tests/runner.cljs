@@ -51,6 +51,7 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
+   [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.util-object-test]
@@ -121,6 +122,7 @@
    'frontend-tests.tokens.style-dictionary-test
    'frontend-tests.tokens.token-errors-test
    'frontend-tests.tokens.workspace-tokens-remap-test
+   'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.render-wasm.process-objects-test
