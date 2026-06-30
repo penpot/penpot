@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.html-import :as dhi]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -38,15 +39,25 @@
   (mf/use-fn
    (mf/deps project-id on-finish-import)
    (fn [entries]
-     (let [entries (->> entries
-                        (mapv (fn [file]
-                                {:name (.-name file)
-                                 :uri  (wapi/create-uri file)}))
-                        (not-empty))]
+     (let [css-files (->> entries
+                          (filter dhi/css-file?)
+                          (mapv (fn [file]
+                                  {:name (.-name file)
+                                   :file file})))
+           entries   (->> entries
+                          (remove dhi/css-file?)
+                          (mapv
+                           (fn [file]
+                             {:name (.-name file)
+                              :uri  (wapi/create-uri file)
+                              :file file
+                              :type (when (dhi/html-file? file) :html-subset)}))
+                          (not-empty))]
        (when entries
          (st/emit! (modal/show
                     {:type :import
                      :project-id project-id
+                     :css-files css-files
                      :entries entries
                      :on-finish-import on-finish-import})))))))
 
@@ -55,7 +66,7 @@
   [{:keys [project-id on-finish-import]} external-ref]
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file {:aria-hidden "true"}
-     [:& file-uploader {:accept ".penpot,.zip"
+     [:& file-uploader {:accept ".penpot,.zip,.html,.htm,.css"
                         :multi true
                         :ref external-ref
                         :on-selected on-file-selected}]]))
@@ -105,6 +116,8 @@
                   (assoc :progress (:progress message))
                   (assoc :status status)
                   (assoc :error (:error message))
+                  (cond-> (:imported-file-id message)
+                    (assoc :imported-file-id (:imported-file-id message)))
                   (d/without-nils)))
             entry))
         entries))
@@ -158,32 +171,55 @@
 
 (defn- analyze-entries
   [state entries]
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :analyze-import
-           :files entries
-           :features features})
-         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+  (let [features      (get @st/state :features)
+        [html-entries other-entries] ((juxt filterv remove) dhi/html-entry? entries)
+        streams       (cond-> []
+                        (seq other-entries)
+                        (conj
+                         (->> (mw/ask-many!
+                               {:cmd :analyze-import
+                                :files other-entries
+                                :features features})
+                              (rx/mapcat #(rx/delay emit-delay (rx/of %)))))
+
+                        (seq html-entries)
+                        (conj
+                         (->> (rx/from html-entries)
+                              (rx/mapcat dhi/analyze-entry)
+                              (rx/mapcat #(rx/delay emit-delay (rx/of %))))))]
+    (->> (if (seq streams) (apply rx/merge streams) (rx/empty))
          (rx/filter some?)
          (rx/subs!
           (fn [message]
-            (when (some? (:error message))
+            (when (and (some? (:error message))
+                       (not (dhi/html-entry? message)))
               (st/emit! (ev/event {::ev/name "import-files-error"
                                    :error (:error message)})))
             (swap! state update-with-analyze-result message))))))
 
 (defn- import-files
-  [state project-id entries]
+  [state project-id entries css-files]
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :import-files
-           :project-id project-id
-           :files entries
-           :features features})
-         (rx/filter (comp uuid? :file-id))
+  (let [features      (get @st/state :features)
+        [html-entries other-entries] ((juxt filterv remove) dhi/html-entry? entries)
+        streams       (cond-> []
+                        (seq other-entries)
+                        (conj
+                         (->> (mw/ask-many!
+                               {:cmd :import-files
+                                :project-id project-id
+                                :files other-entries
+                                :features features})
+                              (rx/filter (comp uuid? :file-id))))
+
+                        (seq html-entries)
+                        (conj
+                         (->> (rx/from html-entries)
+                              (rx/mapcat #(dhi/import-entry project-id css-files %))
+                              (rx/filter some?))))]
+    (->> (if (seq streams) (apply rx/merge streams) (rx/empty))
          (rx/subs!
           (fn [message]
             (swap! state update-entry-status message))))))
@@ -323,7 +359,7 @@
    ::mf/register-as :import
    ::mf/props :obj}
 
-  [{:keys [project-id entries template on-finish-import]}]
+  [{:keys [project-id entries css-files template on-finish-import]}]
 
   (mf/with-effect []
     ;; Revoke all uri's on commonent unmount
@@ -340,11 +376,11 @@
 
         continue-entries
         (mf/use-fn
-         (mf/deps entries)
+         (mf/deps entries css-files)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
              (reset! status* :import-progress)
-             (import-files state* project-id entries))))
+             (import-files state* project-id entries css-files))))
 
         continue-template
         (mf/use-fn
@@ -507,6 +543,10 @@
                      (and (string? err)
                           (str/includes? (str/lower err) "corrupt"))
                      (tr "dashboard.import.import-error.corrupt-file")
+
+                     (and (= :html-subset (:type entry))
+                          (string? err))
+                     err
 
                      :else
                      (tr "dashboard.import.import-error.unknown-error"))])]))]
