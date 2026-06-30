@@ -74,15 +74,13 @@ fn calculate_step_size(zoom: f32) -> f32 {
 }
 
 fn format_label(value: f32) -> String {
-    // Match `format-number` in app.main.ui.formats: round to integer if whole,
-    // else 2 decimals. Tick steps are integers in our table, so this is the
-    // common path.
-    let rounded = value.round();
-    if (value - rounded).abs() < 1e-3 {
-        format!("{}", rounded as i64)
-    } else {
-        format!("{:.2}", value)
-    }
+    // Match `format-number` in app.main.ui.formats: round to at most 2 decimals.
+    // Display drops trailing zeros for free, so 123.00 -> "123",
+    // 123.50 -> "123.5", 123.456 -> "123.46".
+    let rounded = (value * 100.0).round() / 100.0;
+    // Normalize -0.0 so we don't render "-0".
+    let rounded = if rounded == 0.0 { 0.0 } else { rounded };
+    format!("{rounded}")
 }
 
 fn with_alpha(color: Color, alpha_fraction: f32) -> Color {
