@@ -3576,15 +3576,7 @@ export interface Shadow {
  * ```
  */
 export type Shape =
-  | Board
-  | Group
-  | Boolean
-  | Rectangle
-  | Path
-  | Text
-  | Ellipse
-  | SvgRaw
-  | Image;
+  Board | Group | Boolean | Rectangle | Path | Text | Ellipse | SvgRaw | Image;
 
 /**
  * Represents the base properties and methods of a shape in Penpot.
@@ -4312,12 +4304,7 @@ export interface TextRange {
    * The text transform applied to the text range. It can be a specific text transform or 'mixed' if multiple text transforms are used.
    */
   textTransform:
-    | 'uppercase'
-    | 'capitalize'
-    | 'lowercase'
-    | 'none'
-    | 'mixed'
-    | null;
+    'uppercase' | 'capitalize' | 'lowercase' | 'none' | 'mixed' | null;
 
   /**
    * The text decoration applied to the text range. It can be a specific text decoration or 'mixed' if multiple text decorations are used.
