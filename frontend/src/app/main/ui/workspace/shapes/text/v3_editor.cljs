@@ -39,6 +39,24 @@
       (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
     "Noto Color Emoji"))
 
+(defn- composing-event?
+  "True when a key/input event is part of an in-flight IME composition.
+
+  Read from the browser event itself so it stays correct regardless of render
+  timing or the relative ordering of compositionend.
+  Note that , and that compositionstart
+  dispatches after the first composing keydown event.
+
+  We are checkign both isComposing and the keyCode (229, which is what is reported
+  when using an IME), beause compositionstart dispatches after the first composing
+  event. Note that also, on MacOS, the key that commits a composition (e.g. Enter
+  in Japanese IME) dispatches its keydown while composition is still active, so we
+  can't rely on a stale state and need to query the event itself."
+  [^js event]
+  (let [native (.-nativeEvent event)]
+    (or (.-isComposing native)
+        (= 229 (.-keyCode event)))))
+
 (mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
   [{:keys [shape]}]
@@ -47,7 +65,6 @@
         clip-id   (dm/str "text-edition-clip" shape-id)
 
         contenteditable-ref (mf/use-ref nil)
-        composing?          (mf/use-state false)
 
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
@@ -72,15 +89,11 @@
         on-composition-start
         (mf/use-fn
          (fn [_event]
-           (reset! composing? true)
            (text-editor/text-editor-composition-start)))
 
         on-composition-update
         (mf/use-fn
          (fn [event]
-           (when-not composing?
-             (reset! composing? true))
-
            ;; IME cancel (e.g. Escape on Linux ibus-mozc) fires compositionupdate
            ;; with an empty string; that must reach WASM to clear the preview text.
            (let [data (.-data event)]
@@ -94,7 +107,6 @@
         on-composition-end
         (mf/use-fn
          (fn [^js event]
-           (reset! composing? false)
            (let [data (or (.-data event) "")]
              (text-editor/text-editor-composition-end data)
              (sync-wasm-text-editor-content!)
@@ -142,15 +154,8 @@
         on-key-down
         (mf/use-fn
          (fn [^js event]
-           ;; Detect IME composition from the browser event instead of our own
-           ;; `composing?` state.
-           ;; On macOS the key that commits a composition (e.g. Enter in Japanese)
-           ;; dispatches its keydown before `compositionend`. Also, in the first
-           ;; keystroke of a composition, `isComposing` is reported as false, but
-           ;; we do get a 229 keycode (IME handling signal).
            (when (and (text-editor/text-editor-has-focus?)
-                      (not (.-isComposing (.-nativeEvent event)))
-                      (not (= 229 (.-keyCode event))))
+                      (not (composing-event? event)))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
                    shift? (.-shiftKey event)]
@@ -247,7 +252,7 @@
                  input-type   (.-inputType native-event)
                  data         (.-data native-event)]
              ;; Skip composition-related input events - composition-end handles those
-             (when (and (not @composing?)
+             (when (and (not (composing-event? event))
                         (not= input-type "insertCompositionText"))
                (when (and data (seq data))
                  (text-editor/text-editor-insert-text data)
