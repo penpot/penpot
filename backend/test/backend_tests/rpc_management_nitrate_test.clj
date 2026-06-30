@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-nitrate-test
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -1277,3 +1278,40 @@
     (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
       (management-command-with-nitrate! params))
     (t/is (empty? @sent))))
+
+(t/deftest check-organization-sso-returns-valid-true
+  (let [org-id (uuid/random)
+        out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
+                 (management-command-with-nitrate!
+                  {::th/type :check-organization-sso
+                   :organization-id org-id
+                   :client-id "test-client"
+                   :client-secret "test-secret"
+                   :base-url "https://idp.example.com"}))]
+    (t/is (th/success? out))
+    (t/is (true? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-returns-valid-false-on-invalid-config
+  (let [out (management-command-with-nitrate!
+             {::th/type :check-organization-sso
+              :organization-id (uuid/random)
+              :client-id "test-client"
+              :client-secret "test-secret"})]
+    (t/is (th/success? out))
+    (t/is (false? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-uses-issuer-when-base-url-is-blank
+  (let [org-id (uuid/random)
+        out    (with-redefs [oidc/is-organization-sso-config-valid?
+                             (fn [_cfg sso]
+                               (and (= "test-client" (:client-id sso))
+                                    (= "https://idp.example.com/" (:issuer sso))))]
+                 (management-command-with-nitrate!
+                  {::th/type :check-organization-sso
+                   :organization-id org-id
+                   :client-id "test-client"
+                   :client-secret "test-secret"
+                   :base-url ""
+                   :issuer "https://idp.example.com/"}))]
+    (t/is (th/success? out))
+    (t/is (true? (-> out :result :valid)))))

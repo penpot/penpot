@@ -14,7 +14,8 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
-   [app.common.types.organization :as cto]
+   [app.common.types.organization :as cto
+    :refer [schema:nitrate-sso]]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
@@ -429,17 +430,6 @@
                        [:owner-id ::sm/uuid]
                        [:permissions [:map-of :keyword :string]]]
                       params))
-
-(def ^:private schema:nitrate-sso
-  [:map
-   [:organization-id ::sm/uuid]
-   [:active [:maybe :boolean]]
-   [:provider [:maybe :string]]
-   [:client-id [:maybe :string]]
-   [:base-url [:maybe :string]]
-   [:client-secret [:maybe :string]]
-   [:issuer [:maybe :string]]
-   [:scopes [:maybe [::sm/set ::sm/text]]]])
 
 (defn- get-org-sso-api
   "Fetches the SSO configuration for an organization from Nitrate."

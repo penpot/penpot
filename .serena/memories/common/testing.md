@@ -1,24 +1,27 @@
-# Common Module Test Setup
+# Common Testing and Verification
 
 `common/` is CLJC shared code. Tests should cover the relevant runtime(s): JVM for backend/common logic and JS for frontend/exporter behavior. For geometry, component, and file-model changes, JVM tests are common and fast, but JS/browser behavior can differ when WASM modifier math or CLJS-specific state is involved.
 
-## Running tests
+## Unit tests
+
+Common tests live under `common/test/common_tests/` and use `clojure.test`.
+They are CLJC and run on both JVM and JS.
 
 From `common/`:
+- Full JVM test run: `clojure -M:dev:test`
+- Full JS test run: `pnpm run test:quiet`
+- Focus a JVM test namespace: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test`
+- Focus a JVM test var: `clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch`
+- Focus a JS test namespace: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test`
+- Focus a JS test var: `pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute`
+- Quiet logging during a JS run: append `--log-level warn` (or `trace|debug|info|warn|error`)
+- Build JS test target only: `pnpm run build:test`
+- After `pnpm run build:test`, direct compiled runner: `node target/tests/test.js --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn`
+- Watch tests: `pnpm run watch:test`
 
-```bash
-pnpm run test:jvm
-clojure -M:dev:test
-pnpm run test:jvm --focus common-tests.logic.variants-switch-test
-clojure -M:dev:test --focus common-tests.logic.variants-switch-test/test-basic-switch
-pnpm run test:js
-pnpm run test:quiet
-pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test
-pnpm run test:quiet -- --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn
-pnpm run watch:test
-```
-
-Use `test:quiet` for non-interactive JS runs; it buffers `build:test` output and forwards runner args. Common JS runner args support `--focus <namespace-or-var>` and `--log-level trace|debug|info|warn|error`. After `pnpm run build:test`, direct compiled runner focus is faster: `node target/tests/test.js --focus common-tests.logic.comp-sync-test/test-sync-when-changing-attribute --log-level warn`. New common JS test namespaces must be required/listed in `common_tests/runner.cljc`; new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags compose as a union.
+New common JS test namespaces must be required/listed in `common_tests/runner.cljc`;
+new vars in existing namespaces need no runner change. Multiple JVM `--focus` flags
+compose as a union.
 
 ## Test helpers
 

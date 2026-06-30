@@ -26,6 +26,11 @@ From `frontend/`:
 - Format fix: `pnpm run fmt`, or targeted `fmt:clj` / `fmt:js` / `fmt:scss`.
 - Translation formatting after i18n edits: `pnpm run translations`.
 
+**Before linting:** if delimiter errors are suspected (after LLM edits, or
+lint/compiler reports syntax errors), run `tools/paren-repair.bb` on the
+affected files first. Delimiter errors produce misleading linter output.
+See `mem:tools/paren-repair`.
+
 ## Focused memory routing
 
 UI and packages:
