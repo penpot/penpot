@@ -331,3 +331,33 @@ test("BUG 14098 - Fix text editor having 0 width or height", async ({ page }) =>
   const textEditor = workspace.page.locator(`div[class*="viewport"]`).first().getByRole('textbox').first();
   await expect(textEditor).toBeVisible();
 });
+
+test("Preserves empty fill after editing text without changes", async ({ page }) => {
+  const initialText = "Hello";
+  const workspace = new WasmWorkspacePage(page, {
+    textEditor: true,
+  });
+
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC("update-file?id=*", "text-editor/update-file.json");
+  await workspace.goToWorkspace();
+
+  await workspace.createTextShape(190, 150, 300, 200, initialText);
+  await workspace.textEditor.stopEditing();
+
+  const fillColorButton = workspace.page.getByRole("button", {
+    name: "#000000",
+  });
+  await expect(fillColorButton).toBeVisible();
+  await workspace.page.getByRole("button", { name: "Remove color" }).click();
+  await expect(fillColorButton).toHaveCount(0);
+
+  await workspace.doubleClickLeafLayer(initialText);
+  await workspace.textEditor.waitForEditor();
+  await workspace.moveButton.click();
+  await workspace.clickAt(100, 100);
+
+  await workspace.clickLeafLayer(initialText);
+  await expect(fillColorButton).toHaveCount(0);
+  await expect(workspace.page.getByTestId("add-fill")).toBeVisible();
+});
