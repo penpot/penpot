@@ -106,9 +106,12 @@
 
      (defn rpc-cmd-mock
        "Records [cmd params] in [[rpc-calls]], returns `(rx/of nil)`."
-       [cmd params]
-       (swap! rpc-calls conj {:cmd cmd :params params})
-       (rx/of nil))
+       ([cmd params]
+        (swap! rpc-calls conj {:cmd cmd :params params})
+        (rx/of nil))
+       ([cmd params _opts]
+        (swap! rpc-calls conj {:cmd cmd :params params})
+        (rx/of nil)))
 
      (defn revoke-uri-mock
        "Records `uri` in [[revoked-uris]]."
@@ -117,8 +120,10 @@
 
      (defn schedule-on-idle-mock
        "Calls `f` immediately instead of deferring to the idle queue."
-       [f]
-       (f))
+       ([_ms f]
+        (f))
+       ([f]
+        (f)))
 
      (defn timer-mock
        "Returns `(rx/of :immediate)` so debounce timers fire instantly
