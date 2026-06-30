@@ -80,7 +80,7 @@ Create a `package.json` in your plugin folder with build scripts:
 
 ### Step 4: Modify TypeScript Configuration
 
-Create ``tsconfig.plugin.json` next to the `tsconfig.json`:
+Create ``tsconfig.plugin.json`next to the`tsconfig.json`:
 
 ```json
 {

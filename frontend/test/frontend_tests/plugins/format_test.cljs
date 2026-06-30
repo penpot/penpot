@@ -38,3 +38,17 @@
     (format/format-frame-guides nil)
     (format/format-tracks nil)
     (format/format-path-content nil)))
+
+(t/deftest test-format-color-result-uses-shapes-info-key
+  (let [shape-id (random-uuid)
+        result   (format/format-color-result
+                  [{:color "#fabada"}
+                   [{:prop :fill :shape-id shape-id :index 0}]])
+        info     (aget result "shapesInfo")]
+    (t/is (array? info))
+    (t/is (nil? (aget result "shapesColors")))
+    (t/is (= "fill" (aget (aget info 0) "property")))
+    (t/is (= (str shape-id) (aget (aget info 0) "shapeId")))))
+
+(t/deftest test-shape-type-reports-boolean
+  (t/is (= "boolean" (format/shape-type :bool))))

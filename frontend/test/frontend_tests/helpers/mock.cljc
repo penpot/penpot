@@ -131,6 +131,39 @@
        [_ms]
        (rx/of :immediate))
 
+     ;; Static-dispatch-safe stubs
+     ;; ═══════════════════════════════════════════════════════════════
+     ;;
+     ;; The `:esm` test build compiles calls to a *multi-arity* var as
+     ;; `f.cljs$core$IFn$_invoke$arity$N(...)`. A plain single-arity `fn`
+     ;; (including `identity`) does not expose that property, so using one
+     ;; to redefine such a var throws "arity$N is not a function". Multi-arity
+     ;; fns do expose the property, hence the helpers below.
+
+     (defn noop
+       "Multi-arity no-op. Use to stub static-dispatched multi-arity vars
+       such as `st/emit!` (replacing `identity`, which is single-arity)."
+       ([] nil)
+       ([_] nil)
+       ([_ _] nil)
+       ([_ _ _] nil)
+       ([_ _ _ _] nil)
+       ([_ _ _ _ & _] nil))
+
+     (defn stub
+       "Wraps `f` in a multi-arity fn (arities 0-6) delegating to `f`, so the
+       result exposes `cljs$core$IFn$_invoke$arity$N`. Required when replacing
+       a multi-arity var in a `with-redefs`/`set!` mock with a capturing fn."
+       [f]
+       (fn
+         ([] (f))
+         ([a] (f a))
+         ([a b] (f a b))
+         ([a b c] (f a b c))
+         ([a b c d] (f a b c d))
+         ([a b c d e] (f a b c d e))
+         ([a b c d e g] (f a b c d e g))))
+
      ;; Lifecycle
      ;; ═══════════════════════════════════════════════════════════════
 

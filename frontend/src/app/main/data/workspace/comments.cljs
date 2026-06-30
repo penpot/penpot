@@ -8,10 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
+   [app.main.data.changes :as dwc]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
@@ -126,6 +129,14 @@
                       ny (- (:y position) nh)]
                   (update local :vbox assoc :x nx :y ny)))))))
 
+(defn- set-comment-thread
+  "Stores the comment thread in the workspace state so its bubble re-renders."
+  [thread]
+  (ptk/reify ::set-comment-thread
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:comment-threads (:id thread)] thread))))
+
 (defn update-comment-thread-position
   ([thread [new-x new-y]]
    (update-comment-thread-position thread [new-x new-y] nil))
@@ -136,34 +147,105 @@
     (dcmt/check-comment-thread! thread))
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
-     (watch [_ state _]
+     (watch [it state _]
        (let [page      (dsh/lookup-page state)
              page-id   (:id page)
              objects   (dsh/lookup-page-objects state page-id)
              frame-id  (if (nil? frame-id)
                          (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
                          (:frame-id thread))
-             thread     (-> thread
-                            (assoc :position (gpt/point new-x new-y))
-                            (assoc :frame-id frame-id))
-             thread-id  (:id thread)]
+             position  (gpt/point new-x new-y)
+             thread    (-> thread
+                           (assoc :position position)
+                           (assoc :frame-id frame-id))
+             thread-id (:id thread)
+
+             ;; Record the position as a change so it joins the undo entry
+             set-position-changes
+             (-> (pcb/empty-changes it)
+                 (pcb/with-page page)
+                 (pcb/set-comment-thread-position thread))]
 
          (rx/concat
-          (rx/of (fn [state]
-                   (-> state
-                       (update :comment-threads assoc thread-id thread)
-                       ;; Keep the page positions map in sync so subsequent
-                       ;; frame moves compute the relative offset from the
-                       ;; latest position instead of a stale one.
-                       (dsh/update-page page-id
-                                        #(update-in % [:comment-thread-positions thread-id]
-                                                    (fn [pos]
-                                                      (-> pos
-                                                          (assoc :position (:position thread))
-                                                          (assoc :frame-id (:frame-id thread)))))))))
-          (->> (rp/cmd! :update-comment-thread-position thread)
+          ;; Update the new position in the rendered thread, and commit the
+          ;; change so the move is part of the undo entry
+          (rx/of (set-comment-thread thread)
+                 (dwc/commit-changes set-position-changes))
+          (->> (rp/cmd! :update-comment-thread-position {:id thread-id
+                                                         :position position
+                                                         :frame-id frame-id})
                (rx/catch #(rx/throw {:type :update-comment-thread-position}))
                (rx/ignore))))))))
+
+(def ^:private undo-origins
+  #{:app.main.data.workspace.undo/undo
+    :app.main.data.workspace.undo/redo
+    :app.main.data.workspace.undo/undo-to-index})
+
+(defn- sync-comment-thread-position
+  "Syncs the rendered thread and the backend for a comment position change."
+  [{:keys [comment-thread-id position frame-id]}]
+  (ptk/reify ::sync-comment-thread-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (cond-> state
+        (and position frame-id)
+        (update-in [:comment-threads comment-thread-id]
+                   (fn [thread]
+                     (some-> thread (assoc :position position :frame-id frame-id))))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if (and position frame-id)
+        (->> (rp/cmd! :update-comment-thread-position {:id comment-thread-id
+                                                       :position position
+                                                       :frame-id frame-id})
+             (rx/catch #(rx/throw {:type :update-comment-thread-position}))
+             (rx/ignore))
+        (rx/empty)))))
+
+(defn watch-comment-thread-position-changes
+  "Syncs rendered threads and the backend when an undo/redo changes a comment position."
+  [stopper]
+  (ptk/reify ::watch-comment-thread-position-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter dwc/commit?)
+           (rx/map deref)
+           (rx/filter #(contains? undo-origins (:origin %)))
+           (rx/mapcat (fn [commit]
+                        (->> (:redo-changes commit)
+                             (filter #(= :set-comment-thread-position (:type %)))
+                             (rx/from))))
+           (rx/map sync-comment-thread-position)
+           (rx/take-until stopper)))))
+
+(defn frame-pin-transform
+  "Matrix that moves a comment pinned inside `frame` as the frame is transformed,
+   following its translation and rotation but not its resize scale."
+  [frame modifiers transform]
+  (when (and (some? frame) (or (some? modifiers) (some? transform)))
+    (let [frame' (cond-> frame
+                   (some? modifiers) (gsh/transform-shape modifiers)
+                   (some? transform) (gsh/apply-transform transform))
+
+          c   (gsh/shape->center frame)
+          c'  (gsh/shape->center frame')
+          tfi (or (:transform-inverse frame) (gmt/matrix))
+          tf' (or (:transform frame') (gmt/matrix))
+          sr  (:selrect frame)
+          sr' (:selrect frame')
+          d   (gpt/point (- (:x sr') (:x sr))
+                         (- (:y sr') (:y sr)))]
+      (-> (gmt/matrix)
+          (gmt/translate! c')
+          (gmt/multiply! tf')
+          (gmt/translate! (gpt/negate c'))
+          (gmt/translate! d)
+          (gmt/translate! c)
+          (gmt/multiply! tfi)
+          (gmt/translate! (gpt/negate c))))))
 
 ;; Move comment threads that are inside a frame when that frame is moved"
 
@@ -187,25 +269,18 @@
 
             build-move-event
             (fn [comment-thread]
-              (let [frame-id (:frame-id comment-thread)
+              (let [frame-id  (:frame-id comment-thread)
                     frame     (get objects frame-id)
                     modifiers (get-in object-modifiers [frame-id :modifiers])
                     transform (get transforms frame-id)
 
-                    frame'
-                    (cond-> frame
-                      (some? modifiers)
-                      (gsh/transform-shape modifiers)
+                    matrix    (frame-pin-transform frame modifiers transform)
 
-                      (some? transform)
-                      (gsh/apply-transform transform))
-
-                    moved     (gpt/to-vec (gpt/point (:x frame) (:y frame))
-                                          (gpt/point (:x frame') (:y frame')))
                     position  (get-in threads-position-map [(:id comment-thread) :position])
-                    new-x     (+ (:x position) (:x moved))
-                    new-y     (+ (:y position) (:y moved))]
-                (update-comment-thread-position comment-thread [new-x new-y] (:id frame))))]
+                    position' (cond-> position
+                                (some? matrix)
+                                (gpt/transform matrix))]
+                (update-comment-thread-position comment-thread [(:x position') (:y position')] frame-id)))]
 
         (->> (:comment-threads state)
              (vals)

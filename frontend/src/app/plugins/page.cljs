@@ -412,8 +412,7 @@
         (js/Promise.
          (fn [resolve]
            (let [thread-id (obj/get thread "$id")]
-             (js/Promise.
-              (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve)))))))))
+             (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve))))))))
 
     :findCommentThreads
     (fn [criteria]

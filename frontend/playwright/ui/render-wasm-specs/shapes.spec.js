@@ -162,7 +162,7 @@ test("Updates canvas background", async ({ page }) => {
 
   const canvasBackgroundInput = workspace.page.getByRole("textbox", {
     name: "Color",
-  });
+  }).first();
   await canvasBackgroundInput.fill("FABADA");
   await workspace.page.keyboard.press("Enter");
   await workspace.waitForFirstRenderWithoutUI();
