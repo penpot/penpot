@@ -827,6 +827,7 @@
         [:div {:class (stl/css :empty-invitations-buttons)}
          [:a
           {:class (stl/css :btn-empty-invitations)
+           :role "button"
            :on-click on-invite-member
            :data-testid "invite-member"}
           (tr "dashboard.invite-profile")]]
