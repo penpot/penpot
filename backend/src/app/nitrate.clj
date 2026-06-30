@@ -14,18 +14,48 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
-   [app.common.types.organization :as cto]
+   [app.common.types.organization :as cto
+    :refer [schema:nitrate-sso]]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.client :as http]
    [app.http.session :as session]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
+   [app.util.cache :as cache]
    [clojure.core :as c]
+   [clojure.string :as str]
    [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- join-path-segments
+  "Build a single relative path from Nitrate URI segments, normalizing slashes."
+  [segments]
+  (let [path (->> segments (map str) (str/join "/"))]
+    (->> (str/split path #"/")
+         (remove str/blank?)
+         (str/join "/"))))
+
+(defn- join-base-uri
+  "Join path segments to a base URI."
+  [base-uri & segments]
+  (u/join (u/ensure-path-slash base-uri)
+          (join-path-segments segments)))
+
+(defn- generate-nitrate-uri
+  "Joins relative path segments to the Nitrate backend URI.
+   Segments must not start with `/`"
+  [& segments]
+  (apply join-base-uri (cf/get :nitrate-backend-uri) segments))
+
+(defn- generate-public-uri
+  "Joins relative path segments to the public backend URI.
+   Segments must not start with `/`"
+  [& segments]
+  (apply join-base-uri (cf/get :public-uri) segments))
 
 (defn- request-builder
   [cfg method uri shared-key profile-id request-params]
@@ -225,56 +255,49 @@
 
 (defn- get-team-org-api
   [cfg {:keys [team-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/teams/"
-                             team-id)
-                        cto/schema:team-with-organization params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri "api/teams/" team-id)
+                      cto/schema:team-with-organization params))
 
 (defn- get-org-membership-api
   [cfg {:keys [profile-id organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/members/"
-                             profile-id)
-                        schema:profile-org params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/organizations/"
+                       organization-id
+                       "members/"
+                       profile-id)
+                      schema:profile-org params))
 
 (defn- get-org-membership-by-team-api
   [cfg {:keys [profile-id team-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/teams/"
-                             team-id
-                             "/users/"
-                             profile-id)
-                        schema:profile-org params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/teams/"
+                       team-id
+                       "users/"
+                       profile-id)
+                      schema:profile-org params))
 
 
 (defn- get-org-summary-api
   [cfg {:keys [organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/summary")
-                        schema:org-summary params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/organizations/"
+                       organization-id
+                       "summary")
+                      schema:org-summary params))
 
 (defn- get-owned-orgs-api
   [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/owned-organizations")
-                        [:vector schema:org-summary]
-                        params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/users/"
+                       profile-id
+                       "owned-organizations")
+                      [:vector schema:org-summary]
+                      params))
 
 (def ^:private schema:org-summary-counts
   [:map
@@ -288,99 +311,87 @@
 
 (defn- get-owned-orgs-summary-api
   [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)
-        orgs    (request-to-nitrate cfg :get
-                                    (str baseuri
-                                         "/api/users/"
-                                         profile-id
-                                         "/owned-organizations-summary")
-                                    [:vector schema:org-summary-counts]
-                                    params)]
+  (let [orgs (request-to-nitrate cfg :get
+                                 (generate-nitrate-uri
+                                  "api/users/"
+                                  profile-id
+                                  "owned-organizations-summary")
+                                 [:vector schema:org-summary-counts]
+                                 params)]
     (mapv (fn [org]
             (if-let [logo-id (:logo-id org)]
-              (assoc org :custom-photo (str (cf/get :public-uri) "/assets/by-id/" logo-id))
+              (assoc org :custom-photo (generate-public-uri "assets/by-id/" logo-id))
               org))
           orgs)))
 
 (defn- cleanup-deleted-penpot-user-api
   [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/users/"
-                             profile-id
-                             "/cleanup-after-deletion")
-                        nil params)))
+  (request-to-nitrate cfg :post
+                      (generate-nitrate-uri
+                       "api/users/"
+                       profile-id
+                       "cleanup-after-deletion")
+                      nil params))
 
 (defn- set-team-org-api
   [cfg {:keys [organization-id team-id is-default] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)
-        params (assoc params :request-params {:team-id team-id
+  (let [params (assoc params :request-params {:team-id team-id
                                               :is-your-penpot (true? is-default)})
         team (request-to-nitrate cfg :post
-                                 (str baseuri
-                                      "/api/organizations/"
-                                      organization-id
-                                      "/add-team")
+                                 (generate-nitrate-uri
+                                  "api/organizations/"
+                                  organization-id
+                                  "add-team")
                                  cto/schema:team-with-organization params)
         custom-photo (when-let [logo-id (dm/get-in team [:organization :logo-id])]
-                       (str (cf/get :public-uri) "/assets/by-id/" logo-id))]
+                       (generate-public-uri "assets/by-id/" logo-id))]
     (cond-> team
       custom-photo
       (assoc-in [:organization :custom-photo] custom-photo))))
 
 (defn- add-profile-to-org-api
   [cfg {:keys [profile-id organization-id team-id email] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)
-        request-params (cond-> {:user-id profile-id :team-id team-id}
+  (let [request-params (cond-> {:user-id profile-id :team-id team-id}
                          (some? email) (assoc :email email))
         params (assoc params :request-params request-params)]
     (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/add-user")
+                        (generate-nitrate-uri
+                         "api/organizations/"
+                         organization-id
+                         "add-user")
                         schema:profile-org params)))
 
 (defn- remove-profile-from-org-api
   [cfg {:keys [profile-id organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)
-        params (assoc params :request-params {:user-id profile-id})]
+  (let [params (assoc params :request-params {:user-id profile-id})]
     (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/remove-user")
+                        (generate-nitrate-uri
+                         "api/organizations/"
+                         organization-id
+                         "remove-user")
                         nil params)))
 
 (defn- remove-team-from-org-api
   [cfg {:keys [team-id organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)
-        params (assoc params :request-params {:team-id team-id})]
+  (let [params (assoc params :request-params {:team-id team-id})]
     (request-to-nitrate cfg :post
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/remove-team")
+                        (generate-nitrate-uri
+                         "api/organizations/"
+                         organization-id
+                         "remove-team")
                         nil params)))
 
 (defn- delete-team-api
   [cfg {:keys [team-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :delete
-                        (str baseuri
-                             "/api/teams/"
-                             team-id)
-                        nil params)))
+  (request-to-nitrate cfg :delete
+                      (generate-nitrate-uri "api/teams/" team-id)
+                      nil params))
 
 (defn- get-subscription-api
   [cfg {:keys [profile-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/subscriptions/"
-                             profile-id)
-                        schema:subscription params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri "api/subscriptions/" profile-id)
+                      schema:subscription params))
 
 (def ^:private schema:subscription-warning
   [:maybe
@@ -392,21 +403,16 @@
 
 (defn- get-subscription-warning-api
   [cfg {:keys [penpot-id profile-id] :as params}]
-  (let [baseuri   (cf/get :nitrate-backend-uri)
-        penpot-id (or penpot-id profile-id)]
+  (let [penpot-id (or penpot-id profile-id)]
     (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/subscription-warning/"
-                             penpot-id)
+                        (generate-nitrate-uri "api/subscription-warning/" penpot-id)
                         schema:subscription-warning params)))
 
 (defn- get-connectivity-api
   [cfg params]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/connectivity")
-                        schema:connectivity params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri "api/connectivity")
+                      schema:connectivity params))
 
 (def ^:private schema:redeem-result
   [:map
@@ -414,58 +420,51 @@
 
 (defn- get-org-permissions-api
   [cfg {:keys [organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/permissions")
-                        [:map
-                         [:organization-id ::sm/uuid]
-                         [:owner-id ::sm/uuid]
-                         [:permissions [:map-of :keyword :string]]]
-                        params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/organizations/"
+                       organization-id
+                       "permissions")
+                      [:map
+                       [:organization-id ::sm/uuid]
+                       [:owner-id ::sm/uuid]
+                       [:permissions [:map-of :keyword :string]]]
+                      params))
 
-(def ^:private schema:nitrate-sso
-  [:map
-   [:organization-id ::sm/uuid]
-   [:active [:maybe :boolean]]
-   [:provider [:maybe :string]]
-   [:client-id [:maybe :string]]
-   [:base-url [:maybe :string]]
-   [:client-secret [:maybe :string]]
-   [:issuer [:maybe :string]]
-   [:scopes [:maybe [::sm/set ::sm/text]]]])
+(defn- get-org-sso-api
+  "Fetches the SSO configuration for an organization from Nitrate."
+  [cfg {:keys [organization-id] :as params}]
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/organizations/"
+                       organization-id
+                       "sso")
+                      schema:nitrate-sso
+                      params))
 
 (defn- get-org-sso-by-team-api
   [cfg {:keys [team-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/teams/"
-                             team-id
-                             "/sso")
-                        schema:nitrate-sso
-                        params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri "api/teams/" team-id "sso")
+                      schema:nitrate-sso
+                      params))
 
 (defn- get-org-members-api
   [cfg {:keys [organization-id] :as params}]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :get
-                        (str baseuri
-                             "/api/organizations/"
-                             organization-id
-                             "/members-list")
-                        [:vector ::sm/uuid]
-                        params)))
+  (request-to-nitrate cfg :get
+                      (generate-nitrate-uri
+                       "api/organizations/"
+                       organization-id
+                       "members-list")
+                      [:vector ::sm/uuid]
+                      params))
 
 (defn- redeem-activation-code-api
   [cfg params]
-  (let [baseuri (cf/get :nitrate-backend-uri)]
-    (request-to-nitrate cfg :post
-                        (str baseuri "/api/activation-codes/redeem")
-                        schema:redeem-result
-                        (assoc params :throw-on-error? true))))
+  (request-to-nitrate cfg :post
+                      (generate-nitrate-uri "api/activation-codes/redeem")
+                      schema:redeem-result
+                      (assoc params :throw-on-error? true)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
@@ -487,6 +486,7 @@
      :remove-profile-from-org      (partial remove-profile-from-org-api cfg)
      :get-org-permissions          (partial get-org-permissions-api cfg)
      :get-org-sso-by-team          (partial get-org-sso-by-team-api cfg)
+     :get-org-sso                  (partial get-org-sso-api cfg)
      :delete-team                  (partial delete-team-api cfg)
      :remove-team-from-org         (partial remove-team-from-org-api cfg)
      :get-subscription             (partial get-subscription-api cfg)
@@ -498,12 +498,56 @@
 ;; UTILS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce ^:private team-org-owner-cache
+  ;; Short TTL: permission checks run on the read path, so we avoid an
+  ;; HTTP call to nitrate per check. The org owner of a team rarely
+  ;; changes, and stale entries only grant read access for a few seconds.
+  (cache/create :expire "30s" :max-size 2048))
+
+(defn- nitrate-client?
+  "True when `cfg` is a config map carrying the nitrate client (i.e. not
+  a raw db connection/pool passed by an internal caller)."
+  [cfg]
+  (and (map? cfg) (some? (get cfg ::client))))
+
+(def ^:private cache-miss ::no-org-owner)
+
+(defn- get-team-org-owner-id
+  "Returns the organization owner-id for `team-id`, or nil. Cached
+  briefly, including negative results (teams with no organization) so
+  repeated unauthorized probes don't each hit nitrate."
+  [cfg team-id]
+  (let [owner-id (cache/get team-org-owner-cache team-id
+                            (fn [team-id]
+                              (let [team-with-org (call cfg :get-team-org {:team-id team-id})]
+                                (or (get-in team-with-org [:organization :owner-id])
+                                    cache-miss))))]
+    (when-not (= owner-id cache-miss)
+      owner-id)))
+
+(defn organization-owner-of-team?
+  "True if `profile-id` is the owner of the organization that owns
+  `team-id`. Used to grant non-member org owners read-only access to the
+  teams of their organizations. `cfg` must be a config map with the
+  nitrate client; raw db connections/pools yield false so internal
+  callers are unaffected. Returns false when the :nitrate flag is off."
+  [cfg profile-id team-id]
+  (boolean
+   (when (and (contains? cf/flags :nitrate)
+              (nitrate-client? cfg)
+              (some? team-id)
+              (some? profile-id))
+     (= profile-id (get-team-org-owner-id cfg team-id)))))
+
 (defn sso-session-authorized?
-  "Fetches the org-SSO config for the given team and checks whether
-  the HTTP request has a valid session entry for it. Returns a map
+  "Fetches the org-SSO config for the given organization or team and checks
+  whether the HTTP request has a valid session entry for it. Returns a map
   with :authorized and :sso keys."
-  [cfg team-id request]
-  (let [session (session/get-session request) sso (call cfg :get-org-sso-by-team {:team-id team-id})]
+  [cfg organization-id team-id request]
+  (let [session (session/get-session request)
+        sso     (if organization-id
+                  (call cfg :get-org-sso {:organization-id organization-id})
+                  (call cfg :get-org-sso-by-team {:team-id team-id}))]
     (if-not (:active sso)
       {:authorized true :sso sso}
       (if (or (:issuer sso) (:base-url sso))
@@ -549,7 +593,7 @@
       (if (some? org)
         (-> (cto/apply-organization team (assoc org :custom-photo
                                                 (when-let [logo-id (:logo-id org)]
-                                                  (str (cf/get :public-uri) "/assets/by-id/" logo-id))))
+                                                  (generate-public-uri "assets/by-id/" logo-id))))
             (assoc :is-default (or (:is-default team) (true? (:is-your-penpot team-with-org)))))
         team))
     (catch Throwable cause

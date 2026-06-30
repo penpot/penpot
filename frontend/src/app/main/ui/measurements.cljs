@@ -281,7 +281,6 @@
                               :bounds bounds
                               :zoom zoom}]
        [:> size-display* {:selrect selected-selrect :zoom zoom}]
-       [:> selection-size-badge* {:selrect selected-selrect :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))

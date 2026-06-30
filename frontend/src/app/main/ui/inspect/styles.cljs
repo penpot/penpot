@@ -246,8 +246,7 @@
            (let [shapes (->> shapes (filter has-blur?))]
              (when (seq shapes)
                [:> style-box* {:panel :blur}
-                [:> blur-panel* {:shapes shapes
-                                 :objects objects}]]))
+                [:> blur-panel* {:shapes shapes}]]))
            ;; TEXT PANEL
            :text
            (let [shapes (filter has-text? shapes)]

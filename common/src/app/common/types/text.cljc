@@ -78,6 +78,11 @@
    text-transform-attrs
    text-fills))
 
+(def text-span-attrs
+  "Inline text span attrs. Line-height is paragraph-level in the DOM editor;
+   it may still be stored redundantly on span nodes."
+  (vec (remove #{:line-height} text-node-attrs)))
+
 (defn text-node-attr?
   [attr]
   (d/index-of text-node-attrs attr))
@@ -317,9 +322,16 @@
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the attributes that have changed.
    This is independent of the text structure, so if the structure changes
-   but the attributes are the same, it will return an empty set."
+   but the attributes are the same, it will return an empty set.
+
+   Line-height on text nodes is ignored: it is a paragraph-level attribute
+   and may be stored redundantly on spans (e.g. after token apply)."
   [a b]
-  (let [diff-attrs (compare-text-content a b
+  (let [strip-span-line-height
+        #(transform-nodes is-text-node? (fn [node] (dissoc node :line-height)) %)
+        a (strip-span-line-height a)
+        b (strip-span-line-height b)
+        diff-attrs (compare-text-content a b
                                          {:text-cb      identity
                                           :attribute-cb (fn [acc attr] (conj acc attr))})]
     (if-not (contains? diff-attrs :text-content-structure)
