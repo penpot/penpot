@@ -168,9 +168,12 @@
    ::mf/register-as :invite-members
    ::mf/props :obj}
   [{:keys [team origin invite-email]}]
-  (let [members     (get team :members)
+  (let [teams       (mf/deref refs/teams)
+
         perms       (get team :permissions)
         team-id     (get team :id)
+
+        members     (get-in teams [team-id :members])
 
         roles       (mf/with-memo [perms]
                       (get-available-roles perms))
@@ -824,6 +827,7 @@
         [:div {:class (stl/css :empty-invitations-buttons)}
          [:a
           {:class (stl/css :btn-empty-invitations)
+           :role "button"
            :on-click on-invite-member
            :data-testid "invite-member"}
           (tr "dashboard.invite-profile")]]
