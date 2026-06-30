@@ -153,6 +153,10 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let text_content = text_content.new_bounds(shape.selrect());
         let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
         let blur_filter = shape.image_filter(1.);
+        let only_inner_strokes = shape.count_visible_inner_strokes() > 0
+            && shape
+                .visible_strokes()
+                .all(|stroke| stroke.kind == StrokeKind::Inner);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
@@ -208,6 +212,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
                             blur_filter.as_ref(),
                             0.0,
                             None,
+                            None,
                         )?;
                     } else {
                         text::render_with_bounds_outset_overlay_emoji(
@@ -227,15 +232,17 @@ impl ShapeRenderer for VectorRenderer<'_> {
             }
         }
 
-        text::render_overlay_emoji(
-            self.canvas,
-            shape,
-            &mut paragraph_builders,
-            None,
-            blur_filter.as_ref(),
-            None,
-            None,
-        )?;
+        if !only_inner_strokes {
+            text::render_overlay_emoji(
+                self.canvas,
+                shape,
+                &mut paragraph_builders,
+                None,
+                blur_filter.as_ref(),
+                None,
+                None,
+            )?;
+        }
 
         // Strokes for text
         let stroke_blur_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
@@ -250,6 +257,11 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 );
             if stroke.render_kind(false) == StrokeKind::Inner {
                 // Inner text stroke: clip to the glyph fill, else it bleeds out.
+                let fill_inset = (shape.count_visible_inner_strokes() > 0).then(|| {
+                    let ctm = self.canvas.local_to_device_as_3x3();
+                    let scale = (ctm.scale_x().powi(2) + ctm.skew_y().powi(2)).sqrt().max(1.0);
+                    1.0 / scale
+                });
                 let mut mask_builders = text_content.paragraph_builder_group_opaque();
                 let mut fill_builders = text_content.paragraph_builder_group_from_text(None);
                 text::render_inner_stroke(
@@ -263,6 +275,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     blur_filter.as_ref(),
                     stroke_blur_outset,
                     layer_opacity,
+                    fill_inset,
                 )?;
             } else {
                 text::render_with_bounds_outset_overlay_emoji(

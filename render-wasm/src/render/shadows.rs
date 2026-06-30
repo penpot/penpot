@@ -178,6 +178,7 @@ pub fn render_text_shadows(
                     blur_filter.as_ref(),
                     0.0,
                     None,
+                    None,
                 )?;
             } else {
                 text::render(

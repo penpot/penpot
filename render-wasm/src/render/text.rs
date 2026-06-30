@@ -584,6 +584,7 @@ fn render_inner_stroke_on_canvas(
     fill_builders: &mut [Vec<ParagraphBuilder>],
     blur: Option<&ImageFilter>,
     layer_opacity: Option<f32>,
+    fill_inset: Option<f32>,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -623,7 +624,19 @@ fn render_inner_stroke_on_canvas(
     dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
     canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
 
-    paint_text(canvas, shape, fill_builders);
+    if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
+        if let Some(erode) = skia_safe::image_filters::erode((eps, eps), None, None) {
+            let mut layer_paint = Paint::default();
+            layer_paint.set_image_filter(erode);
+            canvas.save_layer(&SaveLayerRec::default().paint(&layer_paint));
+            paint_text(canvas, shape, fill_builders);
+            canvas.restore();
+        } else {
+            paint_text(canvas, shape, fill_builders);
+        }
+    } else {
+        paint_text(canvas, shape, fill_builders);
+    }
 
     canvas.restore(); // DstOver layer
     canvas.restore(); // outer layer
@@ -650,6 +663,7 @@ pub fn render_inner_stroke(
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
     layer_opacity: Option<f32>,
+    fill_inset: Option<f32>,
 ) -> Result<()> {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
@@ -679,6 +693,7 @@ pub fn render_inner_stroke(
                             fill_builders,
                             Some(&blur_filter_clone),
                             layer_opacity,
+                            fill_inset,
                         );
                         Ok(())
                     },
@@ -697,6 +712,7 @@ pub fn render_inner_stroke(
             fill_builders,
             blur,
             layer_opacity,
+            fill_inset,
         );
         return Ok(());
     }
@@ -710,6 +726,7 @@ pub fn render_inner_stroke(
             fill_builders,
             blur,
             layer_opacity,
+            fill_inset,
         );
     }
     Ok(())

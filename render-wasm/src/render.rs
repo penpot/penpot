@@ -1432,6 +1432,10 @@ impl RenderState {
                 let count_inner_strokes = shape.count_visible_inner_strokes();
                 // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
                 let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
+                let only_inner_strokes = count_inner_strokes > 0
+                    && shape
+                        .visible_strokes()
+                        .all(|stroke| stroke.kind == StrokeKind::Inner);
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
                 let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
@@ -1451,17 +1455,19 @@ impl RenderState {
                     .unzip();
                 if skip_effects {
                     // Fast path: render fills and strokes only (skip shadows/blur).
-                    text::render(
-                        Some(self),
-                        None,
-                        &shape,
-                        &mut paragraph_builders,
-                        Some(fills_surface_id),
-                        None,
-                        None,
-                        text_fill_inset,
-                        None,
-                    )?;
+                    if !only_inner_strokes {
+                        text::render(
+                            Some(self),
+                            None,
+                            &shape,
+                            &mut paragraph_builders,
+                            Some(fills_surface_id),
+                            None,
+                            None,
+                            text_fill_inset,
+                            None,
+                        )?;
+                    }
 
                     for (i, (stroke_paragraphs, layer_opacity)) in stroke_paragraphs_list
                         .iter_mut()
@@ -1483,6 +1489,7 @@ impl RenderState {
                                 None,
                                 text_stroke_blur_outset,
                                 *layer_opacity,
+                                text_fill_inset,
                             )?;
                         } else {
                             text::render_with_bounds_outset(
@@ -1573,17 +1580,19 @@ impl RenderState {
                         }
 
                         // 2. Text fills
-                        text::render(
-                            Some(self),
-                            None,
-                            &shape,
-                            &mut paragraph_builders,
-                            Some(fills_surface_id),
-                            None,
-                            blur_filter.as_ref(),
-                            text_fill_inset,
-                            None,
-                        )?;
+                        if !only_inner_strokes {
+                            text::render(
+                                Some(self),
+                                None,
+                                &shape,
+                                &mut paragraph_builders,
+                                Some(fills_surface_id),
+                                None,
+                                blur_filter.as_ref(),
+                                text_fill_inset,
+                                None,
+                            )?;
+                        }
 
                         // 3. Stroke drop shadows
                         shadows::render_text_shadows(
@@ -1620,6 +1629,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     text_stroke_blur_outset,
                                     *layer_opacity,
+                                    text_fill_inset,
                                 )?;
                             } else {
                                 text::render_with_bounds_outset(
