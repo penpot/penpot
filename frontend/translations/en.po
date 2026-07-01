@@ -613,14 +613,7 @@ msgstr "Export selection"
 msgid "dashboard.export-standard-multi"
 msgstr "Download %s standard files (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
-msgstr ""
-"One or more files that you want to download are using shared libraries. "
-"What do you want to do with their assets*?"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:267
+#: src/app/main/ui/dashboard/file_menu.cljs:266
 msgid "dashboard.file-menu.delete-files-permanently-option"
 msgid_plural "dashboard.file-menu.delete-files-permanently-option"
 msgstr[0] "Delete file"
@@ -2070,9 +2063,10 @@ msgid "feedback.type.issue"
 msgstr "Issue"
 
 #: src/app/main/ui/exports/files.cljs:131
-#, fuzzy
 msgid "files-download-modal.description-1"
 msgstr ""
+"One or more files that you want to download are using shared libraries. "
+"What do you want to do with their assets*?"
 
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"

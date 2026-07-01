@@ -583,9 +583,8 @@ msgstr "Вибір експорту"
 msgid "dashboard.export-standard-multi"
 msgstr "Завантажити %s стандартних файлів (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Файли, які Ви хочете експортувати, використовують спільні бібліотеки. Що "
 "плануєте зробити з їхніми ресурсами*?"

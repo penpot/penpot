@@ -507,9 +507,8 @@ msgstr "Izgūt atlasi"
 msgid "dashboard.export-standard-multi"
 msgstr "Lejupielādēt %s standarta datnes (. svg +. json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Viena vai vairākas lejupielādējamās datnes izmanto koplietojamas "
 "bibliotēkas. Ko iesākt ar to līdzekļiem*?"

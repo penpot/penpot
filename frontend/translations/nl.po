@@ -585,9 +585,8 @@ msgstr "Selectie exporteren"
 msgid "dashboard.export-standard-multi"
 msgstr "%s standaardbestanden downloaden (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Een of meer bestanden die je wilt downloaden maken gebruik van gedeelde "
 "bibliotheken. Wat wil je doen met hun assets*?"

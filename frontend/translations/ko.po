@@ -554,10 +554,11 @@ msgstr "선택 영역 내보내기"
 msgid "dashboard.export-standard-multi"
 msgstr "표준 파일 %s개(.svg + .json) 다운로드"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
-msgstr "다운로드하려는 하나 이상의 파일이 공유 라이브러리를 사용 중입니다. 해당 에셋*을 어떻게 처리하시겠습니까?"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
+msgstr ""
+"다운로드하려는 하나 이상의 파일이 공유 라이브러리를 사용 중입니다. 해당 에셋*"
+"을 어떻게 처리하시겠습니까?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:267
 msgid "dashboard.file-menu.delete-files-permanently-option"

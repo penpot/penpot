@@ -461,9 +461,8 @@ msgstr "Izvezi odabir"
 msgid "dashboard.export-standard-multi"
 msgstr "Preuzmi %s standardne datoteke (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Jedna ili više datoteka koju želiš izvesti koristi zajedničke biblioteke. "
 "Što želiš učiniti s njihovim stavkama*?"

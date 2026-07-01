@@ -494,9 +494,8 @@ msgstr "Ekspor pilihan"
 msgid "dashboard.export-standard-multi"
 msgstr "Unduh %s berkas standar (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Satu atau lebih berkas yang ingin Anda ekspor menggunakan pustaka bersama. "
 "Apa yang ingin Anda lakukan dengan asetnya*?"

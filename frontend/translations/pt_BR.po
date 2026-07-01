@@ -497,9 +497,8 @@ msgstr "Exportar seleção"
 msgid "dashboard.export-standard-multi"
 msgstr "Baixar %s arquivos padrões (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Um ou mais arquivos que você deseja exportar estão usando bibliotecas "
 "compartilhadas. O que você quer fazer com seus recursos*?"
