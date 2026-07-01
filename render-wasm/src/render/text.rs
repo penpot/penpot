@@ -569,10 +569,10 @@ fn draw_text(
 ///       paint mask        — opaque fill as clip mask
 ///       saveLayer(SrcIn)  — clips stroke to mask shape
 ///         paint stroke
+///         saveLayer(DstOver)  — fill behind the stroke
+///           paint fill
+///         restore
 ///       restore
-///     restore
-///     saveLayer(DstOver)  — fill behind the stroke
-///       paint fill
 ///     restore
 ///   restore
 #[allow(clippy::too_many_arguments)]
@@ -615,10 +615,7 @@ fn render_inner_stroke_on_canvas(
     // Draw stroke
     paint_text(canvas, shape, stroke_builders);
 
-    canvas.restore(); // SrcIn layer
-    canvas.restore(); // mask group layer
-
-    // Fill with DstOver (behind the stroke result)
+    // Fill with DstOver (behind the stroke, inside SrcIn)
     let mut dst_over_paint = Paint::default();
     dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
     canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
@@ -626,6 +623,8 @@ fn render_inner_stroke_on_canvas(
     paint_text(canvas, shape, fill_builders);
 
     canvas.restore(); // DstOver layer
+    canvas.restore(); // SrcIn layer
+    canvas.restore(); // mask group layer
     canvas.restore(); // outer layer
 
     if layer_opacity.is_some() {
