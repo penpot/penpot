@@ -1398,7 +1398,7 @@ impl RenderState {
         }
 
         match &shape.shape_type {
-            Type::SVGRaw(sr) => {
+            Type::SVGRaw(_) => {
                 if let Some(svg_transform) = shape.svg_transform() {
                     matrix.pre_concat(&svg_transform);
                 }
@@ -1410,17 +1410,7 @@ impl RenderState {
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
                 } else {
-                    let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
-                    let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
-                    match dom_result {
-                        Ok(dom) => {
-                            dom.render(self.surfaces.canvas_and_mark_dirty(fills_surface_id));
-                            shape.to_mut().set_svg(dom);
-                        }
-                        Err(e) => {
-                            eprintln!("Error parsing SVG. Error: {}", e);
-                        }
-                    }
+                    panic!("SVG should be available");
                 }
             }
 
