@@ -14,7 +14,8 @@
    [app.util.object :as obj]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.wasm :as thw]))
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
 
 (t/deftest test-common-shape-properties
   (thw/with-wasm-mocks*
@@ -25,6 +26,7 @@
             ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
 
             _       (set! st/state store)
+            _       (ptk/emit! store #(assoc-in % [:plugins :flags "00000000-0000-0000-0000-000000000000" :throw-validation-errors] true))
 
             ^js file    (. context -currentFile)
             ^js page    (. context -currentPage)
@@ -65,7 +67,7 @@
             (t/is (= (.-x shape) 10))
             (t/is (= (get-in @store (get-shape-path :x)) 10))
 
-            (set! (.-x shape) "fail")
+            (t/is (thrown? js/Error (set! (.-x shape) "fail")))
             (t/is (= (.-x shape) 10))
             (t/is (= (get-in @store (get-shape-path :x)) 10)))
 
@@ -74,7 +76,7 @@
             (t/is (= (.-y shape) 50))
             (t/is (= (get-in @store (get-shape-path :y)) 50))
 
-            (set! (.-y shape) "fail")
+            (t/is (thrown? js/Error (set! (.-y shape) "fail")))
             (t/is (= (.-y shape) 50))
             (t/is (= (get-in @store (get-shape-path :y)) 50)))
 
@@ -85,7 +87,7 @@
             (t/is (= (get-in @store (get-shape-path :width)) 250))
             (t/is (= (get-in @store (get-shape-path :height)) 300))
 
-            (.resize shape 0 0)
+            (t/is (thrown? js/Error (.resize shape 0 0)))
             (t/is (= (.-width shape) 250))
             (t/is (= (.-height shape) 300))
             (t/is (= (get-in @store (get-shape-path :width)) 250))
@@ -115,7 +117,7 @@
             (t/is (= (get-in @store (get-shape-path :proportion-lock)) true)))
 
           (t/testing " - constraintsHorizontal"
-            (set! (.-constraintsHorizontal shape) "fail")
+            (t/is (thrown? js/Error (set! (.-constraintsHorizontal shape) "fail")))
             (t/is (not= (.-constraintsHorizontal shape) "fail"))
             (t/is (not= (get-in @store (get-shape-path :constraints-h)) "fail"))
 
@@ -124,13 +126,22 @@
             (t/is (= (get-in @store (get-shape-path :constraints-h)) :right)))
 
           (t/testing " - constraintsVertical"
-            (set! (.-constraintsVertical shape) "fail")
+            (t/is (thrown? js/Error (set! (.-constraintsVertical shape) "fail")))
             (t/is (not= (.-constraintsVertical shape) "fail"))
             (t/is (not= (get-in @store (get-shape-path :constraints-v)) "fail"))
 
             (set! (.-constraintsVertical shape) "bottom")
             (t/is (= (.-constraintsVertical shape) "bottom"))
             (t/is (= (get-in @store (get-shape-path :constraints-v)) :bottom)))
+
+          (t/testing " - fixedWhenScrolling"
+            (set! (.-fixedWhenScrolling shape) true)
+            (t/is (= (.-fixedWhenScrolling shape) true))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) true))
+
+            (set! (.-fixedWhenScrolling shape) false)
+            (t/is (= (.-fixedWhenScrolling shape) false))
+            (t/is (= (get-in @store (get-shape-path :fixed-scroll)) false)))
 
           (t/testing " - borderRadius"
             (set! (.-borderRadius shape) 10)
@@ -166,7 +177,7 @@
             (t/is (= (.-blendMode shape) "multiply"))
             (t/is (= (get-in @store (get-shape-path :blend-mode)) :multiply))
 
-            (set! (.-blendMode shape) "fail")
+            (t/is (thrown? js/Error (set! (.-blendMode shape) "fail")))
             (t/is (= (.-blendMode shape) "multiply"))
             (t/is (= (get-in @store (get-shape-path :blend-mode)) :multiply)))
 
@@ -185,7 +196,7 @@
                                                                     :color {:color "#fabada" :opacity 1}
                                                                     :hidden false}]))))
             (let [shadow #js {:style "fail"}]
-              (set! (.-shadows shape) #js [shadow])
+              (t/is (thrown? js/Error (set! (.-shadows shape) #js [shadow])))
               (t/is (= (-> (. shape -shadows) (aget 0) (aget "style")) "drop-shadow"))))
 
           (t/testing " - blur"
@@ -202,7 +213,7 @@
             (t/is (= (-> (. shape -exports) (aget 0) (aget "suffix")) "test"))
             (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}]))
 
-            (set! (.-exports shape) #js [#js {:type 10 :scale 2 :suffix "test"}])
+            (t/is (thrown? js/Error (set! (.-exports shape) #js [#js {:type 10 :scale 2 :suffix "test"}])))
             (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}])))
 
           (t/testing " - flipX"
@@ -225,7 +236,7 @@
             (t/is (= (get-in @store (get-shape-path :rotation)) 0)))
 
           (t/testing " - fills"
-            (set! (.-fills shape) #js [#js {:fillColor 100}])
+            (t/is (thrown? js/Error (set! (.-fills shape) #js [#js {:fillColor 100}])))
             (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#B1B2B5" :fill-opacity 1}]))
             (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#B1B2B5"))
 
@@ -330,6 +341,10 @@
               (t/is (= (-> (. text -fills) (aget 0) (aget "fillColor")) "#123456"))
               (t/is (nil? (-> (. text -fills) (aget 0) (aget "fillColorGradient")))))))
 
+        (t/testing "createText with empty string returns null"
+          (t/is (nil? (.createText context "")))
+          (t/is (some? (.createText context "Hello"))))
+
         (t/testing "Relative properties"
           (let [board (.createBoard context)]
             (set! (.-x board) 100)
@@ -369,3 +384,23 @@
           (t/is (pos? (thw/call-count :clean-modifiers)))
           (t/is (pos? (thw/call-count :set-structure-modifiers)))
           (t/is (pos? (thw/call-count :propagate-modifiers))))))))
+
+(t/deftest test-array-properties-return-empty-array-when-no-items
+  ;; Array-typed properties must always return an array, never null,
+  ;; even when the shape has no items for that property.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context "00000000-0000-0000-0000-000000000000")
+            _           (set! st/state store)
+            ^js shape   (.createRectangle context)]
+
+        (t/testing " - exports (no exports set)"
+          (let [exports (.-exports shape)]
+            (t/is (array? exports))
+            (t/is (= 0 (.-length exports)))))
+
+        (t/testing " - shadows (no shadows set)"
+          (let [shadows (.-shadows shape)]
+            (t/is (array? shadows))
+            (t/is (= 0 (.-length shadows)))))))))

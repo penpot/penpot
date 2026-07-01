@@ -41,6 +41,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.session-state :as ss]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -270,8 +271,22 @@
       (st/emit! (dprof/update-profile-props {:onboarding-viewed true})
                 (dnt/show-nitrate-popup :nitrate-form)))))
 
+(defn- use-pending-action
+  "Consumes a pending dashboard action from session storage and resumes it"
+  [pending-action-id]
+  (mf/with-effect [pending-action-id]
+    (when (some? pending-action-id)
+      (dom/replace-history-state!
+       (dom/remove-query-param (rt/get-current-href) :pending-action-id))
+      (when-let [action (ss/consume-pending-action! (str pending-action-id))]
+        (case (:type action)
+          :add-team-to-organization
+          (st/emit! (dnt/add-team-to-organization {:team-id         (:team-id action)
+                                                   :organization-id (:organization-id action)}))
+          nil)))))
+
 (mf/defc dashboard*
-  [{:keys [profile project-id team-id search-term plugin-url template section]}]
+  [{:keys [profile project-id team-id search-term plugin-url template section pending-action-id]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
 
@@ -309,6 +324,7 @@
     (use-plugin-register plugin-url team-id (:id default-project))
     (use-templates-import can-edit? template default-project)
     (use-nitrate-entry-popup)
+    (use-pending-action pending-action-id)
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]

@@ -312,102 +312,13 @@ impl TileHashMap {
 }
 
 const VIEWPORT_DEFAULT_CAPACITY: usize = 24 * 12;
-const VIEWPORT_SPIRAL_DEFAULT_CAPACITY: usize = VIEWPORT_DEFAULT_CAPACITY;
-
-/// Cached spiral of tile offsets for a given grid size.
-///
-/// Offsets are centered at (0,0) and must be translated by the desired origin/center tile.
-#[derive(Debug, Default)]
-pub struct TileSpiral {
-    offsets: Vec<Tile>,
-    columns: usize,
-    rows: usize,
-}
-
-impl TileSpiral {
-    pub fn new() -> Self {
-        Self {
-            offsets: Vec::with_capacity(VIEWPORT_SPIRAL_DEFAULT_CAPACITY),
-            columns: 0,
-            rows: 0,
-        }
-    }
-
-    #[inline]
-    pub fn iter(&self) -> std::slice::Iter<'_, Tile> {
-        self.offsets.iter()
-    }
-
-    /// Ensure the spiral offsets match the given grid size.
-    ///
-    /// This regenerates offsets whenever the size changes (grow or shrink) so callers
-    /// don't accidentally reuse a spiral built for a previous viewport.
-    pub fn ensure(&mut self, columns: usize, rows: usize) {
-        if self.columns == columns && self.rows == rows {
-            return;
-        }
-        self.columns = columns;
-        self.rows = rows;
-
-        let total = columns.saturating_mul(rows);
-        self.offsets.clear();
-        self.offsets.reserve(total);
-
-        if total == 0 {
-            return;
-        }
-
-        // Generate tiles in spiral order from center (same algorithm as before).
-        let mut cx = 0;
-        let mut cy = 0;
-
-        let ratio = (columns as f32 / rows as f32).ceil() as i32;
-
-        let mut direction_current = 0;
-        let mut direction_total_x = ratio;
-        let mut direction_total_y = 1;
-        let mut direction = 0;
-
-        self.offsets.push(Tile(cx, cy));
-        while self.offsets.len() < total {
-            match direction {
-                0 => cx += 1,
-                1 => cy += 1,
-                2 => cx -= 1,
-                3 => cy -= 1,
-                _ => unreachable!("Invalid direction"),
-            }
-
-            self.offsets.push(Tile(cx, cy));
-
-            direction_current += 1;
-            let direction_total = if direction % 2 == 0 {
-                direction_total_x
-            } else {
-                direction_total_y
-            };
-
-            if direction_current == direction_total {
-                if direction % 2 == 0 {
-                    direction_total_x += 1;
-                } else {
-                    direction_total_y += 1;
-                }
-                direction = (direction + 1) % 4;
-                direction_current = 0;
-            }
-        }
-
-        self.offsets.reverse();
-    }
-}
 
 // This structure keeps the list of tiles that are in the pending list, the
 // ones that are going to be rendered.
 pub struct PendingTiles {
     pub list: Vec<Tile>,
-    pub spiral: TileSpiral,
-    pub spiral_rect: TileRect,
+    pub tile_order: Vec<(i32, Tile)>,
+    pub tile_rect: TileRect,
     pub visible_cached: Vec<Tile>,
     pub visible_uncached: Vec<Tile>,
     pub interest_cached: Vec<Tile>,
@@ -418,8 +329,8 @@ impl PendingTiles {
     pub fn new() -> Self {
         Self {
             list: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
-            spiral: TileSpiral::new(),
-            spiral_rect: TileRect::empty(),
+            tile_order: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
+            tile_rect: TileRect::empty(),
             visible_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             visible_uncached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
             interest_cached: Vec::with_capacity(VIEWPORT_DEFAULT_CAPACITY),
@@ -435,22 +346,13 @@ impl PendingTiles {
         // path, and pre-rendering tiles outside the viewport is wasted
         // work that just gets evicted on the next pointer move. The ring
         // is repopulated naturally on gesture end / on idle rAFs.
-        let spiral_rect = if only_visible {
+        let tile_rect = if only_visible {
             &tile_viewbox.visible_rect
         } else {
             &tile_viewbox.interest_rect
         };
 
-        self.spiral_rect = *spiral_rect;
-
-        // We do not regenerate spiral if the spiral_rect
-        // doesn't change. The spiral_rect is based on the
-        // viewbox so, if the viewbox doesn't change
-        // the spiral should not change.
-        let columns = spiral_rect.columns();
-        let rows = spiral_rect.rows();
-
-        self.spiral.ensure(columns as usize, rows as usize);
+        self.tile_rect = *tile_rect;
 
         // Partition tiles into 4 priority groups (highest priority = processed last due to pop()):
         // 1. visible + cached (fastest - just blit from cache)
@@ -462,15 +364,25 @@ impl PendingTiles {
         self.interest_cached.clear();
         self.interest_uncached.clear();
 
-        // Compute the scheduling center explicitly (inclusive range).
-        // This avoids relying on `TileRect::center_x/center_y` semantics, which may be used
-        // elsewhere with different expectations.
-        let center_tile = Tile(
-            (spiral_rect.x1() + spiral_rect.x2()) / 2,
-            (spiral_rect.y1() + spiral_rect.y2()) / 2,
-        );
-        for spiral_tile in self.spiral.iter() {
-            let tile = Tile(spiral_tile.0 + center_tile.0, spiral_tile.1 + center_tile.1);
+        // Enumerate every tile in `tile_rect`, ordered by distance from the
+        // rect center.
+        let center_x = (tile_rect.x1() + tile_rect.x2()) / 2;
+        let center_y = (tile_rect.y1() + tile_rect.y2()) / 2;
+
+        self.tile_order.clear();
+
+        for tile in tile_rect.iter(true) {
+            let dx = tile.x() - center_x;
+            let dy = tile.y() - center_y;
+            self.tile_order.push((dx * dx + dy * dy, tile));
+        }
+
+        // Farthest first, since we use pop() to process the tiles
+        // in order of priority (closest first)
+        self.tile_order.sort_unstable_by(|a, b| b.0.cmp(&a.0));
+
+        for (_, tile) in self.tile_order.iter() {
+            let tile = *tile;
             let is_visible = tile_viewbox.visible_rect.contains(&tile);
             let is_cached = surfaces.has_cached_tile_surface(tile);
 
@@ -482,8 +394,6 @@ impl PendingTiles {
             }
         }
 
-        // Build final list with lowest priority first (they get popped last)
-        // Order: interest_uncached, interest_cached, visible_uncached, visible_cached
         self.list.extend(self.interest_uncached.iter());
         self.list.extend(self.interest_cached.iter());
         self.list.extend(self.visible_uncached.iter());

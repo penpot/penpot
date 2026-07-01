@@ -169,7 +169,7 @@
                          (t/is (= (get c-frame1' :r4) 50)))))))]
 
       (tohs/run-store-async
-       store step2 events identity))))
+       store (constantly nil) events step2))))
 
 (t/deftest remove-token-in-main
   (t/async

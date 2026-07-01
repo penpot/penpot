@@ -14,6 +14,8 @@
    [app.main.data.workspace.drawing.box :as box]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
+   [app.main.data.workspace.drawing.line :as line]
+   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.path :as path]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -57,6 +59,9 @@
 
        ;; NOTE: comments are a special case and they manage they
        ;; own interrupt cycle.
+       (when (= tool :comments)
+         (rx/of (dwlo/toggle-layout-flag :display-comments :force? true)))
+
        (when (and (not= tool :comments)
                   (not= tool :path))
          (let [stopper (rx/filter (ptk/type? ::clear-drawing) stream)]
@@ -97,8 +102,10 @@
     (watch [_ _ _]
       (rx/of
        (case type
-         :path (path/handle-drawing)
+         :path  (path/handle-drawing)
          :curve (curve/handle-drawing)
+         :line  (line/handle-drawing :line)
+         :arrow (line/handle-drawing :arrow)
          (box/handle-drawing type))))))
 
 (defn change-orientation

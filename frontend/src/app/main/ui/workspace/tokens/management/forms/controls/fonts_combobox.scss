@@ -6,9 +6,14 @@
 
 @use "ds/_utils.scss" as *;
 
-.font-select-wrapper {
+.font-select-wrapper,
+.font-select-wrapper-composite {
   position: absolute;
   width: 100%;
   height: px2rem(115);
   top: px2rem(54);
+}
+
+.font-select-wrapper-composite {
+  top: px2rem(36);
 }

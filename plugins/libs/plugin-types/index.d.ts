@@ -6,7 +6,7 @@ export interface Penpot extends Omit<
   Context,
   'addListener' | 'removeListener'
 > {
-  ui: {
+  readonly ui: {
     /**
      * Opens the plugin UI. It is possible to develop a plugin without interface (see Palette color example) but if you need, the way to open this UI is using `penpot.ui.open`.
      * There is a minimum and maximum size for this modal and a default size but it's possible to customize it anyway with the options parameter.
@@ -84,7 +84,7 @@ export interface Penpot extends Omit<
   /**
    * Provides access to utility functions and context-specific operations.
    */
-  utils: ContextUtils;
+  readonly utils: ContextUtils;
   /**
    * Closes the plugin. When this method is called the UI will be closed.
    *
@@ -390,17 +390,17 @@ export interface Boolean extends ShapeBase {
    * The content of the boolean shape, defined as the path string.
    * @deprecated Use either `d` or `commands`.
    */
-  content: string;
+  readonly content: string;
 
   /**
    * The content of the boolean shape, defined as the path string.
    */
-  d: string;
+  readonly d: string;
 
   /**
    * The content of the boolean shape, defined as an array of path commands.
    */
-  commands: Array<PathCommand>;
+  readonly commands: Array<PathCommand>;
 
   /**
    * The fills applied to the shape.
@@ -455,19 +455,19 @@ export type Bounds = {
   /**
    * Top-left x position of the rectangular area defined
    */
-  x: number;
+  readonly x: number;
   /**
    * Top-left y position of the rectangular area defined
    */
-  y: number;
+  readonly y: number;
   /**
    * Width of the represented area
    */
-  width: number;
+  readonly width: number;
   /**
    * Height of the represented area
    */
-  height: number;
+  readonly height: number;
 };
 
 /**
@@ -1165,8 +1165,8 @@ export interface Context {
 
   /**
    * Creates a Text shape with the specified text content. Requires `content:write` permission.
-   * @param text The text content for the Text shape.
-   * @return Returns the new created shape, if the shape wasn't created can return null.
+   * @param text The text content for the Text shape. Must be a non-empty string.
+   * @return Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
    *
    * @example
    * ```js
@@ -1263,12 +1263,30 @@ export interface Context {
   openViewer(): void;
 
   /**
-   * Creates a new page. Requires `content:write` permission.
+   * Creates a new page and returns it. Requires `content:write` permission.
+   *
+   * IMPORTANT: creating a page does **not** make it the active page.
+   * To build content inside the new page, activate it first with
+   * {@link Context.openPage} (and `await` it) before mutate shapes:
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.name = 'New Page';
+   * await penpot.openPage(page); // make the new page active first
+   * const board = penpot.createBoard();
+   * board.resize(375, 812);
+   * page.root.appendChild(board);
+   * ```
    */
   createPage(): Page;
 
   /**
-   * Changes the current open page to given page. Requires `content:read` permission.
+   * Changes the current open page to the given page, making it the **active page**.
+   * The active page is the one all shape creation and structural operations
+   * (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+   * so call this (and `await` it) after {@link Context.createPage} before adding
+   * shapes to the newly created page. Requires `content:read` permission.
    * @param page the page to open (a Page object or a page UUID string)
    * @param newWindow if true opens the page in a new window, defaults to false
    *
@@ -1499,7 +1517,7 @@ export interface Ellipse extends ShapeBase {
   /**
    * The type of the shape, which is always 'ellipse' for ellipse shapes.
    */
-  type: 'ellipse';
+  readonly type: 'ellipse';
 
   /**
    * The fills applied to the shape.
@@ -1522,37 +1540,37 @@ export interface EventsMap {
   /**
    * The `pagechange` event is triggered when the active page in the project is changed.
    */
-  pagechange: Page;
+  readonly pagechange: Page;
   /**
    * The `filechange` event is triggered when a different file is opened.
    * The callback will receive the new file.
    */
-  filechange: File;
+  readonly filechange: File;
   /**
    * The `selectionchange` event is triggered when the selection of elements changes.
    * This event passes a list of identifiers of the selected elements.
    */
-  selectionchange: string[];
+  readonly selectionchange: string[];
   /**
    * The `themechange` event is triggered when the application theme is changed.
    */
-  themechange: Theme;
+  readonly themechange: Theme;
   /**
    * The `finish` event is triggered when the current file is closed.
    * The callback will receive the id of the closed file.
    */
-  finish: string;
+  readonly finish: string;
 
   /**
    * This event will trigger whenever the shape in the props change. It's mandatory to send
    * with the props an object like `{ shapeId: '<id>' }`
    */
-  shapechange: Shape;
+  readonly shapechange: Shape;
 
   /**
    * The `contentsave` event will trigger after the file content is saved in the backend.
    */
-  contentsave: void;
+  readonly contentsave: void;
 }
 
 /**
@@ -1591,17 +1609,17 @@ export interface File extends PluginData {
   /**
    * The `name` for the file
    */
-  name: string;
+  readonly name: string;
 
   /**
    * The `revn` will change for every document update
    */
-  revn: number;
+  readonly revn: number;
 
   /**
    * List all the pages for the current file
    */
-  pages: Page[];
+  readonly pages: Page[];
 
   /**
    * Export the current file to an archive.
@@ -1731,7 +1749,8 @@ export interface Flags {
   /**
    * If `true` the validation errors will throw an exception instead of displaying an
    * error in the debugger console.
-   * Defaults to false
+   * Defaults to `true` for plugins whose manifest declares `"version": 2` (or higher)
+   * and to `false` for v1 plugins (or manifests that omit the version field).
    */
   throwValidationErrors: boolean;
 }
@@ -1801,37 +1820,37 @@ export interface Font {
   /**
    * This property holds the human-readable name of the font.
    */
-  name: string;
+  readonly name: string;
 
   /**
    * The unique identifier of the font.
    */
-  fontId: string;
+  readonly fontId: string;
 
   /**
    * The font family of the font.
    */
-  fontFamily: string;
+  readonly fontFamily: string;
 
   /**
    * The default font style of the font.
    */
-  fontStyle?: 'normal' | 'italic' | null;
+  readonly fontStyle?: 'normal' | 'italic' | null;
 
   /**
    * The default font variant ID of the font.
    */
-  fontVariantId: string;
+  readonly fontVariantId: string;
 
   /**
    * The default font weight of the font.
    */
-  fontWeight: string;
+  readonly fontWeight: string;
 
   /**
    * An array of font variants available for the font.
    */
-  variants: FontVariant[];
+  readonly variants: FontVariant[];
 
   /**
    * Applies the font styles to a text shape.
@@ -1866,22 +1885,22 @@ export interface FontVariant {
   /**
    * The name of the font variant.
    */
-  name: string;
+  readonly name: string;
 
   /**
    * The unique identifier of the font variant.
    */
-  fontVariantId: string;
+  readonly fontVariantId: string;
 
   /**
    * The font weight of the font variant.
    */
-  fontWeight: string;
+  readonly fontWeight: string;
 
   /**
    * The font style of the font variant.
    */
-  fontStyle: 'normal' | 'italic';
+  readonly fontStyle: 'normal' | 'italic';
 }
 
 /**
@@ -1892,7 +1911,7 @@ export interface FontsContext {
   /**
    * An array containing all available fonts.
    */
-  all: Font[];
+  readonly all: Font[];
 
   /**
    * Finds a font by its unique identifier.
@@ -2190,15 +2209,15 @@ export interface GuideColumn {
   /**
    * The type of the guide, which is always 'column' for column guides.
    */
-  type: 'column';
+  readonly type: 'column';
   /**
    * Specifies whether the column guide is displayed.
    */
-  display: boolean;
+  readonly display: boolean;
   /**
    * The parameters defining the appearance and layout of the column guides.
    */
-  params: GuideColumnParams;
+  readonly params: GuideColumnParams;
 }
 
 /**
@@ -2209,7 +2228,7 @@ export interface GuideColumnParams {
   /**
    * The color configuration for the column guides.
    */
-  color: { color: string; opacity: number };
+  readonly color: { color: string; opacity: number };
   /**
    * The optional alignment type of the column guides.
    * - 'stretch': Columns stretch to fit the available space.
@@ -2217,23 +2236,23 @@ export interface GuideColumnParams {
    * - 'center': Columns align to the center.
    * - 'right': Columns align to the right.
    */
-  type?: 'stretch' | 'left' | 'center' | 'right';
+  readonly type?: 'stretch' | 'left' | 'center' | 'right';
   /**
    * The optional size of each column.
    */
-  size?: number;
+  readonly size?: number;
   /**
    * The optional margin between the columns and the board edges.
    */
-  margin?: number;
+  readonly margin?: number;
   /**
    * The optional length of each item within the columns.
    */
-  itemLength?: number;
+  readonly itemLength?: number;
   /**
    * The optional gutter width between columns.
    */
-  gutter?: number;
+  readonly gutter?: number;
 }
 
 /**
@@ -2244,16 +2263,16 @@ export interface GuideRow {
   /**
    * The type of the guide, which is always 'row' for row guides.
    */
-  type: 'row';
+  readonly type: 'row';
   /**
    * Specifies whether the row guide is displayed.
    */
-  display: boolean;
+  readonly display: boolean;
   /**
    * The parameters defining the appearance and layout of the row guides.
    * Note: This reuses the same parameter structure as column guides.
    */
-  params: GuideColumnParams;
+  readonly params: GuideColumnParams;
 }
 
 /**
@@ -2264,15 +2283,15 @@ export interface GuideSquare {
   /**
    * The type of the guide, which is always 'square' for square guides.
    */
-  type: 'square';
+  readonly type: 'square';
   /**
    * Specifies whether the square guide is displayed.
    */
-  display: boolean;
+  readonly display: boolean;
   /**
    * The parameters defining the appearance and layout of the square guides.
    */
-  params: GuideSquareParams;
+  readonly params: GuideSquareParams;
 }
 
 /**
@@ -2283,11 +2302,11 @@ export interface GuideSquareParams {
   /**
    * The color configuration for the square guides.
    */
-  color: { color: string; opacity: number };
+  readonly color: { color: string; opacity: number };
   /**
    * The optional size of each square guide.
    */
-  size?: number;
+  readonly size?: number;
 }
 
 /**
@@ -2316,12 +2335,14 @@ export interface HistoryContext {
 /**
  * Represents an image shape in Penpot.
  * This interface extends `ShapeBase` and includes properties specific to image shapes.
+ * @deprecated Image shapes exist only for backward compatibility with old files.
+ *   New images are embedded in a `Fill` via its `fillImage` (an `ImageData`).
  */
 export interface Image extends ShapeBase {
   /**
    * The type of the shape, which is always 'image' for image shapes.
    */
-  type: 'image';
+  readonly type: 'image';
 
   /**
    * The fills applied to the shape.
@@ -2337,28 +2358,28 @@ export type ImageData = {
   /**
    * The optional name of the image.
    */
-  name?: string;
+  readonly name?: string;
   /**
    * The width of the image.
    */
-  width: number;
+  readonly width: number;
   /**
    * The height of the image.
    */
-  height: number;
+  readonly height: number;
   /**
    * The optional media type of the image (e.g., 'image/png', 'image/jpeg').
    */
-  mtype?: string;
+  readonly mtype?: string;
   /**
    * The unique identifier for the image.
    */
-  id: string;
+  readonly id: string;
   /**
    * Whether to keep the aspect ratio of the image when resizing.
    * Defaults to false if omitted.
    */
-  keepAspectRatio?: boolean;
+  readonly keepAspectRatio?: boolean;
 
   /**
    * Returns the image data as a byte array.
@@ -2852,9 +2873,9 @@ export interface LibraryTypography extends LibraryElement {
   fontId: string;
 
   /**
-   * The font families of the typography element.
+   * The font family of the typography element.
    */
-  fontFamilies: string;
+  fontFamily: string;
 
   /**
    * The unique identifier of the font variant used in the typography element.
@@ -3079,7 +3100,7 @@ export interface Page extends PluginData {
    * The root shape of the current page. Will be the parent shape of all the shapes inside the document.
    * Requires `content:read` permission.
    */
-  root: Shape;
+  readonly root: Shape;
 
   /**
    * Retrieves a shape by its unique identifier.
@@ -3419,7 +3440,7 @@ export interface PluginData {
 /**
  * Point represents a point in 2D space, typically with x and y coordinates.
  */
-export type Point = { x: number; y: number };
+export type Point = { readonly x: number; readonly y: number };
 
 /**
  * It takes back to the last board shown.
@@ -3555,15 +3576,7 @@ export interface Shadow {
  * ```
  */
 export type Shape =
-  | Board
-  | Group
-  | Boolean
-  | Rectangle
-  | Path
-  | Text
-  | Ellipse
-  | SvgRaw
-  | Image;
+  Board | Group | Boolean | Rectangle | Path | Text | Ellipse | SvgRaw | Image;
 
 /**
  * Represents the base properties and methods of a shape in Penpot.
@@ -3650,6 +3663,11 @@ export interface ShapeBase extends PluginData {
    * The vertical constraints applied to the shape.
    */
   constraintsVertical: 'top' | 'bottom' | 'topbottom' | 'center' | 'scale';
+
+  /**
+   * Indicates whether the shape stays fixed in place while scrolling.
+   */
+  fixedWhenScrolling: boolean;
 
   /**
    * The border radius of the shape.
@@ -3946,6 +3964,11 @@ export interface ShapeBase extends PluginData {
 
   /**
    * Adds a new interaction to the shape.
+   *
+   * If the interaction starts a flow (for example a `navigate-to` action) and
+   * the shape's board is not already part of any flow, a new flow starting at
+   * that board is created automatically, matching the behavior of the editor.
+   *
    * @param trigger defines the conditions under which the action will be triggered
    * @param action defines what will be executed when the trigger happens
    * @param delay for the type of trigger `after-delay` will specify the time after triggered. Ignored otherwise.
@@ -4098,7 +4121,7 @@ export interface SvgRaw extends ShapeBase {
   /**
    * The type of the shape, which is always 'svg-raw' for raw SVG shapes.
    */
-  type: 'svg-raw';
+  readonly type: 'svg-raw';
 }
 
 /**
@@ -4281,12 +4304,7 @@ export interface TextRange {
    * The text transform applied to the text range. It can be a specific text transform or 'mixed' if multiple text transforms are used.
    */
   textTransform:
-    | 'uppercase'
-    | 'capitalize'
-    | 'lowercase'
-    | 'none'
-    | 'mixed'
-    | null;
+    'uppercase' | 'capitalize' | 'lowercase' | 'none' | 'mixed' | null;
 
   /**
    * The text decoration applied to the text range. It can be a specific text decoration or 'mixed' if multiple text decorations are used.
@@ -5042,12 +5060,18 @@ export interface TokenTypography extends TokenBase {
 
 /**
  * Any possible type of value field in a token.
+ *
+ * Token values are always stored as strings, including for numeric token
+ * types such as `spacing`, `dimension` or `borderRadius` (e.g. `"16"` or
+ * `"16px"`). A plain `number` is also accepted on input and coerced to its
+ * string representation.
  */
 export type TokenValueString =
   | TokenShadowValueString
   | TokenTypographyValueString
   | string
-  | string[];
+  | string[]
+  | number;
 
 /**
  * The supported Design Tokens in Penpot.
@@ -5103,11 +5127,18 @@ export interface TokenCatalog {
 
   /**
    * Creates a new TokenSet and adds it to the catalog.
+   *
+   * Newly created sets are **inactive** by default: only active sets
+   * affect shapes and reference resolution. Pass `active: true` to create
+   * an already-active set, or activate it later via `set.active = true` /
+   * `set.toggleActive()`.
    * @param name The name of the set (required). It may contain
    * a group path, separated by `/`.
+   * @param active Whether the set should be activated on creation.
+   * Defaults to `false`.
    * @return Returns the created TokenSet.
    */
-  addSet({ name }: { name: string }): TokenSet;
+  addSet({ name, active }: { name: string; active?: boolean }): TokenSet;
 
   /**
    * Retrieves a theme.
@@ -5175,7 +5206,11 @@ export interface TokenSet {
    * @param type The type of the token.
    * @param name The name of the token (required). It may contain
    * a group path, separated by `.`.
-   * @param value The value of the token (required), in the string form.
+   * @param value The value of the token (required), always in its string
+   * form. This applies to numeric token types too (e.g. `spacing`,
+   * `dimension`, `borderRadius`): use `"16"` or `"16px"` rather than `16`.
+   * For convenience a plain number is also accepted and coerced to its
+   * string representation (`16` becomes `"16"`).
    * @return Returns the created Token.
    */
   addToken({
@@ -5252,7 +5287,7 @@ export interface TokenTheme {
   /**
    * The sets that will be activated if this theme is activated.
    */
-  activeSets: TokenSet[];
+  readonly activeSets: TokenSet[];
 
   /**
    * Adds a set to the list of the theme.
@@ -5518,7 +5553,7 @@ export interface Variants {
   /**
    * A list with the names of the properties of the Variant
    */
-  properties: string[];
+  readonly properties: string[];
 
   /**
    * A list of all the values of a property across all the VariantComponents of this Variant

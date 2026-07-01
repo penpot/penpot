@@ -13,7 +13,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc form*
-  [{:keys [token token-type] :as props}]
+  [{:keys [token token-type current-token-path] :as props}]
   (let [initial
         (mf/with-memo [token-type token]
           {:type token-type
@@ -22,7 +22,7 @@
            :description (:description token "")
            :color-result ""})
 
-        props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type)
+        props (mf/spread-props props {:make-schema #(-> (cfo/make-token-schema %1 token-type current-token-path)
                                                         (sm/dissoc-key :id)
                                                         (sm/assoc-key :color-result :string))
                                       :initial initial

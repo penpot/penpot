@@ -78,6 +78,15 @@
    text-transform-attrs
    text-fills))
 
+(def text-span-attrs
+  "Inline text span attrs. Line-height is paragraph-level in the DOM editor;
+   it may still be stored redundantly on span nodes."
+  (vec (remove #{:line-height} text-node-attrs)))
+
+(defn text-node-attr?
+  [attr]
+  (d/index-of text-node-attrs attr))
+
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
 (def text-style-attrs
@@ -201,6 +210,27 @@
   [text]
   (subs text 0 (min 280 (count text))))
 
+(defn- compare-text-attr
+  "Compare two attribute values and return true if they are different.
+   Take into account the following:
+    - Only process keys that belong to text node attrs (ignore deprecated
+      attributes or other things that may be attached).
+    - Consider nil values, empty strings or empty lists all equal.
+    - Normalize numeric values (legacy) into strings.
+    - No value is equal than the default value."
+  [key value1 value2]
+  (when (text-node-attr? key)
+    (let [default-value (get default-text-attrs key)
+          normalize-value (fn [value]
+                            (as-> value $
+                              (if (number? $) (str $) $)
+                              (if (or (d/empty? $) (= $ default-value))
+                                nil
+                                $)))
+          value1' (normalize-value value1)
+          value2' (normalize-value value2)]
+      (not= value1' value2'))))
+
 (defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the differences info.
@@ -245,8 +275,7 @@
              ;; If the key is not :text, and they are different, it is an attribute difference.
              ;; Take into account that some processes remove empty attributes, so in some
              ;; cases we will compare [] with nil, and this is not a difference.
-             (if (and (not= v1 v2)
-                      (or (d/not-empty? v1) (d/not-empty? v2)))
+             (if (compare-text-attr k v1 v2)
                (attribute-cb acc k)
                acc))))
        #{}
@@ -293,9 +322,16 @@
   "Given two content text structures, conformed by maps and vectors,
    compare them, and returns a set with the attributes that have changed.
    This is independent of the text structure, so if the structure changes
-   but the attributes are the same, it will return an empty set."
+   but the attributes are the same, it will return an empty set.
+
+   Line-height on text nodes is ignored: it is a paragraph-level attribute
+   and may be stored redundantly on spans (e.g. after token apply)."
   [a b]
-  (let [diff-attrs (compare-text-content a b
+  (let [strip-span-line-height
+        #(transform-nodes is-text-node? (fn [node] (dissoc node :line-height)) %)
+        a (strip-span-line-height a)
+        b (strip-span-line-height b)
+        diff-attrs (compare-text-content a b
                                          {:text-cb      identity
                                           :attribute-cb (fn [acc attr] (conj acc attr))})]
     (if-not (contains? diff-attrs :text-content-structure)

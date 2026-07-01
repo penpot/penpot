@@ -13,7 +13,7 @@ use super::fonts::FontStore;
 use crate::state::RulerState;
 use crate::view::Viewbox;
 
-const RULER_AREA_SIZE: f32 = 22.0;
+pub const RULER_AREA_SIZE: f32 = 22.0;
 const RULER_TICK_OFFSET: f32 = 15.0;
 const RULER_TICK_LEN: f32 = 4.0;
 const RULER_TICK_GAP: f32 = 2.0;
@@ -28,13 +28,17 @@ const CANVAS_BORDER_RADIUS: f32 = 12.0;
 // distinct offsets for the two and we mirror that.
 const SELECTION_LABEL_BASELINE: f32 = 13.6;
 
-// Selection-label gradient mask: matches the SVG `selection-gradient-start`
-// and `selection-gradient-end` defs. The mask is `OVER_NUMBER_SIZE` screen
-// pixels long, with the opaque part starting `OVER_NUMBER_PERCENT` of the
-// way through the rect (40% from the outside edge, 60% from the inside).
+// Selection-label gradient mask: fades the tick labels behind the selection
+// band. The mask is `OVER_NUMBER_SIZE` screen pixels long. `OVER_NUMBER_PERCENT`
+// is the fraction of the mask that sits *outside* the band; at 1.0 the mask's
+// inner edge lands exactly on the band edge, so the dark shadow begins where
+// the green selection area ends and fades outward (it never bleeds under the
+// band). `GRADIENT_FADE_FRACTION` is the share of the mask spent on the
+// transparent→opaque ramp at the outer end.
 const OVER_NUMBER_SIZE: f32 = 100.0;
-const OVER_NUMBER_PERCENT: f32 = 0.75;
+const OVER_NUMBER_PERCENT: f32 = 1.0;
 const GRADIENT_FADE_FRACTION: f32 = 0.4;
+const OVER_NUMBER_OPACITY: f32 = 0.8;
 
 fn calculate_step_size(zoom: f32) -> f32 {
     if zoom <= 0.0 {
@@ -70,15 +74,13 @@ fn calculate_step_size(zoom: f32) -> f32 {
 }
 
 fn format_label(value: f32) -> String {
-    // Match `format-number` in app.main.ui.formats: round to integer if whole,
-    // else 2 decimals. Tick steps are integers in our table, so this is the
-    // common path.
-    let rounded = value.round();
-    if (value - rounded).abs() < 1e-3 {
-        format!("{}", rounded as i64)
-    } else {
-        format!("{:.2}", value)
-    }
+    // Match `format-number` in app.main.ui.formats: round to at most 2 decimals.
+    // Display drops trailing zeros for free, so 123.00 -> "123",
+    // 123.50 -> "123.5", 123.456 -> "123.46".
+    let rounded = (value * 100.0).round() / 100.0;
+    // Normalize -0.0 so we don't render "-0".
+    let rounded = if rounded == 0.0 { 0.0 } else { rounded };
+    format!("{rounded}")
 }
 
 fn with_alpha(color: Color, alpha_fraction: f32) -> Color {
@@ -308,23 +310,27 @@ fn draw_selection_x(ctx: &RenderCtx, sel: Rect, offset: f32) {
     );
 
     let text_y = ctx.vy + SELECTION_LABEL_BASELINE * zi;
-    let pad_x = 4.0 * zi;
+    // Both labels use the same half-bar gap from the band so the start (left)
+    // and end (right) are spaced symmetrically.
+    let gap = (RULER_AREA_SIZE / 2.0) * zi;
     let left_label = format_label(sel.left - offset);
     let right_label = format_label(sel.right - offset);
     let (lw_font, _) = ctx.font.measure_str(&left_label, None);
-    // The right label is anchored at its left edge, so we don't need its
-    // measured width.
-    let lx = sel.left - pad_x - lw_font * zi;
-    let rx = sel.right + pad_x;
+    let lx = sel.left - gap - lw_font * zi;
+    let rx = sel.right + gap;
 
     let mut text_paint = Paint::default();
     text_paint.set_color(ctx.state.accent_color);
     text_paint.set_anti_alias(true);
+
+    // 1. Left label
     canvas.save();
     canvas.translate((lx, text_y));
     canvas.scale((zi, zi));
     canvas.draw_str(&left_label, Point::new(0.0, 0.0), ctx.font, &text_paint);
     canvas.restore();
+
+    // 2. Right label
     canvas.save();
     canvas.translate((rx, text_y));
     canvas.scale((zi, zi));
@@ -341,7 +347,7 @@ enum MaskAxis {
 /// labels behind the selection band. `fade_to_end` flips it from
 /// transparent→opaque (before the band) to opaque→transparent (after).
 fn draw_mask(ctx: &RenderCtx, rect: Rect, axis: MaskAxis, fade_to_end: bool) {
-    let opaque = ctx.state.bg_color;
+    let opaque = with_alpha(ctx.state.bg_color, OVER_NUMBER_OPACITY);
     let transparent = with_alpha(ctx.state.bg_color, 0.0);
     let (colors, offsets): (&[skia::Color; 3], &[f32; 3]) = if fade_to_end {
         (
@@ -377,11 +383,10 @@ fn draw_selection_y(ctx: &RenderCtx, sel: Rect, offset: f32) {
     let canvas = ctx.canvas;
     let zi = ctx.zi;
 
-    let pad_y = 4.0 * zi;
     let top_label = format_label(sel.top - offset);
     let bottom_label = format_label(sel.bottom - offset);
-    // Top label's draw position doesn't depend on its own width (LX is just
-    // pad_y/zi), so we only need bw_font for the bottom label's right-anchor.
+    // Both labels sit a half-bar gap from the band; only the bottom label's
+    // origin depends on its own width (it reads toward the band).
     let (bw_font, _) = ctx.font.measure_str(&bottom_label, None);
 
     // Mask first (gradient bg over tick labels behind), then band, then
@@ -416,33 +421,27 @@ fn draw_selection_y(ctx: &RenderCtx, sel: Rect, offset: f32) {
     let mut text_paint = Paint::default();
     text_paint.set_color(ctx.state.accent_color);
     text_paint.set_anti_alias(true);
-    // Both labels read bottom-to-top on screen (after the -90° rotation
-    // local +x points upward). With the transform stack
-    // (translate→rotate→scale) and a draw at code-(LX, 0), the actual
-    // origin in document coords is (text_x, pivot_y − LX·zi).
-    //
-    // Top label: want origin just above sel.top, reading upward from
-    // there, so pivot_y − LX·zi = sel.top − pad_y ⇒ LX = pad_y/zi.
+    // Both labels read bottom-to-top on screen
+    // 1. Top label
     canvas.save();
     canvas.translate((text_x, sel.top));
     canvas.rotate(-90.0, None);
     canvas.scale((zi, zi));
     canvas.draw_str(
         &top_label,
-        Point::new(pad_y / zi, 0.0),
+        Point::new(RULER_AREA_SIZE / 2.0, 0.0),
         ctx.font,
         &text_paint,
     );
     canvas.restore();
-    // Bottom label: want the text END at sel.bottom + pad_y and origin
-    // at sel.bottom + pad_y + bw so it reads upward toward the band.
+    // 2. Bottom label
     canvas.save();
     canvas.translate((text_x, sel.bottom));
     canvas.rotate(-90.0, None);
     canvas.scale((zi, zi));
     canvas.draw_str(
         &bottom_label,
-        Point::new(-bw_font - pad_y / zi, 0.0),
+        Point::new(-bw_font - RULER_AREA_SIZE / 2.0, 0.0),
         ctx.font,
         &text_paint,
     );

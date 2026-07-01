@@ -51,6 +51,7 @@
     :$file {:enumerable false :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
     :fileId {:get #(dm/str file-id)}
 
     :name
@@ -101,7 +102,8 @@
 
          :else
          (let [color (-> (u/proxy->library-color self)
-                         (assoc :color value))]
+                         (assoc :color value)
+                         (dissoc :gradient :image))]
            (st/emit! (dwl/update-color-data color file-id)))))}
 
     :opacity
@@ -136,7 +138,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :gradient value))]
+                           (assoc :gradient value)
+                           (dissoc :color :image))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :image
@@ -154,7 +157,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :image value))]
+                           (assoc :image value)
+                           (dissoc :color :gradient))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :remove
@@ -295,6 +299,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true
@@ -484,6 +489,27 @@
                         (assoc :text-transform value))]
            (st/emit! (dwl/update-typography typo file-id)))))}
 
+    :setFont
+    (fn [font variant]
+      (cond
+        (not (obj/type-of? font "FontProxy"))
+        (u/not-valid plugin-id :setFont font)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/not-valid plugin-id :setFont "Plugin doesn't have 'library:write' permission")
+
+        :else
+        ;; When a variant is given read the variant-specific fields from it;
+        ;; otherwise the FontProxy exposes the font's default variant fields.
+        (let [source (if (obj/type-of? variant "FontVariantProxy") variant font)
+              typo (-> (u/locate-library-typography file-id id)
+                       (assoc :font-id (obj/get font "fontId")
+                              :font-family (obj/get font "fontFamily")
+                              :font-variant-id (obj/get source "fontVariantId")
+                              :font-style (obj/get source "fontStyle")
+                              :font-weight (obj/get source "fontWeight")))]
+          (st/emit! (dwl/update-typography typo file-id)))))
+
     :remove
     (fn []
       (cond
@@ -517,6 +543,9 @@
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
+        (not (u/page-active? (obj/get shape "$page")))
+        (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
         :else
         (let [shape-id   (obj/get shape "$id")
               typography (u/locate-library-typography file-id id)]
@@ -531,10 +560,13 @@
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
+        (not (u/page-active? (obj/get range "$page")))
+        (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
         :else
         (let [shape-id (obj/get range "$id")
-              start    (obj/get range "start")
-              end      (obj/get range "end")
+              start    (obj/get range "$start")
+              end      (obj/get range "$end")
               typography (u/locate-library-typography file-id id)
               attrs (-> typography
                         (assoc :typography-ref-file file-id)
@@ -712,6 +744,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true

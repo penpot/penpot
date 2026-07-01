@@ -8,26 +8,30 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar]]
+   [app.common.types.organization :refer [schema:team-with-organization schema:organization-with-avatar schema:nitrate-sso]]
    [app.common.types.profile :refer [schema:profile, schema:basic-profile]]
    [app.common.types.team :refer [schema:team]]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.nitrate :as nitrate]
-   [app.rpc :as-alias rpc]
+   [app.rpc :as rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.commands.teams-invitations :as ti]
    [app.rpc.doc :as doc]
+   [app.rpc.nitrate.emails-helper :as neh]
+   [app.rpc.nitrate.organization-helper :as noh]
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
@@ -484,23 +488,6 @@ RETURNING id, deleted_at;")
 
 ;; API: get-org-invitations
 
-(def ^:private sql:get-org-invitations
-  "SELECT DISTINCT ON (email_to)
-          ti.id,
-          ti.org_id AS organization_id,
-          ti.email_to AS email,
-          ti.created_at AS sent_at,
-          p.fullname AS name,
-          p.id AS profile_id,
-          p.photo_id
-     FROM team_invitation AS ti
-LEFT JOIN profile AS p
-       ON p.email = ti.email_to
-      AND p.deleted_at IS NULL
-    WHERE ti.valid_until >= now()
-      AND (ti.org_id = ? OR ti.team_id = ANY(?))
-    ORDER BY ti.email_to, ti.valid_until DESC, ti.created_at DESC;")
-
 (def ^:private schema:get-org-invitations-params
   [:map
    [:organization-id ::sm/uuid]])
@@ -522,18 +509,13 @@ LEFT JOIN profile AS p
    ::sm/params schema:get-org-invitations-params
    ::sm/result schema:get-org-invitations-result}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (->> (:teams org-summary)
-                         (map :id)
-                         (filter uuid?)
-                         (into []))]
+  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
-                   (let [ids-array (db/create-array conn "uuid" team-ids)]
-                     (->> (db/exec! conn [sql:get-org-invitations organization-id ids-array])
-                          (mapv (fn [{:keys [photo-id] :as invitation}]
-                                  (cond-> (dissoc invitation :photo-id)
-                                    photo-id
-                                    (assoc :photo-url (files/resolve-public-uri photo-id)))))))))))
+                   (->> (noh/get-org-invitations conn organization-id team-ids)
+                        (mapv (fn [{:keys [photo-id] :as invitation}]
+                                (cond-> (dissoc invitation :photo-id)
+                                  photo-id
+                                  (assoc :photo-url (files/resolve-public-uri photo-id))))))))))
 
 
 ;; API: delete-org-invitations
@@ -553,12 +535,8 @@ LEFT JOIN profile AS p
   {::doc/added "2.16"
    ::sm/params schema:delete-org-invitations-params}
   [cfg {:keys [organization-id email]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        clean-email (profile/clean-email email)
-        team-ids    (->> (:teams org-summary)
-                         (map :id)
-                         (filter uuid?)
-                         (into []))]
+  (let [clean-email (profile/clean-email email)
+        team-ids    (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-org-invitations clean-email organization-id ids-array]))))
@@ -584,9 +562,7 @@ LEFT JOIN profile AS p
    ::sm/params schema:delete-all-org-invitations-params
    ::rpc/auth false}
   [cfg {:keys [organization-id]}]
-  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
-        team-ids    (->> (:teams org-summary)
-                         (map :id))]
+  (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (let [ids-array (db/create-array conn "uuid" team-ids)]
                      (db/exec! conn [sql:delete-all-org-invitations organization-id ids-array]))))
@@ -822,4 +798,119 @@ LEFT JOIN profile AS p
     (when (and enabled? (seq events))
       (run! (partial submit-nitrate-audit-event cfg) events))
     nil))
+
+
+;; ---- API: get-teams-detail
+
+(def ^:private sql:get-teams-detail
+  "SELECT
+     t.id,
+     t.name,
+     t.photo_id,
+     t.created_at,
+      (SELECT MAX(p2.modified_at)
+         FROM project AS p2
+        WHERE p2.team_id = t.id
+          AND p2.deleted_at IS NULL
+          AND p2.is_default IS FALSE) AS last_activity_at,
+     owner_tpr.profile_id AS owner_profile_id,
+     owner_p.fullname AS owner_name,
+     owner_p.photo_id AS owner_photo_id,
+     (SELECT COUNT(*)
+        FROM project AS p3
+       WHERE p3.team_id = t.id
+         AND p3.deleted_at IS NULL
+         AND p3.is_default IS FALSE) AS num_projects,
+     (SELECT COUNT(*)
+        FROM file AS f
+        JOIN project AS p4 ON p4.id = f.project_id
+       WHERE p4.team_id = t.id
+         AND f.deleted_at IS NULL
+         AND p4.deleted_at IS NULL) AS num_files,
+     (SELECT COUNT(*)
+        FROM team_profile_rel AS tpr
+       WHERE tpr.team_id = t.id) AS num_members
+   FROM team AS t
+   LEFT JOIN team_profile_rel AS owner_tpr
+     ON owner_tpr.team_id = t.id AND owner_tpr.is_owner IS TRUE
+   LEFT JOIN profile AS owner_p
+     ON owner_p.id = owner_tpr.profile_id
+   WHERE t.id = ANY(?)
+     AND t.deleted_at IS NULL
+     AND t.is_default IS FALSE
+   ORDER BY last_activity_at DESC NULLS LAST")
+
+(def ^:private schema:get-teams-detail-params
+  [:map
+   [:organization-id ::sm/uuid]])
+
+(def ^:private schema:get-teams-detail-result
+  [:vector
+   [:map
+    [:id ::sm/uuid]
+    [:name ::sm/text]
+    [:photo-url {:optional true} ::sm/uri]
+    [:created-at ::sm/inst]
+    [:last-activity-at {:optional true} [:maybe ::sm/inst]]
+    [:owner-profile-id {:optional true} [:maybe ::sm/uuid]]
+    [:owner-name {:optional true} [:maybe ::sm/text]]
+    [:owner-photo-url {:optional true} ::sm/uri]
+    [:num-projects ::sm/int]
+    [:num-files ::sm/int]
+    [:num-members ::sm/int]]])
+
+(sv/defmethod ::get-teams-detail
+  "Get detailed information for all non-deleted teams in an organization,
+   including owner info and project/file/member counts."
+  {::doc/added "2.20"
+   ::sm/params schema:get-teams-detail-params
+   ::sm/result schema:get-teams-detail-result}
+  [cfg {:keys [organization-id]}]
+  (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
+        team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams org-summary))]
+    (if (empty? team-ids)
+      []
+      (db/run! cfg
+               (fn [{:keys [::db/conn]}]
+                 (let [ids-array (db/create-array conn "uuid" team-ids)]
+                   (->> (db/exec! conn [sql:get-teams-detail ids-array])
+                        (mapv (fn [{:keys [photo-id owner-photo-id] :as row}]
+                                (cond-> (dissoc row :photo-id :owner-photo-id)
+                                  photo-id       (assoc :photo-url       (files/resolve-public-uri photo-id))
+                                  owner-photo-id (assoc :owner-photo-url (files/resolve-public-uri owner-photo-id))))))))))))
+
+;; ---- API: check-organization-sso
+
+(def ^:private schema:check-organization-sso-result
+  [:map
+   [:valid ::sm/boolean]])
+
+(sv/defmethod ::check-organization-sso
+  "Validate an organization SSO configuration by generating a login redirect URL.
+  Nitrate calls this while configuring SSO to verify client credentials and OIDC
+  discovery before saving the settings."
+  {::doc/added "2.20"
+   ::sm/params schema:nitrate-sso
+   ::sm/result schema:check-organization-sso-result
+   ::rpc/auth false}
+  [cfg params]
+  {:valid (oidc/is-organization-sso-config-valid? cfg params)})
+
+;; ---- API: notify-org-sso-change
+(sv/defmethod ::notify-org-sso-change
+  "Nitrate notifies that an organization sso values have changed"
+  {::doc/added "2.19"
+   ::sm/params [:map
+                [:organization-id ::sm/uuid]
+                [:updated-props ::sm/boolean]
+                [:became-active ::sm/boolean]]
+   ::rpc/auth false}
+  [{:keys [::db/pool] :as cfg} {:keys [organization-id updated-props became-active]}]
+  (when updated-props
+    (rpc/invalidate-org-sso-cache-by-org! organization-id)
+    (session/clear-org-sso-sessions! pool organization-id))
+  (notifications/notify-organization-change-sso cfg organization-id)
+  (when became-active
+    (neh/send-organization-setup-sso-emails! cfg organization-id))
+  nil)
 

@@ -174,7 +174,7 @@ pub extern "C" fn set_grid_layout_data(
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_grid_columns() -> Result<()> {
-    let bytes = mem::bytes();
+    let bytes = mem::bytes_or_empty();
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
@@ -197,7 +197,7 @@ pub extern "C" fn set_grid_columns() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_grid_rows() -> Result<()> {
-    let bytes = mem::bytes();
+    let bytes = mem::bytes_or_empty();
 
     let entries: Vec<GridTrack> = bytes
         .chunks(size_of::<RawGridTrack>())
@@ -220,7 +220,7 @@ pub extern "C" fn set_grid_rows() -> Result<()> {
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn set_grid_cells() -> Result<()> {
-    let bytes = mem::bytes();
+    let bytes = mem::bytes_or_empty();
 
     let cells: Vec<RawGridCell> = bytes
         .chunks(size_of::<RawGridCell>())

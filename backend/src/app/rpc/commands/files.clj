@@ -84,10 +84,10 @@
   (perms/make-edition-predicate-fn bfc/get-file-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn bfc/get-file-permissions))
+  (perms/make-read-predicate-fn perms/get-file-read-permissions))
 
 (def has-comment-permissions?
-  (perms/make-comment-predicate-fn bfc/get-file-permissions))
+  (perms/make-comment-predicate-fn perms/get-file-read-permissions))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
@@ -99,8 +99,8 @@
 ;; explicit comment permissions through the share-id
 
 (defn check-comment-permissions!
-  [conn profile-id file-id share-id]
-  (let [perms       (bfc/get-file-permissions conn profile-id file-id share-id)
+  [cfg profile-id file-id share-id]
+  (let [perms       (perms/get-file-read-permissions cfg profile-id file-id share-id)
         can-read    (has-read-permissions? perms)
         can-comment (has-comment-permissions? perms)]
     (when-not (or can-read can-comment)
@@ -152,7 +152,7 @@
 (defn- get-minimal-file-with-perms
   [cfg {:keys [:id ::rpc/profile-id]}]
   (let [mfile (get-minimal-file cfg id)
-        perms (bfc/get-file-permissions cfg profile-id id)]
+        perms (perms/get-file-read-permissions cfg profile-id id)]
     (assoc mfile :permissions perms)))
 
 (defn get-file-etag
@@ -165,12 +165,13 @@
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
    ::sm/result schema:file-with-permissions
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id project-id] :as params}]
+  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
   ;; The COND middleware makes initial request for a file and
   ;; permissions when the incoming request comes with an
   ;; ETAG. When ETAG does not matches, the request is resolved
@@ -178,10 +179,10 @@
   ;; will be already prefetched and we just reuse them instead
   ;; of making an additional database queries.
   (let [perms (or (:permissions (::cond/object params))
-                  (bfc/get-file-permissions conn profile-id id))]
+                  (perms/get-file-read-permissions cfg profile-id id))]
     (check-read-permissions! perms)
 
-    (let [team (teams/get-team conn
+    (let [team (teams/get-team cfg
                                :profile-id profile-id
                                :project-id project-id
                                :file-id id)
@@ -241,7 +242,7 @@
    ::sm/result schema:file-fragment}
   [cfg {:keys [::rpc/profile-id file-id fragment-id share-id]}]
   (db/run! cfg (fn [cfg]
-                 (let [perms (bfc/get-file-permissions cfg profile-id file-id share-id)]
+                 (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)]
                    (check-read-permissions! perms)
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
@@ -285,7 +286,7 @@
    ::sm/params schema:get-project-files
    ::sm/result schema:files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
-  (projects/check-read-permissions! pool profile-id project-id)
+  (projects/check-read-permissions! cfg profile-id project-id)
   (get-project-files pool project-id))
 
 ;; --- COMMAND QUERY: has-file-libraries
@@ -303,7 +304,7 @@
    ::sm/result ::sm/boolean}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! pool profile-id file-id)
+    (check-read-permissions! cfg profile-id file-id)
     (get-has-file-libraries conn file-id)))
 
 (def ^:private sql:has-file-libraries
@@ -336,7 +337,7 @@
    ::sm/result ::sm/int}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! pool profile-id file-id)
+    (check-read-permissions! cfg profile-id file-id)
     (get-library-usage conn file-id)))
 
 (def ^:private sql:get-library-usage
@@ -386,7 +387,7 @@
               :code :params-validation
               :hint "page-id is required when object-id is provided"))
 
-  (let [perms (bfc/get-file-permissions conn profile-id file-id share-id)
+  (let [perms (perms/get-file-read-permissions cfg profile-id file-id share-id)
         file  (bfc/get-file cfg file-id :read-only? true)
 
         proj  (db/get conn :project {:id (:project-id file)})
@@ -437,8 +438,8 @@
    ::sm/params schema:get-page}
   [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (check-read-permissions! conn profile-id file-id share-id)
+              (fn [cfg]
+                (check-read-permissions! cfg profile-id file-id share-id)
                 (get-page cfg (assoc params :profile-id profile-id)))))
 
 ;; --- COMMAND QUERY: get-team-shared-files
@@ -561,7 +562,7 @@
 
 (defn- get-team-shared-files
   [{:keys [::db/conn] :as cfg} {:keys [team-id profile-id]}]
-  (teams/check-read-permissions! conn profile-id team-id)
+  (teams/check-read-permissions! cfg profile-id team-id)
 
   (let [process-row
         (fn [{:keys [id library-file-ids]}]
@@ -601,6 +602,7 @@
 (sv/defmethod ::get-file-summary
   "Retrieve a file summary by its ID. Only authenticated users."
   {::doc/added "1.20"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-summary}
   [cfg {:keys [::rpc/profile-id id] :as params}]
   (check-read-permissions! cfg profile-id id)
@@ -669,11 +671,12 @@
    outbound library reference counts. Cheap alternative to `get-file`
    when only metrics are needed."
   {::doc/added "2.17"
+   ::rpc/id-type :file
    ::sm/params schema:get-file-stats
    ::sm/result schema:get-file-stats-result
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
-  (check-read-permissions! conn profile-id id)
+  [cfg {:keys [::rpc/profile-id id]}]
+  (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
 
 
@@ -716,7 +719,7 @@
    ::sm/params schema:get-library-file-references}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
+    (check-read-permissions! cfg profile-id file-id)
     (get-library-file-references conn file-id)))
 
 ;; --- COMMAND QUERY: get-team-recent-files
@@ -760,7 +763,7 @@
    ::sm/params schema:get-team-recent-files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
+    (teams/check-read-permissions! cfg profile-id team-id)
     (get-team-recent-files conn team-id)))
 
 
@@ -805,8 +808,8 @@
   {::doc/added "2.12"
    ::sm/params schema:get-team-deleted-files}
   [cfg {:keys [::rpc/profile-id team-id]}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (teams/check-read-permissions! conn profile-id team-id)
+  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                 (teams/check-read-permissions! cfg profile-id team-id)
                  (get-team-deleted-files conn team-id))))
 
 ;; --- COMMAND QUERY: get-file-info
@@ -842,6 +845,7 @@
 
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
 
    ::sm/webhook
@@ -1001,6 +1005,7 @@
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:set-file-shared}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -1056,6 +1061,7 @@
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
+   ::rpc/id-type :file
    ::webhooks/event? true
    ::sm/params schema:delete-file}
   [cfg {:keys [::rpc/profile-id] :as params}]

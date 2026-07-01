@@ -72,7 +72,7 @@
      :get
      (fn [self]
        (when-let [frame (-> self u/proxy->flow :starting-frame)]
-         (shape/shape-proxy file-id page-id frame)))
+         (shape/shape-proxy plugin-id file-id page-id frame)))
      :set
      (fn [_ value]
        (cond
@@ -330,6 +330,9 @@
           (not (r/check-permission plugin-id "content:write"))
           (u/not-valid plugin-id :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
+          (not (u/page-active? id))
+          (u/not-valid plugin-id :addRulerGuide "Cannot modify a page that is not currently active")
+
           :else
           (let [ruler-id (uuid/next)]
             (st/emit!
@@ -350,6 +353,9 @@
 
         (not (r/check-permission plugin-id "content:write"))
         (u/not-valid plugin-id :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
+
+        (not (u/page-active? id))
+        (u/not-valid plugin-id :removeRulerGuide "Cannot modify a page that is not currently active")
 
         :else
         (let [guide (u/proxy->ruler-guide value)]
@@ -406,8 +412,7 @@
         (js/Promise.
          (fn [resolve]
            (let [thread-id (obj/get thread "$id")]
-             (js/Promise.
-              (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve)))))))))
+             (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve))))))))
 
     :findCommentThreads
     (fn [criteria]

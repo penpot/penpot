@@ -94,7 +94,9 @@
      [:id ::sm/uuid]
      [:name :string]
      [:initials [:maybe :string]]
-     [:logo ::sm/uri]]]
+     [:logo ::sm/uri]
+     [:avatar-bg-url [:maybe ::sm/uri]]
+     [:sso-active [:maybe ::sm/boolean]]]]
    [:profile
     [:map
      [:id ::sm/uuid]
@@ -246,7 +248,7 @@
                           :to email
                           :invited-by (:fullname profile)
                           :team (:name team)
-                          :organization (dm/get-in team [:organization :name])
+                          :organization (:organization team)
                           :token itoken
                           :extra-data ptoken})))
 
@@ -539,7 +541,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! pool profile-id team-id)
+  (teams/check-read-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id

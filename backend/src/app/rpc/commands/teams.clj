@@ -60,6 +60,11 @@
        :can-edit (or is-owner is-admin can-edit)
        :can-read true})))
 
+(defn get-read-permissions
+  [cfg profile-id team-id]
+  (or (get-permissions cfg profile-id team-id)
+      (perms/get-organization-owner-permissions cfg profile-id :team-id team-id)))
+
 (def has-admin-permissions?
   (perms/make-admin-predicate-fn get-permissions))
 
@@ -67,7 +72,7 @@
   (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn get-permissions))
+  (perms/make-read-predicate-fn get-read-permissions))
 
 (def check-admin-permissions!
   (perms/make-check-fn has-admin-permissions?))
@@ -180,7 +185,6 @@
         sql     (if (contains? cf/flags :subscriptions)
                   sql:get-teams-with-permissions-and-subscription
                   sql:get-teams-with-permissions)]
-
     (->> (db/exec! conn [sql (:default-team-id profile) profile-id])
          (into [] xform:process-teams))))
 
@@ -236,20 +240,36 @@
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:get-team}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id id file-id]}]
-  (get-team pool :profile-id profile-id :team-id id :file-id file-id))
+  [cfg {:keys [::rpc/profile-id id file-id] :as params}]
+  (let [team (get-team cfg :profile-id profile-id :team-id id :file-id file-id)]
+    (if (contains? cf/flags :nitrate)
+      (nitrate/add-org-info-to-team cfg team params)
+      team)))
+
+(defn- get-org-owner-viewer-team
+  "When `profile-id` is a non-member owner of the organization that owns
+  the requested team, returns the team shaped with viewer permissions;
+  otherwise nil. `cfg` must carry the nitrate client."
+  [cfg profile-id default-team-id params]
+  (when-let [team-id (perms/resolve-team-id cfg params)]
+    (when (nitrate/organization-owner-of-team? cfg profile-id team-id)
+      (when-let [team (db/get* cfg :team {:id team-id})]
+        (when-not (db/is-row-deleted? team)
+          (-> team
+              (decode-row)
+              (merge perms/viewer-role-flags)
+              (assoc :is-default (= team-id default-team-id))
+              (process-permissions)))))))
 
 (defn get-team
-  [conn & {:keys [profile-id team-id project-id file-id] :as params}]
+  [cfg & {:keys [profile-id team-id project-id file-id] :as params}]
 
   (assert (uuid? profile-id) "profile-id is mandatory")
-  (assert (or (db/connection? conn)
-              (db/pool? conn))
-          "connection or pool is mandatory")
 
   (let [{:keys [default-team-id] :as profile}
-        (profile/get-profile conn profile-id)
+        (profile/get-profile cfg profile-id)
 
         sql
         (if (contains? cf/flags :subscriptions)
@@ -261,14 +281,14 @@
           (some? team-id)
           (let [sql (str "WITH teams AS (" sql ") "
                          "SELECT * FROM teams WHERE id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id team-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id team-id]))
 
           (some? project-id)
           (let [sql (str "WITH teams AS (" sql ") "
                          "SELECT t.* FROM teams AS t "
                          "  JOIN project AS p ON (p.team_id = t.id) "
                          " WHERE p.id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id project-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id project-id]))
 
           (some? file-id)
           (let [sql (str "WITH teams AS (" sql ") "
@@ -276,17 +296,18 @@
                          "  JOIN project AS p ON (p.team_id = t.id) "
                          "  JOIN file AS f ON (f.project_id = p.id) "
                          " WHERE f.id=?")]
-            (db/exec-one! conn [sql default-team-id profile-id file-id]))
+            (db/exec-one! cfg [sql default-team-id profile-id file-id]))
 
           :else
           (throw (IllegalArgumentException. "invalid arguments")))]
 
-    (when-not result
-      (ex/raise :type :not-found
-                :code :team-does-not-exist))
-    (-> result
-        (decode-row)
-        (process-permissions))))
+    (if result
+      (-> result
+          (decode-row)
+          (process-permissions))
+      (or (get-org-owner-viewer-team cfg profile-id default-team-id params)
+          (ex/raise :type :not-found
+                    :code :team-does-not-exist)))))
 
 ;; --- Query: Team Members
 
@@ -315,7 +336,7 @@
    ::sm/params schema:get-team-memebrs}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-members conn team-id)))
 
 ;; --- Query: Team Users
@@ -341,10 +362,10 @@
   (dm/with-open [conn (db/open pool)]
     (if team-id
       (do
-        (check-read-permissions! conn profile-id team-id)
+        (check-read-permissions! cfg profile-id team-id)
         (get-users conn team-id))
       (let [{team-id :id} (get-team-for-file conn file-id)]
-        (check-read-permissions! conn profile-id team-id)
+        (check-read-permissions! cfg profile-id team-id)
         (get-users conn team-id)))))
 
 ;; This is a similar query to team members but can contain more data
@@ -431,7 +452,7 @@
    ::sm/params schema:get-team-stats}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-stats conn team-id)))
 
 (def sql:team-stats
@@ -467,7 +488,7 @@
    ::sm/params schema:get-team-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id team-id)
+    (check-read-permissions! cfg profile-id team-id)
     (get-team-invitations conn team-id)))
 
 
@@ -691,6 +712,7 @@
 
 (sv/defmethod ::update-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:update-team
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
@@ -766,6 +788,7 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:leave-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
@@ -828,6 +851,7 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"
+   ::rpc/id-type :team
    ::sm/params schema:delete-team
    ::db/transaction true}
   [cfg {:keys [::rpc/profile-id id] :as params}]

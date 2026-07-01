@@ -60,14 +60,17 @@
             (not (r/check-permission (obj/get text "$plugin") "content:write"))
             (u/not-valid plugin-id :applyToText "Plugin doesn't have 'content:write' permission")
 
+            (not (u/page-active? (obj/get text "$page")))
+            (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
             :else
-            (let [id (obj/get text "$id")
+            (let [text-id (obj/get text "$id")
                   values {:font-id id
                           :font-family family
                           :font-style (d/nilv (obj/get variant "fontStyle") (:style default-variant))
                           :font-variant-id (d/nilv (obj/get variant "fontVariantId") (:id default-variant))
                           :font-weight (d/nilv (obj/get variant "fontWeight") (:weight default-variant))}]
-              (st/emit! (dwt/update-attrs id values)))))
+              (st/emit! (dwt/update-attrs text-id values)))))
 
         :applyToRange
         (fn [range variant]
@@ -78,16 +81,19 @@
             (not (r/check-permission (obj/get range "$plugin") "content:write"))
             (u/not-valid plugin-id :applyToRange "Plugin doesn't have 'content:write' permission")
 
+            (not (u/page-active? (obj/get range "$page")))
+            (u/not-valid plugin-id :applyToRange "Cannot modify a page that is not currently active")
+
             :else
-            (let [id    (obj/get range "$id")
-                  start (obj/get range "start")
-                  end   (obj/get range "end")
+            (let [range-id (obj/get range "$id")
+                  start (obj/get range "$start")
+                  end   (obj/get range "$end")
                   values {:font-id id
                           :font-family family
                           :font-style (d/nilv (obj/get variant "fontStyle") (:style default-variant))
                           :font-variant-id (d/nilv (obj/get variant "fontVariantId") (:id default-variant))
                           :font-weight (d/nilv (obj/get variant "fontWeight") (:weight default-variant))}]
-              (st/emit! (dwt/update-text-range id start end values)))))))))
+              (st/emit! (dwt/update-text-range range-id start end values)))))))))
 
 (defn fonts-subcontext
   [plugin-id]

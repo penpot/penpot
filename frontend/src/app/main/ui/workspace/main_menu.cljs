@@ -22,6 +22,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.shortcuts :as sc]
@@ -44,6 +45,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc shortcuts*
@@ -355,7 +357,15 @@
            (r/set-resize-type! :bottom)
            (st/emit! (dw/remove-layout-flag :colorpalette)
                      (-> (dw/toggle-layout-flag :textpalette)
-                         (vary-meta assoc ::ev/origin "workspace:menu")))))]
+                         (vary-meta assoc ::ev/origin "workspace:menu")))))
+
+        toggle-comments-visibility
+        (mf/use-fn
+         (mf/deps on-close)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dwcm/toggle-comments-visibility {:origin "workspace:menu"}))
+           (on-close)))]
 
     [:> dropdown-menu* {:show true
                         :class (stl/css :base-menu :sub-menu :pos-3)
@@ -399,6 +409,19 @@
        (if (contains? layout :lock-guides)
          (tr "workspace.header.menu.unlock-guides")
          (tr "workspace.header.menu.lock-guides"))]]
+
+     [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                              :on-click    toggle-comments-visibility
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (toggle-comments-visibility event)))
+                              :data-testid "display-comments"
+                              :id          "file-menu-comments"}
+      [:span {:class (stl/css :item-name)}
+       (if (contains? layout :display-comments)
+         (tr "workspace.header.menu.hide-comments")
+         (tr "workspace.header.menu.show-comments"))]
+      [:> shortcuts* {:id :toggle-comments-visibility}]]
 
      (when-not ^boolean read-only?
        [:*
@@ -936,25 +959,17 @@
                  ev-name (if (= next-renderer :wasm)
                            "enable-webgl-rendering"
                            "disable-webgl-rendering")]
-             (if (cf/external-feature-flag "renderer-hard-reload" "test")
-               ;; Bare RPC + hard reload: skips `du/update-profile-props`, so
-               ;; `features/recompute-features` is not run here; bootstrap
-               ;; after reload resolves render-wasm/v1 from the saved profile.
-               (do
-                 (st/emit! (ev/event {::ev/name ev-name
-                                      ::ev/origin "workspace:menu"}))
-                 (->> (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
-                      (rx/subs! (fn [_] (dom/reload-current-window true))
-                                (fn [_]
-                                  (st/emit! (ntf/error (tr "errors.generic")))))))
-               ;; `update-profile-props` WatchEvent calls
-               ;; `features/recompute-features`.
-               (st/emit! (ev/event {::ev/name ev-name
-                                    ::ev/origin "workspace:menu"})
-                         (du/update-profile-props {:renderer next-renderer})
-                         (ntf/success (tr (if (= next-renderer :wasm)
-                                            "webgl.toast.webgl-render-enabled"
-                                            "webgl.toast.webgl-render-disabled"))))))))
+             (->> (rx/zip
+                   (rp/cmd! :update-profile-props {:props {:renderer next-renderer}})
+                   (rx/filter (ptk/type? ::ev/chunk-persisted) st/stream))
+                  (rx/timeout 2000 (rx/of :timeout))
+                  (rx/subs! (fn [_]
+                              (dom/reload-current-window true))
+                            (fn [_]
+                              (st/emit! (ntf/error (tr "errors.generic"))))))
+             (st/emit! (ev/event {::ev/name ev-name
+                                  ::ev/origin "workspace:menu"})
+                       (ptk/data-event ::ev/force-persist {})))))
 
         open-plugins-manager
         (mf/use-fn

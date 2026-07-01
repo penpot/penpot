@@ -186,7 +186,7 @@ test.describe("Tokens: Apply token", () => {
 
     await tokensSidebar.getByRole("button", { name: "Full" }).click();
 
-    const tokenRow = workspacePage.rightSidebar.getByLabel('Full');
+    const tokenRow = workspacePage.rightSidebar.getByLabel("Full");
     await expect(tokenRow).toBeVisible();
   });
 
@@ -1396,7 +1396,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     // Setup the workspace with token features enabled
     const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
-        flags: ["enable-token-combobox", "enable-feature-token-input"],
+        flags: ["enable-feature-token-input"],
       });
 
     // Transform a rectangle into a flex container to expose gap properties
@@ -1444,6 +1444,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     await layoutSection
       .getByRole("button", { name: "Show 4 sided padding options" })
       .click();
+    await workspacePage.page.waitForTimeout(500);
 
     await expect(
       page

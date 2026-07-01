@@ -48,7 +48,12 @@
    :selrect
    :points
    :show-content
-   :hide-in-viewer])
+   :hide-in-viewer
+
+   ;; Needed to disable/enable width/height
+   ;; otherwise the memo will not detect changes
+   :layout-item-h-sizing
+   :layout-item-v-sizing])
 
 (def ^:private generic-options
   #{:size :position :rotation})
@@ -130,7 +135,7 @@
                        acc))))
           acc)))))
 
-(defn- check-measures-menu-props
+(defn check-measures-menu-props
   [old-props new-props]
   (let [o-values (unchecked-get old-props "values")
         n-values (unchecked-get new-props "values")]
@@ -150,10 +155,12 @@
                      (get n-values :hide-in-viewer))
          (identical? (get o-values :width)
                      (get n-values :width))
-         (identical? (get o-values :width)
-                     (get n-values :width))
          (identical? (get o-values :height)
                      (get n-values :height))
+         (identical? (get o-values :layout-item-h-sizing)
+                     (get n-values :layout-item-h-sizing))
+         (identical? (get o-values :layout-item-v-sizing)
+                     (get n-values :layout-item-v-sizing))
          (identical? (get o-values :points)
                      (get n-values :points))
          (identical? (get o-values :selrect)

@@ -10,9 +10,9 @@
    [app.common.data.macros :as dm]
    [app.main.data.auth :as da]
    [app.main.store :as st]
-   [app.main.ui.auth.login :refer [login-page]]
+   [app.main.ui.auth.login :refer [login-page*]]
    [app.main.ui.auth.recovery :refer [recovery-page*]]
-   [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
+   [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
    [app.main.ui.auth.register :refer [register-page* register-success-page* register-validate-page* terms-register*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -63,10 +63,10 @@
         [:> register-validate-page* {:params params}]
 
         :auth-login
-        [:& login-page {:params params}]
+        [:> login-page* {:params params}]
 
         :auth-recovery-request
-        [:& recovery-request-page]
+        [:> recovery-request-page*]
 
         :auth-recovery
         [:> recovery-page* {:params params}])

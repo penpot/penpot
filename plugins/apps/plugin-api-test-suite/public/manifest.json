@@ -1,0 +1,18 @@
+{
+  "name": "Plugin API Test Suite",
+  "description": "Launcher for a battery of Penpot Plugin API tests",
+  "code": "plugin.js",
+  "version": 2,
+  "icon": "assets/icon.png",
+  "permissions": [
+    "content:read",
+    "content:write",
+    "library:read",
+    "library:write",
+    "user:read",
+    "comment:read",
+    "comment:write",
+    "allow:downloads",
+    "allow:localstorage"
+  ]
+}

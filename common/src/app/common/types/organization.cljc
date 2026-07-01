@@ -17,6 +17,7 @@
    [:avatar-bg-url ::sm/uri]
    [:logo-id {:optional true} [:maybe ::sm/uuid]]
    [:expired-license {:optional true} [:maybe :boolean]]
+   [:sso-active {:optional true} [:maybe :boolean]]
    [:permissions {:optional true}
     [:maybe [:map
              [:create-teams {:optional true} [:maybe [:enum "any" "onlyMe"]]]
@@ -33,7 +34,7 @@
 
 (def organization->team-keys
   "Organization field keys to include in the nested :organization map."
-  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions])
+  [:id :name :custom-photo :slug :avatar-bg-url :owner-id :expired-license :permissions :sso-active])
 
 (defn apply-organization
   "Updates a team map with organization fields in a nested :organization map.
@@ -60,4 +61,16 @@
    [:name ::sm/text]
    [:initials [:maybe :string]]
    [:logo [:maybe ::sm/uri]]
-   [:avatar-bg-url [:maybe ::sm/uri]]])
+   [:avatar-bg-url [:maybe ::sm/uri]]
+   [:sso-active {:optional true} [:maybe :boolean]]])
+
+(def schema:nitrate-sso
+  [:map {:title "NitrateOrganizationSso"}
+   [:organization-id ::sm/uuid]
+   [:active {:optional true} [:maybe :boolean]]
+   [:provider {:optional true} [:maybe :string]]
+   [:client-id {:optional true} [:maybe :string]]
+   [:base-url {:optional true} [:maybe :string]]
+   [:client-secret {:optional true} [:maybe :string]]
+   [:issuer {:optional true} [:maybe :string]]
+   [:scopes {:optional true} [:maybe [::sm/set ::sm/text]]]])

@@ -4,24 +4,24 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC Sucursal en España SL",
   "private": true,
-  "packageManager": "pnpm@11.5.3+sha512.7ac1c919341c213a34dc0d02afb7143c5c26ac26ee8c4782deea821b8ac64d2134a081fd8941dae6e29bbb48f58dfc2b7fbceeccc07cb2f09d219d342a4969ed",
+  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
   },
   "type": "module",
   "dependencies": {
+    "@penpot/svgo": "penpot/svgo#3.3.0",
     "archiver": "8.0.0",
     "cookies": "^0.9.1",
     "date-fns": "^4.4.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^5.11.1",
-    "playwright": "^1.60.0",
+    "playwright": "^1.61.1",
     "raw-body": "^3.0.2",
     "source-map-support": "^0.5.21",
-    "@penpot/svgo": "penpot/svgo#3.3.0",
-    "undici": "^8.4.1",
+    "undici": "^8.5.0",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.2"
   },

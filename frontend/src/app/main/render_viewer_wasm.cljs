@@ -8,6 +8,7 @@
   "WASM offscreen rendering for the shared viewer (snapshot + fixed-scroll)."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.wasm :as wasm]
    [app.util.dom :as dom]
@@ -43,15 +44,31 @@
            :dpr 1}))
 
 (defn- draw-bitmap!
+  "Blit the rendered OffscreenCanvas onto the visible 2D `canvas`. Firefox+NVIDIA
+  can't `drawImage` a managed OffscreenCanvas directly (yields transparent
+  pixels), but `drawImage` of an `ImageBitmap` works — so go through
+  `createImageBitmap` (GPU-side, correct orientation, no CPU readback)."
   [canvas os-canvas object-id vis-w vis-h finish]
-  (ts/raf
-   (fn []
-     (let [ctx2d (.getContext canvas "2d")]
-       (.clearRect ctx2d 0 0 vis-w vis-h)
-       ;; Draw directly from OffscreenCanvas so it can be reused across passes.
-       (.drawImage ctx2d os-canvas 0 0 vis-w vis-h)
-       (dom/set-attribute! canvas "id" (str "screenshot-" object-id))
-       (finish)))))
+  (-> (js/createImageBitmap os-canvas)
+      (p/then
+       (fn [bitmap]
+         (ts/raf
+          (fn []
+            (let [ctx2d (.getContext canvas "2d")]
+              (.clearRect ctx2d 0 0 vis-w vis-h)
+              (.drawImage ctx2d bitmap 0 0 vis-w vis-h)
+              (.close bitmap)
+              (dom/set-attribute! canvas "id" (str "screenshot-" object-id))
+              (finish))))))
+      (p/catch
+       (fn [e]
+         (finish)
+         (ts/schedule
+          (fn []
+            (ex/raise :type :wasm-error
+                      :code :viewer-canvas-failed
+                      :hint "Viewer canvas failed"
+                      :cause e)))))))
 
 (defn- viewer-disable-wasm-ui-overlay!
   "Workspace WASM UI (rulers + rounded viewport frame) is composited in

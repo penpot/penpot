@@ -43,6 +43,13 @@
   (assert (uuid? id) "Shape not valid uuid")
   (dm/get-in (locate-page file-id page-id) [:objects id]))
 
+(defn page-active?
+  "Returns true if `page-id` is the currently active page. Plugin structural
+  operations only affect the active page, so callers use this to reject
+  attempts to modify shapes that live on a different page."
+  [page-id]
+  (= page-id (:current-page-id @st/state)))
+
 (defn locate-library-color
   [file-id id]
   (assert (uuid? id) "Color not valid uuid")
@@ -316,14 +323,27 @@
    message to the console."
   [plugin-id]
   (fn [cause]
-    (let [message
-          (if-let [explain (-> cause ex-data ::sm/explain)]
-            (do
-              (js/console.error (sm/humanize-explain explain))
-              (error-messages explain))
-            (ex-data cause))]
-      (js/console.log (.-stack cause))
-      (not-valid plugin-id :error message))))
+    (let [explain (-> cause ex-data ::sm/explain)
+          throw? (throw-validation-errors? plugin-id)]
+      (cond
+        ;; If it's a clojure error we throw as a validation error
+        (and throw? explain)
+        (throw-not-valid :error (error-messages explain))
+
+        ;; Unexpected errors we just propagate them
+        throw?
+        (throw cause)
+
+        ;; If not throw is active we log the caught error
+        :else
+        (let [message
+              (if explain
+                (do
+                  (js/console.error (sm/humanize-explain explain))
+                  (error-messages explain))
+                (ex-data cause))]
+          (js/console.log (.-stack cause))
+          (not-valid plugin-id :error message))))))
 
 (defn is-main-component-proxy?
   [p]

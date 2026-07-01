@@ -56,11 +56,16 @@
        :can-edit (or is-owner is-admin can-edit)
        :can-read true})))
 
+(defn- get-read-permissions
+  [cfg profile-id project-id]
+  (or (get-permissions cfg profile-id project-id)
+      (perms/get-organization-owner-permissions cfg profile-id :project-id project-id)))
+
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))
 
 (def has-read-permissions?
-  (perms/make-read-predicate-fn get-permissions))
+  (perms/make-read-predicate-fn get-read-permissions))
 
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
@@ -157,11 +162,12 @@
 
 (sv/defmethod ::get-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:get-project}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (dm/with-open [conn (db/open pool)]
     (let [project (db/get-by-id conn :project id)]
-      (check-read-permissions! conn profile-id id)
+      (check-read-permissions! cfg profile-id id)
       project)))
 
 
@@ -223,13 +229,14 @@
 
 (sv/defmethod ::update-project-pin
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:update-project-pin
    ::webhooks/batch-timeout (ct/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::webhooks/event? true
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
-  (check-read-permissions! conn profile-id id)
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
+  (check-read-permissions! cfg profile-id id)
   (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
   nil)
 
@@ -244,6 +251,7 @@
 
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:rename-project
    ::webhooks/event? true
    ::db/transaction true}
@@ -286,6 +294,7 @@
 
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
+   ::rpc/id-type :project
    ::sm/params schema:delete-project
    ::webhooks/event? true
    ::db/transaction true}

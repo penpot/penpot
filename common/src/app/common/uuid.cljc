@@ -183,3 +183,8 @@
 ;;          (js/console.log "RES:  " res))
 ;;
 ;;        )))
+
+
+(defn coerce [v]
+  (cond (uuid? v) v
+        (string? v) (parse* v)))

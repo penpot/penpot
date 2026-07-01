@@ -51,13 +51,19 @@
                                   [_ style-decode] (get styles/mapping key)]
                               (style-decode (.getPropertyValue style style-name)))
                             (let [style-name (styles/get-style-name key)]
-                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))]
-                (assoc acc key (if (value-empty? value) (get defaults key) value))))
+                              (styles/normalize-attr-value key (.getPropertyValue style style-name))))
+                    default (get defaults key)
+                    final-value (if (value-empty? value) default value)]
+                ;; Omit attrs with no CSS value when the default is nil (e.g.
+                ;; typography-ref-id). Avoids polluting round-tripped content.
+                (if (and (value-empty? value) (nil? default))
+                  acc
+                  (assoc acc key final-value))))
             {} attrs)))
 
 (defn get-text-span-styles
   [element]
-  (get-attrs-from-styles element txt/text-node-attrs (txt/get-default-text-attrs)))
+  (get-attrs-from-styles element txt/text-span-attrs (txt/get-default-text-attrs)))
 
 (defn get-paragraph-styles
   [element]

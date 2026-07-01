@@ -31,3 +31,33 @@
       (t/is (gpt/point? result))
       (t/is (= 0 (:x result)))
       (t/is (= 0 (:y result))))))
+
+(t/deftest test-parse-overlay-action-defaults-manual-position
+  (let [destination #js {"$id" (random-uuid)}
+        action      (parser/parse-action
+                     #js {:type "open-overlay"
+                          :destination destination
+                          :position "center"})]
+    (t/is (= :open-overlay (:action-type action)))
+    (t/is (= :center (:overlay-pos-type action)))
+    (t/is (gpt/point? (:overlay-position action)))
+    (t/is (= 0 (:x (:overlay-position action))))
+    (t/is (= 0 (:y (:overlay-position action))))))
+
+(t/deftest test-parse-frame-guide-calls-guide-parser
+  (let [column (parser/parse-frame-guide
+                #js {:type "column"
+                     :display true
+                     :params #js {:type "stretch"
+                                  :size 12}})
+        row    (parser/parse-frame-guide
+                #js {:type "row"
+                     :display false
+                     :params #js {:type "center"
+                                  :margin 4}})]
+    (t/is (= :column (:type column)))
+    (t/is (= true (:display column)))
+    (t/is (= :stretch (get-in column [:params :type])))
+    (t/is (= :row (:type row)))
+    (t/is (= false (:display row)))
+    (t/is (= :center (get-in row [:params :type])))))

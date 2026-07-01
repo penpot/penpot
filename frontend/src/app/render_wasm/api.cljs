@@ -136,12 +136,25 @@
     (reset! transition-tiles-handler* handler)
     (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
 
+(defn arm-page-transition-end!
+  "Arms the end of an active page transition: installs a `tiles-complete` handler
+   (bound to the current epoch) that ends the transition on the next full frame.
+
+   Called once the target page's shapes have been loaded into WASM, so the
+   earlier/empty frames rendered while the previous page is still mounted and
+   while the fresh canvas re-initializes cannot dismiss the blur prematurely.
+   No-op when no transition is active."
+  []
+  (when @page-transition?
+    (set-transition-tiles-complete-handler! @transition-epoch* end-page-transition!)))
+
 (defn start-initial-load-transition!
   "Starts a page-transition workflow for initial file open.
 
    - Sets `page-transition?` to true
-   - Installs a tiles-complete handler to end the transition
-   - Uses a solid background-color placeholder as the transition image"
+   - Uses a solid background-color placeholder as the transition image
+   - The tiles-complete handler that ends the transition is armed later, once
+     the page's shapes are loaded (see `arm-page-transition-end!`)"
   [background]
   (reset! transition-reveal-rulers? true) ; reveal the live rulers
   ;; If something already toggled `page-transition?` (e.g. legacy init code paths),
@@ -149,9 +162,10 @@
   (when (or (not @page-transition?) (nil? @transition-image*))
     (set-transition-image-from-background! background))
   (when-not @page-transition?
-    ;; Start transition + bind the tiles-complete handler to this epoch.
-    (let [epoch (begin-page-transition!)]
-      (set-transition-tiles-complete-handler! epoch end-page-transition!))))
+    ;; Start the transition. The tiles-complete → end handler is armed later,
+    ;; once the target page's shapes are loaded (see `arm-page-transition-end!`),
+    ;; so an earlier/empty frame can't dismiss the overlay prematurely.
+    (begin-page-transition!)))
 
 (defn- start-context-loss-overlay!
   []
@@ -306,9 +320,8 @@
        (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
-(mf/defc object-svg
-  {::mf/props :obj}
-  [{:keys [shape] :as props}]
+(mf/defc object-svg*
+  [{:keys [shape]}]
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
@@ -330,7 +343,7 @@
 (defn get-static-markup
   [shape]
   (->
-   (mf/element object-svg #js {:shape shape})
+   (mf/element object-svg* #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
 ;; forward declare helpers so render can call them
@@ -343,12 +356,15 @@
 (def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
 (def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
 (def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+(def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
 
 (defn- internal-render
   ([]
    (internal-render 0))
   ([timestamp]
-   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (internal-render timestamp wasm/internal-frame-type))
+  ([timestamp flags]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
    (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
      (request-render "frame-type-partial"))))
 
@@ -497,7 +513,14 @@
                (fn [ts]
                  (reset! pending-render false)
                  (set! wasm/internal-frame-id nil)
-                 (render ts)))]
+                 (try
+                   (render ts)
+                   (catch :default e
+                     ;; A failed render (e.g. a WASM panic) must not strand an
+                     ;; active page-transition. Force ending of it so the
+                     ;; workspace is shown without a blur.
+                     (end-page-transition!)
+                     (throw e)))))]
           (set! wasm/internal-frame-id frame-id))))))
 
 (defn- begin-shapes-loading!
@@ -1050,66 +1073,75 @@
 
 (defn set-grid-layout-rows
   [entries]
-  (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero rows.
+  (when (seq entries)
+    (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
-            offset
-            entries)
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_rows")))
+  (h/call wasm/internal-module "_set_grid_rows"))
 
 (defn set-grid-layout-columns
   [entries]
-  (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
-        offset (mem/alloc size)
-        dview  (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero columns.
+  (when (seq entries)
+    (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
+          offset (mem/alloc size)
+          dview  (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-            offset
-            entries)
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_columns")))
+  (h/call wasm/internal-module "_set_grid_columns"))
 
 (defn set-grid-layout-cells
   [cells]
-  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are cells; an empty collection would alloc 0
+  ;; bytes. The wasm side reads an empty buffer as zero cells.
+  (when (seq cells)
+    (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce-kv (fn [offset _ cell]
-                 (let [shape-id  (-> (get cell :shapes) first)]
-                   (-> offset
-                       (mem/write-i32 dview (get cell :row))
-                       (mem/write-i32 dview (get cell :row-span))
-                       (mem/write-i32 dview (get cell :column))
-                       (mem/write-i32 dview (get cell :column-span))
+      (reduce-kv (fn [offset _ cell]
+                   (let [shape-id  (-> (get cell :shapes) first)]
+                     (-> offset
+                         (mem/write-i32 dview (get cell :row))
+                         (mem/write-i32 dview (get cell :row-span))
+                         (mem/write-i32 dview (get cell :column))
+                         (mem/write-i32 dview (get cell :column-span))
 
-                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
-                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+                         (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
+                         (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; padding
-                       (+ 2)
+                         ;; padding
+                         (+ 2)
 
-                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
-                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
+                         (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                         (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
-               offset
-               cells)
+                 offset
+                 cells)))
 
-    (h/call wasm/internal-module "_set_grid_cells")))
+  (h/call wasm/internal-module "_set_grid_cells"))
 
 (defn set-grid-layout
   [shape]
@@ -1290,20 +1322,27 @@
     (perf/end-measure "render-finish")
     (reset! view-interaction-active? false)))
 
+(defn- view-gesture-active?
+  "True while a pointer-driven pan or zoom gesture is in progress."
+  []
+  (let [local (get @st/state :workspace-local)]
+    (or (:panning local) (:zooming local))))
+
+(defn finalize-view-interaction!
+  "Ends the view interaction and triggers a full-quality render."
+  []
+  (view-interaction-end!)
+  (internal-render 0 0))
+
 (def render-finish
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when (initialized?)
-              (view-interaction-end!)
-              ;; Use async _render: visible tiles render synchronously
-              ;; (no yield), interest-area tiles render progressively
-              ;; via rAF.  _set_view_end already rebuilt the tile
-              ;; index.  For pan, most tiles are cached so the render
-              ;; completes in the first frame.  For zoom, interest-
-              ;; area tiles (~3 tile margin) don't block the main
-              ;; thread.
-              (internal-render)))]
+              (if (view-gesture-active?)
+                ;; Pan/zoom pause: render without ending the interaction.
+                (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -2019,6 +2058,8 @@
 (defn- on-webgl-context-lost
   [event]
   (dom/prevent-default event)
+  ;; End any in-flight page transition
+  (end-page-transition!)
   ;; Keep the last rendered pixels visible while context is lost/recovering.
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
   (start-context-loss-overlay!)
@@ -2328,21 +2369,25 @@
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
-   Returns the stroke outline as PathData content."
+   Returns a map {:content <PathData> :even-odd? <boolean>}, or nil when the
+   stroke produces no geometry. The buffer carries two header words ahead of
+   the segments: [even-odd flag][length] (the flat segment list can't encode
+   the fill rule itself)."
   [id stroke-index]
   (use-shape id)
   (try
-    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                     (mem/->offset-32))
-          heap   (mem/get-heap-u32)
-          length (aget heap offset)]
+    (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                        (mem/->offset-32))
+          heap      (mem/get-heap-u32)
+          even-odd? (not (zero? (aget heap offset)))
+          length    (aget heap (inc offset))]
       (if (pos? length)
         (let [data    (mem/slice heap
-                                 (+ offset 1)
+                                 (+ offset 2)
                                  (* length path.impl/SEGMENT-U32-SIZE))
               content (path/from-bytes data)]
           (mem/free)
-          content)
+          {:content content :even-odd? even-odd?})
         (do (mem/free)
             nil)))
     (catch :default cause
@@ -2465,9 +2510,12 @@
 (defn apply-canvas-blur
   []
   (reset! transition-reveal-rulers? false) ; snapshot has rulers baked in
-  (let [already? @page-transition?
-        epoch    (begin-page-transition!)]
-    (set-transition-tiles-complete-handler! epoch end-page-transition!)
+  (let [already? @page-transition?]
+    (begin-page-transition!)
+    ;; The tiles-complete → end handler is armed later, once the target page's
+    ;; shapes are loaded (see `arm-page-transition-end!`), so a frame rendered
+    ;; before the new page is drawn can't dismiss the blur prematurely.
+    ;;
     ;; Lock the snapshot for the whole transition: if the user clicks to another page
     ;; while the transition is active, keep showing the original page snapshot until
     ;; the final target page finishes rendering. The caller (sitemap on-click) is
@@ -2554,5 +2602,11 @@
                 (js/console.error cause)
                 (p/resolved false)))))
       (p/resolved false))))
+
+(defn preload-module!
+  "Starts downloading + compiling the WASM engine now instead of on first
+   viewport mount. Idempotent: the `delay` caches its in-flight promise."
+  []
+  @module)
 
 

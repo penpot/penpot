@@ -43,7 +43,16 @@
    :m4 :margin-bottom-left})
 
 (def ^:private map:token-attr-plugin->token-attr
-  (map-invert map:token-attr->token-attr-plugin))
+  (merge
+   (map-invert map:token-attr->token-attr-plugin)
+   {:padding-top    :p1
+    :padding-right  :p2
+    :padding-bottom :p3
+    :padding-left   :p4
+    :margin-top     :m1
+    :margin-right   :m2
+    :margin-bottom  :m3
+    :margin-left    :m4}))
 
 (defn token-attr->token-attr-plugin
   [k]
@@ -87,13 +96,83 @@
                                :expand-with-children false})
            (se/add-event plugin-id))))))
 
+(defn- typography-resolved-value->js
+  "Converts a resolved typography composite (a Clojure map keyed by the
+   tokenscript field names) into the plugin's `TokenTypographyValue[]` shape: a
+   JS array with a single object using the public camelCase member names."
+  [m]
+  (when (map? m)
+    #js [#js {"fontFamilies"   (clj->js (:font-family m))
+              "fontSizes"      (:font-size m)
+              "fontWeights"    (some-> (:font-weight m) str)
+              "letterSpacing"  (:letter-spacing m)
+              "lineHeight"     (:line-height m)
+              "textCase"       (:text-case m)
+              "textDecoration" (:text-decoration m)}]))
+
+(defn- shadow-key->camel
+  "Renames a shadow composite field name (kebab string) to its public camelCase
+   member name. The shadow schema is closed; offset-x/offset-y are its only
+   multi-word fields, so the rest (blur, spread, color, inset) pass through."
+  [k]
+  (case k
+    "offset-x" "offsetX"
+    "offset-y" "offsetY"
+    k))
+
+(defn- shadow-entry->js
+  "Converts one resolved shadow entry (a JS Map of field name -> tokenscript
+   symbol) into a plain JS object using the public member names and the
+   unit-converted values."
+  [^js m]
+  (let [out #js {}]
+    (.forEach m (fn [sym k]
+                  (obj/set! out (shadow-key->camel k)
+                            (ts/tokenscript-symbols->penpot-unit sym))))
+    out))
+
+(defn- shadow-resolved-value->js
+  "Converts a resolved shadow composite (a sequence of shadow entries) into the
+   plugin's `TokenShadowValue[]` shape."
+  [entries]
+  (when (some? entries)
+    (into-array (map shadow-entry->js entries))))
+
+(defn- font-families-resolved-value->js
+  "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
+   documented `string[]` shape rather than leaking the raw tokenscript structure."
+  [resolved-value]
+  (let [v (ts/tokenscript-symbols->penpot-unit resolved-value)]
+    (cond
+      (nil? v) nil
+      (sequential? v) (clj->js v)
+      :else #js [v])))
+
 (defn- get-resolved-value
   [token tokens-tree]
   (let [resolved-tokens (ts/resolve-tokens tokens-tree)
-        resolved-value  (-> resolved-tokens
-                            (dm/get-in [(:name token) :resolved-value])
-                            (ts/tokenscript-symbols->penpot-unit))]
-    resolved-value))
+        resolved-value  (dm/get-in resolved-tokens [(:name token) :resolved-value])]
+    (cond
+      (= :font-family (:type token))
+      ;; A fontFamilies token resolves to a list of families; expose it as the
+      ;; documented `string[]` rather than the raw tokenscript list symbol.
+      (font-families-resolved-value->js resolved-value)
+
+      (= :typography (:type token))
+      ;; A typography token resolves to a composite; expose it as the documented
+      ;; `TokenTypographyValue[]` rather than the raw tokenscript structure.
+      (typography-resolved-value->js
+       (ts/tokenscript-symbols->penpot-unit resolved-value))
+
+      (= :shadow (:type token))
+      ;; A shadow token resolves to a list of composites whose entries the
+      ;; tokenscript unit conversion leaves as raw symbols; expose them as the
+      ;; documented `TokenShadowValue[]`.
+      (shadow-resolved-value->js
+       (ts/tokenscript-symbols->penpot-unit resolved-value))
+
+      :else
+      (ts/tokenscript-symbols->penpot-unit resolved-value))))
 
 (defn token-proxy? [p]
   (obj/type-of? p "TokenProxy"))
@@ -141,11 +220,21 @@
      (fn [_]
        (let [token (u/locate-token file-id set-id id)]
          (json/->js (:value token))))
-     :schema (let [token (u/locate-token file-id set-id id)]
-               (cfo/make-token-value-schema (:type token)))
+     :schema (let [token (u/locate-token file-id set-id id)
+                   base  (cfo/make-token-value-schema (:type token))]
+               ;; plugin-types declares the fontFamilies value as
+               ;; `string | string[]`, but the core schema only accepts a
+               ;; vector/ref; also accept a plain string (normalized in :set).
+               (if (= :font-family (:type token))
+                 [:or :string base]
+                 base))
      :set
      (fn [_ value]
-       (st/emit! (dwtl/update-token set-id id {:value value})))}
+       (let [token (u/locate-token file-id set-id id)
+             value (cond-> value
+                     (= :font-family (:type token))
+                     (ctob/convert-dtcg-font-family))]
+         (st/emit! (dwtl/update-token set-id id {:value value}))))}
 
     :resolvedValue
     {:this true
@@ -317,7 +406,8 @@
                                       (ctob/tokens-tree))]
                   [:tuple (-> (cfo/make-token-schema
                                tokens-tree
-                               (cto/dtcg-token-type->token-type (-> args (first) (get "type"))))
+                               (cto/dtcg-token-type->token-type (-> args (first) (get "type")))
+                               nil)
                               ;; Don't allow plugins to set the id
                               (sm/dissoc-key :id)
                               ;; Instruct the json decoder in obj/reify not to process map keys (:key-fn below)
@@ -328,7 +418,14 @@
       :fn (fn [attrs]
             (let [tokens-lib (u/locate-tokens-lib file-id)
                   token (ctob/make-token attrs)
-                  tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+                  ;; Resolve against all tokens in the library (including those
+                  ;; in inactive sets) so that references to structurally
+                  ;; existing tokens resolve even if their set is not active.
+                  ;; The target set's tokens take precedence over equally named
+                  ;; tokens in other sets, and the new token takes precedence
+                  ;; over all.
+                  tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                                         (ctob/get-tokens tokens-lib id))
                                   (assoc (:name token) token))
                   resolved-tokens (ts/resolve-tokens tokens-tree)
 
@@ -344,7 +441,10 @@
 
      :duplicate
      (fn []
-       (st/emit! (dwtl/duplicate-token-set id)))
+       (let [id-ref (atom nil)]
+         (st/emit! (dwtl/duplicate-token-set id {:id-ref id-ref}))
+         (when (some? @id-ref)
+           (token-set-proxy plugin-id file-id @id-ref))))
 
      :remove
      (fn []
@@ -443,7 +543,7 @@
            ;; Guard against nil to prevent `enable-set` from conj'ing nil
            ;; into the theme's :sets — which would send `:sets #{nil}` to the
            ;; backend and crash the workspace.
-           (let [set-name (obj/get token-set :name)
+           (let [set-name (obj/get token-set "name")
                  theme    (u/locate-token-theme file-id id)]
              (when (and (some? set-name) (some? theme))
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
@@ -453,7 +553,7 @@
      :schema [:tuple [:fn token-set-proxy?]]
      :fn (fn [token-set]
            ;; Same nil guard as addSet — see comment above.
-           (let [set-name (obj/get token-set :name)
+           (let [set-name (obj/get token-set "name")
                  theme    (u/locate-token-theme file-id id)]
              (when (and (some? set-name) (some? theme))
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
@@ -518,12 +618,27 @@
      :schema [:tuple (-> (sm/schema (cfo/make-token-set-schema
                                      (u/locate-tokens-lib file-id)
                                      nil))
-                         (sm/dissoc-key :id))] ;; We don't allow plugins to set the id
+                         (sm/dissoc-key :id) ;; We don't allow plugins to set the id
+                         ;; Allow an optional `active` flag so a plugin can create
+                         ;; an already-active set in a single call. Newly created
+                         ;; sets are inactive by default (only active sets affect
+                         ;; shapes and reference resolution). `active` is not part
+                         ;; of the token-set data model, so the :fn strips it and
+                         ;; applies it through the set-activation logic.
+                         (sm/merge [:map [:active {:optional true} ::sm/boolean]]))]
 
      :fn (fn [attrs]
-           (let [attrs (update attrs :name ctob/normalize-set-name)
-                 set (ctob/make-token-set attrs)]
+           (let [active? (boolean (:active attrs))
+                 attrs   (-> attrs
+                             (dissoc :active)
+                             (update :name ctob/normalize-set-name))
+                 set     (ctob/make-token-set attrs)]
              (st/emit! (dwtl/create-token-set set))
+             ;; Newly created sets are inactive by default; activate it when
+             ;; requested. Enabling only adds the set name to the hidden theme,
+             ;; so it does not depend on the create event having propagated yet.
+             (when active?
+               (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) true)))
              ;; Pass the set name as `initial-name` so the proxy can resolve
              ;; it immediately, before the async `st/emit!` above propagates
              ;; the new set into `@st/state`.
@@ -544,4 +659,3 @@
            (let [set (u/locate-token-set file-id set-id)]
              (when (some? set)
                (token-set-proxy plugin-id file-id set-id))))}))
-

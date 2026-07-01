@@ -24,6 +24,7 @@
    [app.http.errors :as errors]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.nitrate :as nitrate]
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
@@ -42,9 +43,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- discover-oidc-config
-  [cfg {:keys [base-uri] :as provider}]
+  [cfg {:keys [base-uri skip-ssrf-check?] :as provider}]
   (let [uri (u/join base-uri ".well-known/openid-configuration")
-        rsp (http/req cfg {:method :get :uri (dm/str uri)})]
+        rsp (http/req cfg {:method :get :uri (dm/str uri)} {:skip-ssrf-check? skip-ssrf-check?})]
 
     (if (= 200 (:status rsp))
       (let [data       (-> rsp :body json/decode)
@@ -105,8 +106,8 @@
           keys))
 
 (defn- fetch-oidc-jwks
-  [cfg jwks-uri]
-  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri})]
+  [cfg jwks-uri {:keys [skip-ssrf-check?]}]
+  (let [{:keys [status body]} (http/req cfg {:method :get :uri jwks-uri} {:skip-ssrf-check? skip-ssrf-check?})]
     (if (= 200 status)
       (-> body json/decode :keys process-oidc-jwks)
       (ex/raise :type ::internal
@@ -118,7 +119,8 @@
   "Fetch and Add (if possible) JWK's to the OIDC provider"
   [cfg provider]
   (try
-    (if-let [jwks (some->> (:jwks-uri provider) (fetch-oidc-jwks cfg))]
+    (if-let [jwks (when-let [jwks-uri (:jwks-uri provider)]
+                    (fetch-oidc-jwks cfg jwks-uri {:skip-ssrf-check? (:skip-ssrf-check? provider)}))]
       (assoc provider :jwks jwks)
       provider)
     (catch Throwable cause
@@ -409,9 +411,9 @@
 (defn- build-redirect-uri
   []
   (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path (str "/api/auth/oidc/callback")))))
+    (str (assoc public :path "/api/auth/oidc/callback"))))
 
-(defn- build-auth-redirect-uri
+(defn build-auth-redirect-uri
   [provider token]
   (let [params {:client_id (:client-id provider)
                 :redirect_uri (build-redirect-uri)
@@ -454,7 +456,7 @@
            :grant-type (:grant_type params)
            :redirect-uri (:redirect_uri params))
 
-    (let [{:keys [status body]} (http/req cfg req)]
+    (let [{:keys [status body]} (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
       (if (= status 200)
         (let [data (json/decode body)
               data {:token/access (get data :access_token)
@@ -509,7 +511,7 @@
                   :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
                   :timeout 6000
                   :method :get}
-        response (http/req cfg params)]
+        response (http/req cfg params {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
 
     (l/trc :hint "user info response"
            :status (:status response)
@@ -755,6 +757,119 @@
         (assoc profile :props props'))
       profile)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ORG SSO HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- non-blank-uri
+  [value]
+  (when-not (str/blank? value) value))
+
+(defn org-sso-discovery-uri
+  "Return the OIDC discovery URI from an org SSO config, preferring :issuer."
+  [sso]
+  (or (non-blank-uri (:issuer sso))
+      (non-blank-uri (:base-url sso))))
+
+(defn prepare-org-sso-provider
+  "Build an OIDC provider map dynamically from the Nitrate org SSO config.
+  Uses OIDC discovery via :base-url (or :issuer as fallback) when
+  token/auth/user URIs are absent."
+  [cfg {:keys [client-id client-secret base-url issuer scopes]}]
+  (prepare-oidc-provider cfg
+                         {:type             "oidc"
+                          :client-id        client-id
+                          :client-secret    client-secret
+                          :base-uri         (some-> (or (non-blank-uri base-url)
+                                                        (non-blank-uri issuer))
+                                                    (str/rtrim "/")
+                                                    (str "/"))
+                          :scopes           (into default-oidc-scopes (or scopes #{}))
+                          :skip-ssrf-check? true}))
+
+(defn build-org-sso-auth-redirect-uri
+  "Build the OIDC authorization redirect URI for an organization SSO config.
+  Raises if the config is incomplete or OIDC discovery fails."
+  [cfg sso & {:keys [dest-url organization-id provider]}]
+  (let [organization-id (or organization-id (:organization-id sso))
+        issuer          (org-sso-discovery-uri sso)
+        dest-url        (or dest-url (str (cf/get :public-uri)))]
+    (when-not issuer
+      (ex/raise :type :validation
+                :code :invalid-sso-config
+                :hint "missing issuer or base-url"))
+    (let [oidc-provider (or provider (prepare-org-sso-provider cfg sso))
+          state-token   (tokens/generate cfg {:iss             "oidc"
+                                              :dest-url        dest-url
+                                              :organization-id organization-id
+                                              :issuer          issuer
+                                              :exp             (ct/in-future "4h")})]
+      (build-auth-redirect-uri oidc-provider state-token))))
+
+(def ^:private probe-auth-code "penpot-sso-config-probe")
+
+(defn- decode-token-error-response
+  [body]
+  (when (and (string? body) (pos? (count body)))
+    (try
+      (json/decode body)
+      (catch Throwable _ nil))))
+
+(defn- token-endpoint-error
+  [response]
+  (some-> response :body decode-token-error-response :error d/name))
+
+(defn- token-endpoint-error-description
+  [response]
+  (some-> response :body decode-token-error-response :error-description))
+
+(defn- token-endpoint-valid-client-error?
+  "Token endpoint rejected the dummy auth code but accepted the client credentials."
+  [response]
+  (= "invalid_grant" (token-endpoint-error response)))
+
+(defn- token-endpoint-invalid-client-error?
+  "Token endpoint rejected the client credentials."
+  [{:keys [status] :as response}]
+  (let [error (token-endpoint-error response)
+        description (str/lower (or (token-endpoint-error-description response) ""))]
+    (or (= status 401)
+        (#{"invalid_client" "unauthorized_client"} error)
+        (and (= error "access_denied")
+             (str/includes? description "unauthorized")))))
+
+(defn- probe-org-sso-client-credentials
+  "Probe the token endpoint with a dummy authorization code.
+  Valid client credentials are expected to answer with `invalid_grant`."
+  [cfg provider]
+  (let [params {:client_id     (:client-id provider)
+                :client_secret (:client-secret provider)
+                :code          probe-auth-code
+                :grant_type    "authorization_code"
+                :redirect_uri  (build-redirect-uri)}
+        req    {:method  :post
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept"       "application/json"}
+                :uri     (:token-uri provider)
+                :body    (u/map->query-string params)}
+        response (http/req cfg req {:skip-ssrf-check? (:skip-ssrf-check? provider)})]
+    (cond
+      (token-endpoint-valid-client-error? response) true
+      (token-endpoint-invalid-client-error? response) false
+      :else false)))
+
+(defn is-organization-sso-config-valid?
+  "Return true when the SSO config can be discovered, can build a login URL,
+  and the client credentials are accepted by the token endpoint."
+  [cfg sso]
+  (try
+    (if (org-sso-discovery-uri sso)
+      (let [provider (prepare-org-sso-provider cfg sso)]
+        (and (build-org-sso-auth-redirect-uri cfg sso :provider provider)
+             (probe-org-sso-client-credentials cfg provider)))
+      false)
+    (catch Throwable _ false)))
+
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
   (let [provider (resolve-provider cfg params)
@@ -779,64 +894,80 @@
     (try
       (let [code     (get params :code)
             state    (get params :state)
-            state    (tokens/verify cfg {:token state :iss "oidc"})
+            state    (tokens/verify cfg {:token state :iss "oidc"})]
 
-            provider (resolve-provider cfg state)
-            info     (get-info cfg provider state code)
-            profile  (get-profile cfg (:email info))]
+        ;; Org SSO flow: state carries :dest-url — exchange the authorization
+        ;; code with the OIDC provider to verify authentication actually occurred.
+        (if-let [dest-url (:dest-url state)]
+          (let [organization-id (:organization-id state)
+                sso             (nitrate/call cfg :get-org-sso {:organization-id organization-id})
+                provider        (prepare-org-sso-provider cfg sso)
+                ;; verify token or throw error
+                _info           (get-info cfg provider state code)
+                session         (session/get-session request)
+                exp             (ct/in-future {:hours 48})]
+            (when (and session organization-id)
+              (let [props (-> (or (:props session) {})
+                              (update :sso assoc organization-id exp))]
+                (session/update-session (::session/manager cfg) (assoc session :props props))))
+            (redirect-response dest-url))
 
-        (cond
-          (not profile)
-          (cond
-            (and (email.blacklist/enabled? cfg)
-                 (email.blacklist/contains? cfg (:email info)))
-            (redirect-with-error "email-domain-not-allowed")
+          (let [provider (resolve-provider cfg state)
+                info     (get-info cfg provider state code)
+                profile  (get-profile cfg (:email info))]
 
-            (and (email.whitelist/enabled? cfg)
-                 (not (email.whitelist/contains? cfg (:email info))))
-            (redirect-with-error "email-domain-not-allowed")
+            (cond
+              (not profile)
+              (cond
+                (and (email.blacklist/enabled? cfg)
+                     (email.blacklist/contains? cfg (:email info)))
+                (redirect-with-error "email-domain-not-allowed")
 
-            :else
-            (if (or (contains? cf/flags :registration)
-                    (contains? cf/flags :oidc-registration))
-              (redirect-to-register cfg info provider)
-              (redirect-with-error "registration-disabled")))
+                (and (email.whitelist/enabled? cfg)
+                     (not (email.whitelist/contains? cfg (:email info))))
+                (redirect-with-error "email-domain-not-allowed")
 
-          (:is-blocked profile)
-          (redirect-with-error "profile-blocked")
+                :else
+                (if (or (contains? cf/flags :registration)
+                        (contains? cf/flags :oidc-registration))
+                  (redirect-to-register cfg info provider)
+                  (redirect-with-error "registration-disabled")))
 
-          (not (or (= (:auth-backend profile) (:type provider))
-                   (profile-has-provider-props? provider profile)
-                   (provider-has-email-verified? provider info)))
-          (redirect-with-error "auth-provider-not-allowed")
+              (:is-blocked profile)
+              (redirect-with-error "profile-blocked")
 
-          (not (:is-active profile))
-          (let [info (assoc info :profile-id (:id profile))]
-            (redirect-to-register cfg info provider))
+              (not (or (= (:auth-backend profile) (:type provider))
+                       (profile-has-provider-props? provider profile)
+                       (provider-has-email-verified? provider info)))
+              (redirect-with-error "auth-provider-not-allowed")
 
-          :else
-          (let [sxf     (session/create-fn cfg profile info)
-                token   (or (:invitation-token info)
-                            (tokens/generate cfg
-                                             {:iss :auth
-                                              :exp (ct/in-future "15m")
-                                              :profile-id (:id profile)}))
+              (not (:is-active profile))
+              (let [info (assoc info :profile-id (:id profile))]
+                (redirect-to-register cfg info provider))
 
-                ;; If proceed, update profile on the database
-                profile (update-profile-with-info cfg profile info)
+              :else
+              (let [sxf     (session/create-fn cfg profile info)
+                    token   (or (:invitation-token info)
+                                (tokens/generate cfg
+                                                 {:iss :auth
+                                                  :exp (ct/in-future "15m")
+                                                  :profile-id (:id profile)}))
 
-                props   (audit/profile->props profile)
-                context (d/without-nils {:external-session-id (:external-session-id info)})]
+                    ;; If proceed, update profile on the database
+                    profile (update-profile-with-info cfg profile info)
 
-            (audit/submit cfg {:type "action"
-                               :name "login-with-oidc"
-                               :profile-id (:id profile)
-                               :ip-addr (inet/parse-request request)
-                               :props props
-                               :context context})
+                    props   (audit/profile->props profile)
+                    context (d/without-nils {:external-session-id (:external-session-id info)})]
 
-            (->> (redirect-to-verify-token token)
-                 (sxf request)))))
+                (audit/submit cfg {:type "action"
+                                   :name "login-with-oidc"
+                                   :profile-id (:id profile)
+                                   :ip-addr (inet/parse-request request)
+                                   :props props
+                                   :context context})
+
+                (->> (redirect-to-verify-token token)
+                     (sxf request)))))))
 
       (catch Throwable cause
         (binding [l/*context* (errors/request->context request)]
@@ -849,6 +980,7 @@
    ::http/client
    ::setup/props
    ::db/pool
+   [:app.nitrate/client [:maybe :map]]
    [::providers schema:providers]])
 
 (defmethod ig/assert-key ::routes
