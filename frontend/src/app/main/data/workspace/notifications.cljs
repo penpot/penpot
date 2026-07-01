@@ -19,6 +19,7 @@
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.actions :as dwact]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
@@ -246,7 +247,7 @@
   (sm/check-fn schema:handle-file-change))
 
 (defn handle-file-change
-  [{:keys [file-id changes revn vern] :as msg}]
+  [{:keys [file-id profile-id changes revn vern] :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -262,13 +263,17 @@
       ;; and update the persistence internal state with the updated
       ;; file-revn
 
-      (rx/of (dch/commit {:file-id file-id
-                          :file-revn revn
-                          :file-vern vern
-                          :save-undo? false
-                          :source :remote
-                          :redo-changes (vec changes)
-                          :undo-changes []})))))
+      (let [timestamp (ct/now)]
+        (rx/of (dch/commit {:file-id file-id
+                            :file-revn revn
+                            :file-vern vern
+                            :save-undo? false
+                            :source :remote
+                            :redo-changes (vec changes)
+                            :undo-changes []})
+               ;; Record the remote action so it appears in the History
+               ;; panel's ACTIONS tab for all connected users. Issue #10495.
+               (dwact/add-remote-action profile-id timestamp changes))))))
 
 (defn handle-file-deleted
   [{:keys [file-id] :as msg}]

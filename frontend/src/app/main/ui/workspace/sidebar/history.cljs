@@ -25,6 +25,9 @@
 (def workspace-undo
   (l/derived :workspace-undo st/state))
 
+(def workspace-actions
+  (l/derived :workspace-actions st/state))
+
 (defn get-object
   "Searches for a shape inside the objects list or inside the undo history"
   [id entries objects]
@@ -277,6 +280,20 @@
                      :by         (:by         raw-entry))))
         entries))
 
+(defn- action->entry
+  "Convert a server-side action (from :workspace-actions) into the
+   same shape as an undo entry so it can be rendered with the same
+   parsing pipeline. Issue #10495."
+  [profiles action]
+  (let [profile (get profiles (:profile-id action))]
+    {:redo-changes (:changes action)
+     :undo-changes []
+     :timestamp    (:created-at action)
+     :undo-group   (:id action)
+     :by           (or (:fullname profile)
+                       (:email profile)
+                       (dm/str (:profile-id action)))}))
+
 (mf/defc history-entry-details* [{:keys [entry]}]
   (let [{entries :items} (mf/deref workspace-undo)
         objects (mf/deref refs/workspace-page-objects)]
@@ -366,23 +383,109 @@
      (when @show-detail?
        [:> history-entry-details* {:entry entry}])]))
 
+(mf/defc action-entry*
+  "Render a single action entry from another user. Similar to
+   history-entry* but read-only (no undo click) and always shows
+   the author. Issue #10495."
+  {::mf/props :obj}
+  [{:keys [entry]}]
+  (let [hover?         (mf/use-state false)
+        show-detail?   (mf/use-state false)
+        relative-time  (ct/timeago (:timestamp entry))
+        author         (:by entry)
+
+        toggle-show-detail
+        (mf/use-fn
+         (fn [event]
+           (let [has-entry? (-> (dom/get-current-target event)
+                                (dom/get-data "has-entry")
+                                (parse-boolean))]
+             (dom/stop-propagation event)
+             (when has-entry?
+               (swap! show-detail? not)))))]
+
+    [:div {:class (stl/css-case :history-entry true
+                                :action-entry true
+                                :hover @hover?
+                                :show-detail @show-detail?)
+           :on-pointer-enter #(reset! hover? true)
+           :on-pointer-leave #(reset! hover? false)}
+
+     [:div {:class (stl/css :history-entry-summary)}
+      [:div {:class (stl/css :history-entry-summary-icon)}
+       (entry->icon entry)]
+      [:div {:class (stl/css :history-entry-summary-text)}
+       [:div {:class (stl/css :history-entry-title)}
+        (entry->message entry)]
+       (when (or relative-time author)
+         [:div {:class (stl/css :history-entry-meta)}
+          (when relative-time
+            [:span {:class (stl/css :history-entry-time)}
+             relative-time])
+          (when (and relative-time author) " ")
+          (when author
+            [:span {:class (stl/css :history-entry-author)}
+             (tr "workspace.undo.entry.by" author)])])]
+      (when (:detail entry)
+        [:div {:class (stl/css-case :history-entry-summary-button true
+                                    :button-opened @show-detail?)
+               :on-click toggle-show-detail
+               :data-has-entry (dm/str (not (nil? (:detail entry))))}
+         deprecated-icon/arrow])]
+
+     (when @show-detail?
+       [:> history-entry-details* {:entry entry}])]))
+
 (mf/defc history-toolbox*
   []
-  (let [objects (mf/deref refs/workspace-page-objects)
+  (let [profiles (mf/deref refs/profiles)
+        objects  (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
-        entries (parse-entries items objects)]
+        {:keys [data] :or {data nil}} (mf/deref workspace-actions)
+
+        ;; Build an index of undo-group -> position in items for local lookup
+        item-index
+        (mf/with-memo [items]
+          (into {}
+                (map-indexed (fn [i item] [(:undo-group item) i])
+                             items)))
+
+        ;; Parse local undo entries (one-to-one with items order)
+        local-entries (parse-entries items objects)
+
+        ;; Convert server actions to entry format and parse them,
+        ;; marking them as remote so they render as read-only
+        action-entries
+        (mf/with-memo [data profiles objects]
+          (when (seq data)
+            (let [action-items (mapv (partial action->entry profiles) data)]
+              (mapv #(assoc % :remote true)
+                    (parse-entries action-items objects)))))
+
+        ;; Build combined list sorted by timestamp descending
+        all-entries
+        (mf/with-memo [local-entries action-entries]
+          (let [combined (into (vec action-entries) local-entries)]
+            (->> combined
+                 (sort-by :timestamp (fn [a b] (compare b a)))
+                 (vec))))]
+
     [:div {:class (stl/css :history-toolbox)}
-     (if (empty? entries)
+     (if (and (empty? local-entries) (empty? action-entries))
        [:div {:class (stl/css :history-entry-empty)}
         [:> empty-state* {:icon i/history
                           :text (tr "workspace.undo.empty")}]]
        [:ul {:class (stl/css :history-entries)}
-        (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
-             [:> history-entry* {:key (str "entry-" idx-entry)
-                                 :entry entry
-                                 :idx-entry idx-entry
-                                 :is-current (= idx-entry index)
-                                 :is-disabled (> idx-entry index)}])])]))
+        (for [[idx entry] (map-indexed vector all-entries)]
+          (if (:remote entry)
+            [:> action-entry* {:key (str "action-" idx) :entry entry}]
+            (let [undo-idx (get item-index (:undo-group entry) idx)]
+              [:> history-entry*
+               {:key (str "entry-" idx)
+                :entry entry
+                :idx-entry undo-idx
+                :is-current (= undo-idx index)
+                 :is-disabled (> undo-idx index)}])))])]))
 
 
 
