@@ -13,6 +13,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.ui.formats :as fmt]
    [rumext.v2 :as mf]))
@@ -45,6 +46,7 @@
 (def distance-line-stroke 1)
 
 (def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
+(def ^:private ^:const selection-badge-bg-color-component "var(--color-accent-secondary)")
 (def ^:private ^:const selection-badge-height 16)
 (def ^:private ^:const selection-badge-padding-x 6)
 (def ^:private ^:const selection-badge-vertical-gap 8)
@@ -216,14 +218,22 @@
         badge-radius     (/ selection-badge-border-radius zoom)
         badge-char-width (/ selection-badge-char-width zoom)
 
-        single-shape  (and (= (count shapes) 1) (first shapes))
-        rotation      (when single-shape (dm/get-prop single-shape :rotation))
-        has-rotation? (and rotation (not (mth/almost-zero? rotation)))
+        single-shape     (and (= (count shapes) 1) (first shapes))
+
+        component-color? (if single-shape
+                           (ctk/instance-head? single-shape)
+                           (every? ctk/instance-head? shapes))
+        badge-bg-color   (if component-color?
+                           selection-badge-bg-color-component
+                           selection-badge-bg-color)
+
+        rotation         (when single-shape (dm/get-prop single-shape :rotation))
+        has-rotation?    (and rotation (not (mth/almost-zero? rotation)))
 
         ;; Always compute the selrect from :points via shapes->rect.
         ;; This gives the correct bounding box for all shape types,
         ;; including component instances and shapes with transforms.
-        selrect (gsh/shapes->rect shapes)
+        selrect      (gsh/shapes->rect shapes)
 
         ;; For single shapes we show the original dimensions,
         ;; for multiple shapes show the bounding box
@@ -269,7 +279,7 @@
                  :height badge-height
                  :rx badge-radius
                  :ry badge-radius
-                 :style {:fill selection-badge-bg-color}}]
+                 :style {:fill badge-bg-color}}]
          [:text {:class (stl/css :badge-text)
                  :x 0
                  :y 0
@@ -290,7 +300,7 @@
                  :height badge-height
                  :rx badge-radius
                  :ry badge-radius
-                 :style {:fill selection-badge-bg-color}}]
+                 :style {:fill badge-bg-color}}]
          [:text {:class (stl/css :badge-text)
                  :x 0
                  :y 0
