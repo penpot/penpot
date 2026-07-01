@@ -57,7 +57,7 @@
                           (tr "options.deleted-token-with-name" token-name)
 
                           has-errors
-                          (tr "workspace.tokens.ref-not-valid")
+                          (tr "workspace.tokens.ref-not-valid" token-name)
 
                           :else
                           (mf/html [:> to/resolved-value-tooltip* {:token-name token-name

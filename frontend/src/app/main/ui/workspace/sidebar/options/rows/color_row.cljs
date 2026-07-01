@@ -120,14 +120,14 @@
                                  (tr "options.deleted-token-with-name" applied-token-name)
 
                                  has-errors
-                                 (tr "workspace.tokens.ref-not-valid")
+                                 (tr "workspace.tokens.ref-not-valid" applied-token-name)
 
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
 
         name-tooltip-content (cond
                                has-errors
-                               (tr "workspace.tokens.ref-not-valid")
+                               (tr "workspace.tokens.ref-not-valid" applied-token-name)
 
                                not-active
                                (tr "ds.inputs.token-field.no-active-token-option" applied-token-name)

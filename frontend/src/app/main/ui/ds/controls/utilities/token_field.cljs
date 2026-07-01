@@ -55,7 +55,7 @@
                   (tr "ds.inputs.token-field.no-active-token-option" label)
 
                   (and token-exists? token-has-errors)
-                  (tr "workspace.tokens.ref-not-valid")
+                  (tr "workspace.tokens.ref-not-valid" label)
 
                   :else
                   label)

@@ -907,7 +907,7 @@ test.describe("Tokens: Detach token", () => {
     await expect(page.getByText("Don't remap")).toBeVisible();
     await page.getByText("Don't remap").click();
     const brokenPill = borderRadiusSection.getByRole("button", {
-      name: "{borderRadius.sm} does not exists or has been deleted",
+      name: "{borderRadius.sm} token does not exist or has been deleted",
     });
     await expect(brokenPill).toBeVisible();
 
@@ -1866,12 +1866,12 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
 
   await expect(borderRadiusSection).toBeVisible();
   const deletedBrPill = borderRadiusSection.getByRole("button", {
-    name: "{deleted} does not exists or",
+    name: "{deleted} token does not exist or",
   });
   await expect(deletedBrPill).toBeVisible();
   await deletedBrPill.hover();
   await expect(
-    page.getByRole("tooltip", { name: "{deleted} does not exists or" }),
+    page.getByRole("tooltip", { name: "{deleted} token does not exist or" }),
   ).toBeVisible();
   await expect(fillSection).toBeVisible();
   const fillBrokenTokenPill = fillSection.getByLabel("blue", {
@@ -1884,7 +1884,7 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   });
   await expect(fillBrokenTokenTooltip).toBeVisible();
   await expect(fillBrokenTokenTooltip).toHaveText(
-    "{blue} does not exists or has been deleted.",
+    "{blue} token does not exist or has been deleted.",
   );
   // ------------------------------------
   // Select text layer with deleted token
@@ -1905,7 +1905,7 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   });
   await expect(brokenTypographyTokenTooltip).toBeVisible();
   await expect(brokenTypographyTokenTooltip).toHaveText(
-    "{deleted-typo} does not exists or has been deleted.",
+    "{deleted-typo} token does not exist or has been deleted.",
   );
 
   // ---------------------------------------------------
@@ -1925,13 +1925,13 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
     .click();
   await expect(borderRadiusSection).toBeVisible();
   const deletedReferenceBrPill = borderRadiusSection.getByRole("button", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {ref-1} is not valid or is not in any active set.",
   });
   await expect(deletedReferenceBrPill).toBeVisible();
   await deletedReferenceBrPill.hover();
   await expect(
     page.getByRole("tooltip", {
-      name: "Reference is not valid or is not in any active set",
+      name: "Reference in {ref-1} is not valid or is not in any active set.",
     }),
   ).toBeVisible();
   await expect(fillSection).toBeVisible();
@@ -1941,11 +1941,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillDeletedReferenceTokenPill).toBeVisible();
   await fillDeletedReferenceTokenPill.hover();
   const fillDeletedReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {ref-grfeen} is not valid or is not in any active set.",
   });
   await expect(fillDeletedReferenceTokenTooltip).toBeVisible();
   await expect(fillDeletedReferenceTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {ref-grfeen} is not valid or is not in any active set.",
   );
 
   // ----------------------------------------------
@@ -1965,11 +1965,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(deletedRefTypographyTokenPill).toBeVisible();
   await deletedRefTypographyTokenPill.hover();
   const deletedRefTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is",
+    name: "Reference in {ref-typo} is not valid or is",
   });
   await expect(deletedRefTypographyTokenTooltip).toBeVisible();
   await expect(deletedRefTypographyTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {ref-typo} is not valid or is not in any active set.",
   );
   await expect(fillSection).toBeVisible();
   const fillTextDeletedReferenceTokenPill = fillSection.getByLabel(
@@ -1981,11 +1981,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillTextDeletedReferenceTokenPill).toBeVisible();
   await fillTextDeletedReferenceTokenPill.hover();
   const fillTextDeletedReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {ref-grfeen} is not valid or is not in any active set.",
   });
   await expect(fillTextDeletedReferenceTokenTooltip).toBeVisible();
   await expect(fillTextDeletedReferenceTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {ref-grfeen} is not valid or is not in any active set.",
   );
 
   // -----------------------------------------------------------
@@ -2005,13 +2005,13 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
     .click();
   await expect(borderRadiusSection).toBeVisible();
   const nonActiveReferenceBrPill = borderRadiusSection.getByRole("button", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {in-br} is not valid or is not in any active set.",
   });
   await expect(nonActiveReferenceBrPill).toBeVisible();
   await nonActiveReferenceBrPill.hover();
   await expect(
     page.getByRole("tooltip", {
-      name: "Reference is not valid or is not in any active set",
+      name: "Reference in {in-br} is not valid or is not in any active set.",
     }),
   ).toBeVisible();
   await expect(fillSection).toBeVisible();
@@ -2021,11 +2021,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillNonActiveReferenceTokenPill).toBeVisible();
   await fillNonActiveReferenceTokenPill.hover();
   const fillNonActiveReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {in-color} is not valid or is not in any active set.",
   });
   await expect(fillNonActiveReferenceTokenTooltip).toBeVisible();
   await expect(fillNonActiveReferenceTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {in-color} is not valid or is not in any active set.",
   );
   // ------------------------------------------------------
   // Select text layer with reference token on inactive set
@@ -2044,11 +2044,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(notActiveRefTypographyTokenPill).toBeVisible();
   await notActiveRefTypographyTokenPill.hover();
   const notActiveRefTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is",
+    name: "Reference in {in-typo} is not valid or is",
   });
   await expect(notActiveRefTypographyTokenTooltip).toBeVisible();
   await expect(notActiveRefTypographyTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {in-typo} is not valid or is not in any active set.",
   );
   await expect(fillSection).toBeVisible();
   const fillTextNotActiveReferenceTokenPill = fillSection.getByLabel(
@@ -2060,11 +2060,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillTextNotActiveReferenceTokenPill).toBeVisible();
   await fillTextNotActiveReferenceTokenPill.hover();
   const fillTextNotActiveReferenceTokenTooltip = page.getByRole("tooltip", {
-    name: "Reference is not valid or is not in any active set",
+    name: "Reference in {in-color} is not valid or is not in any active set.",
   });
   await expect(fillTextNotActiveReferenceTokenTooltip).toBeVisible();
   await expect(fillTextNotActiveReferenceTokenTooltip).toHaveText(
-    "Reference is not valid or is not in any active set",
+    "Reference in {in-color} is not valid or is not in any active set.",
   );
 
   // -------------------------------------------------
@@ -2084,13 +2084,13 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
     .click();
   await expect(borderRadiusSection).toBeVisible();
   const nonActiveBrPill = borderRadiusSection.getByRole("button", {
-    name: "{border-radius} is not in any active set",
+    name: "{border-radius} token is not in any active set",
   });
   await expect(nonActiveBrPill).toBeVisible();
   await nonActiveBrPill.hover();
   await expect(
     page.getByRole("tooltip", {
-      name: "{border-radius} is not in any active set or has an invalid value",
+      name: "{border-radius} token is not in any active set or has an invalid value",
     }),
   ).toBeVisible();
   await expect(fillSection).toBeVisible();
@@ -2100,11 +2100,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillNonActiveTokenPill).toBeVisible();
   await fillNonActiveTokenPill.hover();
   const fillNonActiveTokenTooltip = page.getByRole("tooltip", {
-    name: "{red} is not in any active set or has an invalid value.",
+    name: "{red} token is not in any active set or has an invalid value.",
   });
   await expect(fillNonActiveTokenTooltip).toBeVisible();
   await expect(fillNonActiveTokenTooltip).toHaveText(
-    "{red} is not in any active set or has an invalid value.",
+    "{red} token is not in any active set or has an invalid value.",
   );
 
   // --------------------------------------------
@@ -2124,11 +2124,11 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(notActiveTypographyTokenPill).toBeVisible();
   await notActiveTypographyTokenPill.hover();
   const notActiveTypographyTokenTooltip = page.getByRole("tooltip", {
-    name: "{typo-2} is not in any active set or has an invalid value.",
+    name: "{typo-2} token is not in any active set or has an invalid value.",
   });
   await expect(notActiveTypographyTokenTooltip).toBeVisible();
   await expect(notActiveTypographyTokenTooltip).toHaveText(
-    "{typo-2} is not in any active set or has an invalid value.",
+    "{typo-2} token is not in any active set or has an invalid value.",
   );
   await expect(fillSection).toBeVisible();
   const fillTextNotActiveTokenPill = fillSection.getByLabel(
@@ -2140,10 +2140,10 @@ test("BUG: 10471, Correct tooltip on right sidebar tokens", async ({
   await expect(fillTextNotActiveTokenPill).toBeVisible();
   await fillTextNotActiveTokenPill.hover();
   const fillTextNotActiveTokenTooltip = page.getByRole("tooltip", {
-    name: "{red} is not in any active set or has an invalid value.",
+    name: "{red} token is not in any active set or has an invalid value.",
   });
   await expect(fillTextNotActiveTokenTooltip).toBeVisible();
   await expect(fillTextNotActiveTokenTooltip).toHaveText(
-    "{red} is not in any active set or has an invalid value.",
+    "{red} token is not in any active set or has an invalid value.",
   );
 });

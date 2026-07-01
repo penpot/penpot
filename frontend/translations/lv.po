@@ -7476,10 +7476,6 @@ msgstr "Atbīdes"
 msgid "workspace.tokens.radius"
 msgstr "Rādiuss"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
-
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.reference-error"

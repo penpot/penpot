@@ -7929,10 +7929,6 @@ msgstr "पैडिंग्स"
 msgid "workspace.tokens.radius"
 msgstr "त्रिज्या"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "संदर्भ मान्य नहीं है या किसी सक्रिय सेट में नहीं है"
-
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"
 msgstr "token टाइपोग्राफी उपनाम दर्ज करें"

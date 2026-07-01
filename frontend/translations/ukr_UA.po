@@ -1282,12 +1282,6 @@ msgstr "Збігів не виявлено."
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Відкрити список токенів"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr ""
-"Цей токен не міститься в жодному з активних наборів або має недійсне "
-"значення."
-
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
 msgstr "Провайдер автентифікації не дозволений для цього профілю"
@@ -8040,10 +8034,6 @@ msgstr "Внутрішні відступи"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Радіус"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Посилання помилкове або ні на одному із активних наборів"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"
