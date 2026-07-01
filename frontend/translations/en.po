@@ -664,8 +664,8 @@ msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Any web font you upload here will be added to the font family list "
 "available at the text properties of the files of this team. Fonts with the "
-"same font family name will be grouped as a **single font family**. You can "
-"upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
+"same font family name will be grouped as a **single font family**.<br>"
+"You can upload fonts with the following formats: **TTF, OTF and WOFF** (only one "
 "will be needed)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:211
