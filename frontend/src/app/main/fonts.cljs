@@ -133,11 +133,29 @@
 
 ;; --- LOADER: GOOGLE
 
+(defn variable-font?
+  "Returns true if the font data has variable font axes."
+  [{:keys [axes]}]
+  (boolean (seq axes)))
+
+(defn get-weight-axis
+  "Returns the wght axis from font axes, if present."
+  [{:keys [axes]}]
+  (d/seek #(= "wght" (:tag %)) axes))
+
 (defn- generate-gfonts-url
-  [{:keys [family variants]}]
-  (let [query (dm/str "family=" family ":"
-                      (str/join "," (map :id variants))
-                      "&display=block")]
+  [{:keys [family variants axes] :as font}]
+  ;; Use CSS2 variable font format when axes are present (API v2 JSON)
+  (let [query
+        (if (variable-font? font)
+          (let [wght (get-weight-axis font)
+                weight-range (if wght
+                               (str (:min wght) ".." (:max wght))
+                               (str/join "," (map :weight variants)))]
+            (dm/str "family=" (str/replace family " " "+") ":wght@" weight-range "&display=block"))
+          (dm/str "family=" family ":"
+                  (str/join "," (map :id variants))
+                  "&display=block"))]
     (dm/str
      (-> cf/public-uri
          (u/join "internal/gfonts/css")
@@ -178,6 +196,15 @@
     src: url(%(uri)s) format('woff');
   }")
 
+(def variable-font-face-template
+  "@font-face {
+    font-family: '%(family)s';
+    font-style: %(style)s;
+    font-weight: %(min-weight)s %(max-weight)s;
+    font-display: block;
+    src: url(%(uri)s) format('woff2-variations'), url(%(uri)s) format('woff');
+  }")
+
 (defn- asset-id->uri
   [asset-id]
   (-> cf/public-uri
@@ -186,11 +213,18 @@
 
 (defn generate-custom-font-variant-css
   [family variant]
-  (str/fmt font-face-template
-           {:family family
-            :style (:style variant)
-            :weight (:weight variant)
-            :uri (asset-id->uri (::woff1-file-id variant))}))
+  (if (and (:min-weight variant) (:max-weight variant))
+    (str/fmt variable-font-face-template
+             {:family family
+              :style (or (:style variant) "normal")
+              :min-weight (:min-weight variant)
+              :max-weight (:max-weight variant)
+              :uri (asset-id->uri (or (::woff2-file-id variant) (::woff1-file-id variant)))})
+    (str/fmt font-face-template
+             {:family family
+              :style (:style variant)
+              :weight (:weight variant)
+              :uri (asset-id->uri (::woff1-file-id variant))})))
 
 (defn- generate-custom-font-css
   [{:keys [family variants] :as font}]
@@ -312,6 +346,18 @@
            nil
            variants)]
       (:variant result))))
+
+(defn get-variable-weight-range
+  "Returns {:min :max :default} for the wght axis if the font is variable, else nil.
+   Works for both Google fonts (axes field) and custom fonts (variant min/max-weight)."
+  [font]
+  (or
+   ;; Google fonts with axes (API v2 JSON)
+   (when-let [wght (get-weight-axis font)]
+     {:min (:min wght) :max (:max wght) :default (or (:default wght) (:min wght))})
+   ;; Custom font variants with explicit weight range
+   (when-let [v (d/seek #(and (:min-weight %) (:max-weight %)) (:variants font))]
+     {:min (:min-weight v) :max (:max-weight v) :default (:font-weight v)})))
 
 ;; Font embedding functions
 (defn get-node-fonts
