@@ -866,8 +866,8 @@
 (defn get-resolved-file-libraries
   "Get all file libraries including itself. Returns an instance of
   LoadableWeakValueMap that allows do not have strong references to
-  the loaded libraries and reduce possible memory pressure on having
-  all this libraries loaded at same time on processing file validation
+  the loaded libraries and reduce memory pressure on having
+  all this libraries at the same time on processing file validation
   or file migration.
 
   This still requires at least one library at time to be loaded while
@@ -879,3 +879,47 @@
                          (cons (:id file)))
         load-fn     #(get-file cfg % :migrate? false)]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; EXTERNAL LIBRARY RESOLUTION HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn slugify-name
+  "Slugify a library name for cross-environment matching.
+  Lowercases, replaces non-alphanumeric runs with '-', strips
+  leading/trailing '-'."
+  [name]
+  (str/slug name))
+
+(def ^:private sql:get-files-names
+  "SELECT id, name FROM file WHERE id = ANY(?)")
+
+(defn get-files-names
+  "Return [{:id uuid :name string}] for the given file ids."
+  [cfg ids]
+  (db/run! cfg
+           (fn [{:keys [::db/conn]}]
+             (let [ids-arr (db/create-array conn "uuid" ids)]
+               (db/exec! conn [sql:get-files-names ids-arr])))))
+
+(def ^:private sql:get-shared-files-for-team
+  "SELECT f.id, f.name, f.project_id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE p.team_id = ?
+      AND f.is_shared = true
+      AND f.deleted_at IS NULL
+      AND p.deleted_at IS NULL")
+
+(defn get-shared-files-for-team
+  "Return [{:id uuid :name string}] for all shared files in a team."
+  [cfg team-id]
+  (db/run! cfg
+           (fn [{:keys [::db/conn]}]
+             (db/exec! conn [sql:get-shared-files-for-team team-id]))))
+
+(defn find-shared-files-by-slug
+  "Return all shared files in `team-id` whose slugified name equals `slug`."
+  [cfg team-id slug]
+  (->> (get-shared-files-for-team cfg team-id)
+       (filter #(= slug (slugify-name (:name %))))))

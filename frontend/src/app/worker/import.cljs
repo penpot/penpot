@@ -165,8 +165,9 @@
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files]}]
-  (let [binfile-v1 (filter #(= :binfile-v1 (:type %)) files)
-        binfile-v3 (filter #(= :binfile-v3 (:type %)) files)]
+  (let [binfile-v1  (filter #(= :binfile-v1 (:type %)) files)
+        binfile-v3  (filter #(= :binfile-v3 (:type %)) files)
+        resolutions (volatile! {})]
 
     (rx/merge
      (->> (rx/from binfile-v1)
@@ -197,40 +198,50 @@
                              :error (import-cause-message cause (tr "labels.error"))
                              :file-id (:file-id data)})))))))
 
-     (->> (rx/from binfile-v3)
-          (rx/reduce (fn [result file]
-                       (update result (:uri file) (fnil conj []) file))
-                     {})
-          (rx/mapcat identity)
-          (rx/merge-map
-           (fn [[uri entries]]
-             (->> (import-blob-via-upload uri
-                                          {:name       (-> entries first :name)
-                                           :version    3
-                                           :project-id project-id})
-                  (rx/tap (fn [event]
-                            (let [payload (sse/get-payload event)
-                                  type    (sse/get-type event)]
-                              (if (= type "progress")
-                                (log/dbg :hint "import-binfile: progress"
-                                         :section (:section payload)
-                                         :name (:name payload))
-                                (log/dbg :hint "import-binfile: end")))))
-                  (rx/filter sse/end-of-stream?)
-                  (rx/mapcat (fn [_]
-                               (->> (rx/from entries)
-                                    (rx/map (fn [entry]
-                                              {:status :finish
-                                               :file-id (:file-id entry)})))))
-                  (rx/catch
-                   (fn [cause]
-                     (log/error :hint "unexpected error on import process"
-                                :project-id project-id
-                                ::log/sync? true
-                                :cause cause)
-                     (let [err (import-cause-message cause (tr "labels.error"))]
-                       (->> (rx/from entries)
-                            (rx/map (fn [entry]
-                                      {:status :error
-                                       :error err
-                                       :file-id (:file-id entry)})))))))))))))
+
+     (rx/concat
+      (->> (rx/from binfile-v3)
+           (rx/reduce (fn [result file]
+                        (update result (:uri file) (fnil conj []) file))
+                      {})
+           (rx/mapcat identity)
+           (rx/merge-map
+            (fn [[uri entries]]
+              (->> (import-blob-via-upload uri
+                                           {:name       (-> entries first :name)
+                                            :version    3
+                                            :project-id project-id})
+                   (rx/tap (fn [event]
+                             (let [payload (sse/get-payload event)
+                                   type    (sse/get-type event)]
+                               (cond
+                                 (= type "progress")
+                                 (log/dbg :hint "import-binfile: progress"
+                                          :section (:section payload)
+                                          :name (:name payload))
+
+                                 :else
+                                 (log/dbg :hint "import-binfile: end")))))
+                   (rx/filter sse/end-of-stream?)
+                   (rx/mapcat (fn [message]
+                                (let [{:keys [resolution]} (sse/get-payload message)]
+                                  (when (seq resolution)
+                                    (vswap! resolutions merge resolution))
+                                  (->> (rx/from entries)
+                                       (rx/map (fn [entry]
+                                                 {:status :finish
+                                                  :file-id (:file-id entry)}))))))
+                   (rx/catch (fn [cause]
+                               (log/error :hint "import-binfile: unexpected error on importing"
+                                          :project-id project-id
+                                          ::log/sync? true
+                                          :cause cause)
+                               (let [err (import-cause-message cause (tr "labels.error"))]
+                                 (->> (rx/from entries)
+                                      (rx/map (fn [entry]
+                                                {:status :error
+                                                 :error err
+                                                 :file-id (:file-id entry)}))))))))))
+      (->> (rx/defer #(rx/of @resolutions))
+           (rx/map (fn [resolutions]
+                     {:libraries-resolution resolutions})))))))

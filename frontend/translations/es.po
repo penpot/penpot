@@ -758,6 +758,35 @@ msgstr[1] "%s ficheros se han importado correctamente."
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 biblioteca fue vinculada automáticamente por nombre."
+msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
+
+msgid "dashboard.import.resolve-libraries"
+msgstr "Algunas bibliotecas no pudieron vincularse automáticamente. Selecciona la biblioteca correcta para cada una:"
+
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmar vínculos de biblioteca"
+
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
+
+msgid "dashboard.import.review-links"
+msgstr "Revisar vínculos"
+
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Vinculadas automáticamente"
+
+msgid "dashboard.import.summary.your-selection"
+msgstr "Tu selección"
+
+msgid "dashboard.import.summary.linked"
+msgstr "Vinculada"
+
+msgid "dashboard.import.summary.no-selection"
+msgstr "Ninguna biblioteca seleccionada"
+
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
@@ -4896,6 +4925,10 @@ msgstr "Penpot"
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
 msgid "options.deleted-token"
 msgstr "Este token no existe o ha sido borrado."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "{%s} no existe o ha sido borrado."
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
