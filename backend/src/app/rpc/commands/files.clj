@@ -14,6 +14,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.stats :as cfs]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
@@ -21,6 +22,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
@@ -678,6 +680,42 @@
   [cfg {:keys [::rpc/profile-id id]}]
   (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
+
+
+;; --- COMMAND: export-file-tokens
+
+(def ^:private schema:export-file-tokens
+  [:map {:title "export-file-tokens"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::export-file-tokens
+  "Emit the file's design tokens, serialized as a W3C DTCG `tokens.json`
+   string, as a webhook event so an external integration (for example a
+   CI job) can commit them to a Git repository. The tokens are delivered
+   in the `tokens-json` event property and attributed to the requesting
+   profile's email. The team must have an active webhook for the event to
+   reach anywhere; the file must contain design tokens."
+  {::doc/added "2.17"
+   ::webhooks/event? true
+   ::sm/params schema:export-file-tokens
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id]}]
+  (check-read-permissions! conn profile-id id)
+  (let [file       (bfc/get-file cfg id)
+        tokens-lib (get-in file [:data :tokens-lib])]
+    (when (nil? tokens-lib)
+      (ex/raise :type :validation
+                :code :no-tokens-in-file
+                :hint "the file has no design tokens to export"))
+    (let [profile     (db/get conn :profile {:id profile-id} {:columns [:email]})
+          tokens-json (json/encode (ctob/export-dtcg-json tokens-lib) :key-fn identity)]
+      (rph/with-meta
+        {:exported true}
+        {::audit/props {:file-id id
+                        :file-name (:name file)
+                        :project-id (:project-id file)
+                        :exported-by (:email profile)
+                        :tokens-json tokens-json}}))))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
