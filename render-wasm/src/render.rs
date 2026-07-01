@@ -410,6 +410,11 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Whether we've already forced a GPU flush+submit before a tile-atlas
+    /// snapshot this render. The first snapshot of a pass can otherwise capture
+    /// a tile before its text glyph uploads complete (blank first/center tile).
+    /// One explicit flush warms the submit path for the rest of the pass.
+    pub tile_atlas_flushed: bool,
 }
 
 pub struct InteractiveDragCrop {
@@ -592,6 +597,7 @@ impl RenderState {
             interactive_target_seeded: false,
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
+            tile_atlas_flushed: false,
         })
     }
 
@@ -1019,6 +1025,12 @@ impl RenderState {
             .current_tile
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
+
+        // Force pending GPU work (text glyph-atlas uploads)
+        if !self.tile_atlas_flushed {
+            crate::get_gpu_state().context.flush_and_submit();
+            self.tile_atlas_flushed = true;
+        }
 
         self.surfaces.draw_current_tile_into_tile_atlas(
             &self.tile_viewbox,
@@ -2090,6 +2102,7 @@ impl RenderState {
         self.surfaces.atlas.set_doc_bounds(doc_bounds);
 
         self.cache_cleared_this_render = false;
+        self.tile_atlas_flushed = false;
         let preserve_target = self.preserve_target_during_render;
         self.preserve_target_during_render = false;
 

@@ -888,6 +888,11 @@ impl TextContent {
             .copy_finite_size(result.2, default_width, default_height);
     }
 
+    pub fn force_next_layout_update(&mut self) {
+        self.layout_width = None;
+        self.layout.cached_extrect.set(None);
+    }
+
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
         if !self.layout.needs_update()
             && self.layout_version == self.content_version

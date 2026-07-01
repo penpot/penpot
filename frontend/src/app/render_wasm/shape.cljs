@@ -250,13 +250,15 @@
           (api/set-shape-svg-raw-content (api/get-static-markup shape))
 
           (cfh/text-shape? shape)
-          (let [pending-thumbnails (into [] (concat (api/set-shape-text-content id v)))
-                pending-full (into [] (concat (api/set-shape-text-images id v)))]
+          (let [text-content-pending (api/set-shape-text-content id v)
+                pending-thumbnails (vec text-content-pending)
+                pending-full (vec (api/set-shape-text-images id v))
+                font-pending-ids (when (some :callback text-content-pending) [id])]
             ;; FIXME: this is a hack to process the pending tasks
             ;; asynchronously we should probably modify set-wasm-attr!
             ;; to return a list of callbacks to be executed in a
             ;; second pass.
-            (api/process-pending [shape] pending-thumbnails pending-full api/noop-fn)
+            (api/process-pending [shape] pending-thumbnails pending-full font-pending-ids api/noop-fn)
             nil))
 
         :grow-type
