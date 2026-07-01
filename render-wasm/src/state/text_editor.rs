@@ -88,6 +88,7 @@ impl TextSelection {
 }
 
 /// Events that the text editor can emit for frontend synchronization
+/// FIXME: the serialization should be in the wasm module
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ToJs)]
 pub enum TextEditorEvent {
@@ -126,7 +127,8 @@ pub struct TextEditorStyles {
     pub fills: Vec<Fill>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+// FIXME: the serialization should be in the wasm module
+#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 #[repr(u8)]
 pub enum MultipleState {
     Undefined = 0,

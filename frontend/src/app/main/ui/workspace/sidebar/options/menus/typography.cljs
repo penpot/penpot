@@ -360,6 +360,9 @@
                                                {:value (:id variant)
                                                 :key (pr-str variant)
                                                 :label (:name variant)})))
+             ;; When the selection mixes variants we prepend a "--" entry: it is
+             ;; shown as the collapsed value (nothing single is selected) while
+             ;; the real variants of the resolved font are still listed below it.
              variant-options (if (or (= font-variant-id :multiple) (= font-variant-id "mixed"))
                                (conj basic-variant-options
                                      {:value ""

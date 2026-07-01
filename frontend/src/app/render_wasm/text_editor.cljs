@@ -13,7 +13,10 @@
    [app.render-wasm.api.fonts :as fonts]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]))
+
+(def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
 (def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 31 4))
 (def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
@@ -263,7 +266,8 @@
               font-family-id-state (aget heap-u32 (+ u32-offset 5))
               font-size-state (aget heap-u32 (+ u32-offset 6))
               font-weight-state (aget heap-u32 (+ u32-offset 7))
-              font-variant-id-state (aget heap-u32 (+ u32-offset 8))
+              ;; Unused: the variant id is stored as a zero uuid for every span
+              _font-variant-id-state (aget heap-u32 (+ u32-offset 8))
               line-height-state (aget heap-u32 (+ u32-offset 9))
               letter-spacing-state (aget heap-u32 (+ u32-offset 10))
               font-style-state (aget heap-u32 (+ u32-offset 11))
@@ -287,6 +291,13 @@
               font-id (fonts/uuid->font-id font-family-id-value)
               font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
+              ;; A font variant is defined by its family + weight + style, so it
+              ;; is "mixed" when any of those is mixed. When the family itself is
+              ;; mixed there is no single font to resolve variants against, so we
+              ;; also report the variant as mixed.
+              font-variant-multiple? (or (= font-family-id-state multiple-state-multiple)
+                                         (= font-weight-state multiple-state-multiple)
+                                         (= font-style-state multiple-state-multiple))
 
               fills (->> (range num-fills)
                          (map (fn [idx]
@@ -315,7 +326,7 @@
                       :font-style font-style-value
                       :font-family (text-editor-get-style-property font-family-id-state font-id)
                       :font-id (text-editor-get-style-property font-family-id-state font-id)
-                      :font-variant-id (text-editor-get-style-property font-variant-id-state font-variant-id-computed)
+                      :font-variant-id (if font-variant-multiple? :multiple font-variant-id-computed)
                       :typography-ref-file nil
                       :typography-ref-id nil
                       :selected-colors selected-colors
