@@ -505,7 +505,8 @@
        (when (and (seq selected-shapes)
                   (not transform)
                   (not text-editing?)
-                  (not edition))
+                  (not edition)
+                  (not mode-inspect?))
          [:> msr/selection-size-badge*
           {:selrect (gsh/shapes->rect selected-shapes)
            :zoom zoom}])
