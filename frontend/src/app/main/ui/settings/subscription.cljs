@@ -73,7 +73,7 @@
        [:h5 {:class (stl/css :benefits-title)} benefits-title])
      [:ul {:class (stl/css :benefits-list)}
       (for [benefit benefits]
-        [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
+        [:li {:key (dm/str benefit) :class (stl/css :benefit)} benefit])]
 
      (when has-cta-button
        [:> button* {:variant "primary"
