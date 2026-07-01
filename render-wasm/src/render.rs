@@ -1026,10 +1026,8 @@ impl RenderState {
             .as_ref()
             .ok_or(Error::CriticalError("Current tile not found".to_string()))?;
 
-        // Force pending GPU work (text glyph-atlas uploads)
-        if !self.tile_atlas_flushed {
+        if self.tile_atlas_flushed {
             crate::get_gpu_state().context.flush_and_submit();
-            self.tile_atlas_flushed = true;
         }
 
         self.surfaces.draw_current_tile_into_tile_atlas(
@@ -1415,6 +1413,8 @@ impl RenderState {
             }
 
             Type::Text(stored_text_content) => {
+                self.tile_atlas_flushed = true;
+
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -1471,16 +1471,25 @@ impl RenderState {
                         .enumerate()
                     {
                         if stroke_kinds[i] == StrokeKind::Inner {
-                            let mut mask_builders = text_content.paragraph_builder_group_opaque();
                             let mut fill_builders =
                                 text_content.paragraph_builder_group_from_text(None);
                             text::render_inner_stroke(
                                 Some(self),
                                 None,
                                 &shape,
-                                &mut mask_builders,
                                 stroke_paragraphs,
                                 &mut fill_builders,
+                                Some(strokes_surface_id),
+                                None,
+                                text_stroke_blur_outset,
+                                *layer_opacity,
+                            )?;
+                        } else if stroke_kinds[i] == StrokeKind::Outer {
+                            text::render_outer_stroke(
+                                Some(self),
+                                None,
+                                &shape,
+                                stroke_paragraphs,
                                 Some(strokes_surface_id),
                                 None,
                                 text_stroke_blur_outset,
@@ -1500,6 +1509,20 @@ impl RenderState {
                                 *layer_opacity,
                             )?;
                         }
+                    }
+
+                    if shape.has_visible_strokes() && text_content.has_non_ascii() {
+                        let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                        let mut deco_builders =
+                            text_content.paragraph_builder_group_from_text(None);
+                        text::render_emoji_overlay(
+                            self,
+                            &shape,
+                            &mut emoji_builders,
+                            &mut deco_builders,
+                            strokes_surface_id,
+                            None,
+                        );
                     }
                 } else {
                     let mut drop_shadows = shape.drop_shadow_paints();
@@ -1607,17 +1630,25 @@ impl RenderState {
                             .enumerate()
                         {
                             if stroke_kinds[i] == StrokeKind::Inner {
-                                let mut mask_builders =
-                                    text_content.paragraph_builder_group_opaque();
                                 let mut fill_builders =
                                     text_content.paragraph_builder_group_from_text(None);
                                 text::render_inner_stroke(
                                     Some(self),
                                     None,
                                     &shape,
-                                    &mut mask_builders,
                                     stroke_paragraphs,
                                     &mut fill_builders,
+                                    Some(strokes_surface_id),
+                                    blur_filter.as_ref(),
+                                    text_stroke_blur_outset,
+                                    *layer_opacity,
+                                )?;
+                            } else if stroke_kinds[i] == StrokeKind::Outer {
+                                text::render_outer_stroke(
+                                    Some(self),
+                                    None,
+                                    &shape,
+                                    stroke_paragraphs,
                                     Some(strokes_surface_id),
                                     blur_filter.as_ref(),
                                     text_stroke_blur_outset,
@@ -1637,6 +1668,20 @@ impl RenderState {
                                     *layer_opacity,
                                 )?;
                             }
+                        }
+
+                        if shape.has_visible_strokes() && text_content.has_non_ascii() {
+                            let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                            let mut deco_builders =
+                                text_content.paragraph_builder_group_from_text(None);
+                            text::render_emoji_overlay(
+                                self,
+                                &shape,
+                                &mut emoji_builders,
+                                &mut deco_builders,
+                                strokes_surface_id,
+                                blur_filter.as_ref(),
+                            );
                         }
 
                         // 5. Stroke inner shadows
@@ -2092,7 +2137,6 @@ impl RenderState {
         self.surfaces.atlas.set_doc_bounds(doc_bounds);
 
         self.cache_cleared_this_render = false;
-        self.tile_atlas_flushed = false;
         let preserve_target = self.preserve_target_during_render;
         self.preserve_target_during_render = false;
 
@@ -3575,6 +3619,7 @@ impl RenderState {
                 // a resumed-from-yield case rather than a genuinely
                 // empty tile.
                 self.current_tile_had_shapes = false;
+                self.tile_atlas_flushed = false;
 
                 let viewer_masked_pass = self.viewer_masked_pass();
 
