@@ -400,6 +400,13 @@ impl TextContent {
         &self.paragraphs
     }
 
+    pub fn has_non_ascii(&self) -> bool {
+        self.paragraphs
+            .iter()
+            .flat_map(|p| p.children())
+            .any(|span| !span.text.is_ascii())
+    }
+
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
         self.content_version = self.content_version.wrapping_add(1);
         &mut self.paragraphs
