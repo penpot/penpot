@@ -1294,10 +1294,6 @@ msgstr "Aucune correspondance."
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste des tokens"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} n'est pas disponible dans la collection ou le thème actif."
-
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
 msgstr "Le fournisseur d'authentification n'est pas autorisé pour ce profil"
@@ -8118,10 +8114,6 @@ msgstr "Marges intérieures"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Rayons"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "La référence n'est pas valide ou n'est pas dans une collection active"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

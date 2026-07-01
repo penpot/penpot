@@ -1225,10 +1225,6 @@ msgstr "일치하는 항목이 없습니다."
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "token 목록 열기"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "이 token은 활성 세트에 없거나 유효하지 않은 값을 가지고 있습니다."
-
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
 msgstr "이 프로필에 허용되지 않는 인증 제공자입니다"
@@ -7712,10 +7708,6 @@ msgstr "패딩"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "반지름"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "참조가 유효하지 않거나 활성 세트에 없습니다"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

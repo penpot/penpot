@@ -7994,10 +7994,6 @@ msgstr "ריפודים"
 msgid "workspace.tokens.radius"
 msgstr "רדיוס"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "ההפניה לא תקפה או שאינה באף סדרה פעילה"
-
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"
 msgstr "נא למלא כינוי לטיפוגרפיית אסימון"

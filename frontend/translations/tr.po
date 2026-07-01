@@ -1479,10 +1479,6 @@ msgstr "Eşleşme bulunamadı."
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Token listesini aç"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} herhangi bir etkin kümede bulunmuyor veya geçersiz bir değere sahip."
-
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
 msgstr "Kimlik doğrulama sağlayıcısına bu profil için izin verilmiyor"
@@ -4482,12 +4478,6 @@ msgstr "Aboneliği iptal et"
 #: src/app/main/ui/settings/subscription.cljs:103
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Etkinleştirme koduyla yenile"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr ""
-"Bu token herhangi bir etkin kümede yer almıyor veya geçersiz bir değere "
-"sahip."
 
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
@@ -9379,10 +9369,6 @@ msgstr "Dolgular"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Yarıçap"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referans geçerli değil veya herhangi bir etkin kümede bulunmuyor"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

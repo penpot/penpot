@@ -7022,10 +7022,6 @@ msgstr "内边距"
 msgid "workspace.tokens.radius"
 msgstr "圆角半径"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "引用无效或不在任何活动集中"
-
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.reference-error"

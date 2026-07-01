@@ -4348,10 +4348,6 @@ msgstr "Cancelar subscripción"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renovar con código de activación"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
-
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "Esta página no existe"
@@ -4899,7 +4895,7 @@ msgstr "Este token no existe o ha sido borrado."
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs
 msgid "options.deleted-token-with-name"
-msgstr "{%s} no existe o ha sido borrado."
+msgstr "El token {%s} no existe o ha sido borrado."
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
@@ -9169,7 +9165,7 @@ msgstr "Valor original: %s"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
-msgstr "La referencia no es válida o no se encuentra en ningún set activo."
+msgstr "La referencia en {%s} no es válida o no se encuentra en ningún set activo."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
