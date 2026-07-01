@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-27 07:01+0000\n"
+"PO-Revision-Date: 2026-07-02 01:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
@@ -3025,7 +3025,7 @@ msgstr "Versie %s opmerkingen"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:298
 msgid "labels.view-only"
-msgstr "ALLEEN BEKIJKEN"
+msgstr "Alleen weergeven"
 
 #: src/app/main/ui/dashboard/team.cljs:146, src/app/main/ui/dashboard/team.cljs:396, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:683, src/app/main/ui/onboarding/team_choice.cljs:69
 msgid "labels.viewer"
@@ -4039,7 +4039,7 @@ msgstr "Hoe groot is je bedrijf?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "Vertel ons over je baan"
+msgstr "Wat is je bedrijfsgrootte?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -7771,7 +7771,7 @@ msgstr "Maskers"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "Lagen doorzoeken"
+msgstr "Zoeken…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:639, src/app/main/ui/workspace/sidebar/layers.cljs:733
 msgid "workspace.sidebar.layers.shapes"
