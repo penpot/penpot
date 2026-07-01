@@ -21,6 +21,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.plugins :as ctpg]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
@@ -678,6 +679,31 @@
   [cfg {:keys [::rpc/profile-id id]}]
   (check-read-permissions! cfg profile-id id)
   (get-file-stats cfg id))
+
+
+;; --- COMMAND QUERY: get-file-plugin-data
+
+(def ^:private schema:get-file-plugin-data
+  [:map {:title "get-file-plugin-data"}
+   [:id ::sm/uuid]
+   [:namespace {:optional true} :keyword]])
+
+(sv/defmethod ::get-file-plugin-data
+  "Return the file-level plugin data: the arbitrary key/value metadata
+   stored on the file root through the Plugin API. Optionally narrowed
+   to a single `namespace`. Lets external tooling read metadata such as
+   issue or commit references without downloading the whole file."
+  {::doc/added "2.17"
+   ::sm/params schema:get-file-plugin-data
+   ::sm/result ctpg/schema:plugin-data
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id namespace]}]
+  (check-read-permissions! conn profile-id id)
+  (let [plugin-data (-> (bfc/get-file cfg id)
+                        (get-in [:data :plugin-data]))]
+    (if namespace
+      (select-keys plugin-data [namespace])
+      (or plugin-data {}))))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
