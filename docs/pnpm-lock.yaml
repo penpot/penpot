@@ -18,7 +18,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       '@11ty/eleventy-plugin-syntaxhighlight':
-        specifier: ^5.0.0
+        specifier: ^5.0.2
         version: 5.0.2
       '@tigersway/eleventy-plugin-ancestry':
         specifier: ^1.0.3
@@ -30,22 +30,22 @@ importers:
         specifier: ^0.9.5
         version: 0.9.5
       eleventy-plugin-metagen:
-        specifier: ^1.8.3
+        specifier: ^1.8.4
         version: 1.8.4
       eleventy-plugin-nesting-toc:
         specifier: ^1.3.0
         version: 1.3.0
       eleventy-plugin-youtube-embed:
-        specifier: ^1.10.2
+        specifier: ^1.13.2
         version: 1.13.2
       luxon:
-        specifier: ^3.4.4
+        specifier: ^3.7.2
         version: 3.7.2
       markdown-it:
-        specifier: ^14.1.0
+        specifier: ^14.2.0
         version: 14.2.0
       markdown-it-anchor:
-        specifier: ^9.0.1
+        specifier: ^9.2.0
         version: 9.2.0(@types/markdown-it@14.1.2)(markdown-it@14.2.0)
       markdown-it-plantuml:
         specifier: ^1.4.1
@@ -436,8 +436,8 @@ packages:
     resolution: {integrity: sha512-gXkz5+KN7HrG0Q5UGqSMO2qB9AsbEeyLP54kF1YrMsIxmu+g4BdB7rflReZTSTZGpfj8wywu6pfPBCylPIzGQA==}
     engines: {node: '>=6.0'}
 
-  js-yaml@3.14.2:
-    resolution: {integrity: sha512-PMSmkqxr106Xa156c2M265Z+FTrPl+oxd/rgOQy2tijQeK5TxQ43psO1ZCwhVOSdnn+RzkzlRz/eY4BgJBYVpg==}
+  js-yaml@3.15.0:
+    resolution: {integrity: sha512-ttBQIIQPDeLjpPOohtUdXuXUVoA2uIB6fEH9HyJ7234s5mBJ5wTx20njxplLZQgLaOfpmPQA7X2t5AX6tIPbog==}
     hasBin: true
 
   js-yaml@4.2.0:
@@ -692,8 +692,8 @@ packages:
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
-  undici@7.27.2:
-    resolution: {integrity: sha512-uZsKNuzQxDMUY6M3pIMvy5tvlGmtq8XJ2oLAkfRKGNu+1VQAIvLy2xIVG5ATZl5wDXl/tddByAWCizRbOme+TA==}
+  undici@7.28.0:
+    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
     engines: {node: '>=20.18.1'}
 
   unpipe@1.0.0:
@@ -943,7 +943,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.27.2
+      undici: 7.28.0
       whatwg-mimetype: 4.0.0
 
   chokidar@3.6.0:
@@ -1126,7 +1126,7 @@ snapshots:
 
   gray-matter@4.0.3:
     dependencies:
-      js-yaml: 3.14.2
+      js-yaml: 3.15.0
       kind-of: 6.0.3
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
@@ -1188,7 +1188,7 @@ snapshots:
 
   iso-639-1@3.1.5: {}
 
-  js-yaml@3.14.2:
+  js-yaml@3.15.0:
     dependencies:
       argparse: 1.0.10
       esprima: 4.0.1
@@ -1410,7 +1410,7 @@ snapshots:
 
   uc.micro@2.1.0: {}
 
-  undici@7.27.2: {}
+  undici@7.28.0: {}
 
   unpipe@1.0.0: {}
 
