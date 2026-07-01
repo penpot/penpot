@@ -13,7 +13,10 @@
    [app.render-wasm.api.fonts :as fonts]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]))
+
+(def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
 (def ^:const TEXT_EDITOR_STYLES_METADATA_SIZE (* 31 4))
 (def ^:const TEXT_EDITOR_STYLES_FILL_SOLID 0)
@@ -260,33 +263,41 @@
               text-direction-state (aget heap-u32 (+ u32-offset 2))
               text-decoration-state (aget heap-u32 (+ u32-offset 3))
               text-transform-state (aget heap-u32 (+ u32-offset 4))
-              font-family-state (aget heap-u32 (+ u32-offset 5))
+              font-family-id-state (aget heap-u32 (+ u32-offset 5))
               font-size-state (aget heap-u32 (+ u32-offset 6))
               font-weight-state (aget heap-u32 (+ u32-offset 7))
-              font-variant-id-state (aget heap-u32 (+ u32-offset 8))
+              ;; Unused: the variant id is stored as a zero uuid for every span
+              _font-variant-id-state (aget heap-u32 (+ u32-offset 8))
               line-height-state (aget heap-u32 (+ u32-offset 9))
               letter-spacing-state (aget heap-u32 (+ u32-offset 10))
-              num-fills (aget heap-u32 (+ u32-offset 11))
-              multiple-fills (aget heap-u32 (+ u32-offset 12))
+              font-style-state (aget heap-u32 (+ u32-offset 11))
+              num-fills (aget heap-u32 (+ u32-offset 12))
+              multiple-fills (aget heap-u32 (+ u32-offset 13))
 
-              text-align-value (aget heap-u32 (+ u32-offset 13))
-              text-direction-value (aget heap-u32 (+ u32-offset 14))
-              text-decoration-value (aget heap-u32 (+ u32-offset 15))
-              text-transform-value (aget heap-u32 (+ u32-offset 16))
-              font-family-id-a (aget heap-u32 (+ u32-offset 17))
-              font-family-id-b (aget heap-u32 (+ u32-offset 18))
-              font-family-id-c (aget heap-u32 (+ u32-offset 19))
-              font-family-id-d (aget heap-u32 (+ u32-offset 20))
+              text-align-value (aget heap-u32 (+ u32-offset 14))
+              text-direction-value (aget heap-u32 (+ u32-offset 15))
+              text-decoration-value (aget heap-u32 (+ u32-offset 16))
+              text-transform-value (aget heap-u32 (+ u32-offset 17))
+              font-family-id-a (aget heap-u32 (+ u32-offset 18))
+              font-family-id-b (aget heap-u32 (+ u32-offset 19))
+              font-family-id-c (aget heap-u32 (+ u32-offset 20))
+              font-family-id-d (aget heap-u32 (+ u32-offset 21))
               font-family-id-value (uuid/from-unsigned-parts font-family-id-a font-family-id-b font-family-id-c font-family-id-d)
-              font-family-style-value (aget heap-u32 (+ u32-offset 21))
-              _font-family-weight-value (aget heap-u32 (+ u32-offset 22))
+              font-style-raw-value (aget heap-u32 (+ u32-offset 22))
               font-size-value (aget heap-f32 (+ u32-offset 23))
               font-weight-value (aget heap-i32 (+ u32-offset 24))
               line-height-value (aget heap-f32 (+ u32-offset 29))
               letter-spacing-value (aget heap-f32 (+ u32-offset 30))
               font-id (fonts/uuid->font-id font-family-id-value)
-              font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-family-state font-family-style-value))
+              font-style-value (text-editor-translate-font-style (text-editor-get-style-property font-style-state font-style-raw-value))
               font-variant-id-computed (text-editor-compute-font-variant-id font-id font-weight-value font-style-value)
+              ;; A font variant is defined by its family + weight + style, so it
+              ;; is "mixed" when any of those is mixed. When the family itself is
+              ;; mixed there is no single font to resolve variants against, so we
+              ;; also report the variant as mixed.
+              font-variant-multiple? (or (= font-family-id-state multiple-state-multiple)
+                                         (= font-weight-state multiple-state-multiple)
+                                         (= font-style-state multiple-state-multiple))
 
               fills (->> (range num-fills)
                          (map (fn [idx]
@@ -313,9 +324,9 @@
                       :font-size (text-editor-get-style-property font-size-state font-size-value)
                       :font-weight (text-editor-get-style-property font-weight-state font-weight-value)
                       :font-style font-style-value
-                      :font-family (text-editor-get-style-property font-family-state font-id)
-                      :font-id (text-editor-get-style-property font-family-state font-id)
-                      :font-variant-id (text-editor-get-style-property font-variant-id-state font-variant-id-computed)
+                      :font-family (text-editor-get-style-property font-family-id-state font-id)
+                      :font-id (text-editor-get-style-property font-family-id-state font-id)
+                      :font-variant-id (if font-variant-multiple? :multiple font-variant-id-computed)
                       :typography-ref-file nil
                       :typography-ref-id nil
                       :selected-colors selected-colors
