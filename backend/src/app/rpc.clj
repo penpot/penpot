@@ -333,6 +333,7 @@
           'app.rpc.commands.comments
           'app.rpc.commands.demo
           'app.rpc.commands.files
+          'app.rpc.commands.files-actions
           'app.rpc.commands.files-create
           'app.rpc.commands.files-share
           'app.rpc.commands.files-update

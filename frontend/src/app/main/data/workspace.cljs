@@ -37,6 +37,7 @@
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.project :as dpj]
+   [app.main.data.workspace.actions :as dwact]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.clipboard :as dwcp]
    [app.main.data.workspace.colors :as dwcl]
@@ -256,7 +257,8 @@
     (watch [_ _ _]
       (rx/merge
        (rx/of (dp/check-open-plugin)
-              (fdf/fix-deleted-fonts-for-local-library file-id))
+              (fdf/fix-deleted-fonts-for-local-library file-id)
+              (dwact/init-actions-state))
        (if (contains? cf/flags :mcp)
          ;; We wait the plugin runtime to be ready before launch the
          ;; mcp initialization
