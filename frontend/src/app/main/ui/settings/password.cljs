@@ -104,7 +104,8 @@
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.password")))
 
-  [:section {:class (stl/css :dashboard-settings)}
+  [:section {:class (stl/css :dashboard-settings)
+             :aria-labelledby "password-section-title"}
    [:div {:class (stl/css :form-container)}
-    [:h2 (tr "dashboard.password-change")]
+    [:h2 {:id "password-section-title"} (tr "dashboard.password-change")]
     [:> password-form*]]])

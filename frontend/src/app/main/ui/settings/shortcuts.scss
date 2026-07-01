@@ -1,0 +1,302 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+
+.shortcuts-page {
+  display: flex;
+  justify-content: center;
+  padding-block-end: px2rem(32);
+}
+
+.shortcuts-content {
+  display: flex;
+  flex-direction: column;
+  max-inline-size: px2rem(590);
+  inline-size: 100%;
+}
+
+.page-title {
+  color: var(--color-foreground-primary);
+  inline-size: 100%;
+  margin: px2rem(80) 0 var(--sp-l);
+}
+
+.shortcuts-section {
+  margin-block-end: var(--sp-lg);
+}
+
+.shortcuts-search-section {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-xs);
+  padding-block-start: var(--sp-s);
+}
+
+.restore-all-button {
+  min-inline-size: px2rem(130);
+  max-inline-size: px2rem(200);
+  inline-size: fit-content;
+}
+
+// RESTORE ALL MODAL
+
+.modal-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  z-index: var(--z-index-set);
+  background-color: var(--overlay-color);
+}
+
+.modal-dialog {
+  position: relative;
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+  border: $b-2 solid var(--color-background-quaternary);
+  display: grid;
+  grid-template-rows: 0 auto 1fr;
+  gap: var(--sp-xxxl);
+  min-inline-size: $sz-364;
+  min-block-size: $sz-192;
+  max-block-size: $sz-520;
+  inline-size: $sz-500;
+  max-inline-size: $sz-712;
+}
+
+.modal-title {
+  @include t.use-typography("headline-medium");
+
+  color: var(--color-foreground-primary);
+  block-size: px2rem(26);
+}
+
+.close-btn {
+  position: absolute;
+  inset-block-start: px2rem(8);
+  inset-inline-end: px2rem(6);
+  block-size: $sz-32;
+  inline-size: $sz-28;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  block-size: fit-content;
+}
+
+.modal-content-text {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-primary);
+}
+
+.modal-footer {
+  justify-self: end;
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-s);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-s);
+}
+
+.shortcuts-table {
+  inline-size: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.shortcuts-list-item,
+.shortcuts-list-header {
+  @include t.use-typography("body-medium");
+
+  color: var(--color-foreground-secondary);
+  display: grid;
+  grid-template-columns: 40% 30% 30%;
+}
+
+.shortcuts-list-header {
+  border-block-end: $b-1 solid var(--color-foreground-secondary);
+  block-size: $sz-32;
+  text-align: start;
+  padding-block-end: var(--sp-s);
+}
+
+.shortcuts-list-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.shortcuts-list-item {
+  color: var(--color-foreground-primary);
+}
+
+.shortcuts-list-item:first-child {
+  padding-block-start: var(--sp-s);
+}
+
+.shortcut-header-name,
+.shortcut-header-command {
+  text-align: start;
+}
+
+.shortcut-command {
+  display: flex;
+  gap: var(--sp-s);
+  align-items: center;
+  justify-content: start;
+  text-align: start;
+  flex-wrap: wrap;
+}
+
+.default-command {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-tertiary);
+  padding: px2rem(6) var(--sp-xs);
+}
+
+.shortcuts-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  padding-block-start: var(--sp-m);
+}
+
+.shortcuts-info {
+  display: flex;
+  gap: var(--sp-s);
+  align-items: center;
+}
+
+.shortcuts-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-s);
+  padding-block-start: var(--sp-m);
+}
+
+.shortcuts-info {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.shortcuts-customized-dot,
+.shortcuts-conflict-dot {
+  inline-size: px2rem(4);
+  block-size: px2rem(4);
+  border-radius: 50%;
+  background-color: var(--color-accent-info);
+}
+
+.shortcuts-conflict-dot {
+  background-color: var(--color-accent-error);
+}
+
+.shortcuts-info {
+  display: flex;
+  gap: var(--sp-m);
+}
+
+.shortcuts-info-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xxs);
+}
+
+.dot-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: px2rem(16);
+  inline-size: px2rem(16);
+}
+
+.shortcuts-text {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  margin: 0;
+}
+
+.shortcuts-not-assigned-icon {
+  margin-inline-end: var(--sp-xs);
+}
+
+.export-wrapper {
+  position:relative;
+}
+
+.import-export-menu {
+  box-shadow: 0 0 12px 0 var(--menu-shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  padding: 4px;
+  border-radius: $br-8;
+  z-index: 2;
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  top: -6px;
+  right: 0;
+  translate: 0 -100%;
+  width: 192px;
+  margin: 0;
+}
+
+.import-export-menu-item {
+  @include t.use-typography("body-medium");
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color-hover);
+  }
+}
+
+.import-export-menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcuts-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  block-size: px2rem(250);
+}

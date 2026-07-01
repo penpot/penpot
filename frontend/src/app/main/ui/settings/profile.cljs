@@ -143,8 +143,9 @@
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
 
-  [:div {:class (stl/css :dashboard-settings)}
+  [:section {:class (stl/css :dashboard-settings)
+             :aria-labelledby "profile-section-title"}
    [:div {:class (stl/css :form-container)}
-    [:h2 (tr "labels.profile")]
+    [:h2 {:id "profile-section-title" }(tr "labels.profile")]
     [:> profile-photo-form*]
     [:> profile-form*]]])

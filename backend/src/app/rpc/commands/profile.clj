@@ -59,7 +59,9 @@
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
    [:notifications {:optional true} schema:props-notifications]
-   [:workspace-visited {:optional true} ::sm/boolean]])
+   [:workspace-visited {:optional true} ::sm/boolean]
+   [:custom-shortcuts {:optional true}
+    [:map-of {:gen/max 10} :keyword :string]]])
 
 (def schema:profile
   [:map {:title "Profile"}

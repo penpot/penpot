@@ -14,7 +14,7 @@
 (def ^:private schema:empty-state
   [:map
    [:class {:optional true} :string]
-   [:icon [:and :string [:fn #(contains? icon-list %)]]]
+   [:icon {:optional true} [:and :string [:fn #(contains? icon-list %)]]]
    [:text :string]])
 
 (mf/defc empty-state*
@@ -22,8 +22,9 @@
   [{:keys [class icon text] :rest props}]
   (let [props (mf/spread-props props {:class [class (stl/css :group)]})]
     [:> :div props
-     [:div {:class (stl/css :icon-wrapper)}
-      [:> icon* {:icon-id icon
-                 :size "l"
-                 :class (stl/css :icon)}]]
+     (when icon
+       [:div {:class (stl/css :icon-wrapper)}
+        [:> icon* {:icon-id icon
+                   :size "l"
+                   :class (stl/css :icon)}]])
      [:div {:class (stl/css :text)} text]]))

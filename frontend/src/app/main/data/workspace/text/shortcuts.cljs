@@ -237,31 +237,37 @@
   {:underline     {:tooltip (ds/meta "U")
                    :command (ds/c-mod "u")
                    :subsections [:text-editor]
+                   :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-underline"})}
 
    :line-through  {:tooltip (ds/alt (ds/meta-shift "5"))
                    :command "alt+shift+5"
                    :subsections [:text-editor]
+                   :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-line-through"})}
 
    :font-size-inc {:tooltip (ds/meta-shift ">")
                    :command (ds/c-mod "shift+.")
                    :subsections [:text-editor]
+                   :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:font-size-inc true})}
 
    :font-size-dec {:tooltip (ds/meta-shift "<")
                    :command (ds/c-mod "shift+,")
                    :subsections [:text-editor]
+                   :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:font-size-dec true})}
 
    :bold     {:tooltip (ds/meta "b")
               :command (ds/c-mod "b")
               :subsections [:text-editor]
+              :section [:workspace]
               :fn #(update-attrs-when-no-readonly {:font-variant-id "toggle-bold"})}
 
    :italic     {:tooltip (ds/meta "i")
                 :command (ds/c-mod "i")
                 :subsections [:text-editor]
+                :section [:workspace]
                 :fn #(update-attrs-when-no-readonly {:font-variant-id "toggle-italic"})}})
 
 

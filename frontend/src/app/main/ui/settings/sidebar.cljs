@@ -48,6 +48,9 @@
 (def ^:private go-settings-notifications
   #(st/emit! (rt/nav :settings-notifications)))
 
+(def ^:private go-settings-shortcuts
+  #(st/emit! (rt/nav :settings-shortcuts)))
+
 (defn- show-release-notes
   [event]
   (let [version (:main cf/version)]
@@ -66,6 +69,7 @@
         subscription?  (= section :settings-subscription)
         integrations?  (= section :settings-integrations)
         notifications? (= section :settings-notifications)
+        shortcuts?     (= section :settings-shortcuts)
         team-id        (or (dtm/get-last-team-id)
                            (:default-team-id profile))
 
@@ -83,7 +87,8 @@
 
      [:hr {:class (stl/css :sidebar-separator)}]
 
-     [:div {:class (stl/css :sidebar-content-section)}
+     [:nav {:class (stl/css :sidebar-content-section)
+            :aria-label (tr "labels.settings")}
       [:ul {:class (stl/css :sidebar-nav-settings)}
        [:li {:class (stl/css-case :current profile?
                                   :settings-item true)
@@ -99,6 +104,11 @@
                                   :settings-item true)
              :on-click go-settings-notifications}
         [:span {:class (stl/css :element-title)} (tr "labels.notifications")]]
+       
+       [:li {:class (stl/css-case :current shortcuts?
+                                  :settings-item true)
+             :on-click go-settings-shortcuts}
+        [:span {:class (stl/css :element-title)} (tr "labels.shortcuts")]]
 
        [:li {:class (stl/css-case :current options?
                                   :settings-item true)
@@ -137,7 +147,7 @@
 (mf/defc sidebar*
   {::mf/wrap [mf/memo]}
   [{:keys [profile section]}]
-  [:div {:class (stl/css :dashboard-sidebar :settings)}
+  [:aside {:class (stl/css :dashboard-sidebar :settings)}
    [:> sidebar-content* {:profile profile
                          :section section}]
    [:> profile-section* {:profile profile}]])

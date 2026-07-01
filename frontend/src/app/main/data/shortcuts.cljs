@@ -121,6 +121,60 @@
       [sc]
       (str/split sc #"\+| "))))
 
+(defn command->tooltip
+  "Converts a Mousetrap command string (e.g. \"command+shift+z\") to
+  a human-readable display string in the same format used by :tooltip
+  fields (e.g. \"⌘⇧Z\" on macOS or \"Ctrl+Shift+Z\" on Windows).
+  Returns nil for empty or unbound commands."
+  [command]
+  (when (and command (not= command ""))
+    (let [is-macos?    (cf/check-platform? :macos)
+          parts        (str/split command #"\+")
+          display-part (fn [p]
+                         (case p
+                           "ctrl"      (if is-macos? mac-control "Ctrl+")
+                           "command"   (if is-macos? mac-command "Ctrl+")
+                           "alt"       (if is-macos? mac-option "Alt+")
+                           "shift"     (if is-macos? mac-shift "Shift+")
+                           "up"        up-arrow
+                           "down"      down-arrow
+                           "left"      left-arrow
+                           "right"     right-arrow
+                           "del"       (if is-macos? mac-delete "Del")
+                           "backspace" (if is-macos? mac-delete "Backspace")
+                           "escape"    (if is-macos? mac-esc "Escape")
+                           "enter"     (if is-macos? mac-enter "Enter")
+                           "space"     "Space"
+                           "tab"       tab
+                           (str/upper p)))]
+      (str/join "" (map display-part parts)))))
+
+(defn apply-custom-overrides
+  [shortcuts custom-overrides]
+  (if (empty? custom-overrides)
+    shortcuts
+    (reduce-kv
+     (fn [acc sc-key new-command]
+       (if (and (contains? acc sc-key)
+                (not (:disabled (get acc sc-key))))
+         (-> acc
+             (assoc-in [sc-key :command] new-command)
+             (update sc-key dissoc :show-command))
+         acc))
+     shortcuts
+     custom-overrides)))
+
+(defn build-command-index
+  [shortcuts]
+  (reduce-kv
+   (fn [acc sc-key sc-def]
+     (let [commands (:command sc-def)]
+       (if (vector? commands)
+         (reduce #(assoc %1 %2 sc-key) acc commands)
+         (assoc acc commands sc-key))))
+   {}
+   shortcuts))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -180,8 +234,10 @@
         (update state :shortcuts conj* [key shortcuts]))
 
       ptk/EffectEvent
-      (effect [_ _ _]
-        (reset! shortcuts)))))
+      (effect [_ state _]
+        (let [custom-overrides (get-in state [:profile :props :custom-shortcuts])
+              effective        (apply-custom-overrides shortcuts custom-overrides)]
+          (reset! effective))))))
 
 (defn pop-shortcuts
   [key]
@@ -193,5 +249,18 @@
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [[_key shortcuts] (last (:shortcuts state))]
-        (reset! shortcuts)))))
+      (let [[_key shortcuts] (last (:shortcuts state))
+            custom-overrides (get-in state [:profile :props :custom-shortcuts])
+            effective        (apply-custom-overrides shortcuts custom-overrides)]
+        (reset! effective)))))
+
+(defn rebind-shortcuts
+  []
+  (ptk/reify ::rebind-shortcuts
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [[_key shortcuts] (last (:shortcuts state))
+            custom-overrides (get-in state [:profile :props :custom-shortcuts])
+            effective        (apply-custom-overrides shortcuts custom-overrides)]
+        (when shortcuts
+          (reset! effective))))))

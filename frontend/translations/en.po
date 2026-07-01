@@ -3421,6 +3421,10 @@ msgstr "Sets"
 msgid "labels.settings"
 msgstr "Settings"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shortcuts"
+msgstr "Shortcuts"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:34, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:233
 msgid "labels.shadow"
 msgstr "Shadow"
@@ -5601,11 +5605,84 @@ msgstr "Stop measurement"
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
 
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Shortcuts page"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:491, src/app/main/ui/workspace/sidebar/shortcuts.cljs:498
 msgid "shortcuts.title"
 msgstr "Keyboard shortcuts"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.edit"
+msgstr "Edit shortcut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Reset to default"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Head to All to start customizing your shortcuts."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-not-assigned"
+msgstr "Your shortcuts are all set."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "There are no shortcuts that match your search"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalized"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.not-assigned"
+msgstr "Not assigned"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.conflict"
+msgstr "Conflict"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Import/Export"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Press the key combination"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Combination assigned to \"%s\". Saving will remove it there."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr "Combination assigned to \"%s\" applied successfully"
+
+msgid "shortcuts.reset-all"
+msgstr "Reset all shortcuts"
+
+msgid "shortcuts.edit-modal.title"
+msgstr "Edit shortcut"
+
+msgid "shortcuts.edit-modal.current"
+msgstr "Current shortcut"
+
+
+msgid "shortcuts.edit-modal.recording"
+msgstr "Recording..."
+
+
+
+msgid "shortcuts.edit-modal.save"
+msgstr "Save"
+
+msgid "shortcuts.edit-modal.cancel"
+msgstr "Cancel"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.toggle-alignment"
 msgstr "Toggle dynamic alignment"
 

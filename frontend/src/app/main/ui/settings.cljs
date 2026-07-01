@@ -21,6 +21,7 @@
    [app.main.ui.settings.options :refer [options-page*]]
    [app.main.ui.settings.password :refer [password-page*]]
    [app.main.ui.settings.profile :refer [profile-page*]]
+   [app.main.ui.settings.shortcuts :refer [shortcuts-page*]]
    [app.main.ui.settings.sidebar :refer [sidebar*]]
    [app.main.ui.settings.subscription :refer [subscription-page*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -54,7 +55,7 @@
 
       [:div {:class (stl/css :dashboard-content)}
        [:> header*]
-       [:section {:class (stl/css :dashboard-container)}
+       [:div {:class (stl/css :dashboard-container)}
         (case section
           :settings-profile
           [:> profile-page*]
@@ -77,7 +78,10 @@
           [:> integrations-page*]
 
           :settings-notifications
-          [:> notifications-page* {:profile profile}])]]]]))
+          [:> notifications-page* {:profile profile}]
+
+          :settings-shortcuts
+          [:> shortcuts-page* {:profile profile}])]]]]))
 
 (mf/defc settings-page*
   {::mf/lazy-load true}

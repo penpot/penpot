@@ -1,0 +1,208 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/typography.scss" as t;
+
+.section {
+  margin: 0;
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--sp-m);
+  overflow-y: auto;
+  color: var(--color-foreground-secondary);
+}
+
+.section-title,
+.subsection-title {
+  @include t.use-typography("title-small");
+
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: var(--sp-s) 0;
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  .subsection-name,
+  .section-name {
+    padding-inline-start: var(--sp-xs);
+  }
+
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.subsection-title {
+  text-transform: none;
+  padding-inline-start: var(--sp-m);
+}
+
+.subsection-menu {
+  margin-block-end: var(--sp-s);
+}
+
+.sub-menu {
+  margin-block-end: var(--sp-s);
+}
+
+.shortcuts-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  min-block-size: $sz-32;
+  padding: px2rem(6);
+  margin-block-end: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+}
+
+.command-name {
+  @include t.use-typography("body-small");
+
+  margin-inline-start: var(--sp-xxs);
+  color: var(--color-foreground-primary);
+  flex: 1;
+  min-inline-size: 0;
+  text-align: start;
+}
+
+// Editable rows
+
+.shortcuts-name-editable {
+  inline-size: 100%;
+  min-block-size: $sz-32;
+  padding: px2rem(6);
+  margin-block-end: var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+
+  &:hover {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+.shortcuts-editing {
+  background-color: var(--color-background-quaternary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+
+  &:focus-within {
+    border: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.shortcut-button-editable {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+}
+
+.shortcut-button-editing {
+  gap: var(--sp-s);
+}
+
+.shortcut-editing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  outline: none;
+}
+
+.shortcut-recording-area {
+  inline-size: 100%;
+  padding: px2rem(24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+  border: $b-1 dashed var(--color-foreground-secondary);
+}
+
+.shortcut-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.edit-buttons {
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s ease;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+}
+
+.confirmation-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  justify-content: flex-end;
+}
+
+.keys {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.key {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: capitalize;
+  block-size: px2rem(20);
+  padding: px2rem(2) px2rem(6);
+  border-radius: $br-6;
+  color: var(--color-foreground-primary);
+  background-color: var(--color-background-primary);
+}
+
+.customized-key {
+  background-color: var(--color-background-info);
+  color: var(--color-foreground-primary);
+}
+
+.space {
+  margin: 0 var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+}
+
+.shortcut-placeholder {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.shortcut-recorded-keys {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.shortcut-detach-icon {
+  color: var(--color-foreground-secondary);
+}
