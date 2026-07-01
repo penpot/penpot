@@ -254,3 +254,19 @@
           shape  {:points points}]
       (t/is (true? (gint/slow-has-point? shape (pt 50 25))))
       (t/is (false? (gint/slow-has-point? shape (pt 150 25)))))))
+
+(t/deftest has-point-rotated-test
+  ;; Diamond (a square rotated 45º); its axis-aligned x/y/width/height box does
+  ;; not match the rotated polygon.
+  (let [points [(pt 50 0) (pt 100 50) (pt 50 100) (pt 0 50)]
+        shape  {:x 20 :y 20 :width 60 :height 60 :rotation 45 :points points}]
+    (t/testing "point inside the polygon but outside the box is contained"
+      (t/is (true? (gint/has-point? shape (pt 50 5)))))
+    (t/testing "point inside the box but outside the polygon is not contained"
+      (t/is (false? (gint/has-point? shape (pt 22 22)))))))
+
+(t/deftest has-point-axis-aligned-test
+  (let [shape {:x 10 :y 20 :width 100 :height 50 :rotation 0}]
+    (t/testing "unrotated shape uses the axis-aligned box"
+      (t/is (true? (gint/has-point? shape (pt 50 40))))
+      (t/is (false? (gint/has-point? shape (pt 200 40)))))))

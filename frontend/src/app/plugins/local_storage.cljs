@@ -60,7 +60,7 @@
         (u/not-valid plugin-id :removeItem "The key must be a string")
 
         :else
-        (.getItem ^js local-storage (prefix-key plugin-id key))))
+        (.removeItem ^js local-storage (prefix-key plugin-id key))))
 
     :getKeys
     (fn []

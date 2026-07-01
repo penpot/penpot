@@ -12,3 +12,9 @@ allowBuilds:
   workerd: true
 
 linkWorkspacePackages: true
+
+peerDependencyRules:
+  allowedVersions:
+    "eslint-plugin-import>eslint": "10.6.0"
+    "eslint-plugin-jsx-a11y>eslint": "10.6.0"
+    "eslint-plugin-react>eslint": "10.6.0"

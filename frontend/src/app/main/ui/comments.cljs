@@ -1164,6 +1164,9 @@
 
         test-id     (str/join "-" (map :seqn (sort-by :seqn thread-group)))
 
+        ;; Click-through while transforming a shape, so it doesn't capture the drag
+        dragging?   (some? (mf/deref refs/current-transform))
+
         on-click
         (mf/use-fn
          (mf/deps thread-group position zoom)
@@ -1176,7 +1179,8 @@
                        (dwz/set-zoom position scale-zoom)))))]
 
     [:div {:style {:top (dm/str pos-y "px")
-                   :left (dm/str pos-x "px")}
+                   :left (dm/str pos-x "px")
+                   :pointer-events (when dragging? "none")}
            :on-click on-click
            :class (stl/css :floating-preview-wrapper :floating-preview-bubble)}
      [:> comment-avatar*
@@ -1197,6 +1201,9 @@
                        (gpt/transform position-modifier))
 
         frame-id     (:frame-id thread)
+
+        ;; Click-through while transforming a shape, so it doesn't capture the drag
+        dragging?    (some? (mf/deref refs/current-transform))
 
         state        (mf/use-state
                       #(do {:is-hover false
@@ -1290,7 +1297,8 @@
              (on-click thread))))]
 
     [:div {:style {:top (dm/str pos-y "px")
-                   :left (dm/str pos-x "px")}
+                   :left (dm/str pos-x "px")
+                   :pointer-events (when dragging? "none")}
            :on-pointer-down on-pointer-down
            :on-pointer-up on-pointer-up
            :on-pointer-move on-pointer-move

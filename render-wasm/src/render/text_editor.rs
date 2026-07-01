@@ -30,7 +30,7 @@ pub fn render_overlay(
     }
 
     if editor_state.cursor_visible {
-        render_cursor(canvas, zoom, editor_state, text_content, shape);
+        render_cursor(canvas, zoom, options.dpr, editor_state, text_content, shape);
     }
 
     canvas.restore();
@@ -39,6 +39,7 @@ pub fn render_overlay(
 fn render_cursor(
     canvas: &Canvas,
     zoom: f32,
+    dpr: f32,
     editor_state: &TextEditorState,
     text_content: &TextContent,
     shape: &Shape,
@@ -54,7 +55,7 @@ fn render_cursor(
         if editor_state.is_overtype_mode {
             rect.width()
         } else {
-            editor_state.theme.cursor_width / zoom
+            editor_state.theme.cursor_width / zoom * dpr
         },
         rect.height(),
     );

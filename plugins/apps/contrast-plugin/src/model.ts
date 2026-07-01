@@ -24,6 +24,4 @@ export interface ThemePluginEvent {
 }
 
 export type PluginMessageEvent =
-  | InitPluginEvent
-  | SelectionPluginEvent
-  | ThemePluginEvent;
+  InitPluginEvent | SelectionPluginEvent | ThemePluginEvent;

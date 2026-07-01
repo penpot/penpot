@@ -1073,66 +1073,75 @@
 
 (defn set-grid-layout-rows
   [entries]
-  (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero rows.
+  (when (seq entries)
+    (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
-            offset
-            entries)
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_rows")))
+  (h/call wasm/internal-module "_set_grid_rows"))
 
 (defn set-grid-layout-columns
   [entries]
-  (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
-        offset (mem/alloc size)
-        dview  (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero columns.
+  (when (seq entries)
+    (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
+          offset (mem/alloc size)
+          dview  (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-            offset
-            entries)
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_columns")))
+  (h/call wasm/internal-module "_set_grid_columns"))
 
 (defn set-grid-layout-cells
   [cells]
-  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are cells; an empty collection would alloc 0
+  ;; bytes. The wasm side reads an empty buffer as zero cells.
+  (when (seq cells)
+    (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce-kv (fn [offset _ cell]
-                 (let [shape-id  (-> (get cell :shapes) first)]
-                   (-> offset
-                       (mem/write-i32 dview (get cell :row))
-                       (mem/write-i32 dview (get cell :row-span))
-                       (mem/write-i32 dview (get cell :column))
-                       (mem/write-i32 dview (get cell :column-span))
+      (reduce-kv (fn [offset _ cell]
+                   (let [shape-id  (-> (get cell :shapes) first)]
+                     (-> offset
+                         (mem/write-i32 dview (get cell :row))
+                         (mem/write-i32 dview (get cell :row-span))
+                         (mem/write-i32 dview (get cell :column))
+                         (mem/write-i32 dview (get cell :column-span))
 
-                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
-                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+                         (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
+                         (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; padding
-                       (+ 2)
+                         ;; padding
+                         (+ 2)
 
-                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
-                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
+                         (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                         (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
-               offset
-               cells)
+                 offset
+                 cells)))
 
-    (h/call wasm/internal-module "_set_grid_cells")))
+  (h/call wasm/internal-module "_set_grid_cells"))
 
 (defn set-grid-layout
   [shape]
@@ -2360,21 +2369,25 @@
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
-   Returns the stroke outline as PathData content."
+   Returns a map {:content <PathData> :even-odd? <boolean>}, or nil when the
+   stroke produces no geometry. The buffer carries two header words ahead of
+   the segments: [even-odd flag][length] (the flat segment list can't encode
+   the fill rule itself)."
   [id stroke-index]
   (use-shape id)
   (try
-    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                     (mem/->offset-32))
-          heap   (mem/get-heap-u32)
-          length (aget heap offset)]
+    (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                        (mem/->offset-32))
+          heap      (mem/get-heap-u32)
+          even-odd? (not (zero? (aget heap offset)))
+          length    (aget heap (inc offset))]
       (if (pos? length)
         (let [data    (mem/slice heap
-                                 (+ offset 1)
+                                 (+ offset 2)
                                  (* length path.impl/SEGMENT-U32-SIZE))
               content (path/from-bytes data)]
           (mem/free)
-          content)
+          {:content content :even-odd? even-odd?})
         (do (mem/free)
             nil)))
     (catch :default cause
