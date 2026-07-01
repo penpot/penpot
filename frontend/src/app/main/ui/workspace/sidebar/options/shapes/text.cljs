@@ -171,7 +171,7 @@
          :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
      (when is-layout-child?
-       [:& layout-item-menu*
+       [:> layout-item-menu*
         {:ids ids
          :type type
          :values layout-item-values
