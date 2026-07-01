@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-28 10:01+0000\n"
+"PO-Revision-Date: 2026-07-02 01:01+0000\n"
 "Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
@@ -7793,4 +7793,8 @@ msgstr "剪贴板API不可用。请通过HTTPS启动Penpot以启用剪贴板访�
 
 #: src/app/main/data/workspace/clipboard.cljs:321, src/app/main/data/workspace/clipboard.cljs:529
 msgid "errors.clipboard-permission-denied"
-msgstr "剪贴板访问被拒绝。请在浏览器中允许剪贴板权限以粘贴内容。"
+msgstr "剪贴板访问被拒绝。请在浏览器中允许剪贴板权限以粘贴内容"
+
+#: src/app/main/ui/dashboard/fonts.cljs:341
+msgid "errors.font-family-invalid-chars"
+msgstr "字体家族名称只能包含字母、数字、空格、连字符、下划线和点。"
