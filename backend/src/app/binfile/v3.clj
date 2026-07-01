@@ -221,8 +221,9 @@
   [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
 
   (when (and include-libraries embed-assets)
-    (throw (IllegalArgumentException.
-            "the `include-libraries` and `embed-assets` are mutally excluding options")))
+    (ex/raise :type :validation
+              :code :incompatible-options
+              :hint "the `include-libraries` and `embed-assets` are mutually exclusive options"))
 
   (let [detach? (and (not embed-assets) (not include-libraries))]
     (db/tx-run! cfg (fn [cfg]

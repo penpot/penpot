@@ -105,3 +105,24 @@
                      (v3/import-files!))]
       (t/is (= (count result) 1))
       (t/is (every? uuid? result)))))
+
+(t/deftest export-binfile-v3-rejects-incompatible-options
+  ;; Regression for #7649: requesting both `include-libraries` and
+  ;; `embed-assets` must fail with a proper `:validation` error (clear code)
+  ;; rather than a generic `:server-error`/`:unexpected` that surfaced to API
+  ;; clients as an opaque failure.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")
+        cause   (try
+                  (v3/export-files!
+                   (-> th/*system*
+                       (assoc ::bfc/ids #{(:id file)})
+                       (assoc ::bfc/embed-assets true)
+                       (assoc ::bfc/include-libraries true))
+                   (io/output-stream output))
+                  nil
+                  (catch Throwable e e))]
+    (t/is (some? cause))
+    (t/is (= :validation (-> cause ex-data :type)))
+    (t/is (= :incompatible-options (-> cause ex-data :code)))))
