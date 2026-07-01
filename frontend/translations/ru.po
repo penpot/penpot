@@ -564,9 +564,8 @@ msgstr "Выбор экспорта"
 msgid "dashboard.export-standard-multi"
 msgstr "Скачать стандартные файлы (.svg + .json) (%s)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Один или несколько файлов на экспорт используют общие библиотеки. Что нужно "
 "сделать с их ресурсами*?"

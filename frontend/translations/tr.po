@@ -651,9 +651,8 @@ msgstr "Seçimi dışa aktar"
 msgid "dashboard.export-standard-multi"
 msgstr "%s standart dosyayı indir (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "İndirmek istediğiniz bir veya daha fazla dosya, paylaşılan kütüphaneleri "
 "kullanıyor. Bunların varlıklarıyla ne yapmak istiyorsunuz*?"

@@ -381,9 +381,8 @@ msgstr "Selecció d'exportació"
 msgid "dashboard.export-standard-multi"
 msgstr "Baixa %s fitxers estàndard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Un o més fitxers que voleu exportar utilitzen biblioteques compartides. Què "
 "voleu fer amb els seus recursos*?"

@@ -531,9 +531,8 @@ msgstr "Výběr exportu"
 msgid "dashboard.export-standard-multi"
 msgstr "Stáhnout %s soubory (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Jeden nebo více souborů, které chcete exportovat, používá sdílené knihovny. "
 "Co chcete dělat s jejich položkami*?"

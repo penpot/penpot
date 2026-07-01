@@ -333,9 +333,8 @@ msgstr "Nėra elementų su eksporto nustatymais."
 msgid "dashboard.export-shapes.title"
 msgstr "Eksportuoti pažymėtą sritį"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos "
 "bendros bibliotekos. Ką norite daryti su jų komponentais*?"

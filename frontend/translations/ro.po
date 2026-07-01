@@ -579,9 +579,8 @@ msgstr "Exportă selecția"
 msgid "dashboard.export-standard-multi"
 msgstr "Descarcă %s fișiere standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Unul sau mai multe fișiere pe care dorești să le exporți folosesc "
 "biblioteci partajate. Ce vrei să faci cu obiectele lor*?"

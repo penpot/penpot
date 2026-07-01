@@ -538,9 +538,8 @@ msgstr "导出已选中"
 msgid "dashboard.export-standard-multi"
 msgstr "下载 %s 标准文件 (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的素材？"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322

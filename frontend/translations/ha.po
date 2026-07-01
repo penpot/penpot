@@ -422,9 +422,8 @@ msgstr "Fitar da zavi"
 msgid "dashboard.export-standard-multi"
 msgstr "Sauke %s cikakken kundi (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr "za ka iya fitar da kundi daya ko fiye ta hanyar tura taska. \"me \"*?"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322

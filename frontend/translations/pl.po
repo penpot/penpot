@@ -361,9 +361,8 @@ msgstr "Eksportuj wybrane"
 msgid "dashboard.export-standard-multi"
 msgstr "Pobierz %s plików standardowych (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Co najmniej jeden plik, który chcesz wyeksportować, korzysta z bibliotek "
 "udostępnionych. Co chcesz zrobić z ich zasobami*?"

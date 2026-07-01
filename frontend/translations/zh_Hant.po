@@ -509,9 +509,8 @@ msgstr "匯出已選取項目"
 msgid "dashboard.export-standard-multi"
 msgstr "下載%s個標準檔案 (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr "你想匯出的單個或多個檔案中使用了共用資料庫，你想要如何處理它們的素材*？"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:322

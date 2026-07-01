@@ -652,9 +652,8 @@ msgstr "Esporta selezionati"
 msgid "dashboard.export-standard-multi"
 msgstr "Scarica %s file standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Uno o più file che desideri scaricare utilizzano librerie condivise. Che "
 "cosa desideri fare con le loro risorse*?"

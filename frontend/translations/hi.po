@@ -631,9 +631,8 @@ msgstr "निर्यात चयन"
 msgid "dashboard.export-standard-multi"
 msgstr "%s मानक फ़ाइलें डाउनलोड करें (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "एक या एक से अधिक फ़ाइलें जिन्हें आप निर्यात करना चाहते हैं, वे साझा की गई "
 "लाइब्रेरीज़ का उपयोग कर रही हैं। आप उनके एसेट्स के साथ क्या करना चाहते हैं?"

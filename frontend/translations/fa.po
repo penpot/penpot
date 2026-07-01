@@ -492,9 +492,8 @@ msgstr "انتخاب اکسپورت"
 msgid "dashboard.export-standard-multi"
 msgstr "دانلود %s عدد فایل های استاندارد (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "یک یا چند فایلی که می‌خواهید اکسپورت کنید از کتابخانه‌های مشترک استفاده "
 "می‌کنند. با دارایی‌های آن‌ها چه می‌خواهید بکنید*؟"

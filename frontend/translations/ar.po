@@ -393,9 +393,8 @@ msgstr "صدّر التحديد"
 msgid "dashboard.export-standard-multi"
 msgstr "تحميل %s ملفات أساسية (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "ملف أو أكثر تريد تصديرهم يستخدمون مكتبات مشتركة. ماذا تريد أن تفعل في "
 "أصولهم*؟"

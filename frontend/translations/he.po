@@ -567,9 +567,8 @@ msgstr "ייצוא הבחירה"
 msgid "dashboard.export-standard-multi"
 msgstr "הורדת %s קבצים תקניים (‎.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "אחד או יותר מהקבצים שברצונך לייצא משתמשים בספריות משותפות. מה לעשות עם "
 "המשאבים שלהן*?"
