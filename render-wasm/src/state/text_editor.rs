@@ -3,7 +3,7 @@
 use macros::ToJs;
 
 use crate::shapes::{
-    Fill, FontFamily, TextAlign, TextContent, TextDecoration, TextDirection,
+    Fill, FontStyle, TextAlign, TextContent, TextDecoration, TextDirection,
     TextPositionWithAffinity, TextTransform, VerticalAlign,
 };
 use crate::uuid::Uuid;
@@ -111,7 +111,12 @@ pub struct TextEditorStyles {
     pub text_direction: Multiple<TextDirection>, // Multiple
     pub text_decoration: Multiple<TextDecoration>,
     pub text_transform: Multiple<TextTransform>,
-    pub font_family: Multiple<FontFamily>,
+    // The font family is decomposed into its independent parts so the family
+    // dropdown shows a single family even when the selection mixes variants of
+    // the same family (e.g. regular + bold italic). The id identifies the
+    // family; weight is tracked by `font_weight`; only the style is left here.
+    pub font_family_id: Multiple<Uuid>,
+    pub font_style: Multiple<FontStyle>,
     pub font_size: Multiple<f32>,
     pub font_weight: Multiple<i32>,
     pub font_variant_id: Multiple<Uuid>,
@@ -228,7 +233,8 @@ impl TextEditorStyles {
             text_direction: Multiple::empty(),
             text_decoration: Multiple::empty(),
             text_transform: Multiple::empty(),
-            font_family: Multiple::empty(),
+            font_family_id: Multiple::empty(),
+            font_style: Multiple::empty(),
             font_size: Multiple::empty(),
             font_weight: Multiple::empty(),
             font_variant_id: Multiple::empty(),
@@ -244,7 +250,8 @@ impl TextEditorStyles {
         self.text_direction.reset();
         self.text_decoration.reset();
         self.text_transform.reset();
-        self.font_family.reset();
+        self.font_family_id.reset();
+        self.font_style.reset();
         self.font_size.reset();
         self.font_weight.reset();
         self.font_variant_id.reset();
@@ -614,8 +621,11 @@ impl TextEditorState {
                     .text_transform
                     .merge(span.text_transform);
                 self.current_styles
-                    .font_family
-                    .merge(Some(span.font_family));
+                    .font_family_id
+                    .merge(Some(span.font_family.id()));
+                self.current_styles
+                    .font_style
+                    .merge(Some(span.font_family.style()));
                 self.current_styles.font_size.merge(Some(span.font_size));
                 self.current_styles
                     .font_weight
@@ -667,8 +677,11 @@ impl TextEditorState {
                     .text_transform
                     .set_single(text_span.text_transform);
                 self.current_styles
-                    .font_family
-                    .set_single(Some(text_span.font_family));
+                    .font_family_id
+                    .set_single(Some(text_span.font_family.id()));
+                self.current_styles
+                    .font_style
+                    .set_single(Some(text_span.font_family.style()));
                 self.current_styles
                     .font_size
                     .set_single(Some(text_span.font_size));
