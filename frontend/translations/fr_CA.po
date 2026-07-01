@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-06-22 07:30+0000\n"
+"PO-Revision-Date: 2026-07-02 01:01+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
-"Language-Team: French (Canada) "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr_CA/>\n"
+"Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
+"frontend/fr_CA/>\n"
 "Language: fr_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -10055,3 +10055,79 @@ msgstr "Les versions auto-sauvegardées seront conservées pendant %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquer pour fermer le chemin"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:237
+msgid "auth.check-email"
+msgstr "Vérifie ta boîte courriel!"
+
+#: src/app/main/ui/auth/register.cljs:238
+msgid "auth.verification-sent-email"
+msgstr "Nous avons envoyé un courriel de vérification à :"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs:30, src/app/main/ui/inspect/styles/style_box.cljs:32, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:262, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:274
+msgid "labels.blur-effects"
+msgstr "Effets de flou"
+
+#: src/app/main/ui/onboarding/questions.cljs:226
+msgid "onboarding.questions.team-size.1001-5000"
+msgstr "1 001 à 5 000"
+
+#: src/app/main/ui/onboarding/questions.cljs:222
+msgid "onboarding.questions.team-size.101-500"
+msgstr "101 à 500"
+
+#: src/app/main/ui/onboarding/questions.cljs:220
+msgid "onboarding.questions.team-size.2-100"
+msgstr "2 à 100"
+
+#: src/app/main/ui/onboarding/questions.cljs:224
+msgid "onboarding.questions.team-size.501-1000"
+msgstr "501 à 1 000"
+
+#: src/app/main/ui/onboarding/questions.cljs:218
+msgid "onboarding.questions.team-size.just-me"
+msgstr "Seulement moi"
+
+#: src/app/main/ui/onboarding/questions.cljs:228
+msgid "onboarding.questions.team-size.more-than-5001"
+msgstr "5 001+"
+
+#: src/app/main/ui/dashboard/subscription.cljs:229
+msgid "subscription.dashboard.banner.renew"
+msgstr "Renouveler"
+
+#: src/app/main/ui/dashboard/subscription.cljs:216
+msgid "subscription.dashboard.banner.renew-subscription"
+msgstr "Renouveler l'abonnement"
+
+#: src/app/main/ui/dashboard/subscription.cljs:222
+msgid "subscription.dashboard.banner.subscription-expire-days"
+msgstr "Ton abonnement Enterprise expire dans %s jours (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:220
+msgid "subscription.dashboard.banner.subscription-expired"
+msgstr "Ton abonnement Enterprise a expiré. (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:421
+msgid "workspace.header.menu.hide-comments"
+msgstr "Masquer les commentaires"
+
+#, unused
+msgid "workspace.toast.comments-visible"
+msgstr "Commentaires visibles"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
+msgid "workspace.toolbar.mcp"
+msgstr "MCP"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:87
+msgid "workspace.toolbar.mcp-connect-here"
+msgstr "Se connecter ici"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:84
+msgid "workspace.toolbar.mcp-connected"
+msgstr "MCP connecté"
+
+#: src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.palette-bar"
+msgstr "Barre de palettes"
