@@ -148,6 +148,19 @@ describe('Tokens', () => {
       theme.removeSet(set);
     });
 
+    // addSet/removeSet also accept a token set id (string), not just a TokenSet.
+    test('addSet and removeSet accept a set id', async (ctx) => {
+      const cat = catalog(ctx);
+      const theme = cat.addTheme({ group: '', name: unique('theme') });
+      const set = cat.addSet({ name: unique('set'), active: false });
+      theme.addSet(set.id);
+      await sleep(300);
+      expect(theme.activeSets.length).toBeGreaterThan(0);
+      theme.removeSet(set.id);
+      await sleep(300);
+      expect(theme.activeSets.length).toBe(0);
+    });
+
     test('duplicate and remove a theme', (ctx) => {
       const theme = catalog(ctx).addTheme({ group: '', name: unique('theme') });
       const dup = theme.duplicate();
