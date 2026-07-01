@@ -193,7 +193,7 @@ function ensure-devenv-network {
 # instance-env-overrides block.
 function infra-compose {
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
-        docker compose -p penpotdev-infra \
+        docker-compose -p penpotdev-infra \
             --env-file "$DEVENV_DEFAULTS_FILE" \
             -f docker/devenv/docker-compose.infra.yml \
             "$@"
@@ -215,7 +215,7 @@ function instance-compose {
         CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
         PENPOT_SOURCE_PATH="$source_path" \
         "${overrides[@]}" \
-        docker compose -p "penpotdev-${instance}" \
+        docker-compose -p "penpotdev-${instance}" \
             --env-file "$DEVENV_DEFAULTS_FILE" \
             -f docker/devenv/docker-compose.main.yml \
             "$@"

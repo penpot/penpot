@@ -37,6 +37,7 @@ export PENPOT_FLAGS="\
        enable-audit-log \
        enable-transit-readable-response \
        enable-demo-users \
+       disable-email-verification \
        enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
