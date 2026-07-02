@@ -237,6 +237,21 @@ describe('Shapes', () => {
       expect(r.borderRadiusBottomRight).toBeCloseTo(3, 0);
       expect(r.borderRadiusBottomLeft).toBeCloseTo(4, 0);
     });
+
+    // Border radius setters accept fractional numbers, not just integers.
+    test('border radius accepts fractional values', (ctx) => {
+      const r = rect(ctx);
+      r.borderRadius = 4.5;
+      expect(r.borderRadius).toBeCloseTo(4.5, 2);
+      r.borderRadiusTopLeft = 1.25;
+      r.borderRadiusTopRight = 2.5;
+      r.borderRadiusBottomRight = 3.75;
+      r.borderRadiusBottomLeft = 0.5;
+      expect(r.borderRadiusTopLeft).toBeCloseTo(1.25, 2);
+      expect(r.borderRadiusTopRight).toBeCloseTo(2.5, 2);
+      expect(r.borderRadiusBottomRight).toBeCloseTo(3.75, 2);
+      expect(r.borderRadiusBottomLeft).toBeCloseTo(0.5, 2);
+    });
   });
 
   describe('Ordering', () => {

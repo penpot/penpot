@@ -506,9 +506,8 @@ msgstr "Exportă selecția"
 msgid "dashboard.export-standard-multi"
 msgstr "Descarcă %s fișiere standard (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Unul sau mai multe fișiere pe care dorești să le exporți folosesc "
 "biblioteci partajate. Ce vrei să faci cu obiectele lor*?"
@@ -1124,10 +1123,6 @@ msgstr "Nu a fost găsit nimic."
 #: src/app/main/ui/ds/controls/numeric_input.cljs:728, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:511, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:146, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Deschide lista de token-uri"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
-msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "{%s} nu este în nici un set activ sau are o valoare invalidă."
 
 #: src/app/main/data/auth.cljs:346
 msgid "errors.auth-provider-not-allowed"
@@ -7752,10 +7747,6 @@ msgstr "Margini interioare"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Raze"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referința nu este validă sau nu este în nici unul dintre seturile active"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:176
 msgid "workspace.tokens.reference-composite"

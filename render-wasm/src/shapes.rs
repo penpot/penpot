@@ -722,6 +722,23 @@ impl Shape {
         self.invalidate_extrect();
     }
 
+    pub fn update_svg_raw_content(&mut self, font_manager: skia::FontMgr) {
+        match &self.shape_type {
+            Type::SVGRaw(sr) => {
+                let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
+                match dom_result {
+                    Ok(dom) => {
+                        self.set_svg(dom);
+                    }
+                    Err(e) => {
+                        eprintln!("Error parsing SVG. Error: {}", e);
+                    }
+                }
+            }
+            _ => panic!("Updating SVG raw content on non SVG Raw shape"),
+        }
+    }
+
     pub fn set_svg_raw_content(&mut self, content: String) {
         self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
     }

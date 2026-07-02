@@ -51,7 +51,7 @@
   (let [shapes      [(make-shape :text) (make-shape :text) (make-shape :rect)]
         visited-ids (atom [])
         mock-set    (fn [s] (swap! visited-ids conj (:id s)) {:thumbnails [] :full []})
-        mock-pend   (fn [_sh _t _f _cb] nil)]
+        mock-pend   (fn [_sh _t _f _fp _cb] nil)]
 
     (with-mocks* mock-set mock-pend #(wasm.api/process-objects shapes))
 
@@ -66,7 +66,7 @@
   (let [shapes    [(make-shape :text) (make-shape :text)]
         captured  (atom nil)
         mock-set  (fn [_s] {:thumbnails [] :full []})
-        mock-pend (fn [sh t f cb] (reset! captured {:shapes sh :thumbnails t :full f :cb cb}))]
+        mock-pend (fn [sh t f _fp cb] (reset! captured {:shapes sh :thumbnails t :full f :cb cb}))]
 
     (with-mocks* mock-set mock-pend #(wasm.api/process-objects shapes))
 
@@ -99,7 +99,7 @@
             {:thumbnails [] :full []}))
 
         mock-pend
-        (fn [sh t f _cb] (reset! captured {:shapes sh :thumbnails t :full f}))]
+        (fn [sh t f _fp _cb] (reset! captured {:shapes sh :thumbnails t :full f}))]
 
     (with-mocks* mock-set mock-pend #(wasm.api/process-objects shapes))
 

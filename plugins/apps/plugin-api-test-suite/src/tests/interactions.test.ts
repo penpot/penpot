@@ -83,6 +83,21 @@ describe('Interactions', () => {
     expect(interaction.action.type).toBe('open-overlay');
   });
 
+  // position is optional; when omitted the overlay defaults to 'center'.
+  test('open-overlay without a position defaults to center', (ctx) => {
+    const overlay = board(ctx);
+    const r = rect(ctx);
+    const interaction = r.addInteraction('click', {
+      type: 'open-overlay',
+      destination: overlay,
+    });
+    expect(interaction.action.type).toBe('open-overlay');
+    if (interaction.action.type === 'open-overlay') {
+      expect(interaction.action.destination.id).toBe(overlay.id);
+      expect(interaction.action.position).toBe('center');
+    }
+  });
+
   test('toggle-overlay interaction round-trips', (ctx) => {
     const overlay = board(ctx);
     const r = rect(ctx);
@@ -116,6 +131,23 @@ describe('Interactions', () => {
     }
   });
 
+  // animation is optional on close-overlay; omitting it closes with no transition.
+  test('close-overlay without an animation round-trips', (ctx) => {
+    const overlay = board(ctx);
+    const r = rect(ctx);
+    const interaction = r.addInteraction('click', {
+      type: 'close-overlay',
+      destination: overlay,
+    });
+    expect(interaction.action.type).toBe('close-overlay');
+    if (interaction.action.type === 'close-overlay') {
+      expect(
+        interaction.action.destination && interaction.action.destination.id,
+      ).toBe(overlay.id);
+      expect(interaction.action.animation).toBeUndefined();
+    }
+  });
+
   test('previous-screen interaction round-trips', (ctx) => {
     const r = rect(ctx);
     const interaction = r.addInteraction('click', { type: 'previous-screen' });
@@ -132,6 +164,19 @@ describe('Interactions', () => {
     );
     expect(interaction.trigger).toBe('after-delay');
     expect(interaction.delay).toBeCloseTo(1000, 0);
+  });
+
+  // A zero delay is a valid value (fires immediately), not an error.
+  test('after-delay accepts a zero delay', (ctx) => {
+    const dest = board(ctx);
+    const r = rect(ctx);
+    const interaction = r.addInteraction(
+      'after-delay',
+      { type: 'navigate-to', destination: dest },
+      0,
+    );
+    expect(interaction.trigger).toBe('after-delay');
+    expect(interaction.delay).toBeCloseTo(0, 0);
   });
 
   test('mouse-leave trigger is recorded', (ctx) => {
@@ -165,6 +210,20 @@ describe('Interactions', () => {
 
     expect(interaction.delay).toBeCloseTo(250, 0);
     expect(interaction.action.type).toBe('previous-screen');
+  });
+
+  // The delay setter accepts zero (fires immediately) as a valid value.
+  test('delay setter accepts a zero value', (ctx) => {
+    const dest = board(ctx);
+    const r = rect(ctx);
+    const interaction = r.addInteraction(
+      'after-delay',
+      { type: 'navigate-to', destination: dest },
+      1000,
+    );
+
+    interaction.delay = 0;
+    expect(interaction.delay).toBeCloseTo(0, 0);
   });
 
   describe('Animations', () => {

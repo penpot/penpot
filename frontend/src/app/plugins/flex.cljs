@@ -151,7 +151,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -169,7 +169,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -187,7 +187,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -205,7 +205,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -223,7 +223,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -241,7 +241,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -259,7 +259,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -277,7 +277,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-int? value))
+         (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))

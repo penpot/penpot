@@ -453,6 +453,23 @@
 (defn token-theme-proxy? [p]
   (obj/type-of? p "TokenThemeProxy"))
 
+(defn- resolve-token-set
+  "Resolves an addSet/removeSet argument to a token set. A proxy is returned
+   as-is; an id is located in the file's token library."
+  [file-id set-arg]
+  (if (token-set-proxy? set-arg)
+    set-arg
+    (u/locate-token-set file-id set-arg)))
+
+(defn- token-set-name
+  "Reads the name from a resolved token set, supporting both proxies (whose
+   getter falls back to the freshly-created name) and located sets."
+  [set]
+  (when (some? set)
+    (if (token-set-proxy? set)
+      (obj/get set "name")
+      (ctob/get-name set))))
+
 (defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"
@@ -535,27 +552,20 @@
 
     :addSet
     {:enumerable false
-     :schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [token-set]
-           ;; Resolve the set name before the theme lookup. The proxy's :name
-           ;; getter now falls back to `initial-name` when state hasn't
-           ;; propagated, so this is safe even for freshly created sets.
-           ;; Guard against nil to prevent `enable-set` from conj'ing nil
-           ;; into the theme's :sets — which would send `:sets #{nil}` to the
-           ;; backend and crash the workspace.
-           (let [set-name (obj/get token-set "name")
+     :schema [:tuple [:or [:fn token-set-proxy?] ::sm/uuid]]
+     :fn (fn [set-arg]
+           (let [set-name (token-set-name (resolve-token-set file-id set-arg))
                  theme    (u/locate-token-theme file-id id)]
-             (when (and (some? set-name) (some? theme))
+             (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))}
 
     :removeSet
     {:enumerable false
-     :schema [:tuple [:fn token-set-proxy?]]
-     :fn (fn [token-set]
-           ;; Same nil guard as addSet — see comment above.
-           (let [set-name (obj/get token-set "name")
+     :schema [:tuple [:or [:fn token-set-proxy?] ::sm/uuid]]
+     :fn (fn [set-arg]
+           (let [set-name (token-set-name (resolve-token-set file-id set-arg))
                  theme    (u/locate-token-theme file-id id)]
-             (when (and (some? set-name) (some? theme))
+             (when (and set-name theme)
                (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))}
 
     :duplicate
