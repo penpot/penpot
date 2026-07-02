@@ -52,7 +52,7 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :edition :edit-path)
-          (update :workspace-drawing dissoc :tool :object :lock)
+          (update :workspace-drawing dissoc :object :lock)
           (dissoc :workspace-grid-edition)
           (dissoc :workspace-wasm-editor-styles)))
 
