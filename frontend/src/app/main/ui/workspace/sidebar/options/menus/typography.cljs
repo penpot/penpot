@@ -23,7 +23,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
@@ -396,7 +396,7 @@
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
        deprecated-icon/text-lineheight]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:min -200
         :max 200
         :step 0.1
@@ -405,7 +405,7 @@
         :aria-label (tr "inspect.attributes.typography.line-height")
         :value (attr->string line-height)
         :placeholder (if (= :multiple line-height) (tr "settings.multiple") "--")
-        :nillable (= :multiple line-height)
+        :is-nillable (= :multiple line-height)
         :on-change #(handle-change % :line-height)
         :on-blur on-blur}]]
 
@@ -415,7 +415,7 @@
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
        deprecated-icon/text-letterspacing]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:min -200
         :max 200
         :step 0.1
@@ -425,7 +425,7 @@
         :value (attr->string letter-spacing)
         :placeholder (if (= :multiple letter-spacing) (tr "settings.multiple") "--")
         :on-change #(handle-change % :letter-spacing)
-        :nillable (= :multiple letter-spacing)
+        :is-nillable (= :multiple letter-spacing)
         :on-blur on-blur}]]]))
 
 (mf/defc text-transform-options*
