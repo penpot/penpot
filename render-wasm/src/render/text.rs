@@ -388,8 +388,6 @@ fn render_text_on_canvas(
     if blur.is_some() {
         canvas.restore();
     }
-
-    canvas.restore();
 }
 
 /// Lays out and paints paragraph builders without any layer management.
@@ -549,24 +547,24 @@ fn draw_text(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
+    // Text-level opacity must apply to the union of (possibly overlapping)
+    // glyphs, so it gets its own layer; the layer is balanced here (self
+    // contained) instead of relying on a `restore` in the caller.
+    //
+    // With no opacity we paint straight to the canvas: an empty isolation
+    // `save_layer` is a no-op for SrcOver text on the GPU/PDF backends and, on
+    // Skia's SVG backend, it is silently dropped (making the text vanish). The
+    // caller/compositor owns shape-level opacity, blend and blur.
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
-    } else if overlay_emoji {
-        // Vector export (PDF/SVG) path: Skia's SVG backend (`SkSVGDevice`)
-        // cannot create isolation-layer sub-devices, so glyphs drawn inside a
-        // `save_layer` are silently dropped (this is why text vanished from the
-        // SVG export while shapes rendered fine). A plain `save` maps to a `<g>`
-        // and the glyphs are emitted directly. The isolation layer is a no-op
-        // for opaque text, so this is visually identical on the PDF backend too.
-        canvas.save();
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
+        canvas.restore();
     } else {
-        canvas.save_layer(&SaveLayerRec::default());
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
     }
-
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders an inner stroke using mask + SrcIn + DstOver layer structure.
