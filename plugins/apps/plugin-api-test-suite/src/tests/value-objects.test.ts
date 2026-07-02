@@ -4,10 +4,11 @@ import type { TestContext } from '../framework/types';
 import { PNG_1X1 } from './fixtures';
 
 // Value-object property setters.
-// Fills/strokes/gradients are returned as live proxies (their setters persist);
-// shadows/blur/colors are returned as plain snapshots (setting records the
-// member and round-trips on the returned object). Either way every writable
-// member is exercised by reading the value object and setting each property.
+// Fills/strokes/gradients/shadows are returned as live proxies (their setters
+// persist to the shape); blur and the shadow `color` are returned as plain
+// snapshots (setting records the member and round-trips on the returned
+// object). Either way every writable member is exercised by reading the value
+// object and setting each property.
 
 function rect(ctx: TestContext) {
   const r = ctx.penpot.createRectangle();

@@ -248,12 +248,17 @@ describe('Text', () => {
 
   test('getRange beyond the text length is clamped (not rejected)', (ctx) => {
     // An end index past the text length is clamped rather than rejected.
+    // API bug: the range object is returned, but reading `characters` on it
+    // crashes with a TypeError on an internal null instead of yielding the
+    // clamped text. Red until the range is actually clamped (or out-of-bounds
+    // input is rejected up front like a negative start).
     const t = text(ctx, 'Hello Penpot');
     let range: ReturnType<typeof t.getRange> | null = null;
     expect(() => {
       range = t.getRange(0, 999);
     }).not.toThrow();
     expect(range).not.toBeNull();
+    expect(range!.characters).toBe('Hello Penpot');
   });
 
   test('empty fontSize throws', (ctx) => {

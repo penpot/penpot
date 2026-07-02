@@ -343,13 +343,13 @@ describe('Shapes', () => {
       }).toThrow();
     });
 
-    test('NaN rotation is accepted (currently unvalidated)', (ctx) => {
-      // The rotation setter does not reject NaN; this pins the current lenient
-      // behaviour (a candidate for future hardening).
+    test('NaN rotation throws', (ctx) => {
+      // The rotation setter rejects non-finite numbers; a NaN would otherwise
+      // reach the geometry layer as an invalid move vector.
       const r = rect(ctx);
       expect(() => {
         r.rotation = NaN;
-      }).not.toThrow();
+      }).toThrow();
     });
 
     test('invalid blendMode throws', (ctx) => {
@@ -368,11 +368,17 @@ describe('Shapes', () => {
 
     test('setParentIndex with a negative index is accepted (currently unvalidated)', (ctx) => {
       // setParentIndex does not reject a negative index; this pins the current
-      // lenient behaviour (a candidate for future hardening).
+      // lenient behaviour (a candidate for future hardening) and that the
+      // hierarchy survives it: the shape stays a child and no sibling is
+      // duplicated or dropped.
       const a = rect(ctx);
       const b = rect(ctx);
       void b;
+      const countBefore = ctx.board.children.length;
       expect(() => a.setParentIndex(-1)).not.toThrow();
+      expect(a.parent?.id).toBe(ctx.board.id);
+      expect(ctx.board.children).toHaveLength(countBefore);
+      expect(ctx.board.children.filter((c) => c.id === a.id)).toHaveLength(1);
     });
   });
 

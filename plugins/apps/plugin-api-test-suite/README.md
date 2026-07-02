@@ -339,9 +339,7 @@ count:
 
 When a member is confirmed broken, add a test that asserts its **correct** behaviour
 and comment it as blocked-by-bug; it stays red until the API is fixed and then turns
-green (at which point drop the "API bug" framing). There are currently no such red
-tests — e.g. the `fontFamilies` token `resolvedValue` bug (it used to leak the raw
-tokenscript structure instead of `string[]`) has since been fixed.
+green (at which point drop the "API bug" framing).
 
 ### d.ts / runtime mismatches
 
