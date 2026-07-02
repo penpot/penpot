@@ -210,10 +210,6 @@
         alignment     (:stroke-alignment stroke :center)
         width         (:stroke-width stroke 0)
 
-        props         #js {:id (dm/str "stroke-color-gradient-" render-id "-" index)
-                           :gradient gradient
-                           :shape shape
-                           :force-transform (cfh/path-shape? shape)}
         stroke-image  (:stroke-image stroke)
         uri           (when stroke-image (cf/resolve-file-media stroke-image))
         embed         (embed/use-data-uris [uri])
@@ -240,9 +236,13 @@
                            :id (dm/str "stroke-image-" render-id "-" index)}]
     [:*
      (when (some? gradient)
-       (case (:type gradient)
-         :linear [:> grad/linear-gradient props]
-         :radial [:> grad/radial-gradient props]))
+       (let [props {:id (dm/str "stroke-color-gradient-" render-id "-" index)
+                    :gradient gradient
+                    :shape shape
+                    :force-transform (cfh/path-shape? shape)}]
+         (case (:type gradient)
+           :linear [:> grad/linear-gradient* props]
+           :radial [:> grad/radial-gradient* props])))
 
      (when (:stroke-image stroke)
        ;; We need to make the pattern size and the image fit so it's not repeated
