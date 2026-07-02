@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
+   [app.main.constants :as mconst]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -115,7 +116,7 @@
        :on-pointer-move on-pointer-move
        :on-pointer-down on-move-selected
        :on-context-menu on-context-menu
-       :style {:fill (if (or is-hover is-selected) fcc/distance-color "none")
+       :style {:fill (if (or is-hover is-selected) mconst/distance-color "none")
                :opacity (if is-selected 0.5 0.25)}}]
 
      (let [handle-width
@@ -145,7 +146,7 @@
              (cur/get-dynamic "resize-ew" 90)))
 
          :style
-         {:fill (if (or is-hover is-selected) fcc/distance-color "none")
+         {:fill (if (or is-hover is-selected) mconst/distance-color "none")
           :opacity (if is-selected 0 1)}}])]))
 
 (mf/defc padding-rects*
@@ -267,9 +268,9 @@
        [:& fcc/flex-display-pill
         {:height pill-height
          :width pill-width
-         :font-size (/ fcc/font-size zoom)
+         :font-size (/ mconst/font-size zoom)
          :border-radius (/ fcc/flex-display-pill-border-radius zoom)
-         :color fcc/distance-color
+         :color mconst/distance-color
          :x (:x @mouse-pos)
          :y (- (:y @mouse-pos) pill-width)
          :value @hover-value}])]))

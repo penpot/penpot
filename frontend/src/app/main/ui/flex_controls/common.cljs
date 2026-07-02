@@ -1,5 +1,6 @@
 (ns app.main.ui.flex-controls.common
   (:require
+   [app.main.constants :as mconst]
    [app.main.ui.formats :as fmt]
    [rumext.v2 :as mf]))
 
@@ -7,10 +8,8 @@
 ;; CONSTANTS
 ;; ------------------------------------------------
 
-(def font-size 11)
-(def distance-color "var(--color-accent-quaternary)")
-(def distance-text-color "var(--app-white)")
 (def warning-color "var(--status-color-warning-500)")
+
 (def flex-display-pill-width 40)
 (def flex-display-pill-height 20)
 (def flex-display-pill-border-radius 4)
@@ -30,6 +29,6 @@
            :y (+ y (/ height 2))
            :text-anchor "middle"
            :dominant-baseline "central"
-           :style {:fill distance-text-color
+           :style {:fill mconst/distance-text-color
                    :font-size font-size}}
     (fmt/format-number (or value 0))]])

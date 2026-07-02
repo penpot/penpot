@@ -308,3 +308,24 @@
   normal progress becomes tagged as slow if no event received in the
   specified amount of time"
   1000)
+
+;; ------------------------------------------------
+;; Typography
+;; ------------------------------------------------
+
+(def ^:const font-size 11)
+
+;; ------------------------------------------------
+;; Colors (CSS custom properties)
+;; ------------------------------------------------
+
+(def ^:const select-color "var(--color-accent-tertiary)")
+
+(def ^:const distance-color "var(--color-accent-quaternary)")
+(def ^:const distance-text-color "var(--app-white)")
+
+;; ------------------------------------------------
+;; Selection rectangle & guides
+;; ------------------------------------------------
+
+(def ^:const selection-rect-width 1)
