@@ -327,9 +327,10 @@
 
          (when (:hide-in-viewer target-frame)
            ;; If the target frame is hidden, we need to unhide it so
-           ;; users can navigate to it.
+           ;; users can navigate to it, but only if the user hasn't
+           ;; explicitly hidden it. See #9049.
            (dwsh/update-shapes [(:id target-frame)]
-                               #(dissoc % :hide-in-viewer)))
+                               cls/show-in-viewer))
 
          (cond
            (or (nil? shape)
