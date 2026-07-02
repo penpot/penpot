@@ -65,6 +65,23 @@ describe('Layout', () => {
       expect(flex.leftPadding).toBeCloseTo(4, 0);
     });
 
+    // Gap and padding setters accept fractional numbers, not just integers.
+    test('gaps and padding accept fractional values', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      flex.rowGap = 5.5;
+      flex.columnGap = 10.25;
+      flex.topPadding = 1.5;
+      flex.rightPadding = 2.25;
+      flex.bottomPadding = 3.75;
+      flex.leftPadding = 4.5;
+      expect(flex.rowGap).toBeCloseTo(5.5, 2);
+      expect(flex.columnGap).toBeCloseTo(10.25, 2);
+      expect(flex.topPadding).toBeCloseTo(1.5, 2);
+      expect(flex.rightPadding).toBeCloseTo(2.25, 2);
+      expect(flex.bottomPadding).toBeCloseTo(3.75, 2);
+      expect(flex.leftPadding).toBeCloseTo(4.5, 2);
+    });
+
     test('sizing round-trips', (ctx) => {
       const flex = board(ctx).addFlexLayout();
       flex.horizontalSizing = 'fix';
@@ -174,6 +191,23 @@ describe('Layout', () => {
       expect(grid.justifyItems).toBe('start');
       expect(grid.rowGap).toBeCloseTo(7, 0);
       expect(grid.columnGap).toBeCloseTo(9, 0);
+    });
+
+    // Gap and padding setters accept fractional numbers, not just integers.
+    test('gaps and padding accept fractional values', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      grid.rowGap = 7.5;
+      grid.columnGap = 9.25;
+      grid.topPadding = 1.5;
+      grid.rightPadding = 2.75;
+      grid.bottomPadding = 3.25;
+      grid.leftPadding = 4.5;
+      expect(grid.rowGap).toBeCloseTo(7.5, 2);
+      expect(grid.columnGap).toBeCloseTo(9.25, 2);
+      expect(grid.topPadding).toBeCloseTo(1.5, 2);
+      expect(grid.rightPadding).toBeCloseTo(2.75, 2);
+      expect(grid.bottomPadding).toBeCloseTo(3.25, 2);
+      expect(grid.leftPadding).toBeCloseTo(4.5, 2);
     });
 
     // Index boundaries — invalid indices must be rejected.

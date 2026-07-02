@@ -4,9 +4,9 @@ import type { CommentThread, Page } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
 
 // Comments.
-// Comment threads are created on the current page. Both thread removal APIs are
-// currently broken (see the dedicated red tests), so cleanup is best-effort to
-// keep the other assertions meaningful.
+// Comment threads are created on the current page. Thread/comment removal is
+// asynchronous (it resolves once the backend delete RPC completes), so callers
+// must await it; cleanup is best-effort and swallows errors.
 
 function page(ctx: TestContext): Page {
   const p = ctx.penpot.currentPage;
@@ -124,7 +124,7 @@ describe.skipIfMocked('Comments', () => {
       x: 8,
       y: 8,
     });
-    thread.remove();
+    await thread.remove();
     const threads = await p.findCommentThreads();
     expect(threads.every((t) => t.seqNumber !== thread.seqNumber)).toBe(true);
   });

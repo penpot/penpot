@@ -127,7 +127,7 @@
     (cond
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
-      (tr "workspace.tokens.ref-not-valid")
+      (tr "workspace.tokens.ref-not-valid" name)
 
       is-name-collision
       (wte/resolve-error-message (first errors))
@@ -291,6 +291,7 @@
                       :token-pill-applied (and can-edit? applied?)
                       :token-pill-invalid (and can-edit? errors?)
                       :token-pill-invalid-applied (and applied? errors? can-edit?)
+
                       :token-pill-viewer is-viewer?
                       :token-pill-applied-viewer (and is-viewer?
                                                       applied?)

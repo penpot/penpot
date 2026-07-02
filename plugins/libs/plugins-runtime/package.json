@@ -2,9 +2,9 @@
   "name": "@penpot/plugins-runtime",
   "version": "1.4.2",
   "dependencies": {
-    "@penpot/plugin-types": "^1.4.2",
+    "@penpot/plugin-types": "workspace:^",
     "ses": "^2.1.0",
-    "zod": "^3.22.4"
+    "zod": "^3.25.76"
   },
   "module": "./dist/index.js",
   "typings": "./dist/index.d.ts",

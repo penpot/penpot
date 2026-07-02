@@ -17,6 +17,6 @@
     "test:ci:mocked": "pnpm run build:headless && MOCK_BACKEND=1 tsx ci/run-ci.ts"
   },
   "devDependencies": {
-    "playwright": "^1.61.0"
+    "playwright": "^1.61.1"
   }
 }

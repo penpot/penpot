@@ -778,6 +778,7 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
           {:selrect (gsh/shapes->rect selected-shapes)
