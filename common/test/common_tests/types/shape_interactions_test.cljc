@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
@@ -1078,3 +1079,49 @@
             [overlay-pos snap] (ctsi/calc-overlay-position frame-relative base-frame objects base-frame base-frame overlay-frame frame-offset)]
         (t/is (= (gpt/point 18 22) overlay-pos))
         (t/is (= [:top :left] snap))))))
+
+(t/deftest calc-overlay-position-ignores-filter-bounds
+  ;; Regression for #9048: the overlay position must be computed from the
+  ;; destination frame selrect (the visible frame box), not from its
+  ;; filter-inflated object bounds. Shadows, blur, strokes or overflowing
+  ;; children make get-object-bounds larger than the selrect, which used to
+  ;; shift centered/right/bottom overlays by half that extra padding (the
+  ;; overlay appeared offset, e.g. "a bit to the left").
+  (let [base-frame     (cts/setup-shape {:type :frame :width 100 :height 100})
+        overlay-plain  (cts/setup-shape {:type :frame :width 30 :height 20})
+        ;; same selrect as overlay-plain, but with a drop shadow that widens
+        ;; and heightens its object bounds well beyond the selrect.
+        overlay-shadow (-> (cts/setup-shape {:type :frame :width 30 :height 20})
+                           (assoc :shadow [{:style :drop-shadow
+                                            :offset-x 0 :offset-y 0
+                                            :spread 10 :blur 0 :hidden false}]))
+        objects        {(:id base-frame) base-frame
+                        (:id overlay-plain) overlay-plain
+                        (:id overlay-shadow) overlay-shadow}
+        frame-offset   (gpt/point 5 5)
+        interaction    (-> ctsi/default-interaction
+                           (ctsi/set-action-type :open-overlay)
+                           (ctsi/set-position-relative-to (:id base-frame)))]
+
+    ;; Precondition: the shadow really does inflate the object bounds, so the
+    ;; assertions below are meaningful (otherwise the test would be vacuous).
+    (t/is (> (:width (gsb/get-object-bounds objects overlay-shadow))
+             (:width (:selrect overlay-shadow))))
+    (t/is (> (:height (gsb/get-object-bounds objects overlay-shadow))
+             (:height (:selrect overlay-shadow))))
+
+    ;; For every position type that depends on the overlay size, the computed
+    ;; position must be identical whether or not the destination frame has a
+    ;; bounds-inflating shadow.
+    (doseq [pos-type [:center :top-center :top-right :bottom-center :bottom-right]]
+      (let [i-plain  (-> interaction
+                         (ctsi/set-destination (:id overlay-plain))
+                         (ctsi/set-overlay-pos-type pos-type base-frame objects))
+            i-shadow (-> interaction
+                         (ctsi/set-destination (:id overlay-shadow))
+                         (ctsi/set-overlay-pos-type pos-type base-frame objects))
+            [pos-plain snap-plain]   (ctsi/calc-overlay-position i-plain base-frame objects base-frame base-frame overlay-plain frame-offset)
+            [pos-shadow snap-shadow] (ctsi/calc-overlay-position i-shadow base-frame objects base-frame base-frame overlay-shadow frame-offset)]
+        (t/testing (str "overlay position ignores filter bounds for " pos-type)
+          (t/is (= pos-plain pos-shadow))
+          (t/is (= snap-plain snap-shadow)))))))
