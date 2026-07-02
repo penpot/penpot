@@ -162,7 +162,7 @@
             (dtm/fetch-invitations)
             (dtm/fetch-members)))
 
-(mf/defc invite-members-modal*
+(mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members
    ::mf/props :obj}

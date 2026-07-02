@@ -23,12 +23,9 @@
 (def svg-ids-ctx (mf/create-context nil))
 
 (mf/defc svg-root*
-  [props]
+  [{:keys [shape children]}]
 
-  (let [shape       (unchecked-get props "shape")
-        children    (unchecked-get props "children")
-
-        x           (dm/get-prop shape :x)
+  (let [x           (dm/get-prop shape :x)
         y           (dm/get-prop shape :y)
         w           (dm/get-prop shape :width)
         h           (dm/get-prop shape :height)
@@ -53,11 +50,8 @@
       [:> "svg" props children]]]))
 
 (mf/defc svg-element*
-  [props]
-  (let [shape       (unchecked-get props "shape")
-        children    (unchecked-get props "children")
-
-        ids-mapping (mf/use-ctx svg-ids-ctx)
+  [{:keys [shape children]}]
+  (let [ids-mapping (mf/use-ctx svg-ids-ctx)
         render-id   (mf/use-ctx muc/render-id)
 
         tag         (-> shape :content :tag)

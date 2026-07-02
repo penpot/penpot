@@ -23,19 +23,18 @@
 (mf/defc numeric-input*
   {::mf/forward-ref true}
   [{:keys [value min max step data-wrap on-change on-blur on-focus title default
-           select-on-focus class class-name disabled nillable integer]
+           select-on-focus class is-disabled is-nillable is-integer]
     :rest props} external-ref]
   (let [value-str   value
         min-value   min
         max-value   max
         step-value  step
         wrap-value? data-wrap
-        class       (d/nilv (or class class-name) "")
 
         min-value   (d/parse-double min-value)
         max-value   (d/parse-double max-value)
         step-value  (d/parse-double step-value 1)
-        default     (d/parse-double default (when-not nillable 0))
+        default     (d/parse-double default (when-not is-nillable 0))
 
         select-on-focus? (d/nilv select-on-focus true)
 
@@ -55,9 +54,13 @@
         ;; Last value input by the user we need to store to save on unmount
         last-value*  (mf/use-var value)
 
+        drag-state*     (mf/use-ref :idle)
+        drag-start-x*   (mf/use-ref 0)
+        drag-start-val* (mf/use-ref 0)
+
         parse-value
         (mf/use-fn
-         (mf/deps min-value max-value value nillable default integer)
+         (mf/deps min-value max-value value is-nillable default is-integer)
          (fn []
            (when-let [node (mf/ref-val ref)]
              (let [new-value (-> (dom/get-value node)
@@ -66,7 +69,7 @@
                (cond
                  (d/num? new-value)
                  (-> new-value
-                     (cond-> integer mth/round)
+                     (cond-> is-integer mth/round)
                      (d/max (/ sm/min-safe-int 2))
                      (d/min (/ sm/max-safe-int 2))
                      (cond-> (d/num? min-value)
@@ -74,7 +77,7 @@
                      (cond-> (d/num? max-value)
                        (d/min max-value)))
 
-                 nillable
+                 is-nillable
                  default
 
                  :else value)))))
@@ -142,7 +145,7 @@
                                  max-value
 
                                  :else new-value)
-                     new-value (if integer (mth/round new-value) new-value)]
+                     new-value (if is-integer (mth/round new-value) new-value)]
 
                  (apply-value event new-value))))))
 
@@ -189,7 +192,7 @@
          (fn [event]
            (when (mf/ref-val dirty-ref)
              (let [new-value (or @last-value* default)]
-               (if (or nillable new-value)
+               (if (or is-nillable new-value)
                  (apply-value event new-value)
                  (update-input new-value)))
              (when (fn? on-blur)
@@ -206,7 +209,7 @@
                (dom/blur! node)))))
 
         handle-focus
-        (mf/use-fn
+        (mf/use-callback
          (mf/deps on-focus select-on-focus?)
          (fn [event]
            (when-not (= :dragging (mf/ref-val drag-state*))
@@ -225,9 +228,10 @@
         (mf/use-fn
          (mf/deps value value-str min-value max-value default)
          (fn [event]
-           (let [node      (mf/ref-val ref)
+           (let [disabled? (unchecked-get props "disabled")
+                 node      (mf/ref-val ref)
                  is-focused (and (some? node) (dom/active? node))]
-             (when-not (or disabled is-focused (= :multiple value-str))
+             (when-not (or disabled? is-focused (= :multiple value-str))
                (let [client-x  (.-clientX event)
                      start-val (or value default 0)]
                  (mf/set-ref-val! drag-state* :maybe-dragging)
@@ -291,6 +295,7 @@
                                 :ref ref
                                 :default-value (fmt/format-number value)
                                 :title title
+                                :disabled is-disabled
                                 :on-key-down handle-key-down
                                 :on-blur handle-blur
                                 :on-focus handle-focus
