@@ -202,9 +202,13 @@
   (set! wasm.fonts/get-content-fonts     mock-get-content-fonts))
 
 (defn teardown-wasm-mocks!
-  "Restore the original WASM functions saved by `setup-wasm-mocks!`."
+  "Restore the original WASM functions saved by `setup-wasm-mocks!`.
+   No-op when there is nothing to restore (`originals` empty): restoring from an
+   empty snapshot would `set!` every WASM function to nil, breaking any later
+   code that calls them (e.g. a leaked debounced event firing during a
+   subsequent test namespace)."
   []
-  (let [orig @originals]
+  (when-let [orig (not-empty @originals)]
     (set! wasm.api/initialized?            (:initialized? orig))
     (set! wasm.api/use-shape               (:use-shape orig))
     (set! wasm.api/calculate-position-data (:calculate-position-data orig))
