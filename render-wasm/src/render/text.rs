@@ -554,6 +554,14 @@ fn draw_text(
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
+    } else if overlay_emoji {
+        // Vector export (PDF/SVG) path: Skia's SVG backend (`SkSVGDevice`)
+        // cannot create isolation-layer sub-devices, so glyphs drawn inside a
+        // `save_layer` are silently dropped (this is why text vanished from the
+        // SVG export while shapes rendered fine). A plain `save` maps to a `<g>`
+        // and the glyphs are emitted directly. The isolation layer is a no-op
+        // for opaque text, so this is visually identical on the PDF backend too.
+        canvas.save();
     } else {
         canvas.save_layer(&SaveLayerRec::default());
     }

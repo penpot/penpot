@@ -131,6 +131,58 @@ impl FontStore {
     pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {
         None
     }
+
+    /// Builds `@font-face` CSS rules with base64-embedded font data for the
+    /// given registered aliases. Used by the SVG export to embed fonts so the
+    /// document renders faithfully without relying on the viewer having the
+    /// fonts installed (SVG, unlike PDF, does not embed fonts on its own).
+    ///
+    /// The `font-family` in each rule is the typeface's own embedded family
+    /// name (which is what Skia's SVG backend writes on `<text>` elements),
+    /// deduplicated by family/weight/style.
+    pub fn font_face_css_for_aliases(&self, aliases: &HashSet<String>) -> String {
+        use base64::Engine as _;
+
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut css = String::new();
+
+        for alias in aliases {
+            let Some(typeface) = self
+                .font_provider
+                .match_family_style(alias, skia::FontStyle::default())
+            else {
+                continue;
+            };
+
+            let family = typeface.family_name();
+            let style = typeface.font_style();
+            let weight = *style.weight();
+            let italic = style.slant() != skia::font_style::Slant::Upright;
+
+            let dedup_key = format!("{family}|{weight}|{italic}");
+            if !seen.insert(dedup_key) {
+                continue;
+            }
+
+            let Some((data, _index)) = typeface.to_font_data() else {
+                continue;
+            };
+
+            let format = if data.len() >= 4 && &data[0..4] == b"OTTO" {
+                "opentype"
+            } else {
+                "truetype"
+            };
+
+            let encoded = base64::engine::general_purpose::STANDARD.encode(&data);
+            css.push_str(&format!(
+                "@font-face{{font-family:\"{family}\";font-style:{fs};font-weight:{weight};src:url(data:font/ttf;base64,{encoded}) format(\"{format}\");}}",
+                fs = if italic { "italic" } else { "normal" },
+            ));
+        }
+
+        css
+    }
 }
 
 fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontProvider {

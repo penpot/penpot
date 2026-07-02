@@ -16,10 +16,11 @@ use super::{get_dest_rect, get_source_rect};
 // VectorTarget — vector export backend selector
 // ---------------------------------------------------------------------------
 
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
+/// Vector export backend selector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum VectorTarget {
     Pdf,
+    Svg,
 }
 
 // ---------------------------------------------------------------------------
@@ -31,7 +32,7 @@ pub(super) struct VectorRenderer<'a> {
     canvas: &'a Canvas,
     shared: &'a mut RenderState,
     scale: f32,
-    _target: VectorTarget,
+    target: VectorTarget,
 }
 
 impl<'a> VectorRenderer<'a> {
@@ -45,7 +46,24 @@ impl<'a> VectorRenderer<'a> {
             canvas,
             shared,
             scale,
-            _target: target,
+            target,
+        }
+    }
+
+    fn is_svg(&self) -> bool {
+        matches!(self.target, VectorTarget::Svg)
+    }
+
+    /// Whether a blur `image_filter` may be attached to a paint. On the SVG
+    /// compositor, layer blur is emitted as a `<g filter="feGaussianBlur">`
+    /// wrapping the shape, and `SkSVGDevice` both ignores paint image filters
+    /// and drops the implicit layer they trigger (the shape would vanish), so we
+    /// must not set one there.
+    fn paint_image_filter(&self, shape: &Shape) -> Option<skia::ImageFilter> {
+        if self.is_svg() {
+            None
+        } else {
+            shape.image_filter(1.)
         }
     }
 }
@@ -59,14 +77,15 @@ impl ShapeRenderer for VectorRenderer<'_> {
         // Handle image fills individually
         let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
         if has_image_fills {
+            let is_svg = self.is_svg();
             for fill in fills.iter().rev() {
                 match fill {
                     Fill::Image(image_fill) => {
-                        draw_image_fill(self.shared, self.canvas, shape, image_fill)?;
+                        draw_image_fill(self.shared, self.canvas, shape, image_fill, is_svg)?;
                     }
                     _ => {
                         let mut paint = fill.to_paint(&shape.selrect, true);
-                        if let Some(filter) = shape.image_filter(1.) {
+                        if let Some(filter) = self.paint_image_filter(shape) {
                             paint.set_image_filter(filter);
                         }
                         draw_shape_geometry(self.canvas, shape, &paint);
@@ -79,7 +98,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let mut paint = merge_fills(fills, shape.selrect);
         paint.set_anti_alias(true);
 
-        if let Some(filter) = shape.image_filter(1.) {
+        if let Some(filter) = self.paint_image_filter(shape) {
             paint.set_image_filter(filter);
         }
 
@@ -152,7 +171,10 @@ impl ShapeRenderer for VectorRenderer<'_> {
 
         let text_content = text_content.new_bounds(shape.selrect());
         let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-        let blur_filter = shape.image_filter(1.);
+        // On the SVG compositor, layer blur is emitted as a `<g filter>` wrapping
+        // the whole leaf, so text must not also carry its own blur (which would
+        // double-blur and, worse, be dropped by `SkSVGDevice`).
+        let blur_filter = self.paint_image_filter(shape);
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
@@ -346,7 +368,12 @@ impl ShapeRenderer for VectorRenderer<'_> {
 // Tree traversal
 // ---------------------------------------------------------------------------
 
-/// Depth-first render of the shape tree rooted at `id`.
+/// Depth-first render of the shape tree rooted at `id` onto a Skia canvas.
+///
+/// This is the PDF export path: it draws straight to the (PDF) canvas and uses
+/// `save_layer` for composite effects, which the PDF backend supports. SVG has
+/// its own compositor ([`render_svg_body`]) because `SkSVGDevice` drops
+/// `save_layer` content.
 pub(super) fn render_tree(
     shared: &mut RenderState,
     canvas: &Canvas,
@@ -385,6 +412,27 @@ pub(super) fn render_tree(
 }
 
 // ---------------------------------------------------------------------------
+// Child paint order
+// ---------------------------------------------------------------------------
+
+/// Children of `element` in the exact paint order (bottom-to-top) the GPU
+/// renderer uses, so the vector export matches on-canvas z-order.
+///
+/// The GPU pushes `sort_z_index(children_ids_iter(false))` onto a LIFO stack and
+/// therefore paints nodes in the reverse of that list. Crucially, `sort_z_index`
+/// reorders children by their layout `z-index` for layout containers (flex/grid),
+/// which is what places absolutely-positioned items (e.g. a background gradient
+/// with a lower z-index) behind the flow content. Iterating children in plain
+/// stored order ignored this and drew such items on top. We replicate the GPU
+/// ordering here.
+pub(super) fn children_paint_order(tree: ShapesPoolRef, element: &Shape) -> Vec<Uuid> {
+    let ids: Vec<Uuid> = element.children_ids_iter(false).copied().collect();
+    let mut ids = super::sort_z_index(tree, element, ids);
+    ids.reverse();
+    ids
+}
+
+// ---------------------------------------------------------------------------
 // Groups
 // ---------------------------------------------------------------------------
 
@@ -403,10 +451,10 @@ fn render_group(
     // here would double-apply it to children — visible on rotated/nested groups.)
     canvas.save();
 
-    // Group drop shadow: subtree silhouette, below the opacity/clip layer.
+    // Group drop shadow: subtree silhouette, below the opacity/mask layer.
     render_container_drop_shadows(shared, canvas, element, tree, scale, target, false)?;
 
-    // Layer for opacity / blend mode (and group-level layer blur)
+    // Layer for opacity / blend mode / group layer blur (and masking).
     let needs_layer = element.needs_layer();
     if needs_layer {
         let mut paint = Paint::default();
@@ -427,14 +475,15 @@ fn render_group(
         canvas.save_layer(&layer_rec);
     }
 
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
 
     if masked {
-        // Mirror the GPU mask: render all children (including the mask shape)
-        // as content, then re-draw the mask silhouette (the group's first child)
-        // with DstIn to clip everything to it.
-        let paint = Paint::default();
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
+        // Mirror the GPU mask: render the content children into a composition
+        // layer, then re-draw the mask silhouette (the group's first child) with
+        // `DstIn` so it clips everything to its alpha. This preserves soft/alpha
+        // masks exactly (unlike a geometric clip). The SVG backend can't keep
+        // `save_layer` content, so its compositor uses a `<clipPath>` instead.
+        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&Paint::default()));
 
         for child_id in &children {
             render_tree(shared, canvas, child_id, tree, scale, target)?;
@@ -531,7 +580,7 @@ fn render_frame(
     }
 
     // Children (absolute coords, no frame transform).
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+    let children = children_paint_order(tree, element);
     for child_id in &children {
         render_tree(shared, canvas, child_id, tree, scale, target)?;
     }
@@ -578,7 +627,7 @@ fn render_container_drop_shadows(
             renderer.draw_fills(element, &element.fills)?;
         }
 
-        let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
+        let children = children_paint_order(tree, element);
         for child_id in &children {
             render_tree(shared, canvas, child_id, tree, scale, target)?;
         }
@@ -642,7 +691,10 @@ fn render_leaf(
 /// Single source of truth for leaf content draw order/gating (fills, inner
 /// shadows, strokes), generic over [`ShapeRenderer`]. Drop shadows and layer
 /// blur are excluded — they wrap the content and are sequenced per backend.
-fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shape) -> Result<()> {
+pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
+    renderer: &mut R,
+    shape: &Shape,
+) -> Result<()> {
     match &shape.shape_type {
         Type::Text(_) => renderer.draw_text(shape)?,
         Type::SVGRaw(_) => renderer.draw_svg(shape)?,
@@ -681,6 +733,7 @@ fn draw_image_fill(
     canvas: &Canvas,
     shape: &Shape,
     image_fill: &crate::shapes::ImageFill,
+    is_svg: bool,
 ) -> Result<()> {
     // Use a CPU-backed image copy — GPU-backed images can't be drawn
     // on the PDF canvas which has no GPU context.
@@ -701,8 +754,10 @@ fn draw_image_fill(
 
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    if let Some(filter) = shape.image_filter(1.) {
-        paint.set_image_filter(filter);
+    if !is_svg {
+        if let Some(filter) = shape.image_filter(1.) {
+            paint.set_image_filter(filter);
+        }
     }
 
     canvas.draw_image_rect_with_sampling_options(
@@ -882,7 +937,7 @@ fn transformed_skia_path(shape: &Shape) -> Option<skia::Path> {
 // ---------------------------------------------------------------------------
 
 /// Draws the shape's geometry (rect/rrect/oval/path) with the given paint.
-fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
+pub(super) fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
             if let Some(corners) = shape.shape_type.corners() {
@@ -955,3 +1010,4 @@ fn clip_to_shape(canvas: &Canvas, shape: &Shape, antialias: bool) {
         }
     }
 }
+

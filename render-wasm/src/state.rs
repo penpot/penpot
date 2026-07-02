@@ -100,6 +100,10 @@ impl State {
         crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
     }
 
+    pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::svg::render_to_svg(get_render_state(), id, &self.shapes, scale)
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
         let render_state = get_render_state();
         // If zoom changed (e.g. interrupted zoom render followed by pan), the

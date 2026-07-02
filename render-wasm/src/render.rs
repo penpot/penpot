@@ -7,6 +7,7 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
+pub mod svg;
 pub mod rulers;
 mod shadows;
 pub mod shape_renderer;
