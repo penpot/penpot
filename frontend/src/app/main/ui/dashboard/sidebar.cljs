@@ -320,7 +320,8 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
 
              (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-organization)
+             (dnt/go-to-nitrate-ac-create-organization
+              "dashboard:organization-switcher")
 
              :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))
@@ -766,7 +767,8 @@
              (st/emit! (dnt/show-nitrate-popup :nitrate-form {:show-contact-sales-option true}))
 
              (dnt/is-valid-license? profile)
-             (dnt/go-to-nitrate-ac-create-organization)
+             (dnt/go-to-nitrate-ac-create-organization
+              "dashboard:organization-switcher")
 
              :else
              (st/emit! (dnt/show-nitrate-popup :nitrate-form)))))]

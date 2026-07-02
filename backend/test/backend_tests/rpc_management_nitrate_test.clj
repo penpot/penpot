@@ -38,6 +38,7 @@
     (t/is (= (:id profile) (-> out :result :id)))
     (t/is (= "Nitrate User" (-> out :result :name)))
     (t/is (= (:email profile) (-> out :result :email)))
+    (t/is (= (:created-at profile) (-> out :result :created-at)))
     (t/is (nil? (-> out :result :photo-url)))))
 
 (t/deftest authenticate-requires-authentication
