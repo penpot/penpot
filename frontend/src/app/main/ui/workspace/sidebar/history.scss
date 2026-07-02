@@ -41,6 +41,11 @@
   cursor: pointer;
   transition: border 0.2s;
 
+  &.action-entry {
+    cursor: default;
+    opacity: 0.85;
+  }
+
   .history-entry-summary {
     display: flex;
     align-items: center;
