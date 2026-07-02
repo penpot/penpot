@@ -174,10 +174,6 @@
           :hidden hidden
           :color (format-color color)})))
 
-(defn format-shadows
-  [shadows]
-  (format-array format-shadow shadows))
-
 ;;export interface Fill {
 ;;  fillColor?: string;
 ;;  fillOpacity?: number;
@@ -249,16 +245,13 @@
 ;;   suffix: string;
 ;; }
 (defn format-export
-  [{:keys [type scale suffix] :as export}]
+  [{:keys [type scale suffix skip-children] :as export}]
   (when (some? export)
     (obj/without-empty
      #js {:type (format-key type)
           :scale scale
-          :suffix suffix})))
-
-(defn format-exports
-  [exports]
-  (format-array format-export exports))
+          :suffix suffix
+          :skipChildren skip-children})))
 
 ;; export interface GuideColumnParams {
 ;;   color: { color: string; opacity: number };
@@ -408,10 +401,6 @@
     (obj/without-empty
      #js {:type (-> type format-key)
           :value value})))
-
-(defn format-tracks
-  [tracks]
-  (format-array format-track tracks))
 
 
 ;; export interface Dissolve {

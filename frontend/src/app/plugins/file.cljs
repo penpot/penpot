@@ -55,7 +55,7 @@
            (do (swap! data assoc :label value :created-by "user")
                (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
                     (rx/take 1)
-                    (rx/subs! #(st/emit! (se/event "rename-version" :file-id file-id)))))))}
+                    (rx/subs! #(st/emit! (se/event plugin-id "rename-version" :file-id file-id)))))))}
 
       :createdBy
       {:get
@@ -322,7 +322,7 @@
              (fn [resolve reject]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
-                 (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:write' permission")
+                 (u/reject-not-valid reject :saveVersion "Plugin doesn't have 'content:write' permission")
 
                  :else
                  (st/emit!

@@ -418,7 +418,7 @@
     :createShapeFromSvg
     (fn [svg-string]
       (cond
-        (or (not (string? svg-string)) (empty? svg-string))
+        (not (dwm/valid-svg-string? svg-string))
         (u/not-valid plugin-id :createShapeFromSvg svg-string)
 
         :else
@@ -434,7 +434,7 @@
       (js/Promise.
        (fn [resolve reject]
          (cond
-           (or (not (string? svg-string)) (empty? svg-string))
+           (not (dwm/valid-svg-string? svg-string))
            (do
              (u/not-valid plugin-id :createShapeFromSvg "Svg not valid")
              (reject "Svg not valid"))
@@ -592,19 +592,28 @@
                  (page/page-proxy? page) (obj/get page "$id")
                  (string? page)          (uuid/parse* page)
                  :else nil)]
-        (if (nil? id)
+        (cond
+          (nil? id)
           (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
-          (if (true? new-window)
-            (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
-                (js/Promise.resolve nil))
-            (js/Promise.
-             (fn [resolve _]
-               (->> st/stream
-                    (rx/filter (ptk/type? ::dwpg/initialized))
-                    (rx/filter #(= (deref %) id))
-                    (rx/take 1)
-                    (rx/subs! #(resolve nil)))
-               (st/emit! (dcm/go-to-workspace :page-id id))))))))
+
+          (true? new-window)
+          (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+              (js/Promise.resolve nil))
+
+          ;; Navigating to the already-active page emits no initialization
+          ;; event, so resolve right away instead of waiting forever.
+          (u/page-active? id)
+          (js/Promise.resolve nil)
+
+          :else
+          (js/Promise.
+           (fn [resolve _]
+             (->> st/stream
+                  (rx/filter (ptk/type? ::dwpg/initialized))
+                  (rx/filter #(= (deref %) id))
+                  (rx/take 1)
+                  (rx/subs! #(resolve nil)))
+             (st/emit! (dcm/go-to-workspace :page-id id)))))))
 
     :alignHorizontal
     (fn [shapes direction]
