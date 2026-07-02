@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
+   [app.main.constants :as mconst]
    [app.main.ui.formats :as fmt]
    [rumext.v2 :as mf]))
 
@@ -22,28 +23,17 @@
 ;; CONSTANTS
 ;; ------------------------------------------------
 
-(def font-size 11)
-(def selection-rect-width 1)
+(def ^:private ^:const size-display-color "var(--app-white)")
+(def ^:private ^:const size-display-opacity 0.7)
+(def ^:private ^:const size-display-text-color "var(--app-black)")
+(def ^:private ^:const size-display-width-min 50)
+(def ^:private ^:const size-display-width-max 75)
+(def ^:private ^:const size-display-height 16)
 
-(def select-color "var(--color-accent-tertiary)")
-(def select-guide-width 1)
-(def select-guide-dasharray 5)
-
-(def hover-color "var(--color-accent-quaternary)")
-
-(def size-display-color "var(--app-white)")
-(def size-display-opacity 0.7)
-(def size-display-text-color "var(--app-black)")
-(def size-display-width-min 50)
-(def size-display-width-max 75)
-(def size-display-height 16)
-
-(def distance-color "var(--color-accent-quaternary)")
-(def distance-text-color "var(--app-white)")
-(def distance-border-radius 2)
-(def distance-pill-width 50)
-(def distance-pill-height 16)
-(def distance-line-stroke 1)
+(def ^:private ^:const distance-border-radius 2)
+(def ^:private ^:const distance-pill-width 50)
+(def ^:private ^:const distance-pill-height 16)
+(def ^:private ^:const distance-line-stroke 1)
 
 (def ^:private ^:const selection-badge-bg-color "var(--color-accent-tertiary)")
 (def ^:private ^:const selection-badge-bg-color-component "var(--color-accent-secondary)")
@@ -53,6 +43,10 @@
 (def ^:private ^:const selection-badge-border-radius 2)
 (def ^:private ^:const selection-badge-char-width 6.5)
 
+(def ^:private ^:const select-guide-width 1)
+(def ^:private ^:const select-guide-dasharray 5)
+
+(def ^:private ^:const hover-color "var(--color-accent-quaternary)")
 
 ;; ------------------------------------------------
 ;; HELPERS
@@ -130,13 +124,13 @@
              :height rect-height
              :text-anchor "middle"
              :style {:fill size-display-text-color
-                     :font-size (/ font-size zoom)}}
+                     :font-size (/ mconst/font-size zoom)}}
       size-label]]))
 
 (mf/defc distance-display-pill* [{:keys [x y zoom distance bounds]}]
   (let [distance-pill-width (/ distance-pill-width zoom)
         distance-pill-height (/ distance-pill-height zoom)
-        font-size (/ font-size zoom)
+        font-size (/ mconst/font-size zoom)
         text-padding (/ 3 zoom)
         distance-border-radius (/ distance-border-radius zoom)
 
@@ -164,7 +158,7 @@
              :ry distance-border-radius
              :width distance-pill-width
              :height distance-pill-height
-             :style {:fill distance-color}}]
+             :style {:fill mconst/distance-color}}]
 
      [:text {:x (+ text-x offset-x)
              :y (+ text-y offset-y)
@@ -173,13 +167,13 @@
              :text-anchor "middle"
              :width distance-pill-width
              :height distance-pill-height
-             :style {:fill distance-text-color
+             :style {:fill mconst/distance-text-color
                      :font-size font-size}}
       (fmt/format-pixels distance)]]))
 
 (mf/defc selection-rect* [{:keys [selrect zoom]}]
   (let [{:keys [x y width height]} selrect
-        selection-rect-width (/ selection-rect-width zoom)]
+        selection-rect-width (/ mconst/selection-rect-width zoom)]
     [:g.selection-rect
      [:rect {:x x
              :y y
@@ -337,7 +331,7 @@
              :y1 y1
              :x2 x2
              :y2 y2
-             :style {:stroke distance-color
+             :style {:stroke mconst/distance-color
                      :stroke-width distance-line-stroke}}]
 
            [:> distance-display-pill*
@@ -355,7 +349,7 @@
              :y1 y1
              :x2 x2
              :y2 y2
-             :style {:stroke select-color
+             :style {:stroke mconst/select-color
                      :stroke-width (/ select-guide-width zoom)
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
