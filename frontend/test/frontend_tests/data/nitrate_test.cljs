@@ -10,6 +10,27 @@
    [app.main.data.nitrate :as dnt]
    [cljs.test :as t :include-macros true]))
 
+(t/deftest build-admin-console-url-preserves-public-uri-subpath
+  (t/testing "builds admin console routes below the configured Penpot subpath"
+    (let [public-uri (u/uri "https://example.com/penpot/")]
+      (t/is (= "https://example.com/penpot/admin-console/"
+               (dnt/build-admin-console-url public-uri "" nil)))
+      (t/is (= "https://example.com/penpot/admin-console/organization/my-org/organization-id/people/"
+               (dnt/build-admin-console-url
+                public-uri
+                "organization/my-org/organization-id/people/"
+                nil)))
+      (t/is (= {:action "create-organization"
+                :origin "dashboard:organization-switcher"}
+               (-> (dnt/build-admin-console-url
+                    public-uri
+                    ""
+                    {:action "create-organization"
+                     :origin "dashboard:organization-switcher"})
+                   u/uri
+                   :query
+                   u/query-string->map))))))
+
 (t/deftest build-nitrate-callback-urls-preserves-hash-query
   (t/testing "appends subscription to an existing query inside the hash route"
     (let [callbacks (dnt/build-nitrate-callback-urls

@@ -169,7 +169,9 @@
                                                {:show-contact-sales-option true})))))
 
         handle-go-to-cc
-        (mf/use-fn dnt/go-to-nitrate-ac-create-organization)
+        (mf/use-fn
+         #(dnt/go-to-nitrate-ac-create-organization
+           "dashboard:first-organization-promotional-banner"))
 
         handle-open-renew-modal
         (mf/use-fn #(st/emit! (modal/show :nitrate-code-activation {:renew? true})))]

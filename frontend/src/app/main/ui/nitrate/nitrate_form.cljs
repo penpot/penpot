@@ -30,7 +30,11 @@
         on-click
         (mf/use-fn
          (fn []
-           (dnt/go-to-buy-nitrate-license "monthly" dnt/go-to-ac-url)))
+           (dnt/go-to-buy-nitrate-license
+            "monthly"
+            dnt/go-to-ac-url
+            "dashboard:plan-confirmation-modal"
+            (if (:subscription profile) "paid" "trial"))))
 
         on-activate-click
         (mf/use-fn
@@ -101,5 +105,3 @@
              [:a {:class (stl/css :link)
                   :on-click on-activate-click}
               (tr "nitrate.form.enter-code")]]]])]]]]))
-
-
