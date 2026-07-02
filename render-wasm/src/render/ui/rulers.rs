@@ -9,7 +9,7 @@
 
 use skia_safe::{self as skia, Color, Font, Paint, PaintStyle, PathFillType, Point, RRect, Rect};
 
-use super::fonts::FontStore;
+use crate::render::fonts::FontStore;
 use crate::state::RulerState;
 use crate::view::Viewbox;
 
