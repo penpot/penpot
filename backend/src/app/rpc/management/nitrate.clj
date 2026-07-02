@@ -43,6 +43,7 @@
   {:id            (:id profile)
    :name          (:fullname profile)
    :email         (:email profile)
+   :created-at    (:created-at profile)
    :photo-url     (files/resolve-public-uri (get profile :photo-id))})
 
 ;; ---- API: authenticate
