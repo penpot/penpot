@@ -10,7 +10,6 @@
    [app.main.data.workspace.path.common :as dwpc]
    [app.main.features :as features]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.text-editor :as text-editor]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -66,6 +65,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor-wasm/v1")
-        (text-editor/text-editor-dispose)
+        ;; NOTE: the WASM text editor is disposed by the v3 editor component on
+        ;; unmount, *after* it finalizes its content.
         (wasm.api/request-render "clear-edition-mode")))))
 

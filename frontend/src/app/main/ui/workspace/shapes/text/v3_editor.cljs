@@ -318,11 +318,13 @@
      (fn []
        (when-let [node (mf/ref-val contenteditable-ref)]
          (.focus node))
-       ;; Explicitly call on-blur here instead of relying on browser blur events,
-       ;; because in Firefox blur is not reliably fired when leaving the text editor
-       ;; by clicking elsewhere. The component does unmount when the shape is
-       ;; deselected, so we can safely call the blur handler here to finalize the editor.
-       on-blur))
+       ;; On unmount, finalize the editor content and then dispose the WASM editor.
+       ;; We finalize on unmount instead of relying on the browser blur event, because
+       ;; it was not being reliable (timing issues, Firefox issues…)
+       (fn []
+         (on-blur)
+         (text-editor/text-editor-dispose)
+         (wasm.api/request-render "text-editor-dispose"))))
 
     (mf/use-effect
      (fn []

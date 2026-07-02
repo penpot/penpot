@@ -67,3 +67,44 @@ test.describe("BUG 10502 - Mixed families and variants", () => {
   });
 });
 
+test.describe("BUG 10530 - Empty text box left behind when leaving the editor", () => {
+  test("An empty text box is removed when leaving the editor by clicking outside", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+    await expect(layerRows).toHaveCount(0);
+
+    // Draw an empty text box
+    await workspace.createTextShape(200, 150, 320, 210);
+    // The shape exists while it is being edited
+    await expect(layerRows).toHaveCount(1);
+
+    // Leave the editor by clicking outside
+    await workspace.clickAt(500, 400);
+
+    await expect(layerRows).toHaveCount(0);
+  });
+
+  test("A non-empty text box is kept when leaving the editor by clicking outside", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // A text box with content must survive leaving the editor by clicking outside.
+    await workspace.createTextShape(200, 150, 320, 210, "hello");
+    await workspace.clickAt(500, 400);
+
+    await expect(layerRows).toHaveCount(1);
+  });
+});
+
