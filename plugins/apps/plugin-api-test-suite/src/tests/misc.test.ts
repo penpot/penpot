@@ -58,8 +58,12 @@ describe('Misc', () => {
         // Boolean fills round-trip; d/content/commands are derived from the
         // operands and not independently settable (see coverage notes).
         bool.fills = [{ fillColor: '#abcdef', fillOpacity: 1 }];
-        void bool.content;
         expect(bool.fills).toHaveLength(1);
+        // The derived path data reflects the two operands.
+        expect(typeof bool.d).toBe('string');
+        expect(bool.d.length).toBeGreaterThan(0);
+        expect(bool.commands.length).toBeGreaterThan(0);
+        expect(bool.children).toHaveLength(2);
       }
     });
 
@@ -80,6 +84,10 @@ describe('Misc', () => {
   });
 
   describe('Export settings setters', () => {
+    // `shape.exports` returns live export proxies: writing through a returned
+    // export persists to the shape. This reads the export back from the shape
+    // (a fresh proxy) instead of asserting on the object we wrote to, so a
+    // detached-snapshot regression would fail here.
     test('export members round-trip on the returned export', (ctx) => {
       const r = rect(ctx);
       r.exports = [{ type: 'png', scale: 1, suffix: '', skipChildren: false }];
@@ -88,8 +96,11 @@ describe('Misc', () => {
       exp.scale = 2;
       exp.suffix = '@2x';
       exp.skipChildren = true;
-      expect(exp.type).toBe('jpeg');
-      expect(exp.scale).toBeCloseTo(2, 0);
+      const persisted = r.exports[0];
+      expect(persisted.type).toBe('jpeg');
+      expect(persisted.scale).toBeCloseTo(2, 0);
+      expect(persisted.suffix).toBe('@2x');
+      expect(persisted.skipChildren).toBe(true);
     });
   });
 
@@ -127,6 +138,10 @@ describe('Misc', () => {
       }
     });
 
+    // `shape.shadows` returns live shadow proxies: writing through a returned
+    // shadow persists to the shape. The shadow `color`, however, is a plain
+    // snapshot, so setting a gradient on it is lost and the solid color set via
+    // `shadow.color` survives. This reads the shadow back from the shape.
     test('shadow color and id round-trip', (ctx) => {
       const r = rect(ctx);
       r.shadows = [
@@ -161,6 +176,36 @@ describe('Misc', () => {
         void color.gradient;
       }
       expect(r.shadows).toHaveLength(1);
+      const persisted = r.shadows[0].color;
+      expect(persisted).toBeDefined();
+      if (persisted) {
+        expect(persisted.color).toBe('#ff00ff');
+        expect(persisted.opacity).toBeCloseTo(0.5, 2);
+      }
+    });
+
+    // The scalar shadow members persist to the shape through the live proxy.
+    test('shadow scalar members persist to the shape', (ctx) => {
+      const r = rect(ctx);
+      r.shadows = [
+        {
+          style: 'drop-shadow',
+          offsetX: 1,
+          offsetY: 1,
+          blur: 2,
+          spread: 0,
+          hidden: false,
+          color: { color: '#000000', opacity: 1 },
+        },
+      ];
+      const shadow = r.shadows[0];
+      shadow.offsetX = 9;
+      shadow.blur = 7;
+      shadow.hidden = true;
+      const persisted = r.shadows[0];
+      expect(persisted.offsetX).toBeCloseTo(9, 0);
+      expect(persisted.blur).toBeCloseTo(7, 0);
+      expect(persisted.hidden).toBe(true);
     });
   });
 
@@ -182,36 +227,38 @@ describe('Misc', () => {
   });
 
   describe('Layout leftovers', () => {
-    test('flex padding and child margins are readable', (ctx) => {
+    test('flex padding and child margins round-trip', (ctx) => {
       const board = ctx.penpot.createBoard();
       ctx.board.appendChild(board);
       const flex = board.addFlexLayout();
       flex.horizontalPadding = 4;
       flex.verticalPadding = 6;
-      void flex.horizontalPadding;
-      void flex.verticalPadding;
+      expect(flex.horizontalPadding).toBeCloseTo(4, 0);
+      expect(flex.verticalPadding).toBeCloseTo(6, 0);
 
       const child = ctx.penpot.createRectangle();
       flex.appendChild(child);
       const lc = child.layoutChild;
+      expect(lc).toBeDefined();
       if (lc) {
-        lc.horizontalMargin = 1;
-        lc.verticalMargin = 2;
         lc.topMargin = 3;
         lc.rightMargin = 4;
         lc.bottomMargin = 5;
         lc.leftMargin = 6;
         lc.maxHeight = 100;
         lc.minWidth = 10;
-        void lc.horizontalMargin;
-        void lc.verticalMargin;
-        void lc.leftMargin;
-        void lc.rightMargin;
-        void lc.bottomMargin;
-        void lc.maxHeight;
-        void lc.minWidth;
+        expect(lc.topMargin).toBeCloseTo(3, 0);
+        expect(lc.rightMargin).toBeCloseTo(4, 0);
+        expect(lc.bottomMargin).toBeCloseTo(5, 0);
+        expect(lc.leftMargin).toBeCloseTo(6, 0);
+        expect(lc.maxHeight).toBeCloseTo(100, 0);
+        expect(lc.minWidth).toBeCloseTo(10, 0);
+        // The combined setters overwrite the per-side values just set.
+        lc.horizontalMargin = 7;
+        lc.verticalMargin = 8;
+        expect(lc.horizontalMargin).toBeCloseTo(7, 0);
+        expect(lc.verticalMargin).toBeCloseTo(8, 0);
       }
-      expect(board.type).toBe('board');
     });
 
     test('grid cell properties round-trip', (ctx) => {
@@ -223,18 +270,21 @@ describe('Misc', () => {
       const child = ctx.penpot.createRectangle();
       grid.appendChild(child, 1, 1);
       const cell = child.layoutCell;
+      expect(cell).toBeDefined();
       if (cell) {
         cell.areaName = 'header';
+        expect(cell.areaName).toBe('header');
         cell.position = 'auto';
-        void cell.areaName;
-        void cell.position;
-        void cell.rowSpan;
+        expect(cell.position).toBe('auto');
+        expect(cell.rowSpan).toBeCloseTo(1, 0);
       }
-      expect(board.type).toBe('board');
     });
   });
 
   describe('Track', () => {
+    // `grid.rows` returns live track proxies: writing through a returned track
+    // persists to the grid. This reads the track back from the grid (a fresh
+    // proxy) instead of asserting on the object we wrote to.
     test('grid track members round-trip on the returned track', (ctx) => {
       const board = ctx.penpot.createBoard();
       ctx.board.appendChild(board);
@@ -243,8 +293,9 @@ describe('Misc', () => {
       const track = grid.rows[0];
       track.type = 'fixed';
       track.value = 80;
-      expect(track.type).toBe('fixed');
-      expect(track.value).toBeCloseTo(80, 0);
+      const persisted = grid.rows[0];
+      expect(persisted.type).toBe('fixed');
+      expect(persisted.value).toBeCloseTo(80, 0);
     });
   });
 
@@ -258,11 +309,15 @@ describe('Misc', () => {
       const cmd = commands[0];
       void cmd.command;
       void cmd.params;
+      // Command objects are snapshots: mutating one only changes the local
+      // array; the edit reaches the shape by reassigning the whole command
+      // list (Path.commands set).
       cmd.command = 'line-to';
       cmd.params = { x: 5, y: 5 };
       expect(cmd.command).toBe('line-to');
-      // Reassign the whole command list (Path.commands set).
+      expect(path.commands[0].command).toBe('move-to');
       path.commands = commands;
+      expect(path.commands[0].command).toBe('line-to');
     });
   });
 

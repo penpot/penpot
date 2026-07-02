@@ -97,7 +97,8 @@ describe('Variants', () => {
     const vc = await variantComponent(ctx);
     expect(vc.isVariant()).toBe(true);
     expect(typeof vc.variantProps).toBe('object');
-    void vc.variantError; // get only (no runtime setter)
+    // A well-formed variant carries no error (get only; no runtime setter).
+    expect(vc.variantError ?? undefined).toBeUndefined();
 
     const v = vc.variants;
     expect(v).not.toBeNull();
@@ -164,38 +165,61 @@ describe('Variants', () => {
     expect(ctx.penpot.utils.types.isVariantComponent(vc)).toBeTruthy();
   });
 
+  test('variantError stores an invalid variant name', async (ctx) => {
+    const mainA = componentMain(ctx);
+    const mainB = componentMain(ctx);
+    const container = ctx.penpot.createVariantFromComponents([mainA, mainB]);
+    await sleep(400);
+
+    const variants = container.variants;
+    expect(variants).not.toBeNull();
+    if (variants) {
+      const comps = variants.variantComponents();
+      expect(comps.length).toBeGreaterThan(0);
+
+      // Renaming a variant's main instance to something that doesn't follow
+      // the "[property]=[value], …" structure surfaces the rejected name in
+      // variantError instead of applying it.
+      const invalidName = 'not a valid variant structure';
+      comps[0].mainInstance().name = invalidName;
+      await sleep(400);
+
+      const after = variants.variantComponents();
+      expect(after.map((c) => c.variantError)).toContain(invalidName);
+    }
+  });
+
   // ---------------------------------------------------------------------------
   // Edge cases. Out-of-bounds property positions and degenerate
   // container input should be rejected.
   // ---------------------------------------------------------------------------
-  // createVariantFromComponents([]) is rejected (validated), but the
-  // positional property ops do not bounds-check `pos`; an out-of-range index
-  // is a no-op rather than an error. These pin the current behaviour
-  // (bounds-checking the position is a candidate for future hardening).
+  // createVariantFromComponents([]) is rejected (validated). The positional
+  // property ops bounds-check `pos`; an out-of-range index is rejected rather
+  // than reaching the data layer (where it would surface as an error toast).
   test('createVariantFromComponents of an empty array throws', (ctx) => {
     expect(() => ctx.penpot.createVariantFromComponents([])).toThrow();
   });
 
-  test('removeProperty out of bounds is a no-op (not rejected)', async (ctx) => {
+  test('removeProperty out of bounds throws', async (ctx) => {
     const vc = await variantComponent(ctx);
     const v = vc.variants;
     expect(v).not.toBeNull();
     if (v) {
-      expect(() => v.removeProperty(999)).not.toThrow();
+      expect(() => v.removeProperty(999)).toThrow();
     }
   });
 
-  test('renameProperty out of bounds is a no-op (not rejected)', async (ctx) => {
+  test('renameProperty out of bounds throws', async (ctx) => {
     const vc = await variantComponent(ctx);
     const v = vc.variants;
     expect(v).not.toBeNull();
     if (v) {
-      expect(() => v.renameProperty(999, 'Nope')).not.toThrow();
+      expect(() => v.renameProperty(999, 'Nope')).toThrow();
     }
   });
 
-  test('setVariantProperty out of bounds is a no-op (not rejected)', async (ctx) => {
+  test('setVariantProperty out of bounds throws', async (ctx) => {
     const vc = await variantComponent(ctx);
-    expect(() => vc.setVariantProperty(999, 'large')).not.toThrow();
+    expect(() => vc.setVariantProperty(999, 'large')).toThrow();
   });
 });

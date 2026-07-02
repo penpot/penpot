@@ -111,8 +111,10 @@ describe.skipIfMocked('Comments', () => {
     try {
       const reply = await thread.reply('to be removed');
       await reply.remove();
+      // The root comment survives but the removed reply is gone.
       const comments = await thread.findComments();
       expect(comments.length).toBeGreaterThan(0);
+      expect(comments.some((c) => c.content === 'to be removed')).toBe(false);
     } finally {
       cleanup(thread);
     }
@@ -136,6 +138,8 @@ describe.skipIfMocked('Comments', () => {
       y: 70,
     });
     await p.removeCommentThread(thread);
+    const threads = await p.findCommentThreads();
+    expect(threads.every((t) => t.seqNumber !== thread.seqNumber)).toBe(true);
   });
 
   // ---------------------------------------------------------------------------

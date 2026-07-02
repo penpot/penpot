@@ -6,7 +6,10 @@
 
 (ns frontend-tests.plugins.format-test
   (:require
+   [app.plugins.exports :as exports]
    [app.plugins.format :as format]
+   [app.plugins.shadows :as shadows]
+   [app.plugins.tracks :as tracks]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest test-format-array-always-returns-array
@@ -33,10 +36,10 @@
   ;; Each wrapper backs a non-nullable array-typed Plugin API property and
   ;; must return an empty array (never nil) when the source collection is nil.
   (t/are [result] (and (array? result) (= 0 (.-length result)))
-    (format/format-shadows nil)
-    (format/format-exports nil)
+    (shadows/format-shadows nil)
+    (exports/format-exports nil)
     (format/format-frame-guides nil)
-    (format/format-tracks nil)
+    (tracks/format-tracks nil nil nil nil nil nil)
     (format/format-path-content nil)))
 
 (t/deftest test-format-color-result-uses-shapes-info-key

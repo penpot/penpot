@@ -21,6 +21,8 @@ export interface RunOutput {
   coverage: CoverageReport;
   /** Names of tests excluded because of {@link RunOptions.skipMocked}. */
   skipped: string[];
+  /** True when the run ended early because {@link RunOptions.shouldStop} asked it to. */
+  stopped: boolean;
 }
 
 export interface RunOptions {
@@ -30,6 +32,12 @@ export interface RunOptions {
    * {@link RunOutput.skipped}.
    */
   skipMocked?: boolean;
+  /**
+   * Checked before each test; returning true stops the run after the current
+   * test finishes. Lets the UI cancel a long run without leaving a half-created
+   * scratch board behind.
+   */
+  shouldStop?: () => boolean;
 }
 
 export type ResultReporter = (result: TestResult) => void;
@@ -103,7 +111,13 @@ export async function runTests(
 
   const results: TestResult[] = [];
 
+  let stopped = false;
   for (const testCase of selected) {
+    if (options?.shouldStop?.()) {
+      stopped = true;
+      break;
+    }
+
     onResult?.({
       id: testCase.id,
       name: testCase.name,
@@ -165,6 +179,13 @@ export async function runTests(
 
     results.push(result);
     onResult?.(result);
+
+    // Yield a macrotask between tests so the workspace can flush pending
+    // renders. Sync tests only yield microtasks, and hundreds of back-to-back
+    // mutation bursts starve React's commit cycle until it trips its
+    // nested-update limit, surfacing "Maximum update depth exceeded" error
+    // toasts in the host app (and, more rarely, wasm render errors).
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   const summary: RunSummary = {
@@ -175,5 +196,5 @@ export async function runTests(
 
   const coverage = computeCoverage(recorder.accessed, apiSurface as ApiSurface);
 
-  return { results, summary, coverage, skipped };
+  return { results, summary, coverage, skipped, stopped };
 }

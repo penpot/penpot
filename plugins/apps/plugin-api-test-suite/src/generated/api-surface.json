@@ -350,6 +350,7 @@
       "getShapeById",
       "id",
       "name",
+      "remove",
       "removeCommentThread",
       "removeFlow",
       "removeRulerGuide",
@@ -371,7 +372,7 @@
     "PreviousScreen": ["type"],
     "Push": ["direction", "duration", "easing", "type"],
     "Rectangle": ["fills", "type"],
-    "RulerGuide": ["board", "orientation", "position"],
+    "RulerGuide": ["board", "orientation", "position", "remove"],
     "Shadow": [
       "blur",
       "color",
@@ -5658,6 +5659,12 @@
         "type": "Shape",
         "array": false
       },
+      "remove": {
+        "decl": "Page",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "getShapeById": {
         "decl": "Page",
         "kind": "method",
@@ -7072,6 +7079,12 @@
         "decl": "RulerGuide",
         "kind": "getset",
         "type": "Board",
+        "array": false
+      },
+      "remove": {
+        "decl": "RulerGuide",
+        "kind": "method",
+        "type": null,
         "array": false
       }
     },

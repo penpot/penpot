@@ -36,10 +36,13 @@ describe('Plugin data', () => {
   // ---------------------------------------------------------------------------
   test('setPluginData with an empty key is accepted (currently unvalidated)', (ctx) => {
     // An empty key is not rejected; this pins the current lenient behaviour
-    // (a candidate for future hardening).
+    // (a candidate for future hardening): the value is stored and retrievable
+    // under the empty key like any other.
     const rect = ctx.penpot.createRectangle();
     ctx.board.appendChild(rect);
     expect(() => rect.setPluginData('', 'value')).not.toThrow();
+    expect(rect.getPluginData('')).toBe('value');
+    expect(rect.getPluginDataKeys()).toContain('');
   });
 
   test('setPluginData with a non-string value throws', (ctx) => {
