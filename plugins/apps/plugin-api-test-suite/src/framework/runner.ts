@@ -21,6 +21,8 @@ export interface RunOutput {
   coverage: CoverageReport;
   /** Names of tests excluded because of {@link RunOptions.skipMocked}. */
   skipped: string[];
+  /** True when the run ended early because {@link RunOptions.shouldStop} asked it to. */
+  stopped: boolean;
 }
 
 export interface RunOptions {
@@ -30,6 +32,12 @@ export interface RunOptions {
    * {@link RunOutput.skipped}.
    */
   skipMocked?: boolean;
+  /**
+   * Checked before each test; returning true stops the run after the current
+   * test finishes. Lets the UI cancel a long run without leaving a half-created
+   * scratch board behind.
+   */
+  shouldStop?: () => boolean;
 }
 
 export type ResultReporter = (result: TestResult) => void;
@@ -75,12 +83,17 @@ export async function runTests(
 ): Promise<RunOutput> {
   const all = getTests();
   const requested = ids === 'all' ? all : all.filter((t) => ids.includes(t.id));
+  // `.only` focuses the run: when any requested test is marked only, restrict the
+  // run to those and drop the rest. A source-level dev aid for isolating a case.
+  const focused = requested.some((t) => t.only)
+    ? requested.filter((t) => t.only)
+    : requested;
   const skipped = options?.skipMocked
-    ? requested.filter((t) => t.mockedSkip).map((t) => t.name)
+    ? focused.filter((t) => t.mockedSkip).map((t) => t.name)
     : [];
   const selected = options?.skipMocked
-    ? requested.filter((t) => !t.mockedSkip)
-    : requested;
+    ? focused.filter((t) => !t.mockedSkip)
+    : focused;
 
   const recorder = createRecorder(penpot, apiSurface as ApiSurface);
 
@@ -103,7 +116,13 @@ export async function runTests(
 
   const results: TestResult[] = [];
 
+  let stopped = false;
   for (const testCase of selected) {
+    if (options?.shouldStop?.()) {
+      stopped = true;
+      break;
+    }
+
     onResult?.({
       id: testCase.id,
       name: testCase.name,
@@ -141,30 +160,41 @@ export async function runTests(
         durationMs: Date.now() - start,
       };
     } finally {
-      try {
-        rawBoard?.remove();
-      } catch {
-        // best-effort cleanup; never fail a test because teardown failed
-      }
-      // Reset shared state so the next test starts clean. All best-effort: a
-      // teardown failure must never turn into a test failure.
-      try {
-        penpot.selection = [];
-      } catch {
-        /* ignore */
-      }
-      try {
-        const active = penpot.currentPage;
-        if (homePage && active && active.id !== homePage.id) {
-          await penpot.openPage(homePage);
+      // `test.nocleanup` keeps the scratch board and shared state as the test
+      // left them so the result can be inspected in the workspace.
+      if (!testCase.noCleanup) {
+        try {
+          rawBoard?.remove();
+        } catch {
+          // best-effort cleanup; never fail a test because teardown failed
         }
-      } catch {
-        /* ignore */
+        // Reset shared state so the next test starts clean. All best-effort: a
+        // teardown failure must never turn into a test failure.
+        try {
+          penpot.selection = [];
+        } catch {
+          /* ignore */
+        }
+        try {
+          const active = penpot.currentPage;
+          if (homePage && active && active.id !== homePage.id) {
+            await penpot.openPage(homePage);
+          }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
     results.push(result);
     onResult?.(result);
+
+    // Yield a macrotask between tests so the workspace can flush pending
+    // renders. Sync tests only yield microtasks, and hundreds of back-to-back
+    // mutation bursts starve React's commit cycle until it trips its
+    // nested-update limit, surfacing "Maximum update depth exceeded" error
+    // toasts in the host app (and, more rarely, wasm render errors).
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   const summary: RunSummary = {
@@ -175,5 +205,5 @@ export async function runTests(
 
   const coverage = computeCoverage(recorder.accessed, apiSurface as ApiSurface);
 
-  return { results, summary, coverage, skipped };
+  return { results, summary, coverage, skipped, stopped };
 }

@@ -39,6 +39,7 @@ describe('Ruler guides', () => {
     expect(guide.orientation).toBe('vertical');
     // A board-attached ruler guide exposes its board.
     void guide.board;
+    guide.remove();
   });
 
   test('board ruler guide can be reassigned to another board', (ctx) => {
@@ -47,17 +48,20 @@ describe('Ruler guides', () => {
     ctx.board.appendChild(other);
     guide.board = other;
     expect(guide.board && guide.board.id).toBe(other.id);
+    guide.remove();
   });
 
   test('board ruler guide position round-trips', (ctx) => {
     const guide = ctx.board.addRulerGuide('vertical', 50);
     guide.position = 60;
     expect(guide.position).toBeCloseTo(60, 0);
+    guide.remove();
   });
 
   test('board lists its ruler guides', (ctx) => {
-    ctx.board.addRulerGuide('horizontal', 30);
+    const guide = ctx.board.addRulerGuide('horizontal', 30);
     expect(ctx.board.rulerGuides.length).toBeGreaterThan(0);
+    guide.remove();
   });
 
   test('board removeRulerGuide removes a guide', (ctx) => {

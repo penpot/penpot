@@ -208,8 +208,11 @@ describe('Interactions', () => {
     interaction.delay = 250;
     interaction.action = { type: 'previous-screen' };
 
-    expect(interaction.delay).toBeCloseTo(250, 0);
-    expect(interaction.action.type).toBe('previous-screen');
+    // Re-fetch from the shape so we prove persistence, not that the proxy
+    // reflects its own write.
+    const persisted = r.interactions[0];
+    expect(persisted.delay).toBeCloseTo(250, 0);
+    expect(persisted.action.type).toBe('previous-screen');
   });
 
   // The delay setter accepts zero (fires immediately) as a valid value.
@@ -224,6 +227,18 @@ describe('Interactions', () => {
 
     interaction.delay = 0;
     expect(interaction.delay).toBeCloseTo(0, 0);
+  });
+
+  test('removeInteraction removes an interaction from a shape', (ctx) => {
+    const dest = board(ctx);
+    const r = rect(ctx);
+    const interaction = r.addInteraction('click', {
+      type: 'navigate-to',
+      destination: dest,
+    });
+    const before = r.interactions.length;
+    r.removeInteraction(interaction);
+    expect(r.interactions.length).toBe(before - 1);
   });
 
   describe('Animations', () => {

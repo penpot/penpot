@@ -1,6 +1,6 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
-import type { Board, Shape } from '@penpot/plugin-types';
+import type { Shape } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
 
 // Component instances and the ShapeBase component methods.
@@ -37,6 +37,28 @@ describe('Component instances', () => {
     expect(inst.componentRoot()).toBeDefined();
     expect(inst.componentHead()).toBeDefined();
     expect(inst.componentRefShape()).toBeDefined();
+  });
+
+  // Community report (forum #10700, issue #8): cloning a component's main
+  // instance was said to yield a shape with null type/name that appendChild
+  // silently drops. Did not reproduce (clone attaches to the same parent and
+  // can be re-parented); kept as a regression pin.
+  test('cloning a component main instance yields a valid shape', (ctx) => {
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance();
+    const copy = main.clone();
+    expect(copy.type).not.toBeNull();
+    expect(copy.type).toBe(main.type);
+    expect(copy.name).not.toBeNull();
+    expect(copy.id).not.toBe(main.id);
+
+    const target = ctx.penpot.createBoard();
+    ctx.board.appendChild(target);
+    target.resize(200, 200);
+    const before = target.children.length;
+    target.appendChild(copy);
+    expect(target.children.length).toBe(before + 1);
+    expect(target.children.some((s) => s.id === copy.id)).toBe(true);
   });
 
   test('component() returns the library component', (ctx) => {
@@ -114,22 +136,5 @@ describe('Component instances', () => {
     if (c1 && c2) {
       expect(c1.id).toBe(c2.id);
     }
-  });
-});
-
-describe('Shape interactions cleanup', () => {
-  test('removeInteraction removes an interaction from a shape', (ctx) => {
-    const dest = ctx.penpot.createBoard();
-    ctx.board.appendChild(dest as Board);
-    const rect = ctx.penpot.createRectangle();
-    ctx.board.appendChild(rect);
-
-    const interaction = rect.addInteraction('click', {
-      type: 'navigate-to',
-      destination: dest,
-    });
-    const before = rect.interactions.length;
-    rect.removeInteraction(interaction);
-    expect(rect.interactions.length).toBe(before - 1);
   });
 });

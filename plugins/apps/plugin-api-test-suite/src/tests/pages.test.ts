@@ -3,8 +3,8 @@ import { describe, test } from '../framework/registry';
 
 // Pages, selection and flows.
 // Most assertions use the active page (`currentPage`) and the scratch board so
-// the user's file is left clean. createPage/openPage necessarily leave a page
-// behind (the API has no removePage), so the active page is restored afterwards.
+// the user's file is left clean. Tests that create a page restore the active
+// page and remove the created one afterwards.
 
 describe('Pages', () => {
   test('currentPage exposes id and name', (ctx) => {
@@ -26,7 +26,29 @@ describe('Pages', () => {
     const active = ctx.penpot.currentPage;
     expect(active && active.id).toBe(page.id);
 
-    // Restore the originally active page so other tests aren't affected.
+    // Restore the originally active page and remove the created page so the
+    // file is left clean.
+    if (original) await ctx.penpot.openPage(original);
+    page.remove();
+    const pages = ctx.penpot.currentFile?.pages ?? [];
+    expect(pages.some((p) => p.id === page.id)).toBe(false);
+  });
+
+  test('removing the active page activates another page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    const page = ctx.penpot.createPage();
+    await ctx.penpot.openPage(page);
+    page.remove();
+    // The switch to another page happens asynchronously; wait for it.
+    const start = Date.now();
+    let active = ctx.penpot.currentPage;
+    while (active && active.id === page.id && Date.now() - start < 2000) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      active = ctx.penpot.currentPage;
+    }
+    expect(active).not.toBeNull();
+    expect(active && active.id).not.toBe(page.id);
+    // The workspace activates the first remaining page; go back home.
     if (original) await ctx.penpot.openPage(original);
   });
 
@@ -103,6 +125,31 @@ describe('Selection', () => {
     ctx.board.appendChild(rect);
     ctx.penpot.selection = [rect, rect];
     expect(ctx.penpot.selection).toHaveLength(1);
+  });
+
+  // The selection setter does not validate liveness: a removed shape reference
+  // is still accepted into the selection (currently unvalidated).
+  test('selection accepts a removed shape (currently unvalidated)', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    rect.remove();
+    ctx.penpot.selection = [rect];
+    expect(ctx.penpot.selection.some((s) => s.id === rect.id)).toBe(true);
+  });
+
+  // A shape living on a non-active page cannot be selected on the current page;
+  // the setter filters it out.
+  test('selection ignores a shape from a non-active page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    const page = ctx.penpot.createPage();
+    await ctx.penpot.openPage(page);
+    const other = ctx.penpot.createRectangle();
+    if (original) await ctx.penpot.openPage(original);
+
+    ctx.penpot.selection = [other];
+    expect(ctx.penpot.selection.some((s) => s.id === other.id)).toBe(false);
+
+    page.remove();
   });
 });
 

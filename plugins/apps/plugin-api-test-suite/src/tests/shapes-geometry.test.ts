@@ -38,7 +38,9 @@ describe('Shapes', () => {
       const b = rect(ctx);
       // Two siblings on a fresh board occupy indices 0 and 1 (direction depends
       // on naturalChildOrdering, so assert the set rather than which is which).
-      expect([a.parentIndex, b.parentIndex].sort()).toEqual([0, 1]);
+      expect([a.parentIndex, b.parentIndex].sort((x, y) => x - y)).toEqual([
+        0, 1,
+      ]);
     });
   });
 
@@ -269,16 +271,12 @@ describe('Shapes', () => {
       void b;
       const last = ctx.board.children.length - 1;
 
+      // naturalChildOrdering is pinned on, so the last index renders in front.
       a.bringToFront();
-      const front = a.parentIndex;
-      expect(front === 0 || front === last).toBe(true);
+      expect(a.parentIndex).toBe(last);
 
       a.sendToBack();
-      const back = a.parentIndex;
-      expect(back === 0 || back === last).toBe(true);
-
-      // Front and back must be different extremes.
-      expect(front).not.toBe(back);
+      expect(a.parentIndex).toBe(0);
     });
 
     test('bringForward / sendBackward move the shape one step', (ctx) => {
@@ -290,11 +288,63 @@ describe('Shapes', () => {
 
       const start = a.parentIndex;
       a.bringForward();
-      expect(Math.abs(a.parentIndex - start)).toBe(1);
+      expect(a.parentIndex).toBe(start + 1);
 
       const mid = a.parentIndex;
       a.sendBackward();
-      expect(Math.abs(a.parentIndex - mid)).toBe(1);
+      expect(a.parentIndex).toBe(mid - 1);
+    });
+
+    // Community report (forum #10700, issue #16): bringToFront once failed to
+    // reorder shapes inside a flex container (it worked on plain boards and grid
+    // containers). Fixed; kept as a regression pin.
+    test('bringToFront reorders children inside a flex container', (ctx) => {
+      const b = ctx.penpot.createBoard();
+      ctx.board.appendChild(b);
+      b.resize(300, 200);
+      b.addFlexLayout();
+
+      const r1 = ctx.penpot.createRectangle();
+      const r2 = ctx.penpot.createRectangle();
+      const r3 = ctx.penpot.createRectangle();
+      b.appendChild(r1);
+      b.appendChild(r2);
+      b.appendChild(r3);
+
+      r1.bringToFront();
+      // naturalChildOrdering is on: the last element renders in front.
+      expect(b.children[b.children.length - 1].id).toBe(r1.id);
+    });
+
+    // Issue #16, grid variant: reorders correctly. Kept as a regression pin.
+    test('bringToFront reorders children inside a grid container', (ctx) => {
+      const b = ctx.penpot.createBoard();
+      ctx.board.appendChild(b);
+      b.resize(300, 200);
+      const grid = b.addGridLayout();
+      grid.addColumn('flex', 1);
+      grid.addColumn('flex', 1);
+      grid.addRow('flex', 1);
+
+      const r1 = ctx.penpot.createRectangle();
+      const r2 = ctx.penpot.createRectangle();
+      grid.appendChild(r1, 1, 1);
+      grid.appendChild(r2, 1, 2);
+
+      r1.bringToFront();
+      expect(b.children[b.children.length - 1].id).toBe(r1.id);
+    });
+
+    // Locks the ordering semantics the whole suite relies on: with
+    // naturalChildOrdering on, the last child renders in front. If the flag
+    // default ever regresses, this fails loudly.
+    test('last child renders in front under naturalChildOrdering', (ctx) => {
+      const a = rect(ctx);
+      const b = rect(ctx);
+      a.bringToFront();
+      const children = ctx.board.children;
+      expect(children[children.length - 1].id).toBe(a.id);
+      expect(a.parentIndex).toBeGreaterThan(b.parentIndex);
     });
   });
 
@@ -308,11 +358,42 @@ describe('Shapes', () => {
       expect(copy.type).toBe('rectangle');
     });
 
+    test('clone deep-copies a group with its children', (ctx) => {
+      const a = rect(ctx);
+      const b = rect(ctx);
+      const group = ctx.penpot.group([a, b]);
+      expect(group).not.toBeNull();
+      if (!group) return;
+
+      const copy = group.clone();
+      ctx.board.appendChild(copy);
+      expect(copy.id).not.toBe(group.id);
+      expect(copy.children).toHaveLength(group.children.length);
+
+      // Every cloned descendant is a fresh shape, none sharing an id with the
+      // originals.
+      const originalIds = new Set(group.children.map((c) => c.id));
+      for (const child of copy.children) {
+        expect(originalIds.has(child.id)).toBe(false);
+      }
+    });
+
     test('remove detaches the shape from its parent', (ctx) => {
       const r = rect(ctx);
       const before = ctx.board.children.length;
       r.remove();
       expect(ctx.board.children.length).toBe(before - 1);
+    });
+
+    test('remove makes the shape unreachable by id', (ctx) => {
+      const r = rect(ctx);
+      const id = r.id;
+      r.remove();
+      const page = ctx.penpot.currentPage;
+      expect(page).not.toBeNull();
+      if (page) {
+        expect(page.getShapeById(id)).toBeNull();
+      }
     });
   });
 
@@ -343,13 +424,13 @@ describe('Shapes', () => {
       }).toThrow();
     });
 
-    test('NaN rotation is accepted (currently unvalidated)', (ctx) => {
-      // The rotation setter does not reject NaN; this pins the current lenient
-      // behaviour (a candidate for future hardening).
+    test('NaN rotation throws', (ctx) => {
+      // The rotation setter rejects non-finite numbers; a NaN would otherwise
+      // reach the geometry layer as an invalid move vector.
       const r = rect(ctx);
       expect(() => {
         r.rotation = NaN;
-      }).not.toThrow();
+      }).toThrow();
     });
 
     test('invalid blendMode throws', (ctx) => {
@@ -366,13 +447,33 @@ describe('Shapes', () => {
       }).toThrow();
     });
 
+    test('resize to zero dimensions throws', (ctx) => {
+      const r = rect(ctx);
+      expect(() => {
+        r.resize(0, 0);
+      }).toThrow();
+    });
+
+    test('resize with negative dimensions throws', (ctx) => {
+      const r = rect(ctx);
+      expect(() => {
+        r.resize(-100, -50);
+      }).toThrow();
+    });
+
     test('setParentIndex with a negative index is accepted (currently unvalidated)', (ctx) => {
       // setParentIndex does not reject a negative index; this pins the current
-      // lenient behaviour (a candidate for future hardening).
+      // lenient behaviour (a candidate for future hardening) and that the
+      // hierarchy survives it: the shape stays a child and no sibling is
+      // duplicated or dropped.
       const a = rect(ctx);
       const b = rect(ctx);
       void b;
+      const countBefore = ctx.board.children.length;
       expect(() => a.setParentIndex(-1)).not.toThrow();
+      expect(a.parent?.id).toBe(ctx.board.id);
+      expect(ctx.board.children).toHaveLength(countBefore);
+      expect(ctx.board.children.filter((c) => c.id === a.id)).toHaveLength(1);
     });
   });
 
@@ -405,7 +506,9 @@ describe('Shapes', () => {
       void c;
       b.setParentIndex(0);
       expect(b.parentIndex).toBe(0);
-      const indices = ctx.board.children.map((s) => s.parentIndex).sort();
+      const indices = ctx.board.children
+        .map((s) => s.parentIndex)
+        .sort((x, y) => x - y);
       expect(indices).toEqual([0, 1, 2]);
     });
 
