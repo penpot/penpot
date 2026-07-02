@@ -503,7 +503,7 @@
       (-> state
           (update :comments-local assoc :open id)
           (update :comments-local assoc :options nil)
-          (update :comments-local dissoc :draft)))))
+          (update :comments-local dissoc :draft :expanded)))))
 
 (defn close-thread
   []
@@ -511,7 +511,25 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (update :comments-local dissoc :open :draft :options :expanded)))))
+
+(defn expand-comment-group
+  "Temporarily mark a proximity cluster of threads as expanded so its bubbles
+   can be laid out visually without altering their stored positions."
+  [thread-ids]
+  (ptk/reify ::expand-comment-group
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :comments-local assoc :expanded (set thread-ids))
           (update :comments-local dissoc :open :draft :options)))))
+
+(defn collapse-comment-group
+  []
+  (ptk/reify ::collapse-comment-group
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :comments-local dissoc :expanded))))
 
 (defn update-filters
   [{:keys [mode show list] :as params}]
