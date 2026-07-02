@@ -2,11 +2,11 @@ use super::{filters, RenderState, Shape, SurfaceId, DEFAULT_EMOJI_FONT};
 use crate::{
     error::Result,
     math::Rect,
+    render::TextShapingCtx,
     shapes::{
         calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup, ParagraphLayout, Stroke,
         StrokeKind, TextContent,
     },
-    utils::{get_fallback_fonts, get_font_collection},
 };
 use skia_safe::{
     self as skia,
@@ -17,12 +17,13 @@ use skia_safe::{
 
 pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
+    ctx: &TextShapingCtx,
     stroke: &Stroke,
     bounds: &Rect,
     use_shadow: Option<bool>,
 ) -> (Vec<ParagraphBuilderGroup>, Option<f32>) {
-    let fallback_fonts = get_fallback_fonts();
-    let fonts = get_font_collection();
+    let fallback_fonts = ctx.fallback_fonts();
+    let fonts = ctx.font_collection();
     let mut paragraph_group = Vec::new();
     let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
     let mut group_layer_opacity: Option<f32> = None;
@@ -39,7 +40,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                 group_layer_opacity = stroke_layer_opacity;
             }
 
-            let text: String = span.apply_text_transform();
+            let text: String = span.apply_text_transform(ctx.browser);
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -145,6 +146,7 @@ pub fn render_with_bounds_outset(
     stroke_bounds_outset: f32,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     render_with_bounds_outset_inner(
         render_state,
@@ -158,6 +160,7 @@ pub fn render_with_bounds_outset(
         fill_inset,
         layer_opacity,
         false,
+        ctx,
     )
 }
 
@@ -172,6 +175,7 @@ pub fn render_with_bounds_outset_overlay_emoji(
     stroke_bounds_outset: f32,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     render_with_bounds_outset_inner(
         None,
@@ -185,6 +189,7 @@ pub fn render_with_bounds_outset_overlay_emoji(
         fill_inset,
         layer_opacity,
         true,
+        ctx,
     )
 }
 
@@ -201,6 +206,7 @@ fn render_with_bounds_outset_inner(
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
@@ -208,7 +214,7 @@ fn render_with_bounds_outset_inner(
         if let Some(blur_filter) = blur {
             let mut text_bounds = shape
                 .get_text_content()
-                .calculate_bounds(shape, false)
+                .calculate_bounds(ctx, shape, false)
                 .to_rect();
             if stroke_bounds_outset > 0.0 {
                 text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
@@ -231,6 +237,7 @@ fn render_with_bounds_outset_inner(
                             fill_inset,
                             layer_opacity,
                             false,
+                            ctx,
                         );
                         Ok(())
                     },
@@ -250,6 +257,7 @@ fn render_with_bounds_outset_inner(
             fill_inset,
             layer_opacity,
             false,
+            ctx,
         );
         return Ok(());
     }
@@ -264,6 +272,7 @@ fn render_with_bounds_outset_inner(
             fill_inset,
             layer_opacity,
             overlay_emoji,
+            ctx,
         );
     }
     Ok(())
@@ -280,6 +289,7 @@ pub fn render(
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     render_with_bounds_outset(
         render_state,
@@ -292,6 +302,7 @@ pub fn render(
         0.0,
         fill_inset,
         layer_opacity,
+        ctx,
     )
 }
 
@@ -305,6 +316,7 @@ pub fn render_overlay_emoji(
     blur: Option<&ImageFilter>,
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     render_with_bounds_outset_overlay_emoji(
         canvas,
@@ -315,6 +327,7 @@ pub fn render_overlay_emoji(
         0.0,
         fill_inset,
         layer_opacity,
+        ctx,
     )
 }
 
@@ -328,6 +341,7 @@ fn render_text_on_canvas(
     fill_inset: Option<f32>,
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
+    ctx: &TextShapingCtx,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -345,6 +359,7 @@ fn render_text_on_canvas(
             paragraph_builders,
             layer_opacity,
             overlay_emoji,
+            ctx,
         );
         canvas.restore();
     } else if let Some(eps) = fill_inset.filter(|&e| e > 0.0) {
@@ -359,6 +374,7 @@ fn render_text_on_canvas(
                 paragraph_builders,
                 layer_opacity,
                 overlay_emoji,
+                ctx,
             );
             canvas.restore();
         } else {
@@ -368,6 +384,7 @@ fn render_text_on_canvas(
                 paragraph_builders,
                 layer_opacity,
                 overlay_emoji,
+                ctx,
             );
         }
     } else {
@@ -377,14 +394,13 @@ fn render_text_on_canvas(
             paragraph_builders,
             layer_opacity,
             overlay_emoji,
+            ctx,
         );
     }
 
     if blur.is_some() {
         canvas.restore();
     }
-
-    canvas.restore();
 }
 
 /// Lays out and paints paragraph builders without any layer management.
@@ -392,8 +408,9 @@ fn paint_text(
     canvas: &Canvas,
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+    ctx: &TextShapingCtx,
 ) {
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
+    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false, ctx);
 }
 
 fn paint_text_with_emoji_overlay(
@@ -401,10 +418,11 @@ fn paint_text_with_emoji_overlay(
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
     overlay_emoji: bool,
+    ctx: &TextShapingCtx,
 ) {
     let text_content = shape.get_text_content();
     let mut layout_info =
-        calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true);
+        calculate_text_layout_data(shape, text_content, paragraph_builder_groups, true, ctx);
 
     for para in &mut layout_info.paragraphs {
         para.paragraph.paint(canvas, (para.x, para.y));
@@ -657,9 +675,11 @@ pub fn render_emoji_overlay(
     deco_builders: &mut [Vec<ParagraphBuilder>],
     surface_id: SurfaceId,
     blur: Option<&ImageFilter>,
+    ctx: &TextShapingCtx,
 ) {
     let text_content = shape.get_text_content();
-    let mut emoji_layout = calculate_text_layout_data(shape, text_content, emoji_builders, true);
+    let mut emoji_layout =
+        calculate_text_layout_data(shape, text_content, emoji_builders, true, ctx);
 
     if !emoji_layout
         .paragraphs
@@ -681,7 +701,7 @@ pub fn render_emoji_overlay(
         }
     }
 
-    let deco_layout = calculate_text_layout_data(shape, text_content, deco_builders, true);
+    let deco_layout = calculate_text_layout_data(shape, text_content, deco_builders, true, ctx);
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
 
     if let Some(blur_filter) = blur {
@@ -709,17 +729,26 @@ fn draw_text(
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
+    ctx: &TextShapingCtx,
 ) {
+    // Text-level opacity must apply to the union of (possibly overlapping)
+    // glyphs, so it gets its own layer; the layer is balanced here (self
+    // contained) instead of relying on a `restore` in the caller.
+    //
+    // With no opacity we paint straight to the canvas: an empty isolation
+    // `save_layer` is a no-op for SrcOver text on the GPU/PDF backends and, on
+    // Skia's SVG backend, it is silently dropped (making the text vanish). The
+    // caller/compositor owns shape-level opacity, blend and blur.
     if let Some(opacity) = layer_opacity {
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default().paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji, ctx);
+        canvas.restore();
     } else {
-        canvas.save_layer(&SaveLayerRec::default());
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji, ctx);
     }
-
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders a text stroke masked to the glyph shape.
@@ -740,6 +769,7 @@ fn render_masked_stroke_on_canvas(
     stroke_mask_blend: skia::BlendMode,
     blur: Option<&ImageFilter>,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) {
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
@@ -757,13 +787,13 @@ fn render_masked_stroke_on_canvas(
 
     canvas.save_layer(&SaveLayerRec::default());
 
-    paint_text(canvas, shape, mask_builders);
+    paint_text(canvas, shape, mask_builders, ctx);
 
     let mut stroke_paint = Paint::default();
     stroke_paint.set_blend_mode(stroke_mask_blend);
     canvas.save_layer(&SaveLayerRec::default().paint(&stroke_paint));
 
-    paint_text(canvas, shape, stroke_builders);
+    paint_text(canvas, shape, stroke_builders, ctx);
 
     // Fill with DstOver behind the stroke, inside the masked layer so the fill's
     // anti-aliased edge aligns with the stroke (no seam at the glyph edge).
@@ -773,7 +803,7 @@ fn render_masked_stroke_on_canvas(
         dst_over_paint.set_blend_mode(skia::BlendMode::DstOver);
         canvas.save_layer(&SaveLayerRec::default().paint(&dst_over_paint));
 
-        paint_text(canvas, shape, fill_builders);
+        paint_text(canvas, shape, fill_builders, ctx);
 
         canvas.restore(); // DstOver layer
     }
@@ -804,6 +834,7 @@ fn render_masked_stroke(
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     if let Some(render_state) = render_state {
         let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
@@ -811,7 +842,7 @@ fn render_masked_stroke(
         if let Some(blur_filter) = blur {
             let mut text_bounds = shape
                 .get_text_content()
-                .calculate_bounds(shape, false)
+                .calculate_bounds(ctx, shape, false)
                 .to_rect();
             if stroke_bounds_outset > 0.0 {
                 text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
@@ -835,6 +866,7 @@ fn render_masked_stroke(
                             stroke_mask_blend,
                             Some(&blur_filter_clone),
                             layer_opacity,
+                            ctx,
                         );
                         Ok(())
                     },
@@ -854,6 +886,7 @@ fn render_masked_stroke(
             stroke_mask_blend,
             blur,
             layer_opacity,
+            ctx,
         );
         return Ok(());
     }
@@ -868,6 +901,7 @@ fn render_masked_stroke(
             stroke_mask_blend,
             blur,
             layer_opacity,
+            ctx,
         );
     }
     Ok(())
@@ -884,8 +918,9 @@ pub fn render_inner_stroke(
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
-    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque();
+    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque(ctx);
     render_masked_stroke(
         render_state,
         canvas,
@@ -898,6 +933,7 @@ pub fn render_inner_stroke(
         blur,
         stroke_bounds_outset,
         layer_opacity,
+        ctx,
     )
 }
 
@@ -911,8 +947,9 @@ pub fn render_outer_stroke(
     blur: Option<&ImageFilter>,
     stroke_bounds_outset: f32,
     layer_opacity: Option<f32>,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
-    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque();
+    let mut mask_builders = shape.get_text_content().paragraph_builder_group_opaque(ctx);
     render_masked_stroke(
         render_state,
         canvas,
@@ -925,6 +962,7 @@ pub fn render_outer_stroke(
         blur,
         stroke_bounds_outset,
         layer_opacity,
+        ctx,
     )
 }
 

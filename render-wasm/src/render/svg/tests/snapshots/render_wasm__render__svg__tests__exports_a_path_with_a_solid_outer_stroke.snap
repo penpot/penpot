@@ -1,0 +1,13 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="140" height="120"><defs><mask id="smask0" maskUnits="userSpaceOnUse">
+	<rect fill="white" transform="translate(20 20)" x="-100000" y="-100000" width="200000" height="200000"/>
+	<path transform="translate(20 20)" d="M50 0L100 80L0 80L50 0Z"/>
+</mask></defs>
+	<path fill="#CCC" transform="translate(20 20)" d="M50 0L100 80L0 80L50 0Z"/>
+<g mask="url(#smask0)">
+	<path fill="none" stroke="blue" stroke-width="20" stroke-miterlimit="4" transform="translate(20 20)" d="M50 0L100 80L0 80L50 0Z"/>
+</g></svg>

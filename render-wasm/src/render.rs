@@ -7,12 +7,14 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
+pub mod svg;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
 mod surfaces;
 pub mod text;
 pub mod text_editor;
+mod text_shaping;
 mod ui;
 mod vector;
 
@@ -38,6 +40,7 @@ use crate::{get_gpu_state, performance};
 
 pub use fonts::*;
 pub use images::*;
+pub use text_shaping::TextShapingCtx;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
 
@@ -1428,12 +1431,13 @@ impl RenderState {
                 };
                 let text_content: &TextContent =
                     rebound_text_content.as_ref().unwrap_or(stored_text_content);
+                let text_ctx = TextShapingCtx::from_session();
                 let count_inner_strokes = shape.count_visible_inner_strokes();
                 // Erode the main text fill by 1px when there are inner strokes, to avoid a visible seam at the glyph edge.
                 let text_fill_inset = (count_inner_strokes > 0).then(|| 1.0 / self.get_scale());
                 let text_stroke_blur_outset =
                     Stroke::max_bounds_width(shape.visible_strokes(), false);
-                let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+                let mut paragraph_builders = text_content.paragraph_builder_group_from_text(&text_ctx,None);
                 let stroke_kinds: Vec<StrokeKind> =
                     shape.visible_strokes().rev().map(|s| s.kind).collect();
                 let (mut stroke_paragraphs_list, stroke_opacities): (Vec<_>, Vec<_>) = shape
@@ -1442,6 +1446,7 @@ impl RenderState {
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
                             text_content,
+                            &text_ctx,
                             stroke,
                             &shape.selrect(),
                             None,
@@ -1460,6 +1465,7 @@ impl RenderState {
                         None,
                         text_fill_inset,
                         None,
+                        &text_ctx,
                     )?;
 
                     for (i, (stroke_paragraphs, layer_opacity)) in stroke_paragraphs_list
@@ -1469,7 +1475,7 @@ impl RenderState {
                     {
                         if stroke_kinds[i] == StrokeKind::Inner {
                             let mut fill_builders =
-                                text_content.paragraph_builder_group_from_text(None);
+                                text_content.paragraph_builder_group_from_text(&text_ctx,None);
                             text::render_inner_stroke(
                                 Some(self),
                                 None,
@@ -1480,6 +1486,7 @@ impl RenderState {
                                 None,
                                 text_stroke_blur_outset,
                                 *layer_opacity,
+                                &text_ctx,
                             )?;
                         } else if stroke_kinds[i] == StrokeKind::Outer {
                             text::render_outer_stroke(
@@ -1491,6 +1498,7 @@ impl RenderState {
                                 None,
                                 text_stroke_blur_outset,
                                 *layer_opacity,
+                                &text_ctx,
                             )?;
                         } else {
                             text::render_with_bounds_outset(
@@ -1504,14 +1512,15 @@ impl RenderState {
                                 text_stroke_blur_outset,
                                 None,
                                 *layer_opacity,
+                                &text_ctx,
                             )?;
                         }
                     }
 
                     if shape.has_visible_strokes() && text_content.has_non_ascii() {
-                        let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                        let mut emoji_builders = text_content.paragraph_builder_group_opaque(&text_ctx);
                         let mut deco_builders =
-                            text_content.paragraph_builder_group_from_text(None);
+                            text_content.paragraph_builder_group_from_text(&text_ctx,None);
                         text::render_emoji_overlay(
                             self,
                             &shape,
@@ -1519,6 +1528,7 @@ impl RenderState {
                             &mut deco_builders,
                             strokes_surface_id,
                             None,
+                            &text_ctx,
                         );
                     }
                 } else {
@@ -1531,7 +1541,7 @@ impl RenderState {
                     let inner_shadows = shape.inner_shadow_paints();
                     let blur_filter = shape.image_filter(1.);
                     let mut paragraphs_with_shadows =
-                        text_content.paragraph_builder_group_from_text(Some(true));
+                        text_content.paragraph_builder_group_from_text(&text_ctx,Some(true));
                     let (mut stroke_paragraphs_with_shadows_list, _shadow_opacities): (
                         Vec<_>,
                         Vec<_>,
@@ -1541,6 +1551,7 @@ impl RenderState {
                         .map(|stroke| {
                             text::stroke_paragraph_builder_group_from_text(
                                 text_content,
+                                &text_ctx,
                                 stroke,
                                 &shape.selrect(),
                                 Some(true),
@@ -1561,6 +1572,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     None,
                                     None,
+                                    &text_ctx,
                                 )?;
                             }
                         } else {
@@ -1574,6 +1586,7 @@ impl RenderState {
                                 &blur_filter,
                                 &stroke_kinds,
                                 text_content,
+                                &text_ctx,
                             )?;
                         }
                     } else {
@@ -1590,6 +1603,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     None,
                                     None,
+                                    &text_ctx,
                                 )?;
                             }
                         }
@@ -1605,6 +1619,7 @@ impl RenderState {
                             blur_filter.as_ref(),
                             text_fill_inset,
                             None,
+                            &text_ctx,
                         )?;
 
                         // 3. Stroke drop shadows
@@ -1618,6 +1633,7 @@ impl RenderState {
                             &blur_filter,
                             &stroke_kinds,
                             text_content,
+                            &text_ctx,
                         )?;
 
                         // 4. Stroke fills
@@ -1628,7 +1644,7 @@ impl RenderState {
                         {
                             if stroke_kinds[i] == StrokeKind::Inner {
                                 let mut fill_builders =
-                                    text_content.paragraph_builder_group_from_text(None);
+                                    text_content.paragraph_builder_group_from_text(&text_ctx,None);
                                 text::render_inner_stroke(
                                     Some(self),
                                     None,
@@ -1639,6 +1655,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     text_stroke_blur_outset,
                                     *layer_opacity,
+                                    &text_ctx,
                                 )?;
                             } else if stroke_kinds[i] == StrokeKind::Outer {
                                 text::render_outer_stroke(
@@ -1650,6 +1667,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     text_stroke_blur_outset,
                                     *layer_opacity,
+                                    &text_ctx,
                                 )?;
                             } else {
                                 text::render_with_bounds_outset(
@@ -1663,22 +1681,24 @@ impl RenderState {
                                     text_stroke_blur_outset,
                                     None,
                                     *layer_opacity,
+                                    &text_ctx,
                                 )?;
                             }
                         }
 
                         if shape.has_visible_strokes() && text_content.has_non_ascii() {
-                            let mut emoji_builders = text_content.paragraph_builder_group_opaque();
+                            let mut emoji_builders = text_content.paragraph_builder_group_opaque(&text_ctx);
                             let mut deco_builders =
-                                text_content.paragraph_builder_group_from_text(None);
+                                text_content.paragraph_builder_group_from_text(&text_ctx,None);
                             text::render_emoji_overlay(
                                 self,
                                 &shape,
                                 &mut emoji_builders,
                                 &mut deco_builders,
-                                strokes_surface_id,
-                                blur_filter.as_ref(),
-                            );
+                            strokes_surface_id,
+                            blur_filter.as_ref(),
+                            &text_ctx,
+                        );
                         }
 
                         // 5. Stroke inner shadows
@@ -1692,6 +1712,7 @@ impl RenderState {
                             &blur_filter,
                             &stroke_kinds,
                             text_content,
+                            &text_ctx,
                         )?;
 
                         // 6. Fill Inner shadows
@@ -1707,6 +1728,7 @@ impl RenderState {
                                     blur_filter.as_ref(),
                                     None,
                                     None,
+                                    &text_ctx,
                                 )?;
                             }
                         }
@@ -1863,6 +1885,7 @@ impl RenderState {
             None => Vec::new(),
         };
 
+        let text_ctx = TextShapingCtx::from_session();
         for shape_id in root_ids {
             let Some(shape) = tree.get(&shape_id) else {
                 continue;
@@ -1871,7 +1894,7 @@ impl RenderState {
                 continue;
             }
 
-            let doc_bounds = self.get_cached_extrect(shape, tree, 1.0);
+            let doc_bounds = self.get_cached_extrect(shape, tree, 1.0, &text_ctx);
             if !doc_bounds.intersects(viewport) {
                 continue;
             }
@@ -2248,11 +2271,12 @@ impl RenderState {
         };
 
         let mut acc: Option<skia::Rect> = None;
+        let text_ctx = TextShapingCtx::from_session();
         for id in ids.iter() {
             let Some(shape) = tree.get(id) else {
                 continue;
             };
-            let r = self.get_cached_extrect(shape, tree, 1.0);
+            let r = self.get_cached_extrect(shape, tree, 1.0, &text_ctx);
             if r.is_empty() {
                 continue;
             }
@@ -2383,7 +2407,8 @@ impl RenderState {
                 // FIXME
                 return Ok((Vec::new(), 0, 0));
             };
-            let mut extrect = shape.extrect(tree, scale);
+            let text_ctx = TextShapingCtx::from_session();
+            let mut extrect = shape.extrect(tree, scale, &text_ctx);
             self.export_context = Some((extrect, scale));
             let margins = self.surfaces.margins;
             extrect.offset((margins.width as f32 / scale, margins.height as f32 / scale));
@@ -2744,7 +2769,8 @@ impl RenderState {
 
     pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Rect {
         let scale = self.get_scale();
-        let rect = self.get_cached_extrect(shape, tree, scale);
+        let text_ctx = TextShapingCtx::from_session();
+        let rect = self.get_cached_extrect(shape, tree, scale, &text_ctx);
         self.get_rect_bounds(rect)
     }
 
@@ -3016,7 +3042,8 @@ impl RenderState {
         node_render_state: &NodeRenderState,
         target_surface: SurfaceId,
     ) -> Result<()> {
-        let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale));
+        let text_ctx = TextShapingCtx::from_session();
+        let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale, &text_ctx));
         let inherited_layer_blur = match element.shape_type {
             Type::Frame(_) | Type::Group(_) => element.blur,
             _ => None,
@@ -3060,7 +3087,7 @@ impl RenderState {
                     if !matches!(shadow_shape.shape_type, Type::Text(_)) {
                         self.render_drop_black_shadow(
                             shadow_shape,
-                            &shadow_shape.extrect(tree, scale),
+                            &shadow_shape.extrect(tree, scale, &text_ctx),
                             shadow,
                             nested_clip_bounds,
                             scale,
@@ -3156,12 +3183,13 @@ impl RenderState {
         // `modifier_ids` is pre-computed once here and reused throughout the loop to avoid
         // repeated allocations (formerly O(N_shapes) HashMap builds) per node.
         let modifier_ids = tree.modifier_ids();
+        let text_ctx = TextShapingCtx::from_session();
         let moved_bounds = if self.options.is_interactive_transform() && !modifier_ids.is_empty() {
             let mut acc: Option<Rect> = None;
             for id in modifier_ids.iter() {
                 // Current (post-modifier) bounds
                 if let Some(s) = tree.get(id) {
-                    let r = self.get_cached_extrect(s, tree, 1.0);
+                    let r = self.get_cached_extrect(s, tree, 1.0, &text_ctx);
                     acc = Some(match acc {
                         None => r,
                         Some(mut prev) => {
@@ -3175,7 +3203,7 @@ impl RenderState {
                 // shape at its original position are considered "unsafe" even after the shape
                 // has moved away (e.g. dragging a child out of a clipped frame).
                 if let Some(raw) = tree.get_raw(id) {
-                    let r0 = self.get_cached_extrect(raw, tree, 1.0);
+                    let r0 = self.get_cached_extrect(raw, tree, 1.0, &text_ctx);
                     acc = Some(match acc {
                         None => r0,
                         Some(mut prev) => {
@@ -3205,6 +3233,7 @@ impl RenderState {
                 continue;
             };
             let scale = self.get_scale();
+            let text_ctx = TextShapingCtx::from_session();
             let mut extrect: Option<Rect> = None;
 
             // If the shape is not in the tile set, then we add them.
@@ -3267,14 +3296,14 @@ impl RenderState {
                 let is_visible = export
                     || mask
                     || if is_container || has_effects {
-                        let element_extrect =
-                            extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
+                        let element_extrect = extrect
+                            .get_or_insert_with(|| transformed_element.extrect(tree, scale, &text_ctx));
                         element_extrect.intersects(self.render_area_with_margins)
-                            && !transformed_element.visually_insignificant(scale, tree)
+                            && !transformed_element.visually_insignificant(scale, tree, &text_ctx)
                     } else {
                         let selrect = transformed_element.selrect();
                         selrect.intersects(self.render_area_with_margins)
-                            && !transformed_element.visually_insignificant(scale, tree)
+                            && !transformed_element.visually_insignificant(scale, tree, &text_ctx)
                     };
 
                 if self.options.is_debug_visible() {
@@ -3708,7 +3737,8 @@ impl RenderState {
      */
     pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let scale = self.get_scale();
-        let extrect = self.get_cached_extrect(shape, tree, scale);
+        let text_ctx = TextShapingCtx::from_session();
+        let extrect = self.get_cached_extrect(shape, tree, scale, &text_ctx);
         let tile_size = tiles::get_tile_size(scale);
         let shape_tiles = tiles::get_tiles_for_rect(extrect, tile_size);
         let interest_rect = &self.tile_viewbox.interest_rect;
@@ -3769,7 +3799,8 @@ impl RenderState {
         // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
         if tree.get_modifier(&shape.id).is_some() {
             if let Some(raw_shape) = tree.get_raw(&shape.id) {
-                let old_extrect = raw_shape.extrect(tree, 1.0);
+                let text_ctx = TextShapingCtx::from_session();
+                let old_extrect = raw_shape.extrect(tree, 1.0, &text_ctx);
                 self.surfaces
                     .atlas
                     .clear_doc_rect_in_atlas_clipped(old_extrect);
@@ -4044,8 +4075,14 @@ impl RenderState {
         self.touched_ids.clear();
     }
 
-    pub fn get_cached_extrect(&mut self, shape: &Shape, tree: ShapesPoolRef, scale: f32) -> Rect {
-        shape.extrect(tree, scale)
+    pub fn get_cached_extrect(
+        &mut self,
+        shape: &Shape,
+        tree: ShapesPoolRef,
+        scale: f32,
+        ctx: &TextShapingCtx,
+    ) -> Rect {
+        shape.extrect(tree, scale, ctx)
     }
 
     pub fn set_view(&mut self, zoom: f32, x: f32, y: f32) {

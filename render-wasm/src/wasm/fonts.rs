@@ -1,5 +1,6 @@
 use macros::{wasm_error, ToJs};
 
+use crate::error::Error;
 use crate::get_render_state;
 use crate::mem;
 use crate::shapes::{FontFamily, FontStyle};
@@ -50,6 +51,32 @@ pub extern "C" fn store_font(
         .add(family, &font_bytes, is_emoji, is_fallback);
 
     mem::free_bytes()?;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn store_font_url(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    weight: u32,
+    style: u8,
+) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let url_bytes = mem::bytes();
+    let url = String::from_utf8(url_bytes).map_err(|_| {
+        Error::CriticalError("Invalid UTF-8 in font source URL".to_string())
+    })?;
+    mem::free_bytes()?;
+
+    let font_style = RawFontStyle::from(style);
+    let family = FontFamily::new(id, weight, font_style.into());
+    get_render_state()
+        .fonts_mut()
+        .set_source_url(&family.alias(), url);
+
     Ok(())
 }
 

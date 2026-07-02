@@ -1,0 +1,9 @@
+---
+source: src/render/svg/mod.rs
+expression: "render(&pool, group_id)"
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100"><g opacity="0.7">
+	<rect fill="blue" width="90" height="100"/>
+	<rect fill="#00C800" x="110" width="90" height="100"/>
+</g></svg>

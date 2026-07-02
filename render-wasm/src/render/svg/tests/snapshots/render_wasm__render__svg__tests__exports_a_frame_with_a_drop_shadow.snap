@@ -1,0 +1,12 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="402.4282" height="252.4282"><defs><filter id="shadow0" x="-13.6803%" y="-23.7393%" width="127.3606%" height="147.4786%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2.809401" result="shbl0"/><feOffset in="shbl0" dx="40" dy="40" result="shof0"/><feFlood flood-color="#000000" flood-opacity="0.2" result="shfl0"/><feComposite in="shfl0" in2="shof0" operator="in" result="shad0"/><feMerge><feMergeNode in="shad0"/></feMerge></filter><clipPath id="clip1" clipPathUnits="userSpaceOnUse">
+	<rect width="354" height="204"/>
+</clipPath></defs><g filter="url(#shadow0)">
+	<rect fill="none" stroke="black" stroke-width="10" stroke-miterlimit="4" x="5" y="5" width="344" height="194"/>
+</g><g clip-path="url(#clip1)">
+	<rect fill="none" stroke="black" stroke-width="10" stroke-miterlimit="4" x="5" y="5" width="344" height="194"/>
+</g></svg>

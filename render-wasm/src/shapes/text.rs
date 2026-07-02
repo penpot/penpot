@@ -22,9 +22,9 @@ use std::cell::Cell;
 use std::collections::HashSet;
 
 use super::FontFamily;
+use crate::render::TextShapingCtx;
 use crate::math::Point;
 use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
-use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
 // TODO: maybe move this to the wasm module?
@@ -493,6 +493,7 @@ impl TextContent {
 
     fn compute_and_cache_extrect(
         &self,
+        ctx: &TextShapingCtx,
         shape: &Shape,
         selrect: &Rect,
         valign: VerticalAlign,
@@ -501,17 +502,17 @@ impl TextContent {
         // (line.left) reflect alignment within that huge width and are
         // unusable for tight bounds.  Fall back to content_rect.
         if self.grow_type() == GrowType::AutoWidth {
-            return self.content_rect(selrect, valign);
+            return self.content_rect(ctx, selrect, valign);
         }
 
         let tight = if !self.layout.paragraphs.is_empty() {
             self.rect_from_paragraphs(selrect, valign)
         } else {
             let mut text_content = self.clone();
-            text_content.update_layout(shape.selrect);
+            text_content.update_layout(ctx, shape.selrect);
             text_content.rect_from_paragraphs(selrect, valign)
         }
-        .unwrap_or_else(|| self.content_rect(selrect, valign));
+        .unwrap_or_else(|| self.content_rect(ctx, selrect, valign));
 
         // Cache as offsets from selrect origin so it's position-independent.
         let sx = selrect.x();
@@ -529,7 +530,12 @@ impl TextContent {
         tight
     }
 
-    pub fn calculate_bounds(&self, shape: &Shape, apply_transform: bool) -> Bounds {
+    pub fn calculate_bounds(
+        &self,
+        ctx: &TextShapingCtx,
+        shape: &Shape,
+        apply_transform: bool,
+    ) -> Bounds {
         let transform = &shape.transform;
         let center = &shape.center();
         let selrect = shape.selrect();
@@ -552,10 +558,10 @@ impl TextContent {
                     sy + cached.bottom,
                 )
             } else {
-                self.compute_and_cache_extrect(shape, &selrect, valign)
+                self.compute_and_cache_extrect(ctx, shape, &selrect, valign)
             }
         } else {
-            self.compute_and_cache_extrect(shape, &selrect, valign)
+            self.compute_and_cache_extrect(ctx, shape, &selrect, valign)
         };
 
         let mut bounds = Bounds::new(
@@ -578,7 +584,7 @@ impl TextContent {
         bounds
     }
 
-    pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
+    pub fn content_rect(&self, ctx: &TextShapingCtx, selrect: &Rect, valign: VerticalAlign) -> Rect {
         let x = selrect.x();
         let mut y = selrect.y();
 
@@ -589,7 +595,7 @@ impl TextContent {
         };
 
         let height = if self.size.width.round() != width.round() {
-            self.get_height(width)
+            self.get_height(ctx, width)
         } else {
             self.size.height
         };
@@ -712,10 +718,11 @@ impl TextContent {
     /// this text.
     pub fn paragraph_builder_group_from_text(
         &self,
+        ctx: &TextShapingCtx,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        let fonts = get_font_collection();
-        let fallback_fonts = get_fallback_fonts();
+        let fonts = ctx.font_collection();
+        let fallback_fonts = ctx.fallback_fonts();
         let mut paragraph_group = Vec::new();
 
         for paragraph in self.paragraphs() {
@@ -730,7 +737,7 @@ impl TextContent {
                     remove_alpha,
                     paragraph.line_height(),
                 );
-                let text: String = span.apply_text_transform();
+                let text: String = span.apply_text_transform(ctx.browser);
                 if !text.is_empty() {
                     has_text = true;
                 }
@@ -748,9 +755,9 @@ impl TextContent {
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
-    pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        let fonts = get_font_collection();
-        let fallback_fonts = get_fallback_fonts();
+    pub fn paragraph_builder_group_opaque(&self, ctx: &TextShapingCtx) -> Vec<ParagraphBuilderGroup> {
+        let fonts = ctx.font_collection();
+        let fallback_fonts = ctx.fallback_fonts();
         let mut paragraph_group = Vec::new();
 
         for paragraph in self.paragraphs() {
@@ -764,7 +771,7 @@ impl TextContent {
                     true, // always opaque
                     paragraph.line_height(),
                 );
-                let text: String = span.apply_text_transform();
+                let text: String = span.apply_text_transform(ctx.browser);
                 if !text.is_empty() {
                     has_text = true;
                 }
@@ -781,8 +788,8 @@ impl TextContent {
     }
 
     /// Performs an Auto Width text layout.
-    fn text_layout_auto_width(&self) -> TextContentLayoutResult {
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+    fn text_layout_auto_width(&self, ctx: &TextShapingCtx) -> TextContentLayoutResult {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(ctx, None);
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, f32::MAX);
@@ -812,9 +819,9 @@ impl TextContent {
 
     /// Private function that performs
     /// Performs an Auto Height text layout.
-    fn text_layout_auto_height(&self) -> TextContentLayoutResult {
+    fn text_layout_auto_height(&self, ctx: &TextShapingCtx) -> TextContentLayoutResult {
         let width = self.width();
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(ctx, None);
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, width);
@@ -836,9 +843,9 @@ impl TextContent {
     }
 
     /// Performs a Fixed text layout.
-    fn text_layout_fixed(&self) -> TextContentLayoutResult {
+    fn text_layout_fixed(&self, ctx: &TextShapingCtx) -> TextContentLayoutResult {
         let width = self.width();
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(ctx, None);
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut paragraph_builders, width);
@@ -868,8 +875,8 @@ impl TextContent {
         }
     }
 
-    pub fn get_height(&self, width: f32) -> f32 {
-        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+    pub fn get_height(&self, ctx: &TextShapingCtx, width: f32) -> f32 {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(ctx, None);
         let paragraphs = build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let paragraph_height = paragraphs
             .iter()
@@ -900,7 +907,7 @@ impl TextContent {
         self.layout.cached_extrect.set(None);
     }
 
-    pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+    pub fn update_layout(&mut self, ctx: &TextShapingCtx, selrect: Rect) -> TextContentSize {
         if !self.layout.needs_update()
             && self.layout_version == self.content_version
             && self
@@ -914,24 +921,24 @@ impl TextContent {
 
         match self.grow_type() {
             GrowType::AutoHeight => {
-                let result = self.text_layout_auto_height();
+                let result = self.text_layout_auto_height(ctx);
                 self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::AutoWidth => {
-                let result = self.text_layout_auto_width();
+                let result = self.text_layout_auto_width(ctx);
                 self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::Fixed => {
-                let result = self.text_layout_fixed();
+                let result = self.text_layout_fixed(ctx);
                 self.layout_width = Some(result.2.width);
                 self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }
 
         if self.is_empty() {
-            let (placeholder_width, placeholder_height) = self.placeholder_dimensions(selrect);
+            let (placeholder_width, placeholder_height) = self.placeholder_dimensions(ctx, selrect);
             self.size.width = placeholder_width;
             self.size.height = placeholder_height;
             self.size.max_width = placeholder_width;
@@ -971,11 +978,11 @@ impl TextContent {
     /// shows a caret-sized box that reflects the selected font, size and spacing.
     /// If that fails we fall back to the previous WASM size or the incoming
     /// selrect dimensions.
-    fn placeholder_dimensions(&self, selrect: Rect) -> (f32, f32) {
+    fn placeholder_dimensions(&self, ctx: &TextShapingCtx, selrect: Rect) -> (f32, f32) {
         if let Some(paragraph) = self.paragraphs.first() {
             if let Some(span) = paragraph.children().first() {
-                let fonts = get_font_collection();
-                let fallback_fonts = get_fallback_fonts();
+                let fonts = ctx.font_collection();
+                let fallback_fonts = ctx.fallback_fonts();
                 let paragraph_style = paragraph.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
 
@@ -1025,8 +1032,14 @@ impl TextContent {
         x_pos >= rect.x() && x_pos <= rect.right() && y_pos >= rect.y() && y_pos <= rect.bottom()
     }
 
-    pub fn intersect_position_in_text(&self, shape: &Shape, x_pos: f32, y_pos: f32) -> bool {
-        let rect = self.content_rect(&shape.selrect, shape.vertical_align);
+    pub fn intersect_position_in_text(
+        &self,
+        ctx: &TextShapingCtx,
+        shape: &Shape,
+        x_pos: f32,
+        y_pos: f32,
+    ) -> bool {
+        let rect = self.content_rect(ctx, &shape.selrect, shape.vertical_align);
         let mut matrix = Matrix::new_identity();
         let center = shape.center();
         let Some(inv_transform) = &shape.transform.invert() else {
@@ -1054,7 +1067,7 @@ impl TextContent {
             )
         } else {
             let width = self.width();
-            let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+            let mut paragraph_builders = self.paragraph_builder_group_from_text(ctx, None);
             let paragraphs =
                 build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
 
@@ -1363,9 +1376,8 @@ impl TextSpan {
         format!("{}", self.font_family)
     }
 
-    pub fn apply_text_transform(&self) -> String {
-        let browser = crate::with_state!(state, { state.current_browser });
-        let text = process_ignored_chars(&self.text, browser);
+    pub fn apply_text_transform(&self, browser: Browser) -> String {
+        let text = process_ignored_chars(&self.text, browser as u8);
         match self.text_transform {
             Some(TextTransform::Uppercase) => text.to_uppercase(),
             Some(TextTransform::Lowercase) => text.to_lowercase(),
@@ -1425,6 +1437,7 @@ pub fn calculate_text_layout_data(
     text_content: &TextContent,
     paragraph_builder_groups: &mut [ParagraphBuilderGroup],
     skip_position_data: bool,
+    ctx: &TextShapingCtx,
 ) -> TextLayoutData {
     let selrect_width = shape.selrect().width();
     let text_width = text_content.get_width(selrect_width);
@@ -1555,7 +1568,7 @@ pub fn calculate_text_layout_data(
                 let mut span_ranges: Vec<(usize, usize, usize)> = vec![];
                 let mut cur = 0;
                 for (span_index, span) in text_para.children().iter().enumerate() {
-                    let text: String = span.apply_text_transform();
+                    let text: String = span.apply_text_transform(ctx.browser);
                     let text_len = text.encode_utf16().count();
                     span_ranges.push((cur, cur + text_len, span_index));
                     cur += text_len;
@@ -1613,16 +1626,18 @@ pub fn calculate_position_data(
     shape: &Shape,
     text_content: &TextContent,
     skip_position_data: bool,
+    ctx: &TextShapingCtx,
 ) -> Vec<PositionData> {
     let mut text_content = text_content.clone();
-    text_content.update_layout(shape.selrect);
+    text_content.update_layout(ctx, shape.selrect);
 
-    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
+    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(ctx, None);
     let layout_info = calculate_text_layout_data(
         shape,
         &text_content,
         &mut paragraph_builders,
         skip_position_data,
+        ctx,
     );
 
     layout_info.position_data

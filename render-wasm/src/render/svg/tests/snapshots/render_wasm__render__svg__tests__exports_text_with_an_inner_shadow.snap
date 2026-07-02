@@ -1,0 +1,15 @@
+---
+source: src/render/svg/tests/mod.rs
+assertion_line: 1214
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="493.4146" height="257.8471"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style><filter id="inshadow0" x="-2.8379%" y="-6.6218%" width="105.6758%" height="113.2436%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="3.9641016" result="isbl0"/><feOffset in="isbl0" dx="4" dy="4" result="isof0"/><feComposite in="SourceAlpha" in2="isof0" operator="out" result="isbd0"/><feFlood flood-color="#000000" flood-opacity="0.6" result="isfl0"/><feComposite in="isfl0" in2="isbd0" operator="in" result="istn0"/><feComposite in="istn0" in2="SourceAlpha" operator="in" result="issh0"/><feMerge><feMergeNode in="issh0"/></feMerge></filter></defs>
+	<text fill="#EE1919" transform="translate(7.8923 1.9548)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984, " y="181, ">
+			HOLA
+	</text>
+<g filter="url(#inshadow0)">
+	<text transform="translate(7.8923 1.9548)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984, " y="181, ">
+			HOLA
+	</text>
+</g></svg>

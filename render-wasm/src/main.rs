@@ -936,7 +936,9 @@ pub extern "C" fn get_shape_extrect(a: u32, b: u32, c: u32, d: u32) -> Result<*m
         let Some(shape) = state.shapes.get(&id) else {
             return Err(Error::CriticalError("Shape not found".to_string()));
         };
-        let extrect = get_render_state().get_cached_extrect(shape, &state.shapes, 1.0);
+        let text_ctx = crate::render::TextShapingCtx::from_session();
+        let extrect =
+            get_render_state().get_cached_extrect(shape, &state.shapes, 1.0, &text_ctx);
         let mut buf = Vec::with_capacity(16);
         buf.extend_from_slice(&extrect.x().to_le_bytes());
         buf.extend_from_slice(&extrect.y().to_le_bytes());
@@ -992,6 +994,22 @@ pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -
 
     with_state!(state, {
         let data = state.render_shape_pdf(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_svg(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let data = state.render_shape_svg(&id, scale)?;
 
         let len = data.len() as u32;
         let mut buf = Vec::with_capacity(4 + data.len());

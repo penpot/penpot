@@ -1,0 +1,8 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="118.42821" height="96.856415"><defs><filter id="shadow0" x="-18.4282%" y="-15.5353%" width="136.8564%" height="131.0705%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2.809401" result="shbl0"/><feOffset in="shbl0" dx="10" dy="4" result="shof0"/><feFlood flood-color="#380000" flood-opacity="1" result="shfl0"/><feComposite in="shfl0" in2="shof0" operator="in" result="shad0"/><feMerge><feMergeNode in="shad0"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#shadow0)">
+	<ellipse fill="#FBB" transform="translate(0 4.4282)" cx="50" cy="40" rx="50" ry="40"/>
+</g></svg>

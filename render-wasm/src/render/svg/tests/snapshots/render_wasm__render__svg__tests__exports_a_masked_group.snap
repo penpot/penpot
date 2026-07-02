@@ -1,0 +1,10 @@
+---
+source: src/render/svg/mod.rs
+expression: "render(&pool, group_id)"
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100"><defs><mask id="mask1" maskUnits="userSpaceOnUse" mask-type="alpha">
+	<rect width="50" height="100"/>
+</mask></defs><g mask="url(#mask1)">
+	<rect fill="red" width="100" height="100"/>
+</g></svg>

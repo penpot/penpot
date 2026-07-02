@@ -1,0 +1,9 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="110" height="90">
+	<rect fill="#CCC" transform="translate(5 5)" width="100" height="80"/>
+	<rect fill="none" stroke="#080" stroke-width="10" stroke-miterlimit="4" transform="translate(5 5)" width="100" height="80"/>
+</svg>

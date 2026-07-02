@@ -1,4 +1,5 @@
 use crate::get_render_state;
+use crate::render::TextShapingCtx;
 use crate::shapes::text::TextContent;
 use skia_safe::{
     self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
@@ -18,7 +19,8 @@ impl TextPaths {
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
         let mut paths = Vec::new();
         let mut offset_y = self.bounds.y();
-        let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
+        let text_ctx = TextShapingCtx::from_session();
+        let mut paragraph_builders = self.0.paragraph_builder_group_from_text(&text_ctx, None);
 
         for paragraphs in paragraph_builders.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {

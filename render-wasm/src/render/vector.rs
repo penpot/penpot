@@ -9,48 +9,267 @@ use crate::uuid::Uuid;
 
 use super::shape_renderer::ShapeRenderer;
 use super::text;
-use super::RenderState;
 use super::{get_dest_rect, get_source_rect};
+use super::text_shaping::TextShapingCtx;
+use super::{FontStore, ImageProvider};
+
+use crate::render::svg::{emit_linked_image_fill, emit_linked_image_stroke, SvgLayerCanvas};
 
 // ---------------------------------------------------------------------------
-// VectorTarget — vector export backend selector
+// ExportState: GPU-free view of the renderer state for vector export
 // ---------------------------------------------------------------------------
 
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
+/// The subset of renderer state the vector export path (SVG/PDF) actually
+/// touches. It decouples the exporters from [`super::RenderState`], whose
+/// construction requires a live GPU context, so they can run on a plain CPU
+/// Skia canvas.
+///
+/// In production it is built from a `RenderState` (see `render_to_svg` /
+/// `render_to_pdf`); in tests it can be built from a standalone [`FontStore`].
+/// Images are provided through the [`ImageProvider`] trait so image draws are
+/// optional: production plugs in the GPU-backed `ImageStore`, headless tests can
+/// inject a CPU-only fake, and passing `None` skips image draws entirely.
+pub(crate) struct ExportState<'a> {
+    pub fonts: &'a FontStore,
+    pub images: Option<&'a mut (dyn ImageProvider + 'a)>,
+    pub sampling_options: skia::SamplingOptions,
+}
+
+impl<'a> ExportState<'a> {
+    pub fn text_ctx(&self, browser: crate::utils::Browser) -> TextShapingCtx<'a> {
+        TextShapingCtx::new(self.fonts, browser)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// VectorTarget: vector export backend selector
+// ---------------------------------------------------------------------------
+
+/// Vector export backend selector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum VectorTarget {
     Pdf,
+    Svg,
 }
 
 // ---------------------------------------------------------------------------
-// VectorRenderer — implements ShapeRenderer for canvas-based vector export
+// VectorCanvas: Skia canvas or SVG layer builder (never both at once)
 // ---------------------------------------------------------------------------
 
-/// Canvas-based vector render backend (CPU Skia canvas, no GPU surfaces).
-pub(super) struct VectorRenderer<'a> {
-    canvas: &'a Canvas,
-    shared: &'a mut RenderState,
-    scale: f32,
-    _target: VectorTarget,
+/// Where vector drawing happens. [`VectorCanvas::SvgLayer`] owns the fragment
+/// canvas inside [`SvgLayerCanvas`]; linked-image export uses the builder
+/// directly without also holding a separate canvas borrow.
+pub(crate) enum VectorCanvas<'a> {
+    Borrowed(&'a Canvas),
+    SvgLayer(&'a mut SvgLayerCanvas),
 }
 
-impl<'a> VectorRenderer<'a> {
-    pub fn new(
-        canvas: &'a Canvas,
-        shared: &'a mut RenderState,
-        scale: f32,
-        target: VectorTarget,
-    ) -> Self {
-        Self {
-            canvas,
-            shared,
-            scale,
-            _target: target,
+impl<'a> VectorCanvas<'a> {
+    pub fn skia_canvas(&mut self) -> &Canvas {
+        match self {
+            Self::Borrowed(c) => c,
+            Self::SvgLayer(b) => b.canvas(),
+        }
+    }
+
+    fn svg_layer_mut(&mut self) -> Option<&mut SvgLayerCanvas> {
+        match self {
+            Self::Borrowed(_) => None,
+            Self::SvgLayer(b) => Some(b),
         }
     }
 }
 
-impl ShapeRenderer for VectorRenderer<'_> {
+// ---------------------------------------------------------------------------
+// VectorRenderer: ShapeRenderer for canvas-based vector export
+// ---------------------------------------------------------------------------
+
+/// Canvas-based vector render backend (CPU Skia canvas, no GPU surfaces).
+pub(super) struct VectorRenderer<'a, 'b> {
+    canvas: VectorCanvas<'a>,
+    shared: &'a mut ExportState<'b>,
+    scale: f32,
+    target: VectorTarget,
+}
+
+impl<'a, 'b> VectorRenderer<'a, 'b> {
+    pub fn new(
+        canvas: &'a Canvas,
+        shared: &'a mut ExportState<'b>,
+        scale: f32,
+        target: VectorTarget,
+    ) -> Self {
+        Self {
+            canvas: VectorCanvas::Borrowed(canvas),
+            shared,
+            scale,
+            target,
+        }
+    }
+
+    pub fn new_svg_layer(
+        builder: &'a mut SvgLayerCanvas,
+        shared: &'a mut ExportState<'b>,
+        scale: f32,
+        target: VectorTarget,
+    ) -> Self {
+        Self {
+            canvas: VectorCanvas::SvgLayer(builder),
+            shared,
+            scale,
+            target,
+        }
+    }
+
+    pub fn skia_canvas(&mut self) -> &Canvas {
+        self.canvas.skia_canvas()
+    }
+
+    fn text_ctx(&self) -> TextShapingCtx<'b> {
+        self.shared.text_ctx(crate::utils::Browser::Chrome)
+    }
+
+    fn is_svg(&self) -> bool {
+        matches!(self.target, VectorTarget::Svg)
+    }
+
+    /// Whether the SVG compositor re-emits this stroke (the shared renderer skips
+    /// it because `SkSVGDevice` drops the `save_layer` composition).
+    fn defers_stroke_for_svg(shape: &Shape, stroke: &Stroke) -> bool {
+        if matches!(shape.shape_type, Type::Path(_) | Type::Bool(_))
+            && !shape.is_open()
+            && stroke.render_kind(false) == StrokeKind::Outer
+        {
+            return true;
+        }
+        if matches!(shape.shape_type, Type::Rect(_) | Type::Circle) && stroke.clip_op().is_some() {
+            return true;
+        }
+        // Solid/center image strokes only; dotted image strokes still need the
+        // dropped `save_layer` silhouette before the compositor can mask them.
+        matches!(stroke.fill, Fill::Image(_)) && stroke.clip_op().is_none()
+    }
+
+    /// Whether a blur `image_filter` may be attached to a paint. On the SVG
+    /// compositor, layer blur is emitted as a `<g filter="feGaussianBlur">`
+    /// wrapping the shape, and `SkSVGDevice` both ignores paint image filters
+    /// and drops the implicit layer they trigger (the shape would vanish), so we
+    /// must not set one there.
+    fn paint_image_filter(&self, shape: &Shape) -> Option<skia::ImageFilter> {
+        if self.is_svg() {
+            None
+        } else {
+            shape.image_filter(1.)
+        }
+    }
+
+    /// Renders a single text stroke fully opaque (no opacity layer, no
+    /// inner-stroke masking), so the SVG compositor can wrap it in a native
+    /// `<g opacity>` and/or `<g clip-path>`. Skia's SVG backend drops the
+    /// `save_layer`s that the text opacity layer and inner-stroke mask would
+    /// emit, so those effects are reproduced by the wrapping groups instead.
+    /// For inner strokes the caller must supply the glyph-silhouette clip
+    /// (see [`draw_text_glyph_silhouette`]); here the double-width stroke is
+    /// drawn unclipped and the `<clipPath>` keeps only its inner half.
+    pub(super) fn draw_text_stroke_opaque(&mut self, shape: &Shape, stroke: &Stroke) -> Result<()> {
+        let Type::Text(text_content) = &shape.shape_type else {
+            return Ok(());
+        };
+
+        let text_content = text_content.new_bounds(shape.selrect());
+        let blur_filter = self.paint_image_filter(shape);
+        let stroke_blur_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+
+        // The builders come out opaque (the opacity is meant to live in the
+        // layer), so rendering with `layer_opacity = None` yields the fully
+        // opaque stroke that the `<g opacity>` then fades. The exterior clip is
+        // done by the compositor's `<mask>`.
+        let text_ctx = self.text_ctx();
+        let (mut stroke_paragraphs, _) = text::stroke_paragraph_builder_group_from_text(
+            &text_content,
+            &text_ctx,
+            stroke,
+            &shape.selrect(),
+            None,
+        );
+        text::render_with_bounds_outset_overlay_emoji(
+            self.skia_canvas(),
+            shape,
+            &mut stroke_paragraphs,
+            None,
+            blur_filter.as_ref(),
+            stroke_blur_outset,
+            None,
+            None,
+            &text_ctx,
+        )?;
+        Ok(())
+    }
+
+    /// Draws a stroke's opaque black silhouette (its geometry only, no fill),
+    /// used by the SVG compositor as the source of a `<mask>` that confines an
+    /// image-filled stroke to the stroke region (the vector equivalent of the
+    /// `save_layer` + `SrcIn` composition used on the GPU/PDF backends).
+    pub(super) fn draw_stroke_silhouette(
+        &mut self,
+        shape: &Shape,
+        stroke: &Stroke,
+        inner_clip: bool,
+    ) -> Result<()> {
+        let scale = self.scale;
+        draw_stroke_geometry(self.skia_canvas(), scale, shape, stroke, true, inner_clip);
+        Ok(())
+    }
+
+    /// Draws an image-filled stroke's texture over its destination rect, with no
+    /// clipping/isolation of its own. The SVG compositor wraps this in a
+    /// `<g mask>` (see [`draw_stroke_silhouette`]) so the image only shows in the
+    /// stroke region; drawing it here without a `save_layer` keeps it out of the
+    /// layer `SkSVGDevice` would drop.
+    pub(super) fn draw_stroke_image(&mut self, shape: &Shape, stroke: &Stroke) -> Result<()> {
+        let Fill::Image(image_fill) = &stroke.fill else {
+            return Ok(());
+        };
+        let is_svg = self.is_svg();
+        let scale = self.scale;
+        draw_image_stroke(
+            &mut self.canvas,
+            self.shared,
+            scale,
+            shape,
+            stroke,
+            image_fill,
+            is_svg,
+        )
+    }
+
+    /// Renders the opaque glyph silhouette (the text fill at full alpha), used
+    /// by the SVG compositor as the geometry of a `<clipPath>` that clips an
+    /// inner stroke to the glyph interior (the vector equivalent of the
+    /// mask + `SrcIn` composition used on the GPU/PDF backends).
+    pub(super) fn draw_text_glyph_silhouette(&mut self, shape: &Shape) -> Result<()> {
+        let Type::Text(text_content) = &shape.shape_type else {
+            return Ok(());
+        };
+
+        let text_content = text_content.new_bounds(shape.selrect());
+        let text_ctx = self.text_ctx();
+        let mut mask_builders = text_content.paragraph_builder_group_opaque(&text_ctx);
+        text::render_overlay_emoji(
+            self.skia_canvas(),
+            shape,
+            &mut mask_builders,
+            None,
+            None,
+            None,
+            None,
+            &text_ctx,
+        )?;
+        Ok(())
+    }
+}
+
+impl ShapeRenderer for VectorRenderer<'_, '_> {
     fn draw_fills(&mut self, shape: &Shape, fills: &[Fill]) -> Result<()> {
         if fills.is_empty() {
             return Ok(());
@@ -59,17 +278,24 @@ impl ShapeRenderer for VectorRenderer<'_> {
         // Handle image fills individually
         let has_image_fills = fills.iter().any(|f| matches!(f, Fill::Image(_)));
         if has_image_fills {
+            let is_svg = self.is_svg();
             for fill in fills.iter().rev() {
                 match fill {
                     Fill::Image(image_fill) => {
-                        draw_image_fill(self.shared, self.canvas, shape, image_fill)?;
+                        draw_image_fill(
+                            self.shared,
+                            &mut self.canvas,
+                            shape,
+                            image_fill,
+                            is_svg,
+                        )?;
                     }
                     _ => {
                         let mut paint = fill.to_paint(&shape.selrect, true);
-                        if let Some(filter) = shape.image_filter(1.) {
+                        if let Some(filter) = self.paint_image_filter(shape) {
                             paint.set_image_filter(filter);
                         }
-                        draw_shape_geometry(self.canvas, shape, &paint);
+                        draw_shape_geometry(self.skia_canvas(), shape, &paint);
                     }
                 }
             }
@@ -79,17 +305,31 @@ impl ShapeRenderer for VectorRenderer<'_> {
         let mut paint = merge_fills(fills, shape.selrect);
         paint.set_anti_alias(true);
 
-        if let Some(filter) = shape.image_filter(1.) {
+        if let Some(filter) = self.paint_image_filter(shape) {
             paint.set_image_filter(filter);
         }
 
-        draw_shape_geometry(self.canvas, shape, &paint);
+        draw_shape_geometry(self.skia_canvas(), shape, &paint);
         Ok(())
     }
 
     fn draw_strokes(&mut self, shape: &Shape, strokes: &[&Stroke]) -> Result<()> {
+        let is_svg = self.is_svg();
+
         for stroke in strokes.iter().rev() {
-            draw_single_stroke(self.canvas, self.shared, self.scale, shape, stroke)?;
+            // SkSVGDevice drops the save_layer composition; the SVG compositor
+            // re-emits these strokes in `render::svg::{strokes,text}`.
+            if is_svg && Self::defers_stroke_for_svg(shape, stroke) {
+                continue;
+            }
+            draw_single_stroke(
+                &mut self.canvas,
+                self.shared,
+                self.scale,
+                shape,
+                stroke,
+                is_svg,
+            )?;
         }
         Ok(())
     }
@@ -100,35 +340,46 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 let mut paint = Paint::default();
                 paint.set_image_filter(filter);
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                self.canvas.save_layer(&layer_rec);
+                self.skia_canvas().save_layer(&layer_rec);
                 let mut fill_paint = Paint::default();
                 fill_paint.set_anti_alias(true);
                 fill_paint.set_color(skia::Color::BLACK);
-                draw_shape_geometry(self.canvas, shape, &fill_paint);
-                self.canvas.restore();
+                draw_shape_geometry(self.skia_canvas(), shape, &fill_paint);
+                self.skia_canvas().restore();
             }
         }
         Ok(())
     }
 
     fn draw_fill_inner_shadows(&mut self, shape: &Shape) -> Result<()> {
+        // On SVG the inner-shadow composition lives in a `save_layer` (+ image
+        // filter) that `SkSVGDevice` drops, so it is re-emitted natively by the
+        // compositor (`svg::shadows::render_inner_shadows`) as a `<g filter>`.
+        if self.is_svg() {
+            return Ok(());
+        }
         if !shape.has_fills() {
             return Ok(());
         }
         for shadow in shape.inner_shadows_visible() {
             let paint = shadow.get_inner_shadow_paint(true, shape.image_filter(1.).as_ref());
-            self.canvas
+            self.skia_canvas()
                 .save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
             let mut fill_paint = Paint::default();
             fill_paint.set_anti_alias(true);
             fill_paint.set_color(skia::Color::BLACK);
-            draw_shape_geometry(self.canvas, shape, &fill_paint);
-            self.canvas.restore();
+            draw_shape_geometry(self.skia_canvas(), shape, &fill_paint);
+            self.skia_canvas().restore();
         }
         Ok(())
     }
 
     fn draw_stroke_inner_shadows(&mut self, shape: &Shape, stroke: &Stroke) -> Result<()> {
+        // SVG: the image-filter draw is wrapped in an implicit layer dropped by
+        // `SkSVGDevice`. Re-emitted by the compositor (`svg::shadows::render_inner_shadows`).
+        if self.is_svg() {
+            return Ok(());
+        }
         let is_open = shape.is_open();
         for shadow in shape.inner_shadows_visible() {
             if let Some(filter) = shadow.get_inner_shadow_filter() {
@@ -139,7 +390,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     true,
                 );
                 paint.set_image_filter(filter);
-                draw_shape_geometry(self.canvas, shape, &paint);
+                draw_shape_geometry(self.skia_canvas(), shape, &paint);
             }
         }
         Ok(())
@@ -151,15 +402,22 @@ impl ShapeRenderer for VectorRenderer<'_> {
         };
 
         let text_content = text_content.new_bounds(shape.selrect());
-        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-        let blur_filter = shape.image_filter(1.);
+        let text_ctx = self.text_ctx();
+        let mut paragraph_builders = text_content.paragraph_builder_group_from_text(&text_ctx, None);
+        // On the SVG compositor, layer blur is emitted as a `<g filter>` wrapping
+        // the whole leaf, so text must not also carry its own blur (which would
+        // double-blur and, worse, be dropped by `SkSVGDevice`).
+        let blur_filter = self.paint_image_filter(shape);
+        let is_svg = self.is_svg();
+        let canvas = self.skia_canvas();
 
         // Text drop shadows: one filter layer per shadow over fill + stroke
         // silhouettes (mirrors GPU `render_text_shadows`).
         let drop_shadows = shape.drop_shadow_paints();
         if !drop_shadows.is_empty() {
             let shadow_stroke_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
-            let mut shadow_paragraphs = text_content.paragraph_builder_group_from_text(Some(true));
+            let mut shadow_paragraphs =
+                text_content.paragraph_builder_group_from_text(&text_ctx, Some(true));
             let mut stroke_shadow_groups: Vec<(StrokeKind, _)> = shape
                 .visible_strokes()
                 .rev()
@@ -168,6 +426,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
                         stroke.render_kind(false),
                         text::stroke_paragraph_builder_group_from_text(
                             &text_content,
+                            &text_ctx,
                             stroke,
                             &shape.selrect(),
                             Some(true),
@@ -178,27 +437,27 @@ impl ShapeRenderer for VectorRenderer<'_> {
                 .collect();
 
             for shadow_paint in &drop_shadows {
-                self.canvas
-                    .save_layer(&skia::canvas::SaveLayerRec::default().paint(shadow_paint));
+                canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(shadow_paint));
 
                 text::render_overlay_emoji(
-                    self.canvas,
+                    canvas,
                     shape,
                     &mut shadow_paragraphs,
                     None,
                     blur_filter.as_ref(),
                     None,
                     None,
+                    &text_ctx,
                 )?;
 
                 for (kind, stroke_paragraphs) in &mut stroke_shadow_groups {
                     if *kind == StrokeKind::Inner {
                         // Inner stroke masked by the glyph fill (outset 0 here).
                         let mut fill_builders =
-                            text_content.paragraph_builder_group_from_text(Some(true));
+                            text_content.paragraph_builder_group_from_text(&text_ctx, Some(true));
                         text::render_inner_stroke(
                             None,
-                            Some(self.canvas),
+                            Some(canvas),
                             shape,
                             stroke_paragraphs,
                             &mut fill_builders,
@@ -206,21 +465,23 @@ impl ShapeRenderer for VectorRenderer<'_> {
                             blur_filter.as_ref(),
                             0.0,
                             None,
+                            &text_ctx,
                         )?;
                     } else if *kind == StrokeKind::Outer {
                         text::render_outer_stroke(
                             None,
-                            Some(self.canvas),
+                            Some(canvas),
                             shape,
                             stroke_paragraphs,
                             None,
                             blur_filter.as_ref(),
                             0.0,
                             None,
+                            &text_ctx,
                         )?;
                     } else {
                         text::render_with_bounds_outset_overlay_emoji(
-                            self.canvas,
+                            canvas,
                             shape,
                             stroke_paragraphs,
                             None,
@@ -228,22 +489,24 @@ impl ShapeRenderer for VectorRenderer<'_> {
                             shadow_stroke_outset,
                             None,
                             None,
+                            &text_ctx,
                         )?;
                     }
                 }
 
-                self.canvas.restore();
+                canvas.restore();
             }
         }
 
         text::render_overlay_emoji(
-            self.canvas,
+            canvas,
             shape,
             &mut paragraph_builders,
             None,
             blur_filter.as_ref(),
             None,
             None,
+            &text_ctx,
         )?;
 
         // Strokes for text
@@ -253,16 +516,18 @@ impl ShapeRenderer for VectorRenderer<'_> {
             let (mut stroke_paragraphs, layer_opacity) =
                 text::stroke_paragraph_builder_group_from_text(
                     &text_content,
+                    &text_ctx,
                     stroke,
                     &shape.selrect(),
                     None,
                 );
             if stroke.render_kind(false) == StrokeKind::Inner {
                 // Inner text stroke: clip to the glyph fill, else it bleeds out.
-                let mut fill_builders = text_content.paragraph_builder_group_from_text(None);
+                let mut fill_builders =
+                    text_content.paragraph_builder_group_from_text(&text_ctx, None);
                 text::render_inner_stroke(
                     None,
-                    Some(self.canvas),
+                    Some(canvas),
                     shape,
                     &mut stroke_paragraphs,
                     &mut fill_builders,
@@ -270,21 +535,35 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     blur_filter.as_ref(),
                     stroke_blur_outset,
                     layer_opacity,
+                    &text_ctx,
                 )?;
+            } else if is_svg
+                && (layer_opacity.is_some()
+                    || stroke.render_kind(false) == StrokeKind::Outer)
+            {
+                // Re-emitted by the SVG compositor (their composition lives in a
+                // `save_layer` that `SkSVGDevice` drops):
+                // - semi-transparent strokes: the opacity layer (would vanish);
+                // - outer strokes: the double-width stroke must be masked to the
+                //   glyph exterior. Drawn inline it would paint at full double
+                //   width (twice the intended outer width, bleeding over the
+                //   fill), so the compositor masks it to keep only the outer half.
+                continue;
             } else if stroke.render_kind(false) == StrokeKind::Outer {
                 text::render_outer_stroke(
                     None,
-                    Some(self.canvas),
+                    Some(canvas),
                     shape,
                     &mut stroke_paragraphs,
                     None,
                     blur_filter.as_ref(),
                     stroke_blur_outset,
                     layer_opacity,
+                    &text_ctx,
                 )?;
             } else {
                 text::render_with_bounds_outset_overlay_emoji(
-                    self.canvas,
+                    canvas,
                     shape,
                     &mut stroke_paragraphs,
                     None,
@@ -292,24 +571,33 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     stroke_blur_outset,
                     None,
                     layer_opacity,
+                    &text_ctx,
                 )?;
             }
         }
 
-        // Inner shadows for text
-        let inner_shadows: Vec<_> = shape.inner_shadows_visible().collect();
+        // Inner shadows for text. On SVG the shadow paint's image filter forces
+        // an implicit layer that `SkSVGDevice` drops, so the compositor re-emits
+        // them natively over the glyph silhouette (`svg::shadows::render_inner_shadows`).
+        let inner_shadows: Vec<_> = if is_svg {
+            Vec::new()
+        } else {
+            shape.inner_shadows_visible().collect()
+        };
         if !inner_shadows.is_empty() {
-            let mut shadow_paragraphs = text_content.paragraph_builder_group_from_text(Some(true));
+            let mut shadow_paragraphs =
+                text_content.paragraph_builder_group_from_text(&text_ctx, Some(true));
             for shadow in &inner_shadows {
                 let shadow_paint = shadow.get_inner_shadow_paint(true, blur_filter.as_ref());
                 text::render_overlay_emoji(
-                    self.canvas,
+                    canvas,
                     shape,
                     &mut shadow_paragraphs,
                     Some(&shadow_paint),
                     blur_filter.as_ref(),
                     None,
                     None,
+                    &text_ctx,
                 )?;
             }
         }
@@ -322,15 +610,18 @@ impl ShapeRenderer for VectorRenderer<'_> {
             return Ok(());
         };
 
+        let font_provider = self.shared.fonts.font_provider().clone();
+        let canvas = self.skia_canvas();
+
         if let Some(svg_transform) = shape.svg_transform() {
-            self.canvas.concat(&svg_transform);
+            canvas.concat(&svg_transform);
         }
         if let Some(svg) = shape.svg.as_ref() {
-            svg.render(self.canvas);
+            svg.render(canvas);
         } else {
-            let font_manager = skia::FontMgr::from(self.shared.fonts.font_provider().clone());
+            let font_manager = skia::FontMgr::from(font_provider);
             if let Ok(dom) = skia::svg::Dom::from_str(&sr.content, font_manager) {
-                dom.render(self.canvas);
+                dom.render(canvas);
             }
         }
 
@@ -348,7 +639,7 @@ impl ShapeRenderer for VectorRenderer<'_> {
             let mut paint = Paint::default();
             paint.set_image_filter(filter);
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-            self.canvas.save_layer(&layer_rec);
+            self.skia_canvas().save_layer(&layer_rec);
             true
         } else {
             false
@@ -356,311 +647,38 @@ impl ShapeRenderer for VectorRenderer<'_> {
     }
 
     fn restore_blur_layer(&mut self) {
-        self.canvas.restore();
+        self.skia_canvas().restore();
     }
 }
 
 // ---------------------------------------------------------------------------
-// Tree traversal
+// Child paint order
 // ---------------------------------------------------------------------------
 
-/// Depth-first render of the shape tree rooted at `id`.
-pub(super) fn render_tree(
-    shared: &mut RenderState,
-    canvas: &Canvas,
-    id: &Uuid,
-    tree: ShapesPoolRef,
-    scale: f32,
-    target: VectorTarget,
-) -> Result<()> {
-    let Some(element) = tree.get(id) else {
-        return Ok(());
-    };
-
-    if element.hidden {
-        return Ok(());
-    }
-
-    match &element.shape_type {
-        Type::Group(group) => {
-            render_group(shared, canvas, element, group.masked, tree, scale, target)?;
-        }
-        Type::Frame(_) => {
-            render_frame(shared, canvas, element, tree, scale, target)?;
-        }
-        // Leaf types listed explicitly (no `_`) so a new Type must be handled.
-        Type::Rect(_)
-        | Type::Circle
-        | Type::Path(_)
-        | Type::Bool(_)
-        | Type::Text(_)
-        | Type::SVGRaw(_) => {
-            render_leaf(shared, canvas, element, scale, target)?;
-        }
-    }
-
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Groups
-// ---------------------------------------------------------------------------
-
-fn render_group(
-    shared: &mut RenderState,
-    canvas: &Canvas,
-    element: &Shape,
-    masked: bool,
-    tree: ShapesPoolRef,
-    scale: f32,
-    target: VectorTarget,
-) -> Result<()> {
-    // A group has no geometry of its own and does NOT propagate a transform to
-    // its children: child shapes are stored in absolute coordinates and each
-    // applies its own `centered_transform`. (Concatenating the group transform
-    // here would double-apply it to children — visible on rotated/nested groups.)
-    canvas.save();
-
-    // Group drop shadow: subtree silhouette, below the opacity/clip layer.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, false)?;
-
-    // Layer for opacity / blend mode (and group-level layer blur)
-    let needs_layer = element.needs_layer();
-    if needs_layer {
-        let mut paint = Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-
-        if let Some(blur) = element
-            .blur
-            .filter(|b| !b.hidden && b.blur_type == BlurType::LayerBlur && b.value > 0.0)
-        {
-            let sigma = radius_to_sigma(blur.value * scale);
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
-            }
-        }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        canvas.save_layer(&layer_rec);
-    }
-
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
-
-    if masked {
-        // Mirror the GPU mask: render all children (including the mask shape)
-        // as content, then re-draw the mask silhouette (the group's first child)
-        // with DstIn to clip everything to it.
-        let paint = Paint::default();
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
-
-        for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
-        }
-
-        if let Some(mask_id) = element.mask_id() {
-            let mut mask_paint = Paint::default();
-            mask_paint.set_blend_mode(skia::BlendMode::DstIn);
-            canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&mask_paint));
-            render_tree(shared, canvas, mask_id, tree, scale, target)?;
-            canvas.restore(); // mask layer
-        }
-
-        canvas.restore(); // composition layer
-    } else {
-        for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
-        }
-    }
-
-    if needs_layer {
-        canvas.restore(); // opacity/blend layer
-    }
-    canvas.restore();
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Frames
-// ---------------------------------------------------------------------------
-
-fn render_frame(
-    shared: &mut RenderState,
-    canvas: &Canvas,
-    element: &Shape,
-    tree: ShapesPoolRef,
-    scale: f32,
-    target: VectorTarget,
-) -> Result<()> {
-    // A frame's own geometry (background, clip, strokes) is placed by its
-    // `centered_transform`, but — like groups — it does NOT propagate that
-    // transform to its children, which are stored in absolute coordinates. So
-    // the transform is applied only around the frame's own draws; children are
-    // rendered untransformed.
-    let matrix = element.centered_transform();
-
-    canvas.save();
-
-    // Frame drop shadow: background + subtree silhouette, below the clip layer
-    // so it extends outside the frame bounds.
-    render_container_drop_shadows(shared, canvas, element, tree, scale, target, true)?;
-
-    let needs_layer = element.needs_layer();
-
-    if needs_layer {
-        let mut paint = Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-
-        // Frame-level layer blur
-        if let Some(blur) = element
-            .blur
-            .filter(|b| !b.hidden && b.blur_type == BlurType::LayerBlur && b.value > 0.0)
-        {
-            let sigma = radius_to_sigma(blur.value * scale);
-            if let Some(filter) = skia::image_filters::blur((sigma, sigma), None, None, None) {
-                paint.set_image_filter(filter);
-            }
-        }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        canvas.save_layer(&layer_rec);
-    }
-
-    // Clip to frame bounds in the frame's own space, then undo the transform so
-    // children draw at their absolute coords while staying clipped (mirrors the
-    // GPU clip). Outset ~0.5px like the GPU clip to avoid an AA seam.
-    if element.clip_content {
-        canvas.concat(&matrix);
-        clip_to_frame_content(canvas, element, scale);
-        if let Some(inverse) = matrix.invert() {
-            canvas.concat(&inverse);
-        }
-    }
-
-    // Frame's own fills (background) + inner shadows, in the frame's space.
-    if !element.fills.is_empty() {
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
-        renderer.draw_fills(element, &element.fills)?;
-        renderer.draw_fill_inner_shadows(element)?;
-        canvas.restore();
-    }
-
-    // Children (absolute coords, no frame transform).
-    let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
-    for child_id in &children {
-        render_tree(shared, canvas, child_id, tree, scale, target)?;
-    }
-
-    // Strokes over children (clipped frames), in the frame's space.
-    let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
-    if !visible_strokes.is_empty() {
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
-        renderer.draw_strokes(element, &visible_strokes)?;
-        canvas.restore();
-    }
-
-    if needs_layer {
-        canvas.restore(); // opacity/blend layer
-    }
-    canvas.restore();
-    Ok(())
-}
-
-/// Drop shadows for a container: render the subtree into a drop-shadow filter
-/// layer (its alpha becomes the shadow). `draw_fills` includes the frame
-/// background in the silhouette.
-fn render_container_drop_shadows(
-    shared: &mut RenderState,
-    canvas: &Canvas,
-    element: &Shape,
-    tree: ShapesPoolRef,
-    scale: f32,
-    target: VectorTarget,
-    draw_fills: bool,
-) -> Result<()> {
-    for shadow in element.drop_shadows_visible() {
-        let Some(filter) = shadow.get_drop_shadow_filter() else {
-            continue;
-        };
-        let mut paint = Paint::default();
-        paint.set_image_filter(filter);
-        canvas.save_layer(&skia::canvas::SaveLayerRec::default().paint(&paint));
-
-        if draw_fills && !element.fills.is_empty() {
-            let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
-            renderer.draw_fills(element, &element.fills)?;
-        }
-
-        let children: Vec<Uuid> = element.children_ids_iter_forward(false).copied().collect();
-        for child_id in &children {
-            render_tree(shared, canvas, child_id, tree, scale, target)?;
-        }
-
-        canvas.restore();
-    }
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Leaf shapes (Rect, Circle, Path, Bool, Text, SVGRaw)
-// ---------------------------------------------------------------------------
-
-fn render_leaf(
-    shared: &mut RenderState,
-    canvas: &Canvas,
-    element: &Shape,
-    scale: f32,
-    target: VectorTarget,
-) -> Result<()> {
-    let needs_layer = element.needs_layer();
-
-    let matrix = element.centered_transform();
-
-    canvas.save();
-    canvas.concat(&matrix);
-
-    // Layer for opacity/blend
-    if needs_layer {
-        let mut paint = Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        canvas.save_layer(&layer_rec);
-    }
-
-    let mut renderer = VectorRenderer::new(canvas, shared, scale, target);
-
-    // Layer blur (non-text shapes)
-    let blur_layer = if !matches!(element.shape_type, Type::Text(_)) {
-        renderer.apply_blur_layer(element)
-    } else {
-        false
-    };
-
-    renderer.draw_drop_shadows(element)?;
-    render_leaf_content(&mut renderer, element)?;
-
-    if blur_layer {
-        renderer.restore_blur_layer();
-    }
-
-    if needs_layer {
-        canvas.restore();
-    }
-
-    canvas.restore();
-    Ok(())
+/// Children of `element` in the exact paint order (bottom-to-top) the GPU
+/// renderer uses, so the vector export matches on-canvas z-order.
+///
+/// The GPU pushes `sort_z_index(children_ids_iter(false))` onto a LIFO stack and
+/// therefore paints nodes in the reverse of that list. Crucially, `sort_z_index`
+/// reorders children by their layout `z-index` for layout containers (flex/grid),
+/// which is what places absolutely-positioned items (e.g. a background gradient
+/// with a lower z-index) behind the flow content. Iterating children in plain
+/// stored order ignored this and drew such items on top. We replicate the GPU
+/// ordering here.
+pub(super) fn children_paint_order(tree: ShapesPoolRef, element: &Shape) -> Vec<Uuid> {
+    let ids: Vec<Uuid> = element.children_ids_iter(false).copied().collect();
+    let mut ids = super::sort_z_index(tree, element, ids);
+    ids.reverse();
+    ids
 }
 
 /// Single source of truth for leaf content draw order/gating (fills, inner
 /// shadows, strokes), generic over [`ShapeRenderer`]. Drop shadows and layer
-/// blur are excluded — they wrap the content and are sequenced per backend.
-fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shape) -> Result<()> {
+/// blur are excluded; they wrap the content and are sequenced per backend.
+pub(super) fn render_leaf_content<R: ShapeRenderer + ?Sized>(
+    renderer: &mut R,
+    shape: &Shape,
+) -> Result<()> {
     match &shape.shape_type {
         Type::Text(_) => renderer.draw_text(shape)?,
         Type::SVGRaw(_) => renderer.draw_svg(shape)?,
@@ -695,14 +713,33 @@ fn render_leaf_content<R: ShapeRenderer + ?Sized>(renderer: &mut R, shape: &Shap
 // ---------------------------------------------------------------------------
 
 fn draw_image_fill(
-    shared: &mut RenderState,
-    canvas: &Canvas,
+    shared: &mut ExportState,
+    canvas: &mut VectorCanvas,
     shape: &Shape,
     image_fill: &crate::shapes::ImageFill,
+    is_svg: bool,
 ) -> Result<()> {
-    // Use a CPU-backed image copy — GPU-backed images can't be drawn
-    // on the PDF canvas which has no GPU context.
-    let Some(image) = shared.images.get_cpu_image(&image_fill.id()) else {
+    let sampling_options = shared.sampling_options;
+
+    if is_svg {
+        let Some(builder) = canvas.svg_layer_mut() else {
+            return Ok(());
+        };
+        let Some(url) = shared
+            .images
+            .as_ref()
+            .and_then(|images| images.source_url(&image_fill.id()))
+        else {
+            return Ok(());
+        };
+        return emit_linked_image_fill(builder, shape, image_fill, url, shape.selrect);
+    }
+
+    let Some(images) = shared.images.as_deref_mut() else {
+        return Ok(());
+    };
+
+    let Some(image) = images.get_cpu_image(&image_fill.id()) else {
         return Ok(());
     };
 
@@ -712,49 +749,72 @@ fn draw_image_fill(
     let src_rect = get_source_rect(size, container, image_fill);
     let dest_rect = container;
 
-    canvas.save();
+    let skia = canvas.skia_canvas();
+    skia.save();
 
     // Clip to shape
-    clip_to_shape(canvas, shape, true);
+    clip_to_shape(skia, shape, true);
 
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    if let Some(filter) = shape.image_filter(1.) {
-        paint.set_image_filter(filter);
+    if !is_svg {
+        if let Some(filter) = shape.image_filter(1.) {
+            paint.set_image_filter(filter);
+        }
     }
 
-    canvas.draw_image_rect_with_sampling_options(
+    skia.draw_image_rect_with_sampling_options(
         &image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        shared.sampling_options,
+        sampling_options,
         &paint,
     );
 
-    canvas.restore();
+    skia.restore();
     Ok(())
 }
 
 fn draw_single_stroke(
-    canvas: &Canvas,
-    shared: &mut RenderState,
+    canvas: &mut VectorCanvas,
+    shared: &mut ExportState,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
+    is_svg: bool,
 ) -> Result<()> {
     // Image-fill strokes: the stroke masks the visible area of the image.
     if let Fill::Image(image_fill) = &stroke.fill {
-        return draw_image_stroke(canvas, shared, scale, shape, stroke, image_fill);
+        return draw_image_stroke(
+            canvas,
+            shared,
+            scale,
+            shape,
+            stroke,
+            image_fill,
+            is_svg,
+        );
     }
 
-    draw_stroke_geometry(canvas, scale, shape, stroke, false);
+    draw_stroke_geometry(canvas.skia_canvas(), scale, shape, stroke, false, true);
     Ok(())
 }
 
 /// Draws a stroke's geometry by shape type, kind and dash style. Rect/Circle
 /// reuse the GPU stroke fns (dash/alignment parity); Path/Bool use double-width
 /// + clip/clear + caps. `opaque` forces black for an image-stroke silhouette.
-fn draw_stroke_geometry(canvas: &Canvas, scale: f32, shape: &Shape, stroke: &Stroke, opaque: bool) {
+/// `inner_clip` applies the shape-interior clip for inner strokes; callers
+/// building SVG `<mask>` fragments for rotated paths should pass `false` and
+/// supply a rotated `<clipPath>` instead (`SkSVGDevice` drops the canvas CTM
+/// from canvas clips when serializing mask defs).
+fn draw_stroke_geometry(
+    canvas: &Canvas,
+    scale: f32,
+    shape: &Shape,
+    stroke: &Stroke,
+    opaque: bool,
+    inner_clip: bool,
+) {
     let svg_attrs = shape.svg_attrs.as_ref();
     let is_open = shape.is_open();
 
@@ -801,7 +861,7 @@ fn draw_stroke_geometry(canvas: &Canvas, scale: f32, shape: &Shape, stroke: &Str
                 paint.set_shader(None);
                 paint.set_color(skia::Color::BLACK);
             }
-            draw_stroke_kind_aware(canvas, shape, stroke, &paint);
+            draw_stroke_kind_aware(canvas, shape, stroke, &paint, inner_clip);
 
             if is_open {
                 if let Some(cap_path) = transformed_skia_path(shape) {
@@ -818,13 +878,23 @@ fn draw_stroke_geometry(canvas: &Canvas, scale: f32, shape: &Shape, stroke: &Str
 
 /// Draws a stroked `paint` honoring the stroke kind (inner clip / outer
 /// layer+clear / center).
-fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint: &Paint) {
+fn draw_stroke_kind_aware(
+    canvas: &Canvas,
+    shape: &Shape,
+    stroke: &Stroke,
+    paint: &Paint,
+    inner_clip: bool,
+) {
     match stroke.render_kind(shape.is_open()) {
         StrokeKind::Inner => {
-            canvas.save();
-            clip_to_shape(canvas, shape, true);
-            draw_shape_geometry(canvas, shape, paint);
-            canvas.restore();
+            if inner_clip {
+                canvas.save();
+                clip_to_shape(canvas, shape, true);
+                draw_shape_geometry(canvas, shape, paint);
+                canvas.restore();
+            } else {
+                draw_shape_geometry(canvas, shape, paint);
+            }
         }
         StrokeKind::Outer => {
             canvas.save();
@@ -847,24 +917,48 @@ fn draw_stroke_kind_aware(canvas: &Canvas, shape: &Shape, stroke: &Stroke, paint
 /// Image-filled stroke: draw the stroke silhouette in a layer, then paint the
 /// CPU image over it with `SrcIn` so only the stroke area shows the image.
 fn draw_image_stroke(
-    canvas: &Canvas,
-    shared: &mut RenderState,
+    canvas: &mut VectorCanvas,
+    shared: &mut ExportState,
     scale: f32,
     shape: &Shape,
     stroke: &Stroke,
     image_fill: &crate::shapes::ImageFill,
+    is_svg: bool,
 ) -> Result<()> {
-    let Some(image) = shared.images.get_cpu_image(&image_fill.id()) else {
+    let sampling_options = shared.sampling_options;
+
+    let container = shape.selrect;
+    let dest_rect = get_dest_rect(&container, stroke.delta());
+
+    if is_svg {
+        let Some(builder) = canvas.svg_layer_mut() else {
+            return Ok(());
+        };
+        let Some(url) = shared
+            .images
+            .as_ref()
+            .and_then(|images| images.source_url(&image_fill.id()))
+        else {
+            return Ok(());
+        };
+        return emit_linked_image_stroke(builder, shape, image_fill, url, dest_rect);
+    }
+
+    let Some(images) = shared.images.as_deref_mut() else {
+        return Ok(());
+    };
+
+    let Some(image) = images.get_cpu_image(&image_fill.id()) else {
         return Ok(());
     };
     let size = image.dimensions();
-    let container = shape.selrect;
 
-    canvas.save();
-    canvas.save_layer(&skia::canvas::SaveLayerRec::default());
+    let skia = canvas.skia_canvas();
+    skia.save();
+    skia.save_layer(&skia::canvas::SaveLayerRec::default());
 
     // Opaque stroke silhouette; the SrcIn image draw below fills it.
-    draw_stroke_geometry(canvas, scale, shape, stroke, true);
+    draw_stroke_geometry(skia, scale, shape, stroke, true, true);
 
     let mut image_paint = Paint::default();
     image_paint.set_blend_mode(skia::BlendMode::SrcIn);
@@ -875,16 +969,16 @@ fn draw_image_stroke(
 
     let src_rect = get_source_rect(size, &container, image_fill);
     let dest_rect = get_dest_rect(&container, stroke.delta());
-    canvas.draw_image_rect_with_sampling_options(
+    skia.draw_image_rect_with_sampling_options(
         &image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        shared.sampling_options,
+        sampling_options,
         &image_paint,
     );
 
-    canvas.restore(); // layer
-    canvas.restore();
+    skia.restore(); // layer
+    skia.restore();
     Ok(())
 }
 
@@ -900,7 +994,7 @@ fn transformed_skia_path(shape: &Shape) -> Option<skia::Path> {
 // ---------------------------------------------------------------------------
 
 /// Draws the shape's geometry (rect/rrect/oval/path) with the given paint.
-fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
+pub(super) fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
     match &shape.shape_type {
         Type::Rect(_) | Type::Frame(_) => {
             if let Some(corners) = shape.shape_type.corners() {
@@ -925,7 +1019,7 @@ fn draw_shape_geometry(canvas: &Canvas, shape: &Shape, paint: &Paint) {
 
 /// Clips the canvas to a frame's content bounds, outset by ~0.5 device px so
 /// the hard (non-AA) clip edge doesn't shave off edge pixels and leave a seam.
-fn clip_to_frame_content(canvas: &Canvas, shape: &Shape, scale: f32) {
+pub(super) fn clip_to_frame_content(canvas: &Canvas, shape: &Shape, scale: f32) {
     let outset = 0.5 / scale.max(1e-6);
     let mut rect = shape.selrect;
     rect.outset((outset, outset));
@@ -973,3 +1067,4 @@ fn clip_to_shape(canvas: &Canvas, shape: &Shape, antialias: bool) {
         }
     }
 }
+

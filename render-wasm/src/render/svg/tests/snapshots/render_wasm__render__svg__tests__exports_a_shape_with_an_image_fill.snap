@@ -1,0 +1,9 @@
+---
+source: src/render/svg/tests/mod.rs
+assertion_line: 849
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="80"><defs><clipPath id="cl0" clipPathUnits="userSpaceOnUse">
+	<rect width="100" height="80"/>
+</clipPath></defs><g transform="matrix(1 0 0 1 0 0)"><image x="0" y="0" width="100" height="80" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAABHNCSVQICAgIfAhkiAAAABtJREFUCJlj/G/M8J8x7T8DA8PM////GzP8BwBGtwhh9BmShgAAAABJRU5ErkJggg==" clip-path="url(#cl0)"/></g></svg>

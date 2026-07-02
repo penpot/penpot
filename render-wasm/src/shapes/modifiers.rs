@@ -212,9 +212,10 @@ fn propagate_transform(
             match text_content.grow_type() {
                 GrowType::AutoHeight => {
                     let height_before = text_content.size.height;
+                    let text_ctx = crate::render::TextShapingCtx::from_session();
                     let new_height = if width_changed {
                         let mut clone = text_content.clone();
-                        clone.update_layout(resized_selrect);
+                        clone.update_layout(&text_ctx, resized_selrect);
                         clone.size.height
                     } else {
                         height_before
@@ -242,9 +243,10 @@ fn propagate_transform(
                 GrowType::AutoWidth => {
                     let width_before = text_content.width();
                     let height_before = text_content.size.height;
+                    let text_ctx = crate::render::TextShapingCtx::from_session();
                     let (new_width, new_height) = if height_changed {
                         let mut clone = text_content.clone();
-                        clone.update_layout(resized_selrect);
+                        clone.update_layout(&text_ctx, resized_selrect);
                         (clone.width(), clone.size.height)
                     } else {
                         (width_before, height_before)

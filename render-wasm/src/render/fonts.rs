@@ -1,5 +1,5 @@
 use skia_safe::{self as skia, textlayout, Font, FontMgr};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::error::{Error, Result};
 use crate::shapes::{FontFamily, FontStyle};
@@ -26,6 +26,9 @@ pub struct FontStore {
     debug_font: Font,
     ui_font: Font,
     fallback_fonts: HashSet<String>,
+    /// Source URL registered when the font was fetched (SVG export references
+    /// this in `@font-face` rules).
+    source_urls: HashMap<String, String>,
 }
 
 impl FontStore {
@@ -55,6 +58,7 @@ impl FontStore {
             debug_font,
             ui_font,
             fallback_fonts: HashSet::new(),
+            source_urls: HashMap::new(),
         })
     }
 
@@ -131,6 +135,173 @@ impl FontStore {
     pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {
         None
     }
+
+    pub fn set_source_url(&mut self, alias: &str, url: String) {
+        if !url.is_empty() {
+            self.source_urls.insert(alias.to_string(), url);
+        }
+    }
+
+    pub fn source_url(&self, alias: &str) -> Option<&str> {
+        self.source_urls.get(alias).map(String::as_str)
+    }
+
+/// Builds `@font-face` CSS rules for the given registered aliases.
+///
+/// Each rule references the source URL registered for the alias at load time.
+/// Aliases without a registered URL are omitted.
+pub fn font_face_css_for_aliases(&self, aliases: &HashSet<String>) -> String {
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut css = String::new();
+
+        for alias in aliases {
+            let Some(typeface) = self
+                .font_provider
+                .match_family_style(alias, skia::FontStyle::default())
+            else {
+                continue;
+            };
+
+            let family = typeface.family_name();
+            let style = typeface.font_style();
+
+            // Skia's SVG backend derives `<text>` font descriptors from the
+            // typeface's own `SkFontStyle` using a quirky bucketed table (see
+            // `skia_svg_font_weight`). We must mirror it exactly here so each
+            // `@font-face` pairs with the `<text>` elements that reference it;
+            // otherwise, when several weights of the same family coexist, the
+            // browser cannot match the weight and silently falls back to 400.
+            let weight = skia_svg_font_weight(*style.weight());
+            let slant = match style.slant() {
+                skia::font_style::Slant::Italic => "italic",
+                skia::font_style::Slant::Oblique => "oblique",
+                _ => "normal",
+            };
+            let stretch = skia_svg_font_stretch(*style.width());
+
+            let dedup_key = format!("{family}|{weight}|{slant}|{stretch:?}");
+            if !seen.insert(dedup_key) {
+                continue;
+            }
+
+            let stretch_decl = stretch
+                .map(|s| format!("font-stretch:{s};"))
+                .unwrap_or_default();
+
+            let Some(url) = self.source_url(alias) else {
+                continue;
+            };
+            let src = font_face_src_from_url(url);
+
+            css.push_str(&format!(
+                "@font-face{{font-family:\"{family}\";font-style:{slant};font-weight:{weight};{stretch_decl}src:{src};}}",
+            ));
+        }
+
+        css
+    }
+}
+
+fn font_face_src_from_url(url: &str) -> String {
+    let format = font_format_from_url(url);
+    format!(
+        "url(\"{}\") format(\"{format}\")",
+        css_escape_url(url)
+    )
+}
+
+fn font_format_from_url(url: &str) -> &'static str {
+    let path = url
+        .split('#')
+        .next()
+        .unwrap_or(url)
+        .split('?')
+        .next()
+        .unwrap_or(url);
+    if path.ends_with(".woff2") {
+        "woff2"
+    } else if path.ends_with(".woff") {
+        "woff"
+    } else if path.ends_with(".otf") {
+        "opentype"
+    } else {
+        "truetype"
+    }
+}
+
+fn css_escape_url(url: &str) -> String {
+    url.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{FontFamily, FontStyle};
+    use crate::uuid::Uuid;
+
+    #[test]
+    fn font_face_css_uses_registered_url() {
+        let mut store = FontStore::try_new().expect("font store");
+        let family = FontFamily::new(Uuid::nil(), 400, FontStyle::Normal);
+        let alias = family.alias();
+        store.set_source_url(
+            &alias,
+            "https://example.com/fonts/source.ttf".to_string(),
+        );
+
+        let mut aliases = HashSet::new();
+        aliases.insert(alias);
+        let css = store.font_face_css_for_aliases(&aliases);
+
+        assert!(css.contains("url(\"https://example.com/fonts/source.ttf\")"));
+        assert!(css.contains("format(\"truetype\")"));
+        assert!(!css.contains("base64,"));
+    }
+
+    #[test]
+    fn font_face_css_skips_without_registered_url() {
+        let store = FontStore::try_new().expect("font store");
+        let family = FontFamily::new(Uuid::nil(), 400, FontStyle::Normal);
+        let mut aliases = HashSet::new();
+        aliases.insert(family.alias());
+        let css = store.font_face_css_for_aliases(&aliases);
+
+        assert!(css.is_empty());
+    }
+}
+
+/// Reproduces the `font-weight` string that `SkSVGDevice::addTextAttributes`
+/// writes on `<text>` elements for a given typeface weight.
+fn skia_svg_font_weight(weight: i32) -> &'static str {
+    // Skia's table is ["100","200","300","normal","400","500","600","bold",
+    // "800","900"]; we substitute "400" for the omitted-normal bucket so the
+    // descriptor still resolves to weight 400.
+    const WEIGHTS: [&str; 10] = [
+        "100", "200", "300", "400", "400", "500", "600", "bold", "800", "900",
+    ];
+    let index = ((weight.clamp(100, 900) - 50) / 100) as usize;
+    WEIGHTS[index]
+}
+
+/// Reproduces the `font-stretch` value `SkSVGDevice` writes for a typeface
+/// width, returning `None` for the normal width (which Skia omits).
+fn skia_svg_font_stretch(width: i32) -> Option<&'static str> {
+    const STRETCHES: [&str; 9] = [
+        "ultra-condensed",
+        "extra-condensed",
+        "condensed",
+        "semi-condensed",
+        "normal",
+        "semi-expanded",
+        "expanded",
+        "extra-expanded",
+        "ultra-expanded",
+    ];
+    let index = width - 1;
+    if index == 4 {
+        return None;
+    }
+    STRETCHES.get(usize::try_from(index).ok()?).copied()
 }
 
 fn load_default_provider(font_mgr: &FontMgr) -> skia::textlayout::TypefaceFontProvider {

@@ -162,9 +162,6 @@
       (when (= status "ended")
         (dom/trigger-download-uri filename mtype resource-uri)))))
 
-;; TODO: Remove once we support WASM SVG export
-(def ^:private wasm-export-types #{:jpeg :webp :png :pdf})
-
 (defn- wasm-export-enabled?
   "WASM export is available: the flag is set AND render-wasm is active for the
   current file. When render-wasm is inactive its shape tree isn't loaded, so a
@@ -176,8 +173,7 @@
 (defn- use-wasm-export?
   "Whether to take the client-side WASM export path for `export`."
   [state export]
-  (and (wasm-export-enabled? state)
-       (contains? wasm-export-types (:type export))))
+  (wasm-export-enabled? state))
 
 (defn request-simple-export
   [{:keys [export]}]
@@ -193,6 +189,7 @@
       (if (use-wasm-export? state export)
         (do
           (case (:type export)
+            :svg (wasm.exports/export-svg export)
             :pdf (wasm.exports/export-pdf export)
             (wasm.exports/export-image export))
           (rx/empty))

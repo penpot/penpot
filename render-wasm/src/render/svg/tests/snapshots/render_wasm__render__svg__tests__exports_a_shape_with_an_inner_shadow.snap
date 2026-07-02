@@ -1,0 +1,10 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="164.56921" height="134.56921"><defs><filter id="inshadow0" x="-25.2372%" y="-31.4273%" width="150.4743%" height="162.8547%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="7.428203" result="isbl0"/><feOffset in="isbl0" dx="8" dy="6" result="isof0"/><feComposite in="SourceAlpha" in2="isof0" operator="out" result="isbd0"/><feFlood flood-color="#000000" flood-opacity="0.4" result="isfl0"/><feComposite in="isfl0" in2="isbd0" operator="in" result="istn0"/><feComposite in="istn0" in2="SourceAlpha" operator="in" result="issh0"/><feMerge><feMergeNode in="issh0"/></feMerge></filter></defs>
+	<rect fill="#B1B2B5" transform="translate(14.2846 16.2846)" width="120" height="90"/>
+<g filter="url(#inshadow0)">
+	<rect transform="translate(14.2846 16.2846)" width="120" height="90"/>
+</g></svg>

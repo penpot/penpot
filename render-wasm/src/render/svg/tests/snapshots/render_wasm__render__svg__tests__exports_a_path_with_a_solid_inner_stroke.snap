@@ -1,0 +1,14 @@
+---
+source: src/render/svg/mod.rs
+expression: "render(&pool, id)"
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="80">
+	<path fill="#CCC" d="M50 0L100 80L0 80L50 0Z"/>
+	<clipPath id="f0_cl_3">
+		<path d="M50 0L100 80L0 80L50 0Z"/>
+	</clipPath>
+	<g clip-path="url(#f0_cl_3)">
+		<path fill="none" stroke="red" stroke-width="20" stroke-miterlimit="4" d="M50 0L100 80L0 80L50 0Z"/>
+	</g>
+</svg>

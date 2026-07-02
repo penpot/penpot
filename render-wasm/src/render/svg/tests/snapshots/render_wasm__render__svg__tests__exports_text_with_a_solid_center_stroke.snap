@@ -1,0 +1,15 @@
+---
+source: src/render/svg/tests/mod.rs
+assertion_line: 1106
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="471.63" height="236.0625"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style></defs>
+	<text fill="#E17FDA" transform="translate(1 -4.9375)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984, " y="181, ">
+			HOLA
+	</text>
+	<defs/>
+	<text fill="none" stroke="blue" stroke-width="2" stroke-miterlimit="4" transform="translate(1 -4.9375)" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984, " y="181, ">
+			HOLA
+	</text>
+</svg>

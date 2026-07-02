@@ -397,7 +397,8 @@ impl Shape {
         self.invalidate_extrect();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
-            text.update_layout(self.selrect);
+            let ctx = crate::render::TextShapingCtx::from_session();
+            text.update_layout(&ctx, self.selrect);
             text.set_xywh(left, top, self.selrect.width(), self.selrect.height());
         }
     }
@@ -791,12 +792,22 @@ impl Shape {
         self.selrect.width()
     }
 
-    pub fn extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
-        self.calculate_extrect(shapes_pool, scale)
+    pub fn extrect(
+        &self,
+        shapes_pool: ShapesPoolRef,
+        scale: f32,
+        ctx: &crate::render::TextShapingCtx,
+    ) -> math::Rect {
+        self.calculate_extrect(shapes_pool, scale, ctx)
     }
 
-    pub fn visually_insignificant(&self, scale: f32, shapes_pool: ShapesPoolRef) -> bool {
-        let extrect = self.extrect(shapes_pool, scale);
+    pub fn visually_insignificant(
+        &self,
+        scale: f32,
+        shapes_pool: ShapesPoolRef,
+        ctx: &crate::render::TextShapingCtx,
+    ) -> bool {
+        let extrect = self.extrect(shapes_pool, scale, ctx);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
@@ -953,6 +964,7 @@ impl Shape {
         bounds: Bounds,
         shapes_pool: ShapesPoolRef,
         scale: f32,
+        ctx: &crate::render::TextShapingCtx,
     ) -> Bounds {
         let mut rect = bounds.to_rect();
 
@@ -963,7 +975,7 @@ impl Shape {
 
                 for (index, child_id) in self.children.iter().enumerate() {
                     if let Some(child_shape) = shapes_pool.get(child_id) {
-                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale, ctx);
 
                         if index == 0 {
                             mask_rect = Some(child_extrect);
@@ -997,7 +1009,7 @@ impl Shape {
                 for child_id in self.children_ids_iter(false) {
                     if let Some(child_shape) = shapes_pool.get(child_id) {
                         // Always calculate full extrect for children to ensure accurate bounds
-                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale);
+                        let child_extrect = child_shape.calculate_extrect(shapes_pool, scale, ctx);
                         rect.join(child_extrect);
                     }
                 }
@@ -1046,19 +1058,29 @@ impl Shape {
         Bounds::from_rect(&rect)
     }
 
-    pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    pub fn calculate_extrect(
+        &self,
+        shapes_pool: ShapesPoolRef,
+        scale: f32,
+        ctx: &crate::render::TextShapingCtx,
+    ) -> math::Rect {
         // `scale` is forwarded to children but intentionally NOT part of the cache key.
         if let Some(cached_extrect) = *self.extrect_cache.borrow() {
             return cached_extrect;
         }
 
-        let extrect = self.calculate_extrect_uncached(shapes_pool, scale);
+        let extrect = self.calculate_extrect_uncached(shapes_pool, scale, ctx);
 
         *self.extrect_cache.borrow_mut() = Some(extrect);
         extrect
     }
 
-    fn calculate_extrect_uncached(&self, shapes_pool: ShapesPoolRef, scale: f32) -> math::Rect {
+    fn calculate_extrect_uncached(
+        &self,
+        shapes_pool: ShapesPoolRef,
+        scale: f32,
+        ctx: &crate::render::TextShapingCtx,
+    ) -> math::Rect {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
@@ -1076,7 +1098,7 @@ impl Shape {
             }
             Type::Text(text_content) => {
                 // FIXME: we need to recalculate the text bounds here because the shape's selrect
-                text_content.calculate_bounds(shape, false)
+                text_content.calculate_bounds(ctx, shape, false)
             }
             _ => shape.calculate_bounds(false),
         };
@@ -1084,7 +1106,7 @@ impl Shape {
         bounds = self.apply_stroke_bounds(bounds, max_stroke);
         bounds = self.apply_shadow_bounds(bounds);
         bounds = self.apply_blur_bounds(bounds);
-        bounds = self.apply_children_bounds(bounds, shapes_pool, scale);
+        bounds = self.apply_children_bounds(bounds, shapes_pool, scale, ctx);
         bounds = self.apply_children_blur(bounds, shapes_pool);
 
         if !self.transform.is_identity() {
@@ -1441,7 +1463,8 @@ impl Shape {
         // frame bounds, a cached crop anchored to the frame can easily become incorrect while
         // moving (children can extend beyond selrect). Be conservative and render live.
         if matches!(self.shape_type, Type::Frame(_)) && !self.clip_content {
-            let extrect = self.extrect(shapes_pool, 1.0);
+            let text_ctx = crate::render::TextShapingCtx::from_session();
+            let extrect = self.extrect(shapes_pool, 1.0, &text_ctx);
             let sr = self.selrect;
             let exceeds = extrect.left < sr.left
                 || extrect.top < sr.top
@@ -1950,7 +1973,10 @@ mod tests {
         }
 
         let group = pool.get(&group_id).expect("group should exist");
-        let extrect = group.calculate_extrect(&pool, 1.0);
+        let fonts = crate::render::FontStore::try_new().expect("fonts");
+        let text_ctx =
+            crate::render::TextShapingCtx::new(&fonts, crate::utils::Browser::Chrome);
+        let extrect = group.calculate_extrect(&pool, 1.0, &text_ctx);
 
         assert_eq!(extrect.left, 0.0);
         assert_eq!(extrect.top, 0.0);

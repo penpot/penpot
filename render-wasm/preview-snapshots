@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+#
+# Visual review helper for the SVG exporter's `insta` snapshots.
+#
+# This script renders the insta snapshots into an HTML gallery
+# so you can judge whether a change is *visually* valid 
+# before accepting it.
+#
+# Usage:
+#   ./preview-snapshots            # build the gallery and print its path
+#   ./preview-snapshots --open     # also open it in the default browser
+#
+# Text snapshots reference `fonts/sourcesanspro-regular.ttf`; this script copies
+# the bundled font into `target/svg-preview/fonts/` so the gallery renders text.
+#
+# When a test produced a pending change there will be a `*.snap.new` next to the
+# accepted `*.snap`; the gallery then shows "accepted" vs "new" side by side.
+# Once a change looks correct, accept it (rename `*.snap.new` -> `*.snap`, or
+# `cargo insta accept`) and re-run the tests.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SNAP_DIR="$SCRIPT_DIR/src/render/svg/tests/snapshots"
+OUT_DIR="$SCRIPT_DIR/target/svg-preview"
+OUT="$OUT_DIR/index.html"
+FONT_SRC="$SCRIPT_DIR/src/fonts/sourcesanspro-regular.ttf"
+FONT_DIR="$OUT_DIR/fonts"
+
+mkdir -p "$OUT_DIR"
+mkdir -p "$FONT_DIR"
+cp "$FONT_SRC" "$FONT_DIR/"
+
+# Prints the SVG body of a snapshot file: everything after the second `---`
+# line (the YAML front matter insta writes).
+extract_body() {
+    awk 'd>=2{print} /^---$/{d++}' "$1"
+}
+
+# Embeds a snapshot's SVG via <object> pointing at a standalone .svg file.
+#
+# Snapshots must NOT be inlined together into one HTML document: each SVG
+# restarts its def ids at `clip0`/`blur0`/..., so inlining several in the same
+# document makes `url(#clip0)` collide and resolve to the wrong (or empty) clip
+# path. Writing each SVG to its own file isolates ids per document.
+# We use <object> (not <img>) so linked @font-face rules and other external
+# resources resolve inside the SVG document.
+svg_counter=0
+read_svg_dims() {
+    local file="$1"
+    local tag
+    tag=$(grep -m1 '<svg' "$file" | sed 's/>.*//')
+    SVG_W=$(echo "$tag" | sed -n 's/.*[[:space:]]width="\([^"]*\)".*/\1/p')
+    SVG_H=$(echo "$tag" | sed -n 's/.*[[:space:]]height="\([^"]*\)".*/\1/p')
+}
+emit_svg_box() {
+    local body_file="$OUT_DIR/svg-$svg_counter.svg"
+    local name
+    svg_counter=$((svg_counter + 1))
+    name="$(basename "$body_file")"
+    extract_body "$1" > "$body_file"
+    read_svg_dims "$body_file"
+    echo "<div class=\"cb\"><object data=\"$name\" type=\"image/svg+xml\" width=\"$SVG_W\" height=\"$SVG_H\"></object></div>"
+}
+
+{
+    cat <<'HTML'
+<!doctype html>
+<meta charset="utf-8">
+<title>render-wasm SVG snapshot preview</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 24px; }
+  h1 { font-size: 20px; }
+  section { border: 1px solid #8884; border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+  h2 { font-size: 14px; font-family: monospace; margin: 0 0 8px; word-break: break-all; }
+  .cols { display: flex; gap: 24px; flex-wrap: wrap; }
+  figure { margin: 0; }
+  figcaption { font-size: 12px; color: #888; margin-bottom: 4px; }
+  /* Checkerboard so transparency / opacity / blend are visible. */
+  .cb {
+    display: inline-block;
+    line-height: 0;
+    background-image:
+      linear-gradient(45deg, #ccc 25%, transparent 25%),
+      linear-gradient(-45deg, #ccc 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #ccc 75%),
+      linear-gradient(-45deg, transparent 75%, #ccc 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    border: 1px solid #8884;
+  }
+  .cb object {
+    display: block;
+  }
+  .changed { color: #c60; font-weight: bold; font-size: 13px; }
+  details { margin-top: 8px; }
+  pre { background: #8881; padding: 8px; overflow: auto; font-size: 12px; }
+</style>
+<h1>render-wasm SVG snapshot preview</h1>
+HTML
+
+    shopt -s nullglob
+
+    for snap in "$SNAP_DIR"/*.snap; do
+        name="$(basename "$snap" .snap)"
+        new="$snap.new"
+        echo "<section><h2>$name</h2>"
+        if [ -f "$new" ]; then
+            echo '<p class="changed">Pending change: review before accepting</p>'
+            echo '<div class="cols">'
+            echo '<figure><figcaption>accepted (current .snap)</figcaption>'
+            emit_svg_box "$snap"
+            echo '</figure>'
+            echo '<figure><figcaption>new (.snap.new)</figcaption>'
+            emit_svg_box "$new"
+            echo '</figure>'
+            echo '</div>'
+            echo '<details><summary>text diff</summary><pre>'
+            diff -u "$snap" "$new" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' || true
+            echo '</pre></details>'
+        else
+            emit_svg_box "$snap"
+        fi
+        echo '</section>'
+    done
+
+    # New tests whose snapshot has never been accepted yet.
+    for new in "$SNAP_DIR"/*.snap.new; do
+        base="${new%.new}"
+        [ -f "$base" ] && continue
+        name="$(basename "$new" .snap.new)"
+        echo "<section><h2>$name</h2>"
+        echo '<p class="changed">new snapshot (no accepted version yet)</p>'
+        emit_svg_box "$new"
+        echo '</section>'
+    done
+} > "$OUT"
+
+echo "Wrote $OUT"
+
+if [ "${1:-}" = "--open" ]; then
+    xdg-open "$OUT" >/dev/null 2>&1 || open "$OUT" >/dev/null 2>&1 || true
+fi

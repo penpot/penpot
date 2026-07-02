@@ -1,6 +1,7 @@
 use macros::{wasm_error, ToJs};
 
 use crate::globals::{get_render_state, get_text_editor_state};
+use crate::render::TextShapingCtx;
 use crate::math::{Matrix, Point, Rect};
 use crate::mem;
 use crate::render::text_editor as text_editor_render;
@@ -862,7 +863,8 @@ pub extern "C" fn text_editor_render_overlay() {
                     let selrect = shape.selrect();
                     if let Some(shape) = state.shapes.get_mut(&shape_id) {
                         if let Type::Text(text_content) = &mut shape.shape_type {
-                            text_content.update_layout(selrect);
+                            let text_ctx = TextShapingCtx::from_session();
+                            text_content.update_layout(&text_ctx, selrect);
                         }
                     }
                 }

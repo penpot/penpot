@@ -1,0 +1,11 @@
+---
+source: src/render/svg/tests/mod.rs
+assertion_line: 535
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="116" height="96"><defs><mask id="simask0" maskUnits="userSpaceOnUse" mask-type="alpha">
+	<rect fill="none" stroke="black" stroke-width="16" stroke-miterlimit="4" transform="translate(8 8)" width="100" height="80"/>
+</mask></defs>
+	<rect fill="#CCC" transform="translate(8 8)" width="100" height="80"/>
+<g mask="url(#simask0)"><g transform="matrix(1 0 0 1 8 8)"><image x="-16" y="-16" width="132" height="112" preserveAspectRatio="none" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAABHNCSVQICAgIfAhkiAAAABtJREFUCJlj/G/M8J8x7T8DA8PM////GzP8BwBGtwhh9BmShgAAAABJRU5ErkJggg=="/></g></g></svg>

@@ -1,0 +1,8 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="130.71281" height="130.71281"><defs><filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5.118802"/></filter></defs><g filter="url(#blur0)">
+	<rect fill="#0080FF" transform="translate(15.3564 15.3564)" width="100" height="100"/>
+</g></svg>

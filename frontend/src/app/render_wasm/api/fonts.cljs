@@ -130,8 +130,28 @@
               (aget shape-id-buffer 3)))))
 
 ;; IMPORTANT: Only TTF fonts can be stored.
+(defn- store-font-url
+  [font-data font-url]
+  (when (and wasm/context-initialized? (some? font-url) (not (str/blank? font-url)))
+    (let [font-id-buffer (:family-id-buffer font-data)
+          encoder (js/TextEncoder.)
+          encoded (.encode encoder font-url)
+          size (.-byteLength encoded)
+          ptr  (h/call wasm/internal-module "_alloc_bytes" size)
+          heap (gobj/get ^js wasm/internal-module "HEAPU8")
+          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+      (.set mem encoded)
+      (h/call wasm/internal-module "_store_font_url"
+              (aget font-id-buffer 0)
+              (aget font-id-buffer 1)
+              (aget font-id-buffer 2)
+              (aget font-id-buffer 3)
+              (:weight font-data)
+              (:style font-data))
+      true)))
+
 (defn- store-font-buffer
-  [font-data font-array-buffer emoji? fallback?]
+  [font-data font-array-buffer font-url emoji? fallback?]
   (when wasm/context-initialized?
     (let [font-id-buffer  (:family-id-buffer font-data)
           size (.-byteLength font-array-buffer)
@@ -150,6 +170,7 @@
               (:style font-data)
               emoji?
               fallback?)
+      (store-font-url font-data font-url)
       true)))
 
 ;; Tracks fonts currently being fetched: {url -> fallback?}
@@ -174,7 +195,7 @@
               (rx/map (fn [{:keys [body]}]
                         (let [fallback? (get @fetching font-url fallback?)]
                           (swap! fetching dissoc font-url)
-                          (store-font-buffer font-data body emoji? fallback?))))
+                          (store-font-buffer font-data body font-url emoji? fallback?))))
               (rx/catch (fn [cause]
                           (swap! fetching dissoc font-url)
                           (log/error :hint "Could not fetch font"
@@ -223,7 +244,9 @@
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (font-stored? font-data emoji?)]
       (if font-stored?
-        (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)}))
+        (do
+          (store-font-url font-data uri)
+          (st/async-emit! (ptk/data-event :font-loaded {:font-id (:font-id font-data)})))
         (fetch-font font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style

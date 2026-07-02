@@ -733,6 +733,23 @@
        (p/then (fn [^js response] (.blob response)))
        (p/then (fn [^js image] (js/createImageBitmap image))))))
 
+(defn- store-image-url
+  [image-id url]
+  (when (and wasm/context-initialized? (some? url) (not (str/blank? url)))
+    (let [id-buffer (uuid/get-u32 image-id)
+          encoder   (js/TextEncoder.)
+          encoded   (.encode encoder url)
+          size      (.-byteLength encoded)
+          ptr       (mem/alloc size)
+          heap      (mem/get-heap-u8)
+          mem       (js/Uint8Array. (.-buffer heap) ptr size)]
+      (.set mem encoded)
+      (h/call wasm/internal-module "_store_image_url"
+              (aget id-buffer 0)
+              (aget id-buffer 1)
+              (aget id-buffer 2)
+              (aget id-buffer 3)))))
+
 (defn- fetch-image
   "Loads an image and creates a WebGL texture from it, passing the texture ID to WASM.
    This avoids decoding the image twice (once in browser, once in WASM)."
@@ -775,6 +792,7 @@
                    (aset heap32 (+ offset 11) height)
 
                    (h/call wasm/internal-module "_store_image_from_texture")
+                   (store-image-url image-id url)
                    true))))
             (rx/catch
              (fn [cause]
@@ -793,6 +811,7 @@
   [shape-id fill thumbnail?]
   (when-let [image (:fill-image fill)]
     (let [id (get image :id)
+          url (cf/resolve-file-media image thumbnail?)
           buffer (uuid/get-u32 id)
           cached-image? (h/call wasm/internal-module "_is_image_cached"
                                 (aget buffer 0)
@@ -800,6 +819,7 @@
                                 (aget buffer 2)
                                 (aget buffer 3)
                                 thumbnail?)]
+      (store-image-url id url)
       (when (zero? cached-image?)
         (fetch-image shape-id id thumbnail?)))))
 
@@ -2594,6 +2614,24 @@
 
         offset
         (h/call wasm/internal-module "_render_shape_pdf"
+                (aget buffer 0)
+                (aget buffer 1)
+                (aget buffer 2)
+                (aget buffer 3)
+                scale)
+
+        heap (mem/get-heap-u8)
+        heapu32 (mem/get-heap-u32)
+        length (aget heapu32 (mem/->offset-32 offset))
+        result (dr/read-image-bytes heap (+ offset 4) length)]
+    (mem/free)
+    result))
+
+(defn render-shape-svg
+  [shape-id scale]
+  (let [buffer (uuid/get-u32 shape-id)
+        offset
+        (h/call wasm/internal-module "_render_shape_svg"
                 (aget buffer 0)
                 (aget buffer 1)
                 (aget buffer 2)

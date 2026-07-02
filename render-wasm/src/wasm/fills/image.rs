@@ -190,3 +190,16 @@ pub extern "C" fn store_image_from_texture() -> Result<()> {
     mem::free_bytes()?;
     Ok(())
 }
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn store_image_url(a: u32, b: u32, c: u32, d: u32) -> Result<()> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    let url_bytes = mem::bytes();
+    let url = String::from_utf8(url_bytes)
+        .map_err(|_| Error::CriticalError("Invalid UTF-8 in image source URL".to_string()))?;
+    mem::free_bytes()?;
+
+    get_render_state().images.set_source_url(id, url);
+    Ok(())
+}

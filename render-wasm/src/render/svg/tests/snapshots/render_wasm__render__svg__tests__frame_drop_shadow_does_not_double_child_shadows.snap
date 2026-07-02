@@ -1,0 +1,14 @@
+---
+source: src/render/svg/mod.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="350" height="250"><defs><filter id="shadow0" x="-16.6667%" y="-25.0000%" width="133.3333%" height="150.0000%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="0" result="shbl0"/><feOffset in="shbl0" dx="50" dy="50" result="shof0"/><feFlood flood-color="#58EA66" flood-opacity="1" result="shfl0"/><feComposite in="shfl0" in2="shof0" operator="in" result="shad0"/><feMerge><feMergeNode in="shad0"/></feMerge></filter><clipPath id="clip1" clipPathUnits="userSpaceOnUse">
+	<rect width="300" height="200"/>
+</clipPath><clipPath id="clip2" clipPathUnits="userSpaceOnUse">
+	<rect width="300" height="200"/>
+</clipPath><filter id="shadow3" x="-16.6667%" y="-25.0000%" width="133.3333%" height="150.0000%" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="0" result="shbl0"/><feOffset in="shbl0" dx="20" dy="20" result="shof0"/><feFlood flood-color="#1900FF" flood-opacity="1" result="shfl0"/><feComposite in="shfl0" in2="shof0" operator="in" result="shad0"/><feMerge><feMergeNode in="shad0"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#shadow0)"><g clip-path="url(#clip1)">
+	<rect fill="#E17FDA" x="40" y="40" width="120" height="80"/>
+</g></g><g clip-path="url(#clip2)"><g filter="url(#shadow3)">
+	<rect fill="#E17FDA" x="40" y="40" width="120" height="80"/>
+</g></g></svg>

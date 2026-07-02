@@ -62,6 +62,31 @@ enum StoredImage {
 pub struct ImageStore {
     images: HashMap<(Uuid, bool), StoredImage>,
     context: Box<DirectContext>,
+    /// Source URL registered when the image was fetched (referenced in SVG export).
+    source_urls: HashMap<Uuid, String>,
+}
+
+/// Abstracts [`ImageStore`] so the exporters don't depend on a live
+/// GPU context. Wasm uses `ImageStore`; headless tests inject a CPU-only
+/// fake.
+pub trait ImageProvider {
+    fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image>;
+
+    fn source_url(&self, id: &Uuid) -> Option<&str> {
+        let _ = id;
+        None
+    }
+}
+
+impl ImageProvider for ImageStore {
+    fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
+        let gpu_image = self.get(id)?.clone();
+        gpu_image.make_non_texture_image(self.context.as_mut())
+    }
+
+    fn source_url(&self, id: &Uuid) -> Option<&str> {
+        self.source_urls.get(id).map(String::as_str)
+    }
 }
 
 /// Creates a Skia image from an existing WebGL texture.
@@ -150,6 +175,13 @@ impl ImageStore {
         Self {
             images: HashMap::with_capacity(2048),
             context: Box::new(context.clone()),
+            source_urls: HashMap::new(),
+        }
+    }
+
+    pub fn set_source_url(&mut self, id: Uuid, url: String) {
+        if !url.is_empty() {
+            self.source_urls.insert(id, url);
         }
     }
 
@@ -211,11 +243,6 @@ impl ImageStore {
         } else {
             self.get_internal(id, true)
         }
-    }
-
-    pub fn get_cpu_image(&mut self, id: &Uuid) -> Option<Image> {
-        let gpu_image = self.get(id)?.clone();
-        gpu_image.make_non_texture_image(self.context.as_mut())
     }
 
     fn get_internal(&mut self, id: &Uuid, is_thumbnail: bool) -> Option<&Image> {

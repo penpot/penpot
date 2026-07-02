@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
+use skia_safe::{self as skia, Path, Point};
 use std::collections::HashMap;
 
 mod shapes_pool;
@@ -97,6 +97,10 @@ impl State {
 
     pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
         crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
+    }
+
+    pub fn render_shape_svg(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::svg::render_to_svg(get_render_state(), id, &self.shapes, scale)
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
@@ -262,10 +266,6 @@ impl State {
 
     pub fn rebuild_modifier_tiles(&mut self, ids: &[Uuid]) -> Result<()> {
         get_render_state().rebuild_modifier_tiles(&mut self.shapes, ids)
-    }
-
-    pub fn font_collection(&self) -> &FontCollection {
-        get_render_state().fonts().font_collection()
     }
 
     pub fn get_grid_coords(&self, pos_x: f32, pos_y: f32) -> Option<(i32, i32)> {

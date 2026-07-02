@@ -6,6 +6,7 @@ use crate::mem::{self, SerializableResult};
 use crate::shapes::{
     self, GrowType, Shape, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
+use crate::render::TextShapingCtx;
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape, with_current_shape_mut, with_state};
 
@@ -326,10 +327,11 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(content) = &mut shape.shape_type {
-            let text_content_size = content.update_layout(shape.selrect);
+            let text_ctx = TextShapingCtx::from_session();
+            let text_content_size = content.update_layout(&text_ctx, shape.selrect);
 
             // Sacar de aqui x, y, width, height
-            let rect = content.content_rect(&shape.selrect, shape.vertical_align);
+            let rect = content.content_rect(&text_ctx, &shape.selrect, shape.vertical_align);
 
             let mut bytes = vec![0; 20];
             bytes[0..4].clone_from_slice(&text_content_size.width.to_le_bytes());
@@ -364,7 +366,8 @@ pub extern "C" fn intersect_position_in_shape(
             return false;
         };
         if let Type::Text(content) = &shape.shape_type {
-            return content.intersect_position_in_text(shape, x_pos, y_pos);
+            let text_ctx = TextShapingCtx::from_session();
+            return content.intersect_position_in_text(&text_ctx, shape, x_pos, y_pos);
         }
     });
     false
@@ -372,10 +375,11 @@ pub extern "C" fn intersect_position_in_shape(
 
 fn update_text_layout(shape: &mut Shape, force: bool) {
     if let Type::Text(text_content) = &mut shape.shape_type {
+        let text_ctx = TextShapingCtx::from_session();
         if force {
             text_content.force_next_layout_update();
         }
-        text_content.update_layout(shape.selrect);
+        text_content.update_layout(&text_ctx, shape.selrect);
         shape.invalidate_extrect();
     }
 }
@@ -439,7 +443,8 @@ pub extern "C" fn calculate_position_data() -> *mut u8 {
     let mut result = Vec::<shapes::PositionData>::default();
     with_current_shape!(state, |shape: &Shape| {
         if let Type::Text(text_content) = &shape.shape_type {
-            result = shapes::calculate_position_data(shape, text_content, false);
+            let text_ctx = TextShapingCtx::from_session();
+            result = shapes::calculate_position_data(shape, text_content, false, &text_ctx);
         }
     });
     mem::write_vec(result)

@@ -1,4 +1,5 @@
 use super::{RenderState, SurfaceId};
+use crate::render::TextShapingCtx;
 use crate::render::strokes;
 use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, StrokeKind, TextContent, Type};
 use skia_safe::{canvas::SaveLayerRec, Paint, Path};
@@ -138,6 +139,7 @@ pub fn render_text_shadows(
     blur_filter: &Option<skia_safe::ImageFilter>,
     stroke_kinds: &[StrokeKind],
     text_content: &TextContent,
+    ctx: &TextShapingCtx,
 ) -> Result<()> {
     if stroke_paragraphs_group.is_empty() {
         return Ok(());
@@ -161,11 +163,13 @@ pub fn render_text_shadows(
             blur_filter.as_ref(),
             None,
             None,
+            ctx,
         )?;
 
         for (i, stroke_paragraphs) in stroke_paragraphs_group.iter_mut().enumerate() {
             if i < stroke_kinds.len() && stroke_kinds[i] == StrokeKind::Inner {
-                let mut fill_builders = text_content.paragraph_builder_group_from_text(Some(true));
+                let mut fill_builders =
+                    text_content.paragraph_builder_group_from_text(ctx, Some(true));
                 text::render_inner_stroke(
                     None,
                     Some(canvas),
@@ -176,6 +180,7 @@ pub fn render_text_shadows(
                     blur_filter.as_ref(),
                     0.0,
                     None,
+                    ctx,
                 )?;
             } else if i < stroke_kinds.len() && stroke_kinds[i] == StrokeKind::Outer {
                 text::render_outer_stroke(
@@ -187,6 +192,7 @@ pub fn render_text_shadows(
                     blur_filter.as_ref(),
                     0.0,
                     None,
+                    ctx,
                 )?;
             } else {
                 text::render(
@@ -199,6 +205,7 @@ pub fn render_text_shadows(
                     blur_filter.as_ref(),
                     None,
                     None,
+                    ctx,
                 )?;
             }
         }
