@@ -8,6 +8,7 @@
   "Internal Nitrate HTTP RPC API. Provides authenticated access to
   organization management and token validation endpoints."
   (:require
+   [app.auth :as aauth]
    [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -24,6 +25,7 @@
    [app.media :as media]
    [app.nitrate :as nitrate]
    [app.rpc :as rpc]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.nitrate :as cnit]
    [app.rpc.commands.profile :as profile]
@@ -914,3 +916,55 @@ RETURNING id, deleted_at;")
     (neh/send-organization-setup-sso-emails! cfg organization-id))
   nil)
 
+;; ---- API: bulk-create-profiles
+
+(def ^:private schema:bulk-create-profiles-params
+  [:map
+   [:password [::sm/word-string {:max 500}]]
+   [:emails [:vector ::sm/email]]])
+
+(def ^:private schema:bulk-create-profiles-result
+  [:map
+   [:created [:vector ::sm/email]]
+   [:skipped [:vector ::sm/email]]])
+
+(defn- create-active-profile!
+  "Create a single already-active profile (email pre-verified, onboarding
+   skipped) plus its default team. Returns nil; existence checks happen in the
+   caller so duplicates are skipped instead of aborting the whole batch."
+  [cfg email password]
+  (let [fullname (-> (str/split email "@") first)]
+    (->> {:email email
+          :fullname fullname
+          :password password
+          :is-active true
+          :props {:onboarding-viewed true}}
+         (auth/create-profile cfg)
+         (auth/create-profile-rels cfg))
+    nil))
+
+(sv/defmethod ::bulk-create-profiles
+  "Create multiple already-active profiles that share a single password. The
+   created users skip email verification and onboarding. Emails that already
+   belong to an existing profile are skipped. Intended for the Nitrate admin
+   bulk-creation screen; access is gated by the shared key and, in Nitrate, an
+   email allow-list."
+  {::doc/added "2.19"
+   ::sm/params schema:bulk-create-profiles-params
+   ::sm/result schema:bulk-create-profiles-result
+   ::rpc/auth false}
+  [cfg {:keys [password emails]}]
+  (let [derived (aauth/derive-password password)]
+    (db/tx-run!
+     cfg
+     (fn [{:keys [::db/conn] :as cfg}]
+       (reduce
+        (fn [acc email]
+          (let [email (eml/clean email)]
+            (if (profile/get-profile-by-email conn email)
+              (update acc :skipped conj email)
+              (do
+                (create-active-profile! cfg email derived)
+                (update acc :created conj email)))))
+        {:created [] :skipped []}
+        emails)))))
