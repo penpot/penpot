@@ -1,0 +1,201 @@
+name: "CI: Performance Regression"
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  pull_request:
+    paths:
+      - 'backend/src/**'
+      - 'common/src/**'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  perf-regression:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Performance Regression Check"
+    runs-on: penpot-runner-02
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: penpot
+          POSTGRES_PASSWORD: penpot
+          POSTGRES_DB: penpot
+
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: valkey/valkey:9
+
+    env:
+      PENPOT_DATABASE_URI: "postgresql://postgres/penpot"
+      PENPOT_DATABASE_USERNAME: penpot
+      PENPOT_DATABASE_PASSWORD: penpot
+      PENPOT_REDIS_URI: "redis://redis/1"
+      PENPOT_FLAGS: "enable-demo-users enable-backend-api-doc"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install k6
+        run: |
+          curl -sSL https://dl.k6.io/key.gpg | gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | tee /etc/apt/sources.list.d/k6.list
+          apt-get update
+          apt-get install -y k6
+
+      - name: Save performance suite
+        run: cp -r backend/performance /tmp/performance
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2
+            ~/.gitlibs
+          key: ${{ runner.os }}-m2-${{ hashFiles('backend/deps.edn', 'common/deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      # -------------------------------------------------------------------------
+      # Run performance tests on BASE branch (before change)
+      # -------------------------------------------------------------------------
+
+      - name: Checkout base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git checkout origin/${{ github.event.pull_request.base.ref }}
+
+      - name: Restore performance suite (base)
+        run: cp -r /tmp/performance backend/performance
+
+      - name: Start backend (base branch)
+        working-directory: backend
+        run: |
+          clojure -M:dev -m app.main &
+          # Wait for backend to be ready
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:6060/api/rpc/command/get-profile > /dev/null 2>&1; then
+              echo "Backend ready"
+              break
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run performance tests (baseline)
+        working-directory: backend/performance
+        run: |
+          mkdir -p results/baseline
+          ./run.sh smoke
+          ./run.sh lifecycle -v 5 -n 10
+          cp -r results/latest/* results/baseline/ 2>/dev/null || true
+
+      - name: Save baseline results
+        run: cp -r backend/performance/results /tmp/results-baseline
+
+      - name: Stop backend
+        run: |
+          pkill -f "app.main" || true
+          sleep 2
+
+      - name: Clean untracked files
+        run: git clean -fd
+
+      # -------------------------------------------------------------------------
+      # Run performance tests on PR branch (after change)
+      # -------------------------------------------------------------------------
+
+      - name: Checkout PR branch
+        run: |
+          git checkout ${{ github.event.pull_request.head.sha }}
+
+      - name: Restore baseline results
+        run: cp -r /tmp/results-baseline backend/performance/results
+
+      - name: Start backend (PR branch)
+        working-directory: backend
+        run: |
+          clojure -M:dev -m app.main &
+          # Wait for backend to be ready
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:6060/api/rpc/command/get-profile > /dev/null 2>&1; then
+              echo "Backend ready"
+              break
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run performance tests (current)
+        working-directory: backend/performance
+        run: |
+          mkdir -p results/current
+          ./run.sh smoke
+          ./run.sh lifecycle -v 5 -n 10
+          # Copy results
+          cp -r results/latest/* results/current/ 2>/dev/null || true
+
+      - name: Stop backend
+        run: |
+          pkill -f "app.main" || true
+          sleep 2
+
+      # -------------------------------------------------------------------------
+      # Compare results
+      # -------------------------------------------------------------------------
+
+      - name: Compare results
+        working-directory: backend/performance
+        run: |
+          BASELINE=$(find results/baseline -name "k6-summary.json" | head -1)
+          CURRENT=$(find results/current -name "k6-summary.json" | head -1)
+
+          if [ -z "$BASELINE" ] || [ -z "$CURRENT" ]; then
+            echo "Warning: Could not find k6 summary files"
+            echo "Baseline: $BASELINE"
+            echo "Current: $CURRENT"
+            exit 0
+          fi
+
+          echo "Comparing:"
+          echo "  Baseline: $BASELINE"
+          echo "  Current:  $CURRENT"
+          echo ""
+
+          node scripts/compare-results.cjs "$BASELINE" "$CURRENT" --threshold 20
+
+      # -------------------------------------------------------------------------
+      # Upload artifacts
+      # -------------------------------------------------------------------------
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: backend/performance/results/
+          retention-days: 30

@@ -14,9 +14,20 @@
    :iterations 3
    :parallelism 2})
 
+(def ^:private weak-options
+  {:alg :pbkdf2+sha256
+   :iterations 100})
+
 (defn derive-password
   [password]
   (hashers/derive password default-options))
+
+(defn derive-password-weak
+  "Derives a password using a fast algorithm (pbkdf2+sha256, 100 iterations).
+   Intended for demo users only — they are already gated behind the
+   `demo-users` config flag which is disabled in production."
+  [password]
+  (hashers/derive password weak-options))
 
 (defn verify-password
   [attempt password]

@@ -124,9 +124,7 @@
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
   [conn id & {:as opts}]
-  ;; NOTE: We need to set ::db/remove-deleted to false because demo profiles
-  ;; are created with a set deleted-at value
-  (-> (db/get-by-id conn :profile id (assoc opts ::db/remove-deleted false))
+  (-> (db/get-by-id conn :profile id opts)
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)
