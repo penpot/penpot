@@ -288,16 +288,16 @@
                       :token-pill-no-icon (and (not status-icon?) (not errors?))
                       :token-pill-default can-edit?
                       :token-pill-disabled disabled?
-                      :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
+                      :token-pill-applied (and can-edit? applied?)
                       :token-pill-invalid (and can-edit? errors?)
-                      :token-pill-invalid-applied (and full-applied? errors? can-edit?)
+                      :token-pill-invalid-applied (and applied? errors? can-edit?)
                       :token-pill-viewer is-viewer?
-                      :token-pill-applied-viewer (and is-viewer? has-selected?
-                                                      (or half-applied? full-applied?))
+                      :token-pill-applied-viewer (and is-viewer?
+                                                      applied?)
                       :token-pill-invalid-viewer (and is-viewer?
                                                       errors?)
                       :token-pill-invalid-applied-viewer (and is-viewer?
-                                                              (and full-applied? errors?)))
+                                                              applied?))
               :id (str "token-pill-" (:id token))
               :type "button"
               :on-focus on-hover
