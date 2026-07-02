@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use skia_safe::{self as skia, Paint};
 
 use crate::error::Result;
-use crate::shapes::{radius_to_sigma, BlurType, Shape, Stroke, Type};
+use crate::shapes::{radius_to_sigma, BlurType, Shape, Stroke, StrokeKind, Type};
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
@@ -216,6 +216,12 @@ impl SvgLayerCanvas {
             paint.set_color(skia::Color::BLACK);
             draw_shape_geometry(cv, shape, &paint);
         }
+        self.finish_clip_path_fragment(id, canvas);
+    }
+
+    /// Finalizes a fragment canvas as a `<clipPath>` def: its emitted markup
+    /// (shape geometry or text glyph silhouette) becomes the clip geometry.
+    fn finish_clip_path_fragment(&mut self, id: &str, canvas: skia::svg::Canvas) {
         let data = canvas.end();
         let doc = String::from_utf8_lossy(data.as_bytes());
         let inner = extract_inner_svg(&doc);
@@ -383,7 +389,100 @@ fn svg_render_leaf(
         canvas.restore();
     }
 
+    // Semi-transparent text strokes are skipped by the shared renderer on SVG
+    // (their opacity layer is a dropped `save_layer`); re-emit them here inside
+    // a native `<g opacity>` wrapping the fully-opaque stroke.
+    if let Type::Text(_) = &element.shape_type {
+        svg_render_text_alpha_strokes(builder, shared, element, scale)?;
+        svg_render_text_inner_strokes(builder, shared, element, scale)?;
+    }
+
     if effects.is_some() {
+        builder.close_group();
+    }
+    Ok(())
+}
+
+/// Emits each semi-transparent, non-inner text stroke as a `<g opacity>` wrapper
+/// around the fully-opaque stroke geometry, matching the GPU/PDF opacity-layer
+/// result without a `save_layer` (which `SkSVGDevice` would drop).
+fn svg_render_text_alpha_strokes(
+    builder: &mut SvgLayerCanvas,
+    shared: &mut RenderState,
+    element: &Shape,
+    scale: f32,
+) -> Result<()> {
+    let matrix = element.centered_transform();
+    for stroke in element.visible_strokes() {
+        if stroke.render_kind(false) == StrokeKind::Inner {
+            continue;
+        }
+        let opacity = stroke.fill.opacity();
+        if opacity >= 1.0 {
+            // Opaque strokes were already drawn by `render_leaf_content`.
+            continue;
+        }
+
+        builder.open_group(&format!("opacity=\"{opacity}\""));
+        {
+            let canvas = builder.canvas();
+            canvas.save();
+            canvas.concat(&matrix);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale, VectorTarget::Svg);
+            renderer.draw_text_stroke_opaque(element, stroke)?;
+            canvas.restore();
+        }
+        builder.close_group();
+    }
+    Ok(())
+}
+
+/// Emits each inner text stroke as a `<g clip-path>` (glyph-silhouette clip)
+/// wrapping the fully-opaque double-width stroke, plus a `<g opacity>` when the
+/// stroke is semi-transparent. Reproduces the GPU/PDF mask + `SrcIn` + `DstOver`
+/// inner-stroke composition, which `SkSVGDevice` drops (it lives inside
+/// `save_layer`s). Inner strokes vanish from SVG regardless of opacity, so all
+/// of them are handled here.
+fn svg_render_text_inner_strokes(
+    builder: &mut SvgLayerCanvas,
+    shared: &mut RenderState,
+    element: &Shape,
+    scale: f32,
+) -> Result<()> {
+    let matrix = element.centered_transform();
+    for stroke in element.visible_strokes() {
+        if stroke.render_kind(false) != StrokeKind::Inner {
+            continue;
+        }
+
+        // Clip path from the opaque glyph silhouette: clipping the double-width
+        // stroke to the glyph interior keeps only its inner half.
+        let clip_id = builder.unique("tclip");
+        {
+            let canvas = builder.new_fragment();
+            {
+                let cv: &skia::Canvas = &*canvas;
+                cv.concat(&matrix);
+                let mut renderer = VectorRenderer::new(cv, shared, scale, VectorTarget::Svg);
+                renderer.draw_text_glyph_silhouette(element)?;
+            }
+            builder.finish_clip_path_fragment(&clip_id, canvas);
+        }
+
+        let opacity = stroke.fill.opacity();
+        let mut attrs = format!("clip-path=\"url(#{clip_id})\"");
+        if opacity < 1.0 {
+            attrs.push_str(&format!(" opacity=\"{opacity}\""));
+        }
+        builder.open_group(&attrs);
+        {
+            let canvas = builder.canvas();
+            canvas.save();
+            canvas.concat(&matrix);
+            let mut renderer = VectorRenderer::new(canvas, shared, scale, VectorTarget::Svg);
+            renderer.draw_text_stroke_opaque(element, stroke)?;
+            canvas.restore();
+        }
         builder.close_group();
     }
     Ok(())

@@ -66,6 +66,68 @@ impl<'a> VectorRenderer<'a> {
             shape.image_filter(1.)
         }
     }
+
+    /// Renders a single text stroke fully opaque (no opacity layer, no
+    /// inner-stroke masking), so the SVG compositor can wrap it in a native
+    /// `<g opacity>` and/or `<g clip-path>`. Skia's SVG backend drops the
+    /// `save_layer`s that the text opacity layer and inner-stroke mask would
+    /// emit, so those effects are reproduced by the wrapping groups instead.
+    /// For inner strokes the caller must supply the glyph-silhouette clip
+    /// (see [`draw_text_glyph_silhouette`]); here the double-width stroke is
+    /// drawn unclipped and the `<clipPath>` keeps only its inner half.
+    pub(super) fn draw_text_stroke_opaque(&mut self, shape: &Shape, stroke: &Stroke) -> Result<()> {
+        let Type::Text(text_content) = &shape.shape_type else {
+            return Ok(());
+        };
+
+        let text_content = text_content.new_bounds(shape.selrect());
+        let blur_filter = self.paint_image_filter(shape);
+        let stroke_blur_outset = Stroke::max_bounds_width(shape.visible_strokes(), false);
+
+        // The builders come out opaque (the opacity is meant to live in the
+        // layer), so rendering with `layer_opacity = None` yields the fully
+        // opaque stroke that the `<g opacity>` then fades.
+        let (mut stroke_paragraphs, _) = text::stroke_paragraph_builder_group_from_text(
+            &text_content,
+            stroke,
+            &shape.selrect(),
+            None,
+        );
+        text::render_with_bounds_outset_overlay_emoji(
+            self.canvas,
+            shape,
+            &mut stroke_paragraphs,
+            None,
+            blur_filter.as_ref(),
+            stroke_blur_outset,
+            None,
+            None,
+        )?;
+        Ok(())
+    }
+
+    /// Renders the opaque glyph silhouette (the text fill at full alpha), used
+    /// by the SVG compositor as the geometry of a `<clipPath>` that clips an
+    /// inner stroke to the glyph interior (the vector equivalent of the
+    /// mask + `SrcIn` composition used on the GPU/PDF backends).
+    pub(super) fn draw_text_glyph_silhouette(&mut self, shape: &Shape) -> Result<()> {
+        let Type::Text(text_content) = &shape.shape_type else {
+            return Ok(());
+        };
+
+        let text_content = text_content.new_bounds(shape.selrect());
+        let mut mask_builders = text_content.paragraph_builder_group_opaque();
+        text::render_overlay_emoji(
+            self.canvas,
+            shape,
+            &mut mask_builders,
+            None,
+            None,
+            None,
+            None,
+        )?;
+        Ok(())
+    }
 }
 
 impl ShapeRenderer for VectorRenderer<'_> {
@@ -286,6 +348,12 @@ impl ShapeRenderer for VectorRenderer<'_> {
                     stroke_blur_outset,
                     layer_opacity,
                 )?;
+            } else if self.is_svg() && layer_opacity.is_some() {
+                // Semi-transparent stroke: `layer_opacity` would be emitted as a
+                // `save_layer` that `SkSVGDevice` drops (the stroke would vanish).
+                // The SVG compositor renders it opaque inside a `<g opacity>`,
+                // which reproduces the layer semantics natively.
+                continue;
             } else {
                 text::render_with_bounds_outset_overlay_emoji(
                     self.canvas,
