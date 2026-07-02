@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
 @use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_sizes.scss" as *;
 
 .cursor-grabbing {
   cursor: grabbing;
@@ -167,31 +168,68 @@
   z-index: initial;
 }
 
-.floating-thread-draft-wrapper {
-  position: absolute;
+// Sole pointer target of a floating bubble.
+.floating-preview-avatar {
   display: flex;
-  flex-direction: row;
-  column-gap: deprecated.$s-12;
+  height: $sz-32;
+  width: $sz-32;
+}
 
-  --translate-x: 0%;
-  --translate-y: 0%;
+// Expanded-cluster bubble: sits above regular bubbles and fans out on appearance.
+.floating-preview-expanded {
+  z-index: 2;
+  animation: comment-bubble-fan-out 0.18s ease-out;
+}
 
-  transform: translate(var(--translate-x), var(--translate-y));
-
-  &.left {
-    --translate-x: -100%;
-
-    flex-direction: row-reverse;
+@keyframes comment-bubble-fan-out {
+  from {
+    translate: var(--comment-ring-x, 0) var(--comment-ring-y, 0);
+    opacity: 0;
   }
 
-  &.top {
-    --translate-y: -100%;
-
-    align-items: flex-end;
+  to {
+    translate: 0 0;
+    opacity: 1;
   }
 }
 
+// Hovered bubble's preview card floats above every other bubble.
+.floating-preview-hovered {
+  z-index: 10;
+}
+
+// Placeholder shown at the cluster center while its bubbles are fanned out.
+.floating-preview-ghost {
+  z-index: 1;
+  opacity: 0.6;
+  pointer-events: none;
+  animation: comment-ghost-appear 0.18s ease-out;
+
+  .avatar {
+    border-style: dashed;
+    background-color: var(--comment-modal-background-color);
+  }
+}
+
+@keyframes comment-ghost-appear {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.6;
+  }
+}
+
+// Anchored to the wrapper origin and click-through, so hover stays bound to the avatar.
+.floating-thread-wrapper.floating-preview-hover-card {
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
 .floating-thread-draft-inner-wrapper {
+  position: absolute;
   display: flex;
   flex-direction: column;
   gap: deprecated.$s-12;
@@ -202,6 +240,19 @@
   border: deprecated.$s-2 solid var(--modal-border-color);
   background-color: var(--comment-modal-background-color);
   max-height: var(--comment-height);
+
+  --translate-x: 0%;
+  --translate-y: 0%;
+
+  transform: translate(var(--translate-x), var(--translate-y));
+
+  &.left {
+    --translate-x: -100%;
+  }
+
+  &.top {
+    --translate-y: -100%;
+  }
 }
 
 .floating-preview-displacement {
