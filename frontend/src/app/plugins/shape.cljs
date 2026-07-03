@@ -50,6 +50,7 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.exports :as exports]
    [app.plugins.fills :as fills]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
@@ -57,6 +58,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.shadows :as shadows]
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
@@ -224,6 +226,40 @@
 
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+
+(defn commit-shadows!
+  [plugin-id ^js self value]
+  (let [id    (obj/get self "$id")
+        value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
+    (cond
+      (not (sm/validate [:vector ctss/schema:shadow] value))
+      (u/not-valid plugin-id :shadows value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :shadows "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))
+
+(defn commit-exports!
+  [plugin-id ^js self value]
+  (let [id    (obj/get self "$id")
+        value (parser/parse-exports value)]
+    (cond
+      (not (sm/validate [:vector ctse/schema:export] value))
+      (u/not-valid plugin-id :exports value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :exports "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))
 
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
@@ -551,23 +587,10 @@
 
            :shadows
            {:this true
-            :get #(-> % u/proxy->shape :shadow format/format-shadows)
-            :set
-            (fn [self value]
-              (let [id (obj/get self "$id")
-                    value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
-                (cond
-                  (not (sm/validate [:vector ctss/schema:shadow] value))
-                  (u/not-valid plugin-id :shadows value)
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
-
-                  (not (u/page-active? page-id))
-                  (u/not-valid plugin-id :shadows "Cannot modify a page that is not currently active")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))}
+            :get (fn [^js self]
+                   (shadows/format-shadows (-> self u/proxy->shape :shadow)
+                                           #(commit-shadows! plugin-id self %)))
+            :set (fn [self value] (commit-shadows! plugin-id self value))}
 
            :blur
            {:this true
@@ -617,23 +640,10 @@
 
            :exports
            {:this true
-            :get #(-> % u/proxy->shape :exports format/format-exports)
-            :set
-            (fn [self value]
-              (let [id (obj/get self "$id")
-                    value (parser/parse-exports value)]
-                (cond
-                  (not (sm/validate [:vector ctse/schema:export] value))
-                  (u/not-valid plugin-id :exports value)
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
-
-                  (not (u/page-active? page-id))
-                  (u/not-valid plugin-id :exports "Cannot modify a page that is not currently active")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))}
+            :get (fn [^js self]
+                   (exports/format-exports (-> self u/proxy->shape :exports)
+                                           #(commit-exports! plugin-id self %)))
+            :set (fn [self value] (commit-exports! plugin-id self value))}
 
            ;; Geometry properties
            :x
@@ -842,7 +852,7 @@
             :set
             (fn [self value]
               (cond
-                (not (number? value))
+                (not (sm/valid-safe-number? value))
                 (u/not-valid plugin-id :rotation value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -967,10 +977,10 @@
            (fn [angle center]
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
-                 (not (number? angle))
+                 (not (sm/valid-safe-number? angle))
                  (u/not-valid plugin-id :rotate-angle angle)
 
-                 (and (some? center) (or (not (number? (:x center))) (not (number? (:y center)))))
+                 (and (some? center) (or (not (sm/valid-safe-number? (:x center))) (not (sm/valid-safe-number? (:y center)))))
                  (u/not-valid plugin-id :rotate-center center)
 
                  (not (r/check-permission plugin-id "content:write"))
@@ -1280,7 +1290,11 @@
                  (u/not-valid plugin-id :getRange-end end)
 
                  :else
-                 (text/text-range-proxy plugin-id file-id page-id id start end))))
+                 ;; Clamp the end to the actual character count so an
+                 ;; out-of-bounds range yields the trailing text instead of
+                 ;; reading past the content.
+                 (let [end (min end (count (txt/content->text (:content shape))))]
+                   (text/text-range-proxy plugin-id file-id page-id id start end)))))
 
            :applyTypography
            (fn [typography]

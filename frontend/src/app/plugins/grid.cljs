@@ -12,8 +12,8 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
-   [app.plugins.format :as format]
    [app.plugins.register :as r]
+   [app.plugins.tracks :as tracks]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
@@ -53,11 +53,15 @@
 
     :rows
     {:this true
-     :get #(-> % u/proxy->shape :layout-grid-rows format/format-tracks)}
+     :get (fn [self]
+            (tracks/format-tracks plugin-id file-id page-id id :row
+                                  (-> self u/proxy->shape :layout-grid-rows)))}
 
     :columns
     {:this true
-     :get #(-> % u/proxy->shape :layout-grid-columns format/format-tracks)}
+     :get (fn [self]
+            (tracks/format-tracks plugin-id file-id page-id id :column
+                                  (-> self u/proxy->shape :layout-grid-columns)))}
 
     :alignItems
     {:this true

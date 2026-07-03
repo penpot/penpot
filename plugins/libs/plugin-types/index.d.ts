@@ -3103,6 +3103,20 @@ export interface Page extends PluginData {
   readonly root: Shape;
 
   /**
+   * Removes the page from the file. The last remaining page of the file
+   * cannot be removed. If the removed page is the active one, another page
+   * is activated.
+   * Requires `content:write` permission.
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.remove();
+   * ```
+   */
+  remove(): void;
+
+  /**
    * Retrieves a shape by its unique identifier.
    * @param id The unique identifier of the shape.
    *
@@ -3514,6 +3528,11 @@ export interface RulerGuide {
    * If the guide is attached to a board this will retrieve the board shape
    */
   board?: Board;
+
+  /**
+   * Removes the guide from its page.
+   */
+  remove(): void;
 }
 
 /**
