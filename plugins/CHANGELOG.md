@@ -32,6 +32,7 @@
 
 ### 🩹 Fixes
 
+- **plugins-runtime**: The validation error raised when setting a `fontWeight` the current font has no variant for now lists the weights the font supports.
 - **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
 - **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
 - **plugin-types**: Fix `CommonLayout.horizontalSizing`/`verticalSizing` values, which were typed as `'fit-content'` but the runtime uses `'fix'` (now `'fix' | 'fill' | 'auto'`)
