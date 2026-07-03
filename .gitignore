@@ -13,6 +13,8 @@
 .nyc_output
 .rebel_readline_history
 .repl
+opencode.json
+.opencode/package-lock.json
 /*.jpg
 /*.md
 /*.png
@@ -24,7 +26,6 @@
 /.clj-kondo/.cache
 /_dump
 /notes
-/.opencode/package-lock.json
 /plans
 /prompts
 /playground/
