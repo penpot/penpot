@@ -268,6 +268,20 @@
 (defn token-proxy? [t]
   (obj/type-of? t "TokenProxy"))
 
+(defn- z-order-location
+  "Map a plugin z-order intent (:top/:bottom/:up/:down) to the internal
+  vertical-order location. Flex layouts store their children in reverse of the
+  order the plugin exposes (see the `:children` getter), so front/back and
+  forward/backward are inverted for a flex parent under natural child ordering."
+  [plugin-id file-id page-id id loc]
+  (let [shape     (u/locate-shape file-id page-id id)
+        parent    (u/locate-shape file-id page-id (:parent-id shape))
+        reversed? (and (u/natural-child-ordering? plugin-id)
+                       (ctl/flex-layout? parent))]
+    (if reversed?
+      (case loc :top :bottom :bottom :top :up :down :down :up)
+      loc)))
+
 (defn shape-proxy
   ([plugin-id id]
    (shape-proxy plugin-id (:current-file-id @st/state) (:current-page-id @st/state) id))
@@ -970,8 +984,29 @@
                (u/not-valid plugin-id :resize "Cannot modify a page that is not currently active")
 
                :else
-               (st/emit! (dw/update-dimensions [id] :width width)
-                         (dw/update-dimensions [id] :height height))))
+               ;; A layout container that hugs its content (or a hugging/filling
+               ;; layout child) ignores explicit dimensions and snaps back, so
+               ;; switch the non-fixed axes to fixed sizing first, mirroring an
+               ;; interactive drag resize. The sizing change must commit before
+               ;; the resize, otherwise the layout reflows the new size away.
+               (let [shape   (u/locate-shape file-id page-id id)
+                     objects (u/locate-objects file-id page-id)
+                     layout? (or (ctl/any-layout-immediate-child? objects shape)
+                                 (ctl/any-layout? shape))
+                     sizing  (cond-> {}
+                               (and layout? (not= (:layout-item-h-sizing shape) :fix))
+                               (assoc :layout-item-h-sizing :fix)
+
+                               (and layout? (not= (:layout-item-v-sizing shape) :fix))
+                               (assoc :layout-item-v-sizing :fix))]
+                 (apply st/emit!
+                        (cond-> []
+                          (seq sizing)
+                          (conj (dwsl/update-layout #{id} sizing))
+
+                          :always
+                          (conj (dw/update-dimensions [id] :width width)
+                                (dw/update-dimensions [id] :height height)))))))
 
            :rotate
            (fn [angle center]
@@ -1334,19 +1369,19 @@
 
            :bringForward
            (fn []
-             (st/emit! (dw/vertical-order-selected :up [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
-             (st/emit! (dw/vertical-order-selected :down [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
-             (st/emit! (dw/vertical-order-selected :top [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
-             (st/emit! (dw/vertical-order-selected :bottom [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS
            :isComponentInstance

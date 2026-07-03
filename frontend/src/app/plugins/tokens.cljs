@@ -32,15 +32,15 @@
    :r3 :border-radius-bottom-right
    :r4 :border-radius-bottom-left
 
-   :p1 :padding-top-left
-   :p2 :padding-top-right
-   :p3 :padding-bottom-right
-   :p4 :padding-bottom-left
+   :p1 :padding-top
+   :p2 :padding-right
+   :p3 :padding-bottom
+   :p4 :padding-left
 
-   :m1 :margin-top-left
-   :m2 :margin-top-right
-   :m3 :margin-bottom-right
-   :m4 :margin-bottom-left})
+   :m1 :margin-top
+   :m2 :margin-right
+   :m3 :margin-bottom
+   :m4 :margin-left})
 
 (def ^:private map:token-attr-plugin->token-attr
   (merge

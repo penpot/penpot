@@ -63,6 +63,44 @@
             (tracks/format-tracks plugin-id file-id page-id id :column
                                   (-> self u/proxy->shape :layout-grid-columns)))}
 
+    :horizontalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-h-sizing-types value))
+           (u/not-valid plugin-id :horizontalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :horizontalSizing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :horizontalSizing "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+
+    :verticalSizing
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-v-sizing-types value))
+           (u/not-valid plugin-id :verticalSizing value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :verticalSizing "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
+
     :alignItems
     {:this true
      :get #(-> % u/proxy->shape :layout-align-items d/name)

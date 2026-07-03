@@ -68,9 +68,7 @@
   (t/is (= :r1 (ptok/token-attr-plugin->token-attr :border-radius-top-left)))
   (t/is (= :r2 (ptok/token-attr-plugin->token-attr :border-radius-top-right)))
   (t/is (= :r3 (ptok/token-attr-plugin->token-attr :border-radius-bottom-right)))
-  (t/is (= :r4 (ptok/token-attr-plugin->token-attr :border-radius-bottom-left)))
-  (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top-left)))
-  (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom-right))))
+  (t/is (= :r4 (ptok/token-attr-plugin->token-attr :border-radius-bottom-left))))
 
 (t/deftest token-attr-plugin->token-attr-resolves-padding-margin-side-aliases
   (t/is (= :p1 (ptok/token-attr-plugin->token-attr :padding-top)))
@@ -88,7 +86,7 @@
   (t/is (= :stroke-color (ptok/token-attr-plugin->token-attr "stroke-color")))
   ;; Verbose plugin aliases work via the string path too.
   (t/is (= :r1 (ptok/token-attr-plugin->token-attr "border-radius-top-left")))
-  (t/is (= :m3 (ptok/token-attr-plugin->token-attr "margin-bottom-right"))))
+  (t/is (= :m3 (ptok/token-attr-plugin->token-attr "margin-bottom"))))
 
 (t/deftest token-attr?-accepts-keyword-input
   (t/is (true? (boolean (ptok/token-attr? :fill))))
@@ -143,7 +141,7 @@
        (fn []
          (let [shape-id (cthi/id :frame1)
                page-id  (cthf/current-page-id file)]
-           (t/is (= "spacing.medium" (.. shape -tokens -paddingTopLeft)))
+           (t/is (= "spacing.medium" (.. shape -tokens -paddingTop)))
            (t/is (= "spacing.medium"
                     (get-in @store
                             [:files (:id file) :data :pages-index page-id
