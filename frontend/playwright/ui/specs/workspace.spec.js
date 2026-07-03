@@ -104,6 +104,60 @@ test("Selection size badge appears on selection and hides on deselect", async ({
   await expect(badge).toHaveCount(0);
 });
 
+test("Selection size badge uses component color for component selection", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("components/get-file-13267.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "e9c84e12-dd29-80fc-8007-86d559dced7f",
+    pageId: "e9c84e12-dd29-80fc-8007-86d559dced80",
+  });
+
+  await workspacePage.clickLeafLayer("A Component");
+
+  const badge = page.locator(".selection-size-badge");
+  await expect(badge).toBeVisible();
+  await expect(badge.locator("rect")).toHaveCSS("fill", "rgb(187, 151, 216)");
+  await expect(badge.locator("text")).toHaveCSS("fill", "rgb(255, 255, 255)");
+});
+
+test("Selection size badge shows unrotated dimensions for rotated single selection", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const badgeText = page.locator(".selection-size-badge text");
+  await expect(badgeText).toHaveText("126 x 134");
+
+  const rotationInput = workspacePage.rightSidebar.getByRole("textbox", {
+    name: "Rotation",
+  });
+  await rotationInput.fill("45");
+  await rotationInput.press("Enter");
+
+  await expect(rotationInput).toHaveValue("45");
+  await expect(badgeText).toHaveText("126 x 134");
+});
+
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();
