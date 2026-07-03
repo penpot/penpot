@@ -232,10 +232,12 @@
         ;; For single shapes we show the original dimensions,
         ;; for multiple shapes show the bounding box
         shape-width  (if single-shape
-                       (dm/get-prop single-shape :width)
+                       (or (dm/get-prop single-shape :width)
+                           (:width selrect))
                        (:width selrect))
         shape-height (if single-shape
-                       (dm/get-prop single-shape :height)
+                       (or (dm/get-prop single-shape :height)
+                           (:height selrect))
                        (:height selrect))
 
         text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
