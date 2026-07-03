@@ -248,10 +248,9 @@
         (get-contrast-color background-color)))
     (get-contrast-color background-color)))
 
-(mf/defc text-editor-html
+(mf/defc text-editor-html*
   "Text editor (HTML)"
-  {::mf/wrap [mf/memo]
-   ::mf/props :obj}
+  {::mf/wrap [mf/memo]}
   [{:keys [shape canvas-ref render-wasm?] :or {render-wasm? false}}]
   (let [content          (:content shape)
         shape-id         (dm/get-prop shape :id)
@@ -485,7 +484,7 @@
 
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:style style}
-       [:& text-editor-html {:shape shape
-                             :canvas-ref canvas-ref
-                             :render-wasm? render-wasm?
-                             :key (dm/str shape-id)}]]]]))
+       [:> text-editor-html* {:shape shape
+                              :canvas-ref canvas-ref
+                              :render-wasm? render-wasm?
+                              :key (dm/str shape-id)}]]]]))
