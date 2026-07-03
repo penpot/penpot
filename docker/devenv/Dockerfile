@@ -60,6 +60,33 @@ RUN set -eux; \
     corepack enable; \
     rm -rf /tmp/nodejs.tar.gz;
 
+################################################################################
+## OPENCODE SETUP
+################################################################################
+
+FROM base AS setup-opencode
+
+ENV OPENCODE_VERSION=1.17.13
+
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-x64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; exit 1; \
+         ;; \
+    esac; \
+    curl -fsSL ${BINARY_URL} -o /tmp/opencode.tar.gz; \
+    mkdir -p /tmp/opencode; \
+    tar -xzf /tmp/opencode.tar.gz -C /tmp/opencode; \
+    chmod +x /tmp/opencode/opencode; \
+    rm -f /tmp/opencode.tar.gz;
+
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -67,7 +94,7 @@ RUN set -eux; \
 
 FROM base AS setup-caddy
 
-ENV CADDY_VERSION=2.11.2
+ENV CADDY_VERSION=2.11.4
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -99,7 +126,7 @@ RUN set -eux; \
 FROM base AS setup-jvm
 
 # https://clojure.org/releases/tools
-ENV CLOJURE_VERSION=1.12.4.1618
+ENV CLOJURE_VERSION=1.12.5.1654
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -181,11 +208,11 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.04.15 \
-    BABASHKA_VERSION=1.12.208 \
+ENV CLJKONDO_VERSION=2026.05.25 \
+    BABASHKA_VERSION=1.12.218 \
     CLJFMT_VERSION=0.16.4 \
     PIXI_VERSION=0.67.2 \
-    GITHUB_CLI_VERSION=2.91.0 \
+    GITHUB_CLI_VERSION=2.96.0 \
     UV_VERSION=0.11.9 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
@@ -471,6 +498,7 @@ COPY --from=setup-rust /opt/cargo /opt/cargo
 COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
+COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
