@@ -487,11 +487,16 @@
         (if ^boolean is-expanded
           (let [;; Children are rendered in reverse order, so index 0 in render = last in shapes-vec
                 ;; Find if any selected id is a direct child and get its render index
+                ;; `shapes` is a vector of resolved shape objects, so a selected
+                ;; id must be matched against each shape's :id. A plain
+                ;; `.indexOf` of a uuid against objects is always -1, so the
+                ;; chunk holding a selected (but not-yet-rendered) child was
+                ;; never loaded, leaving it invisible/unselectable in the panel
+                ;; (#10539).
                 selected-child-render-idx
                 (when (> total default-chunk-size)
                   (some (fn [sel-id]
-                          (let [idx (.indexOf shapes sel-id)]
-                            (when (>= idx 0) idx)))
+                          (d/index-of-pred shapes #(= (:id %) sel-id)))
                         selected))
 
                 ;; Load at least enough to include the selected child plus extra
