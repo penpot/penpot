@@ -524,21 +524,26 @@ impl RenderState {
                 .is_some_and(|s| s.is_safe_for_drag_crop_cache(tree));
         }
 
-        // If the moving content overlaps this cached crop, do not use the cached pixels
-        // for this frame. We intentionally keep the cache entry: overlap is typically
-        // transient during drag, and once the moving content leaves the area the crop
-        // becomes valid again (stationary shape unchanged).
-        if let Some(moved) = moved_bounds {
-            let intersects = self
-                .backbuffer_crop_cache
-                .get(&node_id)
-                .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
-
-            if intersects {
-                return false;
+        match moved_bounds {
+            // Something is actually moving/resizing. If the moving content overlaps this
+            // cached crop, do not use the cached pixels for this frame. We intentionally
+            // keep the cache entry: overlap is typically transient during drag, and once
+            // the moving content leaves the area the crop becomes valid again (stationary
+            // shape unchanged).
+            Some(moved) => {
+                let intersects = self
+                    .backbuffer_crop_cache
+                    .get(&node_id)
+                    .is_some_and(|crop| moved.intersects(crop.src_doc_bounds));
+                !intersects
             }
+
+            // Interactive-transform mode is active but nothing is moving (no modifiers):
+            // e.g. editing a text shape inside this board reflows its content without
+            // changing geometry. The cached crop was captured before the edit, so blitting
+            // it would paint stale pixels over the freshly rendered tiles. Render live.
+            None => false,
         }
-        true
     }
 
     pub fn try_new(width: i32, height: i32) -> Result<RenderState> {
