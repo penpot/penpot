@@ -1,0 +1,12 @@
+.idea
+.claude
+node_modules
+*.tgz
+*.bak
+*.orig
+temp
+*.tsbuildinfo
+
+# Log files
+logs/
+*.log
