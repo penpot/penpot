@@ -1,22 +1,37 @@
 ## 1.5.0 (Unreleased)
 
+### 💣 Breaking changes & Deprecations
+
 - **plugins-runtime**: changes outside the current page now raise a validation error when the target belongs to a page that is not currently active, instead of silently operating on the active page.
-- **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
-- **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
+- **plugin-types**: Change return type of `combineAsVariants`
+- **plugin-types:** Deprecate the legacy `Image` shape interface — image shapes exist only for backward compatibility with old files; new images are embedded in a `Fill` via its `fillImage` (an `ImageData`).
+- We've solved several inconsistencies accross the API, if you relied on an undocumented property or method be aware that might have changed.
+
+### 🚀 Features
+
 - **plugins-runtime**: Added `version` field that returns the current version
 - **plugins-runtime**: Added optional parameter `throwOnError` to `penpot.ui.sendMessage` (default false, backwards-compatible)
 - **plugin-types**: Added a flags subcontexts with the flag `naturalChildrenOrdering`
+- **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: `penpot.openPage()` now returns `Promise<void>` and should be awaited before performing operations on the new page
-- **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
 - **plugin-types:** Change `LibraryComponent.isVariant()` return type to type guard `this is LibraryVariantComponent`
 - **plugin-types**: Added `createVariantFromComponents`
-- **plugin-types**: Change return type of `combineAsVariants`
 - **plugin-types**: Added `textBounds` property for text shapes
-- **plugin-types**: Added flag `throwValidationErrors` to enable exceptions on validation
 - **plugin-types**: Fix missing `webp` export format in `Export.type`
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
 - **plugin-runtime:** `addToken` now resolves references against all token sets, allowing references to tokens in inactive sets
 - **plugin-types:** `TokenCatalog.addSet` now accepts an optional `active` flag to create an already-active set (sets are inactive by default)
+- **plugin-types:** `TokenTheme.addSet` and `TokenTheme.removeSet` now accept a token set id (`string`) in addition to a `TokenSet`
+- **plugin-runtime:** A `fontFamilies` token's `resolvedValue` now returns the documented `string[]` (the resolved family list) instead of leaking the raw tokenscript list symbol
+
+### 🩹 Fixes
+
+- **plugins-runtime**: Fix inverted validation that rejected valid values (and accepted invalid ones) on text range `align`, `direction`, `textDecoration`, `letterSpacing` and on layout child `zIndex`.
+- **plugins-runtime**: Array-typed properties (e.g. `page.flows`, `shape.exports`, `shape.shadows`, layout `rows`/`columns`, ruler guides, path `commands`) now always return an array, returning an empty array instead of `null` when there are no items
+- **plugin-types**: Fix penpot.openPage() to navigate in same tab by default
+- **plugin-types**: Rename `LibraryTypography.fontFamilies` to `fontFamily` to match the runtime (it holds a single font family, not an array)
+- **plugin-runtime:** Setting a `LibraryColor`'s `gradient` or `image` now clears the other color representations (solid/gradient/image are mutually exclusive), so the result is a valid color instead of being rejected with "expected valid color"
+- **plugin-types:** Mark members that have no runtime setter as `readonly`, fixing a mismatch where they were typed as writable: font metadata (`Font.*`, `FontVariant.*`, `FontsContext.all`), the `Ellipse`/`Image`/`SvgRaw` `type` discriminants (now consistent with the other shapes), `File.name`/`pages`/`revn`, `Page.root`, `TokenTheme.activeSets`, `Variants.properties`, `ImageData.*`, the board guide value objects (`GuideColumn`/`GuideRow`/`GuideSquare` and their params — `board.guides` returns a formatted snapshot, so reconfiguring means reassigning the whole array), the `Point` and `Bounds` value objects, the `Penpot.ui`/`Penpot.utils` subcontexts, the derived `Boolean` path data (`d`/`content`/`commands` are computed from the operands; `Boolean` is not editable like a `Path`), and the `EventsMap` event entries (a type-only event→callback map, never assigned). Members that do expose a setter stay writable: `Board.children`, `Path.d`/`content`/`commands` and `FileVersion.label`.
 
 ## 1.4.2 (2026-01-21)
 

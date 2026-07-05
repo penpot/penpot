@@ -154,6 +154,11 @@ This bootstrap command will:
 
 > [!IMPORTANT]
 > Do not close the plugin's UI while using the MCP server, as this will close the connection.
+> Also keep the Penpot tab active during long MCP sessions. Browsers may freeze, suspend,
+> or unload inactive tabs to save resources; when that happens, the MCP server will reject
+> tasks until the tab wakes up or reconnects. In Chrome, add your Penpot site to
+> **Settings → Performance → Always keep these sites active** or pin the tab to reduce
+> tab deactivation.
 
 ### 3. Connect an MCP Client
 

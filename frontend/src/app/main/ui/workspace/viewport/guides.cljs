@@ -681,7 +681,7 @@
         ;; only overlay the dotted extensions. Drag and edit hide the WASM line
         ;; and require the full SVG line.
         show-line?   (not= mode :hover)
-        show-pill?   (or (= mode :edit) (= mode :hover))
+        show-pill?   (or (= mode :edit) (= mode :hover) (= mode :drag))
         editing?     (= mode :edit)
 
         on-key-down

@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-input :refer [color-input*]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -54,17 +54,17 @@
    (when opacity
      [:div {:class (stl/css :opacity-element-wrapper)}
       [:span {:class (stl/css :icon-text)} "%"]
-      [:> numeric-input* {:value (-> color :opacity opacity->string)
-                          :class (stl/css :opacity-input)
-                          :placeholder "--"
-                          :select-on-focus select-on-focus
-                          :on-focus on-focus
-                          :on-blur on-blur
-                          :on-change on-opacity-change
-                          :data-testid "opacity-input"
-                          :default 100
-                          :min 0
-                          :max 100}]])])
+      [:> deprecated-input/numeric-input* {:value (-> color :opacity opacity->string)
+                                           :class (stl/css :opacity-input)
+                                           :placeholder "--"
+                                           :select-on-focus select-on-focus
+                                           :on-focus on-focus
+                                           :on-blur on-blur
+                                           :on-change on-opacity-change
+                                           :data-testid "opacity-input"
+                                           :default 100
+                                           :min 0
+                                           :max 100}]])])
 
 (mf/defc color-token-row*
   {::mf/private true}
@@ -89,42 +89,72 @@
            (let [token-name (or (:name token) applied-token-name)]
              (detach-token token-name))))
 
-        has-errors (some? (:errors token))
         token-name (:name token)
         resolved (:resolved-value token)
-        not-active (or (empty? active-tokens)
-                       (nil? token))
+
+
+        ;; Tooltip content for the swatch and token name, based on the token's state
+        all-tokens-map (mf/deref refs/workspace-all-tokens-map)
+
+        token-exists? (contains? all-tokens-map applied-token-name)
+        has-errors (and token-exists?
+                        (some? (:errors token)))
+
+        not-active (and
+                    token-exists?
+                    (or (empty? active-tokens)
+                        (nil? token)))
+
         id (dm/str (:id token) "-name")
         token-name-ref (mf/use-ref nil)
+
+        broken-state (or (not token-exists?)
+                         has-errors
+                         not-active)
+
         swatch-tooltip-content (cond
                                  not-active
-                                 (tr "options.deleted-token")
+                                 (tr "ds.inputs.token-field.no-active-token-option" applied-token-name)
+
+                                 (not token-exists?)
+                                 (tr "options.deleted-token-with-name" applied-token-name)
+
                                  has-errors
-                                 (tr "not-active-token.no-name")
+                                 (tr "workspace.tokens.ref-not-valid" applied-token-name)
+
                                  :else
                                  (tr "workspace.tokens.resolved-value" resolved))
+
         name-tooltip-content (cond
-                               not-active
-                               (tr "options.deleted-token")
                                has-errors
-                               (tr "not-active-token.no-name")
+                               (tr "workspace.tokens.ref-not-valid" applied-token-name)
+
+                               not-active
+                               (tr "ds.inputs.token-field.no-active-token-option" applied-token-name)
+
+                               (not token-exists?)
+                               (tr "options.deleted-token-with-name" applied-token-name)
+
                                :else
                                #(mf/html
                                  [:div
                                   [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-                                  [:span {:class (stl/css :token-name-tooltip)} applied-token-name]]))]
+                                  [:span {:class (stl/css :token-name-tooltip)} applied-token-name]
+                                  [:div
+                                   [:span (tr "inspect.tabs.styles.token-resolved-value")]
+                                   [:span {:class (stl/css :resolved-value)} (dm/str " " resolved)]]]))]
+
 
     [:div {:class (stl/css :color-info)}
      [:div {:class (stl/css-case :token-color-wrapper true
-                                 :token-color-with-errors has-errors
-                                 :token-color-not-active not-active)}
+                                 :token-color-with-errors broken-state)}
       [:div {:class (stl/css :color-bullet-wrapper)}
-       (when (or has-errors not-active)
+       (when broken-state
          [:div {:class (stl/css :error-dot)}])
        [:> swatch* {:background color
                     :tooltip-content swatch-tooltip-content
                     :on-click on-swatch-click-token
-                    :has-errors (or has-errors not-active)
+                    :has-errors broken-state
                     :size "small"}]]
       [:> tooltip* {:content name-tooltip-content
                     :id id

@@ -11,15 +11,21 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.tokens :as ptok]
+   [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each {:before cthi/reset-idmap!})
+
+(def ^:private get-resolved-value @#'ptok/get-resolved-value)
 
 ;; Regression coverage for issue #9162.
 ;;
@@ -226,3 +232,173 @@
         {:keys [errors resolved-value]} (get resolved (:name token))]
     (t/is (nil? resolved-value))
     (t/is (seq errors))))
+
+(t/deftest token-set-duplicate-returns-the-duplicated-set
+  (let [file-id (cthi/new-id! :file)
+        set-id  (cthi/new-id! :set)
+        dup-id  (cthi/new-id! :dup)
+        proxy   (ptok/token-set-proxy "plugin-id" file-id set-id)]
+    (with-redefs [dwtl/duplicate-token-set
+                  (mock/stub (fn [id {:keys [id-ref]}]
+                               (t/is (= set-id id))
+                               (reset! id-ref dup-id)
+                               :duplicate-token-set))
+                  st/emit! mock/noop]
+      (let [dup (.duplicate proxy)]
+        (t/is (ptok/token-set-proxy? dup))
+        (t/is (= (str dup-id) (.-id dup)))))))
+
+(t/deftest theme-add-set-and-remove-set-use-the-set-name
+  (let [file-id  (cthi/new-id! :file)
+        theme-id (cthi/new-id! :theme)
+        set-id   (cthi/new-id! :set)
+        set      (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
+        theme    (ptok/token-theme-proxy "plugin-id" file-id theme-id)
+        captured (atom [])]
+    (with-redefs [u/locate-token-theme
+                  (fn [_file _theme]
+                    (ctob/make-token-theme :id theme-id
+                                           :name "Theme"
+                                           :sets #{"Primitives"}))
+                  dwtl/update-token-theme
+                  (fn [id theme]
+                    (swap! captured conj {:id id :theme theme})
+                    :update-token-theme)
+                  st/emit! identity]
+      (.addSet theme set)
+      (.removeSet theme set)
+      (t/is (= [theme-id theme-id] (mapv :id @captured)))
+      (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
+      (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))
+
+(t/deftest font-family-token-value-accepts-a-string
+  (let [file-id  (cthi/new-id! :file)
+        set-id   (cthi/new-id! :set)
+        token-id (cthi/new-id! :token)
+        captured (atom nil)]
+    (with-redefs [u/locate-token (constantly {:id token-id
+                                              :name "font.primary"
+                                              :type :font-family
+                                              :value ["Inter"]})
+                  dwtl/update-token (mock/stub (fn [set-id token-id attrs]
+                                                 (reset! captured {:set-id set-id
+                                                                   :token-id token-id
+                                                                   :attrs attrs})
+                                                 :update-token))
+                  st/emit! mock/noop]
+      (let [token (ptok/token-proxy "plugin-id" file-id set-id token-id)]
+        (set! (.-value token) "Inter, Arial")
+        (t/is (= set-id (:set-id @captured)))
+        (t/is (= token-id (:token-id @captured)))
+        (t/is (= ["Inter" "Arial"] (get-in @captured [:attrs :value])))))))
+
+(t/deftest typography-token-resolved-value-is-plugin-array-shape
+  (let [token (ctob/make-token
+               {:name "type.body"
+                :type :typography
+                :value {:font-family ["Inter" "Arial"]
+                        :font-size "16px"
+                        :font-weight "600"
+                        :line-height "20px"
+                        :letter-spacing "1"
+                        :text-case "uppercase"
+                        :text-decoration "underline"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (array? result))
+    (t/is (= ["Inter" "Arial"] (vec (aget entry "fontFamilies"))))
+    (t/is (= 16 (aget entry "fontSizes")))
+    (t/is (= "600" (aget entry "fontWeights")))
+    (t/is (= 20 (aget entry "lineHeight")))
+    (t/is (= "uppercase" (aget entry "textCase")))
+    (t/is (= "underline" (aget entry "textDecoration")))))
+
+(t/deftest shadow-token-resolved-value-is-plugin-array-shape
+  (let [token (ctob/make-token
+               {:name "shadow.card"
+                :type :shadow
+                :value [{:offset-x "1px"
+                         :offset-y "2px"
+                         :blur "3px"
+                         :spread "4px"
+                         :color "#000000"
+                         :inset false}]})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (array? result))
+    (t/is (= 1 (aget entry "offsetX")))
+    (t/is (= 2 (aget entry "offsetY")))
+    (t/is (= 3 (aget entry "blur")))
+    (t/is (= 4 (aget entry "spread")))))
+
+(t/deftest font-family-token-resolved-value-is-string-array
+  (let [token (ctob/make-token
+               {:name "font.primary"
+                :type :font-family
+                :value ["Inter" "Arial"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (array? result))
+    (t/is (= ["Inter" "Arial"] (vec result)))))
+
+(t/deftest token-theme-add-set-accepts-token-set-id
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        token-set (ctob/make-token-set :id set-id :name "Core")
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.addSet theme-proxy (str set-id))
+        (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
+        (t/is (empty? @invalid))))))
+
+(t/deftest token-theme-add-set-accepts-token-set-proxy
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        token-set (ctob/make-token-set :id set-id :name "Core")
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
+            set-proxy   (ptok/token-set-proxy plugin-id file-id set-id "Core")]
+        (.addSet theme-proxy set-proxy)
+        (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
+        (t/is (empty? @invalid))))))
+
+(t/deftest token-theme-add-set-rejects-invalid-arguments
+  (let [plugin-id "plugin-id"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
+        emitted   (atom [])
+        invalid   (atom [])]
+    (with-redefs [u/locate-token-set   (constantly nil)
+                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
+                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+                  dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
+                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
+                                         ([event & _] (swap! emitted conj event) nil))]
+      (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        ;; Non-id, non-proxy arguments are rejected by the schema coercer.
+        (.addSet theme-proxy 42)
+        (.removeSet theme-proxy nil)
+        (t/is (empty? @emitted))
+        (t/is (= 2 (count @invalid)))
+        (t/is (every? #(= :error (first %)) @invalid))))))
+

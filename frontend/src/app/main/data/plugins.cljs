@@ -82,7 +82,7 @@
 
 (defn- load-plugin!
   [{:keys [plugin-id name version description host code icon permissions]}]
-  (st/emit! (pflag/clear plugin-id)
+  (st/emit! (pflag/initialize plugin-id version)
             (save-current-plugin plugin-id))
 
   (let [load-plugin (unchecked-get ug/global "ɵloadPlugin")]

@@ -27,12 +27,19 @@
    [frontend-tests.logic.groups-test]
    [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.format-test]
+   [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
+   [frontend-tests.plugins.library-test]
+   [frontend-tests.plugins.local-storage-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.shape-bugfixes-test]
+   [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.render-wasm.process-objects-test]
@@ -44,7 +51,9 @@
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
+   [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
+   [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
@@ -54,58 +63,71 @@
 
 (enable-console-print!)
 
-(defmethod cljs.test/report [:cljs.test/default :end-run-tests] [m]
+(defmethod t/report [:cljs.test/default :begin-test-var] [m]
+  (let [v (:var m)]
+    (println (str "  ▸ " (:ns (meta v)) "/" (:name (meta v))))))
+
+(defmethod t/report [:cljs.test/default :end-run-tests] [m]
   (if (cljs.test/successful? m)
     (.exit js/process 0)
     (.exit js/process 1)))
 
 (def test-namespaces
-  '[frontend-tests.basic-shapes-test
-    frontend-tests.code-gen-style-test
-    frontend-tests.copy-as-svg-test
-    frontend-tests.data.nitrate-test
-    frontend-tests.data.repo-test
-    frontend-tests.errors-test
-    frontend-tests.main-errors-test
-    frontend-tests.data.uploads-test
-    frontend-tests.data.viewer-test
-    frontend-tests.data.workspace-colors-test
-    frontend-tests.data.workspace-interactions-test
-    frontend-tests.data.workspace-mcp-test
-    frontend-tests.data.workspace-media-test
-    frontend-tests.data.workspace-shortcuts-test
-    frontend-tests.data.workspace-texts-test
-    frontend-tests.data.workspace-thumbnails-test
-    frontend-tests.helpers-shapes-test
-    frontend-tests.logic.comp-remove-swap-slots-test
-    frontend-tests.logic.components-and-tokens
-    frontend-tests.logic.copying-and-duplicating-test
-    frontend-tests.logic.frame-guides-test
-    frontend-tests.logic.groups-test
-    frontend-tests.logic.pasting-in-containers-test
-    frontend-tests.plugins.context-shapes-test
-    frontend-tests.plugins.page-active-validation-test
-    frontend-tests.plugins.interactions-test
-    frontend-tests.plugins.format-test
-    frontend-tests.plugins.page-test
-    frontend-tests.plugins.parser-test
-    frontend-tests.plugins.tokens-test
-    frontend-tests.plugins.utils-test
-    frontend-tests.svg-fills-test
-    frontend-tests.tokens.import-export-test
-    frontend-tests.tokens.logic.token-actions-test
-    frontend-tests.tokens.logic.token-data-test
-    frontend-tests.tokens.logic.token-remapping-test
-    frontend-tests.tokens.style-dictionary-test
-    frontend-tests.tokens.token-errors-test
-    frontend-tests.tokens.workspace-tokens-remap-test
-    frontend-tests.ui.ds-controls-numeric-input-test
-    frontend-tests.render-wasm.process-objects-test
-    frontend-tests.util-object-test
-    frontend-tests.util-range-tree-test
-    frontend-tests.util-simple-math-test
-    frontend-tests.util-webapi-test
-    frontend-tests.worker-snap-test])
+  ['frontend-tests.basic-shapes-test
+   'frontend-tests.code-gen-style-test
+   'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.nitrate-test
+   'frontend-tests.data.repo-test
+   'frontend-tests.data.uploads-test
+   'frontend-tests.data.viewer-test
+   'frontend-tests.data.workspace-colors-test
+   'frontend-tests.data.workspace-interactions-test
+   'frontend-tests.data.workspace-mcp-test
+   'frontend-tests.data.workspace-media-test
+   'frontend-tests.data.workspace-shortcuts-test
+   'frontend-tests.data.workspace-texts-test
+   'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.errors-test
+   'frontend-tests.helpers-shapes-test
+   'frontend-tests.logic.comp-remove-swap-slots-test
+   'frontend-tests.logic.components-and-tokens
+   'frontend-tests.logic.copying-and-duplicating-test
+   'frontend-tests.logic.frame-guides-test
+   'frontend-tests.logic.groups-test
+   'frontend-tests.logic.pasting-in-containers-test
+   'frontend-tests.main-errors-test
+   'frontend-tests.plugins.comments-test
+   'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.file-test
+   'frontend-tests.plugins.format-test
+   'frontend-tests.plugins.grid-test
+   'frontend-tests.plugins.interactions-test
+   'frontend-tests.plugins.library-test
+   'frontend-tests.plugins.local-storage-test
+   'frontend-tests.plugins.page-active-validation-test
+   'frontend-tests.plugins.page-test
+   'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.shape-bugfixes-test
+   'frontend-tests.plugins.text-test
+   'frontend-tests.plugins.tokens-test
+   'frontend-tests.plugins.utils-test
+   'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.svg-fills-test
+   'frontend-tests.tokens.import-export-test
+   'frontend-tests.tokens.logic.token-actions-test
+   'frontend-tests.tokens.logic.token-data-test
+   'frontend-tests.tokens.logic.token-remapping-test
+   'frontend-tests.tokens.style-dictionary-test
+   'frontend-tests.tokens.token-errors-test
+   'frontend-tests.tokens.workspace-tokens-remap-test
+   'frontend-tests.ui.comments-position-modifier-test
+   'frontend-tests.ui.ds-controls-numeric-input-test
+   'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.util-object-test
+   'frontend-tests.util-range-tree-test
+   'frontend-tests.util-simple-math-test
+   'frontend-tests.util-webapi-test
+   'frontend-tests.worker-snap-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")
@@ -219,18 +241,18 @@
                         :once-fixtures (:once fixtures)
                         :each-fixtures (:each fixtures))
         summary  (volatile! {:test 0 :pass 0 :fail 0 :error 0 :type :summary})]
+
+    (t/set-env! env)
+
     (t/run-block
-     (concat [(fn [] (t/set-env! env))]
-             (t/test-vars-block vars)
+     (concat (t/test-vars-block vars)
              [(fn []
                 (vswap! summary
                         (partial merge-with +)
-                        (:report-counters (t/get-and-clear-env!))))
+                        (:report-counters (t/get-current-env))))
               (fn []
-                (t/set-env! env)
-                (t/do-report @summary)
-                (t/report (assoc @summary :type :end-run-tests))
-                (t/clear-env!))]))))
+                (t/report @summary)
+                (t/report (assoc @summary :type :end-run-tests)))]))))
 
 (defn- run-focused-test!
   [focus]
@@ -250,8 +272,8 @@
 
       :else
       (do
-        (when-let [level (:log-level options)]
-          (l/setup! {:app level}))
+        (l/setup! {:app (or (:log-level options) :warn)})
+
         (if (:focus options)
           (run-focused-test! (:focus options))
           (run-test-vars! (map #(selected-tests {:ns %}) test-namespaces)))))))

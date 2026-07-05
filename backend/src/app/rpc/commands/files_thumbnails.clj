@@ -85,7 +85,7 @@
    ::sm/result [:map-of [:string {:max 250}] [:string {:max 250}]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id tag] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (files/check-read-permissions! conn profile-id file-id)
+    (files/check-read-permissions! cfg profile-id file-id)
     (if tag
       (get-object-thumbnails-by-tag conn file-id tag)
       (get-object-thumbnails conn file-id))))
@@ -197,9 +197,9 @@
    ::sm/params schema:get-file-data-for-thumbnail
    ::sm/result schema:partial-file}
   [cfg {:keys [::rpc/profile-id file-id strip-frames-with-thumbnails] :as params}]
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (files/check-read-permissions! conn profile-id file-id)
-                 (let [team (teams/get-team conn
+  (db/run! cfg (fn [cfg]
+                 (files/check-read-permissions! cfg profile-id file-id)
+                 (let [team (teams/get-team cfg
                                             :profile-id profile-id
                                             :file-id file-id)
                        file (bfc/get-file cfg file-id

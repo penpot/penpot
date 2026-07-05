@@ -311,26 +311,43 @@
 
 (defn error-messages
   [explain]
-  (->> (:errors explain)
-       (reduce csm/interpret-schema-problem {})
-       (flatten-error-map)
-       (map (fn [[field message]]
-              (tr "plugins.validation.message" field message)))
-       (str/join ". ")))
+  (let [msg (->> (:errors explain)
+                 (reduce csm/interpret-schema-problem {})
+                 (flatten-error-map)
+                 (map (fn [[field message]]
+                        (tr "plugins.validation.message" field message)))
+                 (str/join ". "))]
+    ;; Return nil (not "") when the explain has no mappable errors, so
+    ;; `handle-error` can fall back to a non-empty message instead of
+    ;; surfacing a bare "Value not valid. Code: :error" (#9692).
+    (when-not (str/blank? msg) msg)))
 
 (defn handle-error
   "Function to be used in plugin proxies methods to handle errors and print a readable
    message to the console."
   [plugin-id]
   (fn [cause]
-    (let [message
-          (if-let [explain (-> cause ex-data ::sm/explain)]
-            (do
-              (js/console.error (sm/humanize-explain explain))
-              (error-messages explain))
-            (ex-data cause))]
-      (js/console.log (.-stack cause))
-      (not-valid plugin-id :error message))))
+    (let [explain (-> cause ex-data ::sm/explain)
+          throw? (throw-validation-errors? plugin-id)]
+      (cond
+        ;; If it's a clojure error we throw as a validation error
+        (and throw? explain)
+        (throw-not-valid :error (error-messages explain))
+
+        ;; Unexpected errors we just propagate them
+        throw?
+        (throw cause)
+
+        ;; If not throw is active we log the caught error
+        :else
+        (let [message
+              (if explain
+                (do
+                  (js/console.error (sm/humanize-explain explain))
+                  (or (error-messages explain) (pr-str explain)))
+                (or (ex-data cause) (ex-message cause) (str cause)))]
+          (js/console.log (.-stack cause))
+          (not-valid plugin-id :error message))))))
 
 (defn is-main-component-proxy?
   [p]

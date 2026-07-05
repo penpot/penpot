@@ -399,6 +399,7 @@
               (fn [_]
                 ;; Start the event collection pipeline
                 (->> (rx/merge
+                      (rx/filter (ptk/type? ::force-persist) stream)
                       (->> (rx/from-atom buffer)
                            (rx/filter #(pos? (count %)))
                            (rx/debounce 2000))
@@ -416,6 +417,7 @@
                                          (rx/map (constantly chunk))))))
                      (rx/take-until stopper)
                      (rx/subs! (fn [chunk]
+                                 (st/emit! (ptk/data-event ::chunk-persisted {:chunk chunk}))
                                  (swap! buffer remove-from-buffer (count chunk)))
                                (fn [cause]
                                  (l/error :hint "unexpected error on audit persistence" :cause cause))

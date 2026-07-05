@@ -320,9 +320,8 @@
        (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
-(mf/defc object-svg
-  {::mf/props :obj}
-  [{:keys [shape] :as props}]
+(mf/defc object-svg*
+  [{:keys [shape]}]
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
@@ -344,7 +343,7 @@
 (defn get-static-markup
   [shape]
   (->
-   (mf/element object-svg #js {:shape shape})
+   (mf/element object-svg* #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
 ;; forward declare helpers so render can call them
@@ -357,12 +356,15 @@
 (def ^:const FRAME_TYPE_NONE 0)     ;; This type should never "leak".
 (def ^:const FRAME_TYPE_PARTIAL 1)  ;; A frame needs more render calls to end.
 (def ^:const FRAME_TYPE_FULL 2)     ;; A frame was full.
+(def ^:const RENDER-FLAG-SYNC-TILES 4) ;; Rebuild tile index without ending fast mode (pan/zoom pause).
 
 (defn- internal-render
   ([]
    (internal-render 0))
   ([timestamp]
-   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp wasm/internal-frame-type))
+   (internal-render timestamp wasm/internal-frame-type))
+  ([timestamp flags]
+   (set! wasm/internal-frame-type (h/call wasm/internal-module "_render" timestamp flags))
    (when (= wasm/internal-frame-type FRAME_TYPE_PARTIAL)
      (request-render "frame-type-partial"))))
 
@@ -1071,66 +1073,75 @@
 
 (defn set-grid-layout-rows
   [entries]
-  (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero rows.
+  (when (seq entries)
+    (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
-            offset
-            entries)
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_rows")))
+  (h/call wasm/internal-module "_set_grid_rows"))
 
 (defn set-grid-layout-columns
   [entries]
-  (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
-        offset (mem/alloc size)
-        dview  (mem/get-data-view)]
+  ;; Only allocate when there are entries; an empty list would alloc 0 bytes.
+  ;; The wasm side reads an empty buffer as zero columns.
+  (when (seq entries)
+    (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
+          offset (mem/alloc size)
+          dview  (mem/get-data-view)]
 
-    (reduce (fn [offset {:keys [type value]}]
-              (-> offset
-                  (mem/write-u8 dview (sr/translate-grid-track-type type))
-                  (+ 3) ;; padding
-                  (mem/write-f32 dview value)
-                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-            offset
-            entries)
+      (reduce (fn [offset {:keys [type value]}]
+                (-> offset
+                    (mem/write-u8 dview (sr/translate-grid-track-type type))
+                    (+ 3) ;; padding
+                    (mem/write-f32 dview value)
+                    (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+              offset
+              entries)))
 
-    (h/call wasm/internal-module "_set_grid_columns")))
+  (h/call wasm/internal-module "_set_grid_columns"))
 
 (defn set-grid-layout-cells
   [cells]
-  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
-        offset  (mem/alloc size)
-        dview   (mem/get-data-view)]
+  ;; Only allocate when there are cells; an empty collection would alloc 0
+  ;; bytes. The wasm side reads an empty buffer as zero cells.
+  (when (seq cells)
+    (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+          offset  (mem/alloc size)
+          dview   (mem/get-data-view)]
 
-    (reduce-kv (fn [offset _ cell]
-                 (let [shape-id  (-> (get cell :shapes) first)]
-                   (-> offset
-                       (mem/write-i32 dview (get cell :row))
-                       (mem/write-i32 dview (get cell :row-span))
-                       (mem/write-i32 dview (get cell :column))
-                       (mem/write-i32 dview (get cell :column-span))
+      (reduce-kv (fn [offset _ cell]
+                   (let [shape-id  (-> (get cell :shapes) first)]
+                     (-> offset
+                         (mem/write-i32 dview (get cell :row))
+                         (mem/write-i32 dview (get cell :row-span))
+                         (mem/write-i32 dview (get cell :column))
+                         (mem/write-i32 dview (get cell :column-span))
 
-                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
-                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+                         (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
+                         (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; padding
-                       (+ 2)
+                         ;; padding
+                         (+ 2)
 
-                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
-                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
+                         (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                         (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
-               offset
-               cells)
+                 offset
+                 cells)))
 
-    (h/call wasm/internal-module "_set_grid_cells")))
+  (h/call wasm/internal-module "_set_grid_cells"))
 
 (defn set-grid-layout
   [shape]
@@ -1311,20 +1322,27 @@
     (perf/end-measure "render-finish")
     (reset! view-interaction-active? false)))
 
+(defn- view-gesture-active?
+  "True while a pointer-driven pan or zoom gesture is in progress."
+  []
+  (let [local (get @st/state :workspace-local)]
+    (or (:panning local) (:zooming local))))
+
+(defn finalize-view-interaction!
+  "Ends the view interaction and triggers a full-quality render."
+  []
+  (view-interaction-end!)
+  (internal-render 0 0))
+
 (def render-finish
   (letfn [(do-render []
             ;; Check if context is still initialized before executing
             ;; to prevent errors when navigating quickly
             (when (initialized?)
-              (view-interaction-end!)
-              ;; Use async _render: visible tiles render synchronously
-              ;; (no yield), interest-area tiles render progressively
-              ;; via rAF.  _set_view_end already rebuilt the tile
-              ;; index.  For pan, most tiles are cached so the render
-              ;; completes in the first frame.  For zoom, interest-
-              ;; area tiles (~3 tile margin) don't block the main
-              ;; thread.
-              (internal-render)))]
+              (if (view-gesture-active?)
+                ;; Pan/zoom pause: render without ending the interaction.
+                (internal-render 0 RENDER-FLAG-SYNC-TILES)
+                (finalize-view-interaction!))))]
     (fns/debounce do-render DEBOUNCE_DELAY_MS)))
 
 (defn set-view-box
@@ -1405,18 +1423,20 @@
       (set-shape-layout shape)
       (set-layout-data shape)
       (let [is-text? (= type :text)
-            pending_thumbnails (into [] (concat
-                                         (when is-text? (set-shape-text-content id content))
+            text-content-pending (when is-text? (set-shape-text-content id content))
+            pending-thumbnails (into [] (concat
+                                         text-content-pending
                                          (when is-text? (set-shape-text-images id content true))
                                          (set-shape-fills id fills true)
                                          (set-shape-strokes id strokes true)))
-            pending_full (into [] (concat
+            pending-full (into [] (concat
                                    (when is-text? (set-shape-text-images id content false))
                                    (set-shape-fills id fills false)
                                    (set-shape-strokes id strokes false)))]
         (perf/end-measure "set-object")
-        {:thumbnails pending_thumbnails
-         :full pending_full}))))
+        {:thumbnails pending-thumbnails
+         :full pending-full
+         :font-pending-ids (if (some :callback text-content-pending) [id] [])}))))
 
 (defn- update-text-layouts
   "Synchronously update text layouts for all shapes and send rect updates
@@ -1424,8 +1444,29 @@
   [text-ids]
   (run! f/update-text-layout text-ids))
 
+(defn- force-update-text-layouts
+  "Like update-text-layouts but forces a relayout. Use after pending fonts
+   resolve so layouts (and the extrect/tiles derived from them) use real glyph
+   metrics instead of fallback-font estimates."
+  [text-ids]
+  (run! f/force-update-text-layout text-ids))
+
+(defn- relayout-after-fonts!
+  "Relayout text shapes once their pending fonts have resolved. Shapes in
+   `font-pending-ids` had a font fetched, so they get a forced relayout to pick
+   up the real glyph metrics; the remaining text shapes get a normal layout."
+  [shapes font-pending-ids]
+  (let [force-ids (set font-pending-ids)
+        text-ids  (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
+        forced    (filterv force-ids text-ids)
+        rest-ids  (filterv (complement force-ids) text-ids)]
+    (when (seq forced)
+      (force-update-text-layouts forced))
+    (when (seq rest-ids)
+      (update-text-layouts rest-ids))))
+
 (defn process-pending
-  [shapes thumbnails full on-complete]
+  [shapes thumbnails full font-pending-ids on-complete]
   (let [pending-thumbnails
         (d/index-by :key :callback thumbnails)
 
@@ -1449,11 +1490,7 @@
                  (rx/catch #(rx/empty))))
            (rx/subs!
             (fn [_]
-              ;; Fonts are now loaded — recompute text layouts so Skia
-              ;; uses the real metrics instead of fallback-font estimates.
-              (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
-                (when (seq text-ids)
-                  (update-text-layouts text-ids)))
+              (relayout-after-fonts! shapes font-pending-ids)
               (request-render "images-loaded"))
             noop-fn
             (fn [] (when (fn? on-complete) (on-complete)))))
@@ -1462,8 +1499,8 @@
 
 (defn process-object
   [shape]
-  (let [{:keys [thumbnails full]} (set-object shape)]
-    (process-pending [shape] thumbnails full noop-fn)))
+  (let [{:keys [thumbnails full font-pending-ids]} (set-object shape)]
+    (process-pending [shape] thumbnails full font-pending-ids noop-fn)))
 
 (defn process-objects
   "Like process-object but for multiple shapes at once. Accumulates all
@@ -1472,37 +1509,43 @@
    just the first shape that triggered the fetch."
   [shapes]
   (let [total-shapes (count shapes)
-        {:keys [thumbnails full]}
-        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+        {:keys [thumbnails full font-pending-ids]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient []) font-acc (transient [])]
           (if (< index total-shapes)
             (let [shape (nth shapes index)
-                  {:keys [thumbnails full]} (set-object shape)]
+                  {:keys [thumbnails full font-pending-ids]} (set-object shape)]
               (recur (inc index)
                      (reduce conj! thumbnails-acc thumbnails)
-                     (reduce conj! full-acc full)))
-            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
-    (process-pending shapes thumbnails full noop-fn)))
+                     (reduce conj! full-acc full)
+                     (reduce conj! font-acc font-pending-ids)))
+            {:thumbnails (persistent! thumbnails-acc)
+             :full (persistent! full-acc)
+             :font-pending-ids (persistent! font-acc)}))]
+    (process-pending shapes thumbnails full font-pending-ids noop-fn)))
 
 (defn- process-shapes-chunk
   "Process shapes starting at `start-index` until the time budget is exhausted.
-   Returns {:thumbnails [...] :full [...] :next-index n}"
-  [shapes start-index thumbnails-acc full-acc]
+   Returns {:thumbnails [...] :full [...] :font-pending-ids [...] :next-index n}"
+  [shapes start-index thumbnails-acc full-acc font-pending-acc]
   (let [total    (count shapes)
         deadline (+ (js/performance.now) CHUNK_TIME_BUDGET_MS)]
     (loop [index start-index
            t-acc (transient thumbnails-acc)
-           f-acc (transient full-acc)]
+           f-acc (transient full-acc)
+           fp-acc (transient font-pending-acc)]
       (if (and (< index total)
                ;; Check performance.now every 8 shapes to reduce overhead
                (or (pos? (bit-and (- index start-index) 7))
                    (<= (js/performance.now) deadline)))
         (let [shape (nth shapes index)
-              {:keys [thumbnails full]} (set-object shape)]
+              {:keys [thumbnails full font-pending-ids]} (set-object shape)]
           (recur (inc index)
                  (reduce conj! t-acc thumbnails)
-                 (reduce conj! f-acc full)))
+                 (reduce conj! f-acc full)
+                 (reduce conj! fp-acc font-pending-ids)))
         {:thumbnails (persistent! t-acc)
          :full (persistent! f-acc)
+         :font-pending-ids (persistent! fp-acc)
          :next-index index}))))
 
 (defn- set-objects-async
@@ -1513,16 +1556,16 @@
   (let [total-shapes (count shapes)]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc]
+       (letfn [(process-next-chunk [index thumbnails-acc full-acc font-pending-acc]
                  (if (< index total-shapes)
                    ;; Process one time-budgeted chunk
-                   (let [{:keys [thumbnails full next-index]}
+                   (let [{:keys [thumbnails full font-pending-ids next-index]}
                          (process-shapes-chunk shapes index
-                                               thumbnails-acc full-acc)]
+                                               thumbnails-acc full-acc font-pending-acc)]
                      ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full)))))
+                                   (process-next-chunk next-index thumbnails full font-pending-ids)))))
                    ;; All chunks done - finalize
                    (do
                      (perf/end-measure "set-objects")
@@ -1569,13 +1612,11 @@
                                     (rx/reduce conj [])))
                               (rx/subs!
                                (fn [_]
-                                 (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
-                                   (when (seq text-ids)
-                                     (update-text-layouts text-ids)))
+                                 (relayout-after-fonts! shapes font-pending-acc)
                                  (request-render "images-loaded"))
                                noop-fn
                                noop-fn)))))))]
-         (process-next-chunk 0 [] []))))))
+         (process-next-chunk 0 [] [] []))))))
 
 
 ;; This is a version of process-pending that doesn't have sideffects
@@ -1628,22 +1669,25 @@
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
   (let [total-shapes (count shapes)
-        {:keys [thumbnails full]}
-        (loop [index 0 thumbnails-acc (transient []) full-acc (transient [])]
+        {:keys [thumbnails full font-pending-ids]}
+        (loop [index 0 thumbnails-acc (transient []) full-acc (transient []) font-acc (transient [])]
           (if (< index total-shapes)
             (let [shape (nth shapes index)
-                  {:keys [thumbnails full]} (set-object shape)]
+                  {:keys [thumbnails full font-pending-ids]} (set-object shape)]
               (recur (inc index)
                      (reduce conj! thumbnails-acc thumbnails)
-                     (reduce conj! full-acc full)))
-            {:thumbnails (persistent! thumbnails-acc) :full (persistent! full-acc)}))]
+                     (reduce conj! full-acc full)
+                     (reduce conj! font-acc font-pending-ids)))
+            {:thumbnails (persistent! thumbnails-acc)
+             :full (persistent! full-acc)
+             :font-pending-ids (persistent! font-acc)}))]
     (perf/end-measure "set-objects")
     (when on-shapes-ready (on-shapes-ready))
     ;; Rebuild the tile index so _render knows which shapes
     ;; map to which tiles after a page switch.
     (h/call wasm/internal-module "_set_view_end")
     (reset! view-interaction-active? false)
-    (process-pending shapes thumbnails full
+    (process-pending shapes thumbnails full font-pending-ids
                      (fn []
                        (if render-callback
                          (render-callback)
@@ -2351,21 +2395,25 @@
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
-   Returns the stroke outline as PathData content."
+   Returns a map {:content <PathData> :even-odd? <boolean>}, or nil when the
+   stroke produces no geometry. The buffer carries two header words ahead of
+   the segments: [even-odd flag][length] (the flat segment list can't encode
+   the fill rule itself)."
   [id stroke-index]
   (use-shape id)
   (try
-    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                     (mem/->offset-32))
-          heap   (mem/get-heap-u32)
-          length (aget heap offset)]
+    (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                        (mem/->offset-32))
+          heap      (mem/get-heap-u32)
+          even-odd? (not (zero? (aget heap offset)))
+          length    (aget heap (inc offset))]
       (if (pos? length)
         (let [data    (mem/slice heap
-                                 (+ offset 1)
+                                 (+ offset 2)
                                  (* length path.impl/SEGMENT-U32-SIZE))
               content (path/from-bytes data)]
           (mem/free)
-          content)
+          {:content content :even-odd? even-odd?})
         (do (mem/free)
             nil)))
     (catch :default cause

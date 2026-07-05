@@ -159,6 +159,7 @@ $arrow-side: 12px;
   padding: var(--sp-s) var(--sp-m);
   grid-area: content;
   block-size: fit-content;
+  overflow-wrap: anywhere;
 }
 
 .tooltip-trigger {

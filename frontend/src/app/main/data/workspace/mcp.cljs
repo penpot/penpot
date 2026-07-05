@@ -20,7 +20,10 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(def retry-interval 10000)
+(def reconnect-fallback-interval 60000)
+
+(def reconnect-fallback-statuses
+  #{"disconnected" "error"})
 
 (log/set-level! :info)
 
@@ -54,11 +57,13 @@
     (reset!
      interval-sub
      (ts/interval
-      retry-interval
+      reconnect-fallback-interval
       (fn []
-        ;; Try to reconnect if active and not connected
-        (when-not (contains? #{"connecting" "connected"}
-                             (-> @st/state :mcp :connection-status))
+        ;; Slow app-level fallback. The plugin owns normal WebSocket
+        ;; reconnects; this only restarts it if the app remains in a
+        ;; failed connection state.
+        (when (contains? reconnect-fallback-statuses
+                         (-> @st/state :mcp :connection-status))
           (.log js/console "Reconnecting to MCP...")
           (st/emit! (ptk/data-event ::connect))))))))
 

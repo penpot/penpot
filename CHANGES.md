@@ -127,6 +127,13 @@
 - Fix open overlay board mispositioned with repeated image artifacts in viewer WebGL [#10180](https://github.com/penpot/penpot/issues/10180) (PR: [#10191](https://github.com/penpot/penpot/pull/10191))
 - Fix color picker preview when browser has non-100% zoom level [#10265](https://github.com/penpot/penpot/issues/10265) (PR: [#10305](https://github.com/penpot/penpot/pull/10305))
 
+## 2.16.2
+
+### :bug: Bugs fixed
+
+- Fix error 500 when submitting the contact form [#10178](https://github.com/penpot/penpot/issues/10178) (PR: [#10419](https://github.com/penpot/penpot/pull/10419))
+- Fix text editor modifying content and detaching applied typography tokens [#10389](https://github.com/penpot/penpot/issues/10389) (PR: [#10402](https://github.com/penpot/penpot/pull/10402))
+
 ## 2.16.1
 
 ### :sparkles: New features & Enhancements
@@ -135,15 +142,16 @@
 - Add WebSocket proxy configuration for MCP in Nginx example (by @lancatlin) [#10153](https://github.com/penpot/penpot/issues/10153) (PR: [#10152](https://github.com/penpot/penpot/pull/10152))
 - Add tenant prefix to MCP Redis channel names for multi-environment isolation [#10277](https://github.com/penpot/penpot/issues/10277) (PR: [#10276](https://github.com/penpot/penpot/pull/10276))
 - Show MCP key on Integrations page and remove non-recoverable warning from modal [#10290](https://github.com/penpot/penpot/issues/10290) (PR: [#10298](https://github.com/penpot/penpot/pull/10298))
+- Add MCP status button with single-tab connection control [#9923](https://github.com/penpot/penpot/issues/9923) (PR: [#9930](https://github.com/penpot/penpot/pull/9930))
 
 ### :bug: Bugs fixed
 
-- Improve performance of multiple nested flex layouts with text content [#10095](https://github.com/penpot/penpot/issues/10095)
 - Fix race condition between MCP initialization and plugin runtime [#10138](https://github.com/penpot/penpot/issues/10138) (PR: [#10137](https://github.com/penpot/penpot/pull/10137))
 - Filter ignorable React removeChild errors from browser extensions in error boundary [#10146](https://github.com/penpot/penpot/issues/10146) (PR: [#10145](https://github.com/penpot/penpot/pull/10145))
 - Show resolved values in font family token combobox when pasting comma-separated values [#10212](https://github.com/penpot/penpot/issues/10212) (PR: [#10215](https://github.com/penpot/penpot/pull/10215))
 - Fix MCP server status toggle persistence and missing workspace connection options [#10292](https://github.com/penpot/penpot/issues/10292) (PR: [#10226](https://github.com/penpot/penpot/pull/10226))
 - Allow pasting comma-separated emails in the invite members modal [#10173](https://github.com/penpot/penpot/issues/10173) (PR: [#10186](https://github.com/penpot/penpot/pull/10186))
+- Fix text element edit detaching applied color tokens [#9255](https://github.com/penpot/penpot/issues/9255) (PR: [#9525](https://github.com/penpot/penpot/pull/9525), [#9814](https://github.com/penpot/penpot/pull/9814), [#10340](https://github.com/penpot/penpot/pull/10340))
 
 ## 2.16.0
 

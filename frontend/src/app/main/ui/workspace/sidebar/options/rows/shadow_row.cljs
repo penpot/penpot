@@ -11,7 +11,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -171,39 +171,39 @@
                  :title (tr "workspace.options.shadow-options.offsetx")}
            [:span {:class (stl/css :shadow-advanced-label)}
             "X"]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :on-change on-update-offset-x
-                               :value (:offset-x shadow)}]]
+           [:> deprecated-input/numeric-input* {:no-validate true
+                                                :placeholder "--"
+                                                :on-change on-update-offset-x
+                                                :value (:offset-x shadow)}]]
 
           [:div {:class (stl/css :shadow-advanced-blur)
                  :title (tr "workspace.options.shadow-options.blur")}
            [:span {:class (stl/css :shadow-advanced-label)}
             (tr "workspace.options.shadow-options.blur")]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :on-change on-update-blur
-                               :min 0
-                               :value (:blur shadow)}]]
+           [:> deprecated-input/numeric-input* {:no-validate true
+                                                :placeholder "--"
+                                                :on-change on-update-blur
+                                                :min 0
+                                                :value (:blur shadow)}]]
 
           [:div {:class (stl/css :shadow-advanced-spread)
                  :title (tr "workspace.options.shadow-options.spread")}
            [:span {:class (stl/css :shadow-advanced-label)}
             (tr "workspace.options.shadow-options.spread")]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :on-change on-update-spread
-                               :value (:spread shadow)}]]]
+           [:> deprecated-input/numeric-input* {:no-validate true
+                                                :placeholder "--"
+                                                :on-change on-update-spread
+                                                :value (:spread shadow)}]]]
 
          [:div {:class (stl/css :shadow-advanced-row)}
           [:div {:class (stl/css :shadow-advanced-offset-y)
                  :title (tr "workspace.options.shadow-options.offsety")}
            [:span {:class (stl/css :shadow-advanced-label)}
             "Y"]
-           [:> numeric-input* {:no-validate true
-                               :placeholder "--"
-                               :on-change on-update-offset-y
-                               :value (:offset-y shadow)}]]
+           [:> deprecated-input/numeric-input* {:no-validate true
+                                                :placeholder "--"
+                                                :on-change on-update-offset-y
+                                                :value (:offset-y shadow)}]]
 
           [:> color-row* {:class (stl/css :shadow-advanced-color)
                           :color (:color shadow)

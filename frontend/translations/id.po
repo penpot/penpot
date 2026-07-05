@@ -494,9 +494,8 @@ msgstr "Ekspor pilihan"
 msgid "dashboard.export-standard-multi"
 msgstr "Unduh %s berkas standar (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Satu atau lebih berkas yang ingin Anda ekspor menggunakan pustaka bersama. "
 "Apa yang ingin Anda lakukan dengan asetnya*?"
@@ -6674,10 +6673,6 @@ msgstr "Padding"
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:294
 msgid "workspace.tokens.radius"
 msgstr "Radius"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
-msgid "workspace.tokens.ref-not-valid"
-msgstr "Referensi tidak valid atau tidak dalam set aktif mana pun"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused

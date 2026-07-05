@@ -39,6 +39,24 @@
       (if (>= (count lang) 3) (str/capital lang) (str/upper lang)))
     "Noto Color Emoji"))
 
+(defn- composing-event?
+  "True when a key/input event is part of an in-flight IME composition.
+
+  Read from the browser event itself so it stays correct regardless of render
+  timing or the relative ordering of compositionend.
+  Note that , and that compositionstart
+  dispatches after the first composing keydown event.
+
+  We are checkign both isComposing and the keyCode (229, which is what is reported
+  when using an IME), beause compositionstart dispatches after the first composing
+  event. Note that also, on MacOS, the key that commits a composition (e.g. Enter
+  in Japanese IME) dispatches its keydown while composition is still active, so we
+  can't rely on a stale state and need to query the event itself."
+  [^js event]
+  (let [native (.-nativeEvent event)]
+    (or (.-isComposing native)
+        (= 229 (.-keyCode event)))))
+
 (mf/defc text-editor*
   "Contenteditable element positioned over the text shape to capture input events."
   [{:keys [shape]}]
@@ -47,7 +65,6 @@
         clip-id   (dm/str "text-edition-clip" shape-id)
 
         contenteditable-ref (mf/use-ref nil)
-        composing?          (mf/use-state false)
 
         fallback-fonts    (wasm.api/fonts-from-text-content (:content shape) false)
         fallback-families (map (fn [font]
@@ -72,17 +89,15 @@
         on-composition-start
         (mf/use-fn
          (fn [_event]
-           (reset! composing? true)
            (text-editor/text-editor-composition-start)))
 
         on-composition-update
         (mf/use-fn
          (fn [event]
-           (when-not composing?
-             (reset! composing? true))
-
+           ;; IME cancel (e.g. Escape on Linux ibus-mozc) fires compositionupdate
+           ;; with an empty string; that must reach WASM to clear the preview text.
            (let [data (.-data event)]
-             (when data
+             (when (some? data)
                (text-editor/text-editor-composition-update data)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render "text-composition"))
@@ -92,14 +107,12 @@
         on-composition-end
         (mf/use-fn
          (fn [^js event]
-           (reset! composing? false)
-           (let [data (.-data event)]
-             (when data
-               (text-editor/text-editor-composition-end data)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render "text-composition"))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+           (let [data (or (.-data event) "")]
+             (text-editor/text-editor-composition-end data)
+             (sync-wasm-text-editor-content!)
+             (wasm.api/request-render "text-composition"))
+           (when-let [node (mf/ref-val contenteditable-ref)]
+             (set! (.-textContent node) ""))))
 
         on-paste
         (mf/use-fn
@@ -142,11 +155,10 @@
         (mf/use-fn
          (fn [^js event]
            (when (and (text-editor/text-editor-has-focus?)
-                      (not @composing?))
+                      (not (composing-event? event)))
              (let [key    (.-key event)
                    ctrl?  (or (.-ctrlKey event) (.-metaKey event))
                    shift? (.-shiftKey event)]
-
                (cond
                  ;; Escape: finalize and stop
                  (= key "Escape")
@@ -240,7 +252,7 @@
                  input-type   (.-inputType native-event)
                  data         (.-data native-event)]
              ;; Skip composition-related input events - composition-end handles those
-             (when (and (not @composing?)
+             (when (and (not (composing-event? event))
                         (not= input-type "insertCompositionText"))
                (when (and data (seq data))
                  (text-editor/text-editor-insert-text data)

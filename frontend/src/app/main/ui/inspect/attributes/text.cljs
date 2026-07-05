@@ -151,7 +151,7 @@
                             :style full-style
                             :text text}])))
 
-(mf/defc text-panel
+(mf/defc text-panel*
   [{:keys [shapes]}]
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div {:class (stl/css :attributes-block)}

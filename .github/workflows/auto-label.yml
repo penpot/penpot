@@ -1,0 +1,76 @@
+name: Auto Label and Add to Project
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: triage-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.TRIAGE_APP_ID }}
+          private-key: ${{ secrets.TRIAGE_APP_PRIVATE_KEY }}
+          owner: penpot
+
+      - name: Process Issue or PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.triage-app-token.outputs.token }}
+          script: |
+            // === 1. CONFIGURATION ===
+            const PROJECT_NUMBER = 8; // <--- Replace with your project board number
+            const IS_ORG = true;      // <--- Set to false if this is a personal project, true if an organization
+            const OWNER = context.repo.owner;
+            const REPO = context.repo.repo;
+
+            const issueNumber = context.issue.number;
+            const isPR = !!context.payload.pull_request;
+            const contentId = isPR ? context.payload.pull_request.node_id : context.payload.issue.node_id;
+
+            // Define your labels here
+            const labelToApply = 'needs triage';
+
+            // === 2. APPLY THE LABEL ===
+            console.log(`Applying label "${labelToApply}" to ${isPR ? 'PR' : 'Issue'} #${issueNumber}...`);
+            await github.rest.issues.addLabels({
+              issue_number: issueNumber,
+              owner: OWNER,
+              repo: REPO,
+              labels: [labelToApply]
+            });
+
+            // === 3. ADD TO PROJECT BOARD ===
+            console.log(`Fetching Project #${PROJECT_NUMBER} ID...`);
+            const projectQuery = `
+              query($owner: String!, $number: Int!) {
+                ${IS_ORG ? 'organization' : 'user'}(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                  }
+                }
+              }
+            `;
+
+            const projectRes = await github.graphql(projectQuery, { owner: OWNER, number: PROJECT_NUMBER });
+            const projectId = IS_ORG ? projectRes.organization.projectV2.id : projectRes.user.projectV2.id;
+
+            console.log(`Adding item to project board...`);
+            const addToProjectMutation = `
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                  item {
+                    id
+                  }
+                }
+              }
+            `;
+
+            await github.graphql(addToProjectMutation, { projectId, contentId });
+            console.log("Automation successfully completed!");
+

@@ -101,7 +101,7 @@
 
            :else
            (st/emit! (dwi/update-interaction
-                      {:id shape-id}
+                      (u/locate-shape file-id page-id shape-id)
                       index
                       #(assoc % :event-type value)
                       {:page-id page-id})))))}
@@ -112,12 +112,12 @@
      :set
      (fn [_ value]
        (cond
-         (or (not (number? value)) (not (pos? value)))
+         (or (not (sm/valid-safe-int? value)) (neg? value))
          (u/not-valid plugin-id :delay value)
 
          :else
          (st/emit! (dwi/update-interaction
-                    {:id shape-id}
+                    (u/locate-shape file-id page-id shape-id)
                     index
                     #(assoc % :delay value)
                     {:page-id page-id}))))}
@@ -137,7 +137,7 @@
 
            :else
            (st/emit! (dwi/update-interaction
-                      {:id shape-id}
+                      (u/locate-shape file-id page-id shape-id)
                       index
                       #(d/patch-object % params)
                       {:page-id page-id})))))}
@@ -422,7 +422,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (or (not (sm/valid-safe-int? value)) (< value 0))
+                  (or (not (sm/valid-safe-number? value)) (< value 0))
                   (u/not-valid plugin-id :borderRadius value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -441,7 +441,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -460,7 +460,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -479,7 +479,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -498,7 +498,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-int? value))
+                  (not (sm/valid-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -592,7 +592,7 @@
                     :else
                     (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value)))))))}
 
-           :background-blur
+           :backgroundBlur
            {:this true
             :get #(-> % u/proxy->shape :background-blur format/format-blur)
             :set
@@ -1249,6 +1249,11 @@
                  :else
                  (st/emit! (dwg/unmask-group #{id})))))
 
+           :isMask
+           (fn []
+             (let [shape (u/locate-shape file-id page-id id)]
+               (boolean (cfh/mask-shape? shape))))
+
            ;; Only for path and bool shapes
            :toD
            (fn []
@@ -1315,19 +1320,19 @@
 
            :bringForward
            (fn []
-             (st/emit! (dw/vertical-order-selected :up)))
+             (st/emit! (dw/vertical-order-selected :up [id])))
 
            :sendBackward
            (fn []
-             (st/emit! (dw/vertical-order-selected :down)))
+             (st/emit! (dw/vertical-order-selected :down [id])))
 
            :bringToFront
            (fn []
-             (st/emit! (dw/vertical-order-selected :top)))
+             (st/emit! (dw/vertical-order-selected :top [id])))
 
            :sendToBack
            (fn []
-             (st/emit! (dw/vertical-order-selected :bottom)))
+             (st/emit! (dw/vertical-order-selected :bottom [id])))
 
            ;; COMPONENTS
            :isComponentInstance
@@ -1401,6 +1406,28 @@
 
                :else
                (st/emit! (dwl/detach-component id))))
+
+           :swapComponent
+           (fn [component]
+             (let [shape (u/locate-shape file-id page-id id)]
+               (cond
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
+
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
+
+                 (not (obj/type-of? component "LibraryComponentProxy"))
+                 (u/not-valid plugin-id :swapComponent "Component not valid")
+
+                 (not (ctk/in-component-copy? shape))
+                 (u/not-valid plugin-id :swapComponent "The shape is not a component copy instance")
+
+                 :else
+                 (st/emit! (dwl/component-swap shape
+                                               (obj/get component "$file")
+                                               (obj/get component "$id")
+                                               true)))))
 
            ;; Export
            :export
@@ -1536,7 +1563,7 @@
                    (rg/ruler-guide-proxy plugin-id file-id page-id ruler-id)))))
 
            :removeRulerGuide
-           (fn [_ value]
+           (fn [value]
              (cond
                (not (rg/ruler-guide-proxy? value))
                (u/not-valid plugin-id :removeRulerGuide "Guide not provided")
@@ -1618,7 +1645,7 @@
 
                :else
                (let [ids
-                     (into #{id} (keep uuid/parse*) id)
+                     (into #{id} (keep uuid/parse*) ids)
 
                      valid?
                      (every?
@@ -1740,7 +1767,7 @@
                         (let [id (obj/get self "$id")
                               value (parser/parse-frame-guides value)]
                           (cond
-                            (not (sm/validate [:vector ::ctg/grid] value))
+                            (not (sm/validate [:vector ctg/schema:grid] value))
                             (u/not-valid plugin-id :guides value)
 
                             (not (r/check-permission plugin-id "content:write"))

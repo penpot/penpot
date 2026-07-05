@@ -128,3 +128,20 @@
     (let [provider (#'oidc/prepare-oidc-provider {} (assoc manual-oidc-params
                                                            :issuer "https://idp.example.com"))]
       (t/is (= "https://idp.example.com" (:issuer provider))))))
+
+(t/deftest token-endpoint-errors-detect-valid-client-credentials
+  (let [response {:status 403
+                  :body "{\"error\":\"invalid_grant\",\"error_description\":\"Invalid authorization code\"}"}]
+    (t/is (#'oidc/token-endpoint-valid-client-error? response))
+    (t/is (not (#'oidc/token-endpoint-invalid-client-error? response)))))
+
+(t/deftest token-endpoint-errors-detect-invalid-client-credentials
+  (t/is (#'oidc/token-endpoint-invalid-client-error?
+         {:status 401
+          :body "{\"error\":\"access_denied\",\"error_description\":\"Unauthorized\"}"}))
+  (t/is (#'oidc/token-endpoint-invalid-client-error?
+         {:status 400
+          :body "{\"error\":\"invalid_client\"}"}))
+  (t/is (not (#'oidc/token-endpoint-valid-client-error?
+              {:status 400
+               :body "{\"error\":\"invalid_client\"}"}))))

@@ -728,8 +728,8 @@
                                       :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
 
-           :else [:& editor-v1/text-editor-svg {:shape editing-shape
-                                                :ref text-editor-ref}]))
+           :else [:> editor-v1/text-editor-svg* {:shape editing-shape
+                                                 :ref text-editor-ref}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id (->> @hover-ids
@@ -778,9 +778,10 @@
                   (not transform)
                   (not text-editing?)
                   (not edition)
+                  (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:selrect (gsh/shapes->rect selected-shapes)
+          {:shapes selected-shapes
            :zoom zoom}])
 
        (when show-measures?
@@ -853,11 +854,14 @@
           {:zoom zoom
            :selected selected
            :transform transform
-           :focus focus}])
+           :focus focus
+           :vbox vbox
+           :clip-rulers show-rulers?}])
 
        (when show-pixel-grid?
          [:> widgets/pixel-grid* {:vbox vbox
-                                  :zoom zoom}])
+                                  :zoom zoom
+                                  :clip-rulers show-rulers?}])
 
        (when show-snap-points?
          [:> snap-points/snap-points*
