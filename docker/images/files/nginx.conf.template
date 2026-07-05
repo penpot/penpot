@@ -163,6 +163,11 @@ http {
         location / {
             include /etc/nginx/overrides/location.d/*.conf;
 
+            location = /js/config.js {
+                include /etc/nginx/nginx-security-headers.conf;
+                add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+            }
+
             location ~* \.(js|css|jpg|png|svg|gif|ttf|woff|woff2|wasm|map)$ {
                 include /etc/nginx/nginx-security-headers.conf;
                 add_header Cache-Control "public, max-age=604800" always; # 7 days
