@@ -87,17 +87,16 @@
       done
       (let [file   (setup-file-with-empty-lib)
             store  (ths/setup-store file)
-            set    (ctob/make-token-set :name "primitives")
+            set    (ctob/make-token-set :id (cthi/new-id! :set1) :name "primitives")
             events [(dwtl/create-token-set set)]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-state new-state)
-                 lib   (get-in file' [:data :tokens-lib])]
+           (let [file'  (ths/get-file-from-state new-state)
+                 lib    (ctht/get-tokens-lib file')
+                 status (ctht/get-tokens-status file')]
              (t/is (some? (ctob/get-set lib (ctob/get-id set))))
-             (t/is (false? (cfo/token-set-active?
-                            (ctht/get-tokens-status file')
-                            lib "primitives"))))))))))
+             (t/is (false? (ctos/set-active? status (cthi/id :set1)))))))))))
 
 (t/deftest test-create-then-enable-token-set
   (t/testing "create followed by set-enabled (as the plugin addSet does) yields an active set"
@@ -105,18 +104,17 @@
       done
       (let [file   (setup-file-with-empty-lib)
             store  (ths/setup-store file)
-            set    (ctob/make-token-set :name "primitives")
+            set    (ctob/make-token-set :id (cthi/new-id! :set1) :name "primitives")
             events [(dwtl/create-token-set set)
-                    (dwtl/set-enabled-token-set "primitives" true)]]
+                    (dwtl/set-enabled-token-set (cthi/id :set1) true)]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-state new-state)
-                 lib   (get-in file' [:data :tokens-lib])]
+           (let [file'  (ths/get-file-from-state new-state)
+                 lib    (ctht/get-tokens-lib file')
+                 status (ctht/get-tokens-status file')]
              (t/is (some? (ctob/get-set lib (ctob/get-id set))))
-             (t/is (true? (cfo/token-set-active?
-                           (ctht/get-tokens-status file')
-                           lib "primitives"))))))))))
+             (t/is (true? (ctos/set-active? status (cthi/id :set1)))))))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape   attributes to resolved value"

@@ -480,11 +480,6 @@
   [path]
   (mapv add-set-path-group-prefix path))
 
-(defn- set-group-path->set-group-prefixed-path-str
-  [path]
-  (-> (set-group-path->set-group-prefixed-path path)
-      (join-set-path)))
-
 (defn add-set-group-prefix [group-path]
   (str set-group-prefix group-path))
 
@@ -548,7 +543,7 @@
     "Get an ordered sequence of all sets names in the library")
   (get-set-tree [_]
     "Get a nested tree of all sets in the library")
-  (get-sets-at-path [_ path-str]
+  (get-sets-at-path [_ path-vec]
     "Get an ordered sequence of sets under `path` in the library"))
 
 (def ^:private schema:token-set-node
@@ -1108,8 +1103,8 @@
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-sets-at-path [_ path]
-    (some->> (map add-set-path-group-prefix path)
+  (get-sets-at-path [_ path-vec]
+    (some->> (map add-set-path-group-prefix path-vec)
              (get-in sets)
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))

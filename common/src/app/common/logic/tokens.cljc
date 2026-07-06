@@ -8,94 +8,11 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
-   [app.common.types.tokens-lib :as ctob]
-   [app.common.types.tokens-status :as ctos]
-   [clojure.set :as set]))
+   [app.common.types.tokens-lib :as ctob]))
 
-(defn- generate-update-active-sets
-  "Update active set ids in tokens-status by applying update-fn to the
-   current active set ids. Also deactivate all themes since this is a manual
-   set activation.  Returns updated changes."
-  [changes tokens-status _tokens-lib update-fn]
-  (let [current-set-ids  (ctos/get-active-set-ids tokens-status)
-        new-set-ids      (update-fn current-set-ids)
-        tokens-status'   (ctos/set-tokens-status tokens-status #{} new-set-ids)]
-    (pcb/set-tokens-status changes tokens-status')))
+;; Tokens lib
 
-(defn generate-set-enabled-token-set
-  "Enable or disable a token set at `set-name` in `tokens-lib` without modifying a user theme."
-  [changes tokens-status tokens-lib set-name enabled?]
-  (let [set-id (ctob/get-id (ctob/get-set-by-name tokens-lib set-name))]
-    (if set-id
-      (if enabled?
-        (generate-update-active-sets changes tokens-status tokens-lib #(conj % set-id))
-        (generate-update-active-sets changes tokens-status tokens-lib #(disj % set-id)))
-      changes)))
-
-(defn generate-toggle-token-set
-  "Toggle a token set at `set-name` in `tokens-lib` without modifying a user theme."
-  [changes tokens-status tokens-lib set-name]
-  (let [set-id (ctob/get-id (ctob/get-set-by-name tokens-lib set-name))]
-    (if set-id
-      (generate-update-active-sets changes tokens-status tokens-lib
-                                   #(if (contains? % set-id) (disj % set-id) (conj % set-id)))
-      changes)))
-
-
-;; ================== nuevo
-
-(defn generate-activate-theme
-  [changes tokens-status tokens-lib id]
-  (let [tokens-status' (cfo/activate-theme tokens-status tokens-lib id)]
-    (if (not= tokens-status tokens-status')
-      (pcb/set-tokens-status changes tokens-status')
-      changes)))
-
-(defn generate-deactivate-theme
-  [changes tokens-status tokens-lib id]
-  (let [tokens-status' (cfo/deactivate-theme tokens-status tokens-lib id)]
-    (if (not= tokens-status tokens-status')
-      (pcb/set-tokens-status changes tokens-status')
-      changes)))
-
-(defn generate-set-theme-status
-  [changes tokens-status tokens-lib id active?]
-  (if active?
-    (generate-activate-theme changes tokens-status tokens-lib id)
-    (generate-deactivate-theme changes tokens-status tokens-lib id)))
-
-(defn generate-toggle-theme
-  [changes tokens-status tokens-lib id]
-  (let [active? (ctos/theme-active? tokens-status id)]
-    (if active?
-      (generate-deactivate-theme changes tokens-status tokens-lib id)
-      (generate-activate-theme changes tokens-status tokens-lib id))))
-
-(defn generate-sync-tokens-status-with-lib
-  "Synchronizes tokens status with the current tokens lib"
-  [changes tokens-status tokens-lib]
-  (let [tokens-status' (cfo/sync-tokens-status-with-lib tokens-status tokens-lib)]
-    (if (not= tokens-status tokens-status')
-      (pcb/set-tokens-status changes tokens-status')
-      changes)))
-
-;; ======= fin nuevo
-
-(defn generate-toggle-token-set-group
-  "Toggle a token set group at `group-path` in `tokens-lib` without modifying a user theme."
-  [changes tokens-status tokens-lib group-path]
-  (let [sets-at-path (ctob/get-sets-at-path tokens-lib group-path)
-        set-ids      (into #{} (map ctob/get-id) sets-at-path)
-        active?      (cfo/sets-at-path-all-active? tokens-status tokens-lib group-path)]
-    (if (contains? #{:all :partial} active?)
-      ;; Deactivate all sets at path
-      (generate-update-active-sets changes tokens-status tokens-lib
-                                   #(set/difference % set-ids))
-      ;; Activate all sets at path
-      (generate-update-active-sets changes tokens-status tokens-lib
-                                   #(set/union % set-ids)))))
-
-(defn vec-starts-with? [v1 v2]
+(defn- vec-starts-with? [v1 v2]
   (= (subvec v1 0 (min (count v1) (count v2))) v2))
 
 (defn- calculate-move-token-set-or-set-group
@@ -191,3 +108,44 @@
               (pcb/set-token-set changes (ctob/get-id set) nil))
             changes
             sets)))
+
+;; Tokens Status
+
+(defn- update-tokens-status
+  [changes tokens-status update-fn & args]
+  (let [tokens-status' (apply update-fn tokens-status args)]
+    (if (not= tokens-status tokens-status')
+      (pcb/set-tokens-status changes tokens-status')
+      changes)))
+
+(defn generate-activate-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/activate-theme tokens-lib id))
+
+(defn generate-deactivate-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/deactivate-theme tokens-lib id))
+
+(defn generate-set-theme-status
+  [changes tokens-status tokens-lib id active?]
+  (update-tokens-status changes tokens-status cfo/set-theme-active tokens-lib id active?))
+
+(defn generate-toggle-theme
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/toggle-theme-active tokens-lib id))
+
+(defn generate-set-enabled-token-set
+  [changes tokens-status tokens-lib id enabled?]
+  (update-tokens-status changes tokens-status cfo/set-set-active tokens-lib id enabled?))
+
+(defn generate-toggle-token-set
+  [changes tokens-status tokens-lib id]
+  (update-tokens-status changes tokens-status cfo/toggle-set-active tokens-lib id))
+
+(defn generate-toggle-token-set-group
+  [changes tokens-status tokens-lib group-path]
+  (update-tokens-status changes tokens-status cfo/toggle-set-group-active tokens-lib group-path))
+
+(defn generate-sync-tokens-status-with-lib
+  [changes tokens-status tokens-lib]
+  (update-tokens-status changes tokens-status cfo/sync-tokens-status-with-lib tokens-lib))
