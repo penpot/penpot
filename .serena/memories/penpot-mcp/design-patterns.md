@@ -48,6 +48,62 @@ MCP Server 2.16.0 aur local Penpot 2.18.2 mein version mismatch hai.
 
 ---
 
+## 2026-07-06 — createBoard vs createFrame
+
+**Seekha:** Frame/Screen banana ho toh `penpot.createBoard()` use karo, `createFrame` exist nahi karta.
+
+**Details:**
+```javascript
+// ❌ Galat — ERROR aayega
+const f = penpot.createFrame(); // Error: createFrame is not a function
+
+// ✅ Sahi
+const board = penpot.createBoard();
+board.resize(390, 844);
+board.name = 'My Screen';
+```
+
+---
+
+## 2026-07-06 — Shapes Board ke ANDAR Banana
+
+**Seekha:** Agar shape board ke andar `appendChild` se nahi daali, toh wo page (Root Frame) par hoti hai. Prototype mein board empty dikhta hai.
+
+**Details:**
+```javascript
+// ❌ Galat — shape page par hogi, board ke andar NAHI
+const rect = penpot.createRectangle();
+rect.x = 100; rect.y = 200;
+
+// ✅ Sahi — pehle appendChild, PHIR coordinates
+const rect = penpot.createRectangle();
+board.appendChild(rect);       // board ke andar daalo
+rect.x = board.x + 100;       // absolute = board.x + relative
+rect.y = board.y + 200;
+```
+
+**Kab use karo:** Hamesha! Jab bhi koi shape kisi board/screen ke andar dikhani ho.
+
+---
+
+## 2026-07-06 — fontWeight Supported Values
+
+**Seekha:** Default font mein sirf kuch specific font weights kaam karte hain.
+
+**Details:**
+```javascript
+// ❌ Galat — ERROR
+text.fontWeight = '600'; // Font weight '600' not supported
+
+// ✅ Sahi values
+text.fontWeight = '400'; // Regular
+text.fontWeight = '500'; // Medium
+text.fontWeight = '700'; // Bold
+```
+
+---
+
+
 ## 2026-07-06 — execute_code mein `return` Zaroori Hai
 
 **Seekha:** `execute_code` tool mein response lene ke liye `return` lagana zaroori hai.

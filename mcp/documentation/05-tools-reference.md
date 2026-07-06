@@ -121,13 +121,16 @@ shape.rotate(45);         // Rotation
 ## Fill Format
 
 ```javascript
+// ✅ Sahi — fillType zaroori NAHI hai
 shape.fills = [
   {
-    fillType: 'solid',       // 'solid' | 'linear' | 'radial' | 'image'
-    fillColor: '#7238B2',    // Hex color string
+    fillColor: '#7238B2',    // Hex color string (CAPS mein, e.g. '#FF5533')
     fillOpacity: 1           // 0.0 to 1.0
   }
 ];
+
+// fillType optional hai — sirf gradient/image ke liye chahiye
+shape.fills = [{ fillType: 'linear', fillColor: '#7238B2', fillOpacity: 1 }];
 ```
 
 ---
@@ -157,6 +160,9 @@ const text = penpot.createText("Hello World");
 text.x = 50;
 text.y = 50;
 text.name = "Heading";
+text.fontSize = 16;
+// ⚠️ fontWeight: sirf '400', '500', '700', 'bold' use karo
+// '600' jaise values ERROR dete hain default font mein
 ```
 
 ### Rectangle Banana
@@ -166,15 +172,86 @@ const rect = penpot.createRectangle();
 rect.x = 0;
 rect.y = 0;
 rect.resize(300, 200);
-rect.fills = [{ fillType: 'solid', fillColor: '#4A90E2', fillOpacity: 1 }];
+rect.fills = [{ fillColor: '#4A90E2', fillOpacity: 1 }]; // fillType optional
 ```
 
-### Frame/Container Banana
+### Board (Frame/Screen) Banana
 
 ```javascript
-const frame = penpot.createFrame();
-frame.x = 0;
-frame.y = 0;
-frame.resize(1440, 900);
-frame.name = "Desktop Frame";
+// ✅ Sahi — penpot.createBoard() use karo
+const board = penpot.createBoard();
+board.x = 0;
+board.y = 0;
+board.resize(390, 844);
+board.name = 'Screen 1';
+board.fills = [{ fillColor: '#0F0F1A', fillOpacity: 1 }];
+
+// ❌ Galat — createFrame() exist nahi karta!
+// const frame = penpot.createFrame(); // ERROR!
 ```
+
+### Shapes Board ke ANDAR Banana (ZAROORI PATTERN)
+
+```javascript
+// ❌ Galat — shape page par banti hai, board ke andar NAHI
+const rect = penpot.createRectangle();
+rect.x = 100; rect.y = 200; // ye page coordinates hain
+rect.resize(300, 150);
+// Prototype mein kuch nahi dikhega!
+
+// ✅ Sahi — pehle appendChild, phir coordinates set karo
+const board = penpot.createBoard();
+board.x = 0; board.y = 0;
+board.resize(390, 844);
+
+const rect = penpot.createRectangle();
+board.appendChild(rect);        // 1. Pehle board ke andar daalo
+rect.x = board.x + 20;         // 2. Phir absolute position set karo
+rect.y = board.y + 100;        //    (board.x + relative offset)
+rect.resize(350, 150);
+rect.fills = [{ fillColor: '#7238B2', fillOpacity: 1 }];
+```
+
+### Prototyping — Boards ke Beech Navigation
+
+```javascript
+const screen1 = penpot.createBoard();
+screen1.name = 'Screen 1';
+screen1.x = 0; screen1.y = 0;
+screen1.resize(390, 844);
+
+const screen2 = penpot.createBoard();
+screen2.name = 'Screen 2';
+screen2.x = 440; screen2.y = 0; // Side by side rakhो
+screen2.resize(390, 844);
+
+// Button shape board ke andar banana
+const btn = penpot.createRectangle();
+screen1.appendChild(btn);
+btn.x = screen1.x + 20;
+btn.y = screen1.y + 500;
+btn.resize(350, 56);
+btn.name = 'CTA Button';
+
+// Interaction add karo
+btn.addInteraction({
+  trigger: 'click',
+  action: {
+    type: 'navigate-to',
+    destination: screen2,
+    animation: { type: 'slide', way: 'in', direction: 'left', duration: 300, easing: 'ease-in-out' }
+  }
+});
+```
+
+---
+
+## ⚠️ Known Gotchas (Real Mistakes se Seekha)
+
+| # | Galti | Error / Symptom | Sahi Tarika |
+|---|-------|-----------------|-------------|
+| 1 | `return` nahi lagaya | `{"log": ""}` — shape banti hai par response nahi milta | Hamesha `return` lagao |
+| 2 | `penpot.createFrame()` use kiya | `createFrame is not a function` | `penpot.createBoard()` use karo |
+| 3 | `fontWeight: '600'` use kiya | `Font weight '600' not supported` | `'400'`, `'500'`, `'700'` use karo |
+| 4 | Shape board ke bahar create ki | Prototype mein kuch nahi dikhta, shapes page par bikhri hoti hain | Pehle `board.appendChild(shape)`, phir coordinates |
+| 5 | `fillType: 'solid'` hamesha diya | Kaam karta hai par zaroori nahi | Sirf `fillColor` + `fillOpacity` kaafi hai |
