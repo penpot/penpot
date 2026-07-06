@@ -12,3 +12,4 @@ packages:
   - "./packages/common"
   - "./packages/server"
   - "./packages/plugin"
+  - "./packages/demo-client"

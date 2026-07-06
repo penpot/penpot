@@ -1,0 +1,19 @@
+{
+  "name": "demo-client",
+  "version": "1.0.0",
+  "description": "Demo MCP client for Penpot",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --import ts-node/register src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "ts-node": "^10.9.2",
+    "@types/node": "^26.0.1"
+  }
+}

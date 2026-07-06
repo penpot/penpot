@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "penpot": {
+      "serverUrl": "http://localhost:4401/mcp"
+    }
+  }
+}
