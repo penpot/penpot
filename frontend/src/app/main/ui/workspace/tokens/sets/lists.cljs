@@ -10,7 +10,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -245,7 +244,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+             (on-toggle (ctob/get-id set)))))
 
         on-edit-submit'
         (mf/use-fn
@@ -327,9 +326,7 @@
            new-path
            edition-id]}]
 
-  (let [tokens-status (mf/use-ctx ctx/tokens-status)
-
-        collapsed-paths* (mf/use-state #{})
+  (let [collapsed-paths* (mf/use-state #{})
         collapsed-paths  (deref collapsed-paths*)
 
         collapsed?
