@@ -201,18 +201,24 @@
                   (every?
                    (fn [font]
                      (let [font-data (wasm.fonts/make-font-data font)]
-                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))]
+                       (wasm.fonts/font-stored? font-data (:emoji? font-data))))))
 
-         (if fonts-loaded?
-           (let [pass-opts (when (or (some? undo-group) (some? undo-id))
-                             (cond-> {}
-                               (some? undo-group) (assoc :undo-group undo-group)
-                               (some? undo-id) (assoc :undo-id undo-id)))]
-             (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
 
-           ;; Fonts not loaded; retry after 20 msecs
-           (->> (rx/of (resize-wasm-text-debounce id opts))
-                (rx/delay 20))))))))
+             resize-wasm-stream
+             (if fonts-loaded?
+               (let [pass-opts (when (or (some? undo-group) (some? undo-id))
+                                 (cond-> {}
+                                   (some? undo-group) (assoc :undo-group undo-group)
+                                   (some? undo-id) (assoc :undo-id undo-id)))]
+                 (rx/of (resize-wasm-text-debounce-inner id pass-opts)))
+
+               ;; Fonts not loaded; retry after 20 msecs
+               (->> (rx/of (resize-wasm-text-debounce id opts))
+                    (rx/delay 20)))]
+
+         (wrf/mark-pending! :text-resize [id])
+         (->> resize-wasm-stream
+              (rx/finalize #(wrf/mark-done! :text-resize [id]))))))))
 
 (defn resize-wasm-text-all
   "Resize all text shapes (auto-width/auto-height) from a collection of ids."

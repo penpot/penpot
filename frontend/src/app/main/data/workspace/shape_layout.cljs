@@ -99,26 +99,33 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [{:keys [page-id ids undo-group]}]
+  [{:keys [page-id ids undo-group drain-ids]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (or page-id (:current-page-id state))
             objects (dsh/lookup-page-objects state page-id)
-            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))]
-        (if (d/not-empty? ids)
-          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (if (features/active-feature? state "render-wasm/v1")
-              (rx/of (dwm/apply-wasm-modifiers modif-tree
+            ids (->> ids (remove uuid/zero?) (filter #(contains? objects %)))
+
+            update-positions-stream
+            (if (d/not-empty? ids)
+              (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+                (if (features/active-feature? state "render-wasm/v1")
+                  (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                                   :stack-undo? true
+                                                   :undo-group undo-group
+                                                   :ignore-touched true))
+                  (rx/of (dwm/apply-modifiers {:page-id page-id
+                                               :modifiers modif-tree
                                                :stack-undo? true
-                                               :undo-group undo-group
-                                               :ignore-touched true))
-              (rx/of (dwm/apply-modifiers {:page-id page-id
-                                           :modifiers modif-tree
-                                           :stack-undo? true
-                                           :ignore-touched true
-                                           :undo-group undo-group}))))
-          (rx/empty))))))
+                                               :ignore-touched true
+                                               :undo-group undo-group}))))
+              (rx/empty))]
+
+        (cond->> update-positions-stream
+          ;; Drain the pending-reflow marks only after the apply events above are processed
+          (d/not-empty? drain-ids)
+          (rx/finalize #(wrf/mark-done! :layout drain-ids)))))))
 
 (defn initialize-shape-layout
   []
@@ -138,15 +145,15 @@
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
-             ;; Balance the per-event marks: decrement once per buffered event
-             ;; (multiplicity preserved via mapcat, no deduping).
-             (rx/tap #(wrf/mark-done! :layout (mapcat :ids %)))
              (rx/mapcat
               (fn [data]
                 (->> (group-by :page-id data)
                      (map (fn [[page-id items]]
-                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
-                              (update-layout-positions {:page-id page-id :ids ids})))))))
+                            (let [ids       (reduce #(into %1 (:ids %2)) #{} items)
+                                  drain-ids (mapcat :ids items)]
+                              (update-layout-positions {:page-id page-id
+                                                        :ids ids
+                                                        :drain-ids drain-ids})))))))
              (rx/take-until stopper)
              ;; On workspace teardown clear everything still pending.
              (rx/finalize wrf/reset-pending!))))))

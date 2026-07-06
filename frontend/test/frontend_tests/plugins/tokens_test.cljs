@@ -262,7 +262,7 @@
                   (fn [id theme]
                     (swap! captured conj {:id id :theme theme})
                     :update-token-theme)
-                  st/emit! identity]
+                  st/emit! mock/noop]
       (.addSet theme set)
       (.removeSet theme set)
       (t/is (= [theme-id theme-id] (mapv :id @captured)))

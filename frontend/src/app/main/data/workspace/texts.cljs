@@ -420,7 +420,8 @@
              (wrf/mark-pending! :font [id])
              (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
                (->> stream
-                    (rx/filter (ptk/type? ::commit-position-data))
+                    (rx/filter (ptk/type? ::position-data-committed))
+                    (rx/filter #(contains? (:ids (deref %)) id))
                     (rx/take 1)
                     ;; Timeout so the shape cannot stay pending forever
                     (rx/timeout stuck-timeout (rx/of :timeout))
@@ -793,6 +794,8 @@
                    (-> shape
                        (assoc :position-data (get position-data (:id shape)))))
                  {:stack-undo? true :reg-objects? false}))
+         (rx/of (ptk/data-event ::position-data-committed
+                                {:ids (into #{} (keys position-data))}))
          (rx/of (fn [state]
                   (dissoc state ::update-position-data-debounce ::update-position-data))))))))
 
@@ -897,7 +900,8 @@
                (wrf/mark-pending! :font [id])
                (let [stopper (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream)]
                  (->> stream
-                      (rx/filter (ptk/type? ::commit-position-data))
+                      (rx/filter (ptk/type? ::position-data-committed))
+                      (rx/filter #(contains? (:ids (deref %)) id))
                       (rx/take 1)
                       ;; Timeout so the shape cannot stay pending forever
                       (rx/timeout stuck-timeout (rx/of :timeout))

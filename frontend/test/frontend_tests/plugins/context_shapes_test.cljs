@@ -420,8 +420,15 @@
 (def ^:private zero-id "00000000-0000-0000-0000-000000000000")
 
 (t/use-fixtures :each
-  {:before wrf/reset-pending!
+  {:before (fn []
+             ;; Keep the WASM mocks installed across the async test bodies:
+             ;; debounced text-resize timers leaked by earlier test namespaces
+             ;; can fire inside this namespace's async waits, and in Node they
+             ;; would otherwise reach the real (unavailable) WASM API.
+             (thw/setup-wasm-mocks!)
+             (wrf/reset-pending!))
    :after (fn []
+            (thw/teardown-wasm-mocks!)
             (wrf/reset-pending!)
             (set! st/state original-st-state)
             (set! st/stream original-st-stream))})
