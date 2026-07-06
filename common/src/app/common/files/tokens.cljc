@@ -504,11 +504,13 @@
 (defn get-active-themes
   "Return an ordered sequence of active themes"
   [tokens-status tokens-lib]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
   (->> (ctob/get-themes tokens-lib)
        (filter #(ctos/theme-active? tokens-status (ctob/get-id %)))))
 
 (defn activate-theme
-  "Activate a theme and all its sets"
+  "Activate a theme and all its sets. Deactivate any other theme in the same group."
   [tokens-status tokens-lib id]
   (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
   (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
@@ -543,69 +545,117 @@
     (deactivate-theme tokens-status tokens-lib id)
     (activate-theme tokens-status tokens-lib id)))
 
-(defn set-active-themes
-  "Set the active themes and recalculate active sets."
-  [tokens-status tokens-lib theme-ids]
-  (assert (ctos/tokens-status? tokens-status))
-  (assert (ctob/tokens-lib? tokens-lib))
-  (assert (set? theme-ids))
-  (let [active-set-ids (calculate-active-sets theme-ids tokens-lib)]
-    (ctos/set-tokens-status tokens-status theme-ids active-set-ids)))
+(defn set-theme-active
+  "Set a theme's active state and update active sets accordingly."
+  [tokens-status tokens-lib id active?]
+  (if active?
+    (activate-theme tokens-status tokens-lib id)
+    (deactivate-theme tokens-status tokens-lib id)))
 
-(defn get-active-set-names
-  "Return a set of active set names, resolved from TokensStatus + TokensLib."
+(defn get-active-sets
+  "Return a clojure set of the active sets, resolved from TokensStatus + TokensLib."
   [tokens-status tokens-lib]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
   (let [active-set-ids (ctos/get-active-set-ids tokens-status)]
     (into #{}
-          (comp (filter #(contains? active-set-ids (ctob/get-id %)))
-                (map ctob/get-name))
-          (ctob/get-sets tokens-lib))))
+          (comp (map #(ctob/get-set tokens-lib %))
+                (filter some?))
+          active-set-ids)))
 
-(defn token-set-active?
-  "Check if a set (by name) is active."
-  [tokens-status tokens-lib set-name]
-  (let [active-set-names (get-active-set-names tokens-status tokens-lib)]
-    (contains? active-set-names set-name)))
+(defn set-set-active
+  "Set directly a set's active state and deactivate all themes."
+  [tokens-status tokens-lib id active?]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (assert (uuid? id) "expected valid set id")
+  (if (and (ctob/get-set tokens-lib id)
+           (not= active? (ctos/set-active? tokens-status id)))
+    (let [active-set-ids (ctos/get-active-set-ids tokens-status)
+          active-set-ids' (if active?
+                            (conj active-set-ids id)
+                            (disj active-set-ids id))]
+      (ctos/set-tokens-status tokens-status #{} active-set-ids'))
+    tokens-status))
+
+(defn activate-set
+  "Activate directly a set, and deactivate all themes."
+  [tokens-status tokens-lib id]
+  (set-set-active tokens-status tokens-lib id true))
+
+(defn deactivate-set
+  "Deactivate directly a set, and deactivate all themes."
+  [tokens-status tokens-lib id]
+  (set-set-active tokens-status tokens-lib id false))
+
+(defn toggle-set-active
+  "Toggle a set's active state and deactivate all themes."
+  [tokens-status tokens-lib id]
+  (set-set-active tokens-status tokens-lib id (not (ctos/set-active? tokens-status id))))
 
 (defn sets-at-path-all-active?
   "Check active state of sets at a group path.
    Returns :none, :all, or :partial."
   [tokens-status tokens-lib group-path]
-  (let [active-set-names (get-active-set-names tokens-status tokens-lib)
-        path-sets (into #{}
-                        (map ctob/get-name)
-                        (ctob/get-sets-at-path tokens-lib group-path))]
-    (if (seq active-set-names)
-      (let [difference (set/difference path-sets active-set-names)]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (assert (vector? group-path) "expected valid group path")
+  (let [active-set-ids (ctos/get-active-set-ids tokens-status)
+        path-set-ids (into #{}
+                           (map ctob/get-id)
+                           (ctob/get-sets-at-path tokens-lib group-path))]
+    (if (seq active-set-ids)
+      (let [difference (set/difference path-set-ids active-set-ids)]
         (cond
           (empty? difference) :all
-          (seq (set/intersection path-sets active-set-names)) :partial
+          (seq (set/intersection path-set-ids active-set-ids)) :partial
           :else :none))
       :none)))
+
+(defn toggle-set-group-active
+  "Toggle the active state of all sets at a group path, and deactivate all themes.
+   If all sets are active, deactivate all. If none or some are active, activate all."
+  [tokens-status tokens-lib group-path]
+  (let [all-active?     (sets-at-path-all-active? tokens-status tokens-lib group-path)
+
+        sets-at-path    (ctob/get-sets-at-path tokens-lib group-path)
+        set-ids-at-path (into #{} (map ctob/get-id) sets-at-path)
+
+        active-set-ids  (ctos/get-active-set-ids tokens-status)
+        active-set-ids' (if (contains? #{:all :partial} all-active?)
+                          (set/difference active-set-ids set-ids-at-path)
+                          (set/union active-set-ids set-ids-at-path))]
+
+    (if (not= active-set-ids active-set-ids')
+      (ctos/set-tokens-status tokens-status #{} active-set-ids')
+      tokens-status)))
 
 (defn get-tokens-in-active-sets
   "Get merged tokens from all active sets, in set order."
   [tokens-status tokens-lib]
-  (let [active-set-names (get-active-set-names tokens-status tokens-lib)
-        all-set-names    (ctob/get-set-names tokens-lib)
-        ordered-active   (filter active-set-names all-set-names)]
-    (reduce (fn [tokens set-name]
-              (let [set (ctob/get-set-by-name tokens-lib set-name)]
-                (merge tokens (ctob/get-tokens- set))))
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (let [active-set-ids (ctos/get-active-set-ids tokens-status)
+        all-set-ids    (map ctob/get-id (ctob/get-sets tokens-lib))
+        ordered-active (filter active-set-ids all-set-ids)]
+    (reduce (fn [tokens set-id]
+              (merge tokens (ctob/get-tokens tokens-lib set-id)))
             (d/ordered-map)
             ordered-active)))
 
 (defn get-tokens-in-active-sets-force
   "Same as get-tokens-in-active-sets but force-including a set by id."
   [tokens-status tokens-lib force-set-id]
-  (let [active-set-names (get-active-set-names tokens-status tokens-lib)
-        all-set-names    (ctob/get-set-names tokens-lib)
-        force-set        (ctob/get-set tokens-lib force-set-id)
-        ordered-active   (cond-> (filter active-set-names all-set-names)
-                           (some? force-set)
-                           (conj (ctob/get-name force-set)))]
-    (reduce (fn [tokens set-name]
-              (let [set (ctob/get-set-by-name tokens-lib set-name)]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
+  (assert (uuid? force-set-id) "expected valid set id")
+  (let [active-set-ids (ctos/get-active-set-ids tokens-status)
+        all-set-ids    (map ctob/get-id (ctob/get-sets tokens-lib))
+        ordered-active   (cond-> (filter active-set-ids all-set-ids)
+                           (some? force-set-id)
+                           (conj force-set-id))]
+    (reduce (fn [tokens set-id]
+              (let [set (ctob/get-set tokens-lib set-id)]
                 (merge tokens (ctob/get-tokens- set))))
             (d/ordered-map)
             ordered-active)))
@@ -614,6 +664,8 @@
   "Synchronizes tokens status with the current tokens lib:
    - Delete any theme or set that no longer exists in the lib."
   [tokens-status tokens-lib]
+  (assert (ctos/tokens-status? tokens-status) "expected valid tokens-status")
+  (assert (ctob/tokens-lib? tokens-lib) "expected valid tokens-lib")
   (let [active-theme-ids (ctos/get-active-theme-ids tokens-status)
         valid-theme-ids  (into #{}
                                (filter #(some? (ctob/get-theme tokens-lib %)))

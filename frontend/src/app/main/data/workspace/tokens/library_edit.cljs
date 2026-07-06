@@ -274,6 +274,7 @@
 
 (defn toggle-token-theme-active
   [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::toggle-token-theme-active
     ptk/WatchEvent
     (watch [it state _]
@@ -289,6 +290,7 @@
 
 (defn delete-token-theme
   [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
@@ -357,8 +359,8 @@
                     (dch/commit-changes changes)))))))))
 
 (defn set-enabled-token-set
-  [name enabled?]
-  (assert (string? name) "expected a string for `name`")
+  [id enabled?]
+  (assert (uuid? id) "expected a uuid for `id`")
   (assert (boolean? enabled?) "expected a boolean for `enabled?`")
   (ptk/reify ::set-enabled-token-set
     ptk/WatchEvent
@@ -368,14 +370,14 @@
             tokens-status (dsh/lookup-tokens-status state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-set-enabled-token-set tokens-status tokens-lib name enabled?))]
+                              (clt/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set
-  [name]
-  (assert (string? name) "expected a string for `name`")
+  [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [_ state _]
@@ -384,7 +386,7 @@
             tokens-status (dsh/lookup-tokens-status state)
             changes       (-> (pcb/empty-changes)
                               (pcb/with-library-data data)
-                              (clt/generate-toggle-token-set tokens-status tokens-lib name))]
+                              (clt/generate-toggle-token-set tokens-status tokens-lib id))]
 
         (rx/of
          (dch/commit-changes changes)

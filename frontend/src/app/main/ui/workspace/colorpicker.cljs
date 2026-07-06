@@ -769,7 +769,9 @@
         active-sets-names
         (mf/with-memo [tokens-status tokens-lib]
           (when (and tokens-status tokens-lib)
-            (cfo/get-active-set-names tokens-status tokens-lib)))
+            (into #{}
+                  (map ctob/get-name)
+                  (cfo/get-active-sets tokens-status tokens-lib))))
 
         active-tokens (if (delay? active-tokens)
                         @active-tokens
@@ -789,7 +791,7 @@
                   (filter-active-sets active-sets-names)
                   (filter-non-empty-sets)
                   (group-sets)
-                  (combine-groups-with-resolved  color-tokens)))]
+                  (combine-groups-with-resolved color-tokens)))]
 
     (mf/with-effect []
       (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts :workspace)))

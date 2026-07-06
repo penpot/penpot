@@ -20,8 +20,8 @@
   (st/emit! (dwtl/clear-tokens-paths)
             (dwtl/set-selected-token-set-id id)))
 
-(defn- on-toggle-token-set-click [name]
-  (st/emit! (dwtl/toggle-token-set name)))
+(defn- on-toggle-token-set-click [id]
+  (st/emit! (dwtl/toggle-token-set id)))
 
 (defn- on-toggle-token-set-group-click [path]
   (st/emit! (dwtl/toggle-token-set-group path)))

@@ -503,7 +503,6 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
-;; TODOstatus cambiar para que sean ids en todas partes
 (def workspace-active-theme-paths
   (l/derived (d/nilf ctos/get-active-theme-ids) tokens-status))
 
