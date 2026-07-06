@@ -161,12 +161,13 @@
   ;; `combine-as-variants` needs real main components and the variant pipeline,
   ;; so this stays at the proxy boundary and verifies the component ids that
   ;; the head proxy collects from its argument before delegating.
-  (let [file-id  (uuid/next)
-        page-id  (uuid/next)
-        head-id  (uuid/next)
-        other-id (uuid/next)
-        proxy    (shape/shape-proxy plugin-id file-id page-id head-id)
-        captured (atom nil)]
+  (let [file-id   (uuid/next)
+        page-id   (uuid/next)
+        head-id   (uuid/next)
+        other-id  (uuid/next)
+        third-id  (uuid/next)
+        proxy     (shape/shape-proxy plugin-id file-id page-id head-id)
+        captured  (atom nil)]
     (with-redefs [u/locate-shape (fn [_file _page id] {:id id :component-id id})
                   u/locate-library-component (constantly {:id (uuid/next)})
                   ctk/is-variant? (constantly false)
@@ -178,8 +179,11 @@
                     {:event :combine-as-variants})
                   st/emit! mock/noop
                   shape/shape-proxy (mock/stub (fn [& _] #js {}))]
-      (.combineAsVariants proxy #js [(str other-id)])
-      (t/is (= #{head-id other-id} (:ids @captured))))))
+      ;; the collected ids must be ordered (head shape first, then the passed
+      ;; ids in their given order, deduplicated), since the order determines
+      ;; the order of the resulting variant components
+      (.combineAsVariants proxy #js [(str other-id) (str head-id) (str third-id) (str other-id)])
+      (t/is (= [head-id other-id third-id] (:ids @captured))))))
 
 (t/deftest remove-ruler-guide-deletes-the-guide-from-the-page
   ;; Adds a real ruler guide through the API and asserts it is gone from the
