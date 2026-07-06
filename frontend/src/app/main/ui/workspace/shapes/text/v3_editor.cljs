@@ -9,6 +9,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.text :as txt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -28,10 +29,37 @@
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]}
              (text-editor/text-editor-sync-content)]
-    (st/emit! (dwt/v2-update-text-shape-content
-               shape-id content
-               :update-name? true
-               :finalize? finalize?))))
+    ;; Derive the layer name from the text so it tracks the content.
+    (let [text (txt/content->text content)
+          name (when (not= text "")
+                 (txt/generate-shape-name text))]
+      (st/emit! (dwt/v2-update-text-shape-content
+                 shape-id content
+                 :update-name? true
+                 :name name
+                 :finalize? finalize?)))))
+
+(defn- reset-input-node
+  "Empties the contenteditable capture surface and restores a collapsed caret
+  inside it.
+
+  The surface only exists to capture keystrokes for the WASM editor, so we clear
+  it after every input. But removing the text node the caret lived in leaves the
+  document without a valid selection, and the browser then stops firing `input`
+  events for subsequent keystrokes (you can only type one character). Re-placing
+  the caret inside the (now empty) node keeps input flowing, and we re-focus only
+  if focus was actually lost so we don't reset the WASM cursor on every keystroke."
+  [^js node]
+  (when (some? node)
+    (set! (.-textContent node) "")
+    (when (not= (.-activeElement js/document) node)
+      (.focus node))
+    (when-let [sel (.getSelection js/window)]
+      (let [range (.createRange js/document)]
+        (.selectNodeContents range node)
+        (.collapse range true)
+        (.removeAllRanges sel)
+        (.addRange sel range)))))
 
 (defn- font-family-from-font-id [font-id]
   (if (str/includes? font-id "gfont-noto-sans")
@@ -73,18 +101,28 @@
         [{:keys [x y width height]} transform]
         (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
+              vbox (mf/deref refs/vbox)
               [selrect transform] (dsh/get-selrect selrect-transform shape)
               selrect-height (:height selrect)
               selrect-width (:width selrect)
               max-width (max width selrect-width)
               max-height (max height selrect-height)
+              ;; During auto-width editing the shape width is trimmed to the content, so an
+              ;; empty text box ends up only a few pixels wide. That is not enough room for
+              ;; the caret and the contenteditable overlay may fail to receive input when it
+              ;; is that small. Expand the overlay by one viewport width for auto-width texts
+              ;; (mirroring the v2 editor) so typing works and the caret is not clipped.
+              viewport-width (or (:width vbox) 0)
+              overlay-width (if (= (:grow-type shape) :auto-width)
+                              (+ max-width viewport-width)
+                              max-width)
               valign (-> shape :content :vertical-align)
               y (:y selrect)
               y (case valign
                   "bottom" (+ y (- selrect-height height))
                   "center" (+ y (/ (- selrect-height height) 2))
                   y)]
-          [(assoc selrect :y y :width max-width :height max-height) transform])
+          [(assoc selrect :y y :width overlay-width :height max-height) transform])
 
         on-composition-start
         (mf/use-fn
@@ -101,8 +139,7 @@
                (text-editor/text-editor-composition-update data)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render "text-composition"))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+             (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-composition-end
         (mf/use-fn
@@ -111,8 +148,7 @@
              (text-editor/text-editor-composition-end data)
              (sync-wasm-text-editor-content!)
              (wasm.api/request-render "text-composition"))
-           (when-let [node (mf/ref-val contenteditable-ref)]
-             (set! (.-textContent node) ""))))
+           (reset-input-node (mf/ref-val contenteditable-ref))))
 
         on-paste
         (mf/use-fn
@@ -124,8 +160,7 @@
                (text-editor/text-editor-insert-text text)
                (sync-wasm-text-editor-content!)
                (wasm.api/request-render "text-paste"))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+             (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-copy
         (mf/use-fn
@@ -148,8 +183,7 @@
                    (text-editor/text-editor-delete-backward)
                    (sync-wasm-text-editor-content!)
                    (wasm.api/request-render "text-cut"))))
-             (when-let [node (mf/ref-val contenteditable-ref)]
-               (set! (.-textContent node) "")))))
+             (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-key-down
         (mf/use-fn
@@ -258,8 +292,7 @@
                  (text-editor/text-editor-insert-text data)
                  (sync-wasm-text-editor-content!)
                  (wasm.api/request-render "text-input"))
-               (when-let [node (mf/ref-val contenteditable-ref)]
-                 (set! (.-textContent node) ""))))))
+               (reset-input-node (mf/ref-val contenteditable-ref))))))
 
         on-pointer-down
         (mf/use-fn

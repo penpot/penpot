@@ -8,6 +8,7 @@
   "Text editor WASM bindings"
   (:require
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.fonts :as main-fonts]
    [app.render-wasm.api.fonts :as fonts]
@@ -546,6 +547,22 @@
         new-para-set (assoc para-set :children new-paras)]
     (assoc content :children [new-para-set])))
 
+(defn- default-empty-text-content
+  "Build a default, empty text content tree used as a merge template.
+
+  A text shape created by a single click starts with `:content` nil, so
+  `set-shape-text-content` never seeds the content cache for it. Without a
+  template `text-editor-sync-content` would bail and the characters typed into
+  the WASM editor would never reach the shape. This provides the default
+  (Source Sans Pro) styling the WASM editor uses for a fresh empty shape."
+  []
+  (let [attrs (txt/get-default-text-attrs)]
+    {:type "root"
+     :children [{:type "paragraph-set"
+                 :children [(merge attrs
+                                   {:type "paragraph"
+                                    :children [(merge attrs {:text ""})]})]}]}))
+
 (defn text-editor-sync-content
   "Sync text content from the WASM text editor back to the frontend shape.
 
@@ -559,7 +576,11 @@
           new-texts (text-editor-export-content)]
       (when (and shape-id new-texts)
         (let [texts-clj (js->clj new-texts)
-              content   (get-cached-content shape-id)]
+              ;; A brand-new empty text shape (single click) has no cached
+              ;; content yet, so fall back to a default template so the first
+              ;; keystrokes are synced back to the shape instead of dropped.
+              content   (or (get-cached-content shape-id)
+                            (default-empty-text-content))]
           (when content
             (let [merged (merge-exported-texts-into-content content texts-clj)]
               (swap! shape-text-contents assoc shape-id merged)

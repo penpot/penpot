@@ -283,6 +283,7 @@
 (def text-editor-get-current-styles text-editor/text-editor-get-current-styles)
 (def text-editor-has-focus? text-editor/text-editor-has-focus?)
 (def text-editor-has-selection? text-editor/text-editor-has-selection?)
+(def text-editor-get-active-shape-id text-editor/text-editor-get-active-shape-id)
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
