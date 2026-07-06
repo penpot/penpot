@@ -48,6 +48,26 @@ MCP Server 2.16.0 aur local Penpot 2.18.2 mein version mismatch hai.
 
 ---
 
+## 2026-07-06 — execute_code mein `return` Zaroori Hai
+
+**Seekha:** `execute_code` tool mein response lene ke liye `return` lagana zaroori hai.
+
+**Details:**
+```javascript
+// ❌ Galat — response nahi milega (log: "" aayega)
+// Shape ban jaayegi lekin confirmation nahi
+'Square created!';
+
+// ✅ Sahi — result milega
+return 'Square created!';
+return 'Size: ' + shape.width + 'x' + shape.height;
+```
+
+**Kab use karo:** Hamesha! Bina `return` ke shape banti hai lekin MCP ko pata nahi chalta ki kya hua.
+
+---
+
+
 ## Template — Nayi Learning Add Karne Ka Format
 
 ```markdown

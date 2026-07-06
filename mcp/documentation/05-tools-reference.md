@@ -8,14 +8,27 @@ Yeh saare tools hain jo Penpot MCP Server provide karta hai AI clients ko.
 
 **Sabse powerful tool** — arbitrary JavaScript code run karo Penpot Plugin context mein.
 
+> ⚠️ **ZAROORI: `return` keyword lagao!**
+> 
+> Bina `return` ke response hamesha `{"log": ""}` aayega — shape ban jaayegi lekin result nahi milega.
+> 
+> ```javascript
+> // ❌ Galat — log empty aayega
+> 'Square created!';
+> 
+> // ✅ Sahi — result milega
+> return 'Square created!';
+> ```
+
 ```javascript
 // Example: Red circle banana
 const circle = penpot.createEllipse();
 circle.x = 100;
 circle.y = 100;
 circle.resize(200, 200);
-circle.fills = [{ fillType: 'solid', fillColor: '#FF0000', fillOpacity: 1 }];
+circle.fills = [{ fillColor: '#FF0000', fillOpacity: 1 }];
 circle.name = "My Circle";
+return 'Circle created: ' + circle.width + 'x' + circle.height;
 ```
 
 **Kab use karo**: Jab koi specific design task karna ho jo doosre tools se nahi ho.
