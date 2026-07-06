@@ -348,20 +348,16 @@
       :enumerable false
       :get
       (fn [_]
-        (let [tokens-lib    (u/locate-tokens-lib file-id)
-              tokens-status (u/locate-tokens-status file-id)
-              set           (u/locate-token-set file-id id)]
-          (cfo/token-set-active? tokens-status tokens-lib (ctob/get-name set))))
+        (let [tokens-status (u/locate-tokens-status file-id)]
+          (ctos/set-active? tokens-status id)))
       :schema ::sm/boolean
       :set
       (fn [_ value]
-        (let [set (u/locate-token-set file-id id)]
-          (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value))))}
+        (st/emit! (dwtl/set-enabled-token-set id value)))}
 
      :toggleActive
      (fn [_]
-       (let [set (u/locate-token-set file-id id)]
-         (st/emit! (dwtl/toggle-token-set (ctob/get-name set)))))
+       (st/emit! (dwtl/toggle-token-set id)))
 
      :tokens
      {:this true
