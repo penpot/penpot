@@ -13,6 +13,7 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
    [app.main.ui.inspect.exports :as exports]
@@ -115,7 +116,7 @@
         active-themes      (mf/deref refs/workspace-active-theme-paths)
         active-sets        (mf/with-memo [tokens-status tokens-lib]
                              (when (and tokens-status tokens-lib)
-                               (cfo/get-active-set-names tokens-status tokens-lib)))
+                               (cfo/get-active-sets tokens-status tokens-lib)))
         active-tokens      (mf/with-memo [tokens-status tokens-lib]
                              (when (and tokens-status tokens-lib)
                                (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
@@ -155,7 +156,7 @@
       (when (or (seq active-themes) (seq active-sets))
         [:li
          [:> style-box* {:panel :token}
-          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
+          [:> tokens-panel* {:theme-paths active-themes :set-names (map ctob/get-name active-sets)}]]])
       (for [panel panels]
         [:li {:key (d/name panel)}
          (case panel
