@@ -20,10 +20,7 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
-use crate::{
-    render::{FrameType, RenderFlag},
-    shapes::Frame,
-};
+use crate::render::FrameType;
 
 use globals::{get_design_state, get_gpu_state, get_render_state};
 
@@ -108,24 +105,12 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn render2(timestamp: i32, flags: u8) -> Result<FrameType> {
+pub extern "C" fn render2(timestamp: i32, _flags: u8) -> Result<FrameType> {
     with_state!(state, {
         let render_state = get_render_state();
-
-        render_state.prepare_render_loop(&mut state.shapes)?;
-        let frame_type = if flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8 {
-            // TODO: Meter una flag que lo que haga es indicar
-            // si el render es sync o no y que esto no permita
-            let allow_stop = true;
-            render_state
-                .continue_render_loop(timestamp, allow_stop)
-                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
-        } else {
-            let sync_render = false;
-            render_state
-                .start_render_loop(timestamp, sync_render)
-                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
-        };
+        let frame_type = render_state
+            .render_backbuffer_vector(&state.shapes, timestamp)
+            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
         render_state.end_render_loop(&frame_type);
         return Ok(frame_type);
     });

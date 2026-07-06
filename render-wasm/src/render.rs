@@ -1347,6 +1347,110 @@ impl RenderState {
         };
     }
 
+    pub fn render_backbuffer_vector(
+        &mut self,
+        tree: ShapesPoolRef,
+        _timestamp: i32,
+    ) -> Result<FrameType> {
+        #[cfg(feature = "stats")]
+        self.stats.clear();
+
+        self.surfaces.clear_backbuffer(self.background_color);
+        self.surfaces.clear_target(self.background_color);
+
+        self.pending_nodes.clear();
+        self.nested_fills.clear();
+        self.nested_blurs.clear();
+        self.cached_layer_blur = None;
+        self.nested_shadows.clear();
+        self.focus_mode.reset();
+
+        let tile_render_state = get_tile_render_state();
+        tile_render_state.current = None;
+
+        self.empty_grid_frame_ids.clear();
+        if self.show_grid.is_some() {
+            for shape in tree.iter() {
+                if shape.id.is_nil() || !shape.children.is_empty() {
+                    continue;
+                }
+                if let Type::Frame(frame) = &shape.shape_type {
+                    if matches!(frame.layout, Some(Layout::GridLayout(_, _))) && !shape.deleted() {
+                        self.empty_grid_frame_ids.insert(shape.id);
+                    }
+                }
+            }
+        }
+
+        let scale = self.get_scale();
+        let offset = self.viewbox.get_offset();
+        let pan = self.viewbox.pan();
+        let area = self.viewbox.area;
+
+        println!(
+            "VECTOR: scale={scale} pan=({},{}) area=({},{},{},{}) offset=({},{}) dpr={} zoom={}",
+            pan.x, pan.y,
+            area.left, area.top, area.right, area.bottom,
+            offset.x, offset.y,
+            self.viewbox.dpr, self.viewbox.zoom,
+        );
+
+        // Apply viewbox transform to backbuffer canvas.
+        self.surfaces.canvas(SurfaceId::Backbuffer).save();
+        {
+            let canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
+            canvas.restore_to_count(1);
+            canvas.save();
+            canvas.scale((scale, scale));
+            canvas.translate((-offset.x, -offset.y));
+        }
+
+        // Determine root frames to render.
+        self.viewer_render_root = self.base_object;
+        let root_ids: Vec<Uuid> = {
+            if let Some(shape_id) = self.base_object {
+                vec![shape_id]
+            } else if let Some(root) = tree.get(&Uuid::nil()) {
+                root.children_ids(false)
+            } else {
+                return Err(Error::CriticalError(
+                    "Root shape not found".to_string(),
+                ));
+            }
+        };
+
+        // Render each root directly onto the backbuffer canvas using
+        // the vector renderer (CPU Skia canvas, no GPU surface pipelining).
+        for root_id in &root_ids {
+            let canvas_ptr: *const skia::Canvas = {
+                let canvas: &skia::Canvas = self.surfaces.canvas(SurfaceId::Backbuffer);
+                canvas as *const skia::Canvas
+            };
+            let canvas = unsafe { &*canvas_ptr };
+            vector::render_tree(
+                self,
+                canvas,
+                root_id,
+                tree,
+                scale,
+                vector::VectorTarget::Backbuffer,
+            )?;
+        }
+
+        // Restore the viewbox transform.
+        self.surfaces.canvas(SurfaceId::Backbuffer).restore();
+
+        let saved_preview_mode = self.preview_mode;
+        self.preview_mode = true;
+        //self.present_frame();
+        self.surfaces.copy_backbuffer_to_target();
+        self.flush_and_submit();
+
+        self.preview_mode = saved_preview_mode;
+
+        Ok(FrameType::Full)
+    }
+
     pub fn start_render_loop(&mut self, timestamp: i32, sync_render: bool) -> Result<FrameType> {
         let design_state = get_design_state();
         let tree = &design_state.shapes;

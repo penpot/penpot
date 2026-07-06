@@ -16,10 +16,11 @@ use super::{get_dest_rect, get_source_rect};
 // VectorTarget — vector export backend selector
 // ---------------------------------------------------------------------------
 
-/// Vector export backend selector (PDF today; SVG could be added as a variant).
+/// Vector backend selector (PDF export or realtime backbuffer rendering).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum VectorTarget {
     Pdf,
+    Backbuffer,
 }
 
 // ---------------------------------------------------------------------------
