@@ -1644,8 +1644,15 @@
                (u/not-valid plugin-id :ids ids)
 
                :else
-               (let [ids
-                     (into #{id} (keep uuid/parse*) ids)
+               (let [;; Keep the input order (head shape first): it determines
+                     ;; the order of the resulting variant components (see
+                     ;; combine-as-variants)
+                     ids
+                     (into [id]
+                           (comp (keep uuid/parse*)
+                                 (remove #{id})
+                                 (distinct))
+                           ids)
 
                      valid?
                      (every?

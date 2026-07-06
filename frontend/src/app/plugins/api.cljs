@@ -687,9 +687,12 @@
         :else
         (let [file-id (obj/get (first shapes) "$file")
               page-id (obj/get (first shapes) "$page")
+              ;; Keep the input order: it determines the order of the
+              ;; resulting variant components (see combine-as-variants)
               ids (->> shapes
                        (map #(obj/get % "$id"))
-                       (into #{}))
+                       (distinct)
+                       (vec))
 
               ;; Check that every component is:
               ;; - in the same page
