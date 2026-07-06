@@ -68,3 +68,18 @@ semantics change.
 The Penpot frontend can crash silently from the JS API's perspective: `execute_code` calls return successfully, but 1-2s later the workspace becomes unusable (Internal Error page).
 The `execute_code` tool then stops working, but `cljs_repl` still works. Use it to detect a crash via `(some? (:exception @app.main.store/state))`.
 For details on handling crashes, read memory `mem:frontend/handling-crashes`.
+
+# Local MCP Server Setup (Antigravity)
+
+The MCP server (`mcp/` module) is set up and running locally. Full setup details: `mem:penpot-mcp/core`.
+
+**Quick facts:**
+- Penpot runs locally via Docker at `http://localhost:9001`
+- MCP Server runs at `http://localhost:4401/mcp` (Node.js, built from `mcp/packages/server/`)
+- Plugin served at `http://localhost:4400` (connects Penpot ↔ MCP via WebSocket on 4402)
+- IDE config: `mcp_config.json` → `serverUrl: http://localhost:4401/mcp`
+- Start command (from `d:\penpot\mcp\`): `cmd /c "npx -y pnpm@11.9.0 --filter mcp-server --filter mcp-plugin -r --parallel run start"`
+- Login: `test@test.com` / `Test1234!`
+- **Always use `cmd /c "..."` for npm/pnpm on this Windows machine** (PowerShell blocks .ps1 scripts)
+- Read `mem:penpot-mcp/core` for full startup checklist, API usage rules, and troubleshooting
+
