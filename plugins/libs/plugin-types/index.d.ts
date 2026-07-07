@@ -3941,6 +3941,14 @@ export interface ShapeBase extends PluginData {
   swapComponent(component: LibraryComponent): void;
 
   /**
+   * Resets the overrides of the component copy, restoring all its attributes
+   * (and those of its children) to the ones in the linked main component.
+   * Similar to the "reset overrides" action on the Penpot interface.
+   * The current shape must be a component copy instance.
+   */
+  resetOverrides(): void;
+
+  /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
    * @param pos The position of the property to update
    * @param value The new value of the property

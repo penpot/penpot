@@ -29,6 +29,8 @@
 - **plugin-types**: Added `fixedWhenScrolling` property for shapes
 - **plugin-types**: Added `Page.remove()` to remove a page from the file (the last remaining page cannot be removed; removing the active page activates another one)
 - **plugin-types**: Added `RulerGuide.remove()` to remove a ruler guide
+- **plugin-types**: Added `File.validate()` to run the file's referential-integrity validation and return the list of errors found (empty when the file is valid) — the same errors the backend rejects on save
+- **plugin-types**: Added `Shape.resetOverrides()` to restore a component copy's attributes (and its children's) to the linked main component, like the "reset overrides" action on the Penpot interface
 
 ### 🩹 Fixes
 
@@ -49,6 +51,7 @@
 - **plugins-runtime**: `Text.getRange(start, end)` now clamps an `end` past the text length to the character count instead of throwing an internal `TypeError` when reading the range's `characters`.
 - **plugins-runtime**: `penpot.openPage()` (and `Page.openPage()`) now resolves immediately when the target page is already active, instead of waiting forever for a page-initialization event that never fires.
 - **plugins-runtime**: `Shape.shadows`, `Shape.exports` and grid `rows`/`columns` now return live proxies, so writing a member on a returned shadow/export/track (e.g. `shape.shadows[0].blur = 7`) persists to the shape instead of mutating a detached snapshot that was silently discarded. The shadow `color` remains a plain snapshot (reconfigure it by assigning `shadow.color`).
+- **plugins-runtime**: Setting a variant component's `path` now renames the whole variant (its container and every main instance), like the `name` setter already did, instead of renaming only the component and leaving the file referentially inconsistent (which the backend rejected on save with a `variant-component-bad-name` error).
 
 ## 1.4.2 (2026-01-21)
 

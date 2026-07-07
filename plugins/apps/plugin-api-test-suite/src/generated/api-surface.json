@@ -439,6 +439,7 @@
       "proportionLock",
       "remove",
       "removeInteraction",
+      "resetOverrides",
       "resize",
       "rotate",
       "rotation",
@@ -1107,6 +1108,12 @@
         "type": null,
         "array": false
       },
+      "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -1596,6 +1603,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -2716,6 +2729,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -3945,6 +3964,12 @@
         "type": null,
         "array": false
       },
+      "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -4518,6 +4543,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -6139,6 +6170,12 @@
         "type": null,
         "array": false
       },
+      "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -6963,6 +7000,12 @@
         "type": null,
         "array": false
       },
+      "resetOverrides": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
       "switchVariant": {
         "decl": "ShapeBase",
         "kind": "method",
@@ -7480,6 +7523,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -8032,6 +8081,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -8592,6 +8647,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,
@@ -10884,6 +10945,12 @@
         "array": false
       },
       "swapComponent": {
+        "decl": "ShapeBase",
+        "kind": "method",
+        "type": null,
+        "array": false
+      },
+      "resetOverrides": {
         "decl": "ShapeBase",
         "kind": "method",
         "type": null,

@@ -87,6 +87,27 @@ describe('Component instances', () => {
     }
   });
 
+  test('resetOverrides restores a copy to its main component', (ctx) => {
+    const comp = makeComponent(ctx);
+    const main = comp.mainInstance();
+    const inst = comp.instance();
+    ctx.board.appendChild(inst);
+
+    const mainColor = main.fills?.[0]?.fillColor;
+    inst.fills = [{ fillColor: '#FF0000', fillOpacity: 1 }];
+    // The override applied (fill getter normalizes to lowercase).
+    expect(inst.fills?.[0]?.fillColor?.toLowerCase()).toBe('#ff0000');
+
+    inst.resetOverrides();
+    expect(inst.fills?.[0]?.fillColor).toBe(mainColor);
+  });
+
+  test('resetOverrides on a plain shape throws', (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+    expect(() => rect.resetOverrides()).toThrow();
+  });
+
   // ---------------------------------------------------------------------------
   // Edge cases. "fail" tests exercise the component methods on shapes
   // that are not component instances (documented null/self returns, invalid
