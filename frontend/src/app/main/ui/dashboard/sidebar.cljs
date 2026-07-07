@@ -407,9 +407,9 @@
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  default-team-id
                               :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
+      [:span {:class (stl/css :penpot-icon)} (if (contains? cf/flags :nitrate) deprecated-icon/logo-files deprecated-icon/logo-icon)]
 
-      [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
+      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :nitrate) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -901,8 +901,8 @@
        (cond
          is-default?
          [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
-          [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
+          [:span {:class (stl/css :penpot-icon)} (if nitrate? deprecated-icon/logo-files deprecated-icon/logo-icon)]
+          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.my-files") (tr "dashboard.default-team-name"))]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)
