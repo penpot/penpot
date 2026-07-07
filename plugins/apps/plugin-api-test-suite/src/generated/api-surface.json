@@ -66,6 +66,7 @@
       "justifyContent",
       "justifyItems",
       "leftPadding",
+      "paddingType",
       "remove",
       "rightPadding",
       "rowGap",
@@ -254,6 +255,7 @@
       "horizontalMargin",
       "horizontalSizing",
       "leftMargin",
+      "marginType",
       "maxHeight",
       "maxWidth",
       "minHeight",
@@ -2032,6 +2034,12 @@
         "type": null,
         "array": false
       },
+      "paddingType": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
       "horizontalSizing": {
         "decl": "CommonLayout",
         "kind": "getset",
@@ -3242,6 +3250,12 @@
         "type": null,
         "array": false
       },
+      "paddingType": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
       "horizontalSizing": {
         "decl": "CommonLayout",
         "kind": "getset",
@@ -3585,6 +3599,12 @@
         "array": false
       },
       "leftPadding": {
+        "decl": "CommonLayout",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "paddingType": {
         "decl": "CommonLayout",
         "kind": "getset",
         "type": null,
@@ -4863,6 +4883,12 @@
         "array": false
       },
       "leftMargin": {
+        "decl": "LayoutChildProperties",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "marginType": {
         "decl": "LayoutChildProperties",
         "kind": "getset",
         "type": null,
