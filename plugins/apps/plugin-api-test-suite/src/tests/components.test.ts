@@ -137,4 +137,10 @@ describe('Component instances', () => {
       expect(c1.id).toBe(c2.id);
     }
   });
+
+  test('detaching a copy breaks the component link', (ctx) => {
+    const inst = instanceOf(ctx);
+    inst.detach();
+    expect(inst.isComponentInstance()).toBeFalsy();
+  });
 });

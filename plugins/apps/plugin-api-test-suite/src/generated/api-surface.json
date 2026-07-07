@@ -149,8 +149,10 @@
       "name",
       "pages",
       "revn",
-      "saveVersion"
+      "saveVersion",
+      "validate"
     ],
+    "FileValidationError": ["code", "hint", "pageId", "shapeId"],
     "FileVersion": [
       "createdAt",
       "createdBy",
@@ -2965,6 +2967,12 @@
         "type": "FileVersion",
         "array": false
       },
+      "validate": {
+        "decl": "File",
+        "kind": "method",
+        "type": "FileValidationError",
+        "array": true
+      },
       "getPluginData": {
         "decl": "PluginData",
         "kind": "method",
@@ -3000,6 +3008,32 @@
         "kind": "method",
         "type": null,
         "array": true
+      }
+    },
+    "FileValidationError": {
+      "code": {
+        "decl": "FileValidationError",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "hint": {
+        "decl": "FileValidationError",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "shapeId": {
+        "decl": "FileValidationError",
+        "kind": "get",
+        "type": null,
+        "array": false
+      },
+      "pageId": {
+        "decl": "FileValidationError",
+        "kind": "get",
+        "type": null,
+        "array": false
       }
     },
     "FileVersion": {

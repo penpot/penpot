@@ -30,6 +30,21 @@ describe('File', () => {
     }
   });
 
+  test('validate reports referential-integrity errors', (ctx) => {
+    const file = ctx.penpot.currentFile;
+    expect(file).not.toBeNull();
+    if (file) {
+      const errors = file.validate();
+      expect(Array.isArray(errors)).toBe(true);
+      // A healthy scratch file has no integrity errors. Each error (if any)
+      // exposes a string code and hint.
+      for (const e of errors) {
+        expect(typeof e.code).toBe('string');
+        expect(typeof e.hint).toBe('string');
+      }
+    }
+  });
+
   test('export returns binary data', async (ctx) => {
     const file = ctx.penpot.currentFile;
     if (file) {

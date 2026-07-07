@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.validate :as cfv]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -147,6 +148,27 @@
     (fn []
       (let [file (u/locate-file id)]
         (apply array (sequence (map #(page/page-proxy plugin-id id %)) (dm/get-in file [:data :pages])))))
+
+    ;; Run referential-integrity validation on the file and return the errors
+    ;; found (an empty array means the file is valid). Each error carries the
+    ;; validation `code`, a `hint`, and the offending `shapeId`/`pageId`.
+    :validate
+    (fn []
+      (let [file      (u/locate-file id)
+            libraries (get @st/state :files)]
+        (try
+          (->> (cfv/validate-file file libraries)
+               (map (fn [{:keys [code hint shape-id page-id]}]
+                      #js {:code    (name code)
+                           :hint    hint
+                           :shapeId (some-> shape-id str)
+                           :pageId  (some-> page-id str)}))
+               (apply array))
+          (catch :default cause
+            #js [#js {:code "validation-error"
+                      :hint (ex-message cause)
+                      :shapeId nil
+                      :pageId nil}]))))
 
     ;; Plugin data
     :getPluginData

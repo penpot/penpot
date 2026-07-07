@@ -300,6 +300,27 @@ describe('Variants', () => {
     }
   });
 
+  // Blocked by API bug: setting `path` on a variant component renames only that
+  // component (via rename-component), leaving its variant container and main
+  // instance untouched. For a variant, path/name are shared across the whole
+  // group, so the container's name must stay equal to the component's full
+  // path/name. A plain `vc.path === 'Group'` round-trip would pass even with the
+  // bug (the component *is* renamed); the container is the tell. `.name` routes
+  // through the variant-aware rename; `.path` must do the same.
+  test('setting path on a variant component renames the whole variant', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    const container = vc.mainInstance().parent as VariantContainer;
+
+    // mergePathItem(path, name): "path / name" when both present, else the leaf.
+    // Reconstructed from the component so the assertion holds whether the fix
+    // propagates the path or strips it (as the variant rename currently does).
+    const fullName = () => (vc.path ? `${vc.path} / ${vc.name}` : vc.name);
+
+    vc.path = 'Group';
+    await waitFor(() => container.name === fullName());
+    expect(container.name).toBe(fullName());
+  });
+
   // ---------------------------------------------------------------------------
   // Edge cases. Out-of-bounds property positions and degenerate
   // container input should be rejected.

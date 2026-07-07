@@ -780,7 +780,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str value " / " (:name component))]
-           (st/emit! (dwl/rename-component id value)))))}
+           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
 
     :remove
     (fn []

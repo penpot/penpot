@@ -10,6 +10,62 @@ import type {
 
 const SCRATCH_NAME = '__api_test_scratch__';
 
+// Every test runs an extra postcondition: after it we assert it did not leave
+// the file referentially inconsistent (a class of bug local property round-trips
+// can't catch — see `File.validate`). Cheap enough (~1ms/call) to run on all
+// tests, and widens the net to non-component corruption (e.g. layout).
+
+/** Stable signature for a validation error so results can be diffed across runs. */
+function errorSignature(e: {
+  code: string;
+  shapeId: string | null;
+  pageId: string | null;
+}): string {
+  return `${e.code}:${e.shapeId ?? ''}:${e.pageId ?? ''}`;
+}
+
+// Runs `File.validate` on the current file, or returns null when the running
+// frontend predates the method (keeps the suite working against older builds).
+// Uses the *raw* penpot so it isn't credited toward coverage — a dedicated test
+// in file.test.ts exercises `File.validate` for coverage.
+function fileValidate(): FileValidationError[] | null {
+  const file = penpot.currentFile as
+    { validate?: () => FileValidationError[] } | null | undefined;
+  if (!file || typeof file.validate !== 'function') return null;
+  return file.validate();
+}
+
+interface FileValidationError {
+  code: string;
+  shapeId: string | null;
+  pageId: string | null;
+}
+
+// Snapshot of the file's current referential-integrity errors, by signature.
+// Null when validation is unavailable, which disables the postcondition.
+function integritySignatures(): Set<string> | null {
+  const errors = fileValidate();
+  return errors ? new Set(errors.map(errorSignature)) : null;
+}
+
+// Fails the test if it introduced referential-integrity errors not present in
+// `before`. Diffing against a baseline tolerates pre-existing corruption (e.g. a
+// `.nocleanup` test that intentionally leaves a broken file behind) so one bad
+// test doesn't cascade into every later variant/component test.
+function assertNoNewIntegrityErrors(before: Set<string>): void {
+  const errors = fileValidate();
+  if (!errors) return;
+  const introduced = errors.filter((e) => !before.has(errorSignature(e)));
+  if (introduced.length > 0) {
+    const summary = introduced
+      .map((e) => (e.shapeId ? `${e.code} (${e.shapeId})` : e.code))
+      .join(', ');
+    throw new Error(
+      `Test left the file referentially inconsistent: ${summary}`,
+    );
+  }
+}
+
 // A single test must never freeze the whole run. Some plugin API calls can hang
 // indefinitely (e.g. an async op whose completion event never fires), so each
 // test is raced against this timeout and turned into a failure if it exceeds it.
@@ -137,6 +193,10 @@ export async function runTests(
     let rawBoard: ReturnType<typeof penpot.createBoard> | undefined;
     let result: TestResult;
 
+    // Baseline the file's integrity errors before the test so we can attribute
+    // only newly-introduced ones to it.
+    const integrityBaseline = integritySignatures();
+
     try {
       rawBoard = penpot.createBoard();
       rawBoard.name = SCRATCH_NAME;
@@ -145,6 +205,8 @@ export async function runTests(
         testCase.fn({ penpot: recorder.proxy, board }),
         TEST_TIMEOUT_MS,
       );
+      // Postcondition: the test must not have broken referential integrity.
+      if (integrityBaseline) assertNoNewIntegrityErrors(integrityBaseline);
       result = {
         id: testCase.id,
         name: testCase.name,

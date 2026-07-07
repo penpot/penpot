@@ -1654,6 +1654,46 @@ export interface File extends PluginData {
    * Requires the `content:write` permission.
    */
   saveVersion(label: string): Promise<FileVersion>;
+
+  /**
+   * Runs the referential-integrity validation on the file and returns the list
+   * of errors found. An empty array means the file is valid. Useful to detect
+   * inconsistencies (dangling references, broken components/variants, …) that
+   * the backend would otherwise reject when the file is saved.
+   *
+   * @example
+   * ```js
+   * const errors = file.validate();
+   * if (errors.length) console.error(errors);
+   * ```
+   */
+  validate(): FileValidationError[];
+}
+
+/**
+ * A single referential-integrity error reported by {@link File.validate}.
+ */
+export interface FileValidationError {
+  /**
+   * The validation error code (e.g. `'variant-component-bad-name'`,
+   * `'child-not-found'`).
+   */
+  readonly code: string;
+
+  /**
+   * A human-readable description of the error.
+   */
+  readonly hint: string;
+
+  /**
+   * The id of the offending shape, when the error is attached to one.
+   */
+  readonly shapeId: string | null;
+
+  /**
+   * The id of the page the offending shape lives in, when applicable.
+   */
+  readonly pageId: string | null;
 }
 
 /**
