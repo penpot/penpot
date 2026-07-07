@@ -509,7 +509,8 @@ RETURNING id, deleted_at;")
   "Get valid invitations for an organization, returning at most one invitation per email."
   {::doc/added "2.16"
    ::sm/params schema:get-org-invitations-params
-   ::sm/result schema:get-org-invitations-result}
+   ::sm/result schema:get-org-invitations-result
+   ::rpc/auth false}
   [cfg {:keys [organization-id]}]
   (let [team-ids (noh/get-org-team-ids cfg organization-id)]
     (db/run! cfg (fn [{:keys [::db/conn]}]
@@ -535,7 +536,8 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::delete-org-invitations
   "Delete all invitations for one email in an organization scope (org + org teams)."
   {::doc/added "2.16"
-   ::sm/params schema:delete-org-invitations-params}
+   ::sm/params schema:delete-org-invitations-params
+   ::rpc/auth false}
   [cfg {:keys [organization-id email]}]
   (let [clean-email (profile/clean-email email)
         team-ids    (noh/get-org-team-ids cfg organization-id)]
@@ -866,7 +868,8 @@ RETURNING id, deleted_at;")
    including owner info and project/file/member counts."
   {::doc/added "2.20"
    ::sm/params schema:get-teams-detail-params
-   ::sm/result schema:get-teams-detail-result}
+   ::sm/result schema:get-teams-detail-result
+   ::rpc/auth false}
   [cfg {:keys [organization-id]}]
   (let [org-summary (nitrate/call cfg :get-org-summary {:organization-id organization-id})
         team-ids    (into [] (comp d/xf:map-id (filter uuid?)) (:teams org-summary))]
