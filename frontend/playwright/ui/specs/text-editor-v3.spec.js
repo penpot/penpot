@@ -108,3 +108,24 @@ test.describe("BUG 10530 - Empty text box left behind when leaving the editor", 
   });
 });
 
+test("BUG 10467 - Auto-width text captures every typed character", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const layerRows = workspace.layers.getByTestId("layer-row");
+
+  // A single click with the text tool creates an auto-width text box by default
+  await workspace.createAutoWidthTextShape(200, 150, "hello world");
+
+  // Leave the editor to finalize the content
+  await workspace.textEditor.stopEditing();
+
+  // Assert the whole typed text made it into the shape
+  await workspace.layers.getByTestId("layer-row").first().click();
+  await workspace.waitForSelectedShapeName("hello world");
+});
+
