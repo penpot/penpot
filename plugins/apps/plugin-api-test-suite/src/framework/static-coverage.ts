@@ -65,6 +65,7 @@ export const STATIC_COVERAGE: ReadonlySet<string> = new Set<string>([
   // via VariantContainer.variants in variants.test.ts.
   'LibraryVariantComponent.variants#get',
   'LibraryVariantComponent.variantProps#get',
+  'LibraryVariantComponent.variantError#get',
   'LibraryVariantComponent.addVariant#call',
   'LibraryVariantComponent.setVariantProperty#call',
 ]);

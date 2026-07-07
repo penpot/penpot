@@ -10,6 +10,62 @@ import type {
 
 const SCRATCH_NAME = '__api_test_scratch__';
 
+// Every test runs an extra postcondition: after it we assert it did not leave
+// the file referentially inconsistent (a class of bug local property round-trips
+// can't catch — see `File.validate`). Cheap enough (~1ms/call) to run on all
+// tests, and widens the net to non-component corruption (e.g. layout).
+
+/** Stable signature for a validation error so results can be diffed across runs. */
+function errorSignature(e: {
+  code: string;
+  shapeId: string | null;
+  pageId: string | null;
+}): string {
+  return `${e.code}:${e.shapeId ?? ''}:${e.pageId ?? ''}`;
+}
+
+// Runs `File.validate` on the current file, or returns null when the running
+// frontend predates the method (keeps the suite working against older builds).
+// Uses the *raw* penpot so it isn't credited toward coverage — a dedicated test
+// in file.test.ts exercises `File.validate` for coverage.
+function fileValidate(): FileValidationError[] | null {
+  const file = penpot.currentFile as
+    { validate?: () => FileValidationError[] } | null | undefined;
+  if (!file || typeof file.validate !== 'function') return null;
+  return file.validate();
+}
+
+interface FileValidationError {
+  code: string;
+  shapeId: string | null;
+  pageId: string | null;
+}
+
+// Snapshot of the file's current referential-integrity errors, by signature.
+// Null when validation is unavailable, which disables the postcondition.
+function integritySignatures(): Set<string> | null {
+  const errors = fileValidate();
+  return errors ? new Set(errors.map(errorSignature)) : null;
+}
+
+// Fails the test if it introduced referential-integrity errors not present in
+// `before`. Diffing against a baseline tolerates pre-existing corruption (e.g. a
+// `.nocleanup` test that intentionally leaves a broken file behind) so one bad
+// test doesn't cascade into every later variant/component test.
+function assertNoNewIntegrityErrors(before: Set<string>): void {
+  const errors = fileValidate();
+  if (!errors) return;
+  const introduced = errors.filter((e) => !before.has(errorSignature(e)));
+  if (introduced.length > 0) {
+    const summary = introduced
+      .map((e) => (e.shapeId ? `${e.code} (${e.shapeId})` : e.code))
+      .join(', ');
+    throw new Error(
+      `Test left the file referentially inconsistent: ${summary}`,
+    );
+  }
+}
+
 // A single test must never freeze the whole run. Some plugin API calls can hang
 // indefinitely (e.g. an async op whose completion event never fires), so each
 // test is raced against this timeout and turned into a failure if it exceeds it.
@@ -21,6 +77,8 @@ export interface RunOutput {
   coverage: CoverageReport;
   /** Names of tests excluded because of {@link RunOptions.skipMocked}. */
   skipped: string[];
+  /** True when the run ended early because {@link RunOptions.shouldStop} asked it to. */
+  stopped: boolean;
 }
 
 export interface RunOptions {
@@ -30,6 +88,12 @@ export interface RunOptions {
    * {@link RunOutput.skipped}.
    */
   skipMocked?: boolean;
+  /**
+   * Checked before each test; returning true stops the run after the current
+   * test finishes. Lets the UI cancel a long run without leaving a half-created
+   * scratch board behind.
+   */
+  shouldStop?: () => boolean;
 }
 
 export type ResultReporter = (result: TestResult) => void;
@@ -75,12 +139,17 @@ export async function runTests(
 ): Promise<RunOutput> {
   const all = getTests();
   const requested = ids === 'all' ? all : all.filter((t) => ids.includes(t.id));
+  // `.only` focuses the run: when any requested test is marked only, restrict the
+  // run to those and drop the rest. A source-level dev aid for isolating a case.
+  const focused = requested.some((t) => t.only)
+    ? requested.filter((t) => t.only)
+    : requested;
   const skipped = options?.skipMocked
-    ? requested.filter((t) => t.mockedSkip).map((t) => t.name)
+    ? focused.filter((t) => t.mockedSkip).map((t) => t.name)
     : [];
   const selected = options?.skipMocked
-    ? requested.filter((t) => !t.mockedSkip)
-    : requested;
+    ? focused.filter((t) => !t.mockedSkip)
+    : focused;
 
   const recorder = createRecorder(penpot, apiSurface as ApiSurface);
 
@@ -103,7 +172,13 @@ export async function runTests(
 
   const results: TestResult[] = [];
 
+  let stopped = false;
   for (const testCase of selected) {
+    if (options?.shouldStop?.()) {
+      stopped = true;
+      break;
+    }
+
     onResult?.({
       id: testCase.id,
       name: testCase.name,
@@ -118,6 +193,10 @@ export async function runTests(
     let rawBoard: ReturnType<typeof penpot.createBoard> | undefined;
     let result: TestResult;
 
+    // Baseline the file's integrity errors before the test so we can attribute
+    // only newly-introduced ones to it.
+    const integrityBaseline = integritySignatures();
+
     try {
       rawBoard = penpot.createBoard();
       rawBoard.name = SCRATCH_NAME;
@@ -126,6 +205,8 @@ export async function runTests(
         testCase.fn({ penpot: recorder.proxy, board }),
         TEST_TIMEOUT_MS,
       );
+      // Postcondition: the test must not have broken referential integrity.
+      if (integrityBaseline) assertNoNewIntegrityErrors(integrityBaseline);
       result = {
         id: testCase.id,
         name: testCase.name,
@@ -141,30 +222,41 @@ export async function runTests(
         durationMs: Date.now() - start,
       };
     } finally {
-      try {
-        rawBoard?.remove();
-      } catch {
-        // best-effort cleanup; never fail a test because teardown failed
-      }
-      // Reset shared state so the next test starts clean. All best-effort: a
-      // teardown failure must never turn into a test failure.
-      try {
-        penpot.selection = [];
-      } catch {
-        /* ignore */
-      }
-      try {
-        const active = penpot.currentPage;
-        if (homePage && active && active.id !== homePage.id) {
-          await penpot.openPage(homePage);
+      // `test.nocleanup` keeps the scratch board and shared state as the test
+      // left them so the result can be inspected in the workspace.
+      if (!testCase.noCleanup) {
+        try {
+          rawBoard?.remove();
+        } catch {
+          // best-effort cleanup; never fail a test because teardown failed
         }
-      } catch {
-        /* ignore */
+        // Reset shared state so the next test starts clean. All best-effort: a
+        // teardown failure must never turn into a test failure.
+        try {
+          penpot.selection = [];
+        } catch {
+          /* ignore */
+        }
+        try {
+          const active = penpot.currentPage;
+          if (homePage && active && active.id !== homePage.id) {
+            await penpot.openPage(homePage);
+          }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
     results.push(result);
     onResult?.(result);
+
+    // Yield a macrotask between tests so the workspace can flush pending
+    // renders. Sync tests only yield microtasks, and hundreds of back-to-back
+    // mutation bursts starve React's commit cycle until it trips its
+    // nested-update limit, surfacing "Maximum update depth exceeded" error
+    // toasts in the host app (and, more rarely, wasm render errors).
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   const summary: RunSummary = {
@@ -175,5 +267,5 @@ export async function runTests(
 
   const coverage = computeCoverage(recorder.accessed, apiSurface as ApiSurface);
 
-  return { results, summary, coverage, skipped };
+  return { results, summary, coverage, skipped, stopped };
 }

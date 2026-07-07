@@ -22,6 +22,27 @@ describe('Text', () => {
     expect(t.characters).toBe('Updated content');
   });
 
+  // Community report (forum #10700, issue #7): a text shape must always have
+  // content, so assigning an empty string to characters is rejected by
+  // validation (by design). To make a text disappear, hide or remove the shape.
+  test('characters rejects an empty string', (ctx) => {
+    const t = text(ctx, 'hello');
+    expect(() => {
+      t.characters = '';
+    }).toThrow();
+    expect(t.characters).toBe('hello');
+  });
+
+  // Community report (forum #10700, feature request D): rejecting a font
+  // weight the current font has no variant for must tell the caller which
+  // weights are supported.
+  test('unsupported fontWeight error lists the supported weights', (ctx) => {
+    const t = text(ctx, 'hello');
+    expect(() => {
+      t.fontWeight = '123';
+    }).toThrow('Supported weights:');
+  });
+
   test('growType round-trips', (ctx) => {
     const t = text(ctx);
     t.growType = 'auto-height';
@@ -202,7 +223,7 @@ describe('Text', () => {
       expect(range.characters.length).toBeGreaterThan(0);
     });
 
-    test('range font properties can be set', (ctx) => {
+    test('range font property setters are exercised (coverage only)', (ctx) => {
       const t = text(ctx, 'Hello Penpot');
       const range = t.getRange(0, 5);
       const font = ctx.penpot.fonts.all[0];
@@ -247,13 +268,17 @@ describe('Text', () => {
   });
 
   test('getRange beyond the text length is clamped (not rejected)', (ctx) => {
-    // An end index past the text length is clamped rather than rejected.
+    // An end index past the text length is clamped rather than rejected: the
+    // range object is returned and reading `characters` yields the clamped
+    // text. (Reading `characters` once crashed with a TypeError on an internal
+    // null; fixed, kept as a regression pin.)
     const t = text(ctx, 'Hello Penpot');
     let range: ReturnType<typeof t.getRange> | null = null;
     expect(() => {
       range = t.getRange(0, 999);
     }).not.toThrow();
     expect(range).not.toBeNull();
+    expect(range!.characters).toBe('Hello Penpot');
   });
 
   test('empty fontSize throws', (ctx) => {

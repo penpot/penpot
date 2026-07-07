@@ -56,6 +56,19 @@
     :font-style (:style variant)
     :font-weight (:weight variant)}))
 
+(defn- unsupported-weight-message
+  "Validation message for a font weight the current font has no variant for,
+  listing the weights the font supports."
+  [font value]
+  (let [weights (->> (:variants font)
+                     (map :weight)
+                     (distinct)
+                     (sort-by #(or (d/parse-integer %) 0))
+                     (str/join ", "))]
+    (cond-> (dm/str "Font weight '" value "' not supported for the current font")
+      (seq weights)
+      (str ". Supported weights: " weights))))
+
 (defn- text-props
   [shape]
   (d/merge
@@ -225,7 +238,7 @@
               (fonts/find-variant font {:weight weight}))]
          (cond
            (nil? variant)
-           (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+           (u/not-valid plugin-id :fontWeight (unsupported-weight-message font value))
 
            (not (r/check-permission plugin-id "content:write"))
            (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")
@@ -584,7 +597,7 @@
                (fonts/find-variant font {:weight weight}))]
           (cond
             (nil? variant)
-            (u/not-valid plugin-id :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+            (u/not-valid plugin-id :fontWeight (unsupported-weight-message font value))
 
             (not (r/check-permission plugin-id "content:write"))
             (u/not-valid plugin-id :fontWeight "Plugin doesn't have 'content:write' permission")

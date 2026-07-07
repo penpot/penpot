@@ -50,6 +50,7 @@
    [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.exports :as exports]
    [app.plugins.fills :as fills]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
@@ -57,6 +58,7 @@
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.ruler-guides :as rg]
+   [app.plugins.shadows :as shadows]
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
@@ -225,12 +227,60 @@
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
 
+(defn commit-shadows!
+  [plugin-id ^js self value]
+  (let [id    (obj/get self "$id")
+        value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
+    (cond
+      (not (sm/validate [:vector ctss/schema:shadow] value))
+      (u/not-valid plugin-id :shadows value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :shadows "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))
+
+(defn commit-exports!
+  [plugin-id ^js self value]
+  (let [id    (obj/get self "$id")
+        value (parser/parse-exports value)]
+    (cond
+      (not (sm/validate [:vector ctse/schema:export] value))
+      (u/not-valid plugin-id :exports value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? (obj/get self "$page")))
+      (u/not-valid plugin-id :exports "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))
+
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
 ;; Cannot use token/token-proxy? here because of circular dependency in applyToShapes in token proxy
 (defn token-proxy? [t]
   (obj/type-of? t "TokenProxy"))
+
+(defn- z-order-location
+  "Map a plugin z-order intent (:top/:bottom/:up/:down) to the internal
+  vertical-order location. Flex layouts store their children in reverse of the
+  order the plugin exposes (see the `:children` getter), so front/back and
+  forward/backward are inverted for a flex parent under natural child ordering."
+  [plugin-id file-id page-id id loc]
+  (let [shape     (u/locate-shape file-id page-id id)
+        parent    (u/locate-shape file-id page-id (:parent-id shape))
+        reversed? (and (u/natural-child-ordering? plugin-id)
+                       (ctl/flex-layout? parent))]
+    (if reversed?
+      (case loc :top :bottom :bottom :top :up :down :down :up)
+      loc)))
 
 (defn shape-proxy
   ([plugin-id id]
@@ -551,23 +601,10 @@
 
            :shadows
            {:this true
-            :get #(-> % u/proxy->shape :shadow format/format-shadows)
-            :set
-            (fn [self value]
-              (let [id (obj/get self "$id")
-                    value (mapv #(shadow-defaults (parser/parse-shadow %)) value)]
-                (cond
-                  (not (sm/validate [:vector ctss/schema:shadow] value))
-                  (u/not-valid plugin-id :shadows value)
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :shadows "Plugin doesn't have 'content:write' permission")
-
-                  (not (u/page-active? page-id))
-                  (u/not-valid plugin-id :shadows "Cannot modify a page that is not currently active")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))}
+            :get (fn [^js self]
+                   (shadows/format-shadows (-> self u/proxy->shape :shadow)
+                                           #(commit-shadows! plugin-id self %)))
+            :set (fn [self value] (commit-shadows! plugin-id self value))}
 
            :blur
            {:this true
@@ -617,23 +654,10 @@
 
            :exports
            {:this true
-            :get #(-> % u/proxy->shape :exports format/format-exports)
-            :set
-            (fn [self value]
-              (let [id (obj/get self "$id")
-                    value (parser/parse-exports value)]
-                (cond
-                  (not (sm/validate [:vector ctse/schema:export] value))
-                  (u/not-valid plugin-id :exports value)
-
-                  (not (r/check-permission plugin-id "content:write"))
-                  (u/not-valid plugin-id :exports "Plugin doesn't have 'content:write' permission")
-
-                  (not (u/page-active? page-id))
-                  (u/not-valid plugin-id :exports "Cannot modify a page that is not currently active")
-
-                  :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))}
+            :get (fn [^js self]
+                   (exports/format-exports (-> self u/proxy->shape :exports)
+                                           #(commit-exports! plugin-id self %)))
+            :set (fn [self value] (commit-exports! plugin-id self value))}
 
            ;; Geometry properties
            :x
@@ -842,7 +866,7 @@
             :set
             (fn [self value]
               (cond
-                (not (number? value))
+                (not (sm/valid-safe-number? value))
                 (u/not-valid plugin-id :rotation value)
 
                 (not (r/check-permission plugin-id "content:write"))
@@ -960,17 +984,38 @@
                (u/not-valid plugin-id :resize "Cannot modify a page that is not currently active")
 
                :else
-               (st/emit! (dw/update-dimensions [id] :width width)
-                         (dw/update-dimensions [id] :height height))))
+               ;; A layout container that hugs its content (or a hugging/filling
+               ;; layout child) ignores explicit dimensions and snaps back, so
+               ;; switch the non-fixed axes to fixed sizing first, mirroring an
+               ;; interactive drag resize. The sizing change must commit before
+               ;; the resize, otherwise the layout reflows the new size away.
+               (let [shape   (u/locate-shape file-id page-id id)
+                     objects (u/locate-objects file-id page-id)
+                     layout? (or (ctl/any-layout-immediate-child? objects shape)
+                                 (ctl/any-layout? shape))
+                     sizing  (cond-> {}
+                               (and layout? (not= (:layout-item-h-sizing shape) :fix))
+                               (assoc :layout-item-h-sizing :fix)
+
+                               (and layout? (not= (:layout-item-v-sizing shape) :fix))
+                               (assoc :layout-item-v-sizing :fix))]
+                 (apply st/emit!
+                        (cond-> []
+                          (seq sizing)
+                          (conj (dwsl/update-layout #{id} sizing))
+
+                          :always
+                          (conj (dw/update-dimensions [id] :width width)
+                                (dw/update-dimensions [id] :height height)))))))
 
            :rotate
            (fn [angle center]
              (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
                (cond
-                 (not (number? angle))
+                 (not (sm/valid-safe-number? angle))
                  (u/not-valid plugin-id :rotate-angle angle)
 
-                 (and (some? center) (or (not (number? (:x center))) (not (number? (:y center)))))
+                 (and (some? center) (or (not (sm/valid-safe-number? (:x center))) (not (sm/valid-safe-number? (:y center)))))
                  (u/not-valid plugin-id :rotate-center center)
 
                  (not (r/check-permission plugin-id "content:write"))
@@ -1109,7 +1154,16 @@
 
            :appendChild
            (fn [child]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape        (u/locate-shape file-id page-id id)
+                   valid-child? (shape-proxy? child)
+                   child-page   (when valid-child? (obj/get child "$page"))
+                   child-id     (when valid-child? (obj/get child "$id"))
+                   objects      (when valid-child? (u/locate-objects file-id page-id))
+                   child-shape  (when valid-child? (u/locate-shape file-id page-id child-id))
+                   is-reversed? (ctl/flex-layout? shape)
+                   index        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
+                                  0
+                                  (count (:shapes shape)))]
                (cond
                  (and (not (cfh/frame-shape? shape))
                       (not (cfh/group-shape? shape))
@@ -1117,33 +1171,38 @@
                       (not (cfh/bool-shape? shape)))
                  (u/not-valid plugin-id :appendChild (:type shape))
 
-                 (not (shape-proxy? child))
+                 (not valid-child?)
                  (u/not-valid plugin-id :appendChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
                  (or (not (u/page-active? page-id))
-                     (not (u/page-active? (obj/get child "$page"))))
+                     (not (u/page-active? child-page)))
                  (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
 
+                 (u/changes-component-copy-structure? objects shape child-shape)
+                 (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
                  :else
-                 (let [child-id     (obj/get child "$id")
-                       child-shape (u/locate-shape file-id page-id child-id)
-                       is-reversed? (ctl/flex-layout? shape)
-                       index
-                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
-                         0
-                         (count (:shapes shape)))]
-                   (st/emit!
-                    (dwsh/relocate-shapes #{child-id} id index)
-                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
-                              :type (:type child-shape)
-                              :parent-type (:type shape)))))))
+                 (st/emit!
+                  (dwsh/relocate-shapes #{child-id} id index)
+                  (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                            :type (:type child-shape)
+                            :parent-type (:type shape))))))
 
            :insertChild
            (fn [index child]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape        (u/locate-shape file-id page-id id)
+                   valid-child? (shape-proxy? child)
+                   child-page   (when valid-child? (obj/get child "$page"))
+                   child-id     (when valid-child? (obj/get child "$id"))
+                   objects      (when valid-child? (u/locate-objects file-id page-id))
+                   child-shape  (when valid-child? (u/locate-shape file-id page-id child-id))
+                   is-reversed? (ctl/flex-layout? shape)
+                   index        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
+                                  (- (count (:shapes shape)) index)
+                                  index)]
                (cond
                  (and (not (cfh/frame-shape? shape))
                       (not (cfh/group-shape? shape))
@@ -1151,29 +1210,25 @@
                       (not (cfh/bool-shape? shape)))
                  (u/not-valid plugin-id :insertChild (:type shape))
 
-                 (not (shape-proxy? child))
+                 (not valid-child?)
                  (u/not-valid plugin-id :insertChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :insertChild "Plugin doesn't have 'content:write' permission")
 
                  (or (not (u/page-active? page-id))
-                     (not (u/page-active? (obj/get child "$page"))))
+                     (not (u/page-active? child-page)))
                  (u/not-valid plugin-id :insertChild "Cannot modify a page that is not currently active")
 
+                 (u/changes-component-copy-structure? objects shape child-shape)
+                 (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
                  :else
-                 (let [child-id (obj/get child "$id")
-                       child-shape (u/locate-shape file-id page-id child-id)
-                       is-reversed? (ctl/flex-layout? shape)
-                       index
-                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
-                         (- (count (:shapes shape)) index)
-                         index)]
-                   (st/emit!
-                    (dwsh/relocate-shapes #{child-id} id index)
-                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
-                              :type (:type child-shape)
-                              :parent-type (:type shape)))))))
+                 (st/emit!
+                  (dwsh/relocate-shapes #{child-id} id index)
+                  (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                            :type (:type child-shape)
+                            :parent-type (:type shape))))))
 
            ;; Only for frames
            :addFlexLayout
@@ -1280,7 +1335,11 @@
                  (u/not-valid plugin-id :getRange-end end)
 
                  :else
-                 (text/text-range-proxy plugin-id file-id page-id id start end))))
+                 ;; Clamp the end to the actual character count so an
+                 ;; out-of-bounds range yields the trailing text instead of
+                 ;; reading past the content.
+                 (let [end (min end (count (txt/content->text (:content shape))))]
+                   (text/text-range-proxy plugin-id file-id page-id id start end)))))
 
            :applyTypography
            (fn [typography]
@@ -1305,34 +1364,39 @@
            ;; Change index method
            :setParentIndex
            (fn [index]
-             (cond
-               (not (sm/valid-safe-int? index))
-               (u/not-valid plugin-id :setParentIndex index)
+             (let [objects (u/locate-objects file-id page-id)
+                   shape   (get objects id)]
+               (cond
+                 (not (sm/valid-safe-int? index))
+                 (u/not-valid plugin-id :setParentIndex index)
 
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
 
-               (not (u/page-active? page-id))
-               (u/not-valid plugin-id :setParentIndex "Cannot modify a page that is not currently active")
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :setParentIndex "Cannot modify a page that is not currently active")
 
-               :else
-               (st/emit! (dw/set-shape-index file-id page-id id index))))
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :setParentIndex "Cannot change the structure of a component copy")
+
+                 :else
+                 (st/emit! (dw/set-shape-index file-id page-id id index)))))
 
            :bringForward
            (fn []
-             (st/emit! (dw/vertical-order-selected :up [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :up) [id])))
 
            :sendBackward
            (fn []
-             (st/emit! (dw/vertical-order-selected :down [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :down) [id])))
 
            :bringToFront
            (fn []
-             (st/emit! (dw/vertical-order-selected :top [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :top) [id])))
 
            :sendToBack
            (fn []
-             (st/emit! (dw/vertical-order-selected :bottom [id])))
+             (st/emit! (dw/vertical-order-selected (z-order-location plugin-id file-id page-id id :bottom) [id])))
 
            ;; COMPONENTS
            :isComponentInstance
@@ -1428,6 +1492,22 @@
                                                (obj/get component "$file")
                                                (obj/get component "$id")
                                                true)))))
+
+           :resetOverrides
+           (fn []
+             (let [shape (u/locate-shape file-id page-id id)]
+               (cond
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
+
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :resetOverrides "Plugin doesn't have 'content:write' permission")
+
+                 (not (ctk/in-component-copy? shape))
+                 (u/not-valid plugin-id :resetOverrides "The shape is not a component copy instance")
+
+                 :else
+                 (st/emit! (dwl/reset-component id)))))
 
            ;; Export
            :export
@@ -1683,29 +1763,31 @@
 
              :set
              (fn [^js self children]
-               (cond
-                 (not (r/check-permission plugin-id "content:write"))
-                 (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
+               (let [valid-children? (every? shape-proxy? children)
+                     shape           (u/proxy->shape self)
+                     file-id         (obj/get self "$file")
+                     page-id         (obj/get self "$page")
+                     reverse-fn      (if (u/natural-child-ordering? plugin-id) reverse identity)
+                     ids             (when valid-children?
+                                       (->> children reverse-fn (map #(obj/get % "$id"))))]
+                 (cond
+                   (not (r/check-permission plugin-id "content:write"))
+                   (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
 
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :children "Cannot modify a page that is not currently active")
+                   (not (u/page-active? page-id))
+                   (u/not-valid plugin-id :children "Cannot modify a page that is not currently active")
 
-                 (not (every? shape-proxy? children))
-                 (u/not-valid plugin-id :children "Every children needs to be shape proxies")
+                   (not valid-children?)
+                   (u/not-valid plugin-id :children "Every children needs to be shape proxies")
 
-                 :else
-                 (let [shape (u/proxy->shape self)
-                       file-id (obj/get self "$file")
-                       page-id (obj/get self "$page")
-                       reverse-fn (if (u/natural-child-ordering? plugin-id) reverse identity)
-                       ids (->> children reverse-fn (map #(obj/get % "$id")))]
+                   (u/component-copy-container? shape)
+                   (u/not-valid plugin-id :children "Cannot change the structure of a component copy")
 
-                   (cond
-                     (not= (set ids) (set (:shapes shape)))
-                     (u/not-valid plugin-id :children "Not all children are present in the input")
+                   (not= (set ids) (set (:shapes shape)))
+                   (u/not-valid plugin-id :children "Not all children are present in the input")
 
-                     :else
-                     (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
+                   :else
+                   (st/emit! (dw/reorder-children file-id page-id (:id shape) ids)))))}))
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!

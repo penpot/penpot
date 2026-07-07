@@ -139,6 +139,25 @@
     (when (and (some? file-id) (some? page-id) (some? id))
       (locate-shape file-id page-id id))))
 
+(defn inside-component-copy?
+  "True when `shape` is nested inside a component copy. The copy root itself is
+  movable as a whole; its descendants are structural copy content and must not
+  be reparented by the Plugin API."
+  [objects shape]
+  (boolean (ctn/has-any-copy-parent? objects shape)))
+
+(defn component-copy-container?
+  "True when changing `shape`'s children would alter a component copy structure."
+  [shape]
+  (boolean (ctk/in-component-copy? shape)))
+
+(defn changes-component-copy-structure?
+  "Returns true when moving `child` into `parent` would either alter a copy
+  container or move an existing child out of/within a component copy."
+  [objects parent child]
+  (or (component-copy-container? parent)
+      (inside-component-copy? objects child)))
+
 (defn proxy->library-color
   [proxy]
   (let [file-id (obj/get proxy "$file")
