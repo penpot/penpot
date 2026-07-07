@@ -129,3 +129,27 @@ test("BUG 10467 - Auto-width text captures every typed character", async ({
   await workspace.waitForSelectedShapeName("hello world");
 });
 
+test("BUG 10531 - Entering the editor auto-selects the whole text", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("text-editor/get-file-lorem-ipsum.json");
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  // Select the existing text shape and enter edit mode via Enter
+  await workspace.clickLeafLayer("Lorem ipsum");
+  await workspace.textEditor.startEditing();
+
+  // Copying while editing exports only the selected text as raw text.
+  // Since we just entered the editor, the whole text should be selected.
+  await workspace.copy("keyboard");
+
+  // Assert the text was copied correctly
+  const copiedText = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(copiedText).toBe("Lorem ipsum");
+});
+
