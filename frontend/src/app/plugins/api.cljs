@@ -313,43 +313,59 @@
 
     :group
     (fn [shapes]
-      (cond
-        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/not-valid plugin-id :group-shapes shapes)
+      (let [valid-shapes? (and (array? shapes) (every? shape/shape-proxy? shapes))
+            file-id       (:current-file-id @st/state)
+            page-id       (:current-page-id @st/state)
+            objects       (when valid-shapes? (u/locate-objects file-id page-id))
+            id            (uuid/next)
+            ids           (when valid-shapes? (into #{} (map #(obj/get % "$id")) shapes))
+            shape-objs    (when valid-shapes? (map #(get objects %) ids))]
+        (cond
+          (not valid-shapes?)
+          (u/not-valid plugin-id :group-shapes shapes)
 
-        ;; A group cannot be created from no shapes; per the documented contract
-        ;; return null instead of a proxy pointing at a shape that never exists.
-        (zero? (alength shapes))
-        nil
+          ;; A group cannot be created from no shapes; per the documented contract
+          ;; return null instead of a proxy pointing at a shape that never exists.
+          (zero? (alength shapes))
+          nil
 
-        (some #(not (u/page-active? (obj/get % "$page"))) shapes)
-        (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
+          (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+          (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
 
-        :else
-        (let [file-id (:current-file-id @st/state)
-              page-id (:current-page-id @st/state)
-              id (uuid/next)
-              ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dwg/group-shapes id ids)
-                    (se/event plugin-id "create-shape" :type type))
-          (shape/shape-proxy plugin-id file-id page-id id))))
+          (some #(u/inside-component-copy? objects %) shape-objs)
+          (u/not-valid plugin-id :group "Cannot change the structure of a component copy")
+
+          :else
+          (do
+            (st/emit! (dwg/group-shapes id ids)
+                      (se/event plugin-id "create-shape" :type type))
+            (shape/shape-proxy plugin-id file-id page-id id)))))
 
     :ungroup
     (fn [group & rest]
-      (cond
-        (not (shape/shape-proxy? group))
-        (u/not-valid plugin-id :ungroup group)
+      (let [valid-group? (shape/shape-proxy? group)
+            valid-rest?  (every? shape/shape-proxy? rest)
+            shapes       (when (and valid-group? valid-rest?) (concat [group] rest))
+            file-id      (:current-file-id @st/state)
+            page-id      (:current-page-id @st/state)
+            objects      (when shapes (u/locate-objects file-id page-id))
+            ids          (when shapes (into #{} (map #(obj/get % "$id")) shapes))
+            shape-objs   (when shapes (map #(get objects %) ids))]
+        (cond
+          (not valid-group?)
+          (u/not-valid plugin-id :ungroup group)
 
-        (and (some? rest) (not (every? shape/shape-proxy? rest)))
-        (u/not-valid plugin-id :ungroup rest)
+          (not valid-rest?)
+          (u/not-valid plugin-id :ungroup rest)
 
-        (or (not (u/page-active? (obj/get group "$page")))
-            (some #(not (u/page-active? (obj/get % "$page"))) rest))
-        (u/not-valid plugin-id :ungroup "Cannot modify a page that is not currently active")
+          (or (not (u/page-active? (obj/get group "$page")))
+              (some #(not (u/page-active? (obj/get % "$page"))) rest))
+          (u/not-valid plugin-id :ungroup "Cannot modify a page that is not currently active")
 
-        :else
-        (let [shapes (concat [group] rest)
-              ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (some #(u/inside-component-copy? objects %) shape-objs)
+          (u/not-valid plugin-id :ungroup "Cannot change the structure of a component copy")
+
+          :else
           (st/emit! (dwg/ungroup-shapes ids)))))
 
     :createBoard

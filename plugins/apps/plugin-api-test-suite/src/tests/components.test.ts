@@ -1,7 +1,10 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
-import type { Shape } from '@penpot/plugin-types';
+import { waitFor } from './wait';
+import type { Board, Shape } from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
+
+const COPY_STRUCTURE_ERROR = 'Cannot change the structure of a component copy';
 
 // Component instances and the ShapeBase component methods.
 // A component is built from a rectangle and instantiated; the instance exposes
@@ -18,6 +21,35 @@ function instanceOf(ctx: TestContext): Shape {
   const inst = comp.instance();
   ctx.board.appendChild(inst);
   return inst;
+}
+
+function nestedComponentMain(ctx: TestContext): Board {
+  const nested = makeComponent(ctx).instance();
+  const host = ctx.penpot.createBoard();
+  ctx.board.appendChild(host);
+  host.appendChild(nested);
+  return ctx.penpot.library.local
+    .createComponent([host])
+    .mainInstance() as Board;
+}
+
+function boardComponentMainWithChildren(ctx: TestContext): Board {
+  const first = ctx.penpot.createRectangle();
+  const second = ctx.penpot.createRectangle();
+  const host = ctx.penpot.createBoard();
+  ctx.board.appendChild(host);
+  host.appendChild(first);
+  host.appendChild(second);
+  return ctx.penpot.library.local
+    .createComponent([host])
+    .mainInstance() as Board;
+}
+
+function componentMainFromClonedNestedMain(ctx: TestContext): Board {
+  const cloned = nestedComponentMain(ctx).clone();
+  return ctx.penpot.library.local
+    .createComponent([cloned])
+    .mainInstance() as Board;
 }
 
 describe('Component instances', () => {
@@ -59,6 +91,103 @@ describe('Component instances', () => {
     target.appendChild(copy);
     expect(target.children.length).toBe(before + 1);
     expect(target.children.some((s) => s.id === copy.id)).toBe(true);
+  });
+
+  test('appendChild rejects moving children out of a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    expect(() => ctx.board.appendChild(child)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('insertChild rejects moving children out of a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    const target = ctx.penpot.createBoard();
+    ctx.board.appendChild(target);
+    expect(child).toBeDefined();
+
+    expect(() => target.insertChild(0, child)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('children assignment rejects reordering a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+
+    expect(() => {
+      cloned.children = [...cloned.children];
+    }).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('setParentIndex rejects reordering children inside a component copy', (ctx) => {
+    const main = boardComponentMainWithChildren(ctx);
+    const copy = main.component()?.instance() as Board | undefined;
+    expect(copy).toBeDefined();
+    if (!copy) return;
+
+    ctx.board.appendChild(copy);
+    const child = copy.children[1];
+    expect(child).toBeDefined();
+
+    expect(() => child.setParentIndex(0)).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('group rejects children inside a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    expect(() => ctx.penpot.group([child])).toThrow(COPY_STRUCTURE_ERROR);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('remove hides children inside a cloned main instance', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    child.remove();
+    expect(child.hidden).toBe(true);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('detaching a cloned main instance makes child reparenting safe', (ctx) => {
+    const main = nestedComponentMain(ctx);
+    const cloned = main.clone() as Board;
+    cloned.detach();
+    const child = cloned.children[0];
+    expect(child).toBeDefined();
+
+    ctx.board.appendChild(child);
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
+  });
+
+  test('cloned nested main instances can be used as variant component sources', async (ctx) => {
+    const mainA = componentMainFromClonedNestedMain(ctx);
+    const mainB = componentMainFromClonedNestedMain(ctx);
+    const container = ctx.penpot.createVariantFromComponents([mainA, mainB]);
+
+    await waitFor(
+      () => (container.variants?.variantComponents().length ?? 0) >= 2,
+    );
+    const errors = ctx.penpot.currentFile?.validate() ?? [];
+    expect(errors.map((e) => e.code)).toEqual([]);
   });
 
   test('component() returns the library component', (ctx) => {

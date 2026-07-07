@@ -1154,7 +1154,16 @@
 
            :appendChild
            (fn [child]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape        (u/locate-shape file-id page-id id)
+                   valid-child? (shape-proxy? child)
+                   child-page   (when valid-child? (obj/get child "$page"))
+                   child-id     (when valid-child? (obj/get child "$id"))
+                   objects      (when valid-child? (u/locate-objects file-id page-id))
+                   child-shape  (when valid-child? (u/locate-shape file-id page-id child-id))
+                   is-reversed? (ctl/flex-layout? shape)
+                   index        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
+                                  0
+                                  (count (:shapes shape)))]
                (cond
                  (and (not (cfh/frame-shape? shape))
                       (not (cfh/group-shape? shape))
@@ -1162,33 +1171,38 @@
                       (not (cfh/bool-shape? shape)))
                  (u/not-valid plugin-id :appendChild (:type shape))
 
-                 (not (shape-proxy? child))
+                 (not valid-child?)
                  (u/not-valid plugin-id :appendChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
                  (or (not (u/page-active? page-id))
-                     (not (u/page-active? (obj/get child "$page"))))
+                     (not (u/page-active? child-page)))
                  (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
 
+                 (u/changes-component-copy-structure? objects shape child-shape)
+                 (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
                  :else
-                 (let [child-id     (obj/get child "$id")
-                       child-shape (u/locate-shape file-id page-id child-id)
-                       is-reversed? (ctl/flex-layout? shape)
-                       index
-                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
-                         0
-                         (count (:shapes shape)))]
-                   (st/emit!
-                    (dwsh/relocate-shapes #{child-id} id index)
-                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
-                              :type (:type child-shape)
-                              :parent-type (:type shape)))))))
+                 (st/emit!
+                  (dwsh/relocate-shapes #{child-id} id index)
+                  (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                            :type (:type child-shape)
+                            :parent-type (:type shape))))))
 
            :insertChild
            (fn [index child]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape        (u/locate-shape file-id page-id id)
+                   valid-child? (shape-proxy? child)
+                   child-page   (when valid-child? (obj/get child "$page"))
+                   child-id     (when valid-child? (obj/get child "$id"))
+                   objects      (when valid-child? (u/locate-objects file-id page-id))
+                   child-shape  (when valid-child? (u/locate-shape file-id page-id child-id))
+                   is-reversed? (ctl/flex-layout? shape)
+                   index        (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
+                                  (- (count (:shapes shape)) index)
+                                  index)]
                (cond
                  (and (not (cfh/frame-shape? shape))
                       (not (cfh/group-shape? shape))
@@ -1196,29 +1210,25 @@
                       (not (cfh/bool-shape? shape)))
                  (u/not-valid plugin-id :insertChild (:type shape))
 
-                 (not (shape-proxy? child))
+                 (not valid-child?)
                  (u/not-valid plugin-id :insertChild-child child)
 
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :insertChild "Plugin doesn't have 'content:write' permission")
 
                  (or (not (u/page-active? page-id))
-                     (not (u/page-active? (obj/get child "$page"))))
+                     (not (u/page-active? child-page)))
                  (u/not-valid plugin-id :insertChild "Cannot modify a page that is not currently active")
 
+                 (u/changes-component-copy-structure? objects shape child-shape)
+                 (u/not-valid plugin-id :insertChild "Cannot change the structure of a component copy")
+
                  :else
-                 (let [child-id (obj/get child "$id")
-                       child-shape (u/locate-shape file-id page-id child-id)
-                       is-reversed? (ctl/flex-layout? shape)
-                       index
-                       (if (or (not (u/natural-child-ordering? plugin-id)) is-reversed?)
-                         (- (count (:shapes shape)) index)
-                         index)]
-                   (st/emit!
-                    (dwsh/relocate-shapes #{child-id} id index)
-                    (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
-                              :type (:type child-shape)
-                              :parent-type (:type shape)))))))
+                 (st/emit!
+                  (dwsh/relocate-shapes #{child-id} id index)
+                  (se/event plugin-id (if (ctl/any-layout? shape) "add-layout-element" "add-element")
+                            :type (:type child-shape)
+                            :parent-type (:type shape))))))
 
            ;; Only for frames
            :addFlexLayout
@@ -1354,18 +1364,23 @@
            ;; Change index method
            :setParentIndex
            (fn [index]
-             (cond
-               (not (sm/valid-safe-int? index))
-               (u/not-valid plugin-id :setParentIndex index)
+             (let [objects (u/locate-objects file-id page-id)
+                   shape   (get objects id)]
+               (cond
+                 (not (sm/valid-safe-int? index))
+                 (u/not-valid plugin-id :setParentIndex index)
 
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :setParentIndex "Plugin doesn't have 'content:write' permission")
 
-               (not (u/page-active? page-id))
-               (u/not-valid plugin-id :setParentIndex "Cannot modify a page that is not currently active")
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :setParentIndex "Cannot modify a page that is not currently active")
 
-               :else
-               (st/emit! (dw/set-shape-index file-id page-id id index))))
+                 (u/inside-component-copy? objects shape)
+                 (u/not-valid plugin-id :setParentIndex "Cannot change the structure of a component copy")
+
+                 :else
+                 (st/emit! (dw/set-shape-index file-id page-id id index)))))
 
            :bringForward
            (fn []
@@ -1748,29 +1763,31 @@
 
              :set
              (fn [^js self children]
-               (cond
-                 (not (r/check-permission plugin-id "content:write"))
-                 (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
+               (let [valid-children? (every? shape-proxy? children)
+                     shape           (u/proxy->shape self)
+                     file-id         (obj/get self "$file")
+                     page-id         (obj/get self "$page")
+                     reverse-fn      (if (u/natural-child-ordering? plugin-id) reverse identity)
+                     ids             (when valid-children?
+                                       (->> children reverse-fn (map #(obj/get % "$id"))))]
+                 (cond
+                   (not (r/check-permission plugin-id "content:write"))
+                   (u/not-valid plugin-id :children "Plugin doesn't have 'content:write' permission")
 
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :children "Cannot modify a page that is not currently active")
+                   (not (u/page-active? page-id))
+                   (u/not-valid plugin-id :children "Cannot modify a page that is not currently active")
 
-                 (not (every? shape-proxy? children))
-                 (u/not-valid plugin-id :children "Every children needs to be shape proxies")
+                   (not valid-children?)
+                   (u/not-valid plugin-id :children "Every children needs to be shape proxies")
 
-                 :else
-                 (let [shape (u/proxy->shape self)
-                       file-id (obj/get self "$file")
-                       page-id (obj/get self "$page")
-                       reverse-fn (if (u/natural-child-ordering? plugin-id) reverse identity)
-                       ids (->> children reverse-fn (map #(obj/get % "$id")))]
+                   (u/component-copy-container? shape)
+                   (u/not-valid plugin-id :children "Cannot change the structure of a component copy")
 
-                   (cond
-                     (not= (set ids) (set (:shapes shape)))
-                     (u/not-valid plugin-id :children "Not all children are present in the input")
+                   (not= (set ids) (set (:shapes shape)))
+                   (u/not-valid plugin-id :children "Not all children are present in the input")
 
-                     :else
-                     (st/emit! (dw/reorder-children file-id page-id (:id shape) ids))))))}))
+                   :else
+                   (st/emit! (dw/reorder-children file-id page-id (:id shape) ids)))))}))
 
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!

@@ -521,25 +521,33 @@
 
     :appendChild
     (fn [child row column]
-      (cond
-        (not (shape-proxy? child))
-        (u/not-valid plugin-id :appendChild-child child)
+      (let [valid-child? (shape-proxy? child)
+            child-page   (when valid-child? (obj/get child "$page"))
+            child-id     (when valid-child? (obj/get child "$id"))
+            objects      (when valid-child? (u/locate-objects file-id page-id))
+            shape        (when valid-child? (get objects id))
+            child-shape  (when valid-child? (get objects child-id))]
+        (cond
+          (not valid-child?)
+          (u/not-valid plugin-id :appendChild-child child)
 
-        (or (< row 0) (not (sm/valid-safe-int? row)))
-        (u/not-valid plugin-id :appendChild-row row)
+          (or (< row 0) (not (sm/valid-safe-int? row)))
+          (u/not-valid plugin-id :appendChild-row row)
 
-        (or (< column 0) (not (sm/valid-safe-int? column)))
-        (u/not-valid plugin-id :appendChild-column column)
+          (or (< column 0) (not (sm/valid-safe-int? column)))
+          (u/not-valid plugin-id :appendChild-column column)
 
-        (not (r/check-permission plugin-id "content:write"))
-        (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
-        (or (not (u/page-active? page-id))
-            (not (u/page-active? (obj/get child "$page"))))
-        (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
+          (or (not (u/page-active? page-id))
+              (not (u/page-active? child-page)))
+          (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
 
-        :else
-        (let [child-id  (obj/get child "$id")]
+          (u/changes-component-copy-structure? objects shape child-shape)
+          (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
+          :else
           (st/emit! (dwt/move-shapes-to-frame #{child-id} id nil [row column])
                     (ptk/data-event :layout/update {:ids [id]})))))))
 
