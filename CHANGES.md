@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2.18.0
+
+### :bug: Bugs fixed
+
+- Fix MCP integration hanging when the Penpot tab is backgrounded or frozen by the browser [#10323](https://github.com/penpot/penpot/issues/10323) (PR: [#10392](https://github.com/penpot/penpot/pull/10392))
+- Fix synced component copy not reflowing children after spacing token update [#9892](https://github.com/penpot/penpot/issues/9892)
+- Fix spacebar activating pan mode while typing a comment (by @Krishcode264) [#10285](https://github.com/penpot/penpot/issues/10285) (PR: [#10287](https://github.com/penpot/penpot/pull/10287))
+- Fix plugin API rejecting negative letterSpacing values (by @filipsajdak) [#9780](https://github.com/penpot/penpot/issues/9780) (PR: [#10257](https://github.com/penpot/penpot/pull/10257))
+- Fix plugin API addTheme calls failing with the signature shown in the high-level overview [#10074](https://github.com/penpot/penpot/issues/10074) (PR: [#10359](https://github.com/penpot/penpot/pull/10359))
+- Fix empty text shape not being deleted on editor exit [#10540](https://github.com/penpot/penpot/issues/10540) (PR: [#10541](https://github.com/penpot/penpot/pull/10541))
+- Fix broken token pills showing wrong default state when not selected [#10524](https://github.com/penpot/penpot/issues/10524) (PR: [#10535](https://github.com/penpot/penpot/pull/10535))
+- Replace hyphens with bullets in subscription benefits list [#10547](https://github.com/penpot/penpot/issues/10547) (PR: [#10523](https://github.com/penpot/penpot/pull/10523))
+- Fix Chinese (zh-CN) translation showing wrong label for Intersection in board path menu (by @sawirricardo) [#10346](https://github.com/penpot/penpot/issues/10346) (PR: [#10381](https://github.com/penpot/penpot/pull/10381))
+
+### :sparkles: New features & Enhancements
+
+- Group toolbar drawing tools into shape and free-draw flyouts [#9316](https://github.com/penpot/penpot/issues/9316) (PR: [#9480](https://github.com/penpot/penpot/pull/9480), [#10354](https://github.com/penpot/penpot/pull/10354))
+- Add outline stroke to Paths [#9961](https://github.com/penpot/penpot/issues/9961) (PR: [#8677](https://github.com/penpot/penpot/pull/8677))
+- Make throwValidationErrors default to true for v2 manifest plugins [#10401](https://github.com/penpot/penpot/issues/10401) (PR: [#10433](https://github.com/penpot/penpot/pull/10433))
+- Add dedicated Line and Arrow drawing tools (by @davidv399) [#9145](https://github.com/penpot/penpot/issues/9145) (PR: [#9146](https://github.com/penpot/penpot/pull/9146))
+- Refactor wasm rulers and UI state [#10116](https://github.com/penpot/penpot/issues/10116) (PR: [#10461](https://github.com/penpot/penpot/pull/10461))
+- Improve team invitations modal in the dashboard [#10484](https://github.com/penpot/penpot/issues/10484) (PR: [#10459](https://github.com/penpot/penpot/pull/10459))
+
 ## 2.17.0 (Unreleased)
 
 ### :boom: Breaking changes & Deprecations
