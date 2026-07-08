@@ -42,12 +42,14 @@
      (wasm.api/set-shape-text-images id content)
      (let [dimension (when (not= :fixed grow-type)
                        (wasm.api/get-text-dimensions))]
-       {:width  (if (#{:fixed :auto-height} grow-type)
-                  (:width selrect)
-                  (:width dimension))
-        :height (if (= :fixed grow-type)
-                  (:height selrect)
-                  (:height dimension))}))))
+       ;; nil dimension = shape not present in WASM state; skip the resize.
+       (when (or (= :fixed grow-type) (some? dimension))
+         {:width  (if (#{:fixed :auto-height} grow-type)
+                    (:width selrect)
+                    (:width dimension))
+          :height (if (= :fixed grow-type)
+                    (:height selrect)
+                    (:height dimension))})))))
 
 (defn resize-wasm-text-modifiers
   ([shape]
