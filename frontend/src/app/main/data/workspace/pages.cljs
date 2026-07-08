@@ -416,9 +416,9 @@
   (ptk/reify ::select-page
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :selected-pages] (d/ordered-set id))
-          (assoc-in [:workspace-local :selected-pages-anchor] id)))))
+      (update state :workspace-local assoc
+              :selected-pages (d/ordered-set id)
+              :selected-pages-anchor id))))
 
 (defn toggle-page-selection
   "Add or remove a page from the sitemap multi-selection (ctrl/cmd + click)."
@@ -432,9 +432,9 @@
             selected   (if (contains? selected id)
                          (disj selected id)
                          (conj selected id))]
-        (-> state
-            (assoc-in [:workspace-local :selected-pages] selected)
-            (assoc-in [:workspace-local :selected-pages-anchor] id))))))
+        (update state :workspace-local assoc
+                :selected-pages selected
+                :selected-pages-anchor id)))))
 
 (defn select-pages-range
   "Select every page between the current anchor and `id`, both included
@@ -453,8 +453,8 @@
           (let [start (min a-idx b-idx)
                 end   (inc (max a-idx b-idx))
                 range (subvec pages start end)]
-            (assoc-in state [:workspace-local :selected-pages]
-                      (into (d/ordered-set) range)))
+            (update state :workspace-local assoc
+                    :selected-pages (into (d/ordered-set) range)))
           state)))))
 
 (defn delete-pages
