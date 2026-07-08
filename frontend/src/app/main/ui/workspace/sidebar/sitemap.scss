@@ -4,30 +4,34 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_utils.scss" as *;
 @use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/mixins.scss" as *;
 
 .sitemap {
   position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
-  width: 100%;
-  height: var(--height, deprecated.$s-200);
+  inline-size: 100%;
+  block-size: var(--height, $sz-200);
 }
 
 .title {
-  margin-left: deprecated.$s-2;
+  margin-inline-start: var(--sp-xxs);
   color: var(--title-foreground-color-hover);
 }
 
 .resize-area {
   position: absolute;
-  bottom: calc(-1 * deprecated.$s-8);
-  left: 0;
-  width: 100%;
-  height: deprecated.$s-12;
-  border-top: deprecated.$s-2 solid var(--resize-area-border-color);
+  inset-block-end: calc(-1 * var(--sp-s));
+  inset-inline-start: 0;
+  inline-size: 100%;
+  block-size: $sz-12;
+  border-block-start: $b-2 solid var(--resize-area-border-color);
   background-color: var(--resize-area-background-color);
   cursor: ns-resize;
 
@@ -39,8 +43,8 @@
 .tool-window-content {
   display: flex;
   flex-direction: column;
-  height: calc(-38px + var(--height, deprecated.$s-200));
-  width: var(--left-sidebar-width);
+  block-size: calc(-38px + var(--height, $sz-200));
+  inline-size: var(--left-sidebar-width);
   overflow: hidden auto;
   scrollbar-gutter: stable;
 
@@ -50,9 +54,9 @@
 }
 
 .pages-list {
-  width: 100%;
-  max-height: deprecated.$s-152;
-  margin-bottom: deprecated.$s-12;
+  inline-size: 100%;
+  max-block-size: $sz-154;
+  margin-block-end: var(--sp-m);
 }
 
 .page-delete-button {
@@ -64,30 +68,30 @@
 }
 
 .page-element {
-  @include deprecated.body-small-typography;
+  @include t.use-typography("body-small");
 
-  min-height: deprecated.$s-32;
-  width: 100%;
+  min-block-size: $sz-32;
+  inline-size: 100%;
   cursor: pointer;
 
   &.dnd-over-top {
-    border-top: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-start: $b-1 solid var(--layer-row-foreground-color-drag);
   }
 
   &.dnd-over-bot {
-    border-bottom: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-end: $b-1 solid var(--layer-row-foreground-color-drag);
   }
 
   .dnd-over > .element-list-body {
-    border: deprecated.$s-1 solid var(--layer-row-foreground-color-drag);
+    border: $b-1 solid var(--layer-row-foreground-color-drag);
   }
 
   .element-list-body {
     display: flex;
     align-items: center;
-    height: deprecated.$s-32;
-    width: 100%;
-    padding: 0 deprecated.$s-12 0 0;
+    block-size: $sz-32;
+    inline-size: 100%;
+    padding: 0 var(--sp-m) 0 0;
     transition: none;
     color: var(--layer-row-foreground-color);
 
@@ -95,42 +99,44 @@
     user-select: none;
 
     .page-name {
-      @include deprecated.text-ellipsis;
+      @include text-ellipsis;
 
       flex-grow: 1;
-      padding-left: deprecated.$s-2;
+      padding-inline-start: var(--sp-xxs);
     }
 
     .page-icon {
-      @include deprecated.flex-center;
-
-      padding: 0 deprecated.$s-4 0 deprecated.$s-8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 var(--sp-xs) 0 var(--sp-s);
     }
 
     .page-actions {
-      height: deprecated.$s-32;
+      block-size: $sz-32;
       display: flex;
       align-items: center;
     }
 
     .element-name {
-      @include deprecated.text-ellipsis;
+      @include text-ellipsis;
 
       color: var(--layer-row-foreground-color-focus);
     }
 
     input.element-name {
-      @include deprecated.text-ellipsis;
-      @include deprecated.body-small-typography;
-      @include deprecated.remove-input-style;
+      @include text-ellipsis;
+      @include t.use-typography("body-small");
 
+      background: none;
+      outline: none;
       flex-grow: 1;
-      height: deprecated.$s-28;
-      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
-      padding-left: deprecated.$s-6;
+      block-size: $sz-28;
+      max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+      padding-inline-start: $sz-6;
       margin: 0;
-      border-radius: deprecated.$br-8;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      border-radius: $br-8;
+      border: $b-1 solid var(--input-border-color-focus);
       color: var(--layer-row-foreground-color);
     }
   }
@@ -152,8 +158,7 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-selected);
       background-color: var(--layer-row-background-color-selected);
-      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-        var(--layer-row-background-color-selected);
+      box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-selected);
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-selected);
@@ -166,11 +171,10 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-hover);
       background-color: var(--layer-row-background-color-hover);
-      box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
-        var(--layer-row-background-color-hover);
+      box-shadow: $sz-16 0 0 0 var(--layer-row-background-color-hover);
 
       .page-actions button {
-        opacity: deprecated.$op-10;
+        opacity: 1;
 
         --delete-button-display: initial;
       }
@@ -184,11 +188,11 @@
   &:focus {
     .element-list-body {
       color: var(--layer-row-foreground-color-focus);
-      border: deprecated.$s-1 solid var(--layer-row-border-color-focus);
+      border: $b-1 solid var(--layer-row-border-color-focus);
       outline: none;
 
       .page-actions button {
-        opacity: deprecated.$op-10;
+        opacity: 1;
       }
     }
   }
@@ -198,7 +202,7 @@
       outline: none;
 
       .page-actions button {
-        opacity: deprecated.$op-10;
+        opacity: 1;
       }
     }
   }
@@ -207,7 +211,7 @@
     .element-list-body {
       color: var(--layer-row-foreground-color-hidden);
       background-color: var(--layer-row-background-color-hidden);
-      opacity: deprecated.$op-7;
+      opacity: 0.7;
 
       .page-icon svg {
         stroke: var(--layer-row-foreground-color-hidden);
@@ -217,14 +221,14 @@
 }
 
 .element-list-body.separator-body {
-  height: auto;
-  min-height: var(--sp-xxxl);
+  block-size: auto;
+  min-block-size: var(--sp-xxxl);
   padding: 0;
 }
 
 .page-separator {
-  width: 100%;
-  height: $b-1;
+  inline-size: 100%;
+  block-size: $b-1;
   margin: var(--sp-s);
   background-color: var(--color-background-quaternary);
 }
@@ -237,6 +241,6 @@
 }
 
 .title-spacing-sitemap {
-  padding-inline-start: deprecated.$s-8;
-  margin-block: deprecated.$s-8 deprecated.$s-4;
+  padding-inline-start: var(--sp-s);
+  margin-block: var(--sp-s) var(--sp-xs);
 }
