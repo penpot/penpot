@@ -1,6 +1,6 @@
 {
   "name": "@penpot/mcp",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "description": "MCP server for Penpot integration",
   "license": "MPL-2.0",
   "bin": {
