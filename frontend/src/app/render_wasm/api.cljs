@@ -273,6 +273,7 @@
 (def draw-thumbnail-to-canvas webgl/draw-thumbnail-to-canvas)
 
 ;; Re-export public text editor functions
+(def text-editor-apply-theme text-editor/text-editor-apply-theme)
 (def text-editor-focus text-editor/text-editor-focus)
 (def text-editor-blur text-editor/text-editor-blur)
 (def text-editor-set-cursor-from-offset text-editor/text-editor-set-cursor-from-offset)
