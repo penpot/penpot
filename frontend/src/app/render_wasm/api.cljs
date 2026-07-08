@@ -460,6 +460,20 @@
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_ui_only")))
 
+(defn render-from-cache!
+  "Blit the shapes from the cached tile atlas and redraw the UI overlay
+   (rulers, selection band) fresh on top, in a single atomic frame. The
+   *shapes* are the cached part (already-rasterized tiles, not rebuilt); the UI
+   is re-rendered every call, which is what lets it reflect a new selection.
+
+   Use for UI-only updates that don't change shapes (e.g. the ruler selection
+   band): unlike `request-render`, it never kicks off a progressive,
+   tile-by-tile shape re-render, so it does not flash on zoomed-in views where
+   the scene spans multiple tiles."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_from_cache" 0)))
+
 ;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
 (def ^:private TRANSITION_BLUR_RADIUS 4.0)
 
