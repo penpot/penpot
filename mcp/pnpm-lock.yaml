@@ -21,6 +21,22 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/demo-client:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.4.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.1
+        version: 26.0.1
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@types/node@26.0.1)(typescript@6.0.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/plugin:
     dependencies:
       '@penpot/plugin-styles':

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Cropper & Color Eraser</title>
+  </head>
+  <body>
+    <div id="app" class="app-container">
+      <!-- Tabs Navigation (Only visible when image is loaded) -->
+      <div id="tabs" class="tabs-header hidden">
+        <button class="tab-btn active" data-tab="crop">Crop</button>
+        <button class="tab-btn" data-tab="erase">Erase Color</button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading" class="state-container">
+        <div class="spinner"></div>
+        <p class="body-s">Loading image data...</p>
+      </div>
+
+      <!-- Warning State (No image selected) -->
+      <div id="warning" class="state-container hidden">
+        <svg class="warning-icon" viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <p class="body-m">No Image Selected</p>
+        <p class="body-s hint text-center">Please select a shape with an image fill in Penpot to start cropping/erasing.</p>
+      </div>
+
+      <!-- Main Cropper Interface -->
+      <div id="cropper-workspace" class="workspace-container hidden">
+        <div class="img-container">
+          <img id="image-element" src="" alt="Source Image" />
+        </div>
+
+        <div class="controls-panel">
+          <!-- Aspect Ratio Selector -->
+          <div class="control-row">
+            <label for="aspect-ratio" class="label-s">Aspect Ratio</label>
+            <select id="aspect-ratio" class="select select-s">
+              <option value="NaN">Free</option>
+              <option value="1">1:1 (Square)</option>
+              <option value="1.7777777777777777">16:9 (Widescreen)</option>
+              <option value="1.3333333333333333">4:3 (Standard)</option>
+              <option value="0.6666666666666666">2:3 (Portrait)</option>
+            </select>
+          </div>
+
+          <!-- Basic Actions -->
+          <div class="actions-row">
+            <button id="btn-rotate-left" class="btn btn-secondary btn-s" title="Rotate Left">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0-.57-8.38l.41 1.31"/>
+              </svg>
+            </button>
+            <button id="btn-rotate-right" class="btn btn-secondary btn-s" title="Rotate Right">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1 .57-8.38l-.41 1.31"/>
+              </svg>
+            </button>
+            <button id="btn-flip-h" class="btn btn-secondary btn-s" title="Flip Horizontal">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M4 12H2M22 12h-2M17 7l5 5-5 5M7 7L2 12l5 5"/>
+              </svg>
+            </button>
+            <button id="btn-flip-v" class="btn btn-secondary btn-s" title="Flip Vertical">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M12 4V2M12 22v-2M7 17l5 5 5-5M7 7l5-5 5 5"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Apply / Save -->
+          <button id="btn-apply" class="btn btn-primary btn-m w-full">
+            <span class="btn-text">Apply Crop</span>
+            <span class="spinner hidden" id="apply-spinner"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Color Eraser Interface -->
+      <div id="eraser-workspace" class="workspace-container hidden">
+        <div class="canvas-container">
+          <canvas id="eraser-canvas"></canvas>
+        </div>
+
+        <div class="controls-panel">
+          <!-- Color Sampling Controls -->
+          <div class="control-row">
+            <span class="label-s">Color to Erase</span>
+            <div class="color-picker-group">
+              <button id="btn-preset-white" class="btn-color-preset" style="background: #ffffff; border: 1px solid #d1d5db;" title="Erase White"></button>
+              <button id="btn-preset-black" class="btn-color-preset" style="background: #000000; border: 1px solid #4b5563;" title="Erase Black"></button>
+              <input type="color" id="color-picker" class="picker-input" value="#ffffff" title="Pick Custom Color" />
+              <div id="sampled-color-preview" class="color-preview" title="Currently Selected Color"></div>
+            </div>
+          </div>
+
+          <div class="control-row hint-text">
+            <p class="body-xs">Tip: Click on the image to sample a color</p>
+          </div>
+
+          <!-- Tolerance Slider -->
+          <div class="control-row">
+            <label for="tolerance" class="label-s">Tolerance (<span id="tolerance-val">30</span>)</label>
+            <input type="range" id="tolerance" class="slider" min="0" max="150" value="30" />
+          </div>
+
+          <!-- Apply / Save -->
+          <button id="btn-apply-erase" class="btn btn-primary btn-m w-full">
+            <span class="btn-text">Apply Erase</span>
+            <span class="spinner hidden" id="erase-spinner"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

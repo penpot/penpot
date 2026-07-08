@@ -1,0 +1,8 @@
+{
+  "name": "Image Cropper",
+  "description": "Crop, rotate, and flip your images inside Penpot",
+  "code": "plugin.js",
+  "version": 2,
+  "icon": "icon.png",
+  "permissions": ["content:read", "content:write"]
+}

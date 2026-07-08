@@ -210,6 +210,12 @@ importers:
 
   apps/icons-plugin: {}
 
+  apps/image-cropper-plugin:
+    dependencies:
+      cropperjs:
+        specifier: ^1.6.2
+        version: 1.6.2
+
   apps/lorem-ipsum-plugin: {}
 
   apps/plugin-api-test-suite:
@@ -2721,6 +2727,9 @@ packages:
   cors@2.8.6:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
+
+  cropperjs@1.6.2:
+    resolution: {integrity: sha512-nhymn9GdnV3CqiEHJVai54TULFAE3VshJTXSqSJKa8yXAKyBKDWdhHarnlIPrshJ0WMFTGuFvG02YjLXfPiuOA==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -7721,6 +7730,8 @@ snapshots:
     dependencies:
       object-assign: 4.1.1
       vary: 1.1.2
+
+  cropperjs@1.6.2: {}
 
   cross-spawn@7.0.6:
     dependencies:
