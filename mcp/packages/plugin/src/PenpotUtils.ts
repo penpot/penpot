@@ -87,16 +87,20 @@ export class PenpotUtils {
     public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
-        let find = function (shape: Shape | null) {
+        // Walk the descendants of the given shape, testing the predicate on each
+        // one. The starting shape is never tested itself: findShapes searches
+        // *within* a container, so a predicate meant for descendants cannot
+        // accidentally select (and later mutate) the container it was handed.
+        let walk = function (shape: Shape | null) {
             if (!shape) {
                 return;
             }
-            if (predicate(shape)) {
-                result.push(shape);
-            }
             if ("children" in shape && shape.children) {
                 for (let child of shape.children) {
-                    find(child);
+                    if (predicate(child)) {
+                        result.push(child);
+                    }
+                    walk(child);
                 }
             }
         };
@@ -105,11 +109,11 @@ export class PenpotUtils {
             const pages = penpot.currentFile?.pages;
             if (pages) {
                 for (let page of pages) {
-                    find(page.root);
+                    walk(page.root);
                 }
             }
         } else {
-            find(root);
+            walk(root);
         }
         return result;
     }

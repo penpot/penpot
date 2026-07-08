@@ -388,6 +388,26 @@ describe('Layout', () => {
         expect(child.minHeight).toBeCloseTo(20, 0);
       }
     });
+
+    // Community report (forum #10700, issue #12): layoutChild was said to be
+    // null for children appended to a flex board that is re-found (fresh
+    // proxy) instead of using the creation-time reference. Did not reproduce;
+    // kept as a regression pin.
+    test('layoutChild is available on children of a re-found flex board', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      b.addFlexLayout();
+
+      const found = ctx.penpot.currentPage.getShapeById(b.id) as Board;
+      expect(found).not.toBeNull();
+      const child = ctx.penpot.createRectangle();
+      found.appendChild(child);
+      expect(child.layoutChild).toBeDefined();
+      if (child.layoutChild) {
+        child.layoutChild.horizontalSizing = 'fill';
+        expect(child.layoutChild.horizontalSizing).toBe('fill');
+      }
+    });
   });
 
   describe('Cell', () => {
@@ -412,6 +432,94 @@ describe('Layout', () => {
         expect(cell.column).toBeCloseTo(1, 0);
         expect(cell.columnSpan).toBeCloseTo(2, 0);
       }
+    });
+
+    // Community report (forum #10700, issue #2): columnSpan was said to expand
+    // the grid's column count and scramble the other cells' positions. Did not
+    // reproduce; kept as a regression pin.
+    test('columnSpan spans a cell without changing column count or other cells', (ctx) => {
+      const b = board(ctx);
+      b.resize(600, 400);
+      const grid = b.addGridLayout();
+      grid.addColumn('flex', 1);
+      grid.addColumn('flex', 1);
+      grid.addColumn('flex', 1);
+      grid.addRow('flex', 1);
+      grid.addRow('flex', 1);
+
+      const a = ctx.penpot.createRectangle();
+      const c = ctx.penpot.createRectangle();
+      const d = ctx.penpot.createRectangle();
+      grid.appendChild(a, 1, 1);
+      grid.appendChild(c, 1, 3);
+      grid.appendChild(d, 2, 2);
+
+      const cellA = a.layoutCell;
+      expect(cellA).toBeDefined();
+      if (cellA) {
+        cellA.columnSpan = 2;
+      }
+
+      expect(grid.columns.length).toBe(3);
+      expect(grid.rows.length).toBe(2);
+      if (cellA) {
+        expect(cellA.row).toBeCloseTo(1, 0);
+        expect(cellA.column).toBeCloseTo(1, 0);
+        expect(cellA.columnSpan).toBeCloseTo(2, 0);
+      }
+      const cellC = c.layoutCell;
+      const cellD = d.layoutCell;
+      expect(cellC).toBeDefined();
+      expect(cellD).toBeDefined();
+      if (cellC && cellD) {
+        expect(cellC.row).toBeCloseTo(1, 0);
+        expect(cellC.column).toBeCloseTo(3, 0);
+        expect(cellD.row).toBeCloseTo(2, 0);
+        expect(cellD.column).toBeCloseTo(2, 0);
+      }
+    });
+  });
+
+  describe('Sizing', () => {
+    // Community report (forum #10700, feature request C): resize on a board
+    // whose layout hugs content (auto sizing) must behave like the UI — switch
+    // the sizing to fixed and apply the requested dimensions. This once snapped
+    // back to the hugged content (flex) or left the sizing 'auto' (grid). Fixed;
+    // kept as a regression pin.
+    test('resize on an auto-sized flex board switches sizing to fixed', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      const flex = b.addFlexLayout();
+      flex.horizontalSizing = 'auto';
+      flex.verticalSizing = 'auto';
+      const child = ctx.penpot.createRectangle();
+      child.resize(50, 50);
+      b.appendChild(child);
+
+      b.resize(500, 400);
+      expect(b.width).toBeCloseTo(500, 0);
+      expect(b.height).toBeCloseTo(400, 0);
+      expect(flex.horizontalSizing).toBe('fix');
+      expect(flex.verticalSizing).toBe('fix');
+    });
+
+    test('resize on an auto-sized grid board switches sizing to fixed', (ctx) => {
+      const b = board(ctx);
+      b.resize(300, 200);
+      const grid = b.addGridLayout();
+      grid.addColumn('auto');
+      grid.addRow('auto');
+      grid.horizontalSizing = 'auto';
+      grid.verticalSizing = 'auto';
+      const child = ctx.penpot.createRectangle();
+      child.resize(50, 50);
+      grid.appendChild(child, 1, 1);
+
+      b.resize(500, 400);
+      expect(b.width).toBeCloseTo(500, 0);
+      expect(b.height).toBeCloseTo(400, 0);
+      expect(grid.horizontalSizing).toBe('fix');
+      expect(grid.verticalSizing).toBe('fix');
     });
   });
 

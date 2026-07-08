@@ -158,6 +158,35 @@ test("Selection size badge shows unrotated dimensions for rotated single selecti
   await expect(badgeText).toHaveText("126 x 134");
 });
 
+test("Selection size badge shows dimensions for path shapes", async ({ page }) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-empty.json",
+  );
+
+  await workspacePage.goToWorkspace();
+
+  // Workaround: hover viewport first to avoid nil mouse position crash
+  await workspacePage.viewport.hover();
+
+  // Draw a path
+  await workspacePage.pathButton.click();
+  await workspacePage.clickAt(779, 163);
+  await workspacePage.clickAt(951, 258);
+
+  // Finish drawing (commits path, path enters edition mode)
+  await page.keyboard.press("Escape");
+
+  // Exit edition mode (path stays selected, badge becomes visible)
+  await page.keyboard.press("Escape");
+
+  const badgeText = page.locator(".selection-size-badge text");
+  await expect(badgeText).toBeVisible();
+  await expect(badgeText).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
+});
+
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WasmWorkspacePage(page);
   await workspacePage.setupEmptyFile();

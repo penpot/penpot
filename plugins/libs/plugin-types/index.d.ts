@@ -1654,6 +1654,46 @@ export interface File extends PluginData {
    * Requires the `content:write` permission.
    */
   saveVersion(label: string): Promise<FileVersion>;
+
+  /**
+   * Runs the referential-integrity validation on the file and returns the list
+   * of errors found. An empty array means the file is valid. Useful to detect
+   * inconsistencies (dangling references, broken components/variants, …) that
+   * the backend would otherwise reject when the file is saved.
+   *
+   * @example
+   * ```js
+   * const errors = file.validate();
+   * if (errors.length) console.error(errors);
+   * ```
+   */
+  validate(): FileValidationError[];
+}
+
+/**
+ * A single referential-integrity error reported by {@link File.validate}.
+ */
+export interface FileValidationError {
+  /**
+   * The validation error code (e.g. `'variant-component-bad-name'`,
+   * `'child-not-found'`).
+   */
+  readonly code: string;
+
+  /**
+   * A human-readable description of the error.
+   */
+  readonly hint: string;
+
+  /**
+   * The id of the offending shape, when the error is attached to one.
+   */
+  readonly shapeId: string | null;
+
+  /**
+   * The id of the page the offending shape lives in, when applicable.
+   */
+  readonly pageId: string | null;
 }
 
 /**
@@ -3103,6 +3143,20 @@ export interface Page extends PluginData {
   readonly root: Shape;
 
   /**
+   * Removes the page from the file. The last remaining page of the file
+   * cannot be removed. If the removed page is the active one, another page
+   * is activated.
+   * Requires `content:write` permission.
+   *
+   * @example
+   * ```js
+   * const page = penpot.createPage();
+   * page.remove();
+   * ```
+   */
+  remove(): void;
+
+  /**
    * Retrieves a shape by its unique identifier.
    * @param id The unique identifier of the shape.
    *
@@ -3514,6 +3568,11 @@ export interface RulerGuide {
    * If the guide is attached to a board this will retrieve the board shape
    */
   board?: Board;
+
+  /**
+   * Removes the guide from its page.
+   */
+  remove(): void;
 }
 
 /**
@@ -3880,6 +3939,14 @@ export interface ShapeBase extends PluginData {
    * @param component The new component to replace the current one
    */
   swapComponent(component: LibraryComponent): void;
+
+  /**
+   * Resets the overrides of the component copy, restoring all its attributes
+   * (and those of its children) to the ones in the linked main component.
+   * Similar to the "reset overrides" action on the Penpot interface.
+   * The current shape must be a component copy instance.
+   */
+  resetOverrides(): void;
 
   /**
    * Switch a VariantComponent copy to the nearest one that has the specified property value
