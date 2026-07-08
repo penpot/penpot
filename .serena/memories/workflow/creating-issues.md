@@ -79,6 +79,8 @@ Write the body to a temp file to avoid shell quoting issues:
 <version>
 ```
 
+Note: do not soft-wrap paragraphs in the body. Each paragraph is a single line in the source; newlines are reserved for structural breaks (section headers, list items, code-block fences, blank-line separators). List items stay on a single line each. GitHub renders single-line paragraphs correctly, and wrapping makes diffs noisy on every small wording change. Same rule applies to PR bodies.
+
 ## Creating the Issue
 
 ```bash
