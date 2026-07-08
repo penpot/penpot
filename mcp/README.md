@@ -164,20 +164,26 @@ You can change the port by setting the `PENPOT_MCP_SERVER_PORT` environment vari
 before starting the server. These endpoints can be used directly by MCP clients that support them.
 Simply configure the client to connect the MCP server by providing the respective URL.
 
-#### Configuring your client
+#### Configuring Your Client
 
-You can configure your client with the [add-mcp](https://github.com/neon-solutions/add-mcp) helper.
-Simply call 
+You can configure your client using the correct local URL automatically by using the `client-setup` command.
 
-    npx -y add-mcp -g -n penpot http://localhost:4401/mcp
+  * When using the released artifact, call  
+    
+        npx -y @penpot/mcp@latest client-setup
 
-and follow the interactive dialogue to configure the clients of your choice.
+  * When using the source version, call
+ 
+        pnpm run client-setup
+
+and then follow the interactive dialogue to configure the clients of your choice.
+
 The config entry name is `penpot` (override it with `-n <name>`) and the URL points to the local http
-endpoint (adjust the port if you changed `PENPOT_MCP_SERVER_PORT`).
+endpoint.
 
 When using a client that only supports stdio transport like **Claude Desktop**,
-a proxy like [mcp-remote](https://github.com/geelen/mcp-remote) is required. 
-More information on connecting your client follows below.
+a proxy like [mcp-remote](https://github.com/geelen/mcp-remote) is required, and you will
+need to set up the MCP server manually, as explained below.
 
 #### Using a Proxy for stdio Transport
 
