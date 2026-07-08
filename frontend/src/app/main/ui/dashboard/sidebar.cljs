@@ -801,7 +801,12 @@
                                                     :class (stl/css :dropdown :teams-dropdown)
                                                     :organization current-org
                                                     :profile profile
-                                                    :organizations (vals orgs)}]])
+                                                    :organizations (->> (vals orgs)
+                                                                        (sort-by (juxt (fn [o] (str/lower (:name o "")))
+                                                                                       :id)))}]])
+
+
+
             orgs-portal-container)))
        ;; Orgs options
        [:> org-options-dropdown* {:show show-org-options-menu?
