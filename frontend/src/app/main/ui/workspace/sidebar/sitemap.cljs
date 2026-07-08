@@ -120,11 +120,10 @@
          (mf/deps id)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-page.title")
-                       :message (tr "modals.delete-page.body")
-                       :on-accept delete-fn}))))
+           (st/emit! (modal/show {:type :confirm
+                                  :title (tr "modals.delete-page.title")
+                                  :message (tr "modals.delete-page.body")
+                                  :on-accept delete-fn}))))
 
         on-double-click
         (mf/use-fn
@@ -201,32 +200,31 @@
          nil)))
 
     (let [selected? (and is-selected (not is-separator?))]
-      [:li {:class (stl/css-case
-                    :page-element true
-                    :separator is-separator?
-                    :selected selected?
-                    :dnd-over-top (= (:over dprops) :top)
-                    :dnd-over-bot (= (:over dprops) :bot))
+      [:li {:class (stl/css-case :page-item true
+                                 :separator is-separator?
+                                 :selected selected?
+                                 :dnd-over-top (= (:over dprops) :top)
+                                 :dnd-over-bot (= (:over dprops) :bot))
             :ref dref}
-       [:div {:class (stl/css-case
-                      :element-list-body true
-                      :separator-body is-separator?
-                      :hover (and is-hovering (not is-separator?))
-                      :selected selected?)
+       [:div {:class (stl/css-case :page-item-body true
+                                   :separator is-separator?
+                                   :hover (and is-hovering (not is-separator?))
+                                   :selected selected?)
               :data-testid (dm/str "page-" id)
               :tab-index "0"
               :on-click on-click
               :on-double-click on-double-click
               :on-context-menu on-context-menu}
         (if (and is-separator? (not is-editing))
-          [:div {:class (stl/css :page-separator)
+          [:div {:class (stl/css :page-divider)
                  :data-testid "page-separator"}]
           [:*
            (when-not is-separator?
-             [:div {:class (stl/css :page-icon)}
-              [:> icon* {:icon-id i/document :size "s"}]])
+             [:div {:class (stl/css :page-item-icon)}
+              [:> icon* {:icon-id i/document
+                         :size "s"}]])
            (if is-editing
-             [:input {:class        (stl/css :element-name)
+             [:input {:class        (stl/css :page-item-input)
                       :type         "text"
                       :ref          input-ref
                       :on-blur      on-blur
@@ -234,16 +232,18 @@
                       :auto-focus   true
                       :default-value name}]
              [:*
-              [:span {:class (stl/css :page-name) :title name :data-testid "page-name"}
+              [:span {:class (stl/css :page-item-label)
+                      :title name
+                      :data-testid "page-name"}
                name]
-              [:div {:class (stl/css :page-actions)}
+              [:div {:class (stl/css :page-item-actions)}
                (when (and is-deletable (not read-only?))
                  [:> icon-button* {:variant "action"
                                    :aria-label (tr "modals.delete-page.title")
                                    :on-click on-delete
                                    :icon-size "s"
-                                   :class (stl/css :page-delete-button)
-                                   :icon-class (stl/css :page-delete-button-icon)
+                                   :class (stl/css :page-delete-btn)
+                                   :icon-class (stl/css :page-delete-icon)
                                    :icon i/delete}])]])])]])))
 
 ;; --- Page Item Wrapper
@@ -277,7 +277,7 @@
         selected-pages  (if (seq selected-pages)
                           selected-pages
                           #{current-page-id})]
-    [:ul {:class (stl/css :page-list)}
+    [:ul
      [:> hooks/sortable-container* {}
       (for [[index page-id] (d/enumerate pages)]
         [:> page-item-wrapper* {:page-id page-id
@@ -299,7 +299,8 @@
         on-create      (mf/use-fn
                         (mf/deps file-id project-id)
                         (fn [event]
-                          (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
+                          (st/emit! (dw/create-page {:file-id file-id
+                                                     :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
@@ -312,7 +313,7 @@
                      :collapsed     collapsed
                      :on-collapsed  on-toggle-collapsed
                      :title         (tr "workspace.sidebar.sitemap")
-                     :class         (stl/css :title-spacing-sitemap)}
+                     :class         (stl/css :sitemap-title)}
 
       (if ^boolean read-only?
         (when ^boolean (:can-edit permissions)
@@ -320,12 +321,11 @@
                                   :size :small
                                   :content (tr "labels.view-only")}])
         [:> icon-button* {:variant "ghost"
-                          :class (stl/css :add-page)
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
                           :on-click on-create
                           :icon i/add}])]
 
      (when-not ^boolean collapsed
-       [:div {:class (stl/css :tool-window-content)}
-        [:> pages-list* {:file file :key (dm/str (:id file))}]])]))
-
+       [:div {:class (stl/css :sitemap-content)}
+        [:> pages-list* {:key (dm/str (:id file))
+                         :file file}]])]))
