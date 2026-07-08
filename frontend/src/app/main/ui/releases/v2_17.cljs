@@ -158,13 +158,13 @@
           [:p {:class (stl/css :feature-content)}
            "• Typography tokens now appear when you multi-select text."]
           [:p {:class (stl/css :feature-content)}
-            "• The Design sidebar gains a composite typography input."]
+           "• The Design sidebar gains a composite typography input."]
           [:p {:class (stl/css :feature-content)}
-            "• Autocomplete speeds up token creation forms."]
+           "• Autocomplete speeds up token creation forms."]
           [:p {:class (stl/css :feature-content)}
-            "• Dropdowns surface more context at a glance."]
+           "• Dropdowns surface more context at a glance."]
           [:p {:class (stl/css :feature-content)}
-            "• Token propagation is faster, a nice performance boost."]]
+           "• Token propagation is faster, a nice performance boost."]]
          [:div {:class (stl/css :navigation)}
           [:> c/navigation-bullets*
            {:slide slide
