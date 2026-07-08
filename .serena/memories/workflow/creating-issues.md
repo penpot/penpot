@@ -155,6 +155,199 @@ query { repository(owner: "penpot", name: "penpot") {
 rm -f /tmp/issue-body.md
 ```
 
+## Creating Issues from PRs
+
+Used when the project board needs an issue as the primary changelog/release
+unit and the PR describes the implementation. The issue is the **WHAT**
+(user-facing), the PR is the **HOW** (implementation).
+
+### Fetch the PR
+
+```bash
+gh pr view <PR_NUMBER> --repo penpot/penpot \
+  --json title,body,author,labels,baseRefName,mergedAt,state,milestone
+```
+
+Identify:
+
+- **WHAT** — user-facing problem or feature. Goes into the issue.
+  Describe symptoms and impact, not internal mechanisms.
+- **HOW** — implementation details. These belong in the PR, not the issue.
+
+### Determine metadata
+
+- **Title:** rewrite from user perspective using the title rules above. Strip
+  leading emoji prefixes (`:bug:`, `:sparkles:`, `:tada:`). Focus on
+  observable behavior.
+- **Labels:** copy `community contribution` if present on the PR.
+- **Milestone:** always copy what's on the PR.
+
+  ```bash
+  gh pr view <PR_NUMBER> --json milestone --jq '.milestone.title'
+  ```
+
+  If the PR has no milestone, create the issue without one.
+- **Project:** `Main`.
+- **Body:** extract the user-facing section (steps to reproduce or feature
+  description). Omit internal details. Use the templates above.
+- **Issue Type:** use the mapping table above (also handles `:bug:` /
+  `:sparkles:` / `:tada:` title prefixes).
+
+### Create the issue
+
+```bash
+cat > /tmp/issue-body.md << 'ISSUE_BODY'
+<body content here>
+ISSUE_BODY
+
+gh issue create \
+  --repo penpot/penpot \
+  --title "<Title>" \
+  --label "community contribution" \  # only if PR has this label
+  --milestone "<milestone>" \
+  --project "Main" \
+  --body-file /tmp/issue-body.md
+```
+
+Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
+
+### Assign to the PR author
+
+```bash
+AUTHOR=$(gh pr view <PR_NUMBER> --repo penpot/penpot --json author --jq '.author.login')
+gh issue edit <ISSUE_NUMBER> --repo penpot/penpot --add-assignee "$AUTHOR"
+```
+
+### Set Issue Type and verify
+
+See the **Setting the Issue Type** and **Verification** sections above — the
+GraphQL mutations and `gh issue view` calls are identical regardless of how
+the issue was sourced.
+
+### Link the PR to the issue
+
+Append `Closes #<ISSUE_NUMBER>` to the PR body:
+
+```bash
+gh pr view <PR_NUMBER> --repo penpot/penpot --json body --jq '.body' > /tmp/pr-body.md
+printf "\n\nCloses #<ISSUE_NUMBER>\n" >> /tmp/pr-body.md
+gh pr edit <PR_NUMBER> --repo penpot/penpot --body-file /tmp/pr-body.md
+
+# Verify
+gh pr view <PR_NUMBER> --repo penpot/penpot --json body \
+  --jq '.body | test("Closes #<ISSUE_NUMBER>")'
+```
+
+**Note:** If the PR is already merged, `Closes` won't auto-close the issue —
+it only creates the "Development" sidebar link. This is the desired
+behavior since the issue is a tracking artifact.
+
+### Clean up
+
+```bash
+rm -f /tmp/issue-body.md /tmp/pr-body.md
+```
+
+### Rules for this flow
+
+- **One issue per PR** — even if a PR fixes multiple things, create a single
+  issue that summarizes the overall change.
+- **Community attribution:** if the PR has the `community contribution`
+  label or the author is not a core team member, add the label to the issue.
+- **Don't put implementation details in the issue body** — the issue is for
+  users, QA, and changelog readers.
+
+## Creating Issues from Draft Body
+
+Used when the user provides a draft body from elsewhere (Taiga story, user
+report, discussion transcript) and there is no PR yet.
+
+### Get the body
+
+Read the draft body from wherever it was provided. If the user gives only a
+vague one-liner, ask them to expand it (steps to reproduce, expected vs.
+actual, use case) before proceeding.
+
+### Derive the title
+
+Apply the title rules in the **Title Derivation** section above. Distinguish
+bug vs. feature from the body content:
+
+- Steps to reproduce + expected vs. actual → bug
+- "would be nice", "add support for", "allow users to" → feature / enhancement
+
+### Choose a body template
+
+Use the bug or enhancement template from the **Issue Body Template** section
+above. Fill in placeholders with the user-provided details. If the body
+doesn't fit either, ask the user which template to use.
+
+### Determine metadata
+
+- **Project:** `Main` (always).
+- **Milestone:** ask the user if not obvious; otherwise omit.
+- **Labels:** usually none for new user-reported issues. Add
+  `community contribution` if the user is a non-team contributor.
+- **Issue Type:** use the mapping table above (bug description → Bug; feature
+  request → Enhancement or Feature).
+
+### Create the issue
+
+```bash
+cat > /tmp/issue-body.md << 'ISSUE_BODY'
+<body content here>
+ISSUE_BODY
+
+gh issue create \
+  --repo penpot/penpot \
+  --title "<Title>" \
+  --label "community contribution" \  # only if applicable
+  --milestone "<milestone>" \        # only if provided
+  --project "Main" \
+  --body-file /tmp/issue-body.md
+```
+
+### Set Issue Type and verify
+
+Same GraphQL mutation and `gh issue view` commands as in the
+**Setting the Issue Type** and **Verification** sections above.
+
+### Clean up
+
+```bash
+rm -f /tmp/issue-body.md
+```
+
+## Retitling an Existing Issue
+
+Used when an issue's current title is vague, prefixed, or no longer matches
+the body (e.g. `[PENPOT FEEDBACK]: ...`, `feature: ...`).
+
+### Fetch the issue
+
+```bash
+gh issue view <NUMBER> --repo penpot/penpot --json title,body
+```
+
+### Derive a new title
+
+Read the body (not the current title) and apply the title rules in the
+**Title Derivation** section above.
+
+### Apply the new title
+
+```bash
+gh issue edit <NUMBER> --repo penpot/penpot --title "<NEW TITLE>"
+```
+
+### Confirm
+
+```bash
+gh issue view <NUMBER> --repo penpot/penpot --json title
+```
+
 ## See Also
 
-- Creating issues **from PRs** (separating WHAT from HOW): `mem:workflow/creating-prs`
+- End-to-end orchestration entry point: the `create-issue` skill at
+  `.opencode/skills/create-issue/SKILL.md`. The skill is a thin entry
+  point; this memory is the canonical home for all issue-creation rules.
