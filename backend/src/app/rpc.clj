@@ -246,7 +246,8 @@
            (::nitrate/sso mdata true))
     (fn [cfg params]
       ;; Resolve team/project/file from explicit keys or from :id via metadata
-      (let [organization-id (uuid/coerce (:organization-id params))
+      (let [profile-id      (::profile-id params)
+            organization-id (uuid/coerce (:organization-id params))
             id-type         (::id-type mdata)
             id              (uuid/coerce (:id params))
             team-id         (or (uuid/coerce (:team-id params))
@@ -255,9 +256,10 @@
                                 (when (= id-type :project) id))
             file-id         (or (uuid/coerce (:file-id params))
                                 (when (= id-type :file) id))]
-        (if (or organization-id team-id project-id file-id)
+        (if (and profile-id
+                 (or organization-id team-id project-id file-id))
           (let [cache-ref  (or organization-id team-id project-id file-id)
-                profile-id (::profile-id params)
+
                 cache-key  [profile-id cache-ref]
                 cached     (cache/get org-sso-auth-cache cache-key)
                 result     (if (some? cached)
