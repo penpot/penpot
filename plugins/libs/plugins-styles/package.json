@@ -1,6 +1,6 @@
 {
   "name": "@penpot/plugin-styles",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "dependencies": {},
   "scripts": {
     "build": "node ../../tools/scripts/build-css.mjs",
