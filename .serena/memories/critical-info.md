@@ -45,7 +45,8 @@ module. You can read it from `mem:<MODULE>/core`
    tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
    `*-devenv` commands, read `mem:devenv/core`.
 - `tools/` contains standalone dev utilities: `nrepl-eval.mjs` (backend REPL eval),
-  `paren-repair.bb` (delimiter-error fixer, see `mem:tools/paren-repair`), and
+  `paren-repair.bb` (delimiter-error fixer, see `mem:tools/paren-repair`),
+  `psql` / `db-schema` (PostgreSQL client and schema dump wrappers, see `mem:tools/psql`), and
   `taiga.py` / `gh.py` (issue management helpers).
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
