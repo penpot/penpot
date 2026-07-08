@@ -119,6 +119,32 @@ describe('Fills & strokes', () => {
       }
     });
 
+    test('a gradient-only fill reads back no solid fillColor', (ctx) => {
+      const r = rect(ctx);
+      r.fills = [
+        {
+          fillColorGradient: {
+            type: 'linear',
+            startX: 0,
+            startY: 0,
+            endX: 1,
+            endY: 1,
+            width: 1,
+            stops: [
+              { color: '#ff0000', opacity: 1, offset: 0 },
+              { color: '#0000ff', opacity: 1, offset: 1 },
+            ],
+          },
+        },
+      ];
+      const fills = r.fills;
+      if (Array.isArray(fills)) {
+        expect(fills[0].fillColorGradient).toBeDefined();
+        // A gradient fill carries no solid color.
+        expect(fills[0].fillColor).toBeFalsy();
+      }
+    });
+
     test('fillOpacity above 1 throws', (ctx) => {
       const r = rect(ctx);
       expect(() => {

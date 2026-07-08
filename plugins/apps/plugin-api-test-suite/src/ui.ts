@@ -16,6 +16,7 @@ const results = new Map<string, TestResult>();
 const selected = new Set<string>();
 const expandedGroups = new Set<string>();
 let running = false;
+let stopping = false;
 let reloading = false;
 let statusText = '';
 
@@ -160,12 +161,24 @@ function renderHeader(): HTMLElement {
 }
 
 function renderToolbar(): HTMLElement {
-  const runAll = el('button', {
-    textContent: 'Run all',
-    disabled: running || tests.length === 0,
-  });
-  runAll.dataset.appearance = 'primary';
-  runAll.addEventListener('click', () => run('all'));
+  // While a run is in progress the primary action becomes Stop; otherwise it
+  // runs all tests.
+  const primary = running
+    ? el('button', {
+        textContent: 'Stop',
+        disabled: stopping,
+      })
+    : el('button', {
+        textContent: 'Run all',
+        disabled: tests.length === 0,
+      });
+  primary.dataset.appearance = 'primary';
+  if (running) {
+    primary.dataset.variant = 'destructive';
+    primary.addEventListener('click', () => stop());
+  } else {
+    primary.addEventListener('click', () => run('all'));
+  }
 
   const runSelected = el('button', {
     textContent: 'Run selected',
@@ -187,7 +200,7 @@ function renderToolbar(): HTMLElement {
   reload.addEventListener('click', () => reloadTests());
 
   const toolbar = el('div', { className: 'toolbar' }, [
-    runAll,
+    primary,
     runSelected,
     reload,
   ]);
@@ -471,6 +484,8 @@ function renderCoverage(): HTMLElement {
 function run(ids: string[] | 'all') {
   if (running) return;
   running = true;
+  stopping = false;
+  statusText = '';
 
   const targetIds = ids === 'all' ? tests.map((t) => t.id) : ids;
   for (const id of targetIds) {
@@ -487,6 +502,19 @@ function run(ids: string[] | 'all') {
 
   render();
   sendToPlugin({ type: 'run', ids });
+}
+
+/**
+ * Asks the sandbox to stop after the current test. The run keeps going until the
+ * in-flight test settles, at which point a `runComplete` arrives and clears the
+ * running state.
+ */
+function stop() {
+  if (!running || stopping) return;
+  stopping = true;
+  statusText = 'Stopping after the current test…';
+  render();
+  sendToPlugin({ type: 'stop' });
 }
 
 async function reloadTests() {
@@ -537,7 +565,16 @@ window.addEventListener('message', (event: MessageEvent<PluginToUIMessage>) => {
       break;
     case 'runComplete':
       running = false;
+      stopping = false;
       lastCoverage = message.coverage;
+      // A stopped run leaves queued tests marked `running`; drop those back to
+      // pending so the list doesn't show spinners forever.
+      for (const [id, r] of [...results]) {
+        if (r.status === 'running') results.delete(id);
+      }
+      statusText = message.stopped
+        ? `Stopped · ${message.summary.passed + message.summary.failed} test(s) run`
+        : '';
       render();
       break;
     case 'reloaded':

@@ -27,6 +27,7 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.constants :as mconst]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -308,6 +309,7 @@
                     (if (features/active-feature? state "render-wasm/v1")
                       (rx/merge
                        (->> resize-events-stream
+                            (rx/sample mconst/resize-sample-time)
                             (rx/mapcat
                              (fn [modifiers]
                                (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
@@ -335,7 +337,7 @@
                         ;; rx/last applies the exact final frame.
                         (rx/merge
                          (->> resize-events-stream
-                              (rx/sample 16)
+                              (rx/sample mconst/resize-sample-time)
                               (rx/mapcat emit-modifiers)
                               (rx/take-until stopper))
                          (->> resize-events-stream
@@ -523,6 +525,7 @@
           (rx/concat
            (rx/merge
             (->> angle-stream
+                 (rx/sample mconst/rotation-sample-time)
                  (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)))
                  (rx/take-until stopper))
             (->> angle-stream
@@ -539,7 +542,7 @@
             (rx/concat
              (rx/merge
               (->> angle-stream
-                   (rx/sample 16)
+                   (rx/sample mconst/rotation-sample-time)
                    (rx/map emit-modifiers)
                    (rx/take-until stopper))
               (->> angle-stream
@@ -800,7 +803,7 @@
                        (rx/take-until duplicate-stopper)
                        ;; Sample at a fixed cadence to keep preview smooth. Unlike a throttle,
                        ;; this tends to avoid perceptible "jumps" while still capping WASM work.
-                       (rx/sample 16)
+                       (rx/sample mconst/move-sample-time)
                        (rx/map
                         (fn [[modifiers snap-ignore-axis]]
                           (dwm/set-wasm-modifiers modifiers
@@ -840,7 +843,7 @@
                (rx/merge
                 (->> modifiers-stream
                      ;; Throttle the live preview to limit re-renders.
-                     (rx/sample 16)
+                     (rx/sample mconst/move-sample-time)
                      (rx/map
                       (fn [[modifiers snap-ignore-axis]]
                         (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis}))))

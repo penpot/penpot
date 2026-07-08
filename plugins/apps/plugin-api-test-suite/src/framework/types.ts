@@ -27,6 +27,18 @@ export interface TestCase {
    * or `describe.skipIfMocked`.
    */
   mockedSkip?: boolean;
+  /**
+   * When true, the run is focused on this test (and any other `.only`): all
+   * non-`only` tests are skipped. A dev aid for isolating a single case, set via
+   * `test.only`.
+   */
+  only?: boolean;
+  /**
+   * When true, the scratch board and shared state (selection, active page) are
+   * left in place after the test instead of being torn down, so the result can
+   * be inspected in the workspace. Set via `test.nocleanup`.
+   */
+  noCleanup?: boolean;
 }
 
 /** Lightweight test description sent to the UI (no function). */

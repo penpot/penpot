@@ -30,6 +30,21 @@ describe('File', () => {
     }
   });
 
+  test('validate reports referential-integrity errors', (ctx) => {
+    const file = ctx.penpot.currentFile;
+    expect(file).not.toBeNull();
+    if (file) {
+      const errors = file.validate();
+      expect(Array.isArray(errors)).toBe(true);
+      // A healthy scratch file has no integrity errors. Each error (if any)
+      // exposes a string code and hint.
+      for (const e of errors) {
+        expect(typeof e.code).toBe('string');
+        expect(typeof e.hint).toBe('string');
+      }
+    }
+  });
+
   test('export returns binary data', async (ctx) => {
     const file = ctx.penpot.currentFile;
     if (file) {
@@ -55,12 +70,21 @@ describe('File', () => {
         expect(version.label).toBe('plugin-test-version');
         expect(version.isAutosave).toBe(false);
 
-        // Relabel the saved version (covers FileVersion.label set).
+        // Relabel the saved version (covers FileVersion.label set). The
+        // proxy's own `label` reflects the write immediately from its local
+        // cache, so also fetch the versions again and assert the rename
+        // actually reached the backend.
         version.label = 'plugin-test-version-renamed';
         expect(version.label).toBe('plugin-test-version-renamed');
 
+        // The rename is persisted asynchronously; give it a moment to land.
+        await new Promise((resolve) => setTimeout(resolve, 500));
         const versions = await file.findVersions();
         expect(versions.length).toBeGreaterThan(0);
+        const renamed = versions.filter(
+          (v) => v.label === 'plugin-test-version-renamed',
+        );
+        expect(renamed).toHaveLength(1);
 
         // Clean up the version we just created.
         await version.remove();

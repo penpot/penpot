@@ -295,22 +295,28 @@
 
     :appendChild
     (fn [child]
-      (cond
-        (not (shape-proxy? child))
-        (u/not-valid plugin-id :appendChild child)
+      (let [valid-child? (shape-proxy? child)
+            child-page   (when valid-child? (obj/get child "$page"))
+            child-id     (when valid-child? (obj/get child "$id"))
+            objects      (when valid-child? (u/locate-objects file-id page-id))
+            shape        (when valid-child? (get objects id))
+            child-shape  (when valid-child? (u/locate-shape file-id page-id child-id))
+            index        (when valid-child?
+                           (if (and (u/natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
+                             0
+                             (count (:shapes shape))))]
+        (cond
+          (not valid-child?)
+          (u/not-valid plugin-id :appendChild child)
 
-        (or (not (u/page-active? page-id))
-            (not (u/page-active? (obj/get child "$page"))))
-        (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
+          (or (not (u/page-active? page-id))
+              (not (u/page-active? child-page)))
+          (u/not-valid plugin-id :appendChild "Cannot modify a page that is not currently active")
 
-        :else
-        (let [child-id (obj/get child "$id")
-              shape (u/locate-shape file-id page-id id)
-              child-shape (u/locate-shape file-id page-id child-id)
-              index
-              (if (and (u/natural-child-ordering? plugin-id) (not (ctl/reverse? shape)))
-                0
-                (count (:shapes shape)))]
+          (u/changes-component-copy-structure? objects shape child-shape)
+          (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
+          :else
           (st/emit!
            (dwsh/relocate-shapes #{child-id} id index)
            (se/event plugin-id "add-layout-element"

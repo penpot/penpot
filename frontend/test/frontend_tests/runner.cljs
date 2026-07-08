@@ -42,6 +42,7 @@
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
    [frontend-tests.plugins.utils-test]
+   [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.tokens.import-export-test]
@@ -111,6 +112,7 @@
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
    'frontend-tests.plugins.utils-test
+   'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.import-export-test

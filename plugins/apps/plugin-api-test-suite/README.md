@@ -152,6 +152,32 @@ In the UI each group header shows an aggregate **status dot** rolled up from its
 tests: it turns purple while any test in the group is running, red if any failed,
 green only once every test passed, and grey until then.
 
+### Focusing and debugging tests
+
+Two chainable modifiers help while developing a single case:
+
+```ts
+// Focus the run on this test — every non-`.only` test is skipped.
+test.only('the case under investigation', (ctx) => {
+  /* … */
+});
+
+// Keep the scratch board (and selection / active page) after the test so the
+// result can be inspected in the workspace instead of being torn down.
+test.nocleanup('leaves its board behind', (ctx) => {
+  /* … */
+});
+
+// They compose in any order, and with `skipIfMocked`:
+test.only.nocleanup('inspect this one', (ctx) => {
+  /* … */
+});
+```
+
+`.only` is a source-level focus, like `it.only` in other frameworks: leaving it in
+place limits every run (including CI) to the focused tests, so remove it before
+committing.
+
 ### The test context (`ctx`)
 
 `fn` receives a `TestContext` (`src/framework/types.ts`):
@@ -339,9 +365,7 @@ count:
 
 When a member is confirmed broken, add a test that asserts its **correct** behaviour
 and comment it as blocked-by-bug; it stays red until the API is fixed and then turns
-green (at which point drop the "API bug" framing). There are currently no such red
-tests — e.g. the `fontFamilies` token `resolvedValue` bug (it used to leak the raw
-tokenscript structure instead of `string[]`) has since been fixed.
+green (at which point drop the "API bug" framing).
 
 ### d.ts / runtime mismatches
 
