@@ -1,0 +1,8 @@
+# Workspace-independent MCP servers for the OpenAI Codex CLI.
+# This block is concatenated with the port-substituted templates/codex.toml
+# by manage.sh's write-instance-mcp-configs to produce .codex/config.toml at
+# the workspace root.
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest", "--cdp-endpoint=http://127.0.0.1:9222"]

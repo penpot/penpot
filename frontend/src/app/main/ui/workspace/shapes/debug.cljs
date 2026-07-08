@@ -23,7 +23,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc debug-bounding-boxes
+(mf/defc debug-bounding-boxes*
   [{:keys [shape]}]
   (let [points (->> (:points shape)
                     (map #(dm/fmt "%,%" (dm/get-prop % :x) (dm/get-prop % :y)))
@@ -47,11 +47,9 @@
                 :stroke-width 1
                 :stroke color}]]))
 
-(mf/defc debug-text-bounds
-  {::mf/wrap-props false}
-  [props]
-  (let [shape (unchecked-get props "shape")
-        zoom (mf/deref refs/selected-zoom)
+(mf/defc debug-text-bounds*
+  [{:keys [shape]}]
+  (let [zoom (mf/deref refs/selected-zoom)
         bounding-box (gst/shape->rect shape)
         ctx (js* "document.createElement(\"canvas\").getContext(\"2d\")")]
     [:g {:transform (gsh/transform-str shape)}
@@ -91,8 +89,7 @@
                   :style {:stroke "green"
                           :stroke-width (/ 2 zoom)}}]]))]))
 
-(mf/defc debug-bool-shape
-  {::mf/wrap-props false}
+(mf/defc debug-bool-shape*
   [{:keys [shape]}]
 
   (let [objects (mf/deref refs/workspace-page-objects)
@@ -172,17 +169,17 @@
           (when hp
             [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "green"}])]))]))
 
-(mf/defc shape-debug
+(mf/defc shape-debug*
   [{:keys [shape]}]
   [:*
    (when ^boolean (dbg/enabled? :bounding-boxes)
-     [:& debug-bounding-boxes {:shape shape}])
+     [:> debug-bounding-boxes* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :bool-shapes)
               ^boolean (cfh/bool-shape? shape))
-     [:& debug-bool-shape {:shape shape}])
+     [:> debug-bool-shape* {:shape shape}])
 
    (when (and ^boolean (dbg/enabled? :text-outline)
               ^boolean (cfh/text-shape? shape)
               ^boolean (seq (:position-data shape)))
-     [:& debug-text-bounds {:shape shape}])])
+     [:> debug-text-bounds* {:shape shape}])])

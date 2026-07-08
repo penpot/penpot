@@ -137,8 +137,7 @@
        :top top
        :left left
        :options options}]
-     [:& udi/import-form {:ref file-input
-                          :project-id (:id project)
-                          :on-finish-import on-finish-import}]]))
-
+     [:> udi/import-form* {:ref file-input
+                           :project-id (:id project)
+                           :on-finish-import on-finish-import}]]))
 

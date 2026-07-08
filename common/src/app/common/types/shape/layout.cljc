@@ -1074,7 +1074,7 @@
           (maybe-remove?)))))
 
 (defn check-deassigned-cells
-  "Clean the cells whith shapes that are no longer in the layout"
+  "Clean the cells with shapes that are no longer in the layout"
   [parent objects]
 
   (let [child-set (set (:shapes parent))

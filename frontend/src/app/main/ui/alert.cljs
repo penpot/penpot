@@ -27,6 +27,7 @@
            title
            on-accept
            hint
+           hide-actions?
            accept-label
            accept-style] :as props}]
 
@@ -65,8 +66,8 @@
        (when (seq link-message)
          [:h3 {:class (stl/css :modal-msg)}
           [:span (:before link-message)]
-          [:& lk/link {:action (:on-click link-message)
-                       :class (stl/css :link)}
+          [:> lk/link* {:action (:on-click link-message)
+                        :class (stl/css :link)}
            (:text link-message)]
           [:span (:after link-message)]])
        (when (and (string? scd-message) (not= scd-message ""))
@@ -77,11 +78,12 @@
                                     :appearance :ghost}
           hint])]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:div {:class (stl/css :action-buttons)}
-        [:input {:class (stl/css-case :accept-btn true
-                                      :danger (= accept-style :danger)
-                                      :primary (= accept-style :primary))
-                 :type "button"
-                 :value accept-label
-                 :on-click accept-fn}]]]]]))
+      (when-not hide-actions?
+        [:div {:class (stl/css :modal-footer)}
+         [:div {:class (stl/css :action-buttons)}
+          [:input {:class (stl/css-case :accept-btn true
+                                        :danger (= accept-style :danger)
+                                        :primary (= accept-style :primary))
+                   :type "button"
+                   :value accept-label
+                   :on-click accept-fn}]]])]]))

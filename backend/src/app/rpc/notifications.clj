@@ -34,11 +34,20 @@
 
 
 (defn notify-organization-deletion
-  [cfg organization-name teams deleted-teams]
+  [cfg organization-id organization-name teams deleted-teams]
   (let [msgbus (::mbus/msgbus cfg)]
     (mbus/pub! msgbus
                :topic uuid/zero
                :message {:type :organization-deleted
+                         :organization-id organization-id
                          :organization-name organization-name
                          :teams teams
                          :deleted-teams deleted-teams})))
+
+(defn notify-organization-change-sso
+  [cfg organization-id]
+  (let [msgbus (::mbus/msgbus cfg)]
+    (mbus/pub! msgbus
+               :topic uuid/zero
+               :message {:type :organization-change-sso
+                         :organization-id organization-id})))

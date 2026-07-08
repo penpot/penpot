@@ -21,7 +21,7 @@
 
 (defn- write!
   [^OutputStream output ^bytes data]
-  (l/trc :hint "writting data" :data data :length (alength data))
+  (l/trc :hint "writing data" :data data :length (alength data))
   (.write output data)
   (.flush output))
 

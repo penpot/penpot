@@ -389,7 +389,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 281.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "line-through",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2111,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae134c87eab3": {
@@ -758,7 +788,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 281.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2719,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae1409412914": {
@@ -1143,7 +1203,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 488.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2707,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae1488974651": {
@@ -1293,7 +1383,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 111.419998168945,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2313,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.2399978637695,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae149cc8c2f1": {
@@ -1432,7 +1552,32 @@
               },
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 201.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2714,
+                  "~:fills": [],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae149cc8c2f0": {
@@ -1571,7 +1716,32 @@
               },
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 201.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2514,
+                  "~:fills": [],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae136831d5b7": {
@@ -2116,7 +2286,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 281.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2519,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae1409412913": {
@@ -2368,7 +2568,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 201.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "underline",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2106,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae149fbf3112": {
@@ -2525,7 +2755,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 281.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2318,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae1409412912": {
@@ -4487,7 +4747,44 @@
               },
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 111.419998168945,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2714,
+                  "~:fills": [
+                    {
+                      "~:fill-opacity": 1,
+                      "~:fill-image": {
+                        "~:id": "~uaa0a383a-7553-808a-8006-ae13a3c575eb",
+                        "~:width": 100,
+                        "~:height": 100,
+                        "~:mtype": "image/jpeg",
+                        "~:keep-aspect-ratio": true,
+                        "~:name": "sample"
+                      }
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.2399978637695,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae136eba4581": {
@@ -5550,7 +5847,32 @@
               },
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 201.419982910156,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2313,
+                  "~:fills": [],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.239990234375,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae148b39a12f": {
@@ -5700,7 +6022,37 @@
               "~:fills": [],
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 111.419998168945,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2514,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.2399978637695,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           },
           "~u13fc1849-119a-8028-8006-ae145f7fe46e": {
@@ -6244,7 +6596,37 @@
               },
               "~:flip-x": null,
               "~:height": 63.999981880188,
-              "~:flip-y": null
+              "~:flip-y": null,
+              "~:position-data": [
+                {
+                  "~:y": 111.419998168945,
+                  "~:line-height": "1.2",
+                  "~:font-style": "normal",
+                  "~:typography-ref-id": null,
+                  "~:text-transform": "none",
+                  "~:text-align": "left",
+                  "~:font-id": "sourcesanspro",
+                  "~:font-size": "72px",
+                  "~:font-weight": "900",
+                  "~:typography-ref-file": null,
+                  "~:text-direction": "ltr",
+                  "~:width": 169.070068359375,
+                  "~:font-variant-id": "regular",
+                  "~:text-decoration": "none",
+                  "~:letter-spacing": "0px",
+                  "~:x": 2106,
+                  "~:fills": [
+                    {
+                      "~:fill-color": "#000000",
+                      "~:fill-opacity": 1
+                    }
+                  ],
+                  "~:direction": "ltr",
+                  "~:font-family": "sourcesanspro",
+                  "~:height": 93.2399978637695,
+                  "~:text": "HOLA"
+                }
+              ]
             }
           }
         },

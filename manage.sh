@@ -50,6 +50,7 @@ PENPOT_PORT_BASE_SERENA=${SERENA_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_SERENA_DASHBOARD=${SERENA_DASHBOARD_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_OPENCODE=${OPENCODE_EXTERNAL_PORT:?missing in defaults.env}
 PENPOT_PORT_BASE_MDTS=${MDTS_EXTERNAL_PORT:?missing in defaults.env}
+PENPOT_PORT_BASE_STORYBOOK=${PENPOT_STORYBOOK_PORT:?missing in defaults.env}
 
 # Per-instance values like PENPOT_REDIS_URI are injected by
 # instance-env-overrides as shell env variables (not set in this shell),
@@ -59,7 +60,7 @@ PENPOT_PORT_BASE_MDTS=${MDTS_EXTERNAL_PORT:?missing in defaults.env}
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.2-13
+export IMAGEMAGICK_VERSION=7.1.2-24
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
@@ -314,6 +315,7 @@ function instance-env-overrides {
     serena_dash=$(instance-port "$instance" "$PENPOT_PORT_BASE_SERENA_DASHBOARD")
     opencode=$(instance-port "$instance" "$PENPOT_PORT_BASE_OPENCODE")
     mdts=$(instance-port "$instance" "$PENPOT_PORT_BASE_MDTS")
+    storybook=$(instance-port "$instance" "$PENPOT_PORT_BASE_STORYBOOK")
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
@@ -323,6 +325,7 @@ function instance-env-overrides {
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
         "PENPOT_MCP_REPL_PORT=${mcp_repl}" \
+        "PENPOT_STORYBOOK_PORT=${storybook}" \
         "SERENA_EXTERNAL_PORT=${serena}" \
         "OPENCODE_EXTERNAL_PORT=${opencode}" \
         "MDTS_EXTERNAL_PORT=${mdts}" \
@@ -1281,16 +1284,17 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
-    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-mcp-bundle                 Build mcp bundle."
+    echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
-    echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
+    echo "- build-docker-images              Build all docker images (frontend, backend, exporter, mcp and storybook)."
     echo "- build-frontend-docker-image      Build frontend docker images."
     echo "- build-backend-docker-image       Build backend docker images."
     echo "- build-exporter-docker-image      Build exporter docker images."
     echo "- build-mcp-docker-image           Build exporter docker images."
     echo "- build-storybook-docker-image     Build storybook docker images."
+    echo "- build-imagemagick-docker-image   Build imagemagic docker images."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -1369,11 +1373,6 @@ case $1 in
         build-docs-bundle;
         ;;
 
-    build-imagemagick-docker-image)
-        shift;
-        build-imagemagick-docker-image $@;
-        ;;
-
     build-docker-images)
         build-frontend-docker-image
         build-backend-docker-image
@@ -1400,6 +1399,11 @@ case $1 in
 
     build-storybook-docker-image)
         build-storybook-docker-image
+        ;;
+
+    build-imagemagick-docker-image)
+        shift;
+        build-imagemagick-docker-image $@;
         ;;
 
     *)

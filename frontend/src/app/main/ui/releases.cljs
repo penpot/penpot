@@ -35,6 +35,7 @@
    [app.main.ui.releases.v2-14]
    [app.main.ui.releases.v2-15]
    [app.main.ui.releases.v2-16]
+   [app.main.ui.releases.v2-17]
    [app.main.ui.releases.v2-2]
    [app.main.ui.releases.v2-3]
    [app.main.ui.releases.v2-4]
@@ -49,8 +50,7 @@
 
 ;;; --- RELEASE NOTES MODAL
 
-(mf/defc release-notes
-  {::mf/props :obj}
+(mf/defc release-notes*
   [{:keys [version]}]
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
@@ -103,8 +103,8 @@
         version  (obj/get props "version")]
     (when (contains? versions version)
       [:div.relnotes
-       [:> release-notes props]])))
+       [:> release-notes* props]])))
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "2.16")))
+  (rc/render-release-notes (assoc params :version "2.17")))

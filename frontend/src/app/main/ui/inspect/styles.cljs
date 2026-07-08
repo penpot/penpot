@@ -51,7 +51,6 @@
    :grid-column
    :grid-row])
 
-
 (def type->panel-group
   {:multiple [:fill :stroke :text :shadow :blur :layout-element]
    :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
@@ -72,7 +71,8 @@
   (seq (:strokes shape)))
 
 (defn- has-blur? [shape]
-  (:blur shape))
+  (or (:blur shape)
+      (:background-blur shape)))
 
 (defn- has-text? [shape]
   (:content shape))
@@ -246,8 +246,7 @@
            (let [shapes (->> shapes (filter has-blur?))]
              (when (seq shapes)
                [:> style-box* {:panel :blur}
-                [:> blur-panel* {:shapes shapes
-                                 :objects objects}]]))
+                [:> blur-panel* {:shapes shapes}]]))
            ;; TEXT PANEL
            :text
            (let [shapes (filter has-text? shapes)]

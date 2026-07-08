@@ -9,6 +9,7 @@ mod render;
 mod shapes;
 mod state;
 mod tiles;
+mod ui;
 mod utils;
 mod uuid;
 mod view;
@@ -19,6 +20,7 @@ use std::collections::HashMap;
 
 #[allow(unused_imports)]
 use crate::error::{Error, Result};
+use crate::render::{FrameType, RenderFlag};
 
 use globals::{get_design_state, get_gpu_state, get_render_state};
 
@@ -91,15 +93,6 @@ pub extern "C" fn set_antialias_threshold(threshold: f32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn set_max_atlas_texture_size(max_px: i32) -> Result<()> {
-    get_render_state()
-        .surfaces
-        .set_max_atlas_texture_size(max_px);
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
     with_state!(state, {
         let color = skia::Color::new(raw_color);
@@ -112,15 +105,16 @@ pub extern "C" fn set_canvas_background(raw_color: u32) -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn render(timestamp: i32) -> Result<()> {
+pub extern "C" fn render(timestamp: i32, flags: u8) -> Result<FrameType> {
     with_state!(state, {
+        let render_state = get_render_state();
         state.rebuild_touched_tiles();
         // Drain the throttled modifier-tile invalidation accumulated
         // since the previous rAF. set_modifiers skips this work during
         // interactive_transform; we do it once here, with the current
         // modifier set, so the cost is paid once per rAF rather than
         // once per pointer move.
-        if get_render_state().options.is_interactive_transform() {
+        if render_state.options.is_interactive_transform() {
             // Collect into an owned Vec to release the immutable borrow on
             // `state.shapes` before the mutable `rebuild_modifier_tiles` call.
             let ids = state.shapes.modifier_ids().to_vec();
@@ -128,9 +122,62 @@ pub extern "C" fn render(timestamp: i32) -> Result<()> {
                 state.rebuild_modifier_tiles(&ids)?;
             }
         }
-        state
-            .start_render_loop(timestamp)
-            .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?;
+        let is_partial = flags & RenderFlag::Partial as u8 == RenderFlag::Partial as u8;
+        if flags & RenderFlag::SyncTiles as u8 != 0 {
+            render_state.preserve_target_during_render = true;
+        }
+        let frame_type = if is_partial && !render_state.preserve_target_during_render {
+            state
+                .continue_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        } else {
+            state
+                .start_render_loop(timestamp)
+                .map_err(|_| Error::RecoverableError("Error rendering".to_string()))?
+        };
+        return Ok(frame_type);
+    });
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_ui_only() -> Result<()> {
+    with_state!(state, {
+        state.render_ui_only();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_blurred_snapshot(blur_radius: f32) -> Result<()> {
+    with_state!(state, {
+        state.render_blurred_snapshot(blur_radius);
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn clear_render_include_filter() -> Result<()> {
+    with_state!(state, {
+        state.clear_include_filter();
+    });
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_render_include_filter() -> Result<()> {
+    let bytes = mem::bytes();
+
+    let entries: Vec<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::try_from(data).map_err(|e| Error::RecoverableError(e.to_string())))
+        .collect::<Result<Vec<Uuid>>>()?;
+
+    with_state!(state, {
+        state.set_include_filter(entries);
     });
     Ok(())
 }
@@ -179,7 +226,7 @@ pub extern "C" fn render_from_cache(_: i32) -> Result<()> {
     with_state!(state, {
         // Don't cancel the animation frame — let the async render
         // continue populating the tile HashMap in the background.
-        // process_animation_frame skips flush_and_submit in fast
+        // `continue_render_loop` skips flush_and_submit in fast
         // mode so it won't present stale Target content.  The
         // tile HashMap is position-independent, so tiles rendered
         // for the old viewport can be reused by the next full
@@ -241,16 +288,6 @@ pub extern "C" fn render_loading_overlay() -> Result<()> {
 
 #[no_mangle]
 #[wasm_error]
-pub extern "C" fn process_animation_frame(timestamp: i32) -> Result<()> {
-    let result = with_state!(state, { state.process_animation_frame(timestamp) });
-    if let Err(err) = result {
-        eprintln!("process_animation_frame error: {}", err);
-    }
-    Ok(())
-}
-
-#[no_mangle]
-#[wasm_error]
 pub extern "C" fn reset_canvas() -> Result<()> {
     get_render_state().reset_canvas();
     Ok(())
@@ -301,12 +338,7 @@ pub extern "C" fn set_view_end() -> Result<()> {
         performance::begin_measure!("set_view_end");
         let render_state = get_render_state();
         render_state.options.set_fast_mode(false);
-        render_state.cancel_animation_frame();
-
-        let scale = render_state.get_scale();
-        render_state
-            .tile_viewbox
-            .update(render_state.viewbox, scale);
+        render_state.tile_viewbox.update(&render_state.viewbox);
 
         if render_state.options.is_profile_rebuild_tiles() {
             state.rebuild_tiles();
@@ -325,6 +357,10 @@ pub extern "C" fn set_view_end() -> Result<()> {
             // keep cached tile textures so the render can blit them
             // instead of re-drawing every visible tile from scratch.
             render_state.rebuild_tile_index(&state.shapes);
+        }
+        // Avoid `reset_canvas` on the post-gesture render (pan at stable zoom).
+        if !render_state.options.is_profile_rebuild_tiles() {
+            render_state.preserve_target_during_render = true;
         }
         performance::end_measure!("set_view_end");
     });
@@ -358,7 +394,6 @@ pub extern "C" fn set_modifiers_end() -> Result<()> {
     let render_state = get_render_state();
     render_state.options.set_fast_mode(false);
     render_state.options.set_interactive_transform(false);
-    render_state.cancel_animation_frame();
     performance::end_measure!("set_modifiers_end");
     Ok(())
 }
@@ -698,7 +733,11 @@ pub extern "C" fn set_shape_svg_raw_content() -> Result<()> {
             .map_err(|e| Error::RecoverableError(e.to_string()))?
             .trim_end_matches('\0')
             .to_string();
+
+        let render_state = get_render_state();
+        let font_manager = skia::FontMgr::from(render_state.fonts().font_provider().clone());
         shape.set_svg_raw_content(svg_raw_content);
+        shape.update_svg_raw_content(font_manager);
     });
 
     Ok(())
@@ -946,7 +985,25 @@ pub fn free_gpu_resources() {
     get_render_state().free_gpu_resources();
 }
 
-fn main() {
-    #[cfg(target_arch = "wasm32")]
-    init_gl!();
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
+    let id = uuid_from_u32_quartet(a, b, c, d);
+
+    with_state!(state, {
+        let data = state.render_shape_pdf(&id, scale)?;
+
+        let len = data.len() as u32;
+        let mut buf = Vec::with_capacity(4 + data.len());
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(&data);
+        Ok(mem::write_bytes(buf))
+    })
+}
+
+pub fn main() {
+    // Why an empty main?
+    // Right now with the target `wasm32-unknown-emscripten` it is not possible
+    // to compile a rust project without a main and generate the necessary glue
+    // code. So the only option is to compile it with an empty main.
 }

@@ -98,9 +98,9 @@
      [:& recovery-form {:params params :on-success-callback on-success-callback}]
      [:hr {:class (stl/css :separator)}]
      [:div {:class (stl/css :go-back)}
-      [:& lk/link {:action go-back
-                   :class (stl/css :go-back-link)
-                   :data-testid "go-back-link"}
+      [:> lk/link* {:action go-back
+                    :class (stl/css :go-back-link)
+                    :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))
 
 
@@ -110,7 +110,7 @@
   [:div {:class (stl/css :auth-form-wrapper :register-success)}
    [:div {:class (stl/css :auth-title-wrapper)}
     [:h2 {:class (stl/css :auth-title)}
-     (tr "auth.check-mail")]
+     (tr "auth.check-email")]
     [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery")]]
    [:div {:class (stl/css :notification-text-email)} email]
    [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery-check")]])

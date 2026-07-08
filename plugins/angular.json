@@ -10,7 +10,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
             "outputPath": {
               "base": "dist/apps/contrast-plugin",
@@ -62,7 +62,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": { "buildTarget": "contrast-plugin:build:production" },
             "development": {
@@ -82,9 +82,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/apps/icons-plugin",
+            "outputPath": {
+              "base": "dist/apps/icons-plugin",
+              "browser": ""
+            },
             "index": "apps/icons-plugin/src/index.html",
             "browser": "apps/icons-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -131,7 +134,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": { "buildTarget": "icons-plugin:build:production" },
             "development": {
@@ -151,9 +154,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/apps/lorem-ipsum-plugin",
+            "outputPath": {
+              "base": "dist/apps/lorem-ipsum-plugin",
+              "browser": ""
+            },
             "index": "apps/lorem-ipsum-plugin/src/index.html",
             "browser": "apps/lorem-ipsum-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -200,7 +206,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "lorem-ipsum-plugin:build:production"
@@ -222,7 +228,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
             "outputPath": {
               "base": "dist/apps/table-plugin",
@@ -274,7 +280,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": { "buildTarget": "table-plugin:build:production" },
             "development": {
@@ -294,9 +300,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/apps/rename-layers-plugin",
+            "outputPath": {
+              "base": "dist/apps/rename-layers-plugin",
+              "browser": ""
+            },
             "index": "apps/rename-layers-plugin/src/index.html",
             "browser": "apps/rename-layers-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -343,7 +352,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "rename-layers-plugin:build:production"
@@ -365,7 +374,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
             "outputPath": {
               "base": "dist/apps/colors-to-tokens-plugin",
@@ -417,7 +426,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "colors-to-tokens-plugin:build:production"
@@ -439,9 +448,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/apps/poc-state-plugin",
+            "outputPath": {
+              "base": "dist/apps/poc-state-plugin",
+              "browser": ""
+            },
             "index": "apps/poc-state-plugin/src/index.html",
             "browser": "apps/poc-state-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -487,7 +499,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "poc-state-plugin:build:production"
@@ -509,9 +521,12 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:application",
+          "builder": "@angular/build:application",
           "options": {
-            "outputPath": "dist/apps/poc-tokens-plugin",
+            "outputPath": {
+              "base": "dist/apps/poc-tokens-plugin",
+              "browser": ""
+            },
             "index": "apps/poc-tokens-plugin/src/index.html",
             "browser": "apps/poc-tokens-plugin/src/main.ts",
             "polyfills": ["zone.js"],
@@ -558,7 +573,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "poc-tokens-plugin:build:production"

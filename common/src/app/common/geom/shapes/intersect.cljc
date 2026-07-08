@@ -355,11 +355,15 @@
 
 (defn has-point?
   [shape point]
-  (if (or ^boolean (cfh/path-shape? shape)
-          ^boolean (cfh/bool-shape? shape)
-          ^boolean (cfh/circle-shape? shape))
-    (slow-has-point? shape point)
-    (fast-has-point? shape point)))
+  (let [rotation (dm/get-prop shape :rotation)]
+    ;; Rotated shapes don't match their axis-aligned box, so use the polygon test.
+    (if (or ^boolean (cfh/path-shape? shape)
+            ^boolean (cfh/bool-shape? shape)
+            ^boolean (cfh/circle-shape? shape)
+            (and (some? rotation)
+                 (not ^boolean (mth/almost-zero? rotation))))
+      (slow-has-point? shape point)
+      (fast-has-point? shape point))))
 
 (defn rect-contains-shape?
   [rect shape]
@@ -369,7 +373,7 @@
 
 
 (defn line-line-intersect
-  "Calculates the interesection point for two lines given by the points a-b and b-c"
+  "Calculates the intersection point for two lines given by the points a-b and b-c"
   [a b c d]
 
   (let [;; Line equation representation: ax + by + c = 0

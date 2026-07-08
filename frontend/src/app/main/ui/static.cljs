@@ -43,8 +43,15 @@
 
 (mf/defc error-container*
   [{:keys [children]}]
-  (let [profile-id  (:profile-id @st/state)
-        on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
+  (let [profile     (mf/deref refs/profile)
+        profile-id  (:id profile)
+        on-nav-root (mf/use-fn
+                     (mf/deps profile-id profile)
+                     (fn []
+                       (if (and profile-id (some? (:default-team-id profile)))
+                         (st/emit! (dcm/go-to-dashboard-recent
+                                    :team-id (:default-team-id profile)))
+                         (st/emit! (rt/nav-root)))))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -321,6 +328,16 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
 
+(mf/defc nitrate-unavailable*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:p {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-unavailable.main-message")]]
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
+
 (mf/defc webgl-context-lost*
   []
   (let [on-reload (mf/use-fn #(js/location.reload))]
@@ -491,6 +508,9 @@
 
       :service-unavailable
       [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
 
       [:> internal-error* props])))
 

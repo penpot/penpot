@@ -51,13 +51,17 @@
   visibility: var(--actions-visibility);
 }
 
+.font-family-mixed {
+  color: var(--color-foreground-secondary);
+}
+
 .typography-selection-wrapper {
   display: grid;
   grid-template-columns: $sz-24 auto 1fr;
   flex: 1;
   block-size: 100%;
   inline-size: 100%;
-  padding: 0 var(--sp-m);
+  padding-inline-start: var(--sp-m);
 
   &.is-selectable {
     cursor: pointer;
@@ -73,22 +77,8 @@
   color: var(--color-foreground-secondary);
 }
 
-.typography-name,
-.typography-font {
-  @include t.use-typography("body-small");
-  @include text-ellipsis;
-
-  display: block;
-  align-self: center;
-  margin-inline-start: px2rem(6);
-}
-
 .typography-name {
   color: var(--color-foreground-primary);
-}
-
-.typography-font {
-  color: var(--color-foreground-secondary);
 }
 
 .font-name-wrapper {
@@ -182,17 +172,28 @@
   color: var(--color-foreground-primary);
 }
 
-.typography-name,
-.typography-font {
+.name-block {
   @include t.use-typography("body-small");
   @include text-ellipsis;
 
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-inline-start: px2rem(6);
+  margin: 0;
+  min-inline-size: px2rem(6);
+  padding: 8px 0 8px 6px;
+  max-width: 100%;
+  color: var(--color-foreground-primary);
+}
+
+.typography-name,
+.typography-font {
+  @include t.use-typography("body-small");
+
   min-inline-size: 0;
   color: var(--color-foreground-primary);
+}
+
+.typography-font {
+  margin-inline-start: px2rem(6);
+  color: var(--color-foreground-secondary);
 }
 
 .info-row {
@@ -323,12 +324,16 @@
   justify-content: center;
   align-items: center;
   position: absolute;
-  top: 0;
+  top: calc(-1 * #{px2rem(18)});
   left: 0;
   right: 0;
   block-size: 100%;
   inline-size: 100%;
   z-index: var(--z-index-dropdown);
+}
+
+.fonts-on-modal {
+  top: 0;
 }
 
 .show-recent {
@@ -388,7 +393,7 @@
 }
 
 .font-selector-dropdown-full-size {
-  block-size: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
+  block-size: var(--sidebar-element-options-height);
   display: grid;
   grid-template-rows: auto 1fr;
   padding: var(--sp-xxs) var(--sp-m) var(--sp-m) var(--sp-m);

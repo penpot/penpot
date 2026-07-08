@@ -461,8 +461,18 @@ You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd>
 </ul>
 
 <h3 id="blur">Blur</h3>
-<p>You can set a blur for each and every layer at Penpot.</p>
-<p><strong></strong>Applying a lot and/or big values for blurs can affect Penpot’s performance as it requires a lot from the browser.</p>
+<p>You can add blur effects to layers from the Design sidebar. Penpot supports two types:</p>
+<ul>
+  <li><strong>Layer blur</strong> blurs the layer content itself.</li>
+  <li><strong>Background blur</strong> blurs whatever sits behind the layer. Use it for frosted-glass or depth effects. Background blur requires the <a href="/user-guide/first-steps/troubleshooting-webgl/">WebGL renderer</a> to be enabled.</li>
+</ul>
+<p class="advice">Background blur is not included in exported files yet (PNG, SVG, PDF, and others). The exporter still uses the legacy SVG renderer, so the effect only shows in the workspace and View mode. Export support is a current priority and will land in an upcoming release.</p>
+<figure>
+  <img src="/img/styling/background-blur.webp" alt="Colorful shapes behind a frosted panel with background blur applied" />
+  <figcaption>Background blur affects the layers behind the shape, not the shape itself.</figcaption>
+</figure>
+<p>Click <strong>+</strong> in the Blur section to add an effect. You can apply both types on the same layer. Use the type selector to switch between them, the eye icon to show or hide an effect without removing it, and the value field to set the blur amount.</p>
+<p class="advice">Applying many or large blur values can affect Penpot’s performance, as it requires a lot from the browser.</p>
 <figure>
   <video title="Apply blur to a layer" muted="" playsinline="" controls="" width="100%" poster="/img/styling/blur.webp" height="auto">
     <source src="/img/styling/blur.mp4" type="video/mp4">

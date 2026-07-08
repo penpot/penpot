@@ -57,7 +57,7 @@
               "rectangle")
       :circle (if (cts/has-images? shape)
                 "img"
-                "elipse")
+                "ellipse")
       :path (if (cts/has-images? shape)
               "img"
               "path")
@@ -85,4 +85,3 @@
       :mask "mask"
       :group "group"
       nil)))
-

@@ -11,7 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
-   [app.common.types.path :as path]))
+   [app.common.types.path :as path]
+   [app.common.types.stroke :as cts]))
 
 (defn shape-stroke-margin
   [shape stroke-width]
@@ -37,13 +38,10 @@
   (d/concat-vec
    [{:id "BackgroundImageFix" :type :image-fix}]
 
-   ;; Background blur won't work in current SVG specification
-   ;; We can revisit this in the future
-   #_(->> shape :blur (into []) (blur-filters :background-blur))
-
    (->> shape :shadow (apply-filters :style :drop-shadow))
    [{:id "shape" :type :blend-filters}]
    (->> shape :shadow (apply-filters :style :inner-shadow))
+
    (->> shape :blur list (apply-filters :type :layer-blur))))
 
 (defn- calculate-filter-bounds
@@ -88,22 +86,40 @@
   ([shape]
    (get-shape-filter-bounds shape false))
   ([shape ignore-shadow-margin?]
-   (if (or (and (cfh/svg-raw-shape? shape)
-                (not= :svg (dm/get-in shape [:content :tag])))
-           ;; If no shadows or blur, we return the selrect as is
-           (and (empty? (-> shape :shadow))
-                (or (nil? (:blur shape))
-                    (not= :layer-blur (-> shape :blur :type))
-                    (zero? (-> shape :blur :value (or 0))))))
+   (cond
+     ;; SVG raw elements (non-root) don't have proper rotated points; use selrect
+     (and (cfh/svg-raw-shape? shape)
+          (not= :svg (dm/get-in shape [:content :tag])))
      (dm/get-prop shape :selrect)
+
+     ;; No shadows or blur: use the axis-aligned bounding box from the actual
+     ;; (possibly rotated) points. Using selrect here would be wrong for rotated
+     ;; shapes because selrect stores the unrotated rectangle, not the screen-space bbox.
+     (and (empty? (-> shape :shadow))
+          (or (nil? (:blur shape))
+              (zero? (-> shape :blur :value (or 0)))))
+     (-> (dm/get-prop shape :points)
+         (grc/points->rect))
+
+     :else
      (let [filters    (shape->filters shape)
-           blur-value (case (-> shape :blur :type)
-                        :layer-blur (or (-> shape :blur :value) 0)
-                        :background-blur 0
-                        0)
+           blur-value (or (-> shape :blur :value) 0)
            srect      (-> (dm/get-prop shape :points)
                           (grc/points->rect))]
        (get-rect-filter-bounds srect filters blur-value ignore-shadow-margin?)))))
+
+(def ^:private stroke-margin-multiplier 4.25)
+
+(defn- stroke-cap-marker-margin
+  [strokes open-path?]
+  (if open-path?
+    (->> strokes
+         (filter (fn [s]
+                   (or (cts/stroke-caps-marker (:stroke-cap-start s))
+                       (cts/stroke-caps-marker (:stroke-cap-end s)))))
+         (map #(* stroke-margin-multiplier (:stroke-width % 0)))
+         (reduce d/max 0))
+    0))
 
 (defn calculate-padding
   ([shape]
@@ -127,6 +143,11 @@
            0
            (shape-stroke-margin shape stroke-width))
 
+         stroke-cap-margin
+         (if ignore-margin?
+           0
+           (stroke-cap-marker-margin strokes open-path?))
+
          shadow-width
          (->> (:shadow shape)
               (remove :hidden)
@@ -149,8 +170,8 @@
          shadow-width
          (if ignore-shadow-margin? 0 shadow-width)]
 
-     {:horizontal (mth/ceil (+ stroke-margin shadow-width))
-      :vertical (mth/ceil (+ stroke-margin shadow-height))})))
+     {:horizontal (mth/ceil (+ stroke-margin stroke-cap-margin shadow-width))
+      :vertical (mth/ceil (+ stroke-margin stroke-cap-margin shadow-height))})))
 
 (defn- add-padding
   [bounds padding]
@@ -214,10 +235,7 @@
            (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
 
          filters (shape->filters shape)
-         blur-value (case (-> shape :blur :type)
-                      :layer-blur (or (-> shape :blur :value) 0)
-                      :background-blur 0
-                      0)]
+         blur-value (or (-> shape :blur :value) 0)]
 
      (get-rect-filter-bounds children-bounds filters blur-value ignore-shadow-margin?))))
 

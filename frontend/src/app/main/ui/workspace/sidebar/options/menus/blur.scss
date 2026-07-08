@@ -4,114 +4,134 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
-  @include sidebar.option-grid-structure;
-}
-
-.element-title {
-  grid-column: span 8;
+  max-width: var(--options-width);
 }
 
 .title-spacing-blur {
-  padding-left: deprecated.$s-2;
+  padding-left: var(--sp-xxs);
   margin: 0;
 }
 
-.element-set-content {
-  @include deprecated.flex-column;
+.long-title {
+  height: auto;
+}
 
-  margin-bottom: deprecated.$s-8;
+.element-set-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-s);
 }
 
 .first-row {
   @include sidebar.option-grid-structure;
+}
 
-  .blur-info {
-    grid-column: span 6;
-    display: flex;
-    align-items: center;
-    gap: deprecated.$s-1;
-    flex-grow: 1;
-    border-radius: deprecated.$br-8;
-    background-color: var(--input-details-color);
+.show-more {
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-tertiary);
+  border-radius: $br-8 0 0 $br-8;
 
-    .show-more {
-      @extend %button-secondary;
-
-      height: deprecated.$s-32;
-      width: deprecated.$s-28;
-      border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-      box-sizing: border-box;
-      border: deprecated.$s-1 solid var(--button-secondary-background-color-rest);
-
-      svg {
-        @extend %button-icon;
-      }
-
-      &.selected {
-        background-color: var(--button-radio-background-color-active);
-
-        svg {
-          stroke: var(--button-radio-foreground-color-active);
-        }
-      }
-    }
-
-    .label {
-      @include deprecated.body-small-typography;
-
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
-      height: deprecated.$s-32;
-      padding: 0 deprecated.$s-8;
-      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-      background-color: var(--input-background-color);
-      color: var(--menu-foreground-color);
-      box-sizing: border-box;
-      border: deprecated.$s-1 solid var(--input-border-color);
-    }
-
-    .blur-type-select {
-      flex-grow: 1;
-      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-    }
+  &:hover {
+    background-color: var(--color-background-quaternary);
+    border: $b-1 solid var(--color-background-quaternary);
   }
 
-  .actions {
-    @include deprecated.flex-row;
-  }
-
-  &.hidden {
-    .blur-info {
-      @include deprecated.hidden-element;
-
-      .show-more {
-        @include deprecated.hidden-element;
-
-        border: deprecated.$s-1 solid var(--input-border-color-disabled);
-      }
-
-      .label {
-        @include deprecated.hidden-element;
-
-        border: deprecated.$s-1 solid var(--input-border-color-disabled);
-      }
-    }
+  &:disabled {
+    background-color: var(--color-background-primary);
+    border-block-start: $b-1 solid var(--color-background-quaternary);
+    border-block-end: $b-1 solid var(--color-background-quaternary);
+    border-inline-start: $b-1 solid var(--color-background-quaternary);
   }
 }
 
+.blur-info {
+  grid-column: span 6;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  gap: 1px;
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
+}
+
+.mixed-label {
+  @include t.use-typography("body-small");
+
+  grid-column: span 7;
+  gap: 1px;
+  border-radius: $br-8;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  height: $sz-32;
+  padding: 0 var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  box-sizing: border-box;
+}
+
+.disabled-label-tooltip {
+  flex-grow: 1;
+}
+
+.label {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  height: $sz-32;
+  padding: 0 var(--sp-s);
+  border-radius: 0 $br-8 $br-8 0;
+  background-color: var(--color-background-tertiary);
+  border: $b-1 solid var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  box-sizing: border-box;
+}
+
+.blur-type-select {
+  flex-grow: 1;
+  border-radius: 0 $br-8 $br-8 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.hidden .blur-info,
+.hidden .blur-info .label {
+  cursor: default;
+  pointer-events: none;
+  box-sizing: border-box;
+  color: var(--color-foreground-secondary);
+  stroke: var(--color-foreground-secondary);
+  background-color: transparent;
+}
+
+.hidden .blur-info .label {
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
 .second-row {
-  @extend %input-element;
-  @include deprecated.body-small-typography;
+  width: var(--three-columns-width);
+}
 
-  width: deprecated.$s-92;
-
-  .label {
-    padding-left: deprecated.$s-8;
-    width: deprecated.$s-60;
-  }
+.disabled-label {
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-primary);
+  border-top: $b-1 solid var(--color-background-quaternary);
+  border-bottom: $b-1 solid var(--color-background-quaternary);
+  border-right: $b-1 solid var(--color-background-quaternary);
+  border-left: $b-1 solid transparent;
 }

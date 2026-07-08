@@ -264,7 +264,7 @@
       :scale)))
 
 (defn normalize-modifiers
-  "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
+  "Before applying constraints we need to remove the deformation caused by the resizing of the parent"
   [constraints-h constraints-v modifiers
    child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds]
 

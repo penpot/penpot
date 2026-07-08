@@ -160,10 +160,11 @@
             width (obj/get dom "clientWidth")]
         (swap! state* assoc :width width)))
 
-    [:div {:class (stl/css :palette-wrapper)
-           :id "palette-wrapper"
-           :style  (calculate-palette-style rulers?)
-           :data-testid "palette"}
+    [:section {:class (stl/css :palette-wrapper)
+               :id "palette-wrapper"
+               :style  (calculate-palette-style rulers?)
+               :aria-label (tr "workspace.toolbar.palette-bar")
+               :data-testid "palette"}
      (when-not ^boolean read-only?
        [:div {:ref parent-ref
               :class (dm/str size-classname " " (stl/css-case :palettes true

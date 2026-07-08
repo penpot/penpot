@@ -31,8 +31,7 @@
 
 ;; DEPRECATED, use stroke-block-styles* instead.
 ;; This component is kept for backward compatibility
-(mf/defc stroke-block
-  {::mf/wrap-props false}
+(mf/defc stroke-block*
   [{:keys [objects shape stroke]}]
   (let [format*   (mf/use-state :hex)
         format    (deref format*)
@@ -100,6 +99,6 @@
                                         :shape shape
                                         :color-space color-space
                                         :stroke stroke}]
-              [:& stroke-block {:key (str "stroke-color-" (:id shape) stroke)
-                                :shape shape
-                                :stroke stroke}])))]])))
+              [:> stroke-block* {:key (str "stroke-color-" (:id shape) stroke)
+                                 :shape shape
+                                 :stroke stroke}])))]])))

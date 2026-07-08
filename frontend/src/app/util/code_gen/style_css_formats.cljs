@@ -38,7 +38,7 @@
    :border-color              :border-color
    :box-shadow                :shadows
    :filter                    :blur
-   :backdrop-filter            :blur
+   :backdrop-filter           :background-blur
    :gap                       :size-array
    :row-gap                   :size-array
    :column-gap                :size-array
@@ -174,7 +174,7 @@
        (map #(format-shadow->css % options))
        (str/join ", ")))
 
-(defn- format-blur
+(defn format-blur
   [value]
   (dm/fmt "blur(%)" (fmt/format-pixels value)))
 
@@ -202,5 +202,6 @@
       :tracks (format-tracks value)
       :shadows (format-shadow value options)
       :blur (format-blur value)
+      :background-blur (format-blur value)
       :matrix (format-matrix value)
       (if (keyword? value) (d/name value) value))))

@@ -73,6 +73,7 @@
     :r4
     :shadow
     :blur
+    :background-blur
     :strokes
     :width
     :height

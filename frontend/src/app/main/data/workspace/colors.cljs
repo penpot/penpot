@@ -47,6 +47,20 @@
       (let [wglobal (:workspace-global state)]
         (layout/persist-layout-state! wglobal)))))
 
+(defn toggle-palette
+  "Toggle the palette tool and change the library it uses"
+  [selected]
+  (ptk/reify ::toggle-palette
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (layout/toggle-layout-flag :colorpalette)
+             (mbc/event colorpalette-selected-broadcast-key selected)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [wglobal (:workspace-global state)]
+        (layout/persist-layout-state! wglobal)))))
+
 (defn start-picker
   []
   (ptk/reify ::start-picker
@@ -1047,7 +1061,15 @@
           (when-let [color (-> state
                                (select-keys [:image :gradient :color :opacity])
                                (not-empty))]
-            (rx/of (add-recent-color color))))))))
+            ;; Closing the dialog while an image-fill upload is still in
+            ;; flight (or a gradient is mid-edit) leaves the colorpicker
+            ;; with a partial selection — opacity-only, or with stops not
+            ;; yet committed. ``add-recent-color`` runs the value through
+            ;; ``check-color`` and asserts; gate on the same schema here
+            ;; so the partial value is silently dropped instead of crashing
+            ;; the workspace.
+            (when (clr/valid-color? color)
+              (rx/of (add-recent-color color)))))))))
 
 (defn update-colorpicker-gradient
   [changes]

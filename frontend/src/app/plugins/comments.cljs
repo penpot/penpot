@@ -9,7 +9,6 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.main.data.comments :as dc]
-   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as dwc]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -136,6 +135,9 @@
              (not (r/check-permission plugin-id "comment:write"))
              (u/not-valid plugin-id :position "Plugin doesn't have 'comment:write' permission")
 
+             (not (u/page-active? page-id))
+             (u/not-valid plugin-id :position "Cannot modify a page that is not currently active")
+
              :else
              (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
                  (swap! data* assoc :position (gpt/point position))))))}
@@ -200,13 +202,12 @@
 
       :remove
       (fn []
-        (let [profile (:profile @st/state)
-              owner   (dsh/lookup-profile @st/state (:owner-id data))]
+        (let [profile (:profile @st/state)]
           (cond
             (not (r/check-permission plugin-id "comment:write"))
             (u/not-valid plugin-id :remove "Plugin doesn't have 'comment:write' permission")
 
-            (not= (:id profile) owner)
+            (not= (:id profile) (:owner-id data))
             (u/not-valid plugin-id :remove "Cannot change content from another user's comments")
 
             :else

@@ -17,7 +17,7 @@
 
 (defmacro select-keys
   "A macro version of `select-keys`. Useful when keys vector is known
-  at compile time (aprox 600% performance boost).
+  at compile time (approx 600% performance boost).
 
   It is not 100% equivalent, this macro does not removes not existing
   keys in contrast to clojure.core/select-keys"

@@ -11,16 +11,16 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.inspect.annotation :refer [annotation]]
-   [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
+   [app.main.ui.inspect.annotation :refer [annotation*]]
+   [app.main.ui.inspect.attributes.blur :refer [blur-panel*]]
    [app.main.ui.inspect.attributes.fill :refer [fill-panel*]]
-   [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
-   [app.main.ui.inspect.attributes.layout :refer [layout-panel]]
-   [app.main.ui.inspect.attributes.layout-element :refer [layout-element-panel]]
-   [app.main.ui.inspect.attributes.shadow :refer [shadow-panel]]
+   [app.main.ui.inspect.attributes.geometry :refer [geometry-panel*]]
+   [app.main.ui.inspect.attributes.layout :refer [layout-panel*]]
+   [app.main.ui.inspect.attributes.layout-element :refer [layout-element-panel*]]
+   [app.main.ui.inspect.attributes.shadow :refer [shadow-panel*]]
    [app.main.ui.inspect.attributes.stroke :refer [stroke-panel*]]
-   [app.main.ui.inspect.attributes.svg :refer [svg-panel]]
-   [app.main.ui.inspect.attributes.text :refer [text-panel]]
+   [app.main.ui.inspect.attributes.svg :refer [svg-panel*]]
+   [app.main.ui.inspect.attributes.text :refer [text-panel*]]
    [app.main.ui.inspect.attributes.variant :refer [variant-panel*]]
    [app.main.ui.inspect.attributes.visibility :refer [visibility-panel*]]
    [app.main.ui.inspect.exports :refer [exports]]
@@ -61,16 +61,16 @@
                                 :workspace-element-options (= from :workspace))}
      (for [[idx option] (map-indexed vector options)]
        [:> (case option
-             :geometry         geometry-panel
-             :layout           layout-panel
-             :layout-element   layout-element-panel
+             :geometry         geometry-panel*
+             :layout           layout-panel*
+             :layout-element   layout-element-panel*
              :fill             fill-panel*
              :stroke           stroke-panel*
-             :shadow           shadow-panel
-             :blur             blur-panel
+             :shadow           shadow-panel*
+             :blur             blur-panel*
              :visibility       visibility-panel*
-             :text             text-panel
-             :svg              svg-panel
+             :text             text-panel*
+             :svg              svg-panel*
              :variant          variant-panel*)
         {:key idx
          :shapes shapes
@@ -81,7 +81,7 @@
          :libraries libraries
          :file-id file-id}])
      (when annotation-content
-       [:& annotation {:content annotation-content}])
+       [:> annotation* {:content annotation-content}])
      [:& exports
       {:shapes shapes
        :type type

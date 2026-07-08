@@ -19,6 +19,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.path :as path]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -412,12 +413,9 @@
    (add-object changes obj nil))
 
   ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
-
-   ;; FIXME: add shape validation
-
    (assert-page-id! changes)
    (assert-objects! changes)
-   (let [obj (cond-> obj
+   (let [obj (cond-> (cts/check-shape obj)
                (not= index ::undefined)
                (assoc ::index index))
 

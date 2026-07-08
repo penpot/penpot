@@ -89,6 +89,12 @@
                 email)]
     email))
 
+(defn- with-nitrate-licence
+  [profile cfg]
+  (if (contains? cf/flags :nitrate)
+    (nitrate/add-nitrate-licence-to-profile cfg profile)
+    profile))
+
 ;; --- QUERY: Get profile (own)
 
 
@@ -106,12 +112,12 @@
     (let [profile (-> (get-profile pool profile-id)
                       (strip-private-attrs)
                       (update :props filter-props))]
-      (if (contains? cf/flags :nitrate)
-        (nitrate/add-nitrate-licence-to-profile cfg profile)
-        profile))
+      (with-nitrate-licence profile cfg))
 
-    (catch Throwable _
-      {:id uuid/zero :fullname "Anonymous User"})))
+    (catch Throwable cause
+      (if (= :not-found (-> cause ex-data :type))
+        {:id uuid/zero :fullname "Anonymous User"}
+        (throw cause)))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
@@ -135,7 +141,7 @@
    ::sm/params schema:update-profile
    ::sm/result schema:profile
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id fullname lang theme] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
   ;; NOTE: we need to retrieve the profile independently if we use
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
@@ -156,6 +162,7 @@
     (-> profile
         (strip-private-attrs)
         (d/without-nils)
+        (with-nitrate-licence cfg)
         (rph/with-meta {::audit/props (audit/profile->props profile)}))))
 
 
@@ -291,14 +298,14 @@
                          :file-mtype (:mtype file)}}))))
 
 (defn- generate-thumbnail
-  [_ input]
-  (let [input   (media/run {:cmd :info :input input})
-        thumb   (media/run {:cmd :profile-thumbnail
-                            :format :jpeg
-                            :quality 85
-                            :width 256
-                            :height 256
-                            :input input})
+  [cfg input]
+  (let [input   (media/run cfg {:cmd :info :input input})
+        thumb   (media/run cfg {:cmd :profile-thumbnail
+                                :format :jpeg
+                                :quality 85
+                                :width 256
+                                :height 256
+                                :input input})
         hash    (sto/calculate-hash (:data thumb))
         content (-> (sto/content (:data thumb) (:size thumb))
                     (sto/wrap-with-hash hash))]
@@ -483,8 +490,17 @@
                 {:deleted-at deleted-at}
                 {:id profile-id})
 
-    ;; Api call to nitrate
-    (nitrate/call cfg :remove-profile-from-all-orgs {:profile-id profile-id})
+    ;; Delete owned organizations on the fly (no grace period).
+    ;; Nitrate iterates the user's owned orgs and, per org, calls
+    ;; Penpot back through two paths: ::notify-user-organizations-deletion
+    ;; (during delete-owned-orgs) and ::notify-organization-deletion.
+    ;; Both preserve org teams unchanged and only prefix or delete
+    ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; Let Nitrate clean up the data associated with the deleted Penpot user:
+    ;; owned organizations, remaining memberships, and subscription cancellation.
+    (when (contains? cf/flags :nitrate)
+      (nitrate/call cfg :cleanup-deleted-penpot-user
+                    {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
     (wrk/submit! {::db/conn conn
@@ -492,7 +508,6 @@
                   ::wrk/params {:object :profile
                                 :deleted-at deleted-at
                                 :id profile-id}})
-
 
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))
@@ -519,6 +534,32 @@
   [cfg {:keys [::rpc/profile-id]}]
   (let [editors (db/exec! cfg [sql:get-subscription-editors profile-id])]
     {:editors editors}))
+
+;; --- QUERY: Owned Organizations Summary (for delete-account modal)
+
+(def ^:private schema:owned-organization-summary
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:slug ::sm/text]
+   [:team-count ::sm/int]
+   [:member-count ::sm/int]
+   [:avatar-bg-url {:optional true} [:maybe ::sm/uri]]
+   [:logo-id {:optional true} [:maybe ::sm/uuid]]
+   [:custom-photo {:optional true} [:maybe ::sm/text]]])
+
+(def ^:private schema:get-owned-organizations-summary-result
+  [:vector schema:owned-organization-summary])
+
+(sv/defmethod ::get-owned-organizations-summary
+  "List organizations owned by the current profile with team and member counts.
+   Used by the delete-account modal to warn the user about cascading deletion."
+  {::doc/added "2.18"
+   ::sm/result schema:get-owned-organizations-summary-result}
+  [cfg {:keys [::rpc/profile-id]}]
+  (if (contains? cf/flags :nitrate)
+    (or (nitrate/call cfg :get-owned-orgs-summary {:profile-id profile-id}) [])
+    []))
 
 ;; --- HELPERS
 

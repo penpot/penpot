@@ -459,7 +459,7 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
+  [{:keys [form label class trim valid-item-fn caution-item-fn on-submit] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -610,6 +610,7 @@
 
     [:div {:class klass}
      [:input {:id (name input-name)
+              :name (name input-name)
               :class in-klass
               :type "text"
               :auto-focus auto-focus?

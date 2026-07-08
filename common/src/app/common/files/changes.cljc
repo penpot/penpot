@@ -1194,7 +1194,7 @@
 ;; frames. Return the ids of the frames affected
 
 (defn- parents-frames
-  "Go trough the parents and get all of them that are a frame."
+  "Go through the parents and get all of them that are a frame."
   [id objects]
   (->> (cfh/get-parents-with-self objects id)
        (filter cfh/frame-shape?)))

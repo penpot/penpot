@@ -20,6 +20,7 @@
 
 .grid-editor-wrapper {
   cursor: grab;
+  position: relative;
   width: 100%;
   height: 80%;
   display: flex;
@@ -62,6 +63,8 @@
   right: calc(deprecated.$s-20 / var(--zoom));
   width: calc(deprecated.$s-20 / var(--zoom));
   height: calc(deprecated.$s-20 / var(--zoom));
+  opacity: 0;
+  pointer-events: none;
 
   svg {
     position: absolute;
@@ -71,6 +74,11 @@
     height: auto;
     stroke: var(--grid-editor-marker-color);
   }
+}
+
+.grid-editor-wrapper:hover .grid-editor-button {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .grid-frame {

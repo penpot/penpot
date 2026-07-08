@@ -1,4 +1,15 @@
-import { Board, Bounds, Fill, FlexLayout, GridLayout, Page, Rectangle, Shape, Text } from "@penpot/plugin-types";
+import type {
+    Board,
+    Bounds,
+    Fill,
+    FlexLayout,
+    GridLayout,
+    Page,
+    Rectangle,
+    Shape,
+    Text,
+    VariantContainer,
+} from "@penpot/plugin-types";
 
 export class PenpotUtils {
     /**
@@ -76,16 +87,20 @@ export class PenpotUtils {
     public static findShapes(predicate: (shape: Shape) => boolean, root: Shape | null = null): Shape[] {
         let result = new Array<Shape>();
 
-        let find = function (shape: Shape | null) {
+        // Walk the descendants of the given shape, testing the predicate on each
+        // one. The starting shape is never tested itself: findShapes searches
+        // *within* a container, so a predicate meant for descendants cannot
+        // accidentally select (and later mutate) the container it was handed.
+        let walk = function (shape: Shape | null) {
             if (!shape) {
                 return;
             }
-            if (predicate(shape)) {
-                result.push(shape);
-            }
             if ("children" in shape && shape.children) {
                 for (let child of shape.children) {
-                    find(child);
+                    if (predicate(child)) {
+                        result.push(child);
+                    }
+                    walk(child);
                 }
             }
         };
@@ -94,11 +109,11 @@ export class PenpotUtils {
             const pages = penpot.currentFile?.pages;
             if (pages) {
                 for (let page of pages) {
-                    find(page.root);
+                    walk(page.root);
                 }
             }
         } else {
-            find(root);
+            walk(root);
         }
         return result;
     }
@@ -510,6 +525,88 @@ export class PenpotUtils {
         }
 
         return null;
+    }
+
+    /**
+     * Creates a variant group from a list of main component instances and immediately
+     * configures its property names and values.
+     *
+     * Encapsulates the full multi-step workflow in a single call:
+     *   1. `penpot.createVariantFromComponents()` — groups the components
+     *   2. `variants.renameProperty()` / `variants.addProperty()` — sets property names
+     *   3. `comp.setVariantProperty()` — sets each component's property values
+     *
+     * @param components - Array of main-instance boards to combine. Each element carries
+     *   a `shape` (the Board on the canvas) and a `properties` map of
+     *   `{ propertyName: value }` for that component.
+     * @returns The newly created `VariantContainer`.
+     *
+     * @example
+     * // Three button variants differing in Size
+     * // Given three main components s, m, l (here: the first three main components on the page)
+     * const [s, m, l] = penpot.currentPage.findAllShapes(sh => sh.isMainComponent()).slice(0, 3) as Board[];
+     * const container = PenpotUtils.createVariantContainer([
+     *   { shape: s, properties: { Size: 'Small' } },
+     *   { shape: m, properties: { Size: 'Medium' } },
+     *   { shape: l, properties: { Size: 'Large' } },
+     * ]);
+     *
+     * @example
+     * // Two properties: Size × State
+     * const container = PenpotUtils.createVariantContainer([
+     *   { shape: s, properties: { Size: 'Small', State: 'Default' } },
+     *   { shape: m, properties: { Size: 'Medium', State: 'Default' } },
+     *   { shape: l, properties: { Size: 'Large', State: 'Hover' } },
+     * ]);
+     */
+    public static createVariantContainer(
+        components: Array<{ shape: Board; properties: Record<string, string> }>
+    ): VariantContainer {
+        // Collect all unique property names (preserving first-seen order)
+        const propNames: string[] = [];
+        for (const { properties } of components) {
+            for (const name of Object.keys(properties)) {
+                if (!propNames.includes(name)) propNames.push(name);
+            }
+        }
+
+        // 1. Create the variant container
+        // @ts-ignore — createVariantFromComponents was added after plugin-types@1.4.1
+        const container: VariantContainer = (penpot as any).createVariantFromComponents(components.map((c) => c.shape));
+        const variants = container.variants;
+        if (!variants) {
+            throw new Error(
+                "createVariantContainer: the created container has no `variants`. " +
+                    "Ensure every provided shape is a main component instance (Board)."
+            );
+        }
+
+        // 2. Rename / add properties
+        // createVariantFromComponents always creates exactly one property ("Property 1")
+        for (let i = 0; i < propNames.length; i++) {
+            if (i === 0) {
+                variants.renameProperty(0, propNames[0]);
+            } else {
+                variants.addProperty();
+                variants.renameProperty(i, propNames[i]);
+            }
+        }
+
+        // 3. Set each component's property values
+        const variantComps = variants.variantComponents();
+        for (let compIdx = 0; compIdx < variantComps.length; compIdx++) {
+            const comp = variantComps[compIdx];
+            if (!penpot.utils.types.isVariantComponent(comp)) continue;
+            const props = components[compIdx]?.properties ?? {};
+            for (let propIdx = 0; propIdx < propNames.length; propIdx++) {
+                const value = props[propNames[propIdx]];
+                if (value !== undefined) {
+                    comp.setVariantProperty(propIdx, value);
+                }
+            }
+        }
+
+        return container;
     }
 
     /**

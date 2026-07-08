@@ -14,6 +14,7 @@
   --options-empty: var(--color-canvas);
 
   display: grid;
+  align-content: center;
   place-items: center start;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
@@ -27,7 +28,7 @@
   color: var(--options-fg-color);
   cursor: default;
 
-  &:hover,
+  &:hover:not(.option-disabled),
   &[aria-selected="true"] {
     --options-bg-color: var(--color-background-quaternary);
   }
@@ -68,6 +69,10 @@
 .option-selected {
   --options-fg-color: var(--color-accent-primary);
   --options-icon-fg-color: var(--color-accent-primary);
+}
+
+.option-disabled {
+  opacity: 0.6;
 }
 
 .option-check {

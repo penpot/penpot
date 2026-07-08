@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.color :as cl]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
@@ -72,19 +73,21 @@
             ;; Remove previous token when renaming a token
             (dissoc (:name prev-token))
             (update (:name token) #(ctob/make-token (merge % prev-token token))))]
-
-    (->> (if (contains? cf/flags :tokenscript)
-           (rx/of (ts/resolve-tokens tokens))
-           (sd/resolve-tokens-interactive tokens))
-         (rx/mapcat
-          (fn [resolved-tokens]
-            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
-                  resolved-value (if (contains? cf/flags :tokenscript)
-                                   (ts/tokenscript-symbols->penpot-unit resolved-value)
-                                   resolved-value)]
-              (if resolved-value
-                (rx/of {:value resolved-value})
-                (rx/of {:error (first errors)}))))))))
+    ;; TODO: Review this when tokenscript is fully integrated.
+    (if (cfo/token-circular-reference? tokens (:name token))
+      (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})
+      (->> (if (contains? cf/flags :tokenscript)
+             (rx/of (ts/resolve-tokens tokens))
+             (sd/resolve-tokens-interactive tokens))
+           (rx/mapcat
+            (fn [resolved-tokens]
+              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
+                    resolved-value (if (contains? cf/flags :tokenscript)
+                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     resolved-value)]
+                (if resolved-value
+                  (rx/of {:value resolved-value})
+                  (rx/of {:error (first errors)})))))))))
 
 (defn- hex->color-obj
   [hex]
@@ -315,9 +318,13 @@
      (swap! form (fn [state]
                    (-> state
                        (assoc-in [:data :value value-subfield index field] (if trim? (str/trim value) value))
+                       (assoc-in [:touched :value value-subfield index field] true)
+                       (update :errors dissoc :value)
+                       (update :extra-errors dissoc :value)
                        (update :errors clean-errors)
                        (update :extra-errors clean-errors)
                        (update :extra-errors dissoc "")))))))
+
 
 (mf/defc indexed-color-input*
   [{:keys [name tokens token index value-subfield] :rest props}]
@@ -325,11 +332,25 @@
   (let [form       (mf/use-ctx fc/context)
         input-name name
         token-name (get-in @form [:data :name] nil)
-        error
-        (get-in @form [:errors :value value-subfield index input-name])
+
+        touched?
+        (get-in @form [:touched :value value-subfield index input-name])
 
         value
         (get-in @form [:data :value value-subfield index input-name] "")
+
+        ;; Resolution error for this specific field
+        indexed-error
+        (get-in @form [:errors :value value-subfield index input-name])
+
+        ;; Empty-field error: scoped to this layer so each shadow layer is
+        ;; evaluated independently from the others.
+        empty-error
+        (when (str/blank? value)
+          {:message (tr "errors.tokens.empty-field")})
+
+        error
+        (when touched? (or indexed-error empty-error))
 
         color-resolved
         (get-in @form [:data :value value-subfield index :color-result] "")

@@ -68,8 +68,26 @@ impl TryFrom<RawStrokeCap> for StrokeCap {
     }
 }
 
+// A negative value means "unset" — the renderer falls back to its default
+// dash pattern. We use a sentinel instead of passing a bool because adding
+// two f32 params keeps the FFI signature flat and allocation-free.
+fn decode_optional(value: f32) -> Option<f32> {
+    if value.is_finite() && value >= 0.0 {
+        Some(value)
+    } else {
+        None
+    }
+}
+
 #[no_mangle]
-pub extern "C" fn add_shape_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
+pub extern "C" fn add_shape_center_stroke(
+    width: f32,
+    style: u8,
+    cap_start: u8,
+    cap_end: u8,
+    dash: f32,
+    gap: f32,
+) {
     let stroke_style = RawStrokeStyle::from(style);
     let cap_start = RawStrokeCap::from(cap_start);
     let cap_end = RawStrokeCap::from(cap_end);
@@ -80,12 +98,21 @@ pub extern "C" fn add_shape_center_stroke(width: f32, style: u8, cap_start: u8, 
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
+            decode_optional(dash),
+            decode_optional(gap),
         ));
     });
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
+pub extern "C" fn add_shape_inner_stroke(
+    width: f32,
+    style: u8,
+    cap_start: u8,
+    cap_end: u8,
+    dash: f32,
+    gap: f32,
+) {
     let stroke_style = RawStrokeStyle::from(style);
     let cap_start = RawStrokeCap::from(cap_start);
     let cap_end = RawStrokeCap::from(cap_end);
@@ -96,12 +123,21 @@ pub extern "C" fn add_shape_inner_stroke(width: f32, style: u8, cap_start: u8, c
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
+            decode_optional(dash),
+            decode_optional(gap),
         ));
     });
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) {
+pub extern "C" fn add_shape_outer_stroke(
+    width: f32,
+    style: u8,
+    cap_start: u8,
+    cap_end: u8,
+    dash: f32,
+    gap: f32,
+) {
     let stroke_style = RawStrokeStyle::from(style);
     let cap_start = RawStrokeCap::from(cap_start);
     let cap_end = RawStrokeCap::from(cap_end);
@@ -112,6 +148,8 @@ pub extern "C" fn add_shape_outer_stroke(width: f32, style: u8, cap_start: u8, c
             stroke_style.into(),
             cap_start.try_into().ok(),
             cap_end.try_into().ok(),
+            decode_optional(dash),
+            decode_optional(gap),
         ));
     });
 }

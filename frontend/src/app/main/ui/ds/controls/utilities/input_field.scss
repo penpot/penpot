@@ -126,3 +126,12 @@
 .tooltip-wrapper {
   inline-size: 100%;
 }
+
+.text-icon {
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+  inline-size: fit-content;
+  min-inline-size: px2rem(46);
+  padding-inline-start: var(--sp-xs);
+}

@@ -159,7 +159,7 @@ To save time on both sides, please avoid submitting PRs that:
 
 ### Good first issues
 
-We use the `easy fix` label to mark issues appropriate for newcomers.
+We use the `good first issue` label to mark issues appropriate for newcomers.
 
 ## Commit Guidelines
 
@@ -175,26 +175,26 @@ Commit messages must follow this format:
 
 ### Commit types
 
-| Emoji | Description |
-|-------|-------------|
-| :bug: | Bug fix |
-| :sparkles: | Improvement or enhancement |
-| :tada: | New feature |
-| :recycle: | Refactor |
-| :lipstick: | Cosmetic changes |
-| :ambulance: | Critical bug fix |
-| :books: | Documentation |
-| :construction: | Work in progress |
-| :boom: | Breaking change |
-| :wrench: | Configuration update |
-| :zap: | Performance improvement |
-| :whale: | Docker-related change |
-| :paperclip: | Other non-relevant changes |
-| :arrow_up: | Dependency update |
-| :arrow_down: | Dependency downgrade |
-| :fire: | Removal of code or files |
-| :globe_with_meridians: | Add or update translations |
-| :rocket: | Epic or highlight |
+| Emoji                  | Code                     | Description                |
+| ---------------------- | ------------------------ | -------------------------- |
+| :bug:                  | `:bug:`                  | Bug fix                    |
+| :sparkles:             | `:sparkles:`             | Improvement or enhancement |
+| :tada:                 | `:tada:`                 | New feature                |
+| :recycle:              | `:recycle:`              | Refactor                   |
+| :lipstick:             | `:lipstick:`             | Cosmetic changes           |
+| :ambulance:            | `:ambulance:`            | Critical bug fix           |
+| :books:                | `:books:`                | Documentation              |
+| :construction:         | `:construction:`         | Work in progress           |
+| :boom:                 | `:boom:`                 | Breaking change            |
+| :wrench:               | `:wrench:`               | Configuration update       |
+| :zap:                  | `:zap:`                  | Performance improvement    |
+| :whale:                | `:whale:`                | Docker-related change      |
+| :paperclip:            | `:paperclip:`            | Other non-relevant changes |
+| :arrow_up:             | `:arrow_up:`             | Dependency update          |
+| :arrow_down:           | `:arrow_down:`           | Dependency downgrade       |
+| :fire:                 | `:fire:`                 | Removal of code or files   |
+| :globe_with_meridians: | `:globe_with_meridians:` | Add or update translations |
+| :rocket:               | `:rocket:`               | Epic or highlight          |
 
 ### Rules
 
@@ -231,6 +231,19 @@ We use [cljfmt](https://github.com/weavejester/cljfmt) for formatting and
 ./scripts/lint
 ```
 
+For frontend SCSS, we use `stylelint` for linting and
+`Prettier` for formatting:
+
+```bash
+cd frontend
+
+# Lint SCSS
+pnpm run lint:scss (does not modify files)
+
+# Fix SCSS formatting (modifies files in place)
+pnpm run fmt:scss
+```
+
 Ideally, run these as git pre-commit hooks.
 [Husky](https://typicode.github.io/husky/#/) is a convenient option for
 setting this up.
@@ -259,23 +272,23 @@ By submitting code you agree to and can certify the following:
 > By making a contribution to this project, I certify that:
 >
 > (a) The contribution was created in whole or in part by me and I have the
->     right to submit it under the open source license indicated in the file; or
+> right to submit it under the open source license indicated in the file; or
 >
 > (b) The contribution is based upon previous work that, to the best of my
->     knowledge, is covered under an appropriate open source license and I have
->     the right under that license to submit that work with modifications,
->     whether created in whole or in part by me, under the same open source
->     license (unless I am permitted to submit under a different license), as
->     indicated in the file; or
+> knowledge, is covered under an appropriate open source license and I have
+> the right under that license to submit that work with modifications,
+> whether created in whole or in part by me, under the same open source
+> license (unless I am permitted to submit under a different license), as
+> indicated in the file; or
 >
 > (c) The contribution was provided directly to me by some other person who
->     certified (a), (b) or (c) and I have not modified it.
+> certified (a), (b) or (c) and I have not modified it.
 >
 > (d) I understand and agree that this project and the contribution are public
->     and that a record of the contribution (including all personal information
->     I submit with it, including my sign-off) is maintained indefinitely and
->     may be redistributed consistent with this project or the open source
->     license(s) involved.
+> and that a record of the contribution (including all personal information
+> I submit with it, including my sign-off) is maintained indefinitely and
+> may be redistributed consistent with this project or the open source
+> license(s) involved.
 
 ### Signed-off-by
 

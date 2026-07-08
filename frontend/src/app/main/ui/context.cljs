@@ -35,7 +35,7 @@
 
 (def sidebar
   "A context that intends to store the current sidebar position,
-  usefull for components that behaves distinctly if they are showed in
+  useful for components that behaves distinctly if they are showed in
   right sidebar or left sidebar.
 
   Possible values: `:right:` and `:left`."

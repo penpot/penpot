@@ -144,6 +144,15 @@
   {::yres/status 404
    ::yres/body (ex-data err)})
 
+(defmethod handle-error :nitrate-unavailable
+  [err request _]
+  (binding [l/*context* (request->context request)]
+    (l/warn :hint "nitrate is unreachable; blocking request" :cause err)
+    ;; Do not leak Nitrate's internal URL/status to the client; the
+    ;; full context is already logged above for operators.
+    {::yres/status 503
+     ::yres/body {:type :nitrate-unavailable}}))
+
 (defmethod handle-error :internal
   [error request parent-cause]
   (binding [l/*context* (request->context request)]

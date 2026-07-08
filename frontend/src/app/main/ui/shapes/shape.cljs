@@ -125,7 +125,7 @@
         [:& ed/export-data {:shape shape}])
 
       [:defs
-       [:& defs/svg-defs          {:shape shape :render-id render-id}]
+       [:> defs/svg-defs*         {:shape shape :render-id render-id}]
 
        ;; The filters for frames should be setup inside the container.
        (when-not (cfh/frame-shape? shape)

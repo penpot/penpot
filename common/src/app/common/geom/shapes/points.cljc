@@ -31,21 +31,21 @@
       (gpt/scale val)))
 
 (defn end-hv
-  "Horizontal vector from the oposite to the origin in the x axis with a magnitude `val`"
+  "Horizontal vector from the opposite to the origin in the x axis with a magnitude `val`"
   [[p0 p1 _ _] val]
   (-> (gpt/to-vec p1 p0)
       (gpt/unit)
       (gpt/scale val)))
 
 (defn start-vv
-  "Vertical vector from the oposite to the origin in the x axis with a magnitude `val`"
+  "Vertical vector from the opposite to the origin in the x axis with a magnitude `val`"
   [[p0 _ _ p3] val]
   (-> (gpt/to-vec p0 p3)
       (gpt/unit)
       (gpt/scale val)))
 
 (defn end-vv
-  "Vertical vector from the oposite to the origin in the x axis with a magnitude `val`"
+  "Vertical vector from the opposite to the origin in the x axis with a magnitude `val`"
   [[p0 _ _ p3] val]
   (-> (gpt/to-vec p3 p0)
       (gpt/unit)

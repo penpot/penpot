@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
+   [app.main.constants :as mconst]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -20,9 +21,9 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc padding-display
-  [{:keys [frame-id zoom hover-all? hover-v? hover-h? padding-num padding on-pointer-enter
-           on-pointer-leave rect-data hover? selected? mouse-pos hover-value on-move-selected
+(mf/defc padding-display*
+  [{:keys [frame-id zoom is-hover-all is-hover-v is-hover-h padding-num padding on-pointer-enter
+           on-pointer-leave rect-data is-hover is-selected mouse-pos hover-value on-move-selected
            on-context-menu on-change]}]
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
@@ -42,7 +43,7 @@
 
         calc-modifiers
         (mf/use-fn
-         (mf/deps frame-id padding-num padding hover-all? hover-v? hover-h?)
+         (mf/deps frame-id padding-num padding is-hover-all is-hover-v is-hover-h)
          (fn [pos]
            (let [delta
                  (-> (gpt/to-vec @start pos)
@@ -54,10 +55,10 @@
 
                  layout-padding
                  (cond
-                   hover-all? (assoc padding :p1 val :p2 val :p3 val :p4 val)
-                   hover-v?   (assoc padding :p1 val :p3 val)
-                   hover-h?   (assoc padding :p2 val :p4 val)
-                   :else      (assoc padding padding-num val))
+                   is-hover-all (assoc padding :p1 val :p2 val :p3 val :p4 val)
+                   is-hover-v   (assoc padding :p1 val :p3 val)
+                   is-hover-h   (assoc padding :p2 val :p4 val)
+                   :else        (assoc padding padding-num val))
 
 
                  layout-padding-type
@@ -115,8 +116,8 @@
        :on-pointer-move on-pointer-move
        :on-pointer-down on-move-selected
        :on-context-menu on-context-menu
-       :style {:fill (if (or hover? selected?) fcc/distance-color "none")
-               :opacity (if selected? 0.5 0.25)}}]
+       :style {:fill (if (or is-hover is-selected) mconst/distance-color "none")
+               :opacity (if is-selected 0.5 0.25)}}]
 
      (let [handle-width
            (if (= axis :x)
@@ -139,17 +140,17 @@
          :on-pointer-move on-pointer-move
          :on-context-menu on-context-menu
          :class
-         (when (or hover? selected?)
+         (when (or is-hover is-selected)
            (if (= (:resize-axis rect-data) :x)
              (cur/get-dynamic "resize-ew" 0)
              (cur/get-dynamic "resize-ew" 90)))
 
          :style
-         {:fill (if (or hover? selected?) fcc/distance-color "none")
-          :opacity (if selected? 0 1)}}])]))
+         {:fill (if (or is-hover is-selected) mconst/distance-color "none")
+          :opacity (if is-selected 0 1)}}])]))
 
-(mf/defc padding-rects
-  [{:keys [frame zoom alt? shift? on-move-selected on-context-menu]}]
+(mf/defc padding-rects*
+  [{:keys [frame zoom is-alt is-shift on-move-selected on-context-menu]}]
   (let [frame-id                           (:id frame)
         paddings-selected                  (mf/deref refs/workspace-paddings-selected)
         current-modifiers                  (mf/use-state nil)
@@ -161,9 +162,9 @@
         mouse-pos                          (mf/use-state nil)
         hover                              (mf/use-state nil)
 
-        hover-all?                         (and (not (nil? @hover)) alt?)
-        hover-v?                           (and (or (= @hover :p1) (= @hover :p3)) shift?)
-        hover-h?                           (and (or (= @hover :p2) (= @hover :p4)) shift?)
+        hover-all?                         (and (not (nil? @hover)) is-alt)
+        hover-v?                           (and (or (= @hover :p1) (= @hover :p3)) is-shift)
+        hover-h?                           (and (or (= @hover :p2) (= @hover :p4)) is-shift)
         padding                            (:layout-padding frame)
         {:keys [width height x1 x2 y1 y2]} (:selrect frame)
         pill-width                         (/ fcc/flex-display-pill-width zoom)
@@ -243,13 +244,13 @@
 
     [:g.paddings {:pointer-events "visible"}
      (for [[padding-num rect-data] padding-rect-data]
-       [:& padding-display
+       [:> padding-display*
         {:key (:key rect-data)
          :frame-id frame-id
          :zoom zoom
-         :hover-all? hover-all?
-         :hover-v? hover-v?
-         :hover-h? hover-h?
+         :is-hover-all hover-all?
+         :is-hover-v hover-v?
+         :is-hover-h hover-h?
          :padding padding
          :mouse-pos mouse-pos
          :hover-value hover-value
@@ -259,30 +260,30 @@
          :on-move-selected on-move-selected
          :on-context-menu on-context-menu
          :on-change on-change
-         :hover?  (hover? padding-num)
-         :selected? (get paddings-selected padding-num)
+         :is-hover  (hover? padding-num)
+         :is-selected (get paddings-selected padding-num)
          :rect-data rect-data}])
 
      (when @hover
        [:& fcc/flex-display-pill
         {:height pill-height
          :width pill-width
-         :font-size (/ fcc/font-size zoom)
+         :font-size (/ mconst/font-size zoom)
          :border-radius (/ fcc/flex-display-pill-border-radius zoom)
-         :color fcc/distance-color
+         :color mconst/distance-color
          :x (:x @mouse-pos)
          :y (- (:y @mouse-pos) pill-width)
          :value @hover-value}])]))
 
-(mf/defc padding-control
-  [{:keys [frame zoom alt? shift? on-move-selected on-context-menu]}]
+(mf/defc padding-control*
+  [{:keys [frame zoom is-alt is-shift on-move-selected on-context-menu]}]
   (when frame
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& padding-rects
+      [:> padding-rects*
        {:frame frame
         :zoom zoom
-        :alt? alt?
-        :shift? shift?
+        :is-alt is-alt
+        :is-shift is-shift
         :on-move-selected on-move-selected
         :on-context-menu on-context-menu}]]]))

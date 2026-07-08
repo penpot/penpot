@@ -11,73 +11,54 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as cc]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc render-text
-  {::mf/wrap-props false}
-  [props]
-  (let [node   (obj/get props "node")
-        parent (obj/get props "parent")
-        shape  (obj/get props "shape")
-        text   (:text node)
-        style  (if (= text "")
-                 (sts/generate-text-styles shape parent)
-                 (sts/generate-text-styles shape node))]
+(mf/defc render-text*
+  [{:keys [node parent shape]}]
+  (let [text  (:text node)
+        style (if (= text "")
+                (sts/generate-text-styles shape parent)
+                (sts/generate-text-styles shape node))]
     [:span.text-node {:style style}
      (if (= text "") "\u00A0" text)]))
 
-(mf/defc render-root
-  {::mf/wrap-props false}
-  [props]
-  (let [node     (obj/get props "node")
-        children (obj/get props "children")
-        shape    (obj/get props "shape")
-        style    (sts/generate-root-styles shape node)]
+(mf/defc render-root*
+  [{:keys [node children shape]}]
+  (let [style (sts/generate-root-styles shape node)]
     [:div.root.rich-text
      {:style style
       :xmlns "http://www.w3.org/1999/xhtml"}
      children]))
 
-(mf/defc render-paragraph-set
-  {::mf/wrap-props false}
-  [props]
-  (let [children (obj/get props "children")
-        shape    (obj/get props "shape")
-        style    (sts/generate-paragraph-set-styles shape)]
+(mf/defc render-paragraph-set*
+  [{:keys [children shape]}]
+  (let [style (sts/generate-paragraph-set-styles shape)]
     [:div.paragraph-set {:style style} children]))
 
-(mf/defc render-paragraph
-  {::mf/wrap-props false}
-  [props]
-  (let [node     (obj/get props "node")
-        shape    (obj/get props "shape")
-        children (obj/get props "children")
-        style    (sts/generate-paragraph-styles shape node)
-        dir      (:text-direction node "auto")]
+(mf/defc render-paragraph*
+  [{:keys [node children shape]}]
+  (let [style (sts/generate-paragraph-styles shape node)
+        dir   (:text-direction node "auto")]
     [:p.paragraph {:style style :dir dir} children]))
 
 ;; -- Text nodes
-(mf/defc render-node
-  {::mf/wrap-props false}
-  [props]
-  (let [{:keys [type text children]} (obj/get props "node")]
+(mf/defc render-node*
+  {::mf/props :obj}
+  [{:keys [node] :as props}]
+  (let [{:keys [type text children]} node]
     (if (string? text)
-      [:> render-text props]
+      [:> render-text* props]
       (let [component (case type
-                        "root" render-root
-                        "paragraph-set" render-paragraph-set
-                        "paragraph" render-paragraph
+                        "root" render-root*
+                        "paragraph-set" render-paragraph-set*
+                        "paragraph" render-paragraph*
                         nil)]
         (when component
           [:> component props
-           (for [[index node] (d/enumerate children)]
-             (let [props (-> (obj/clone props)
-                             (obj/set! "node" node)
-                             (obj/set! "index" index)
-                             (obj/set! "key" index))]
-               [:> render-node props]))])))))
+           (for [[index child-node] (d/enumerate children)]
+             [:> render-node*
+              (mf/spread-props props {:node child-node :index index :key index})])])))))
 
 (defn- next-color
   "Given a set of colors try to get a color not yet used"
@@ -168,9 +149,8 @@
 
     [colors color-mapping color-mapping-inverse]))
 
-(mf/defc text-shape
-  {::mf/props :obj
-   ::mf/forward-ref true}
+(mf/defc text-shape*
+  {::mf/forward-ref true}
   [{:keys [shape grow-type]} ref]
   (let [transform (gsh/transform-str shape)
         id        (dm/get-prop shape :id)
@@ -196,6 +176,6 @@
      ;; `background-clip`
      [:style ".text-node { background-clip: text;
                            -webkit-background-clip: text; }"]
-     [:& render-node {:index 0
-                      :shape shape
-                      :node content}]]))
+     [:> render-node* {:index 0
+                       :shape shape
+                       :node content}]]))

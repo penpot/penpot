@@ -27,6 +27,7 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -54,7 +55,8 @@
    [app.util.object :as obj]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -311,31 +313,59 @@
 
     :group
     (fn [shapes]
-      (cond
-        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/not-valid plugin-id :group-shapes shapes)
+      (let [valid-shapes? (and (array? shapes) (every? shape/shape-proxy? shapes))
+            file-id       (:current-file-id @st/state)
+            page-id       (:current-page-id @st/state)
+            objects       (when valid-shapes? (u/locate-objects file-id page-id))
+            id            (uuid/next)
+            ids           (when valid-shapes? (into #{} (map #(obj/get % "$id")) shapes))
+            shape-objs    (when valid-shapes? (map #(get objects %) ids))]
+        (cond
+          (not valid-shapes?)
+          (u/not-valid plugin-id :group-shapes shapes)
 
-        :else
-        (let [file-id (:current-file-id @st/state)
-              page-id (:current-page-id @st/state)
-              id (uuid/next)
-              ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dwg/group-shapes id ids)
-                    (se/event plugin-id "create-shape" :type type))
-          (shape/shape-proxy plugin-id file-id page-id id))))
+          ;; A group cannot be created from no shapes; per the documented contract
+          ;; return null instead of a proxy pointing at a shape that never exists.
+          (zero? (alength shapes))
+          nil
+
+          (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+          (u/not-valid plugin-id :group "Cannot modify a page that is not currently active")
+
+          (some #(u/inside-component-copy? objects %) shape-objs)
+          (u/not-valid plugin-id :group "Cannot change the structure of a component copy")
+
+          :else
+          (do
+            (st/emit! (dwg/group-shapes id ids)
+                      (se/event plugin-id "create-shape" :type type))
+            (shape/shape-proxy plugin-id file-id page-id id)))))
 
     :ungroup
     (fn [group & rest]
-      (cond
-        (not (shape/shape-proxy? group))
-        (u/not-valid plugin-id :ungroup group)
+      (let [valid-group? (shape/shape-proxy? group)
+            valid-rest?  (every? shape/shape-proxy? rest)
+            shapes       (when (and valid-group? valid-rest?) (concat [group] rest))
+            file-id      (:current-file-id @st/state)
+            page-id      (:current-page-id @st/state)
+            objects      (when shapes (u/locate-objects file-id page-id))
+            ids          (when shapes (into #{} (map #(obj/get % "$id")) shapes))
+            shape-objs   (when shapes (map #(get objects %) ids))]
+        (cond
+          (not valid-group?)
+          (u/not-valid plugin-id :ungroup group)
 
-        (and (some? rest) (not (every? shape/shape-proxy? rest)))
-        (u/not-valid plugin-id :ungroup rest)
+          (not valid-rest?)
+          (u/not-valid plugin-id :ungroup rest)
 
-        :else
-        (let [shapes (concat [group] rest)
-              ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (or (not (u/page-active? (obj/get group "$page")))
+              (some #(not (u/page-active? (obj/get % "$page"))) rest))
+          (u/not-valid plugin-id :ungroup "Cannot modify a page that is not currently active")
+
+          (some #(u/inside-component-copy? objects %) shape-objs)
+          (u/not-valid plugin-id :ungroup "Cannot change the structure of a component copy")
+
+          :else
           (st/emit! (dwg/ungroup-shapes ids)))))
 
     :createBoard
@@ -370,8 +400,11 @@
     :createText
     (fn [text]
       (cond
-        (or (not (string? text)) (empty? text))
+        (not (string? text))
         (u/not-valid plugin-id :createText text)
+
+        (empty? text)
+        nil
 
         :else
         (let [page  (dsh/lookup-page @st/state)
@@ -401,7 +434,7 @@
     :createShapeFromSvg
     (fn [svg-string]
       (cond
-        (or (not (string? svg-string)) (empty? svg-string))
+        (not (dwm/valid-svg-string? svg-string))
         (u/not-valid plugin-id :createShapeFromSvg svg-string)
 
         :else
@@ -417,7 +450,7 @@
       (js/Promise.
        (fn [resolve reject]
          (cond
-           (or (not (string? svg-string)) (empty? svg-string))
+           (not (dwm/valid-svg-string? svg-string))
            (do
              (u/not-valid plugin-id :createShapeFromSvg "Svg not valid")
              (reject "Svg not valid"))
@@ -441,6 +474,9 @@
 
           (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
           (u/not-valid plugin-id :createBoolean-shapes shapes)
+
+          (some #(not (u/page-active? (obj/get % "$page"))) shapes)
+          (u/not-valid plugin-id :createBoolean "Cannot modify a page that is not currently active")
 
           :else
           (let [ids      (into #{} (map #(obj/get % "$id")) shapes)
@@ -571,11 +607,29 @@
       (let [id (cond
                  (page/page-proxy? page) (obj/get page "$id")
                  (string? page)          (uuid/parse* page)
-                 :else nil)
-            new-window (if (boolean? new-window) new-window false)]
-        (if (nil? id)
+                 :else nil)]
+        (cond
+          (nil? id)
           (u/not-valid plugin-id :openPage "Expected a Page object or a page UUID string")
-          (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window new-window)))))
+
+          (true? new-window)
+          (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
+              (js/Promise.resolve nil))
+
+          ;; Navigating to the already-active page emits no initialization
+          ;; event, so resolve right away instead of waiting forever.
+          (u/page-active? id)
+          (js/Promise.resolve nil)
+
+          :else
+          (js/Promise.
+           (fn [resolve _]
+             (->> st/stream
+                  (rx/filter (ptk/type? ::dwpg/initialized))
+                  (rx/filter #(= (deref %) id))
+                  (rx/take 1)
+                  (rx/subs! #(resolve nil)))
+             (st/emit! (dcm/go-to-workspace :page-id id)))))))
 
     :alignHorizontal
     (fn [shapes direction]
@@ -640,8 +694,13 @@
         (u/not-valid plugin-id :flatten-shapes "Not valid shapes")
 
         :else
-        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/convert-selected-to-path ids)))))
+        ;; convert-selected-to-path converts the shapes in place (keeping their
+        ;; ids), so return proxies for the same ids, now resolving as paths.
+        (let [file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)
+              ids (mapv #(obj/get % "$id") shapes)]
+          (st/emit! (dw/convert-selected-to-path (into #{} ids)))
+          (apply array (map #(shape/shape-proxy plugin-id file-id page-id %) ids)))))
 
     :createVariantFromComponents
     (fn [shapes]
@@ -653,9 +712,12 @@
         :else
         (let [file-id (obj/get (first shapes) "$file")
               page-id (obj/get (first shapes) "$page")
+              ;; Keep the input order: it determines the order of the
+              ;; resulting variant components (see combine-as-variants)
               ids (->> shapes
                        (map #(obj/get % "$id"))
-                       (into #{}))
+                       (distinct)
+                       (vec))
 
               ;; Check that every component is:
               ;; - in the same page

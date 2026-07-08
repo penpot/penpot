@@ -1,6 +1,14 @@
+allowBuilds:
+  esbuild: true
+  sharp: false
+
 linkWorkspacePackages: true
 
+minimumReleaseAgeExclude:
+  - qs@6.14.2 || 6.15.2
+  - path-to-regexp@8.4.0
+
 packages:
-    - "./packages/common"
-    - "./packages/server"
-    - "./packages/plugin"
+  - "./packages/common"
+  - "./packages/server"
+  - "./packages/plugin"

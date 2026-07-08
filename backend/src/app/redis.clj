@@ -43,7 +43,6 @@
    io.lettuce.core.ScriptOutputType
    io.lettuce.core.SetArgs
    io.netty.channel.nio.NioEventLoopGroup
-   io.netty.util.concurrent.EventExecutorGroup
    io.netty.util.HashedWheelTimer
    io.netty.util.Timer
    java.lang.AutoCloseable
@@ -527,7 +526,6 @@
 (def ^:private schema:client-params
   [:map {:title "redis-params"}
    ::wrk/netty-io-executor
-   ::wrk/netty-executor
    [::uri ::sm/uri]
    [::timeout ::ct/duration]])
 
@@ -539,7 +537,7 @@
   (check-client-params params))
 
 (defmethod ig/init-key ::client
-  [_ {:keys [::uri ::wrk/netty-io-executor ::wrk/netty-executor] :as params}]
+  [_ {:keys [::uri ::wrk/netty-io-executor] :as params}]
 
   (l/inf :hint "initialize redis client" :uri (str uri))
 
@@ -547,7 +545,6 @@
         cache     (atom {})
 
         resources (.. (DefaultClientResources/builder)
-                      (eventExecutorGroup ^EventExecutorGroup netty-executor)
 
                       ;; We provide lettuce with a shared event loop
                       ;; group instance instead of letting lettuce to

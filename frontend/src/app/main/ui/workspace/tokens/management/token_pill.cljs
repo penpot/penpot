@@ -127,7 +127,7 @@
     (cond
       ;; If there are errors, show the appropriate message
       ref-not-in-active-set
-      (tr "workspace.tokens.ref-not-valid")
+      (tr "workspace.tokens.ref-not-valid" name)
 
       is-name-collision
       (wte/resolve-error-message (first errors))
@@ -290,7 +290,7 @@
                       :token-pill-disabled disabled?
                       :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
-                      :token-pill-invalid-applied (and full-applied? errors? can-edit?)
+                      :token-pill-invalid-applied (and (or half-applied? full-applied?) errors? can-edit?)
                       :token-pill-viewer is-viewer?
                       :token-pill-applied-viewer (and is-viewer? has-selected?
                                                       (or half-applied? full-applied?))
@@ -298,6 +298,7 @@
                                                       errors?)
                       :token-pill-invalid-applied-viewer (and is-viewer?
                                                               (and full-applied? errors?)))
+              :id (str "token-pill-" (:id token))
               :type "button"
               :on-focus on-hover
 

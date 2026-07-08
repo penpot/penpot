@@ -294,7 +294,7 @@
         sorted-tokens     (sort-combined-tokens filtered-combined)]
     (if (seq combined-tokens)
       [:div {:class (stl/css :color-tokens-section)}
-       [:> input* {:placeholder "Search by token name"
+       [:> input* {:placeholder (tr "workspace.tokens.search-by-token")
                    :icon i/search
                    :max-length max-input-length
                    :variant "comfortable"

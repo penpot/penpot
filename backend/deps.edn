@@ -6,7 +6,7 @@
   org.clojure/clojure {:mvn/version "1.12.5"}
   org.clojure/tools.namespace {:mvn/version "1.5.1"}
 
-  com.github.luben/zstd-jni {:mvn/version "1.5.7-10"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.7-11"}
 
   io.prometheus/simpleclient {:mvn/version "0.16.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
@@ -39,7 +39,7 @@
   metosin/reitit-core {:mvn/version "0.10.1"}
   nrepl/nrepl {:mvn/version "1.7.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.11"}
+  org.postgresql/postgresql {:mvn/version "42.7.12"}
   org.xerial/sqlite-jdbc {:mvn/version "3.53.2.0"}
 
   com.zaxxer/HikariCP {:mvn/version "7.0.2"}
@@ -52,10 +52,6 @@
   com.github.ben-manes.caffeine/caffeine {:mvn/version "3.2.4"}
 
   org.jsoup/jsoup {:mvn/version "1.22.2"}
-  org.im4java/im4java
-  {:git/tag "1.4.0-penpot-2"
-   :git/sha "e2b3e16"
-   :git/url "https://github.com/penpot/im4java"}
 
   at.yawk.lz4/lz4-java
   {:mvn/version "1.11.0"}
@@ -67,14 +63,16 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.46.7"}
-  software.amazon.awssdk/sts {:mvn/version "2.46.7"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.46.18"}
+  software.amazon.awssdk/sts {:mvn/version "2.46.18"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
  {:dev
-  {:extra-deps
-   {com.bhauman/rebel-readline {:mvn/version "0.1.7"}
+  {:jvm-opts ["--sun-misc-unsafe-memory-access=allow"
+              "--enable-native-access=ALL-UNNAMED"]
+   :extra-deps
+   {com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
     org.clojure/data.csv {:mvn/version "1.1.1"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
@@ -88,9 +86,7 @@
 
   :test
   {:main-opts ["-m" "kaocha.runner"]
-   :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"
-              "--sun-misc-unsafe-memory-access=allow"
-              "--enable-native-access=ALL-UNNAMED"]
+   :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :outdated

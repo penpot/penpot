@@ -9,29 +9,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.shared.token-option :as to]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.i18n :as i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc resolved-value-tooltip*
-  {::mf/private true}
-  [{:keys [token-name resolved-value]}]
-  [:*
-   [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-   [:span {:class (stl/css :token-name-tooltip)} token-name]
-   [:div
-    [:span (tr "inspect.tabs.styles.token-resolved-value")]
-    [:ul
-     (for [[k v] resolved-value]
-       [:li {:key (d/name k)}
-        [:span {:class (stl/css :resolved-key)} (str "- " (d/name k) ": ")]
-        [:span {:class (stl/css :resolved-value)}
-         (if (sequential? v)
-           (str/join ", " (map #(dm/str "\"" % "\"") v))
-           (dm/str v))]])]]])
 
 (mf/defc token-typography-row*
   [{:keys [token-name active-tokens detach-token] :rest props}]
@@ -41,31 +26,46 @@
         token (->> (:typography active-tokens)
                    (d/seek #(= (:name %) token-name)))
 
-        has-errors (some? (:errors token))
         display-name (or (:name token) token-name)
 
         resolved-value (:resolved-value token)
-        not-active (or (nil? token)
-                       (empty? (:typography active-tokens)))
         on-detach
         (mf/use-fn
          (mf/deps display-name)
          (fn []
            (detach-token display-name)))
 
+        all-tokens-map (mf/deref refs/workspace-all-tokens-map)
+
+        token-exists? (contains? all-tokens-map token-name)
+        has-errors (and token-exists?
+                        (some? (:errors token)))
+
+        not-active (and
+                    token-exists?
+                    (or (nil? token)
+                        (empty? (:typography active-tokens))))
+
+        broken-state (or (not token-exists?)
+                         has-errors
+                         not-active)
         tooltip-content (cond
                           not-active
-                          (tr "not-active-token.no-name")
+                          (tr "ds.inputs.token-field.no-active-token-option" token-name)
+
+                          (not token-exists?)
+                          (tr "options.deleted-token-with-name" token-name)
+
                           has-errors
-                          (tr "options.deleted-token")
+                          (tr "workspace.tokens.ref-not-valid" token-name)
+
                           :else
-                          (mf/html [:> resolved-value-tooltip* {:token-name token-name
-                                                                :resolved-value resolved-value}]))]
+                          (mf/html [:> to/resolved-value-tooltip* {:token-name token-name
+                                                                   :resolved-value resolved-value}]))]
 
     [:div {:class (stl/css-case :token-typography-row true
-                                :token-typography-row-with-errors has-errors
-                                :token-typography-row-not-active not-active)}
-     (when (or has-errors not-active)
+                                :token-typography-row-with-errors broken-state)}
+     (when broken-state
        [:div {:class (stl/css :error-dot)}])
      [:> icon* {:icon-id i/text-typography
                 :class (stl/css :icon)}]

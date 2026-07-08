@@ -1,12 +1,17 @@
 use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
 use std::collections::HashMap;
 
+mod rulers;
 mod shapes_pool;
 mod text_editor;
+mod ui;
+pub use rulers::RulerState;
 pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
+pub use ui::UIState;
 
 use crate::error::{Error, Result};
+use crate::render::FrameType;
 use crate::shapes::{grid_layout::grid_cell_data, Shape};
 use crate::uuid::Uuid;
 use crate::{get_render_state, tiles};
@@ -64,12 +69,22 @@ impl State {
         get_render_state().render_from_cache(&self.shapes);
     }
 
-    pub fn render_sync(&mut self, timestamp: i32) -> Result<()> {
+    pub fn render_ui_only(&mut self) {
+        get_render_state().render_ui_only(&self.shapes);
+    }
+
+    pub fn render_blurred_snapshot(&mut self, blur_radius: f32) {
+        get_render_state().render_blurred_snapshot(&self.shapes, blur_radius);
+    }
+
+    pub fn render_sync(&mut self, timestamp: i32) -> Result<FrameType> {
         get_render_state().start_render_loop(None, &self.shapes, timestamp, true)
     }
 
-    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<()> {
-        get_render_state().start_render_loop(Some(id), &self.shapes, timestamp, true)
+    pub fn render_sync_shape(&mut self, id: &Uuid, timestamp: i32) -> Result<FrameType> {
+        let render_state = get_render_state();
+        render_state.prepare_sync_shape_render();
+        render_state.start_render_loop(Some(id), &self.shapes, timestamp, true)
     }
 
     pub fn render_shape_pixels(
@@ -81,7 +96,11 @@ impl State {
         get_render_state().render_shape_pixels(id, &self.shapes, scale, timestamp)
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<()> {
+    pub fn render_shape_pdf(&mut self, id: &Uuid, scale: f32) -> Result<Vec<u8>> {
+        crate::render::pdf::render_to_pdf(get_render_state(), id, &self.shapes, scale)
+    }
+
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
         let render_state = get_render_state();
         // If zoom changed (e.g. interrupted zoom render followed by pan), the
         // tile index may be stale for the new viewport position. Rebuild the
@@ -92,12 +111,12 @@ impl State {
         if render_state.zoom_changed() {
             render_state.rebuild_tile_index(&self.shapes);
         }
-
         render_state.start_render_loop(None, &self.shapes, timestamp, false)
     }
 
-    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<()> {
-        get_render_state().process_animation_frame(None, &self.shapes, timestamp)
+    pub fn continue_render_loop(&mut self, timestamp: i32) -> Result<FrameType> {
+        let allow_stop = true;
+        get_render_state().continue_render_loop(None, &self.shapes, timestamp, allow_stop)
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -106,6 +125,14 @@ impl State {
 
     pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
         get_render_state().set_focus_mode(shapes);
+    }
+
+    pub fn clear_include_filter(&mut self) {
+        get_render_state().clear_include_filter();
+    }
+
+    pub fn set_include_filter(&mut self, shapes: Vec<Uuid>) {
+        get_render_state().set_include_filter(shapes);
     }
 
     pub fn init_shapes_pool(&mut self, capacity: usize) {
@@ -188,6 +215,11 @@ impl State {
     /// invalidated and recalculated to include the new child. This ensures that frames
     /// and groups properly encompass their children.
     pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
+        // Reparent preview during drag is handled by structure modifiers only.
+        if get_render_state().options.is_interactive_transform() {
+            return;
+        }
+
         let Some(shape) = self.current_shape_mut() else {
             panic!("Invalid current shape")
         };

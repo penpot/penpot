@@ -83,3 +83,8 @@
 .option-name {
   @include text-ellipsis;
 }
+
+.token-name-tooltip {
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
+}

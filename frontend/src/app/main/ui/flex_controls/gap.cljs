@@ -15,6 +15,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.constants :as mconst]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
@@ -27,9 +28,9 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc gap-display
+(mf/defc gap-display*
   [{:keys [frame-id zoom gap-type gap on-pointer-enter on-pointer-leave
-           rect-data hover? selected? mouse-pos hover-value
+           rect-data is-hover is-selected mouse-pos hover-value
            on-move-selected on-context-menu on-change]}]
   (let [resizing             (mf/use-var nil)
         start                (mf/use-var nil)
@@ -109,8 +110,8 @@
        :on-pointer-down on-move-selected
        :on-context-menu on-context-menu
 
-       :style {:fill (if (or hover? selected?) fcc/distance-color "none")
-               :opacity (if selected? 0.5 0.25)}}]
+       :style {:fill (if (or is-hover is-selected) mconst/distance-color "none")
+               :opacity (if is-selected 0.5 0.25)}}]
 
      (let [handle-width
            (if (= axis :x)
@@ -132,12 +133,12 @@
          :on-lost-pointer-capture on-lost-pointer-capture
          :on-pointer-move on-pointer-move
          :on-context-menu on-context-menu
-         :class (when (or hover? selected?)
+         :class (when (or is-hover is-selected)
                   (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
-         :style {:fill (if (or hover? selected?) fcc/distance-color "none")
-                 :opacity (if selected? 0 1)}}])]))
+         :style {:fill (if (or is-hover is-selected) mconst/distance-color "none")
+                 :opacity (if is-selected 0 1)}}])]))
 
-(mf/defc gap-rects
+(mf/defc gap-rects*
   [{:keys [frame zoom on-move-selected on-context-menu]}]
   (let [frame-id                   (:id frame)
         saved-dir                  (:layout-flex-dir frame)
@@ -320,7 +321,7 @@
     [:g.gaps {:pointer-events "visible"}
      (for [[index display-item] (d/enumerate (concat display-blocks display-children))]
        (let [gap-type (:gap-type display-item)]
-         [:& gap-display
+         [:> gap-display*
           {:key (str frame-id index)
            :frame-id frame-id
            :zoom zoom
@@ -332,8 +333,8 @@
            :on-context-menu on-context-menu
            :on-change on-change
            :rect-data display-item
-           :hover?    (= @hover gap-type)
-           :selected? (= gap-selected gap-type)
+           :is-hover    (= @hover gap-type)
+           :is-selected (= gap-selected gap-type)
            :mouse-pos mouse-pos
            :hover-value hover-value}]))
 
@@ -341,20 +342,20 @@
        [:& fcc/flex-display-pill
         {:height pill-height
          :width pill-width
-         :font-size (/ fcc/font-size zoom)
+         :font-size (/ mconst/font-size zoom)
          :border-radius (/ fcc/flex-display-pill-border-radius zoom)
-         :color fcc/distance-color
+         :color mconst/distance-color
          :x (:x @mouse-pos)
          :y (- (:y @mouse-pos) pill-width)
          :value @hover-value}])]))
 
 
-(mf/defc gap-control
+(mf/defc gap-control*
   [{:keys [frame zoom  on-move-selected on-context-menu]}]
   (when frame
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& gap-rects
+      [:> gap-rects*
        {:frame frame
         :zoom zoom
         :on-move-selected on-move-selected

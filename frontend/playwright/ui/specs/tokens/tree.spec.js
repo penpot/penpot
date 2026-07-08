@@ -37,8 +37,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
@@ -93,8 +107,22 @@ test.describe("Tokens - node tree", () => {
     const { tokensSidebar } = await setupTokensFileRender(page);
 
     // Create multiple tokens in a group
-    await createToken(page, "Color", "dark.primary", "Value", "#000000");
-    await createToken(page, "Color", "dark.secondary", "Value", "#111111");
+    await createToken(
+      page,
+      "Color",
+      "dark.primary",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+    await createToken(
+      page,
+      "Color",
+      "dark.secondary",
+      "Value",
+      "textbox",
+      "#111111",
+    );
 
     // Verify that the node and child token are visible before deletion
     const darkNode = tokensSidebar.getByRole("button", {
@@ -153,8 +181,23 @@ test.describe("Tokens - node tree", () => {
       await setupTokensFileRender(page);
 
     // Create tokens in two separate groups
-    await createToken(page, "Color", "dark.base", "Value", "#000000");
-    await createToken(page, "Color", "light.accent", "Value", "#ffffff");
+    await createToken(
+      page,
+      "Color",
+      "dark.base",
+      "Value",
+      "textbox",
+      "#000000",
+    );
+
+    await createToken(
+      page,
+      "Color",
+      "light.accent",
+      "Value",
+      "textbox",
+      "#ffffff",
+    );
 
     const lightGroup = tokensSidebar.getByRole("button", {
       name: "light",
@@ -260,9 +303,9 @@ test("User can see an error on token pill and token modal form when token has an
     .getByRole("checkbox")
     .click();
 
-  await createToken(page, "Border radius", "a.b", "Value", "23");
+  await createToken(page, "Border radius", "a.b", "Value", "combobox", "23");
   await tokenThemesSetsSidebar.getByRole("button", { name: "first" }).click();
-  await createToken(page, "Border radius", "a", "Value", "25");
+  await createToken(page, "Border radius", "a", "Value", "combobox", "25");
   await tokenThemesSetsSidebar.getByRole("button", { name: "second" }).click();
 
   const brokenTokenPill = tokensSidebar.getByRole("button", {

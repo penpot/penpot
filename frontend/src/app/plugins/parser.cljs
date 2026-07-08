@@ -237,7 +237,6 @@
 
 ;; export interface Blur {
 ;;   id?: string;
-;;   type?: 'layer-blur';
 ;;   value?: number;
 ;;   hidden?: boolean;
 ;; }
@@ -246,7 +245,6 @@
   (when (some? blur)
     (d/without-nils
      {:id (-> (obj/get blur "id") parse-id)
-      :type (-> (obj/get blur "type") parse-keyword)
       :value (obj/get blur "value")
       :hidden (obj/get blur "hidden")})))
 
@@ -338,17 +336,17 @@
     (d/without-nils
      {:type (-> (obj/get guide "type") parse-keyword)
       :display (obj/get guide "display")
-      :params (-> (obj/get guide "params") parse-frame-guide-column-params)})))
+      :params (-> (obj/get guide "params") parse-frame-guide-square-params)})))
 
 (defn parse-frame-guide
   [^js guide]
   (when (some? guide)
     (case (obj/get guide "type")
       "column"
-      parse-frame-guide-column
+      (parse-frame-guide-column guide)
 
       "row"
-      parse-frame-guide-row
+      (parse-frame-guide-row guide)
 
       "square"
       (parse-frame-guide-square guide))))
@@ -490,7 +488,7 @@
          {:action-type action-type
           :destination (-> (obj/get action "destination") (obj/get "$id"))
           :relative-to (-> (obj/get action "relativeTo") (obj/get "$id"))
-          :overlay-pos-type (-> (obj/get action "position") parse-keyword)
+          :overlay-pos-type (or (-> (obj/get action "position") parse-keyword) :center)
           :overlay-position (-> (obj/get action "manualPositionLocation") parse-point)
           :close-click-outside (obj/get action "closeWhenClickOutside")
           :background-overlay (obj/get action "addBackgroundOverlay")

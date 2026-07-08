@@ -22,11 +22,16 @@
                      (json/encode {:type :json-verbose}))]
         (->> (rx/of json)
              (dwti/import-file-stream "core")
+             (rx/take 1)
              (rx/subs! (fn [tokens-lib]
                          (t/is (instance? ctob/TokensLib tokens-lib))
                          (t/is (= "red" (-> tokens-lib
                                             (ctob/get-token-by-name "core" "color")
-                                            (:value))))
+                                            (:value)))))
+                       (fn [err]
+                         (t/do-report {:type :error :message "Stream error" :actual err})
+                         (done))
+                       (fn []
                          (done))))))))
 
 (t/deftest reference-errors-test

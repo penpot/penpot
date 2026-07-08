@@ -115,7 +115,6 @@ impl TextContentSize {
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TextPositionWithAffinity {
-    #[allow(dead_code)]
     pub position_with_affinity: PositionWithAffinity,
     pub paragraph: usize,
     pub offset: usize,
@@ -244,9 +243,9 @@ impl TextContentLayout {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TextDecorationSegment {
+    #[allow(dead_code)]
     pub kind: skia::textlayout::TextDecoration,
     pub text_style: skia::textlayout::TextStyle,
     pub y: f32,
@@ -392,16 +391,6 @@ impl TextContent {
         self.bounds = Rect::from_xywh(x, y, w, h);
     }
 
-    #[allow(dead_code)]
-    pub fn x(&self) -> f32 {
-        self.bounds.x()
-    }
-
-    #[allow(dead_code)]
-    pub fn y(&self) -> f32 {
-        self.bounds.y()
-    }
-
     pub fn add_paragraph(&mut self, paragraph: Paragraph) {
         self.paragraphs.push(paragraph);
         self.content_version = self.content_version.wrapping_add(1);
@@ -409,6 +398,13 @@ impl TextContent {
 
     pub fn paragraphs(&self) -> &[Paragraph] {
         &self.paragraphs
+    }
+
+    pub fn has_non_ascii(&self) -> bool {
+        self.paragraphs
+            .iter()
+            .flat_map(|p| p.children())
+            .any(|span| !span.text.is_ascii())
     }
 
     pub fn paragraphs_mut(&mut self) -> &mut Vec<Paragraph> {
@@ -621,10 +617,6 @@ impl TextContent {
         let mut offset_y = 0.0;
         let layout_paragraphs = self.layout.paragraphs.iter().flatten();
 
-        // IMPORTANT! I'm keeping this because I think it should be better to have the span index
-        // cached the same way we keep the paragraph index.
-        #[allow(dead_code)]
-        let mut _span_index: usize = 0;
         for (paragraph_index, layout_paragraph) in layout_paragraphs.enumerate() {
             let start_y = offset_y;
             let end_y = offset_y + layout_paragraph.height();
@@ -652,15 +644,8 @@ impl TextContent {
                     // in which span we are.
                     let mut computed_position: usize = 0;
 
-                    // This could be useful in the future as part of the TextPositionWithAffinity.
-                    #[allow(dead_code)]
-                    let mut _span_offset: usize = 0;
-
                     // If paragraph has no spans, default to span 0, offset 0
-                    if paragraph.children().is_empty() {
-                        _span_index = 0;
-                        _span_offset = 0;
-                    } else {
+                    if !paragraph.children().is_empty() {
                         for span in paragraph.children() {
                             let length = span.text.chars().count();
                             let start_position = computed_position;
@@ -670,19 +655,15 @@ impl TextContent {
                             // Handle empty spans: if the span is empty and current position
                             // matches the start, this is the right span
                             if length == 0 && current_position == start_position {
-                                _span_offset = 0;
                                 break;
                             }
 
                             if start_position <= current_position
                                 && end_position >= current_position
                             {
-                                _span_offset =
-                                    position_with_affinity.position as usize - start_position;
                                 break;
                             }
                             computed_position += length;
-                            _span_index += 1;
                         }
                     }
 
@@ -912,6 +893,11 @@ impl TextContent {
         self.layout.set(result.0, result.1);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
+    }
+
+    pub fn force_next_layout_update(&mut self) {
+        self.layout_width = None;
+        self.layout.cached_extrect.set(None);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
@@ -1152,22 +1138,12 @@ impl Paragraph {
         }
     }
 
-    #[allow(dead_code)]
-    fn set_children(&mut self, children: Vec<TextSpan>) {
-        self.children = children;
-    }
-
     pub fn children(&self) -> &[TextSpan] {
         &self.children
     }
 
     pub fn children_mut(&mut self) -> &mut Vec<TextSpan> {
         &mut self.children
-    }
-
-    #[allow(dead_code)]
-    fn add_span(&mut self, span: TextSpan) {
-        self.children.push(span);
     }
 
     pub fn line_height(&self) -> f32 {
@@ -1306,11 +1282,6 @@ impl TextSpan {
         self.text = text;
     }
 
-    #[allow(dead_code)]
-    pub fn fills(&self) -> &[shapes::Fill] {
-        &self.fills
-    }
-
     pub fn to_style(
         &self,
         content_bounds: &Rect,
@@ -1415,7 +1386,6 @@ impl TextSpan {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Copy, Clone)]
 pub struct PositionData {
     pub paragraph: u32,
@@ -1429,21 +1399,17 @@ pub struct PositionData {
     pub direction: u32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct ParagraphLayout {
     pub paragraph: skia::textlayout::Paragraph,
     pub x: f32,
     pub y: f32,
-    pub spans: Vec<crate::shapes::TextSpan>,
     pub decorations: Vec<TextDecorationSegment>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct TextLayoutData {
     pub position_data: Vec<PositionData>,
-    pub content_rect: Rect,
     pub paragraphs: Vec<ParagraphLayout>,
 }
 
@@ -1508,12 +1474,6 @@ pub fn calculate_text_layout_data(
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            let spans = if let Some(text_para) = text_paragraphs.get(i) {
-                text_para.children().to_vec()
-            } else {
-                Vec::new()
-            };
-
             // Calculate text decorations for this paragraph
             let mut decorations = Vec::new();
             let line_metrics = skia_paragraph.get_line_metrics();
@@ -1580,7 +1540,6 @@ pub fn calculate_text_layout_data(
                 paragraph: skia_paragraph,
                 x,
                 y: y_accum,
-                spans: spans.clone(),
                 decorations,
             });
         }
@@ -1644,10 +1603,8 @@ pub fn calculate_text_layout_data(
         }
     }
 
-    let content_rect = Rect::from_xywh(x, base_y + vertical_offset, text_width, total_text_height);
     TextLayoutData {
         position_data,
-        content_rect,
         paragraphs: paragraph_layouts,
     }
 }

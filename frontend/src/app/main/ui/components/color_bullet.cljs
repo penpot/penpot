@@ -58,9 +58,8 @@
   [title]
   (str/replace title "." ".\u200B"))
 
-(mf/defc color-bullet
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc color-bullet*
+  {::mf/wrap [mf/memo]}
   [{:keys [color on-click mini area]}]
   (let [read-only? (nil? on-click)
         on-click
@@ -112,8 +111,7 @@
             [:div {:class (stl/css :color-bullet-right)
                    :style {:background (uc/color->background color)}}]])]))))
 
-(mf/defc color-name
-  {::mf/wrap-props false}
+(mf/defc color-name*
   [{:keys [color size on-click on-double-click origin]}]
   (let [{:keys [name]} (meta color)
         {:keys [color gradient]} (if (string? color) {:color color :opacity 1} color)]

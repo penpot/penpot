@@ -331,7 +331,7 @@
                       :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
-       [:div {:class (stl/css :section-list-item)}
+       [:div {:class (stl/css :section-list-publish)}
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
@@ -580,9 +580,9 @@
                      [:div {:class (stl/css :libraries-updates-item)
                             :key (dm/str (:id color))}
                       [:*
-                       [:& cb/color-bullet {:color {:color (:color color)
-                                                    :id (:id color)
-                                                    :opacity (:opacity color)}}]
+                       [:> cb/color-bullet* {:color {:color (:color color)
+                                                     :id (:id color)
+                                                     :opacity (:opacity color)}}]
                        [:div {:class (stl/css :name-block)}
                         [:span {:class (stl/css :item-name)
                                 :title (:name color)}
@@ -618,7 +618,7 @@
              (when (or (pos? (:components exceeded))
                        (pos? (:colors exceeded))
                        (pos? (:typographies exceeded)))
-               [:& lb/link-button
+               [:> lb/link-button*
                 {:on-click see-all-assets
                  :class (stl/css :libraries-updates-see-all)
                  :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))

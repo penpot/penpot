@@ -12,7 +12,6 @@
    [app.common.math :as mth]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (def rulers-pos 15)
@@ -35,6 +34,19 @@
 ;; ----------------
 ;;   RULERS
 ;; ----------------
+
+(mf/defc rulers-clip-path*
+  "Defines a clip path (referenced by `id`) that excludes the ruler bars from the
+   given `vbox`. Used to keep SVG overlays from painting over the rulers that are
+   drawn by the wasm render engine on the canvas."
+  [{:keys [id vbox zoom]}]
+  (let [ruler-size (/ ruler-area-size zoom)]
+    [:defs
+     [:clipPath {:id id}
+      [:rect {:x (+ (:x vbox) ruler-size)
+              :y (+ (:y vbox) ruler-size)
+              :width (max 0 (- (:width vbox) ruler-size))
+              :height (max 0 (- (:height vbox) ruler-size))}]]]))
 
 (defn- calculate-step-size
   [zoom]
@@ -311,36 +323,27 @@
                       :fill selection-area-color}}
        (fmt/format-number (- (:y1 selection-rect) offset-y))]])])
 
-(mf/defc rulers
-  {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % (mf/check-props ["zoom" "vbox" "selected-shapes" "show-rulers?"]))]}
-  [props]
-  (let [zoom            (obj/get props "zoom")
-        zoom-inverse    (obj/get props "zoom-inverse")
-        vbox            (obj/get props "vbox")
-        offset-x        (obj/get props "offset-x")
-        offset-y        (obj/get props "offset-y")
-        selected-shapes (-> (obj/get props "selected-shapes")
-                            (hooks/use-equal-memo))
-        show-rulers?    (obj/get props "show-rulers?")
+(mf/defc rulers*
+  [{:keys [zoom zoom-inverse vbox offset-x offset-y selected-shapes show-rulers]}]
+  (let [selected-shapes
+        (hooks/use-equal-memo selected-shapes)
 
         selection-rect
-        (mf/use-memo
-         (mf/deps selected-shapes)
-         #(when (d/not-empty? selected-shapes)
+        (mf/with-memo [selected-shapes]
+          (when (d/not-empty? selected-shapes)
             (gsh/shapes->rect selected-shapes)))]
 
     (when (some? vbox)
       [:g.viewport-frame {:pointer-events "none"}
        [:> viewport-frame*
-        {:show-rulers show-rulers?
+        {:show-rulers show-rulers
          :zoom zoom
          :zoom-inverse zoom-inverse
          :vbox vbox
          :offset-x offset-x
          :offset-y offset-y}]
 
-       (when (and show-rulers? (some? selection-rect))
+       (when (and show-rulers (some? selection-rect))
          [:> selection-area*
           {:zoom zoom
            :zoom-inverse zoom-inverse

@@ -15,6 +15,47 @@
    [app.main.ui.comments :as cmt]
    [rumext.v2 :as mf]))
 
+;; Pin transform for the bubble's frame so it follows the frame during a drag,
+;; scoped per frame to avoid re-rendering the whole layer each tick.
+(defn- use-frame-position-modifier
+  [frame-id]
+  (let [modifiers (mf/deref refs/workspace-modifiers)
+        wasm-mods (mf/deref refs/workspace-wasm-modifiers)
+        objects   (mf/deref refs/workspace-page-objects)]
+    (dwcm/frame-pin-transform (get objects frame-id)
+                              (get-in modifiers [frame-id :modifiers])
+                              (get wasm-mods frame-id))))
+
+(mf/defc comment-floating-bubble-wrapper*
+  {::mf/private true}
+  [{:keys [thread zoom is-open]}]
+  (let [position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-bubble*
+     {:thread thread
+      :zoom zoom
+      :position-modifier position-modifier
+      :is-open is-open}]))
+
+(mf/defc comment-floating-group-wrapper*
+  {::mf/private true}
+  [{:keys [thread-group zoom]}]
+  (let [thread            (first thread-group)
+        position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-group*
+     {:thread-group thread-group
+      :zoom zoom
+      :position-modifier position-modifier}]))
+
+(mf/defc comment-floating-thread-wrapper*
+  {::mf/private true}
+  [{:keys [thread viewport zoom]}]
+  (let [position-modifier (use-frame-position-modifier (:frame-id thread))]
+    [:> cmt/comment-floating-thread*
+     {:thread thread
+      :viewport viewport
+      :position-modifier position-modifier
+      :zoom zoom}]))
+
 (mf/defc comments-layer*
   {::mf/wrap [mf/memo]}
   [{:keys [vbox vport zoom file-id page-id]}]
@@ -65,18 +106,18 @@
          (let [group? (> (count thread-group) 1)
                thread (first thread-group)]
            (if group?
-             [:> cmt/comment-floating-group* {:thread-group thread-group
-                                              :zoom zoom
-                                              :key (:seqn thread)}]
-             [:> cmt/comment-floating-bubble* {:thread thread
-                                               :zoom zoom
-                                               :is-open (= (:id thread) (:open local))
-                                               :key (:seqn thread)}])))
+             [:> comment-floating-group-wrapper* {:thread-group thread-group
+                                                  :zoom zoom
+                                                  :key (:seqn thread)}]
+             [:> comment-floating-bubble-wrapper* {:thread thread
+                                                   :zoom zoom
+                                                   :is-open (= (:id thread) (:open local))
+                                                   :key (:seqn thread)}])))
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
-             [:> cmt/comment-floating-thread*
+             [:> comment-floating-thread-wrapper*
               {:thread thread
                :viewport viewport
                :zoom zoom}])))

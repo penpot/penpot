@@ -501,7 +501,6 @@ pub fn propagate_modifiers(
         }
     }
 
-    // #[allow(dead_code)]
     Ok(modifiers
         .iter()
         .map(|(key, val)| TransformEntry::from_input(*key, *val))

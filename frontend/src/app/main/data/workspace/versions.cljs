@@ -19,7 +19,6 @@
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.thumbnails :as th]
    [app.main.features :as features]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -73,9 +72,7 @@
          (rx/of ::dwp/force-persist
                 (ev/event {::ev/name "create-version"}))
 
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/take 1)
+         (->> (dwp/wait-persisted)
               (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
@@ -119,13 +116,6 @@
     ptk/EffectEvent
     (effect [_ _ _]
       (th/clear-queue!))))
-
-(defn- wait-for-persistence
-  [file-id snapshot-id]
-  (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-       (rx/filter #(or (nil? %) (= :saved %)))
-       (rx/take 1)
-       (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id snapshot-id}))))
 
 (defn delete-version
   [id]
@@ -223,7 +213,8 @@
          (rx/of ::dwp/force-persist
                 (dw/remove-layout-flag :document-history))
 
-         (->> (wait-for-persistence file-id id)
+         (->> (dwp/wait-persisted)
+              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
               (rx/map #(initialize-version))))))))
 
 (defn enter-restore
@@ -286,8 +277,24 @@
             features (features/get-enabled-features state team-id)
             snapshot (->> (dm/get-in state [:workspace-versions :data])
                           (d/seek #(= id (:id %))))
-            label    (or (:label snapshot)
-                         (tr "workspace.versions.preview.unnamed"))
+            ;; Match the History sidebar's identifying text so the
+            ;; preview banner and the sidebar entry "speak the same
+            ;; language" (#9503):
+            ;; - user-created (pinned) versions keep the user's custom
+            ;;   label; if absent, fall back to "unnamed"
+            ;; - system-created autosaves use the same auto-generated
+            ;;   label the sidebar's `snapshot-entry*` already renders
+            ;;   via `workspace.versions.autosaved.version` + a
+            ;;   localized date, instead of the internal snapshot
+            ;;   label (e.g. `internal/snapshot/20`).
+            label    (cond
+                       (= "system" (:created-by snapshot))
+                       (tr "workspace.versions.autosaved.version"
+                           (ct/format-inst (:created-at snapshot) :localized-date))
+
+                       :else
+                       (or (:label snapshot)
+                           (tr "workspace.versions.preview.unnamed")))
             output-s (rx/subject)]
         (rx/merge
          output-s
@@ -333,12 +340,6 @@
 ;; PLUGINS SPECIFIC EVENTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wait-persisted-status
-  []
-  (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-       (rx/filter #(or (nil? %) (= :saved %)))
-       (rx/take 1)))
-
 (defn create-version-from-plugins
   [file-id label resolve reject]
 
@@ -355,7 +356,7 @@
                 (rx/of ::dwp/force-persist))
 
               (->> (if (= file-id current-file-id)
-                     (wait-persisted-status)
+                     (dwp/wait-persisted)
                      (rx/of :nothing))
                    (rx/mapcat
                     (fn [_]
@@ -385,7 +386,8 @@
                               ::ev/origin "plugins"})
                    ::dwp/force-persist)
 
-            (->> (wait-for-persistence file-id id)
+            (->> (dwp/wait-persisted)
+                 (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
                  (rx/map #(initialize-version)))
 
             (->> (rx/of 1)

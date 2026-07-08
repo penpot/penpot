@@ -74,13 +74,19 @@
     modified-at)
 
   (rename [this new-name]
-    (assoc this :name new-name))
+    (assoc this
+           :name new-name
+           :modified-at (ct/now)))
 
   (reid [this new-id]
-    (assoc this :id new-id))
+    (assoc this
+           :id new-id
+           :modified-at (ct/now)))
 
   (set-description [this new-description]
-    (assoc this :description new-description)))
+    (assoc this
+           :description new-description
+           :modified-at (ct/now))))
 
 (defmethod pp/simple-dispatch Token
   [^Token obj]
@@ -1154,24 +1160,25 @@ Will return a value that matches this schema:
     (if-let [theme (get-theme this id)]
       (let [group       (:group theme)
             name        (:name theme)
-            theme'      (-> (make-token-theme (f theme))
-                            (assoc :modified-at (ct/now)))
-            group'      (:group theme')
-            name'       (:name theme')
-            same-group? (= group group')
-            same-name?  (= name name')
-            same-path?  (and same-group? same-name?)]
-        (TokensLib. sets
-                    (if same-path?
-                      (update themes group' assoc name' theme')
-                      (-> themes
-                          (d/oassoc-in-before [group name] [group' name'] theme')
-                          (d/dissoc-in [group name])))
-                    (if same-path?
-                      active-themes
-                      (disj active-themes (join-theme-path group name)))))
+            theme'      (make-token-theme (f theme))]
+        (if (= theme theme')
+          this
+          (let [theme'      (assoc theme' :modified-at (ct/now))
+                group'      (:group theme')
+                name'       (:name theme')
+                same-group? (= group group')
+                same-name?  (= name name')
+                same-path?  (and same-group? same-name?)]
+            (TokensLib. sets
+                        (if same-path?
+                          (update themes group' assoc name' theme')
+                          (-> themes
+                              (d/oassoc-in-before [group name] [group' name'] theme')
+                              (d/dissoc-in [group name])))
+                        (if same-path?
+                          active-themes
+                          (disj active-themes (join-theme-path group name)))))))
       this))
-
 
   (delete-theme [this id]
     (let [theme (get-theme this id)
@@ -1428,7 +1435,7 @@ Will return a value that matches this schema:
               (d/oassoc data hidden-theme-name (make-hidden-theme))))))
 
 (defn map->tokens-lib
-  "Make a new instance of TokensLib from a map, but skiping all
+  "Make a new instance of TokensLib from a map, but skipping all
   validation; it is used for create new instances from trusted
   sources"
   [& {:keys [sets themes active-themes]}]
@@ -1530,8 +1537,9 @@ Will return a value that matches this schema:
    active-tokens: map of token-name to token-object for all active tokens in the set
    current-path: the path of the group being renamed, e.g. \"foo.bar\"
    current-name: the current name of the group being renamed, e.g. \"bar\"
-   new-name: the new name for the group being renamed, e.g. \"baz\""
+   new-name: the new name for the group being renamed, e.g. \"baz\"
 
+   Returns a sequence of [name token] for each renamed token."
   [active-tokens current-path current-name new-name]
   (let [path-prefix (str/replace current-path current-name "")]
     (mapv (fn [[token-path token-obj]]
@@ -1575,6 +1583,13 @@ Will return a value that matches this schema:
      ["type" :string]]]))
 
 (def ^:private schema:dtcg-node
+  ;; Per the DTCG Community Group Final Report (W3C, 2025-10-28):
+  ;;   "The presence of a $value property definitively identifies an object as a token."
+  ;;   "A token's type can be specified by the optional $type property [...]
+  ;;    Furthermore, the $type property on a group applies to all tokens nested
+  ;;    within that group."
+  ;; So $value is the only required property; $type may be inherited from a
+  ;; parent group and is therefore optional on the token itself.
   [:schema {:registry
             {::simple-value
              [:or :string :int :double ::sm/boolean]
@@ -1587,7 +1602,7 @@ Will return a value that matches this schema:
                                 [:ref ::simple-value]
                                 [:vector ::simple-value]]]]}}
    [:map
-    ["$type" :string]
+    ["$type" {:optional true} :string]
     ["$value" [:ref ::value]]]])
 
 (def ^:private dtcg-node?
@@ -1726,33 +1741,51 @@ Will return a value that matches this schema:
 
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
-   being the keys the token paths after joining the keys with '.'."
-  [decoded-json-tokens parent-path]
-  (reduce-kv
-   (fn [tokens k v]
-     (let [child-path (if (empty? parent-path)
-                        (name k)
-                        (str parent-path "." k))]
-       (if (and (map? v)
-                (not (contains? v "$type")))
-         (merge tokens (flatten-nested-tokens-json v child-path))
-         (let [token-type (cto/dtcg-token-type->token-type (get v "$type"))]
-           (if token-type
-             (assoc tokens child-path (make-token
-                                       :name child-path
-                                       :type token-type
-                                       :value
-                                       (let [token-value (get v "$value")]
-                                         (case token-type
-                                           :font-family (convert-dtcg-font-family token-value)
-                                           :typography (convert-dtcg-typography-composite token-value)
-                                           :shadow (convert-dtcg-shadow-composite token-value)
-                                           token-value))
-                                       :description (get v "$description")))
-             ;; Discard unknown type tokens
-             tokens)))))
-   {}
-   decoded-json-tokens))
+   being the keys the token paths after joining the keys with '.'.
+
+   Per the DTCG spec, a node is a token iff it carries a `$value`
+   property; every other map is a group. A group may declare a `$type`
+   that is inherited by every nested token that does not declare its
+   own `$type`, so this walker propagates the nearest enclosing group
+   `$type` down through the recursion."
+  ([decoded-json-tokens parent-path]
+   (flatten-nested-tokens-json decoded-json-tokens parent-path nil))
+  ([decoded-json-tokens parent-path inherited-type]
+   (reduce-kv
+    (fn [tokens k v]
+      (let [child-path (if (empty? parent-path)
+                         (name k)
+                         (str parent-path "." k))]
+        (if (and (map? v)
+                 (not (contains? v "$value")))
+          ;; Group: recurse, letting the group's `$type` (if any) replace
+          ;; the inherited type for descendants that don't declare their
+          ;; own `$type`.
+          (merge tokens
+                 (flatten-nested-tokens-json
+                  v
+                  child-path
+                  (or (get v "$type") inherited-type)))
+          ;; Token: resolve the type from the token's own `$type`,
+          ;; falling back to the inherited group `$type`.
+          (let [type-key   (or (get v "$type") inherited-type)
+                token-type (cto/dtcg-token-type->token-type type-key)]
+            (if token-type
+              (assoc tokens child-path (make-token
+                                        :name child-path
+                                        :type token-type
+                                        :value
+                                        (let [token-value (get v "$value")]
+                                          (case token-type
+                                            :font-family (convert-dtcg-font-family token-value)
+                                            :typography (convert-dtcg-typography-composite token-value)
+                                            :shadow (convert-dtcg-shadow-composite token-value)
+                                            token-value))
+                                        :description (get v "$description")))
+              ;; Discard unknown / un-typeable tokens
+              tokens)))))
+    {}
+    decoded-json-tokens)))
 
 (defn- parse-single-set-dtcg-json
   "Parse a decoded json file with a single set of tokens in DTCG format into a TokensLib."
@@ -2136,8 +2169,41 @@ Will return a value that matches this schema:
 ;; MIGRATIONS HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn update-all-tokens
+  "Walk through all tokens in the library and apply the given function to them.
+   The function receives the library, the set and the token as arguments,
+   and should return the updated token."
+  [tokens-lib update-fn]
+  (let [update-one-set
+        (fn [lib set]
+          (reduce (fn [lib' token]
+                    (update-token lib'
+                                  (get-id set)
+                                  (get-id token)
+                                  #(update-fn lib'
+                                              (get-set lib' (get-id set))
+                                              %)))
+                  lib
+                  (vals (get-tokens lib (get-id set)))))]
+    (reduce (fn [lib set]
+              (update-one-set lib set))
+            tokens-lib
+            (get-sets tokens-lib))))
+
+(defn update-all-themes
+  "Walk through all themes in the library and apply the given function to them.
+   The function receives the library and the theme as arguments,
+   and should return the updated theme."
+  [tokens-lib update-fn]
+  (reduce (fn [lib theme]
+            (update-theme lib
+                          (get-id theme)
+                          #(update-fn lib %)))
+          tokens-lib
+          (get-themes tokens-lib)))
+
 (defn fix-duplicate-token-set-ids
-  "Given an instance of TokensLib fixes it internal sets data sturcture
+  "Given an instance of TokensLib fixes it internal sets data structure
   for ensure each set has unique id;
 
   Specific function for file data migrations"
@@ -2162,6 +2228,19 @@ Will return a value that matches this schema:
                 (update :sets d/update-vals migrate-set-node)
                 (map->tokens-lib)
                 (check)))))
+
+(defn fix-missing-sets-in-themes
+  [tokens-lib]
+  (let [existing-set-names (into #{} (map get-name) (get-sets tokens-lib))
+        fix-theme-sets
+        (fn [_ theme]
+          (let [current-sets (:sets theme)
+                valid-sets   (clojure.set/intersection current-sets existing-set-names)]
+            (if-not (= valid-sets current-sets)
+              (assoc theme :sets valid-sets)
+              theme)))]
+
+    (update-all-themes tokens-lib fix-theme-sets)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION (FRESIAN)
@@ -2200,7 +2279,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-3
      "Migrate the TokensLib data structure internals to v1.3 version; it
-  expects input from v1.2 version"
+      expects input from v1.2 version"
      [{:keys [sets themes] :as params}]
      (let [migrate-token
            (fn [token]
@@ -2248,7 +2327,7 @@ Will return a value that matches this schema:
 #?(:clj
    (defn- migrate-to-v1-4
      "Migrate the TokensLib data structure internals to v1.4 version; it
-  expects input from v1.3 version"
+      expects input from v1.3 version"
      [params]
      (let [migrate-set-node
            (fn recurse [node]

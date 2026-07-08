@@ -14,11 +14,14 @@
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [goog.events :as gevents]
    [rumext.v2 :as mf]
-   [rumext.v2.util :as mfu]))
+   [rumext.v2.util :as mfu])
+  (:import goog.events.EventType))
 
 (def ^:private schema:combobox
   [:map
@@ -93,16 +96,18 @@
 
         on-option-click
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change options)
          (fn [event]
            (dom/stop-propagation event)
            (let [node  (dom/get-current-target event)
-                 id    (dom/get-data node "id")]
-             (reset! selected-id* id)
-             (reset! is-open* false)
-             (reset! focused-id* nil)
-             (when (fn? on-change)
-               (on-change id)))))
+                 id    (dom/get-data node "id")
+                 option (d/seek #(= id (get % :id)) options)]
+             (when-not (true? (:disabled option))
+               (reset! selected-id* id)
+               (reset! is-open* false)
+               (reset! focused-id* nil)
+               (when (fn? on-change)
+                 (on-change id))))))
 
         on-click
         (mf/use-fn
@@ -192,14 +197,15 @@
                      (handle-focus-change options focused-id* new-index nodes))
 
                    (kbd/enter? event)
-                   (do
-                     (reset! selected-id* focused-id)
-                     (reset! is-open* false)
-                     (reset! focused-id* nil)
-                     (dom/blur! (mf/ref-val input-ref))
-                     (when (and (fn? on-change)
-                                (some? focused-id))
-                       (on-change focused-id)))
+                   (let [focused-option (d/seek #(= focused-id (get % :id)) options)]
+                     (when-not (true? (:disabled focused-option))
+                       (reset! selected-id* focused-id)
+                       (reset! is-open* false)
+                       (reset! focused-id* nil)
+                       (dom/blur! (mf/ref-val input-ref))
+                       (when (and (fn? on-change)
+                                  (some? focused-id))
+                         (on-change focused-id))))
 
                    (kbd/esc? event)
                    (do (reset! is-open* false)
@@ -258,6 +264,18 @@
         (when-let [value (mf/ref-val value-ref)]
           (mf/set-ref-val! value-ref nil)
           (on-change value))))
+
+    (mf/with-effect [is-open]
+      (when is-open
+        (let [handler (fn [event]
+                        (let [wrapper-node (mf/ref-val combobox-ref)
+                              target       (dom/get-target event)]
+                          (when (and (some? wrapper-node)
+                                     (not (dom/child? target wrapper-node)))
+                            (reset! is-open* false))))
+              key     (gevents/listen globals/document EventType.MOUSEDOWN handler)]
+          (fn []
+            (gevents/unlistenByKey key)))))
 
     [:div {:ref combobox-ref
            :class (stl/css-case

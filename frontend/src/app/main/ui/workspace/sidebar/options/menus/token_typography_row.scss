@@ -35,8 +35,7 @@
   }
 }
 
-.token-typography-row-with-errors,
-.token-typography-row-not-active {
+.token-typography-row-with-errors {
   --token-typography-row-background-color: var(--color-background-primary);
   --token-typography-row-foreground-color: var(--color-foreground-secondary);
   --token-typography-row-border-color: var(--color-token-border);
@@ -67,10 +66,6 @@
 .token-tooltip {
   min-inline-size: 0;
   inline-size: inherit;
-}
-
-.token-name-tooltip {
-  color: var(--color-foreground-primary);
 }
 
 .detach-button {

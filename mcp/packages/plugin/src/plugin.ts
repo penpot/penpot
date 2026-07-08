@@ -1,5 +1,6 @@
 import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
+import { formatTaskError } from "./ErrorUtils";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
@@ -97,8 +98,7 @@ async function handlePluginTaskRequest(request: { id: string; task: string; para
             console.log("Task handled successfully:", task);
         } catch (error) {
             console.error("Error handling task:", error);
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            task.sendError(`Error handling task: ${errorMessage}`);
+            task.sendError(`Error handling task: ${formatTaskError(error)}`);
         }
     } else {
         console.error("Unknown plugin task:", request.task);

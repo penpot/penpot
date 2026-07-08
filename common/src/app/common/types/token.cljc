@@ -20,7 +20,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- schema-keys
-  "Converts registed map schema into set of keys."
+  "Converts registered map schema into set of keys."
   [schema]
   (->> schema
        (sm/schema)
@@ -42,7 +42,7 @@
 
 (defn token-value-self-reference?
   "Check if the token is self referencing with its `token-name` in `token-value`.
-  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  Simple 1 level check, doesn't account for circular self references across multiple tokens."
   [token-name token-value]
   (let [token-references (find-token-value-references token-value)
         self-reference? (get token-references token-name)]
@@ -554,10 +554,17 @@
    :opacity            [:opacity]
    :stroke-width       [:stroke-width :dimensions]
    :font-size          [:font-size]
+   :font-weight        [:font-weight]
+   :text-decoration    [:text-decoration]
+   :text-case          [:text-case]
    :letter-spacing     [:letter-spacing]
+   :dimensions         [:dimensions]
    :fill               [:color]
    :stroke-color       [:color]
-   :typography         [:typography]})
+   :typography         [:typography]
+   :number             [:number]
+   :sizing             [:sizing :dimensions]
+   :spacing            [:spacing :dimensions]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for tokens application
@@ -714,7 +721,7 @@
           (or (nil? last-space-left)   (> (dm/number open-pos) (dm/number last-space-left)))
           (or (nil? first-space-right) (< (dm/number close-pos) (dm/number first-space-right)))))))
 
-(defn- build-result
+(defn build-result
   "Builds the result map for `insert-ref` by replacing the substring of `value`
    between `prefix-end` and `suffix-start` with a formatted reference `{name}`.
    Returns a map with:

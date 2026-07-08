@@ -1,5 +1,36 @@
 packages:
   - 'apps/**'
   - 'libs/**'
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: true
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+  puppeteer: false
+  sharp: true
+  workerd: true
 
 linkWorkspacePackages: true
+
+minimumReleaseAgeExclude:
+  - minimatch@10.2.1 || 10.2.3
+  - ajv@8.18.0
+  - lodash@4.17.24
+  - esbuild@0.28.1
+  - '@babel/core@7.29.1'
+  - undici@7.28.0
+
+overrides:
+  '@babel/core@<=7.29.0': ^7.29.1
+  ajv@>=7.0.0-alpha.0 <8.18.0: ^8.18.0
+  lodash@<=4.17.23: ^4.17.24
+  lodash@>=4.0.0 <=4.17.23: ^4.17.24
+  minimatch@>=10.0.0 <10.2.1: ^10.2.1
+  minimatch@>=10.0.0 <10.2.3: ^10.2.3
+
+peerDependencyRules:
+  allowedVersions:
+    "eslint-plugin-import>eslint": "10.6.0"
+    "eslint-plugin-jsx-a11y>eslint": "10.6.0"
+    "eslint-plugin-react>eslint": "10.6.0"

@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
+   [app.main.constants :as mconst]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -20,10 +21,10 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc margin-display
-  [{:keys [shape-id zoom hover-all? hover-v? hover-h? margin-num margin
+(mf/defc margin-display*
+  [{:keys [shape-id zoom is-hover-all is-hover-v is-hover-h margin-num margin
            on-pointer-enter on-pointer-leave on-change
-           rect-data hover? selected? mouse-pos hover-value]}]
+           rect-data is-hover is-selected mouse-pos hover-value]}]
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
@@ -42,7 +43,7 @@
 
         calc-modifiers
         (mf/use-fn
-         (mf/deps shape-id margin-num margin hover-all? hover-v? hover-h?)
+         (mf/deps shape-id margin-num margin is-hover-all is-hover-v is-hover-h)
          (fn [pos]
            (let [delta
                  (-> (gpt/to-vec @start pos)
@@ -54,10 +55,10 @@
 
                  layout-item-margin
                  (cond
-                   hover-all? (assoc margin :m1 val :m2 val :m3 val :m4 val)
-                   hover-v?   (assoc margin :m1 val :m3 val)
-                   hover-h?   (assoc margin :m2 val :m4 val)
-                   :else      (assoc margin margin-num val))
+                   is-hover-all (assoc margin :m1 val :m2 val :m3 val :m4 val)
+                   is-hover-v   (assoc margin :m1 val :m3 val)
+                   is-hover-h   (assoc margin :m2 val :m4 val)
+                   :else        (assoc margin margin-num val))
 
                  layout-item-margin-type
                  (if (= (:m1 margin) (:m2 margin) (:m3 margin) (:m4 margin)) :simple :multiple)]
@@ -114,13 +115,13 @@
       :on-pointer-down on-pointer-down
       :on-lost-pointer-capture on-lost-pointer-capture
       :on-pointer-move on-pointer-move
-      :class (when (or hover? selected?)
+      :class (when (or is-hover is-selected)
                (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
-      :style {:fill (if (or hover? selected?) fcc/warning-color "none")
-              :opacity (if selected? 0.5 0.25)}}]))
+      :style {:fill (if (or is-hover is-selected) fcc/warning-color "none")
+              :opacity (if is-selected 0.5 0.25)}}]))
 
 
-(mf/defc margin-rects [{:keys [shape frame zoom alt? shift?]}]
+(mf/defc margin-rects* [{:keys [shape frame zoom is-alt is-shift]}]
   (let [shape-id                   (:id shape)
         pill-width                 (/ fcc/flex-display-pill-width zoom)
         pill-height                (/ fcc/flex-display-pill-height zoom)
@@ -133,9 +134,9 @@
         hover-value                (mf/use-state 0)
         mouse-pos                  (mf/use-state nil)
         hover                      (mf/use-state nil)
-        hover-all?                 (and (not (nil? @hover)) alt?)
-        hover-v?                   (and (or (= @hover :m1) (= @hover :m3)) shift?)
-        hover-h?                   (and (or (= @hover :m2) (= @hover :m4)) shift?)
+        hover-all?                 (and (not (nil? @hover)) is-alt)
+        hover-v?                   (and (or (= @hover :m1) (= @hover :m3)) is-shift)
+        hover-h?                   (and (or (= @hover :m2) (= @hover :m4)) is-shift)
         margin                    (:layout-item-margin shape)
         {:keys [width height x1 x2 y1 y2]} (:selrect shape)
 
@@ -202,21 +203,21 @@
 
     [:g.margins {:pointer-events "visible"}
      (for [[margin-num rect-data] margin-display-data]
-       [:& margin-display
+       [:> margin-display*
         {:key (:key rect-data)
          :shape-id shape-id
          :zoom zoom
-         :hover-all? hover-all?
-         :hover-v? hover-v?
-         :hover-h? hover-h?
+         :is-hover-all hover-all?
+         :is-hover-v hover-v?
+         :is-hover-h hover-h?
          :margin-num margin-num
          :margin margin
          :on-pointer-enter (partial on-pointer-enter margin-num (get margin margin-num))
          :on-pointer-leave on-pointer-leave
          :on-change on-change
          :rect-data rect-data
-         :hover?  (hover? margin-num)
-         :selected? (get margins-selected margin-num)
+         :is-hover  (hover? margin-num)
+         :is-selected (get margins-selected margin-num)
          :mouse-pos mouse-pos
          :hover-value hover-value}])
 
@@ -224,21 +225,21 @@
        [:& fcc/flex-display-pill
         {:height pill-height
          :width pill-width
-         :font-size (/ fcc/font-size zoom)
+         :font-size (/ mconst/font-size zoom)
          :border-radius (/ fcc/flex-display-pill-border-radius zoom)
          :color fcc/warning-color
          :x (:x @mouse-pos)
          :y (- (:y @mouse-pos) pill-width)
          :value @hover-value}])]))
 
-(mf/defc margin-control
-  [{:keys [shape parent zoom alt? shift?]}]
+(mf/defc margin-control*
+  [{:keys [shape parent zoom is-alt is-shift]}]
   (when shape
     [:g.measurement-gaps {:pointer-events "none"}
      [:g.hover-shapes
-      [:& margin-rects
+      [:> margin-rects*
        {:shape shape
         :frame parent
         :zoom zoom
-        :alt? alt?
-        :shift? shift?}]]]))
+        :is-alt is-alt
+        :is-shift is-shift}]]]))

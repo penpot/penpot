@@ -15,11 +15,11 @@
    [rumext.v2 :as mf]))
 
 ;; For use it, just wrap the component you want to profile with
-;; `perf/profiler` component and pass a label for debug purpose.
+;; `perf/profiler*` component and pass a label for debug purpose.
 ;;
 ;; Example:
 ;;
-;; [:& perf/profiler {:label "viewport"}
+;; [:> perf/profiler* {:label "viewport"}
 ;;  [:section
 ;;   [:& some-component]]]
 ;;
@@ -90,17 +90,12 @@
       (conj! td adur)
       (log phase td))))
 
-(mf/defc profiler
-  {::mf/wrap-props false}
-  [props]
-  (let [children (unchecked-get props "children")
-        label    (unchecked-get props "label")
-        enabled? (unchecked-get props "enabled")
-        enabled? (if (nil? enabled?) true enabled?)
-        on-render (mf/use-memo
+(mf/defc profiler*
+  [{:keys [children label enabled] :or {enabled true}}]
+  (let [on-render (mf/use-memo
                    (mf/deps label)
                    #(on-render-factory label))]
-    (if enabled?
+    (if enabled
       [:> react/Profiler #js {:id label
                               :onRender on-render}
        children]

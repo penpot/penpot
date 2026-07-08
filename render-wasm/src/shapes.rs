@@ -188,6 +188,7 @@ pub struct Shape {
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
+    pub background_blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -291,6 +292,7 @@ impl Shape {
             opacity: 1.,
             hidden: false,
             blur: None,
+            background_blur: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
@@ -312,6 +314,10 @@ impl Shape {
 
         if let Some(blur) = self.blur.as_mut() {
             blur.scale_content(value);
+        }
+
+        if let Some(background_blur) = self.background_blur.as_mut() {
+            background_blur.scale_content(value);
         }
 
         self.layout_item
@@ -631,6 +637,15 @@ impl Shape {
         self.blur = blur;
     }
 
+    pub fn set_background_blur(&mut self, blur: Option<Blur>) {
+        self.invalidate_extrect();
+        self.background_blur = blur;
+    }
+
+    pub fn visible_background_blur(&self) -> Option<Blur> {
+        self.background_blur.filter(|blur| !blur.hidden)
+    }
+
     pub fn add_child(&mut self, id: Uuid) {
         self.children.push(id);
     }
@@ -705,6 +720,23 @@ impl Shape {
         };
         self.invalidate_bounds();
         self.invalidate_extrect();
+    }
+
+    pub fn update_svg_raw_content(&mut self, font_manager: skia::FontMgr) {
+        match &self.shape_type {
+            Type::SVGRaw(sr) => {
+                let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
+                match dom_result {
+                    Ok(dom) => {
+                        self.set_svg(dom);
+                    }
+                    Err(e) => {
+                        eprintln!("Error parsing SVG. Error: {}", e);
+                    }
+                }
+            }
+            _ => panic!("Updating SVG raw content on non SVG Raw shape"),
+        }
     }
 
     pub fn set_svg_raw_content(&mut self, content: String) {
@@ -1077,6 +1109,15 @@ impl Shape {
         self.selrect.center()
     }
 
+    // TODO: This can be used in more places
+    pub fn centered_transform(&self) -> Matrix {
+        let center = self.center();
+        let mut matrix = self.transform;
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+        matrix
+    }
+
     pub fn clip(&self) -> bool {
         self.clip_content
     }
@@ -1412,6 +1453,7 @@ impl Shape {
         }
 
         self.blur.is_none()
+            && self.background_blur.is_none()
             && self.shadows.is_empty()
             && (self.opacity - 1.0).abs() <= 1e-4
             && self.blend_mode().0 == skia::BlendMode::SrcOver
@@ -1656,7 +1698,7 @@ impl Shape {
             return false;
         }
 
-        if self.blur.is_some() {
+        if self.blur.is_some() || self.background_blur.is_some() {
             return false;
         }
 
@@ -1794,6 +1836,38 @@ mod tests {
             shape.fills.first(),
             Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
         )
+    }
+
+    #[test]
+    fn layer_blur_and_background_blur_can_coexist() {
+        let mut shape = any_shape();
+
+        let layer_blur = Blur::new(BlurType::LayerBlur, false, 4.0);
+        let background_blur = Blur::new(BlurType::BackgroundBlur, false, 8.0);
+
+        shape.set_blur(Some(layer_blur));
+        shape.set_background_blur(Some(background_blur));
+
+        assert_eq!(shape.blur, Some(layer_blur));
+        assert_eq!(shape.background_blur, Some(background_blur));
+        assert_eq!(shape.visible_background_blur(), Some(background_blur));
+
+        // Clearing one type must not affect the other.
+        shape.set_blur(None);
+        assert_eq!(shape.blur, None);
+        assert_eq!(shape.background_blur, Some(background_blur));
+
+        shape.set_blur(Some(layer_blur));
+        shape.set_background_blur(None);
+        assert_eq!(shape.blur, Some(layer_blur));
+        assert_eq!(shape.background_blur, None);
+    }
+
+    #[test]
+    fn hidden_background_blur_is_not_visible() {
+        let mut shape = any_shape();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, true, 8.0)));
+        assert_eq!(shape.visible_background_blur(), None);
     }
 
     #[test]

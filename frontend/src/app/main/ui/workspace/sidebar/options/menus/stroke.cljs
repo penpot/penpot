@@ -20,7 +20,6 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row*]]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -30,6 +29,8 @@
    :stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-dash
+   :stroke-gap
    :stroke-color
    :stroke-color-ref-id
    :stroke-color-ref-file
@@ -38,9 +39,31 @@
    :stroke-cap-start
    :stroke-cap-end])
 
+(defn- stroke-menu-check-props
+  "A stroke-menu specific memoize check function that only checks if
+  specific values are changed on provided props. This allows pass the
+  whole shape as values without adding additional rerenders when other
+  shape properties changes."
+  [n-props o-props]
+  (and (identical? (unchecked-get n-props "ids")
+                   (unchecked-get o-props "ids"))
+       (identical? (unchecked-get n-props "type")
+                   (unchecked-get o-props "type"))
+       (identical? (unchecked-get n-props "appliedTokens")
+                   (unchecked-get o-props "appliedTokens"))
+       (identical? (unchecked-get n-props "showCaps")
+                   (unchecked-get o-props "showCaps"))
+       (identical? (unchecked-get n-props "disableStrokeStyle")
+                   (unchecked-get o-props "disableStrokeStyle"))
+       (let [o-vals  (unchecked-get o-props "values")
+             n-vals  (unchecked-get n-props "values")
+             o-strokes (get o-vals :strokes)
+             n-strokes (get n-vals :strokes)]
+         (identical? o-strokes n-strokes))))
+
 (mf/defc stroke-menu*
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens"]))]}
-  [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes objects] :as props}]
+  {::mf/wrap [#(mf/memo' % stroke-menu-check-props)]}
+  [{:keys [ids type values show-caps disable-stroke-style applied-tokens]}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -113,29 +136,17 @@
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
 
-        open-caps-select
-        (fn [caps-state]
-          (fn [event]
-            (let [window-size (dom/get-window-size)
+        on-stroke-dash-change
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-dash value} index))))
 
-                  target (dom/get-current-target event)
-                  rect   (dom/get-bounding-rect target)
-
-                  top (if (< (+ (:bottom rect) 320) (:height window-size))
-                        (+ (:bottom rect) 5)
-                        (- (:height window-size) 325))
-
-                  left (if (< (+ (:left rect) 200) (:width window-size))
-                         (:left rect)
-                         (- (:width window-size) 205))]
-              (swap! caps-state assoc :open? true
-                     :left left
-                     :top top))))
-
-        close-caps-select
-        (fn [caps-state]
-          (fn [_]
-            (swap! caps-state assoc :open? false)))
+        on-stroke-gap-change
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-gap value} index))))
 
         on-stroke-cap-start-change
         (fn [index value]
@@ -217,30 +228,28 @@
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
              [:> stroke-row* {:key (dm/str "stroke-" index "-" (hash applied-tokens))
+                              :index index
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
-                              :index index
-                              :shapes shapes
-                              :objects objects
                               :show-caps show-caps
                               :on-color-change on-color-change
+                              :on-reorder handle-reorder
                               :on-color-detach on-color-detach
+                              :on-remove on-remove
                               :on-stroke-width-change on-stroke-width-change
+                              :on-stroke-dash-change on-stroke-dash-change
+                              :on-stroke-gap-change on-stroke-gap-change
                               :on-stroke-style-change on-stroke-style-change
                               :on-stroke-alignment-change on-stroke-alignment-change
-                              :open-caps-select open-caps-select
-                              :close-caps-select close-caps-select
                               :on-stroke-cap-start-change on-stroke-cap-start-change
                               :on-stroke-cap-end-change on-stroke-cap-end-change
                               :on-stroke-cap-switch on-stroke-cap-switch
-                              :applied-tokens (when (= 0 index) applied-tokens)
-                              :on-detach-token on-detach-token
-                              :on-remove on-remove
                               :on-toggle-visibility on-toggle-visibility
-                              :on-reorder handle-reorder
                               :disable-drag disable-drag
                               :on-focus on-focus
-                              :select-on-focus (not @disable-drag)
                               :on-blur on-blur
-                              :ids ids
-                              :disable-stroke-style disable-stroke-style}])])])]))
+                              :applied-tokens (when (= 0 index) applied-tokens)
+                              :on-detach-token on-detach-token
+                              :disable-stroke-style disable-stroke-style
+                              :select-on-focus (not @disable-drag)
+                              :ids ids}])])])]))

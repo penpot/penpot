@@ -250,14 +250,14 @@ test("Multiselection of text and typographies", async ({ page }) => {
 
   await expect(textSection).toBeVisible();
   await expect(
-    textSection.getByText("Multiple typographies"),
+    textSection.getByText("Mixed assets"),
   ).not.toBeVisible();
 
   // Select two plain text layer with different font family
   await plainTextLayerTwo.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
   await expect(
-    textSection.getByTitle("Font family").getByText("--"),
+    textSection.getByTitle("Font family").getByText("Mixed Font Families"),
   ).toBeVisible();
 
   // Select typography text layer
@@ -268,45 +268,43 @@ test("Multiselection of text and typographies", async ({ page }) => {
   // Select two typography text layer with different typography
   await typographyTextLayerTwo.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Multiple typographies")).toBeVisible();
+  await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   // Select token typography text layer
-  // TODO: CHANGE WHEN TOKEN TYPOGRAPHY ROW IS READY
   await tokenTypographyTextLayerOne.click();
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Metrophobic")).toBeVisible();
+  await expect(textSection.getByLabel('token-typo-one')).toBeVisible();
 
   // Select two token typography text layer with different token typography
-  // TODO: CHANGE WHEN TOKEN TYPOGRAPHY ROW IS READY
   await tokenTypographyTextLayerTwo.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
   await expect(
-    textSection.getByTitle("Font family").getByText("--"),
+    textSection.getByText('Mixed tokens'),
   ).toBeVisible();
 
   //Select plain text layer and typography text layer together
   await plainTextLayer.click();
   await typographyTextLayerOne.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Multiple typographies")).toBeVisible();
+  await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   //Select plain text layer and typography text layer together on reverse order
   await typographyTextLayerOne.click();
   await plainTextLayer.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Multiple typographies")).toBeVisible();
+  await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   //Selen token typography text layer and typography text layer together
   await tokenTypographyTextLayerOne.click();
   await typographyTextLayerOne.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Multiple typographies")).toBeVisible();
+  await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   //Select token typography text layer and typography text layer together on reverse order
   await typographyTextLayerOne.click();
   await tokenTypographyTextLayerOne.click({ modifiers: ["Control"] });
   await expect(textSection).toBeVisible();
-  await expect(textSection.getByText("Multiple typographies")).toBeVisible();
+  await expect(textSection.getByText("Mixed assets")).toBeVisible();
 
   // Select rectangle and elipse together
   await rectangleLayer.click();

@@ -16,7 +16,7 @@
   --options-dropdown-border-color: var(--color-background-quaternary);
 
   position: absolute;
-  inset-block-start: $sz-36;
+  inset-block: var(--dropdown-start, $sz-36) var(--dropdown-end, auto);
   inline-size: var(--dropdown-width, 100%);
   transform: translateX(var(--dropdown-translate-distance, 0));
   background-color: var(--options-dropdown-bg-color);

@@ -37,7 +37,7 @@
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
-   [app.main.data.persistence :as-alias dps]
+   [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
@@ -306,13 +306,30 @@
   (and (instance? js/DOMException cause)
        (= (.-name cause) "NotAllowedError")))
 
+(defn- clipboard-unavailable-error?
+  "Check if the given error is a clipboard API unavailable error
+  (thrown when navigator.clipboard is undefined, e.g. on insecure
+   origins per the W3C Secure Contexts spec)."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
 (defn- on-clipboard-permission-error
   [cause]
-  (if (clipboard-permission-error? cause)
+  (cond
+    (clipboard-permission-error? cause)
     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
                       :type :toast
                       :level :warning
                       :timeout 5000}))
+
+    (clipboard-unavailable-error? cause)
+    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+
+    :else
     (rx/throw cause)))
 
 (defn paste-from-clipboard
@@ -510,6 +527,12 @@
                   (cond
                     (clipboard-permission-error? cause)
                     (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                                      :type :toast
+                                      :level :warning
+                                      :timeout 5000}))
+
+                    (clipboard-unavailable-error? cause)
+                    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
                                       :type :toast
                                       :level :warning
                                       :timeout 5000}))
@@ -720,7 +743,8 @@
                   (update :fills translate-fills)
                   (update :strokes translate-strokes)
                   (d/update-when :content #(txt/transform-nodes process-text-node %))
-                  (d/update-when :position-data #(mapv process-text-node %)))))
+                  ;; Removes the position-data so it's regenerated
+                  (dissoc :position-data))))
 
           ;; Analyze the rchange and replace staled media and
           ;; references to the new uploaded media-objects.
@@ -1142,11 +1166,7 @@
 
         (rx/concat
          ;; Ensure current state persisted before exporting.
-         (rx/of ::dps/force-persist)
-         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
-              (rx/filter #(or (nil? %) (= :saved %)))
-              (rx/first)
-              (rx/timeout 400 (rx/empty)))
+         (dps/force-persist-and-wait 400)
 
          ;; Exporting itself can take its time, better to notify that we are busy.
          (rx/of (ntf/info (tr "workspace.clipboard.copying")))

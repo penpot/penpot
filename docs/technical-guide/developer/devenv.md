@@ -45,12 +45,158 @@ This is an incomplete list of devenv related subcommands found on
 manage.sh script:
 
 ```bash
-./manage.sh build-devenv-local # builds the local devenv docker image (called by run-devenv automatically when needed)
-./manage.sh start-devenv       # starts background running containers
-./manage.sh run-devenv         # enters to new tmux session inside of one of the running containers
-./manage.sh stop-devenv        # stops background running containers
-./manage.sh drop-devenv        # removes all the containers, volumes and networks used by the devenv
+./manage.sh build-devenv --local            # builds the local devenv docker image
+./manage.sh start-devenv                    # brings up the shared infra + ws0 in background
+./manage.sh run-devenv --attach             # bring up main devenv instance and attach to its tmux session
+./manage.sh run-devenv --agentic --attach   # bring up main devenv instance in agentic mode and attach tmux
+./manage.sh attach-devenv                   # re-attaches to the tmux session of a running instance
+./manage.sh stop-devenv                     # stops one instance (or --all); infra stops with the last
+./manage.sh drop-devenv                     # removes containers (data volumes preserved)
 ```
+
+### Agentic Mode
+
+The `--agentic` flag enables additional features for AI-assisted development.
+See the dedicated section [Agentic Dev Environment](../agentic-devenv/) for details.
+
+### Parallel workspaces
+
+The devenv runs as separate compose projects:
+  * shared infra (`penpotdev-infra`: Postgres, MinIO, mailer, LDAP)
+  * `penpotdev-wsN` project per runtime instance.
+     - `ws0` (a.k.a. `main`) is the current state of your repo;
+     - `ws1` and up are clones that you maintain explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
+       (default `~/.penpot/penpot_workspaces/`). You can explicitly sync them
+       with the `--sync` flag (automatic on first start).
+
+Each call to `run-devenv` brings up one instance, and ws0 is always
+running whenever any ws1+ is — `--ws N` (N≥1) auto-starts ws0 first if it
+isn't already up:
+
+```bash
+./manage.sh run-devenv                 # main (ws0)
+./manage.sh run-devenv --ws 1          # ws0 if needed, then ws1
+./manage.sh run-devenv --ws 2 --sync   # ws2, re-seeding from the live repo
+```
+
+Starting an instance that is already running is an error. `--sync` is only
+valid for `ws1+`; on ws0 it errors out. When a `ws1+` workspace directory
+does not exist yet, the first start syncs it implicitly from the live repo.
+Otherwise the workspace contents are left untouched unless `--sync` is passed
+again. Live-repo Git in a fragile state (rebase / merge / cherry-pick /
+`index.lock`) blocks all syncs.
+
+`frontend/resources/public/js/config.js` (which is gitignored and configures
+the frontend's MCP flag) is copied into each workspace on its initial sync
+only. After that the developer maintains it in each workspace; subsequent
+`--sync` runs leave the workspace copy alone.
+
+Stopping mirrors the start invariant — ws0 is the last to stop, and shared
+infra stops with it:
+
+```bash
+./manage.sh stop-devenv --ws 1           # stops ws1; ws0 + infra stay up
+./manage.sh stop-devenv                  # stops ws0 + infra; errors if ws1+ still running
+./manage.sh stop-devenv --all            # stops every ws1+ first, then ws0 + infra
+```
+
+Host ports are offset by `10000 × N`:
+
+| Service | ws0 | ws1 | ws2 |
+|---|---|---|---|
+| Penpot UI (HTTPS) | `https://localhost:3449` | `https://localhost:13449` | `https://localhost:23449` |
+| MCP HTTP stream | `http://localhost:4401/mcp` | `http://localhost:14401/mcp` | `http://localhost:24401/mcp` |
+| Serena MCP | `http://localhost:14181` | `http://localhost:24181` | `http://localhost:34181` |
+
+Container-internal ports stay fixed. Target a specific instance with
+`--ws N` on `attach-devenv`, `run-devenv`, `stop-devenv`,
+`start-coding-agent`, `run-devenv-shell`, and `isolated-shell`. `--ws`
+accepts a **non-negative integer only** — `--ws main` or `--ws ws1` is
+rejected, keeping the flag shape uniform across commands. `run-devenv` is
+ws0-only and takes no workspace flag. `run-devenv` also accepts
+`--serena-context CTX` (used together with `--agentic`) and `--git-user-name NAME` / `--git-user-email
+EMAIL` (see below).
+
+Configuration lives in one tracked file, `docker/devenv/defaults.env` (the
+ws0 baseline); `ws1+` values (offset ports, `wsN` container/volume names) are
+derived and injected automatically, so there is no per-instance file to edit.
+
+### Git identity inside the container
+
+`run-devenv` wires a Git author identity into the container's
+**global** git config (`git config --global user.{name,email}`) so commits
+made from inside the devenv carry a real author/committer. Without this,
+the container would commit as the unconfigured `penpot@<container>`
+fallback — usable but useless for review.
+
+The values come from `--git-user-name NAME` / `--git-user-email EMAIL`
+when passed, or from your host's effective `git config user.{name,email}`
+otherwise. "Effective" here means the values plain `git config user.X`
+returns at the working directory `manage.sh` is invoked from — local
+(`<repo>/.git/config`) overrides global (`~/.gitconfig`), matching what
+`git commit` on the host would record. If neither is available the script
+prints a warning and continues — commits will fail inside the container
+until you set an identity. The values are applied every time
+`run-devenv` brings an instance up (idempotent), so re-running
+with different flags is the way to change the in-container identity.
+
+### Shared state and workers
+
+All instances share one Penpot database and one MinIO bucket; users, teams,
+files, and MCP tokens are visible from every instance. Per-instance Valkey
+keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
+file-summary cache, rate-limit counters) isolated.
+
+Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
+disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
+`task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
+runs them against the shared DB and MinIO. The "ws0 always up when ws1+ is
+up" invariant exists for this reason: it keeps a single worker-bearer and
+avoids the multi-instance cron-dedup race (the lock on `scheduled_task` is
+released when the task body finishes, so two cron timers firing the same
+scheduled instant with a gap larger than the body's runtime can both
+execute it).
+
+### Upgrading from a pre-parallel devenv
+
+The devenv compose configuration has been split into two files and reorganized
+into separate compose projects per runtime instance:
+
+- `docker/devenv/docker-compose.infra.yml` (Postgres, MinIO, mailer, LDAP)
+  runs under the compose project `penpotdev-infra`.
+- `docker/devenv/docker-compose.main.yml` (one main container + its Valkey)
+  runs once per runtime instance under `penpotdev-ws0`, `penpotdev-ws1`, ….
+- Both projects join the external Docker network `penpot_shared`, created
+  idempotently by `manage.sh`.
+- Configuration lives in `docker/devenv/defaults.env` (the ws0 baseline);
+  ws1+ overrides are computed and injected at compose time.
+
+If you had the devenv running on the previous single-project (`penpotdev`)
+layout, leftover containers and the auto-generated `penpotdev_default`
+network must be removed before bringing the new ws0 instance up. The named
+data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_minio_data`,
+`penpotdev_user_data`, `penpotdev_valkey_data`) are pinned by explicit
+`name:` entries in the new compose files and are preserved through the
+transition — your Postgres DB, MinIO objects, and home cache survive.
+
+One-time cleanup, then bring up ws0:
+
+```bash
+# Stop and remove the old single-project containers (data volumes stay).
+docker stop penpot-devenv-main penpot-devenv-valkey 2>/dev/null
+docker rm   penpotdev-postgres-1 penpotdev-minio-1 penpotdev-minio-setup-1 \
+            penpotdev-mailer-1   penpotdev-ldap-1 \
+            penpot-devenv-main   penpot-devenv-valkey 2>/dev/null
+
+# Remove the orphaned auto-generated network.
+docker network rm penpotdev_default 2>/dev/null
+
+# Bring up infra + ws0 under the new project layout.
+./manage.sh run-devenv
+```
+
+After the cleanup, normal `./manage.sh start-devenv` / `run-devenv` work against the new layout. The legacy
+`penpotdev` compose project is no longer used.
 
 Having the container running and tmux opened inside the container,
 you are free to execute commands and open as many shells as you want.

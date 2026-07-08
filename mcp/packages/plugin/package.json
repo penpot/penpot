@@ -7,17 +7,18 @@
     "start": "vite build --watch --config vite.config.ts",
     "start:multi-user": "pnpm run start",
     "build": "tsc && vite build --config vite.release.config.ts",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
     "types:check": "tsc --noEmit",
     "clean": "rm -rf dist/"
   },
   "dependencies": {
-    "@penpot/plugin-styles": "1.4.1",
-    "@penpot/plugin-types": "1.4.1"
+    "@penpot/plugin-styles": "1.4.2",
+    "@penpot/plugin-types": "1.4.2"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "typescript": "^5.8.3",
-    "vite": "^7.0.8",
-    "vite-live-preview": "^0.3.2"
+    "cross-env": "^10.1.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.1",
+    "vite-live-preview": "^0.4.0"
   }
 }

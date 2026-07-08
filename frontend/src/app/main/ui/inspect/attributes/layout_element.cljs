@@ -44,7 +44,7 @@
           [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} value]]]]))))
 
-(mf/defc layout-element-panel
+(mf/defc layout-element-panel*
   [{:keys [objects shapes]}]
   (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
         only-flex? (every? #(ctl/flex-layout-immediate-child? objects %) shapes)
@@ -61,7 +61,7 @@
           only-flex?
           "Flex element"
           only-grid?
-          "Flex element"
+          "Grid element"
           :else
           "Layout element")]
 

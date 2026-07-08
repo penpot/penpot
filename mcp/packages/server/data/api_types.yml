@@ -11,11 +11,11 @@ Penpot:
             open: (
                 name: string,
                 url: string,
-                options?: { width: number; height: number; hidden: boolean },
+                options?: { width: number; height: number; hidden?: boolean },
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
-            sendMessage: (message: unknown) => void;
+            sendMessage: (message: unknown, throwOnError?: boolean) => void;
             onMessage: <T>(callback: (message: T) => void) => void;
         };
         utils: ContextUtils;
@@ -73,7 +73,7 @@ Penpot:
         generateFontFaces(shapes: Shape[]): Promise<string>;
         openViewer(): void;
         createPage(): Page;
-        openPage(page: string | Page, newWindow?: boolean): void;
+        openPage(page: string | Page, newWindow?: boolean): Promise<void>;
         alignHorizontal(
             shapes: Shape[],
             direction: "center" | "left" | "right",
@@ -97,22 +97,22 @@ Penpot:
     Properties:
       ui: |-
         ```
-        ui: {
+        readonly ui: {
             open: (
                 name: string,
                 url: string,
-                options?: { width: number; height: number; hidden: boolean },
+                options?: { width: number; height: number; hidden?: boolean },
             ) => void;
             size: { width: number; height: number } | null;
             resize: (width: number, height: number) => void;
-            sendMessage: (message: unknown) => void;
+            sendMessage: (message: unknown, throwOnError?: boolean) => void;
             onMessage: <T>(callback: (message: T) => void) => void;
         }
         ```
 
         Type Declaration
 
-        * open: (    name: string,    url: string,    options?: { width: number; height: number; hidden: boolean },) => void
+        * open: (    name: string,    url: string,    options?: { width: number; height: number; hidden?: boolean },) => void
 
           Opens the plugin UI. It is possible to develop a plugin without interface (see Palette color example) but if you need, the way to open this UI is using `penpot.ui.open`.
           There is a minimum and maximum size for this modal and a default size but it's possible to customize it anyway with the options parameter.
@@ -122,6 +122,13 @@ Penpot:
           penpot.ui.open('Plugin name', 'url', {width: 150, height: 300});
           ```
         * size: { width: number; height: number } | null
+
+          The current size of the modal, or `null` if the plugin UI is not open.
+
+          Example
+          ```
+          const size = penpot.ui.size;console.log(size);
+          ```
         * resize: (width: number, height: number) => void
 
           Resizes the plugin UI.
@@ -130,25 +137,25 @@ Penpot:
           ```
           penpot.ui.resize(300, 400);
           ```
-        * sendMessage: (message: unknown) => void
+        * sendMessage: (message: unknown, throwOnError?: boolean) => void
 
           Sends a message to the plugin UI.
 
           Example
           ```
-          this.sendMessage({ type: 'example-type', content: 'data we want to share' });
+          penpot.ui.sendMessage({ type: 'example-type', content: 'data we want to share' });
           ```
         * onMessage: <T>(callback: (message: T) => void) => void
 
-          This is usually used in the `plugin.ts` file in order to handle the data sent by our plugin
+          This is usually used in the `plugin.ts` file in order to handle the messages sent from the plugin UI.
 
           Example
           ```
-          penpot.ui.onMessage((message) => {if(message.type === 'example-type' { ...do something })});
+          penpot.ui.onMessage((message) => { if (message.type === 'example-type') { ...do something } });
           ```
       utils: |-
         ```
-        utils: ContextUtils
+        readonly utils: ContextUtils
         ```
 
         Provides access to utility functions and context-specific operations.
@@ -331,7 +338,9 @@ Penpot:
 
         * selectionchange: event emitted when the current selection changes. The callback will receive the list of ids for the new selection
         * themechange: event emitted when the user changes its theme. The callback will receive the new theme (currently: either `dark` or `light`)
-        * documentsaved: event emitted after the document is saved in the backend.
+        * filechange: event emitted when a different file is opened. The callback will receive the new file.
+        * contentsave: event emitted after the file content is saved in the backend. The callback receives no arguments.
+        * finish: event emitted when the current file is closed. The callback will receive the id of the closed file.
 
         Type Parameters
 
@@ -355,7 +364,7 @@ Penpot:
 
         Example
         ```
-        penpot.on('pagechange', () => {...do something}).
+        penpot.on('pagechange', () => {...do something});
         ```
       off: |-
         ```
@@ -508,7 +517,7 @@ Penpot:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and if the selected shape is a group,if (selected.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.group(penpotShapesArray[0]);}
+        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and that the selected shape is a groupif (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.ungroup(penpotShapesArray[0]);}
         ```
       createRectangle: |-
         ```
@@ -643,11 +652,11 @@ Penpot:
 
         * text: string
 
-          The text content for the Text shape.
+          The text content for the Text shape. Must be a non-empty string.
 
         Returns Text | null
 
-        Returns the new created shape, if the shape wasn't created can return null.
+        Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
 
         Example
         ```
@@ -663,7 +672,11 @@ Penpot:
         Parameters
 
         * shapes: Shape[]
+
+          the shapes to generate the markup for
         * options: { type?: "html" | "svg" }
+
+          `type` of the markup to generate. Defaults to `'html'`.
 
         Returns string
 
@@ -688,7 +701,12 @@ Penpot:
         Parameters
 
         * shapes: Shape[]
+
+          the shapes to generate the styles for
         * options: { type?: "css"; withPrelude?: boolean; includeChildren?: boolean }
+
+          `type` of the styles to generate (defaults to `'css'`), `withPrelude` to include the style prelude
+          (defaults to `false`) and `includeChildren` to also generate the styles for the shape children (defaults to `true`).
 
         Returns string
 
@@ -727,15 +745,28 @@ Penpot:
         createPage(): Page
         ```
 
-        Creates a new page. Requires `content:write` permission.
+        Creates a new page and returns it. Requires `content:write` permission.
+
+        IMPORTANT: creating a page does **not** make it the active page.
+        To build content inside the new page, activate it first with
+        Context.openPage (and `await` it) before mutate shapes:
 
         Returns Page
+
+        Example
+        ```
+        const page = penpot.createPage();page.name = 'New Page';await penpot.openPage(page); // make the new page active firstconst board = penpot.createBoard();board.resize(375, 812);page.root.appendChild(board);
+        ```
       openPage: |-
         ```
-        openPage(page: string | Page, newWindow?: boolean): void
+        openPage(page: string | Page, newWindow?: boolean): Promise<void>
         ```
 
-        Changes the current open page to given page. Requires `content:read` permission.
+        Changes the current open page to the given page, making it the **active page**.
+        The active page is the one all shape creation and structural operations
+        (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+        so call this (and `await` it) after Context.createPage before adding
+        shapes to the newly created page. Requires `content:read` permission.
 
         Parameters
 
@@ -746,11 +777,11 @@ Penpot:
 
           if true opens the page in a new window, defaults to false
 
-        Returns void
+        Returns Promise<void>
 
         Example
         ```
-        context.openPage(page);
+        await context.openPage(page);
         ```
       alignHorizontal: |-
         ```
@@ -965,7 +996,6 @@ Blur:
     ```
     interface Blur {
         id?: string;
-        type?: "layer-blur";
         value?: number;
         hidden?: boolean;
     }
@@ -980,13 +1010,6 @@ Blur:
         ```
 
         The optional unique identifier for the blur effect.
-      type: |-
-        ```
-        type?: "layer-blur"
-        ```
-
-        The optional type of the blur effect.
-        Currently, only 'layer-blur' is supported.
       value: |-
         ```
         value?: number
@@ -1053,6 +1076,7 @@ Board:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -1078,6 +1102,7 @@ Board:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -1139,6 +1164,7 @@ Board:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -1156,7 +1182,7 @@ Board:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -1188,7 +1214,7 @@ Board:
         showInViewMode: boolean
         ```
 
-        WHen true the board will be displayed in the view mode
+        When true the board will be displayed in the view mode
       grid: |-
         ```
         readonly grid?: GridLayout
@@ -1221,7 +1247,7 @@ Board:
         The horizontal sizing behavior of the board.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'auto': The container fits the content.
       verticalSizing: |-
         ```
@@ -1231,7 +1257,7 @@ Board:
         The vertical sizing behavior of the board.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'auto': The container fits the content.
       fills: |-
         ```
@@ -1309,17 +1335,13 @@ Board:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -1356,6 +1378,12 @@ Board:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -1426,6 +1454,14 @@ Board:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -1473,9 +1509,7 @@ Board:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -1619,19 +1653,23 @@ Board:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5
+        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5;
         ```
       addRulerGuide: |-
         ```
         addRulerGuide(orientation: RulerGuideOrientation, value: number): RulerGuide
         ```
 
-        Creates a new ruler guide.
+        Creates a new ruler guide attached to the board.
 
         Parameters
 
         * orientation: RulerGuideOrientation
+
+          `horizontal` or `vertical`
         * value: number
+
+          the position of the guide relative to the board
 
         Returns RulerGuide
       removeRulerGuide: |-
@@ -1639,7 +1677,7 @@ Board:
         removeRulerGuide(guide: RulerGuide): void
         ```
 
-        Removes the `guide` from the current page.
+        Removes the `guide` from the board.
 
         Parameters
 
@@ -1889,11 +1927,26 @@ Board:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -1907,7 +1960,7 @@ Board:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -1976,7 +2029,7 @@ Board:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -2040,6 +2093,10 @@ Board:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -2079,7 +2136,7 @@ Board:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -2089,7 +2146,7 @@ Board:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -2172,6 +2229,7 @@ VariantContainer:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -2197,6 +2255,7 @@ VariantContainer:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -2258,6 +2317,7 @@ VariantContainer:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -2275,7 +2335,7 @@ VariantContainer:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -2306,7 +2366,7 @@ VariantContainer:
         showInViewMode: boolean
         ```
 
-        WHen true the board will be displayed in the view mode
+        When true the board will be displayed in the view mode
       grid: |-
         ```
         readonly grid?: GridLayout
@@ -2339,7 +2399,7 @@ VariantContainer:
         The horizontal sizing behavior of the board.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'auto': The container fits the content.
       verticalSizing: |-
         ```
@@ -2349,7 +2409,7 @@ VariantContainer:
         The vertical sizing behavior of the board.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'auto': The container fits the content.
       fills: |-
         ```
@@ -2431,17 +2491,13 @@ VariantContainer:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -2478,6 +2534,12 @@ VariantContainer:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -2548,6 +2610,14 @@ VariantContainer:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -2595,9 +2665,7 @@ VariantContainer:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -2741,19 +2809,23 @@ VariantContainer:
 
         Example
         ```
-        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5
+        const board = penpot.createBoard();const grid = board.addGridLayout();// You can change the grid properties as follows.grid.alignItems = "center";grid.justifyItems = "start";grid.rowGap = 10;grid.columnGap = 10;grid.verticalPadding = 5;grid.horizontalPadding = 5;
         ```
       addRulerGuide: |-
         ```
         addRulerGuide(orientation: RulerGuideOrientation, value: number): RulerGuide
         ```
 
-        Creates a new ruler guide.
+        Creates a new ruler guide attached to the board.
 
         Parameters
 
         * orientation: RulerGuideOrientation
+
+          `horizontal` or `vertical`
         * value: number
+
+          the position of the guide relative to the board
 
         Returns RulerGuide
       removeRulerGuide: |-
@@ -2761,7 +2833,7 @@ VariantContainer:
         removeRulerGuide(guide: RulerGuide): void
         ```
 
-        Removes the `guide` from the current page.
+        Removes the `guide` from the board.
 
         Parameters
 
@@ -3011,11 +3083,26 @@ VariantContainer:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -3029,7 +3116,7 @@ VariantContainer:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -3098,7 +3185,7 @@ VariantContainer:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -3162,6 +3249,10 @@ VariantContainer:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -3201,7 +3292,7 @@ VariantContainer:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -3211,7 +3302,7 @@ VariantContainer:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -3281,6 +3372,7 @@ Boolean:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -3306,6 +3398,7 @@ Boolean:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -3367,6 +3460,7 @@ Boolean:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -3384,7 +3478,7 @@ Boolean:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -3403,10 +3497,10 @@ Boolean:
         readonly type: "boolean"
         ```
 
-        The type of the shape, which is always 'bool' for boolean operation shapes.
+        The type of the shape, which is always 'boolean' for boolean operation shapes.
       content: |-
         ```
-        content: string
+        readonly content: string
         ```
 
         The content of the boolean shape, defined as the path string.
@@ -3416,13 +3510,13 @@ Boolean:
         Use either `d` or `commands`.
       d: |-
         ```
-        d: string
+        readonly d: string
         ```
 
         The content of the boolean shape, defined as the path string.
       commands: |-
         ```
-        commands: PathCommand[]
+        readonly commands: PathCommand[]
         ```
 
         The content of the boolean shape, defined as an array of path commands.
@@ -3494,17 +3588,13 @@ Boolean:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -3541,6 +3631,12 @@ Boolean:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -3611,6 +3707,14 @@ Boolean:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -3658,9 +3762,7 @@ Boolean:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -4025,11 +4127,26 @@ Boolean:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -4043,7 +4160,7 @@ Boolean:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -4112,7 +4229,7 @@ Boolean:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -4176,6 +4293,10 @@ Boolean:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -4215,7 +4336,7 @@ Boolean:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -4225,7 +4346,7 @@ Boolean:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -4265,7 +4386,7 @@ CloseOverlay:
     interface CloseOverlay {
         type: "close-overlay";
         destination?: Board;
-        animation: Animation;
+        animation?: Animation;
     }
     ```
 
@@ -4286,10 +4407,10 @@ CloseOverlay:
         The overlay to be closed with this action.
       animation: |-
         ```
-        readonly animation: Animation
+        readonly animation?: Animation
         ```
 
-        Animation displayed with this interaction.
+        Animation displayed with this interaction. Omit it to close with no transition.
 Color:
   overview: |-
     Interface Color
@@ -4760,7 +4881,7 @@ CommonLayout:
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
       verticalSizing: |-
@@ -4771,7 +4892,7 @@ CommonLayout:
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
     Methods:
@@ -4845,7 +4966,7 @@ Context:
         removeListener(listenerId: symbol): void;
         openViewer(): void;
         createPage(): Page;
-        openPage(page: string | Page, newWindow?: boolean): void;
+        openPage(page: string | Page, newWindow?: boolean): Promise<void>;
         alignHorizontal(
             shapes: Shape[],
             direction: "center" | "left" | "right",
@@ -5138,7 +5259,7 @@ Context:
 
         Example
         ```
-        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and if the selected shape is a group,if (selected.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.group(penpotShapesArray[0]);}
+        const penpotShapesArray = penpot.selection;// We need to make sure that something is selected, and that the selected shape is a groupif (penpotShapesArray.length && penpot.utils.types.isGroup(penpotShapesArray[0])) {  penpot.ungroup(penpotShapesArray[0]);}
         ```
       createRectangle: |-
         ```
@@ -5273,11 +5394,11 @@ Context:
 
         * text: string
 
-          The text content for the Text shape.
+          The text content for the Text shape. Must be a non-empty string.
 
         Returns Text | null
 
-        Returns the new created shape, if the shape wasn't created can return null.
+        Returns the new created shape. Returns null if an empty string is provided or the shape couldn't be created.
 
         Example
         ```
@@ -5293,7 +5414,11 @@ Context:
         Parameters
 
         * shapes: Shape[]
+
+          the shapes to generate the markup for
         * options: { type?: "html" | "svg" }
+
+          `type` of the markup to generate. Defaults to `'html'`.
 
         Returns string
 
@@ -5318,7 +5443,12 @@ Context:
         Parameters
 
         * shapes: Shape[]
+
+          the shapes to generate the styles for
         * options: { type?: "css"; withPrelude?: boolean; includeChildren?: boolean }
+
+          `type` of the styles to generate (defaults to `'css'`), `withPrelude` to include the style prelude
+          (defaults to `false`) and `includeChildren` to also generate the styles for the shape children (defaults to `true`).
 
         Returns string
 
@@ -5401,15 +5531,28 @@ Context:
         createPage(): Page
         ```
 
-        Creates a new page. Requires `content:write` permission.
+        Creates a new page and returns it. Requires `content:write` permission.
+
+        IMPORTANT: creating a page does **not** make it the active page.
+        To build content inside the new page, activate it first with
+        Context.openPage (and `await` it) before mutate shapes:
 
         Returns Page
+
+        Example
+        ```
+        const page = penpot.createPage();page.name = 'New Page';await penpot.openPage(page); // make the new page active firstconst board = penpot.createBoard();board.resize(375, 812);page.root.appendChild(board);
+        ```
       openPage: |-
         ```
-        openPage(page: string | Page, newWindow?: boolean): void
+        openPage(page: string | Page, newWindow?: boolean): Promise<void>
         ```
 
-        Changes the current open page to given page. Requires `content:read` permission.
+        Changes the current open page to the given page, making it the **active page**.
+        The active page is the one all shape creation and structural operations
+        (`createBoard`, `appendChild`, `insertChild`, property setters, etc.) act upon,
+        so call this (and `await` it) after Context.createPage before adding
+        shapes to the newly created page. Requires `content:read` permission.
 
         Parameters
 
@@ -5420,11 +5563,11 @@ Context:
 
           if true opens the page in a new window, defaults to false
 
-        Returns void
+        Returns Promise<void>
 
         Example
         ```
-        context.openPage(page);
+        await context.openPage(page);
         ```
       alignHorizontal: |-
         ```
@@ -5889,6 +6032,7 @@ Ellipse:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -5914,6 +6058,7 @@ Ellipse:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -5975,6 +6120,7 @@ Ellipse:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -5992,7 +6138,7 @@ Ellipse:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -6008,8 +6154,10 @@ Ellipse:
     Properties:
       type: |-
         ```
-        type: "ellipse"
+        readonly type: "ellipse"
         ```
+
+        The type of the shape, which is always 'ellipse' for ellipse shapes.
       fills: |-
         ```
         fills: Fill[]
@@ -6072,17 +6220,13 @@ Ellipse:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -6119,6 +6263,12 @@ Ellipse:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -6189,6 +6339,14 @@ Ellipse:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -6236,9 +6394,7 @@ Ellipse:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -6548,11 +6704,26 @@ Ellipse:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -6566,7 +6737,7 @@ Ellipse:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -6635,7 +6806,7 @@ Ellipse:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -6699,6 +6870,10 @@ Ellipse:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -6738,7 +6913,7 @@ Ellipse:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -6748,7 +6923,7 @@ Ellipse:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -6807,48 +6982,50 @@ EventsMap:
     Properties:
       pagechange: |-
         ```
-        pagechange: Page
+        readonly pagechange: Page
         ```
 
         The `pagechange` event is triggered when the active page in the project is changed.
       filechange: |-
         ```
-        filechange: File
+        readonly filechange: File
         ```
 
-        The `filechange` event is triggered when there are changes in the current file.
+        The `filechange` event is triggered when a different file is opened.
+        The callback will receive the new file.
       selectionchange: |-
         ```
-        selectionchange: string[]
+        readonly selectionchange: string[]
         ```
 
         The `selectionchange` event is triggered when the selection of elements changes.
         This event passes a list of identifiers of the selected elements.
       themechange: |-
         ```
-        themechange: Theme
+        readonly themechange: Theme
         ```
 
         The `themechange` event is triggered when the application theme is changed.
       finish: |-
         ```
-        finish: string
+        readonly finish: string
         ```
 
-        The `finish` event is triggered when some operation is finished.
+        The `finish` event is triggered when the current file is closed.
+        The callback will receive the id of the closed file.
       shapechange: |-
         ```
-        shapechange: Shape
+        readonly shapechange: Shape
         ```
 
         This event will trigger whenever the shape in the props change. It's mandatory to send
         with the props an object like `{ shapeId: '<id>' }`
       contentsave: |-
         ```
-        contentsave: void
+        readonly contentsave: void
         ```
 
-        The `contentsave` event will trigger when the content file changes.
+        The `contentsave` event will trigger after the file content is saved in the backend.
 Export:
   overview: |-
     Interface Export
@@ -6913,6 +7090,7 @@ File:
         ): Promise<Uint8Array<ArrayBufferLike>>;
         findVersions(criteria?: { createdBy: User }): Promise<FileVersion[]>;
         saveVersion(label: string): Promise<FileVersion>;
+        validate(): FileValidationError[];
         getPluginData(key: string): string;
         setPluginData(key: string, value: string): void;
         getPluginDataKeys(): string[];
@@ -6938,19 +7116,19 @@ File:
         The `id` property is a unique identifier for the file.
       name: |-
         ```
-        name: string
+        readonly name: string
         ```
 
         The `name` for the file
       revn: |-
         ```
-        revn: number
+        readonly revn: number
         ```
 
         The `revn` will change for every document update
       pages: |-
         ```
-        pages: Page[]
+        readonly pages: Page[]
         ```
 
         List all the pages for the current file
@@ -6963,12 +7141,19 @@ File:
         ): Promise<Uint8Array<ArrayBufferLike>>
         ```
 
+        Export the current file to an archive.
+
         Parameters
 
         * exportType: "penpot" | "zip"
         * libraryExportType: "all" | "merge" | "detach"
 
         Returns Promise<Uint8Array<ArrayBufferLike>>
+
+        Example
+        ```
+        const exportedData = await file.export('penpot', 'all');
+        ```
       findVersions: |-
         ```
         findVersions(criteria?: { createdBy: User }): Promise<FileVersion[]>
@@ -6994,6 +7179,22 @@ File:
         * label: string
 
         Returns Promise<FileVersion>
+      validate: |-
+        ```
+        validate(): FileValidationError[]
+        ```
+
+        Runs the referential-integrity validation on the file and returns the list
+        of errors found. An empty array means the file is valid. Useful to detect
+        inconsistencies (dangling references, broken components/variants, …) that
+        the backend would otherwise reject when the file is saved.
+
+        Returns FileValidationError[]
+
+        Example
+        ```
+        const errors = file.validate();if (errors.length) console.error(errors);
+        ```
       getPluginData: |-
         ```
         getPluginData(key: string): string
@@ -7122,6 +7323,50 @@ File:
         ```
         const sharedKeys = shape.getSharedPluginDataKeys('exampleNamespace');console.log(sharedKeys);
         ```
+FileValidationError:
+  overview: |-
+    Interface FileValidationError
+    =============================
+
+    A single referential-integrity error reported by File.validate.
+
+    ```
+    interface FileValidationError {
+        code: string;
+        hint: string;
+        shapeId: string | null;
+        pageId: string | null;
+    }
+    ```
+
+    Referenced by: File
+  members:
+    Properties:
+      code: |-
+        ```
+        readonly code: string
+        ```
+
+        The validation error code (e.g. `'variant-component-bad-name'`,
+        `'child-not-found'`).
+      hint: |-
+        ```
+        readonly hint: string
+        ```
+
+        A human-readable description of the error.
+      shapeId: |-
+        ```
+        readonly shapeId: string | null
+        ```
+
+        The id of the offending shape, when the error is attached to one.
+      pageId: |-
+        ```
+        readonly pageId: string | null
+        ```
+
+        The id of the page the offending shape lives in, when applicable.
 FileVersion:
   overview: |-
     Interface FileVersion
@@ -7174,6 +7419,11 @@ FileVersion:
         ```
         restore(): void
         ```
+
+        Restores the current version and replaces the content of the active file
+        for the contents of this version.
+        Requires the `content:write` permission.
+        Warning: Calling this will close the plugin because the workspace will reload
 
         Returns void
       remove: |-
@@ -7258,7 +7508,7 @@ Flags:
     Interface Flags
     ===============
 
-    This subcontext allows the API o change certain defaults
+    This subcontext allows the API to change certain defaults
 
     ```
     interface Flags {
@@ -7275,9 +7525,9 @@ Flags:
         naturalChildOrdering: boolean
         ```
 
-        If `true` the .children property will be always sorted in the z-index ordering.
-        Also, appendChild method will be append the children in the top-most position.
-        The insertchild method is changed acordingly to respect this ordering.
+        If `true` the .children property will always be sorted in the z-index ordering.
+        Also, the appendChild method will append the children in the top-most position.
+        The insertChild method is changed accordingly to respect this ordering.
         Defaults to false
       throwValidationErrors: |-
         ```
@@ -7286,7 +7536,8 @@ Flags:
 
         If `true` the validation errors will throw an exception instead of displaying an
         error in the debugger console.
-        Defaults to false
+        Defaults to `true` for plugins whose manifest declares `"version": 2` (or higher)
+        and to `false` for v1 plugins (or manifests that omit the version field).
 FlexLayout:
   overview: |-
     Interface FlexLayout
@@ -7470,7 +7721,7 @@ FlexLayout:
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
       verticalSizing: |-
@@ -7481,7 +7732,7 @@ FlexLayout:
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
       dir: |-
@@ -7605,43 +7856,43 @@ Font:
     Properties:
       name: |-
         ```
-        name: string
+        readonly name: string
         ```
 
         This property holds the human-readable name of the font.
       fontId: |-
         ```
-        fontId: string
+        readonly fontId: string
         ```
 
         The unique identifier of the font.
       fontFamily: |-
         ```
-        fontFamily: string
+        readonly fontFamily: string
         ```
 
         The font family of the font.
       fontStyle: |-
         ```
-        fontStyle?: "normal" | "italic" | null
+        readonly fontStyle?: "normal" | "italic" | null
         ```
 
         The default font style of the font.
       fontVariantId: |-
         ```
-        fontVariantId: string
+        readonly fontVariantId: string
         ```
 
         The default font variant ID of the font.
       fontWeight: |-
         ```
-        fontWeight: string
+        readonly fontWeight: string
         ```
 
         The default font weight of the font.
       variants: |-
         ```
-        variants: FontVariant[]
+        readonly variants: FontVariant[]
         ```
 
         An array of font variants available for the font.
@@ -7712,25 +7963,25 @@ FontVariant:
     Properties:
       name: |-
         ```
-        name: string
+        readonly name: string
         ```
 
         The name of the font variant.
       fontVariantId: |-
         ```
-        fontVariantId: string
+        readonly fontVariantId: string
         ```
 
         The unique identifier of the font variant.
       fontWeight: |-
         ```
-        fontWeight: string
+        readonly fontWeight: string
         ```
 
         The font weight of the font variant.
       fontStyle: |-
         ```
-        fontStyle: "normal" | "italic"
+        readonly fontStyle: "normal" | "italic"
         ```
 
         The font style of the font variant.
@@ -7757,7 +8008,7 @@ FontsContext:
     Properties:
       all: |-
         ```
-        all: Font[]
+        readonly all: Font[]
         ```
 
         An array containing all available fonts.
@@ -8037,7 +8288,7 @@ GridLayout:
         The `horizontalSizing` property specifies the horizontal sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
       verticalSizing: |-
@@ -8048,7 +8299,7 @@ GridLayout:
         The `verticalSizing` property specifies the vertical sizing behavior of the container.
         It can be one of the following values:
 
-        * 'fix': The containers has its own intrinsic fixed size.
+        * 'fix': The container has its own intrinsic fixed size.
         * 'fill': The container fills the available space. Only can be set if it's inside another layout.
         * 'auto': The container fits the content.
       dir: |-
@@ -8327,6 +8578,7 @@ Group:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -8352,6 +8604,7 @@ Group:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -8415,6 +8668,7 @@ Group:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -8432,7 +8686,7 @@ Group:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -8512,17 +8766,13 @@ Group:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -8559,6 +8809,12 @@ Group:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -8629,6 +8885,14 @@ Group:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -8676,9 +8940,7 @@ Group:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       fills: |-
         ```
         fills: Fill[] | "mixed"
@@ -9060,11 +9322,26 @@ Group:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -9078,7 +9355,7 @@ Group:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -9147,7 +9424,7 @@ Group:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -9211,6 +9488,10 @@ Group:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -9250,7 +9531,7 @@ Group:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -9260,7 +9541,7 @@ Group:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -9294,7 +9575,7 @@ GuideColumn:
     Interface GuideColumn
     =====================
 
-    Represents a goard guide for columns in Penpot.
+    Represents a board guide for columns in Penpot.
     This interface includes properties for defining the type, visibility, and parameters of column guides within a board.
 
     ```
@@ -9310,19 +9591,19 @@ GuideColumn:
     Properties:
       type: |-
         ```
-        type: "column"
+        readonly type: "column"
         ```
 
         The type of the guide, which is always 'column' for column guides.
       display: |-
         ```
-        display: boolean
+        readonly display: boolean
         ```
 
         Specifies whether the column guide is displayed.
       params: |-
         ```
-        params: GuideColumnParams
+        readonly params: GuideColumnParams
         ```
 
         The parameters defining the appearance and layout of the column guides.
@@ -9350,13 +9631,13 @@ GuideColumnParams:
     Properties:
       color: |-
         ```
-        color: { color: string; opacity: number }
+        readonly color: { color: string; opacity: number }
         ```
 
         The color configuration for the column guides.
       type: |-
         ```
-        type?: "center" | "left" | "right" | "stretch"
+        readonly type?: "center" | "left" | "right" | "stretch"
         ```
 
         The optional alignment type of the column guides.
@@ -9367,25 +9648,25 @@ GuideColumnParams:
         * 'right': Columns align to the right.
       size: |-
         ```
-        size?: number
+        readonly size?: number
         ```
 
         The optional size of each column.
       margin: |-
         ```
-        margin?: number
+        readonly margin?: number
         ```
 
         The optional margin between the columns and the board edges.
       itemLength: |-
         ```
-        itemLength?: number
+        readonly itemLength?: number
         ```
 
         The optional length of each item within the columns.
       gutter: |-
         ```
-        gutter?: number
+        readonly gutter?: number
         ```
 
         The optional gutter width between columns.
@@ -9410,19 +9691,19 @@ GuideRow:
     Properties:
       type: |-
         ```
-        type: "row"
+        readonly type: "row"
         ```
 
         The type of the guide, which is always 'row' for row guides.
       display: |-
         ```
-        display: boolean
+        readonly display: boolean
         ```
 
         Specifies whether the row guide is displayed.
       params: |-
         ```
-        params: GuideColumnParams
+        readonly params: GuideColumnParams
         ```
 
         The parameters defining the appearance and layout of the row guides.
@@ -9448,19 +9729,19 @@ GuideSquare:
     Properties:
       type: |-
         ```
-        type: "square"
+        readonly type: "square"
         ```
 
         The type of the guide, which is always 'square' for square guides.
       display: |-
         ```
-        display: boolean
+        readonly display: boolean
         ```
 
         Specifies whether the square guide is displayed.
       params: |-
         ```
-        params: GuideSquareParams
+        readonly params: GuideSquareParams
         ```
 
         The parameters defining the appearance and layout of the square guides.
@@ -9484,13 +9765,13 @@ GuideSquareParams:
     Properties:
       color: |-
         ```
-        color: { color: string; opacity: number }
+        readonly color: { color: string; opacity: number }
         ```
 
         The color configuration for the square guides.
       size: |-
         ```
-        size?: number
+        readonly size?: number
         ```
 
         The optional size of each square guide.
@@ -9549,6 +9830,11 @@ Image:
     Represents an image shape in Penpot.
     This interface extends `ShapeBase` and includes properties specific to image shapes.
 
+    Deprecated
+
+    Image shapes exist only for backward compatibility with old files.
+    New images are embedded in a `Fill` via its `fillImage` (an `ImageData`).
+
     ```
     interface Image {
         type: "image";
@@ -9575,6 +9861,7 @@ Image:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -9600,6 +9887,7 @@ Image:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -9661,6 +9949,7 @@ Image:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -9678,7 +9967,7 @@ Image:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -9694,8 +9983,10 @@ Image:
     Properties:
       type: |-
         ```
-        type: "image"
+        readonly type: "image"
         ```
+
+        The type of the shape, which is always 'image' for image shapes.
       fills: |-
         ```
         fills: Fill[]
@@ -9758,17 +10049,13 @@ Image:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -9805,6 +10092,12 @@ Image:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -9875,6 +10168,14 @@ Image:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -9922,9 +10223,7 @@ Image:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -10234,11 +10533,26 @@ Image:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -10252,7 +10566,7 @@ Image:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -10321,7 +10635,7 @@ Image:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -10385,6 +10699,10 @@ Image:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -10424,7 +10742,7 @@ Image:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -10434,7 +10752,7 @@ Image:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -11244,7 +11562,7 @@ LibraryComponent:
     interface LibraryComponent {
         instance(): Shape;
         mainInstance(): Shape;
-        isVariant(): boolean;
+        isVariant(): this is LibraryVariantComponent;
         transformInVariant(): void;
         id: string;
         libraryId: string;
@@ -11318,18 +11636,20 @@ LibraryComponent:
         Returns the reference to the main component shape.
       isVariant: |-
         ```
-        isVariant(): boolean
+        isVariant(): this is LibraryVariantComponent
         ```
 
-        Returns boolean
+        Checks whether this component is a variant component.
+        If true, the component can be used as a `LibraryVariantComponent`,
+        which provides additional attributes (e.g. `variants`) and methods.
 
-        true when this component is a VariantComponent
+        Returns this is LibraryVariantComponent
       transformInVariant: |-
         ```
         transformInVariant(): void
         ```
 
-        Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a
+        Creates a new Variant from this standard Component. It creates a VariantContainer, transforms this Component into a VariantComponent, duplicates it, and creates a
         set of properties based on the component name and path.
         Similar to doing it with the contextual menu or the shortcut on the Penpot interface
 
@@ -11474,7 +11794,7 @@ LibraryVariantComponent:
     interface LibraryVariantComponent {
         instance(): Shape;
         mainInstance(): Shape;
-        isVariant(): boolean;
+        isVariant(): this is LibraryVariantComponent;
         transformInVariant(): void;
         variants: Variants | null;
         variantProps: { [property: string]: string };
@@ -11499,7 +11819,7 @@ LibraryVariantComponent:
     * LibraryComponent
       + LibraryVariantComponent
 
-    Referenced by: ContextTypesUtils
+    Referenced by: ContextTypesUtils, LibraryComponent, LibraryVariantComponent
   members:
     Properties:
       variants: |-
@@ -11513,13 +11833,13 @@ LibraryVariantComponent:
         readonly variantProps: { [property: string]: string }
         ```
 
-        A list of the variants props of this VariantComponent. Each property have a key and a value
+        A list of the variant props of this VariantComponent. Each property has a key and a value
       variantError: |-
         ```
         variantError: string
         ```
 
-        If this VariantComponent has an invalid name, that does't follow the structure [property]=[value], [property]=[value]
+        If this VariantComponent has an invalid name, that doesn't follow the structure [property]=[value], [property]=[value]
         this field stores that invalid name
       id: |-
         ```
@@ -11571,18 +11891,20 @@ LibraryVariantComponent:
         Returns the reference to the main component shape.
       isVariant: |-
         ```
-        isVariant(): boolean
+        isVariant(): this is LibraryVariantComponent
         ```
 
-        Returns boolean
+        Checks whether this component is a variant component.
+        If true, the component can be used as a `LibraryVariantComponent`,
+        which provides additional attributes (e.g. `variants`) and methods.
 
-        true when this component is a VariantComponent
+        Returns this is LibraryVariantComponent
       transformInVariant: |-
         ```
         transformInVariant(): void
         ```
 
-        Creates a new Variant from this standard Component. It creates a VariantContainer, transform this Component into a VariantComponent, duplicates it, and creates a
+        Creates a new Variant from this standard Component. It creates a VariantContainer, transforms this Component into a VariantComponent, duplicates it, and creates a
         set of properties based on the component name and path.
         Similar to doing it with the contextual menu or the shortcut on the Penpot interface
 
@@ -11605,7 +11927,11 @@ LibraryVariantComponent:
         Parameters
 
         * pos: number
+
+          The position of the property to update
         * value: string
+
+          The new value of the property
 
         Returns void
       getPluginData: |-
@@ -11987,7 +12313,7 @@ LibraryTypography:
         name: string;
         path: string;
         fontId: string;
-        fontFamilies: string;
+        fontFamily: string;
         fontVariantId: string;
         fontSize: string;
         fontWeight: string;
@@ -12045,12 +12371,12 @@ LibraryTypography:
         ```
 
         The unique identifier of the font used in the typography element.
-      fontFamilies: |-
+      fontFamily: |-
         ```
-        fontFamilies: string
+        fontFamily: string
         ```
 
-        The font families of the typography element.
+        The font family of the typography element.
       fontVariantId: |-
         ```
         fontVariantId: string
@@ -12290,7 +12616,7 @@ LocalStorage:
     Proxy for the local storage. Only elements owned by the plugin
     can be stored and accessed.
     Warning: other plugins won't be able to access this information but
-    the user could potentialy access the data through the browser information.
+    the user could potentially access the data through the browser information.
 
     ```
     interface LocalStorage {
@@ -12323,7 +12649,7 @@ LocalStorage:
         ```
 
         Set the data given the key. If the value already existed it
-        will be overriden. The value will be stored in a string representation.
+        will be overridden. The value will be stored in a string representation.
         Requires the `allow:localstorage` permission.
 
         Parameters
@@ -12616,6 +12942,7 @@ Page:
         name: string;
         rulerGuides: RulerGuide[];
         root: Shape;
+        remove(): void;
         getShapeById(id: string): Shape | null;
         findShapes(
             criteria?: {
@@ -12681,10 +13008,10 @@ Page:
         readonly rulerGuides: RulerGuide[]
         ```
 
-        The ruler guides attached to the board
+        The ruler guides attached to the page
       root: |-
         ```
-        root: Shape
+        readonly root: Shape
         ```
 
         The root shape of the current page. Will be the parent shape of all the shapes inside the document.
@@ -12696,6 +13023,22 @@ Page:
 
         The interaction flows defined for the page.
     Methods:
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        Removes the page from the file. The last remaining page of the file
+        cannot be removed. If the removed page is the active one, another page
+        is activated.
+        Requires `content:write` permission.
+
+        Returns void
+
+        Example
+        ```
+        const page = penpot.createPage();page.remove();
+        ```
       getShapeById: |-
         ```
         getShapeById(id: string): Shape | null
@@ -12736,7 +13079,7 @@ Page:
         ```
 
         Finds all shapes on the page.
-        Optionaly it gets a criteria object to search for specific criteria
+        Optionally it gets a criteria object to search for specific criteria
 
         Parameters
 
@@ -12811,8 +13154,14 @@ Page:
         Parameters
 
         * orientation: RulerGuideOrientation
+
+          `horizontal` or `vertical`
         * value: number
+
+          the position of the guide in absolute coordinates
         * board: Board
+
+          if provided, the guide will be attached to the board
 
         Returns RulerGuide
       removeRulerGuide: |-
@@ -12832,8 +13181,7 @@ Page:
         addCommentThread(content: string, position: Point): Promise<CommentThread>
         ```
 
-        Creates a new comment thread in the `position`. Optionaly adds
-        it into the `board`.
+        Creates a new comment thread in the `position`.
         Returns the thread created.
         Requires the `comment:write` permission.
 
@@ -13042,6 +13390,7 @@ Path:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -13067,6 +13416,7 @@ Path:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -13128,6 +13478,7 @@ Path:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -13145,7 +13496,7 @@ Path:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -13170,7 +13521,7 @@ Path:
         content: string
         ```
 
-        The content of the boolean shape, defined as the path string.
+        The content of the path shape, defined as the path string.
 
         Deprecated
 
@@ -13180,13 +13531,13 @@ Path:
         d: string
         ```
 
-        The content of the boolean shape, defined as the path string.
+        The content of the path shape, defined as the path string.
       commands: |-
         ```
         commands: PathCommand[]
         ```
 
-        The content of the boolean shape, defined as an array of path commands.
+        The content of the path shape, defined as an array of path commands.
       fills: |-
         ```
         fills: Fill[]
@@ -13249,17 +13600,13 @@ Path:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -13296,6 +13643,12 @@ Path:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -13366,6 +13719,14 @@ Path:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -13413,9 +13774,7 @@ Path:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -13739,11 +14098,26 @@ Path:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -13757,7 +14131,7 @@ Path:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -13826,7 +14200,7 @@ Path:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -13890,6 +14264,10 @@ Path:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -13929,7 +14307,7 @@ Path:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -13939,7 +14317,7 @@ Path:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -14335,7 +14713,7 @@ Push:
         readonly easing?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out"
         ```
 
-        Function that the dissolve effect will follow for the interpolation.
+        Function that the push effect will follow for the interpolation.
         Defaults to `linear`
 Rectangle:
   overview: |-
@@ -14371,6 +14749,7 @@ Rectangle:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -14396,6 +14775,7 @@ Rectangle:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -14457,6 +14837,7 @@ Rectangle:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -14474,7 +14855,7 @@ Rectangle:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -14556,17 +14937,13 @@ Rectangle:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -14603,6 +14980,12 @@ Rectangle:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -14673,6 +15056,14 @@ Rectangle:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -14720,9 +15111,7 @@ Rectangle:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       strokes: |-
         ```
         strokes: Stroke[]
@@ -15032,11 +15421,26 @@ Rectangle:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -15050,7 +15454,7 @@ Rectangle:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -15119,7 +15523,7 @@ Rectangle:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -15183,6 +15587,10 @@ Rectangle:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -15222,7 +15630,7 @@ Rectangle:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -15232,7 +15640,7 @@ Rectangle:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -15274,6 +15682,7 @@ RulerGuide:
         orientation: RulerGuideOrientation;
         position: number;
         board?: Board;
+        remove(): void;
     }
     ```
 
@@ -15291,14 +15700,23 @@ RulerGuide:
         position: number
         ```
 
-        `position` is the position in the axis in absolute positioning. If this is a board
-        guide will return the positioning relative to the board.
+        `position` is the position in the axis in absolute coordinates. If this is a board
+        guide it will return the position relative to the board.
       board: |-
         ```
         board?: Board
         ```
 
         If the guide is attached to a board this will retrieve the board shape
+    Methods:
+      remove: |-
+        ```
+        remove(): void
+        ```
+
+        Removes the guide from its page.
+
+        Returns void
 Shadow:
   overview: |-
     Interface Shadow
@@ -15407,6 +15825,7 @@ ShapeBase:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -15432,6 +15851,7 @@ ShapeBase:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -15495,6 +15915,7 @@ ShapeBase:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -15512,7 +15933,7 @@ ShapeBase:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
     }
@@ -15587,17 +16008,13 @@ ShapeBase:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -15634,6 +16051,12 @@ ShapeBase:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -15704,6 +16127,14 @@ ShapeBase:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -15751,9 +16182,7 @@ ShapeBase:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       fills: |-
         ```
         fills: Fill[] | "mixed"
@@ -16069,11 +16498,26 @@ ShapeBase:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -16087,7 +16531,7 @@ ShapeBase:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -16156,7 +16600,7 @@ ShapeBase:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -16220,6 +16664,10 @@ ShapeBase:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -16259,7 +16707,7 @@ ShapeBase:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -16269,7 +16717,7 @@ ShapeBase:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -16354,7 +16802,7 @@ Slide:
         readonly easing?: "linear" | "ease" | "ease-in" | "ease-out" | "ease-in-out"
         ```
 
-        Function that the dissolve effect will follow for the interpolation.
+        Function that the slide effect will follow for the interpolation.
         Defaults to `linear`.
 Stroke:
   overview: |-
@@ -16475,6 +16923,7 @@ SvgRaw:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -16500,6 +16949,7 @@ SvgRaw:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -16563,6 +17013,7 @@ SvgRaw:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -16580,7 +17031,7 @@ SvgRaw:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
         type: "svg-raw";
@@ -16649,17 +17100,13 @@ SvgRaw:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -16696,6 +17143,12 @@ SvgRaw:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -16766,6 +17219,14 @@ SvgRaw:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -16813,9 +17274,7 @@ SvgRaw:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       fills: |-
         ```
         fills: Fill[] | "mixed"
@@ -16897,8 +17356,10 @@ SvgRaw:
         The interactions for the current shape.
       type: |-
         ```
-        type: "svg-raw"
+        readonly type: "svg-raw"
         ```
+
+        The type of the shape, which is always 'svg-raw' for raw SVG shapes.
     Methods:
       getPluginData: |-
         ```
@@ -17135,11 +17596,26 @@ SvgRaw:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -17153,7 +17629,7 @@ SvgRaw:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -17222,7 +17698,7 @@ SvgRaw:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -17286,6 +17762,10 @@ SvgRaw:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -17325,7 +17805,7 @@ SvgRaw:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -17335,7 +17815,7 @@ SvgRaw:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -17396,6 +17876,7 @@ Text:
         proportionLock: boolean;
         constraintsHorizontal: "center" | "left" | "right" | "leftright" | "scale";
         constraintsVertical: "center" | "top" | "bottom" | "scale" | "topbottom";
+        fixedWhenScrolling: boolean;
         borderRadius: number;
         borderRadiusTopLeft: number;
         borderRadiusTopRight: number;
@@ -17421,6 +17902,7 @@ Text:
             | "luminosity";
         shadows: Shadow[];
         blur?: Blur;
+        backgroundBlur?: Blur;
         exports: Export[];
         boardX: number;
         boardY: number;
@@ -17484,6 +17966,7 @@ Text:
         component(): LibraryComponent | null;
         detach(): void;
         swapComponent(component: LibraryComponent): void;
+        resetOverrides(): void;
         switchVariant(pos: number, value: string): void;
         combineAsVariants(ids: string[]): VariantContainer;
         isVariantHead(): boolean;
@@ -17501,7 +17984,7 @@ Text:
             delay?: number,
         ): Interaction;
         removeInteraction(interaction: Interaction): void;
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void;
+        applyToken(token: Token, properties?: TokenProperty[]): void;
         clone(): Shape;
         remove(): void;
         type: "text";
@@ -17588,17 +18071,13 @@ Text:
         readonly bounds: Bounds
         ```
 
-        Returns
-
-        Returns the bounding box surrounding the current shape
+        The bounding box surrounding the current shape
       center: |-
         ```
         readonly center: Point
         ```
 
-        Returns
-
-        Returns the geometric center of the shape
+        The geometric center of the shape
       blocked: |-
         ```
         blocked: boolean
@@ -17635,6 +18114,12 @@ Text:
         ```
 
         The vertical constraints applied to the shape.
+      fixedWhenScrolling: |-
+        ```
+        fixedWhenScrolling: boolean
+        ```
+
+        Indicates whether the shape stays fixed in place while scrolling.
       borderRadius: |-
         ```
         borderRadius: number
@@ -17705,6 +18190,14 @@ Text:
         ```
 
         The blur effect applied to the shape.
+      backgroundBlur: |-
+        ```
+        backgroundBlur?: Blur
+        ```
+
+        The background blur effect applied to the shape.
+        Background blur creates a blur effect on the content behind the shape,
+        rather than on the shape's own content.
       exports: |-
         ```
         exports: Export[]
@@ -17752,9 +18245,7 @@ Text:
         rotation: number
         ```
 
-        Returns
-
-        Returns the rotation in degrees of the shape with respect to it's center.
+        The rotation in degrees of the shape with respect to its center.
       fills: |-
         ```
         fills: Fill[] | "mixed"
@@ -17934,7 +18425,7 @@ Text:
         verticalAlign: "center" | "top" | "bottom" | null
         ```
 
-        The vertical alignment of the text shape. It can be a specific alignment or 'mixed' if multiple alignments are used.
+        The vertical alignment of the text shape.
       textBounds: |-
         ```
         readonly textBounds: { x: number; y: number; width: number; height: number }
@@ -18178,11 +18669,26 @@ Text:
         swapComponent(component: LibraryComponent): void
         ```
 
-        TODO
+        Swaps the component instance for another component, keeping the overrides
+        when possible. Similar to the "swap component" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Parameters
 
         * component: LibraryComponent
+
+          The new component to replace the current one
+
+        Returns void
+      resetOverrides: |-
+        ```
+        resetOverrides(): void
+        ```
+
+        Resets the overrides of the component copy, restoring all its attributes
+        (and those of its children) to the ones in the linked main component.
+        Similar to the "reset overrides" action on the Penpot interface.
+        The current shape must be a component copy instance.
 
         Returns void
       switchVariant: |-
@@ -18196,7 +18702,7 @@ Text:
 
         * pos: number
 
-          The position of the poroperty to update
+          The position of the property to update
         * value: string
 
           The new value of the property
@@ -18265,7 +18771,7 @@ Text:
           Angle in degrees to rotate.
         * center: { x: number; y: number } | null
 
-          Center of the transform rotation. If not send will use the geometri center of the shapes.
+          Center of the transform rotation. If not sent it will use the geometric center of the shape.
 
         Returns void
 
@@ -18329,6 +18835,10 @@ Text:
 
         Adds a new interaction to the shape.
 
+        If the interaction starts a flow (for example a `navigate-to` action) and
+        the shape's board is not already part of any flow, a new flow starting at
+        that board is created automatically, matching the behavior of the editor.
+
         Parameters
 
         * trigger: Trigger
@@ -18368,7 +18878,7 @@ Text:
         ```
       applyToken: |-
         ```
-        applyToken(token: Token, properties: TokenProperty[] | undefined): void
+        applyToken(token: Token, properties?: TokenProperty[]): void
         ```
 
         Applies one design token to one or more properties of the shape.
@@ -18378,7 +18888,7 @@ Text:
         * token: Token
 
           is the Token to apply
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -18765,11 +19275,8 @@ TokenBase:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
     }
     ```
 
@@ -18847,7 +19354,7 @@ TokenBase:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -18857,7 +19364,7 @@ TokenBase:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -18870,7 +19377,7 @@ TokenBase:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -18879,7 +19386,7 @@ TokenBase:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenBorderRadius:
@@ -18898,11 +19405,8 @@ TokenBorderRadius:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "borderRadius";
         value: string;
         resolvedValue: number | undefined;
@@ -18991,7 +19495,7 @@ TokenBorderRadius:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19001,7 +19505,7 @@ TokenBorderRadius:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19014,7 +19518,7 @@ TokenBorderRadius:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19023,13 +19527,15 @@ TokenBorderRadius:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenShadowValue:
   overview: |-
     Interface TokenShadowValue
     ==========================
+
+    The value of a TokenShadow in its composite form.
 
     ```
     interface TokenShadowValue {
@@ -19085,6 +19591,8 @@ TokenShadowValueString:
   overview: |-
     Interface TokenShadowValueString
     ================================
+
+    The value of a TokenShadow in its composite of strings form.
 
     ```
     interface TokenShadowValueString {
@@ -19158,11 +19666,8 @@ TokenShadow:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "shadow";
         value: string | TokenShadowValueString[];
         resolvedValue: TokenShadowValue[] | undefined;
@@ -19253,7 +19758,7 @@ TokenShadow:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19263,7 +19768,7 @@ TokenShadow:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19276,7 +19781,7 @@ TokenShadow:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19285,7 +19790,7 @@ TokenShadow:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenColor:
@@ -19304,11 +19809,8 @@ TokenColor:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "color";
         value: string;
         resolvedValue: string | undefined;
@@ -19370,8 +19872,10 @@ TokenColor:
         readonly resolvedValue: string | undefined
         ```
 
-        The value as defined in the token itself.
-        It's a rgb color or a reference.
+        The value calculated by finding all tokens with the same name in active sets
+        and resolving the references.
+
+        It's a rgb color, or undefined if no value has been found in active sets.
     Methods:
       duplicate: |-
         ```
@@ -19395,7 +19899,7 @@ TokenColor:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19405,7 +19909,7 @@ TokenColor:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19418,7 +19922,7 @@ TokenColor:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19427,7 +19931,7 @@ TokenColor:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenDimension:
@@ -19446,11 +19950,8 @@ TokenDimension:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "dimension";
         value: string;
         resolvedValue: number | undefined;
@@ -19539,7 +20040,7 @@ TokenDimension:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19549,7 +20050,7 @@ TokenDimension:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19562,7 +20063,7 @@ TokenDimension:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19571,7 +20072,7 @@ TokenDimension:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenFontFamilies:
@@ -19590,11 +20091,8 @@ TokenFontFamilies:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "fontFamilies";
         value: string | string[];
         resolvedValue: string[] | undefined;
@@ -19686,7 +20184,7 @@ TokenFontFamilies:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19696,7 +20194,7 @@ TokenFontFamilies:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19709,7 +20207,7 @@ TokenFontFamilies:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19718,7 +20216,7 @@ TokenFontFamilies:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenFontSizes:
@@ -19737,11 +20235,8 @@ TokenFontSizes:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "fontSizes";
         value: string;
         resolvedValue: number | undefined;
@@ -19830,7 +20325,7 @@ TokenFontSizes:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19840,7 +20335,7 @@ TokenFontSizes:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19853,7 +20348,7 @@ TokenFontSizes:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -19862,7 +20357,7 @@ TokenFontSizes:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenFontWeights:
@@ -19881,11 +20376,8 @@ TokenFontWeights:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "fontWeights";
         value: string;
         resolvedValue: string | undefined;
@@ -19975,7 +20467,7 @@ TokenFontWeights:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -19985,7 +20477,7 @@ TokenFontWeights:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -19998,7 +20490,7 @@ TokenFontWeights:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20007,7 +20499,7 @@ TokenFontWeights:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenLetterSpacing:
@@ -20026,11 +20518,8 @@ TokenLetterSpacing:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "letterSpacing";
         value: string;
         resolvedValue: number | undefined;
@@ -20119,7 +20608,7 @@ TokenLetterSpacing:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20129,7 +20618,7 @@ TokenLetterSpacing:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20142,7 +20631,7 @@ TokenLetterSpacing:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20151,7 +20640,7 @@ TokenLetterSpacing:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenNumber:
@@ -20170,11 +20659,8 @@ TokenNumber:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "number";
         value: string;
         resolvedValue: number | undefined;
@@ -20263,7 +20749,7 @@ TokenNumber:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20273,7 +20759,7 @@ TokenNumber:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20286,7 +20772,7 @@ TokenNumber:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20295,7 +20781,7 @@ TokenNumber:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenOpacity:
@@ -20314,11 +20800,8 @@ TokenOpacity:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "opacity";
         value: string;
         resolvedValue: number | undefined;
@@ -20408,7 +20891,7 @@ TokenOpacity:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20418,7 +20901,7 @@ TokenOpacity:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20431,7 +20914,7 @@ TokenOpacity:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20440,7 +20923,7 @@ TokenOpacity:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenRotation:
@@ -20459,11 +20942,8 @@ TokenRotation:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "rotation";
         value: string;
         resolvedValue: number | undefined;
@@ -20553,7 +21033,7 @@ TokenRotation:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20563,7 +21043,7 @@ TokenRotation:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20576,7 +21056,7 @@ TokenRotation:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20585,7 +21065,7 @@ TokenRotation:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenSizing:
@@ -20604,11 +21084,8 @@ TokenSizing:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "sizing";
         value: string;
         resolvedValue: number | undefined;
@@ -20697,7 +21174,7 @@ TokenSizing:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20707,7 +21184,7 @@ TokenSizing:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20720,7 +21197,7 @@ TokenSizing:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20729,7 +21206,7 @@ TokenSizing:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenSpacing:
@@ -20748,11 +21225,8 @@ TokenSpacing:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "spacing";
         value: string;
         resolvedValue: number | undefined;
@@ -20841,7 +21315,7 @@ TokenSpacing:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20851,7 +21325,7 @@ TokenSpacing:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -20864,7 +21338,7 @@ TokenSpacing:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -20873,7 +21347,7 @@ TokenSpacing:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenBorderWidth:
@@ -20892,11 +21366,8 @@ TokenBorderWidth:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "borderWidth";
         value: string;
         resolvedValue: number | undefined;
@@ -20985,7 +21456,7 @@ TokenBorderWidth:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -20995,7 +21466,7 @@ TokenBorderWidth:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -21008,7 +21479,7 @@ TokenBorderWidth:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -21017,7 +21488,7 @@ TokenBorderWidth:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenTextCase:
@@ -21036,11 +21507,8 @@ TokenTextCase:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "textCase";
         value: string;
         resolvedValue: string | undefined;
@@ -21130,7 +21598,7 @@ TokenTextCase:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -21140,7 +21608,7 @@ TokenTextCase:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -21153,7 +21621,7 @@ TokenTextCase:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -21162,7 +21630,7 @@ TokenTextCase:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenTextDecoration:
@@ -21181,11 +21649,8 @@ TokenTextDecoration:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "textDecoration";
         value: string;
         resolvedValue: string | undefined;
@@ -21275,7 +21740,7 @@ TokenTextDecoration:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -21285,7 +21750,7 @@ TokenTextDecoration:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -21298,7 +21763,7 @@ TokenTextDecoration:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -21307,13 +21772,15 @@ TokenTextDecoration:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenTypographyValue:
   overview: |-
     Interface TokenTypographyValue
     ==============================
+
+    The value of a TokenTypography in its composite form.
 
     ```
     interface TokenTypographyValue {
@@ -21377,6 +21844,8 @@ TokenTypographyValueString:
     Interface TokenTypographyValueString
     ====================================
 
+    The value of a TokenTypography in its composite of strings form.
+
     ```
     interface TokenTypographyValueString {
         letterSpacing: string;
@@ -21422,9 +21891,9 @@ TokenTypographyValueString:
         lineHeight: string
         ```
 
-        The line height, as a number. Note that there not exists an individual
-        token type line height, only part of a Typography token. If you need to
-        put here a reference, use a NumberToken.
+        The line height, as a number. Note that there is no individual line-height
+        token type; it only exists as part of a Typography token. If you need to
+        put a reference here, use a Number token.
       textCase: |-
         ```
         textCase: string
@@ -21455,11 +21924,8 @@ TokenTypography:
         duplicate(): Token;
         remove(): void;
         resolvedValueString: string | undefined;
-        applyToShapes(
-            shapes: Shape[],
-            properties: TokenProperty[] | undefined,
-        ): void;
-        applyToSelected(properties: TokenProperty[] | undefined): void;
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void;
+        applyToSelected(properties?: TokenProperty[]): void;
         type: "typography";
         value: string | TokenTypographyValueString;
         resolvedValue: TokenTypographyValue[] | undefined;
@@ -21550,7 +22016,7 @@ TokenTypography:
         Returns void
       applyToShapes: |-
         ```
-        applyToShapes(shapes: Shape[], properties: TokenProperty[] | undefined): void
+        applyToShapes(shapes: Shape[], properties?: TokenProperty[]): void
         ```
 
         Applies this token to one or more properties of the given shapes.
@@ -21560,7 +22026,7 @@ TokenTypography:
         * shapes: Shape[]
 
           is an array of shapes to apply it.
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
           an optional list of property names. If omitted, the
           default properties will be applied.
@@ -21573,7 +22039,7 @@ TokenTypography:
         Returns void
       applyToSelected: |-
         ```
-        applyToSelected(properties: TokenProperty[] | undefined): void
+        applyToSelected(properties?: TokenProperty[]): void
         ```
 
         Applies this token to the currently selected shapes.
@@ -21582,7 +22048,7 @@ TokenTypography:
 
         Parameters
 
-        * properties: TokenProperty[] | undefined
+        * properties: TokenProperty[]
 
         Returns void
 TokenCatalog:
@@ -21603,7 +22069,7 @@ TokenCatalog:
         themes: TokenTheme[];
         sets: TokenSet[];
         addTheme(group: { group: string; name: string }): TokenTheme;
-        addSet(name: { name: string }): TokenSet;
+        addSet(name: { name: string; active?: boolean }): TokenSet;
         getThemeById(id: string): TokenTheme | undefined;
         getSetById(id: string): TokenSet | undefined;
     }
@@ -21624,7 +22090,7 @@ TokenCatalog:
         ```
 
         The list of sets in this catalog, in the order defined
-        by the user. The order is important because then same token name
+        by the user. The order is important because when the same token name
         exists in several active sets, the latter has precedence.
     Methods:
       addTheme: |-
@@ -21645,14 +22111,19 @@ TokenCatalog:
         Returns the created TokenTheme.
       addSet: |-
         ```
-        addSet(name: { name: string }): TokenSet
+        addSet(name: { name: string; active?: boolean }): TokenSet
         ```
 
         Creates a new TokenSet and adds it to the catalog.
 
+        Newly created sets are **inactive** by default: only active sets
+        affect shapes and reference resolution. Pass `active: true` to create
+        an already-active set, or activate it later via `set.active = true` /
+        `set.toggleActive()`.
+
         Parameters
 
-        * name: { name: string }
+        * name: { name: string; active?: boolean }
 
           The name of the set (required). It may contain
           a group path, separated by `/`.
@@ -21792,7 +22263,7 @@ TokenSet:
 
         * type: { type: TokenType; name: string; value: TokenValueString }
 
-          Thetype of token.
+          The type of the token.
 
         Returns Token
 
@@ -21825,9 +22296,9 @@ TokenTheme:
     sets that are *not* in this theme, because they may have been
     activated by other themes.
 
-    Themes may be gruped. At any time only one of the themes in a group
+    Themes may be grouped. At any time only one of the themes in a group
     may be active. But there may be active themes in other groups. This
-    allows to define multiple "axis" for theming (e.g. color scheme,
+    allows defining multiple "axis" for theming (e.g. color scheme,
     density or brand).
 
     When a TokenSet is activated or deactivated directly, all themes
@@ -21843,8 +22314,8 @@ TokenTheme:
         active: boolean;
         toggleActive(): void;
         activeSets: TokenSet[];
-        addSet(tokenSet: TokenSet): void;
-        removeSet(tokenSet: TokenSet): void;
+        addSet(tokenSet: string | TokenSet): void;
+        removeSet(tokenSet: string | TokenSet): void;
         duplicate(): TokenTheme;
         remove(): void;
     }
@@ -21865,14 +22336,14 @@ TokenTheme:
         readonly externalId: string | undefined
         ```
 
-        Optional identifier that may exists if the theme was imported from an
+        Optional identifier that may exist if the theme was imported from an
         external tool that uses ids in the json file.
       group: |-
         ```
         group: string
         ```
 
-        The group name of the theme. Can be empt string.
+        The group name of the theme. Can be an empty string.
       name: |-
         ```
         name: string
@@ -21887,7 +22358,7 @@ TokenTheme:
         Indicates if the theme is currently active.
       activeSets: |-
         ```
-        activeSets: TokenSet[]
+        readonly activeSets: TokenSet[]
         ```
 
         The sets that will be activated if this theme is activated.
@@ -21902,26 +22373,30 @@ TokenTheme:
         Returns void
       addSet: |-
         ```
-        addSet(tokenSet: TokenSet): void
+        addSet(tokenSet: string | TokenSet): void
         ```
 
         Adds a set to the list of the theme.
 
         Parameters
 
-        * tokenSet: TokenSet
+        * tokenSet: string | TokenSet
+
+          a `TokenSet` or the id of a token set.
 
         Returns void
       removeSet: |-
         ```
-        removeSet(tokenSet: TokenSet): void
+        removeSet(tokenSet: string | TokenSet): void
         ```
 
         Removes a set from the list of the theme.
 
         Parameters
 
-        * tokenSet: TokenSet
+        * tokenSet: string | TokenSet
+
+          a `TokenSet` or the id of a token set.
 
         Returns void
       duplicate: |-
@@ -22025,7 +22500,10 @@ Variants:
     Interface Variants
     ==================
 
-    TODO
+    Represents a Variant in Penpot: the grouping of all the VariantComponents that
+    belong to the same VariantContainer, together with their shared properties.
+    This interface provides attributes and actions that affect the Variant as a
+    whole (not a single VariantComponent).
 
     ```
     interface Variants {
@@ -22059,7 +22537,7 @@ Variants:
         The unique identifier of the library to which the variant belongs.
       properties: |-
         ```
-        properties: string[]
+        readonly properties: string[]
         ```
 
         A list with the names of the properties of the Variant
@@ -22069,7 +22547,7 @@ Variants:
         currentValues(property: string): string[]
         ```
 
-        A list of all the values of a property along all the variantComponents of this Variant
+        A list of all the values of a property across all the VariantComponents of this Variant
 
         Parameters
 
@@ -22277,25 +22755,25 @@ Bounds:
     Properties:
       x: |-
         ```
-        x: number
+        readonly x: number
         ```
 
         Top-left x position of the rectangular area defined
       y: |-
         ```
-        y: number
+        readonly y: number
         ```
 
         Top-left y position of the rectangular area defined
       width: |-
         ```
-        width: number
+        readonly width: number
         ```
 
         Width of the represented area
       height: |-
         ```
-        height: number
+        readonly height: number
         ```
 
         Height of the represented area
@@ -22411,37 +22889,37 @@ ImageData:
     Properties:
       name: |-
         ```
-        name?: string
+        readonly name?: string
         ```
 
         The optional name of the image.
       width: |-
         ```
-        width: number
+        readonly width: number
         ```
 
         The width of the image.
       height: |-
         ```
-        height: number
+        readonly height: number
         ```
 
         The height of the image.
       mtype: |-
         ```
-        mtype?: string
+        readonly mtype?: string
         ```
 
         The optional media type of the image (e.g., 'image/png', 'image/jpeg').
       id: |-
         ```
-        id: string
+        readonly id: string
         ```
 
         The unique identifier for the image.
       keepAspectRatio: |-
         ```
-        keepAspectRatio?: boolean
+        readonly keepAspectRatio?: boolean
         ```
 
         Whether to keep the aspect ratio of the image when resizing.
@@ -22452,7 +22930,7 @@ ImageData:
         data(): Promise<Uint8Array<ArrayBufferLike>>
         ```
 
-        Returns the imaged data as a byte array.
+        Returns the image data as a byte array.
 
         Returns Promise<Uint8Array<ArrayBufferLike>>
 LibraryContext:
@@ -22553,11 +23031,11 @@ Point:
     Properties:
       x: |-
         ```
-        x: number
+        readonly x: number
         ```
       y: |-
         ```
-        y: number
+        readonly y: number
         ```
 RulerGuideOrientation:
   overview: |-
@@ -22567,6 +23045,8 @@ RulerGuideOrientation:
     ```
     RulerGuideOrientation: "horizontal" | "vertical"
     ```
+
+    The possible orientations for a ruler guide: 'horizontal' or 'vertical'.
 
     Referenced by: Board, Page, RulerGuide, VariantContainer
   members: {}
@@ -22675,9 +23155,15 @@ TokenValueString:
         | TokenTypographyValueString
         | string
         | string[]
+        | number
     ```
 
     Any possible type of value field in a token.
+
+    Token values are always stored as strings, including for numeric token
+    types such as `spacing`, `dimension` or `borderRadius` (e.g. `"16"` or
+    `"16px"`). A plain `number` is also accepted on input and coerced to its
+    string representation.
 
     Referenced by: TokenSet
   members: {}

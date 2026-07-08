@@ -17,6 +17,7 @@
    [app.rpc.commands.access-token]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]
    [yetti.request :as yreq]
@@ -111,6 +112,74 @@
     (let [response (handler {::http/auth-data {:type :token :token "foobar" :claims {:tid (:id token)}}})]
       (t/is (= #{} (:app.http.access-token/perms response)))
       (t/is (= (:id profile) (:app.http.access-token/profile-id response))))))
+
+(defrecord MethodAwareDummyRequest [req-method headers]
+  yreq/IRequest
+  (method [_] req-method)
+  (get-header [_ name] (get headers name)))
+
+(t/deftest cors-middleware-allowlisted-origin
+  (let [handler (#'app.http.middleware/wrap-cors
+                 (fn [_] {::yres/status 200 ::yres/headers {}})
+                 #{"https://trusted.example"})
+        resp    (handler (->MethodAwareDummyRequest :get {"origin" "https://trusted.example"}))
+        headers (::yres/headers resp)]
+
+    (t/is (= 200 (::yres/status resp)))
+    (t/is (= "https://trusted.example" (get headers "access-control-allow-origin")))
+    (t/is (= "true" (get headers "access-control-allow-credentials")))
+    (t/is (= "Origin" (get headers "vary")))
+    (t/is (= "content-type" (get headers "access-control-expose-headers")))
+    (t/is (not (str/includes?
+                (get headers "access-control-allow-headers" "")
+                "cookie")))))
+
+(t/deftest cors-middleware-non-allowlisted-origin
+  (let [handler (#'app.http.middleware/wrap-cors
+                 (fn [_] {::yres/status 200 ::yres/headers {}})
+                 #{"https://trusted.example"})
+        resp    (handler (->MethodAwareDummyRequest :get {"origin" "https://attacker.example"}))
+        headers (::yres/headers resp)]
+
+    (t/is (= 200 (::yres/status resp)))
+    (t/is (nil? (get headers "access-control-allow-origin")))
+    (t/is (nil? (get headers "access-control-allow-credentials")))
+    (t/is (nil? (get headers "access-control-allow-headers")))
+    (t/is (nil? (get headers "access-control-expose-headers")))
+    (t/is (= "Origin" (get headers "vary")))))
+
+(t/deftest cors-middleware-preflight-allowlisted
+  (let [handler (#'app.http.middleware/wrap-cors
+                 (fn [_] {::yres/status 200 ::yres/headers {}})
+                 #{"https://trusted.example"})
+        resp    (handler (->MethodAwareDummyRequest :options {"origin" "https://trusted.example"}))
+        headers (::yres/headers resp)]
+
+    (t/is (= 204 (::yres/status resp)))
+    (t/is (= "https://trusted.example" (get headers "access-control-allow-origin")))
+    (t/is (= "true" (get headers "access-control-allow-credentials")))))
+
+(t/deftest cors-middleware-preflight-non-allowlisted
+  (let [handler (#'app.http.middleware/wrap-cors
+                 (fn [_] {::yres/status 200 ::yres/headers {}})
+                 #{"https://trusted.example"})
+        resp    (handler (->MethodAwareDummyRequest :options {"origin" "https://attacker.example"}))
+        headers (::yres/headers resp)]
+
+    (t/is (= 204 (::yres/status resp)))
+    (t/is (nil? (get headers "access-control-allow-origin")))
+    (t/is (nil? (get headers "access-control-allow-credentials")))))
+
+(t/deftest cors-middleware-missing-origin
+  (let [handler (#'app.http.middleware/wrap-cors
+                 (fn [_] {::yres/status 200 ::yres/headers {}})
+                 #{"https://trusted.example"})
+        resp    (handler (->MethodAwareDummyRequest :get {}))
+        headers (::yres/headers resp)]
+
+    (t/is (= 200 (::yres/status resp)))
+    (t/is (nil? (get headers "access-control-allow-origin")))
+    (t/is (nil? (get headers "access-control-allow-credentials")))))
 
 (t/deftest session-authz
   (let [cfg      th/*system*

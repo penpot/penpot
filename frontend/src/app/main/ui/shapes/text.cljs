@@ -43,4 +43,4 @@
       ;; will give a tainted canvas error because the `foreignObject` cannot be
       ;; rendered.
       (and (nil? position-data) (or is-component? is-render?))
-      [:> fo/text-shape props])))
+      [:> fo/text-shape* props])))
