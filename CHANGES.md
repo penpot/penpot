@@ -41,6 +41,7 @@
 - Add resource limits to font processing child processes [#10234](https://github.com/penpot/penpot/issues/10234) (PR: [#10274](https://github.com/penpot/penpot/pull/10274))
 - Add color variants and positioning to selection size badge (by @bittoby) [#10258](https://github.com/penpot/penpot/issues/10258) (PR: [#9210](https://github.com/penpot/penpot/pull/9210))
 - Use hard reload for render engine switching in the workspace menu [#10441](https://github.com/penpot/penpot/issues/10441) (PR: [#10444](https://github.com/penpot/penpot/pull/10444))
+- Rotate size badge when shape is rotated [#10386](https://github.com/penpot/penpot/issues/10386) (PR: [#10393](https://github.com/penpot/penpot/pull/10393))
 
 ### :bug: Bugs fixed
 
@@ -148,6 +149,14 @@
 - Fix emojis without fill but with outer stroke not being rendered [#10473](https://github.com/penpot/penpot/issues/10473) (PR: [#10519](https://github.com/penpot/penpot/pull/10519))
 - Fix texts with lots of emojis not being rendered across multiple tiles [#10474](https://github.com/penpot/penpot/issues/10474) (PR: [#10504](https://github.com/penpot/penpot/pull/10504))
 - Fix artifacts in texts with inner strokes [#10476](https://github.com/penpot/penpot/issues/10476) (PR: [#10509](https://github.com/penpot/penpot/pull/10509))
+- Fix open overlay position control showing only center icon instead of full grid [#10176](https://github.com/penpot/penpot/issues/10176) (PR: [#10512](https://github.com/penpot/penpot/pull/10512))
+- Fix wrong text color in selection size badge [#10256](https://github.com/penpot/penpot/issues/10256) (PR: [#10393](https://github.com/penpot/penpot/pull/10393))
+- Fix several issues with plugins [#10394](https://github.com/penpot/penpot/issues/10394)
+- Fix pixel grid rendered on top of the rulers [#10426](https://github.com/penpot/penpot/issues/10426) (PR: [#10430](https://github.com/penpot/penpot/pull/10430))
+- Fix double-clicking text without fills creating a black file [#10472](https://github.com/penpot/penpot/issues/10472) (PR: [#10483](https://github.com/penpot/penpot/pull/10483))
+- Fix SVG raw caching prevented by unnecessary Cow wrapping [#10488](https://github.com/penpot/penpot/issues/10488) (PR: [#10492](https://github.com/penpot/penpot/pull/10492))
+- Add component reset operation to plugin API [#10561](https://github.com/penpot/penpot/issues/10561) (PR: [#10533](https://github.com/penpot/penpot/pull/10533))
+- Fix blur menu alignment in Firefox [#10576](https://github.com/penpot/penpot/issues/10576) (PR: [#10575](https://github.com/penpot/penpot/pull/10575))
 
 ## 2.16.2
 
