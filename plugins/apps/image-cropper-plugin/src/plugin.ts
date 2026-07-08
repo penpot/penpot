@@ -106,6 +106,33 @@ penpot.ui.onMessage<any>(async (message) => {
         message.mtype || 'image/png'
       );
 
+      // Adjust geometry to match the crop in place if crop coordinates are provided
+      if (message.cropData && message.originalImageSize) {
+        // Temporarily disable aspect ratio lock (proportionLock) to allow resizing to the cropped aspect ratio
+        const wasLocked = shape.proportionLock;
+        shape.proportionLock = false;
+
+        // Use a uniform scale factor to preserve aspect ratio and prevent distortion
+        const scale = shape.width / message.originalImageSize.width;
+        console.log('[Plugin Sandbox] Calculated Scale:', scale);
+
+        const newX = shape.x + message.cropData.x * scale;
+        const newY = shape.y + message.cropData.y * scale;
+        const newW = message.cropData.width * scale;
+        const newH = message.cropData.height * scale;
+
+        console.log('[Plugin Sandbox] Target Shape:', { x: newX, y: newY, w: newW, h: newH });
+
+        shape.x = newX;
+        shape.y = newY;
+
+        // Resize the shape using the uniform scale factor
+        shape.resize(newW, newH);
+
+        // Restore the original lock state (it will lock to the new correct aspect ratio)
+        shape.proportionLock = wasLocked;
+      }
+
       // Create new fills list and replace the cropped fill
       const updatedFills = [...(shape.fills as Fill[])];
       updatedFills[fillIndex] = {

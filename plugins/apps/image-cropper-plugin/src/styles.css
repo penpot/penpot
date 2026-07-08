@@ -20,6 +20,43 @@ html, body {
   box-sizing: border-box;
 }
 
+/* Tabs Navigation */
+.tabs-header {
+  display: flex;
+  background: var(--color-bg-secondary, #2d2d2d);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  z-index: 12;
+}
+
+.tabs-header.hidden {
+  display: none !important;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 12px 8px;
+  color: var(--color-text-secondary, #a3a3a3);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+  color: var(--color-text-primary, #ffffff);
+}
+
+.tab-btn.active {
+  color: var(--color-primary-default, #0f766e);
+  border-bottom-color: var(--color-primary-default, #0f766e);
+}
+
+/* States */
 .state-container {
   display: flex;
   flex-direction: column;
@@ -58,7 +95,7 @@ html, body {
   display: none !important;
 }
 
-/* Image container holds the cropper workspace */
+/* Image containers */
 .img-container {
   flex: 1;
   width: 100%;
@@ -72,10 +109,35 @@ html, body {
   position: relative;
 }
 
+.canvas-container {
+  flex: 1;
+  width: 100%;
+  /* Dark checkerboard pattern for transparency visual feedback */
+  background-color: #121212;
+  background-image: linear-gradient(45deg, #1e1e1e 25%, transparent 25%),
+                    linear-gradient(-45deg, #1e1e1e 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #1e1e1e 75%),
+                    linear-gradient(-45deg, transparent 75%, #1e1e1e 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
 #image-element {
   max-width: 100%;
   max-height: 100%;
   display: block;
+}
+
+#eraser-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: crosshair;
 }
 
 /* Controls Panel */
@@ -100,8 +162,8 @@ html, body {
 }
 
 .label-s {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--color-text-secondary, #a3a3a3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -122,7 +184,7 @@ html, body {
 }
 
 .select-s:hover, .select-s:focus {
-  border-color: var(--color-primary-default, #0ea5e9);
+  border-color: var(--color-primary-default, #0f766e);
 }
 
 .actions-row {
@@ -184,6 +246,80 @@ html, body {
   width: 100%;
 }
 
+/* Color Picker controls */
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-color-preset {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+  outline: none;
+}
+
+.btn-color-preset:hover {
+  transform: scale(1.15);
+}
+
+.picker-input {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+}
+
+.color-preview {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: background-color 0.2s ease;
+}
+
+.hint-text {
+  margin-top: -6px;
+  margin-bottom: 2px;
+}
+
+.body-xs {
+  font-size: 11px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin: 0;
+}
+
+/* Slider styling */
+.slider {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-bg-tertiary, #3a3a3a);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary-default, #0f766e);
+  transition: transform 0.1s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
 /* Spinner Styles */
 .spinner {
   width: 18px;
@@ -214,16 +350,16 @@ html, body {
 
 /* CropperJS Custom Styling overrides to fit Penpot Dark Theme */
 .cropper-view-box {
-  outline: 2px solid var(--color-primary-default, #0ea5e9);
-  outline-color: rgba(14, 165, 233, 0.75);
+  outline: 2px solid var(--color-primary-default, #0f766e);
+  outline-color: rgba(15, 118, 110, 0.75);
 }
 
 .cropper-line {
-  background-color: var(--color-primary-default, #0ea5e9);
+  background-color: var(--color-primary-default, #0f766e);
 }
 
 .cropper-point {
-  background-color: var(--color-primary-default, #0ea5e9);
+  background-color: var(--color-primary-default, #0f766e);
   border-radius: 2px;
 }
 
