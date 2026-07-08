@@ -51,6 +51,7 @@
     :$file {:enumerable false :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
     :fileId {:get #(dm/str file-id)}
 
     :name
@@ -101,7 +102,8 @@
 
          :else
          (let [color (-> (u/proxy->library-color self)
-                         (assoc :color value))]
+                         (assoc :color value)
+                         (dissoc :gradient :image))]
            (st/emit! (dwl/update-color-data color file-id)))))}
 
     :opacity
@@ -136,7 +138,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :gradient value))]
+                           (assoc :gradient value)
+                           (dissoc :color :image))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :image
@@ -154,7 +157,8 @@
 
            :else
            (let [color (-> (u/proxy->library-color self)
-                           (assoc :image value))]
+                           (assoc :image value)
+                           (dissoc :color :gradient))]
              (st/emit! (dwl/update-color-data color file-id))))))}
 
     :remove
@@ -295,6 +299,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true
@@ -484,6 +489,27 @@
                         (assoc :text-transform value))]
            (st/emit! (dwl/update-typography typo file-id)))))}
 
+    :setFont
+    (fn [font variant]
+      (cond
+        (not (obj/type-of? font "FontProxy"))
+        (u/not-valid plugin-id :setFont font)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/not-valid plugin-id :setFont "Plugin doesn't have 'library:write' permission")
+
+        :else
+        ;; When a variant is given read the variant-specific fields from it;
+        ;; otherwise the FontProxy exposes the font's default variant fields.
+        (let [source (if (obj/type-of? variant "FontVariantProxy") variant font)
+              typo (-> (u/locate-library-typography file-id id)
+                       (assoc :font-id (obj/get font "fontId")
+                              :font-family (obj/get font "fontFamily")
+                              :font-variant-id (obj/get source "fontVariantId")
+                              :font-style (obj/get source "fontStyle")
+                              :font-weight (obj/get source "fontWeight")))]
+          (st/emit! (dwl/update-typography typo file-id)))))
+
     :remove
     (fn []
       (cond
@@ -539,8 +565,8 @@
 
         :else
         (let [shape-id (obj/get range "$id")
-              start    (obj/get range "start")
-              end      (obj/get range "end")
+              start    (obj/get range "$start")
+              end      (obj/get range "$end")
               typography (u/locate-library-typography file-id id)
               attrs (-> typography
                         (assoc :typography-ref-file file-id)
@@ -684,24 +710,26 @@
 
     :removeProperty
     (fn [pos]
-      (if (not (nat-int? pos))
-        (u/not-valid plugin-id :pos pos)
-        (st/emit!
-         (se/event plugin-id "remove-property")
-         (dwv/remove-property id pos))))
+      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+        (if (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos pos)
+          (st/emit!
+           (se/event plugin-id "remove-property")
+           (dwv/remove-property id pos)))))
 
     :renameProperty
     (fn [pos name]
-      (cond
-        (not (nat-int? pos))
-        (u/not-valid plugin-id :pos pos)
+      (let [nprops (->> (get-variant-components file-id id) first :variant-properties count)]
+        (cond
+          (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos pos)
 
-        (not (string? name))
-        (u/not-valid plugin-id :name name)
+          (not (string? name))
+          (u/not-valid plugin-id :name name)
 
-        :else
-        (st/emit!
-         (dwv/update-property-name id pos name {:trigger "plugin:rename-property"}))))))
+          :else
+          (st/emit!
+           (dwv/update-property-name id pos name {:trigger "plugin:rename-property"})))))))
 
 (set! shape/variant-proxy variant-proxy)
 
@@ -718,6 +746,7 @@
     :$id {:enumerable false :get (constantly id)}
     :$file {:enumerable false :get (constantly file-id)}
     :id {:get (fn [] (dm/str id))}
+    :libraryId {:get (fn [] (dm/str file-id))}
 
     :name
     {:this true
@@ -751,7 +780,7 @@
          :else
          (let [component (u/proxy->library-component self)
                value (dm/str value " / " (:name component))]
-           (st/emit! (dwl/rename-component id value)))))}
+           (st/emit! (dwv/rename-comp-or-variant-and-main id value)))))}
 
     :remove
     (fn []
@@ -911,17 +940,18 @@
 
     :setVariantProperty
     (fn [pos value]
-      (cond
-        (not (nat-int? pos))
-        (u/not-valid plugin-id :pos (str pos))
+      (let [nprops (-> (u/locate-library-component file-id id) :variant-properties count)]
+        (cond
+          (or (not (nat-int? pos)) (>= pos nprops))
+          (u/not-valid plugin-id :pos (str pos))
 
-        (not (string? value))
-        (u/not-valid plugin-id :name value)
+          (not (string? value))
+          (u/not-valid plugin-id :name value)
 
-        :else
-        (st/emit!
-         (se/event plugin-id "variant-edit-property-value")
-         (dwv/update-property-value id pos value))))))
+          :else
+          (st/emit!
+           (se/event plugin-id "variant-edit-property-value")
+           (dwv/update-property-value id pos value)))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))

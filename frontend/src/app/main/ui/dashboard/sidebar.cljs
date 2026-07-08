@@ -407,9 +407,9 @@
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  default-team-id
                               :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
+      [:span {:class (stl/css :penpot-icon)} (if (contains? cf/flags :nitrate) deprecated-icon/logo-files deprecated-icon/logo-icon)]
 
-      [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
+      [:span {:class (stl/css :team-text)} (if (contains? cf/flags :nitrate) (tr "dashboard.my-files") (tr "dashboard.your-penpot"))]
       (when (= default-team-id (:id team))
         tick-icon)]
 
@@ -676,18 +676,24 @@
   [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
 
-        ;; Find the "your-penpot" teams, and transform them in orgs
-        orgs  (mf/with-memo [teams]
-                (->> teams
-                     vals
-                     (filter :is-default)
-                     (map dtm/team->organization)
-                     (d/index-by :id)))
+        current-org (dtm/team->organization team)
+
+        ;; Find the "your-penpot" teams, and transform them in orgs. When
+        ;; the selected team is directly accessible but not listed in
+        ;; membership teams, include only its org so the org selector can
+        ;; show the current selection without leaking the team into the
+        ;; teams dropdown.
+        orgs  (mf/with-memo [teams current-org]
+                (cond-> (->> teams
+                             vals
+                             (filter :is-default)
+                             (map dtm/team->organization)
+                             (d/index-by :id))
+                  (:id current-org)
+                  (assoc (:id current-org) current-org)))
 
         show-dropdown? (or (dnt/is-valid-license? profile)
                            (> (count orgs) 1))
-
-        current-org (dtm/team->organization team)
 
         org-teams (mf/with-memo [teams current-org]
                     (->> teams
@@ -895,8 +901,8 @@
        (cond
          is-default?
          [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
-          [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
+          [:span {:class (stl/css :penpot-icon)} (if nitrate? deprecated-icon/logo-files deprecated-icon/logo-icon)]
+          [:span {:class (stl/css :team-text)} (if nitrate? (tr "dashboard.my-files") (tr "dashboard.default-team-name"))]]
 
          (and (contains? cf/flags :subscriptions)
               (not is-default?)
@@ -1446,4 +1452,3 @@
    [:> profile-section*
     {:profile profile
      :team team}]])
-

@@ -72,7 +72,6 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
@@ -275,7 +274,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc :thumbnails thumbnails)
+          (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
           (update :files assoc file-id file)))))
 
 (defn zoom-to-frame
@@ -352,10 +351,8 @@
       (let [stoper-s     (rx/filter (ptk/type? ::finalize-workspace) stream)
             rparams      (rt/get-params state)
             features     (features/get-enabled-features state team-id)
-            ;; since render-wasm/v1 can be hot-toggled by the user, we need to query it
-            ;; from the state with active-feature?
-            render-wasm-enabled? #(features/active-feature? @st/state "render-wasm/v1")
-            render-wasm-ready?   #(and (render-wasm-enabled?)
+            render-wasm-enabled? (features/active-feature? state "render-wasm/v1")
+            render-wasm-ready?   #(and render-wasm-enabled?
                                        wasm-state/context-initialized?
                                        (not @wasm-state/context-lost?))]
 
@@ -368,7 +365,7 @@
                (rx/concat
                 ;; Fetch all essential data that should be loaded before the file
                 (rx/merge
-                 (if ^boolean (render-wasm-enabled?)
+                 (if ^boolean render-wasm-enabled?
                    (->> (rx/from @wasm/module)
                         (rx/filter true?)
                         (rx/tap (fn [_]
@@ -440,6 +437,9 @@
                       (rx/observe-on :async)
                       (rx/take 1)
                       (rx/map #(dwcm/navigate-to-comment-id comment-id))))
+
+               ;; Keep comment thread positions in sync on undo/redo
+               (rx/of (dwcm/watch-comment-thread-position-changes stoper-s))
 
                (let [local-commits-s
                      (->> stream
@@ -775,44 +775,46 @@
   #{:up :down :bottom :top})
 
 (defn vertical-order-selected
-  [loc]
-  (dm/assert!
-   "expected valid location"
-   (contains? valid-vertical-locations loc))
-  (ptk/reify ::vertical-order-selected
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id         (:current-page-id state)
-            objects         (dsh/lookup-page-objects state page-id)
-            selected-ids    (dsh/lookup-selected state)
-            selected-shapes (map (d/getf objects) selected-ids)
-            undo-id (js/Symbol)
+  ([loc]
+   (vertical-order-selected loc nil))
+  ([loc ids]
+   (dm/assert!
+    "expected valid location"
+    (contains? valid-vertical-locations loc))
+   (ptk/reify ::vertical-order-selected
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id         (:current-page-id state)
+             objects         (dsh/lookup-page-objects state page-id)
+             selected-ids    (or ids (dsh/lookup-selected state))
+             selected-shapes (map (d/getf objects) selected-ids)
+             undo-id (js/Symbol)
 
-            move-shape
-            (fn [changes shape]
-              (let [parent        (get objects (:parent-id shape))
-                    sibling-ids   (:shapes parent)
-                    current-index (d/index-of sibling-ids (:id shape))
-                    index-in-selection (d/index-of selected-ids (:id shape))
-                    new-index     (case loc
-                                    :top (count sibling-ids)
-                                    :down (max 0 (- current-index 1))
-                                    :up (min (count sibling-ids) (+ (inc current-index) 1))
-                                    :bottom index-in-selection)]
-                (pcb/change-parent changes
-                                   (:id parent)
-                                   [shape]
-                                   new-index)))
+             move-shape
+             (fn [changes shape]
+               (let [parent        (get objects (:parent-id shape))
+                     sibling-ids   (:shapes parent)
+                     current-index (d/index-of sibling-ids (:id shape))
+                     index-in-selection (d/index-of selected-ids (:id shape))
+                     new-index     (case loc
+                                     :top (count sibling-ids)
+                                     :down (max 0 (- current-index 1))
+                                     :up (min (count sibling-ids) (+ (inc current-index) 1))
+                                     :bottom index-in-selection)]
+                 (pcb/change-parent changes
+                                    (:id parent)
+                                    [shape]
+                                    new-index)))
 
-            changes (reduce move-shape
-                            (-> (pcb/empty-changes it page-id)
-                                (pcb/with-objects objects))
-                            selected-shapes)]
+             changes (reduce move-shape
+                             (-> (pcb/empty-changes it page-id)
+                                 (pcb/with-objects objects))
+                             selected-shapes)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:ids selected-ids})
-               (dwu/commit-undo-transaction undo-id))))))
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dch/commit-changes changes)
+                (ptk/data-event :layout/update {:ids selected-ids})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn set-shape-index
   [file-id page-id id new-index]

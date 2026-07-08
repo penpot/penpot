@@ -610,9 +610,8 @@ msgstr "Exportar selección"
 msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:155
-#, unused
-msgid "dashboard.export.explain"
+#: src/app/main/ui/exports/files.cljs:132
+msgid "files-download-modal.description-1"
 msgstr ""
 "Uno o mas ficheros que quieres descargar usan librerias compartidas. ¿Qué "
 "quieres hacer con los recursos*?"
@@ -1433,6 +1432,9 @@ msgstr "Tu nombre"
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
+
+msgid "dashboard.my-files"
+msgstr "Mis Archivos"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -4348,10 +4350,6 @@ msgstr "Cancelar subscripción"
 msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renovar con código de activación"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:44, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:110
-msgid "not-active-token.no-name"
-msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
-
 #: src/app/main/ui/static.cljs:309
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "Esta página no existe"
@@ -4896,6 +4894,10 @@ msgstr "Penpot"
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
 msgid "options.deleted-token"
 msgstr "Este token no existe o ha sido borrado."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "El token {%s} no existe o ha sido borrado."
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
@@ -9165,7 +9167,7 @@ msgstr "Valor original: %s"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
-msgstr "La referencia no es válida o no se encuentra en ningún set activo."
+msgstr "La referencia en {%s} no es válida o no se encuentra en ningún set activo."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused

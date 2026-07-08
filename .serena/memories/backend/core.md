@@ -92,6 +92,10 @@ IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 * **Linting:** `pnpm run lint` from the repository root.
 * **Formatting:** `pnpm run check-fmt`. Use `pnpm run fmt` to fix. Avoid unrelated whitespace diffs.
 
+**Before linting:** if delimiter errors are suspected (after LLM edits), run
+`tools/paren-repair.bb` on the affected files first. Delimiter errors produce
+misleading linter/compiler output. See `mem:tools/paren-repair`.
+
 ## Testing
 
 IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.

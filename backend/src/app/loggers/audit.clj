@@ -88,7 +88,8 @@
   #{:session-id
     :password
     :old-password
-    :token})
+    :token
+    :client-secret})
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under

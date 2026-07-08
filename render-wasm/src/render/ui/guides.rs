@@ -3,22 +3,43 @@ use skia_safe::{self as skia};
 use crate::math::Rect;
 use crate::ui::{Guide, GuideKind};
 
-/// Renders the ruler guides overlay using the guides provided by the host
-/// (ClojureScript) and stored in the render state.
+/// Renders the ruler guides, clipped out of the ruler bars.
 pub fn render(
     canvas: &skia::Canvas,
     zoom: f32,
     dpr: f32,
     area: Rect,
+    ruler_width: f32,
     horizontal: &[Guide],
     vertical: &[Guide],
 ) {
+    // Horizontal guides: clip out the top strip (horizontal ruler)
+    canvas.save();
+    canvas.clip_rect(
+        Rect::from_ltrb(area.left, area.top + ruler_width, area.right, area.bottom),
+        None,
+        false,
+    );
+
     for guide in horizontal {
         render_guide(canvas, zoom, dpr, area, *guide);
     }
+
+    canvas.restore();
+
+    // Vertical guides: clip out the left strip (vertical ruler)
+    canvas.save();
+    canvas.clip_rect(
+        Rect::from_ltrb(area.left + ruler_width, area.top, area.right, area.bottom),
+        None,
+        false,
+    );
+
     for guide in vertical {
         render_guide(canvas, zoom, dpr, area, *guide);
     }
+
+    canvas.restore();
 }
 
 pub fn render_guide(canvas: &skia::Canvas, zoom: f32, dpr: f32, area: Rect, guide: Guide) {

@@ -38,6 +38,7 @@
            code-action
            editors
            recommended
+           current-plan
            show-button-cta
            inline-error]}]
 
@@ -46,7 +47,8 @@
         has-cta-button (and cta-link cta-text show-button-cta)
         has-cta-link (and cta-link cta-text (not show-button-cta))]
     [:div {:class (stl/css-case :plan-card true
-                                :plan-card-highlight recommended)}
+                                :plan-card-highlight recommended
+                                :plan-card-current current-plan)}
      [:div {:class (stl/css :plan-card-header)}
       [:div {:class (stl/css :plan-card-title-container)}
        (when card-title-icon
@@ -71,7 +73,7 @@
        [:h5 {:class (stl/css :benefits-title)} benefits-title])
      [:ul {:class (stl/css :benefits-list)}
       (for [benefit benefits]
-        [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
+        [:li {:key (dm/str benefit) :class (stl/css :benefit)} benefit])]
 
      (when has-cta-button
        [:> button* {:variant "primary"
@@ -585,7 +587,8 @@
                          :cta-link (if (and (:licenses connectivity) (not (:manual nitrate-license)))
                                      dnt/go-to-nitrate-billing
                                      open-cancel-contact-sales-modal)
-                         :code-action (when (:manual nitrate-license) :renovate)}]
+                         :code-action (when (:manual nitrate-license) :renovate)
+                         :current-plan true}]
          (case subscription-type
            "professional"
            [:> plan-card* {:card-title (tr "subscription.settings.professional")
@@ -597,7 +600,8 @@
                                         (tr "subscription.settings.professional.selfhost.unlimited-users")),
                                       (if cf/saas?
                                         (tr "subscription.settings.professional.teams-editors-benefit")
-                                        (tr "subscription.settings.professional.selfhost.community-support"))]}]
+                                        (tr "subscription.settings.professional.selfhost.community-support"))]
+                           :current-plan true}]
 
            "unlimited"
            (if subscription-is-trial?
@@ -611,7 +615,8 @@
                              :cta-link go-to-payments
                              :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
                              :cta-link-trial go-to-payments
-                             :editors (-> profile :props :subscription :quantity)}]
+                             :editors (-> profile :props :subscription :quantity)
+                             :current-plan true}]
 
              [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                              :card-title-icon i/character-u
@@ -621,7 +626,8 @@
                                         (tr "subscription.settings.unlimited.bill")]
                              :cta-text (tr "subscription.settings.manage-your-subscription")
                              :cta-link go-to-payments
-                             :editors (-> profile :props :subscription :quantity)}])
+                             :editors (-> profile :props :subscription :quantity)
+                             :current-plan true}])
 
            "enterprise"
            (if subscription-is-trial?
@@ -634,7 +640,8 @@
                              :cta-text (tr "subscription.settings.manage-your-subscription")
                              :cta-link go-to-payments
                              :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
-                             :cta-link-trial go-to-payments}]
+                             :cta-link-trial go-to-payments
+                             :current-plan true}]
              [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                              :card-title-icon i/character-e
                              :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
@@ -642,7 +649,8 @@
                                         (tr "subscription.settings.enterprise.autosave"),
                                         (tr "subscription.settings.enterprise.capped-bill")]
                              :cta-text (tr "subscription.settings.manage-your-subscription")
-                             :cta-link go-to-payments}])))
+                             :cta-link go-to-payments
+                             :current-plan true}])))
 
        [:div {:class (stl/css :membership-container)}
         (when (or nitrate?
@@ -683,7 +691,8 @@
                                        open-cancel-contact-sales-modal)
                                      go-to-payments)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])
+                         :cta-link-with-icon go-to-pricing-page
+                         :current-plan false}])
 
        (when (and (not= subscription-type "unlimited") cf/saas?)
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
@@ -699,7 +708,8 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :recommended (= subscription-type "professional")
-                         :show-button-cta (= subscription-type "professional")}])
+                         :show-button-cta (= subscription-type "professional")
+                         :current-plan false}])
 
        (when (and (not= subscription-type "enterprise") cf/saas? (not (contains? cf/flags :nitrate)))
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
@@ -714,7 +724,8 @@
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :show-button-cta (= subscription-type "professional")}])
+                         :show-button-cta (= subscription-type "professional")
+                         :current-plan false}])
 
        ;; TODO add translations for this texts when we have the definitive ones
        (when (and (contains? cf/flags :nitrate) (not nitrate?))
@@ -732,6 +743,7 @@
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
                          :show-button-cta (not nitrate-license)
+                         :current-plan false
                          :inline-error nitrate-start-error-message}])]]]))
 
 (mf/defc subscribe-nitrate-dialog

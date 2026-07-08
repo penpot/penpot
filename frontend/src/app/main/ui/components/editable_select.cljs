@@ -12,7 +12,7 @@
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -163,13 +163,13 @@
     [:div {:class (dm/str class " " (stl/css :editable-select))
            :ref on-node-load}
      (if (= type "number")
-       [:> numeric-input* {:value (or (some-> current-value value->label) "")
-                           :className input-class
-                           :on-change set-value
-                           :on-focus handle-focus
-                           :on-blur handle-blur
-                           :aria-label aria-label
-                           :placeholder placeholder}]
+       [:> deprecated-input/numeric-input* {:value (or (some-> current-value value->label) "")
+                                            :class input-class
+                                            :on-change set-value
+                                            :on-focus handle-focus
+                                            :on-blur handle-blur
+                                            :aria-label aria-label
+                                            :placeholder placeholder}]
        [:input {:value (if (= value :multiple) nil (or (some-> current-value value->label) ""))
                 :class input-class
                 :on-change handle-change-input

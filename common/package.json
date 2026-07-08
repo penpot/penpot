@@ -13,7 +13,7 @@
   "devDependencies": {
     "concurrently": "^10.0.3",
     "nodemon": "^3.1.14",
-    "prettier": "3.8.4",
+    "prettier": "3.9.4",
     "source-map-support": "^0.5.21",
     "ws": "^8.21.0"
   },

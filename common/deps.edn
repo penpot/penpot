@@ -20,7 +20,13 @@
   selmer/selmer {:mvn/version "1.13.4"}
   criterium/criterium {:mvn/version "0.4.6"}
 
-  metosin/jsonista {:mvn/version "1.0.0"}
+  metosin/jsonista {:mvn/version "1.0.0"
+                    :exclusions [com.fasterxml.jackson.core/jackson-core
+                                 com.fasterxml.jackson.core/jackson-databind]}
+  com.fasterxml.jackson.core/jackson-core {:mvn/version "2.22.0"}
+  com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.22.0"}
+
+
   metosin/malli {:mvn/version "0.19.1"}
 
   expound/expound {:mvn/version "0.9.0"}
@@ -58,7 +64,7 @@
    {org.clojure/tools.namespace {:mvn/version "1.5.1"}
     thheller/shadow-cljs {:mvn/version "3.2.0"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
-    com.bhauman/rebel-readline {:mvn/version "0.1.5"}
+    com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     criterium/criterium {:mvn/version "0.4.6"}
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["test" "dev"]}

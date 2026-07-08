@@ -38,8 +38,14 @@
    ;; returning nil makes callers skip the WASM resize/modifier path.
    (when (and id (wasm.api/initialized?))
      (wasm.api/use-shape id)
-     (wasm.api/set-shape-text-content id content)
-     (wasm.api/set-shape-text-images id content)
+     ;; While the WASM text editor is actively editing it already holds the live
+     ;; content and layout. Re-pushing the content here calls `_clear_shape_text`
+     ;; + `_update_shape_text_layout`, which resets the editor and drops every
+     ;; keystroke after the first, so we just measure the live layout instead.
+     (when-not (and (wasm.api/text-editor-has-focus?)
+                    (= id (wasm.api/text-editor-get-active-shape-id)))
+       (wasm.api/set-shape-text-content id content)
+       (wasm.api/set-shape-text-images id content))
      (let [dimension (when (not= :fixed grow-type)
                        (wasm.api/get-text-dimensions))]
        {:width  (if (#{:fixed :auto-height} grow-type)

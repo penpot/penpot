@@ -6,11 +6,13 @@
 
 (ns backend-tests.rpc-management-nitrate-test
   (:require
+   [app.auth.oidc :as oidc]
    [app.common.data :as d]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.email :as eml]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
@@ -1198,3 +1200,118 @@
       (t/is (some? rel1)))
     (let [rel2 (th/db-get :team-profile-rel {:team-id (:id extra-team) :profile-id (:id user)})]
       (t/is (some? rel2)))))
+
+(t/deftest notify-org-sso-change-sends-setup-sso-email-once-per-recipient
+  (let [owner       (th/create-profile* 1 {:is-active true :fullname "Owner"})
+        member      (th/create-profile* 2 {:is-active true
+                                           :fullname "Member"
+                                           :email "member@example.com"})
+        invited     (th/create-profile* 3 {:is-active true
+                                           :fullname "Invited User"
+                                           :email "invited@example.com"})
+        org-id      (uuid/random)
+        org-name    "Acme Inc"
+        team        (th/create-team* 1 {:profile-id (:id owner)})
+        org-summary {:id org-id
+                     :name org-name
+                     :teams [{:id (:id team)}]}
+        sent        (atom [])
+        params      {::th/type :notify-org-sso-change
+                     :organization-id org-id
+                     :updated-props false
+                     :became-active true}]
+
+    ;; Member also has a pending invitation: should still receive only one email.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :org-id org-id
+                    :team-id nil
+                    :email-to (:email member)
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "24h")})
+
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to (:email invited)
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    ;; Invite without an existing profile.
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :org-id nil
+                    :email-to "external@example.com"
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "72h")})
+
+    (with-redefs [nitrate/call (fn [_cfg method _params]
+                                 (case method
+                                   :get-org-members [(:id owner) (:id member)]
+                                   :get-org-summary org-summary
+                                   nil))
+                  eml/send! (fn [params] (swap! sent conj params))]
+      (management-command-with-nitrate! params))
+
+    (let [emails (->> @sent (map :to) set)]
+      (t/is (= 4 (count @sent)))
+      (t/is (= #{"member@example.com"
+                 (:email owner)
+                 "invited@example.com"
+                 "external@example.com"}
+               emails))
+      (doseq [email-params @sent]
+        (t/is (= org-name (:organization-name email-params)))
+        (t/is (= eml/organization-setup-sso (::eml/factory email-params)))))))
+
+(t/deftest notify-org-sso-change-skips-email-when-not-active
+  (let [sent   (atom [])
+        params {::th/type :notify-org-sso-change
+                :organization-id (uuid/random)
+                :updated-props false
+                :became-active false}]
+    (with-redefs [eml/send! (fn [params] (swap! sent conj params))]
+      (management-command-with-nitrate! params))
+    (t/is (empty? @sent))))
+
+(t/deftest check-organization-sso-returns-valid-true
+  (let [org-id (uuid/random)
+        out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
+                 (management-command-with-nitrate!
+                  {::th/type :check-organization-sso
+                   :organization-id org-id
+                   :client-id "test-client"
+                   :client-secret "test-secret"
+                   :base-url "https://idp.example.com"}))]
+    (t/is (th/success? out))
+    (t/is (true? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-returns-valid-false-on-invalid-config
+  (let [out (management-command-with-nitrate!
+             {::th/type :check-organization-sso
+              :organization-id (uuid/random)
+              :client-id "test-client"
+              :client-secret "test-secret"})]
+    (t/is (th/success? out))
+    (t/is (false? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-uses-issuer-when-base-url-is-blank
+  (let [org-id (uuid/random)
+        out    (with-redefs [oidc/is-organization-sso-config-valid?
+                             (fn [_cfg sso]
+                               (and (= "test-client" (:client-id sso))
+                                    (= "https://idp.example.com/" (:issuer sso))))]
+                 (management-command-with-nitrate!
+                  {::th/type :check-organization-sso
+                   :organization-id org-id
+                   :client-id "test-client"
+                   :client-secret "test-secret"
+                   :base-url ""
+                   :issuer "https://idp.example.com/"}))]
+    (t/is (th/success? out))
+    (t/is (true? (-> out :result :valid)))))

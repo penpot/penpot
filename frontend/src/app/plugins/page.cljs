@@ -123,6 +123,22 @@
      :enumerable false
      :get #(.getRoot ^js %)}
 
+    :remove
+    (fn []
+      (let [pages (-> (u/locate-file file-id) :data :pages)]
+        (cond
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+          (nil? (u/locate-page file-id id))
+          (u/not-valid plugin-id :remove "Page not found")
+
+          (<= (count pages) 1)
+          (u/not-valid plugin-id :remove "Cannot remove the last page of the file")
+
+          :else
+          (st/emit! (dw/delete-page id)))))
+
     :background
     {:this true
      :get #(or (-> % u/proxy->page :background) cc/canvas)
@@ -275,6 +291,11 @@
         (do (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))
             (js/Promise.resolve nil))
 
+        ;; Navigating to the already-active page emits no initialization
+        ;; event, so resolve right away instead of waiting forever.
+        (u/page-active? id)
+        (js/Promise.resolve nil)
+
         :else
         (js/Promise.
          (fn [resolve _]
@@ -412,8 +433,7 @@
         (js/Promise.
          (fn [resolve]
            (let [thread-id (obj/get thread "$id")]
-             (js/Promise.
-              (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve)))))))))
+             (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve))))))))
 
     :findCommentThreads
     (fn [criteria]
