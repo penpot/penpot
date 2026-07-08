@@ -90,6 +90,8 @@
     padding: 0 deprecated.$s-12 0 0;
     transition: none;
     color: var(--layer-row-foreground-color);
+    // Avoid text selection when shift/ctrl clicking to multi-select pages
+    user-select: none;
 
     .page-name {
       @include deprecated.text-ellipsis;

@@ -3926,6 +3926,14 @@ msgstr "Are you sure you want to delete this page?"
 msgid "modals.delete-page.title"
 msgstr "Delete page"
 
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "Are you sure you want to delete the selected pages?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Delete pages"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Delete project"
@@ -6440,6 +6448,10 @@ msgstr "Your items are going to be named automatically as \"group name / item na
 #: src/app/main/ui/workspace/context_menu.cljs:716, src/app/main/ui/workspace/sidebar/assets/colors.cljs:265, src/app/main/ui/workspace/sidebar/assets/components.cljs:670, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:475, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:541
 msgid "workspace.assets.delete"
 msgstr "Delete"
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Delete pages"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:74
 msgid "workspace.assets.delete-group"

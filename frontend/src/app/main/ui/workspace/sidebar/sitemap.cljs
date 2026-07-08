@@ -76,27 +76,43 @@
         on-click
         (mf/use-fn
          (mf/deps id current-page-id is-separator?)
-         (fn []
+         (fn [event]
            (when-not is-separator?
-             ;; WASM page transitions:
-             ;; - Capture the current page (A) once
-             ;; - Show a blurred snapshot while the target page (B/C/...) renders
-             ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
-             (if (and (features/active-feature? @st/state "render-wasm/v1")
-                      (not= id current-page-id))
-               (-> (if @wasm.api/page-transition?
-                     (p/resolved nil)
-                     ;; Blur with Skia, then capture the already-blurred frame.
-                     (do (wasm.api/render-blurred-snapshot!)
-                         (wasm.api/capture-canvas-snapshot)))
-                   (p/finally
-                     (fn []
-                       (wasm.api/apply-canvas-blur)
-                       ;; Two RAF so the overlay paints before navigation.
-                       (timers/raf
-                        (fn []
-                          (timers/raf navigate-fn))))))
-               (navigate-fn)))))
+             (cond
+               ;; Shift + click: select the range of pages from the anchor
+               ;; to this page (does not navigate).
+               (kbd/shift? event)
+               (st/emit! (dw/select-pages-range id))
+
+               ;; Ctrl/Cmd + click: add/remove this page to/from the
+               ;; multi-selection (does not navigate).
+               (kbd/mod? event)
+               (st/emit! (dw/toggle-page-selection id))
+
+               ;; Plain click: reset the selection to this page and
+               ;; navigate to it.
+               :else
+               (do
+                 (st/emit! (dw/select-page id))
+                 ;; WASM page transitions:
+                 ;; - Capture the current page (A) once
+                 ;; - Show a blurred snapshot while the target page (B/C/...) renders
+                 ;; - If the user clicks again during the transition, keep showing the original (A) snapshot
+                 (if (and (features/active-feature? @st/state "render-wasm/v1")
+                          (not= id current-page-id))
+                   (-> (if @wasm.api/page-transition?
+                         (p/resolved nil)
+                         ;; Blur with Skia, then capture the already-blurred frame.
+                         (do (wasm.api/render-blurred-snapshot!)
+                             (wasm.api/capture-canvas-snapshot)))
+                       (p/finally
+                         (fn []
+                           (wasm.api/apply-canvas-blur)
+                           ;; Two RAF so the overlay paints before navigation.
+                           (timers/raf
+                            (fn []
+                              (timers/raf navigate-fn))))))
+                   (navigate-fn)))))))
 
         on-delete
         (mf/use-fn
@@ -252,7 +268,13 @@
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
         editing-page-id (mf/deref refs/editing-page-item)
-        current-page-id (mf/use-ctx ctx/current-page-id)]
+        selected-pages  (mf/deref refs/selected-pages)
+        current-page-id (mf/use-ctx ctx/current-page-id)
+        ;; When there is no explicit multi-selection, the current page
+        ;; is the selected one.
+        selected-pages  (if (seq selected-pages)
+                          selected-pages
+                          #{current-page-id})]
     [:ul {:class (stl/css :page-list)}
      [:> hooks/sortable-container* {}
       (for [[index page-id] (d/enumerate pages)]
@@ -261,7 +283,7 @@
           :index index
           :deletable? deletable?
           :editing? (= page-id editing-page-id)
-          :selected? (= page-id current-page-id)
+          :selected? (contains? selected-pages page-id)
           :current-page-id current-page-id
           :key page-id}])]]))
 

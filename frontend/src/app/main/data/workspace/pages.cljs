@@ -135,7 +135,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [local (-> (:workspace-local state)
-                      (dissoc :edition :edit-path :selected))
+                      (dissoc :edition :edit-path :selected
+                              :selected-pages :selected-pages-anchor))
             exit? (not= :workspace (rt/lookup-name state))
             state (-> state
                       (update :workspace-cache assoc [file-id page-id] local)
@@ -395,3 +396,104 @@
             (rx/of (dch/commit-changes changes)
                    (when (= id (:current-page-id state))
                      (dcm/go-to-workspace {:page-id (first pages)})))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page selection (sitemap multi-selection)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn clear-page-selection
+  "Clear the sitemap multi-selection state."
+  []
+  (ptk/reify ::clear-page-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :selected-pages :selected-pages-anchor))))
+
+(defn select-page
+  "Set the sitemap selection to a single page (plain click). It also
+  sets the anchor used by range (shift+click) selection."
+  [id]
+  (ptk/reify ::select-page
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :selected-pages] (d/ordered-set id))
+          (assoc-in [:workspace-local :selected-pages-anchor] id)))))
+
+(defn toggle-page-selection
+  "Add or remove a page from the sitemap multi-selection (ctrl/cmd + click)."
+  [id]
+  (ptk/reify ::toggle-page-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [current-id (:current-page-id state)
+            selected   (or (not-empty (dm/get-in state [:workspace-local :selected-pages]))
+                           (d/ordered-set current-id))
+            selected   (if (contains? selected id)
+                         (disj selected id)
+                         (conj selected id))]
+        (-> state
+            (assoc-in [:workspace-local :selected-pages] selected)
+            (assoc-in [:workspace-local :selected-pages-anchor] id))))))
+
+(defn select-pages-range
+  "Select every page between the current anchor and `id`, both included
+  (shift + click). The anchor is kept unchanged."
+  [id]
+  (ptk/reify ::select-pages-range
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [current-id (:current-page-id state)
+            pages      (-> (dsh/lookup-file-data state) :pages vec)
+            anchor     (or (dm/get-in state [:workspace-local :selected-pages-anchor])
+                           current-id)
+            a-idx      (d/index-of pages anchor)
+            b-idx      (d/index-of pages id)]
+        (if (and (some? a-idx) (some? b-idx))
+          (let [start (min a-idx b-idx)
+                end   (inc (max a-idx b-idx))
+                range (subvec pages start end)]
+            (assoc-in state [:workspace-local :selected-pages]
+                      (into (d/ordered-set) range)))
+          state)))))
+
+(defn delete-pages
+  "Delete a collection of pages in a single change (single undo entry),
+  always keeping at least one page in the file."
+  [ids]
+  (ptk/reify ::delete-pages
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id (:current-file-id state)
+            fdata   (dsh/lookup-file-data state file-id)
+            pindex  (:pages-index fdata)
+            pages   (:pages fdata)
+
+            ids     (set ids)
+            ;; A file must keep at least one page: if every page is
+            ;; selected, keep the first one in page order.
+            ids     (if (>= (count ids) (count pages))
+                      (set (rest (filter ids pages)))
+                      ids)
+
+            ;; Pages to delete, in page order.
+            del-ids   (filter ids pages)
+            remaining (remove ids pages)
+
+            changes (reduce
+                     (fn [changes id]
+                       (let [page (-> (get pindex id)
+                                      (assoc :index (d/index-of pages id)))]
+                         (-> changes
+                             (delete-page-components page)
+                             (pcb/del-page page))))
+                     (-> (pcb/empty-changes it)
+                         (pcb/with-library-data fdata))
+                     del-ids)]
+
+        (if (empty? del-ids)
+          (rx/empty)
+          (rx/of (dch/commit-changes changes)
+                 (clear-page-selection)
+                 (when (contains? ids (:current-page-id state))
+                   (dcm/go-to-workspace {:page-id (first remaining)}))))))))
