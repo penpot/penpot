@@ -286,6 +286,13 @@
         default (unchecked-get values "parent")]
     (d/nilv (unchecked-get values (d/name kind)) default)))
 
+
+(defn translate-multiple-state
+  [multiple-state]
+  (let [values (unchecked-get wasm/serializers "multiple-state")
+        default (unchecked-get values "undefined")]
+    (d/nilv (unchecked-get values (d/name multiple-state)) default)))
+
 ;; --- Guides
 
 ;; Each guide is serialized as 5 x 32-bit words:

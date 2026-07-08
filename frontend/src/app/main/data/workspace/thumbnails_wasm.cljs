@@ -169,7 +169,7 @@
     (ptk/reify ::persist-thumbnail
       ptk/WatchEvent
       (watch [_ state _]
-        (let [data-uri (dm/get-in state [:thumbnails object-id])]
+        (let [data-uri (dm/get-in state [:thumbnails object-id :uri])]
           (if (and (some? data-uri)
                    (str/starts-with? data-uri "data:"))
             (let [blob (wapi/data-uri->blob data-uri)]

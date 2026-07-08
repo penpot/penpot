@@ -3,7 +3,7 @@ use crate::with_state;
 use crate::{
     error::{Error, Result},
     globals::{get_render_state, get_ui_state},
-    ui::{Guide, GuideKind},
+    ui::{Color, Guide, GuideKind},
 };
 use macros::{wasm_error, ToJs};
 
@@ -121,4 +121,47 @@ pub extern "C" fn find_guide_at(x: f32, y: f32, zoom: f32, tolerance: f32) -> Re
         .find_guide_at(x, y, zoom, tolerance)
         .map(|guide| guide.index as i32)
         .unwrap_or(-1))
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_rulers_visible(visible: u32) -> Result<()> {
+    get_ui_state().ruler_state_mut().visible = visible != 0;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_rulers_frame_visible(visible: u32) -> Result<()> {
+    get_ui_state().ruler_state_mut().frame = visible != 0;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_rulers_offsets(offset_x: f32, offset_y: f32) -> Result<()> {
+    let r = &mut get_ui_state().ruler_state_mut();
+    r.offset_x = offset_x;
+    r.offset_y = offset_y;
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_rulers_selection(has: u32, x: f32, y: f32, w: f32, h: f32) -> Result<()> {
+    get_ui_state()
+        .ruler_state_mut()
+        .set_selection(has != 0, x, y, w, h);
+    Ok(())
+}
+
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn set_rulers_colors(bg: u32, border: u32, label: u32, accent: u32) -> Result<()> {
+    let r = &mut get_ui_state().ruler_state_mut();
+    r.bg_color = Color::new(bg);
+    r.border_color = Color::new(border);
+    r.label_color = Color::new(label);
+    r.accent_color = Color::new(accent);
+    Ok(())
 }

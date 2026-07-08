@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
-use crate::shapes::Color;
+pub use crate::math::Rect;
+pub use crate::shapes::Color;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GuideKind {

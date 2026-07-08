@@ -209,6 +209,20 @@
         (filter #(= team-id (:team-id (val %))))
         (into {}))))
 
+(defn lookup-team
+  "The team identified by `team-id`, looked up first in the membership
+  `:teams` map and falling back to the directly-opened `:current-team`.
+  The fallback covers org-owner access to teams the profile is not a
+  member of, which are kept out of `:teams` so they don't leak into the
+  teams listing."
+  ([state]
+   (lookup-team state (:current-team-id state)))
+  ([state team-id]
+   (or (dm/get-in state [:teams team-id])
+       (let [current (:current-team state)]
+         (when (= team-id (:id current))
+           current)))))
+
 (defn get-selrect
   [selrect-transform shape]
   (if (some? selrect-transform)

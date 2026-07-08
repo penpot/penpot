@@ -7,7 +7,6 @@ pub mod grid_layout;
 mod images;
 mod options;
 pub mod pdf;
-pub mod rulers;
 mod shadows;
 pub mod shape_renderer;
 mod strokes;
@@ -30,7 +29,7 @@ use crate::shapes::{
     all_with_ancestors, radius_to_sigma, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor,
     Stroke, StrokeKind, TextContent, Type,
 };
-use crate::state::{RulerState, ShapesPoolMutRef, ShapesPoolRef};
+use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -374,7 +373,6 @@ pub(crate) struct RenderState {
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
-    pub rulers: RulerState,
     pub focus_mode: FocusMode,
     /// Viewer-only whitelist for fixed-scroll layer passes.
     pub include_filter: Option<HashSet<Uuid>>,
@@ -589,7 +587,6 @@ impl RenderState {
             nested_blurs: vec![],
             nested_shadows: vec![],
             show_grid: None,
-            rulers: RulerState::default(),
             focus_mode: FocusMode::new(),
             include_filter: None,
             viewer_render_root: None,

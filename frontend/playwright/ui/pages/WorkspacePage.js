@@ -379,6 +379,29 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   /**
+   * Creates a new auto-width Text Shape by single-clicking at the given
+   * coordinates (as opposed to dragging a fixed-size box) and, optionally,
+   * types an initial text.
+   *
+   * @param {number} x
+   * @param {number} y
+   * @param {string} [initialText]
+   * @param {*} [options]
+   */
+  async createAutoWidthTextShape(x, y, initialText, options) {
+    const timeToWait = options?.timeToWait ?? 100;
+    await this.page.keyboard.press("T");
+    await this.page.waitForTimeout(timeToWait);
+
+    await this.clickAt(x, y);
+
+    if (initialText) {
+      await this.waitForSelectedShapeName("Text");
+      await this.page.keyboard.type(initialText);
+    }
+  }
+
+  /**
    * Copies the selected element into the clipboard, or copy the
    * content of the locator into the clipboard.
    *
@@ -446,6 +469,33 @@ export class WorkspacePage extends BaseWebSocketPage {
   async togglePages() {
     const pagesToggle = this.page.getByText("Pages");
     await pagesToggle.click();
+  }
+
+  async selectToolbarTool(workspacePage, toolName) {
+    await workspacePage.page
+      .getByRole("button", { name: toolName })
+      .first()
+      .click();
+  }
+
+  async selectToolFromFlyout(
+    workspacePage,
+    { triggerToolName, targetToolName },
+  ) {
+    const trigger = workspacePage.page
+      .getByRole("button", { name: triggerToolName })
+      .first();
+
+    const option = workspacePage.page
+      .getByRole("menuitemradio", { name: targetToolName })
+      .first();
+
+    await trigger.hover();
+    // Flyout opening is delayed by 350ms in the toolbar component.
+    await workspacePage.page.waitForTimeout(450);
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await option.waitFor({ state: "visible" });
+    await option.click();
   }
 
   async moveSelectionToShape(name) {

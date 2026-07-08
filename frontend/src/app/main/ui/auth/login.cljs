@@ -259,8 +259,8 @@
              (contains? cf/flags :login-with-ldap))
      [:> login-form* props])])
 
-(mf/defc login-page
-  [{:keys [params] :as props}]
+(mf/defc login-page*
+  [{:keys [params]}]
   (let [go-register
         (mf/use-fn
          #(st/emit! (rt/nav :auth-register params)))]

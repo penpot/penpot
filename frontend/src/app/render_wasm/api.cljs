@@ -58,6 +58,7 @@
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -283,6 +284,7 @@
 (def text-editor-get-current-styles text-editor/text-editor-get-current-styles)
 (def text-editor-has-focus? text-editor/text-editor-has-focus?)
 (def text-editor-has-selection? text-editor/text-editor-has-selection?)
+(def text-editor-get-active-shape-id text-editor/text-editor-get-active-shape-id)
 (def text-editor-select-all text-editor/text-editor-select-all)
 (def text-editor-select-word-boundary text-editor/text-editor-select-word-boundary)
 (def text-editor-sync-content text-editor/text-editor-sync-content)
@@ -320,9 +322,8 @@
        (.postMessage (.-port2 ch) nil)))))
 
 ;; Based on app.main.render/object-svg
-(mf/defc object-svg
-  {::mf/props :obj}
-  [{:keys [shape] :as props}]
+(mf/defc object-svg*
+  [{:keys [shape]}]
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
@@ -344,7 +345,7 @@
 (defn get-static-markup
   [shape]
   (->
-   (mf/element object-svg #js {:shape shape})
+   (mf/element object-svg* #js {:shape shape})
    (rds/renderToStaticMarkup)))
 
 ;; forward declare helpers so render can call them
@@ -458,6 +459,20 @@
   []
   (when (and wasm/context-initialized? (not @wasm/context-lost?))
     (h/call wasm/internal-module "_render_ui_only")))
+
+(defn render-from-cache!
+  "Blit the shapes from the cached tile atlas and redraw the UI overlay
+   (rulers, selection band) fresh on top, in a single atomic frame. The
+   *shapes* are the cached part (already-rasterized tiles, not rebuilt); the UI
+   is re-rendered every call, which is what lets it reflect a new selection.
+
+   Use for UI-only updates that don't change shapes (e.g. the ruler selection
+   band): unlike `request-render`, it never kicks off a progressive,
+   tile-by-tile shape re-render, so it does not flash on zoomed-in views where
+   the scene spans multiple tiles."
+  []
+  (when (and wasm/context-initialized? (not @wasm/context-lost?))
+    (h/call wasm/internal-module "_render_from_cache" 0)))
 
 ;; CSS-pixel blur radius for the page-transition snapshot (DPR-scaled in WASM).
 (def ^:private TRANSITION_BLUR_RADIUS 4.0)
@@ -1282,17 +1297,19 @@
   ([]
    (if-not (initialized?)
      {:x 0 :y 0 :width 0 :height 0 :max-width 0}
-     (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
-                         (mem/->offset-32))
-           heapf32   (mem/get-heap-f32)
-           width     (aget heapf32 (+ offset 0))
-           height    (aget heapf32 (+ offset 1))
-           max-width (aget heapf32 (+ offset 2))
+     (let [ptr (h/call wasm/internal-module "_get_text_dimensions")]
+       ;; NULL pointer when there is no current shape or it is not a text.
+       (when-not (zero? ptr)
+         (let [offset    (mem/->offset-32 ptr)
+               heapf32   (mem/get-heap-f32)
+               width     (aget heapf32 (+ offset 0))
+               height    (aget heapf32 (+ offset 1))
+               max-width (aget heapf32 (+ offset 2))
 
-           x (aget heapf32 (+ offset 3))
-           y (aget heapf32 (+ offset 4))]
-       (mem/free)
-       {:x x :y y :width width :height height :max-width max-width}))))
+               x (aget heapf32 (+ offset 3))
+               y (aget heapf32 (+ offset 4))]
+           (mem/free)
+           {:x x :y y :width width :height height :max-width max-width}))))))
 
 (defn intersect-position-in-shape
   [id position]
@@ -1452,19 +1469,45 @@
   [text-ids]
   (run! f/force-update-text-layout text-ids))
 
+(defn- text-selrect-stale?
+  "Check if the WASM-measured dimensions of an auto-grow text shape differ
+   from its stored selrect (same 0.1px tolerance as the classic renderer)."
+  [{:keys [id selrect grow-type]}]
+  (when-let [{:keys [width height]} (get-text-dimensions id)]
+    (case grow-type
+      :auto-width  (or (not (mth/close? width (:width selrect) 0.1))
+                       (not (mth/close? height (:height selrect) 0.1)))
+      :auto-height (not (mth/close? height (:height selrect) 0.1))
+      false)))
+
+(defn- sync-stale-text-selrects!
+  "Emit the ids of auto-grow text shapes whose selrect no longer matches the
+   measured layout, so the workspace resizes them (data-event instead of a
+   direct call to avoid a circular dependency; see the watcher in
+   `app.main.data.workspace/initialize-workspace`)."
+  [shapes]
+  (let [stale-ids (into []
+                        (comp (filter cfh/text-shape?)
+                              (filter (comp #{:auto-width :auto-height} :grow-type))
+                              (filter text-selrect-stale?)
+                              (map :id))
+                        shapes)]
+    (when (seq stale-ids)
+      (st/emit! (ptk/data-event ::stale-text-selrects {:ids stale-ids})))))
+
 (defn- relayout-after-fonts!
-  "Relayout text shapes once their pending fonts have resolved. Shapes in
-   `font-pending-ids` had a font fetched, so they get a forced relayout to pick
-   up the real glyph metrics; the remaining text shapes get a normal layout."
+  "Relayout text shapes once their pending fonts have resolved. Font fetches
+   are deduped per URL and storing a font does not invalidate cached layouts,
+   so every text shape (not only the fetch triggers in `font-pending-ids`)
+   needs a forced relayout; then re-sync selrects that drifted."
   [shapes font-pending-ids]
-  (let [force-ids (set font-pending-ids)
-        text-ids  (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
-        forced    (filterv force-ids text-ids)
-        rest-ids  (filterv (complement force-ids) text-ids)]
-    (when (seq forced)
-      (force-update-text-layouts forced))
-    (when (seq rest-ids)
-      (update-text-layouts rest-ids))))
+  (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
+    (when (seq text-ids)
+      (if (seq font-pending-ids)
+        (do
+          (force-update-text-layouts text-ids)
+          (sync-stale-text-selrects! shapes))
+        (update-text-layouts text-ids)))))
 
 (defn process-pending
   [shapes thumbnails full font-pending-ids on-complete]
@@ -2396,21 +2439,25 @@
 
 (defn stroke-to-path
   "Converts a shape's stroke at the given index into a filled path.
-   Returns the stroke outline as PathData content."
+   Returns a map {:content <PathData> :even-odd? <boolean>}, or nil when the
+   stroke produces no geometry. The buffer carries two header words ahead of
+   the segments: [even-odd flag][length] (the flat segment list can't encode
+   the fill rule itself)."
   [id stroke-index]
   (use-shape id)
   (try
-    (let [offset (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
-                     (mem/->offset-32))
-          heap   (mem/get-heap-u32)
-          length (aget heap offset)]
+    (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
+                        (mem/->offset-32))
+          heap      (mem/get-heap-u32)
+          even-odd? (not (zero? (aget heap offset)))
+          length    (aget heap (inc offset))]
       (if (pos? length)
         (let [data    (mem/slice heap
-                                 (+ offset 1)
+                                 (+ offset 2)
                                  (* length path.impl/SEGMENT-U32-SIZE))
               content (path/from-bytes data)]
           (mem/free)
-          content)
+          {:content content :even-odd? even-odd?})
         (do (mem/free)
             nil)))
     (catch :default cause

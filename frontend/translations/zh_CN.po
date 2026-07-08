@@ -6615,7 +6615,7 @@ msgstr "显示/隐藏界面"
 
 #: src/app/main/ui/workspace/context_menu.cljs:466, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:95
 msgid "workspace.shape.menu.intersection"
-msgstr "差集"
+msgstr "交集"
 
 #: src/app/main/ui/workspace/context_menu.cljs:500, src/app/main/ui/workspace/sidebar/layer_item.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:324
 msgid "workspace.shape.menu.lock"

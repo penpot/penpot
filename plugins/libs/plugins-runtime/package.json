@@ -1,6 +1,6 @@
 {
   "name": "@penpot/plugins-runtime",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "dependencies": {
     "@penpot/plugin-types": "workspace:^",
     "ses": "^2.1.0",

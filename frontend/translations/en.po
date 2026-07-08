@@ -1422,6 +1422,9 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+msgid "dashboard.my-files"
+msgstr "My Files"
+
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -9720,6 +9723,9 @@ msgstr "The value is not valid"
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name"
 
+msgid "workspace.toolbar.arrow"
+msgstr "Arrow (%s)"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "Assets"
@@ -9756,6 +9762,9 @@ msgstr "Create board. Click and drag to define its size. (%s)"
 #: src/app/main/ui/workspace/top_toolbar.cljs:116, src/app/main/ui/workspace/top_toolbar.cljs:117
 msgid "workspace.toolbar.image"
 msgstr "Image (%s)"
+
+msgid "workspace.toolbar.line"
+msgstr "Line (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:66, src/app/main/ui/workspace/top_toolbar.cljs:77
 msgid "workspace.toolbar.mcp"
