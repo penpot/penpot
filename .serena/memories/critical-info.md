@@ -48,12 +48,23 @@ module. You can read it from `mem:<MODULE>/core`
    When working on devenv startup, compose layout, instance config (`defaults.env`),
    tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
    `*-devenv` commands, read `mem:devenv/core`.
-- `tools/` contains standalone dev utilities: `nrepl-eval.mjs` (backend REPL eval),
-  `paren-repair.bb` (delimiter-error fixer, see `mem:tools/paren-repair`),
-  `psql` / `db-schema` (PostgreSQL client and schema dump wrappers, see `mem:tools/psql`), and
-  `taiga.py` / `gh.py` (issue management helpers).
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.
+
+# Dev tools
+
+- `tools/nrepl-eval.mjs` — Evaluate Clojure/ClojureScript code via nREPL.
+  Supports `--backend` (port 6064) and `--frontend` (port 3447) aliases.
+  See `mem:tools/nrepl-eval`.
+- `tools/paren-repair.bb` — Fix mismatched delimiters in Clojure/CLJS files
+  and reformat with cljfmt. Run before lint checks when LLM edits break parens.
+  See `mem:tools/paren-repair`.
+- `tools/psql` — PostgreSQL client wrapper with devenv defaults.
+  Companion: `tools/db-schema` for DDL dumps. See `mem:tools/psql`.
+- `tools/taiga.py` — Fetch public issues, user stories, and tasks from the
+  Penpot Taiga project without authentication. See `mem:tools/taiga`.
+- `tools/gh.py` — GitHub operations helper: list milestone issues, fetch PR
+  details, compare against CHANGES.md. Requires `gh` CLI. See `mem:tools/gh`.
 
 # Dependency graph
 
