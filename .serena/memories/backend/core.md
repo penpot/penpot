@@ -106,3 +106,4 @@ IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 * **Coverage:** If code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
 * **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
 * **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
+* **Principles:** Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:common/testing-principles`.
