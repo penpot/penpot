@@ -70,7 +70,7 @@
 
              (rx/take-until stopper-s))))))
 
-(defn- handle-interrupt
+(defn handle-interrupt
   []
   (ptk/reify ::handle-interrupt
     ptk/WatchEvent
