@@ -24,7 +24,6 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwlo]
-   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.viewport-wasm :as dwvw]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
@@ -72,7 +71,7 @@
 
              (rx/take-until stopper-s))))))
 
-(defn- handle-interrupt
+(defn handle-interrupt
   []
   (ptk/reify ::handle-interrupt
     ptk/WatchEvent
@@ -87,8 +86,7 @@
           ;; tool is active. When comments are merely visible during design,
           ;; `select-shape` emits `:interrupt` and this would otherwise wipe
           ;; the freshly selected shape, breaking click selection.
-          comments-mode?    (rx/of (dwe/clear-edition-mode)
-                                   (dws/deselect-all true))
+          comments-mode?    (rx/of (dwe/clear-edition-mode))
           :else             (rx/empty))))))
 
 ;; Event responsible of the what should be executed when user clicked

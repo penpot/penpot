@@ -2,6 +2,20 @@
 
 PR only on explicit request. Branch: issue/feature-specific; fallback `<type>/<short-description>` (`fix/...`, `feat/...`, `refactor/...`, `docs/...`, `chore/...`, `perf/...`).
 
+## Target Branch
+
+Auto-detect the base branch with `tools/detect-target-branch`:
+
+```bash
+TARGET=$(tools/detect-target-branch)
+```
+
+This outputs `staging` or `develop` by walking the local commit graph (pure local, no remote/network). Do not ask the user for the target branch unless the tool fails.
+
+## Metadata
+
+Always add the PR to the Main project (`--project "Main"`) unless the user explicitly requests a different project.
+
 ## Title Format
 
 PR titles follow commit title conventions:
@@ -60,3 +74,24 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 - Follow `mem:workflow/creating-commits` for commits
 - Run the focused tests/lints appropriate to touched modules.
 - Do not force-push during review unless the maintainer workflow explicitly asks for it.
+- When the user says the code is already pushed, trust that — do not verify remote branch existence via `git ls-remote` or `git fetch`.
+
+## Creating the PR
+
+```bash
+cat > /tmp/pr-body.md << 'PR_BODY'
+<body content here>
+PR_BODY
+
+TARGET=$(tools/detect-target-branch)
+
+gh pr create \
+  --repo penpot/penpot \
+  --base "$TARGET" \
+  --head <branch> \
+  --title "<title>" \
+  --project "Main" \
+  --body-file /tmp/pr-body.md
+
+rm -f /tmp/pr-body.md
+```
