@@ -272,13 +272,13 @@
         (st/emit! (dp/set-plugin-data file-id :page id (keyword "shared" namespace) key value))))
 
     :getSharedPluginDataKeys
-    (fn [self namespace]
+    (fn [namespace]
       (cond
         (not (string? namespace))
         (u/not-valid plugin-id :page-plugin-data-namespace namespace)
 
         :else
-        (let [page (u/proxy->page self)]
+        (let [page (u/locate-page file-id id)]
           (apply array (keys (dm/get-in page [:plugin-data (keyword "shared" namespace)]))))))
 
     :openPage
