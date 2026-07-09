@@ -36,5 +36,8 @@
 
 (defn set-content
   [state content]
-  (let [path-loc (get-path-location state :content)]
+  (let [shape    (get-in state (get-path-location state))
+        _        (assert (contains? #{:path :bool} (:type shape))
+                         "set-content expects a :path or :bool shape")
+        path-loc (get-path-location state :content)]
     (assoc-in state path-loc content)))

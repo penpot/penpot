@@ -21,6 +21,7 @@
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -910,7 +911,13 @@
                 :svg-raw
                 nil
 
+                :path
                 (rx/of (dwe/start-edition-mode id)
+                       (dwdp/start-path-edit id))
+
+                (:rect :circle :image)
+                (rx/of (dwsh/update-shapes [id] path/convert-to-path)
+                       (dwe/start-edition-mode id)
                        (dwdp/start-path-edit id))))
 
           ;; When we have multiple shapes selected, instead of enter
