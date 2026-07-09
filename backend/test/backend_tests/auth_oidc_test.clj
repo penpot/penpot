@@ -7,7 +7,9 @@
 (ns backend-tests.auth-oidc-test
   (:require
    [app.auth.oidc :as oidc]
-   [clojure.test :as t]))
+   [app.config :as cf]
+   [clojure.test :as t]
+   [yetti.response :as-alias yres]))
 
 (def ^:private oidc-provider
   {:id "oidc"
@@ -53,3 +55,91 @@
     ;; not silently slip through as if it were the matching string.
     (t/is (= :auto (#'oidc/select-user-info-source :token)))
     (t/is (= :auto (#'oidc/select-user-info-source :userinfo)))))
+
+(t/deftest int-in-range-checks-range-correctly
+  (t/testing "values within range return true"
+    (t/is (#'oidc/int-in-range? 200 200 300))
+    (t/is (#'oidc/int-in-range? 250 200 300))
+    (t/is (#'oidc/int-in-range? 299 200 300)))
+  (t/testing "values outside range return false"
+    (t/is (not (#'oidc/int-in-range? 199 200 300)))
+    (t/is (not (#'oidc/int-in-range? 300 200 300)))))
+
+(t/deftest redirect-response-builds-302-response
+  (let [result (#'oidc/redirect-response "https://example.com/path")]
+    (t/is (= 302 (::yres/status result)))
+    (t/is (= "https://example.com/path" (get-in result [::yres/headers "location"])))))
+
+(t/deftest valid-info-validates-info-map
+  (t/testing "valid info maps pass validation"
+    (t/is (#'oidc/valid-info?
+           {:backend "oidc" :email "user@example.com" :fullname "User"
+            :email-verified true :props {:foo 1}})))
+  (t/testing "incomplete maps fail validation"
+    (t/is (not (#'oidc/valid-info? nil)))
+    (t/is (not (#'oidc/valid-info? {})))
+    (t/is (not (#'oidc/valid-info? {:backend "oidc"})))
+    (t/is (not (#'oidc/valid-info? {:backend "oidc" :email "user@example.com"})))
+    (t/is (not (#'oidc/valid-info? {:backend "oidc" :email "user@example.com" :fullname "User"})))
+    (t/is (not (#'oidc/valid-info?
+                {:backend "oidc" :email "user@example.com" :fullname "User" :email-verified true})))))
+
+(t/deftest qualify-prop-key-qualifies-key
+  (let [provider {:type "github"}]
+    (t/is (= :github/email (#'oidc/qualify-prop-key provider :email)))
+    (t/is (= :github/full-name (#'oidc/qualify-prop-key provider :full_name)))
+    (t/is (= :github/my-key (#'oidc/qualify-prop-key provider :my-key)))))
+
+(t/deftest qualify-props-qualifies-all-keys
+  (let [provider {:type "github"}
+        result   (#'oidc/qualify-props provider {:email "u@e.com" :name "Test"})]
+    (t/is (= "u@e.com" (:github/email result)))
+    (t/is (= "Test" (:github/name result)))))
+
+(t/deftest provider-has-email-verified-checks-email-verified
+  (let [provider {:type "github"}]
+    (t/testing "returns true when email_verified in props is true"
+      (t/is (#'oidc/provider-has-email-verified? provider {:props {:github/email-verified true}})))
+    (t/testing "returns false when email_verified is false or missing"
+      (t/is (not (#'oidc/provider-has-email-verified? provider {:props {}})))
+      (t/is (not (#'oidc/provider-has-email-verified? provider {:props {:github/email-verified false}}))))))
+
+(t/deftest profile-has-provider-props-matches-provider
+  (t/testing "non-OIDC provider with string id checks for qualified email key"
+    (let [provider {:type "github" :id "github"}]
+      (t/is (#'oidc/profile-has-provider-props? provider {:props {:github/email "u@e.com"}}))
+      (t/is (not (#'oidc/profile-has-provider-props? provider {:props {}})))
+      (t/is (not (#'oidc/profile-has-provider-props? provider {:props nil})))))
+  (t/testing "OIDC provider with UUID id checks oidc/provider-id"
+    (let [provider {:type "oidc" :id #uuid "00000000-0000-0000-0000-000000000001"}]
+      (t/is (#'oidc/profile-has-provider-props?
+             provider {:props {:oidc/provider-id "00000000-0000-0000-0000-000000000001"}}))
+      (t/is (not (#'oidc/profile-has-provider-props? provider {:props {:oidc/provider-id "other"}}))))))
+
+(t/deftest redirect-with-error-builds-error-url
+  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+    (t/testing "with error and hint"
+      (let [result (#'oidc/redirect-with-error "auth-error" "hint message")
+            loc    (get-in result [::yres/headers "location"])]
+        (t/is (= 302 (::yres/status result)))
+        (t/is (.contains loc "http://localhost:3449/#/auth/login?"))
+        (t/is (.contains loc "error=auth-error"))
+        (t/is (.contains loc "hint=hint"))))
+    (t/testing "without hint omits hint param"
+      (let [result (#'oidc/redirect-with-error "auth-error")
+            loc    (get-in result [::yres/headers "location"])]
+        (t/is (.contains loc "error=auth-error"))
+        (t/is (not (.contains loc "hint=")))))))
+
+(t/deftest redirect-to-verify-token-builds-verify-url
+  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+    (let [result (#'oidc/redirect-to-verify-token "test-token-value")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (= 302 (::yres/status result)))
+      (t/is (.contains loc "http://localhost:3449/#/auth/verify-token?"))
+      (t/is (.contains loc "token=test-token-value")))))
+
+(t/deftest build-redirect-uri-constructs-redirect
+  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+    (t/is (= "http://localhost:3449/api/auth/oidc/callback"
+             (#'oidc/build-redirect-uri)))))
