@@ -108,6 +108,18 @@
     {:width width
      :height height}))
 
+(defn- replace-internal-uris
+  "Replaces internal-uri references with public-uri in SVG output.
+   This ensures that font URLs and other resource references in the
+   exported SVG use the public-facing URI accessible to end users."
+  [svg-content]
+  (let [internal-uri (str (cf/get-internal-uri))
+        public-uri   (str (cf/get :public-uri))]
+    (if (and (not= internal-uri public-uri)
+             (str/includes? svg-content internal-uri))
+      (str/replace svg-content internal-uri public-uri)
+      svg-content)))
+
 (defn render
   [{:keys [page-id file-id share-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
@@ -320,7 +332,9 @@
 
                       result  (if (contains? cf/flags :exporter-svgo)
                                 (svgo/optimize result svgo/defaultOptions)
-                                result)]
+                                result)
+
+                      result  (replace-internal-uris result)]
 
                 ;; (println "------- ORIGIN:")
                 ;; (cljs.pprint/pprint (xml->clj xmldata))
@@ -349,7 +363,7 @@
                     :render-embed true
                     :object-id (mapv :id objects)
                     :route "objects"}
-            uri    (-> (cf/get :public-uri)
+            uri    (-> (cf/get-internal-uri)
                        (u/ensure-path-slash)
                        (u/join "render.html")
                        (assoc :query (u/map->query-string params)))]
