@@ -35,7 +35,7 @@ Command what should be built. Format: `[Imperative verb] [what] in/on [where]`.
 
 | Field | Rule |
 |-------|------|
-| **Labels** | `bug` (crashes/regressions) · `enhancement` (new features) · `community contribution` (PRs from non-core) · skip workflow labels (`backport candidate`, `team-qa`) |
+| **Labels** | `community contribution` (PRs from non-core) · skip workflow labels (`backport candidate`, `team-qa`) · do **not** add `bug` or `enhancement` labels (use Issue Type instead) |
 | **Milestone** | Use the current or next planned milestone. Fetch available milestones: `gh api repos/penpot/penpot/milestones --jq '.[].title'`. If unsure, omit. |
 | **Project** | Always `Main` (project number 8). Use `--project "Main"` flag. |
 | **Issue Type** | See Issue Type section below. Cannot be set via `gh issue create` — use GraphQL after creation. |
@@ -114,8 +114,8 @@ Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
 | Docs | `IT_kwDOAcyBPM4B_IQz` |
 
 **Map:**
-- `bug` label → Bug
-- `enhancement` label → Enhancement
+- Bug report (steps to reproduce, expected vs. actual) → Bug
+- Enhancement / new feature → Enhancement
 - Feature/epic → Feature
 - Docs → Docs
 - None of the above → Task
