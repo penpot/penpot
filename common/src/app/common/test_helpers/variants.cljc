@@ -13,6 +13,11 @@
    [app.common.types.text :as txt]))
 
 (defn add-variant
+  "Add a variant component to a file with two variants, each with a root shape.
+    :variant-label [:name Board]                            
+        {:root2-label} [:name Board]  # [Component :component2-label]
+        {:root1-label} [:name Board]  # [Component :component1-label]
+  "
   [file variant-label component1-label root1-label component2-label root2-label
    & {:keys [variant1-params variant2-params]
       :or   {variant1-params {} variant2-params {}}}]
