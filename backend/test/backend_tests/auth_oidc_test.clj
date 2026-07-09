@@ -9,6 +9,7 @@
    [app.auth.oidc :as oidc]
    [app.config :as cf]
    [clojure.test :as t]
+   [mockery.core :refer [with-mocks]]
    [yetti.response :as-alias yres]))
 
 (def ^:private oidc-provider
@@ -117,7 +118,7 @@
       (t/is (not (#'oidc/profile-has-provider-props? provider {:props {:oidc/provider-id "other"}}))))))
 
 (t/deftest redirect-with-error-builds-error-url
-  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
     (t/testing "with error and hint"
       (let [result (#'oidc/redirect-with-error "auth-error" "hint message")
             loc    (get-in result [::yres/headers "location"])]
@@ -132,7 +133,7 @@
         (t/is (not (.contains loc "hint=")))))))
 
 (t/deftest redirect-to-verify-token-builds-verify-url
-  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
     (let [result (#'oidc/redirect-to-verify-token "test-token-value")
           loc    (get-in result [::yres/headers "location"])]
       (t/is (= 302 (::yres/status result)))
@@ -140,6 +141,84 @@
       (t/is (.contains loc "token=test-token-value")))))
 
 (t/deftest build-redirect-uri-constructs-redirect
-  (with-redefs [cf/config {:public-uri "http://localhost:3449"}]
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
     (t/is (= "http://localhost:3449/api/auth/oidc/callback"
              (#'oidc/build-redirect-uri)))))
+
+(t/deftest fetch-user-info-returns-decoded-body-on-success
+  (let [cfg      {}
+        provider {:user-uri "https://provider.example.com/userinfo"}
+        tdata    {:token/access "test-access-token" :token/type "Bearer"}]
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 200
+                                     :body "{\"email\":\"user@example.com\",\"name\":\"Test User\"}"}}]
+      (let [result (#'oidc/fetch-user-info cfg provider tdata)]
+        (t/is (:called? @http-mock))
+        (t/is (= 1 (:call-count @http-mock)))
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "Test User" (:name result)))))))
+
+(t/deftest fetch-user-info-throws-on-non-2xx
+  (let [cfg      {}
+        provider {:user-uri "https://provider.example.com/userinfo"}
+        tdata    {:token/access "test-at" :token/type "Bearer"}]
+    (t/testing "401 with Bad credentials"
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return {:status 401
+                                       :body "Bad credentials"}}]
+        (let [e (try (#'oidc/fetch-user-info cfg provider tdata) (catch Throwable t t))]
+          (t/is (instance? clojure.lang.ExceptionInfo e))
+          (t/is (= :unable-to-retrieve-user-info (:code (ex-data e))))
+          (t/is (= 401 (:http-status (ex-data e))))
+          (t/is (= "Bad credentials" (:http-body (ex-data e)))))))
+    (t/testing "500 server error"
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return {:status 500
+                                       :body "Internal Server Error"}}]
+        (let [e (try (#'oidc/fetch-user-info cfg provider tdata) (catch Throwable t t))]
+          (t/is (instance? clojure.lang.ExceptionInfo e))
+          (t/is (= :unable-to-retrieve-user-info (:code (ex-data e))))
+          (t/is (= 500 (:http-status (ex-data e)))))))))
+
+(t/deftest fetch-user-info-passes-correct-request
+  (let [cfg      {}
+        provider {:user-uri "https://provider.example.com/userinfo" :skip-ssrf-check? true}
+        tdata    {:token/access "secret-token" :token/type "Bearer"}]
+    (with-mocks [http-mock {:target 'app.http.client/req
+                            :return {:status 200 :body "{}"}}]
+      (#'oidc/fetch-user-info cfg provider tdata)
+      (let [[_ req-opts opts] (-> @http-mock :call-args)]
+        (t/is (true? (:skip-ssrf-check? opts)))
+        (t/is (= "https://provider.example.com/userinfo" (:uri req-opts)))
+        (t/is (= "Bearer secret-token" (get-in req-opts [:headers "Authorization"])))
+        (t/is (= :get (:method req-opts)))))))
+
+(t/deftest fetch-access-token-returns-token-data-on-success
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
+    (let [cfg      {}
+          provider {:client-id "test-client"
+                    :client-secret "test-secret"
+                    :token-uri "https://provider.example.com/token"}
+          code     "auth-code-123"]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return {:status 200
+                                       :body "{\"access_token\":\"at\",\"id_token\":\"it\",\"token_type\":\"Bearer\"}"}}]
+        (let [result (#'oidc/fetch-access-token cfg provider code)]
+          (t/is (:called? @http-mock))
+          (t/is (= 1 (:call-count @http-mock)))
+          (t/is (= "at" (:token/access result)))
+          (t/is (= "it" (:token/id result)))
+          (t/is (= "Bearer" (:token/type result))))))))
+
+(t/deftest fetch-access-token-throws-on-error
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
+    (let [cfg      {}
+          provider {:client-id "test-client"
+                    :client-secret "test-secret"
+                    :token-uri "https://provider.example.com/token"}
+          code     "auth-code-123"]
+      (with-mocks [http-mock {:target 'app.http.client/req
+                              :return {:status 400 :body "{\"error\":\"invalid_grant\"}"}}]
+        (let [e (try (#'oidc/fetch-access-token cfg provider code) (catch Throwable t t))]
+          (t/is (instance? clojure.lang.ExceptionInfo e))
+          (t/is (= :unable-to-fetch-access-token (:code (ex-data e)))))))))
