@@ -222,3 +222,126 @@
         (let [e (try (#'oidc/fetch-access-token cfg provider code) (catch Throwable t t))]
           (t/is (instance? clojure.lang.ExceptionInfo e))
           (t/is (= :unable-to-fetch-access-token (:code (ex-data e)))))))))
+
+;; Shared mock data for get-info tests
+(def ^:private mock-tdata
+  {:token/access "mock-at" :token/id nil :token/type "Bearer"})
+
+(def ^:private mock-claims
+  {:email "user@example.com" :name "User" :exp 1 :iss "test"})
+
+(def ^:private mock-userinfo
+  {:email "user@example.com" :name "User"})
+
+(t/deftest get-info-uses-token-source
+  (let [provider {:type "oidc" :user-info-source "token"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly mock-claims)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "User" (:fullname result)))
+        (t/is (= "oidc" (:backend result)))
+        (t/is (= false (:email-verified result)))))))
+
+(t/deftest get-info-uses-userinfo-source
+  (let [provider {:type "oidc" :user-info-source "userinfo"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly nil)
+                  app.auth.oidc/fetch-user-info    (constantly mock-userinfo)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "User" (:fullname result)))
+        (t/is (= "oidc" (:backend result)))))))
+
+(t/deftest get-info-auto-prefers-claims
+  (let [provider {:type "oidc" :user-info-source "auto"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly mock-claims)
+                  app.auth.oidc/fetch-user-info    (fn [& _] (throw (Exception. "should not call")))]
+
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "User" (:fullname result)))))))
+
+(t/deftest get-info-auto-falls-back-to-userinfo
+  (let [provider {:type "oidc" :user-info-source "auto"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly nil)
+                  app.auth.oidc/fetch-user-info    (constantly mock-userinfo)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "User" (:fullname result)))))))
+
+(t/deftest get-info-throws-on-incomplete-info
+  (let [provider {:type "oidc" :user-info-source "userinfo"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly nil)
+                  app.auth.oidc/fetch-user-info    (constantly {:no-email nil})]
+      (let [e (try (#'oidc/get-info {} provider state code) (catch Throwable t t))]
+        (t/is (instance? clojure.lang.ExceptionInfo e))
+        (t/is (= :incomplete-user-info (:code (ex-data e))))))))
+
+(t/deftest get-info-checks-roles-satisfied
+  (let [provider {:type "oidc" :user-info-source "token" :roles #{"member"}}
+        state    {}
+        code     "code"
+        claims   (assoc mock-claims :roles ["member" "admin"])]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly claims)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "user@example.com" (:email result)))
+        (t/is (= "oidc" (:backend result)))))))
+
+(t/deftest get-info-throws-on-insufficient-roles
+  (let [provider {:type "oidc" :user-info-source "token" :roles #{"admin"}}
+        state    {}
+        code     "code"
+        claims   (assoc mock-claims :roles ["member"])]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly claims)]
+      (let [e (try (#'oidc/get-info {} provider state code) (catch Throwable t t))]
+        (t/is (instance? clojure.lang.ExceptionInfo e))
+        (t/is (= :unable-to-auth (:code (ex-data e))))))))
+
+(t/deftest get-info-merges-state-props
+  (let [provider {:type "oidc" :user-info-source "token"}
+        state    {:invitation-token "inv-123"
+                  :external-session-id "ext-456"
+                  :props {:utm_source "twitter"}}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly mock-claims)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "inv-123" (:invitation-token result)))
+        (t/is (= "ext-456" (:external-session-id result)))
+        (t/is (= "twitter" (get-in result [:props :utm_source])))))))
+
+(t/deftest get-info-adds-sso-session-id-from-claims
+  (let [provider {:type "oidc" :user-info-source "token"}
+        state    {}
+        code     "code"
+        claims   (assoc mock-claims :sid "sso-sid")]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly claims)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= "sso-sid" (:sso-session-id result)))))))
+
+(t/deftest get-info-adds-sso-provider-id-for-uuid-provider
+  (let [provider {:type "oidc" :user-info-source "token"
+                  :id #uuid "00000000-0000-0000-0000-000000000001"}
+        state    {}
+        code     "code"]
+    (with-redefs [app.auth.oidc/fetch-access-token  (constantly mock-tdata)
+                  app.auth.oidc/get-id-token-claims (constantly mock-claims)]
+      (let [result (#'oidc/get-info {} provider state code)]
+        (t/is (= #uuid "00000000-0000-0000-0000-000000000001" (:sso-provider-id result)))))))
