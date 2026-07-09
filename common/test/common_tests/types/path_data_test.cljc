@@ -1370,6 +1370,15 @@
     ;; A path shape stays a path shape unchanged
     (t/is (= :path (:type result)))))
 
+(t/deftest shape-to-path-svg-raw-does-not-throw
+  (let [shape  {:type :svg-raw :x 0.0 :y 0.0 :width 100.0 :height 50.0
+                :selrect (make-selrect 0.0 0.0 100.0 50.0)
+                :content {:tag :text :attrs {:style {}}
+                          :content [{:tag :tspan :attrs {} :content ["x"]}]}}
+        result (path/convert-to-path shape {})]
+    (t/is (= :svg-raw (:type result)))
+    (t/is (some? (:content result)))))
+
 (t/deftest shape-to-path-rect-with-radius
   (let [shape  {:type :rect :x 0.0 :y 0.0 :width 100.0 :height 100.0
                 :r1 10.0 :r2 10.0 :r3 10.0 :r4 10.0
