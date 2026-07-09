@@ -170,7 +170,11 @@
     :mcp
     :background-blur
     :available-viewer-wasm
-    :stroke-path})
+    :stroke-path
+
+    ;; Individual stroke widths per side (top/right/bottom/left) for
+    ;; rects and frames; only rendered by the wasm render engine.
+    :stroke-per-side})
 
 (def all-flags
   (set/union email login varia))

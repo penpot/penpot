@@ -30,6 +30,12 @@ pub(super) fn draw_stroke_on_rect(
     let filter = compose_filters(blur, shadow);
     paint.set_image_filter(filter);
 
+    // Per-side widths render as a band between an outer and an inner rect.
+    if let Some(widths) = stroke.per_side_widths() {
+        draw_per_side_stroke_on_rect(canvas, stroke, rect, corners, &paint, widths, antialias);
+        return;
+    }
+
     // By default just draw the rect. Only dotted inner/outer strokes need
     // clipping to prevent the dotted pattern from appearing in wrong areas.
     let draw_stroke = || match corners {
@@ -94,6 +100,93 @@ pub(super) fn draw_stroke_on_rect(
     } else {
         draw_stroke();
     }
+}
+
+/// Draws a rect/frame stroke whose sides have different widths as the area
+/// between an outer and an inner (rounded) rect, mitered like CSS borders.
+/// The band is filled with the stroke fill; dashed/dotted patterns are not
+/// supported per side and render solid.
+#[allow(clippy::too_many_arguments)]
+fn draw_per_side_stroke_on_rect(
+    canvas: &skia::Canvas,
+    stroke: &Stroke,
+    rect: &Rect,
+    corners: &Option<Corners>,
+    paint: &skia::Paint,
+    widths: [f32; 4],
+    antialias: bool,
+) {
+    let [top, right, bottom, left] = widths;
+
+    // Fraction of each side width growing outward / inward from the shape
+    // boundary, per stroke alignment.
+    let (out_f, in_f) = match stroke.kind {
+        StrokeKind::Inner => (0.0, 1.0),
+        StrokeKind::Center => (0.5, 0.5),
+        StrokeKind::Outer => (1.0, 0.0),
+    };
+
+    let outer = Rect::from_ltrb(
+        rect.left - left * out_f,
+        rect.top - top * out_f,
+        rect.right + right * out_f,
+        rect.bottom + bottom * out_f,
+    );
+    let inner = Rect::from_ltrb(
+        rect.left + left * in_f,
+        rect.top + top * in_f,
+        rect.right - right * in_f,
+        rect.bottom - bottom * in_f,
+    );
+    // When a side width exceeds the shape dimension the inner rect collapses
+    // and the whole outer rect is filled, like CSS collapsing borders.
+    let has_hole = inner.width() > 0.0 && inner.height() > 0.0;
+
+    let mut fill_paint = paint.clone();
+    fill_paint.set_style(skia::PaintStyle::Fill);
+    fill_paint.set_path_effect(None);
+    fill_paint.set_anti_alias(antialias);
+
+    let mut pb = skia::PathBuilder::new();
+    match corners {
+        Some(radii) => {
+            // Straight (zero-radius) corners stay sharp; rounded ones keep
+            // their curvature parallel to the shape edge, like CSS borders.
+            let grow = |radius: f32, delta: f32| {
+                if radius > 0.0 {
+                    radius + delta
+                } else {
+                    0.0
+                }
+            };
+            let shrink = |radius: f32, delta: f32| (radius - delta).max(0.0);
+            // Adjacent side widths per corner, matching the Skia radii order:
+            // [top-left, top-right, bottom-right, bottom-left].
+            let side_deltas = [(left, top), (right, top), (right, bottom), (left, bottom)];
+            let mut outer_radii = *radii;
+            let mut inner_radii = *radii;
+            for (i, (dx, dy)) in side_deltas.into_iter().enumerate() {
+                outer_radii[i].x = grow(outer_radii[i].x, dx * out_f);
+                outer_radii[i].y = grow(outer_radii[i].y, dy * out_f);
+                inner_radii[i].x = shrink(inner_radii[i].x, dx * in_f);
+                inner_radii[i].y = shrink(inner_radii[i].y, dy * in_f);
+            }
+            pb.add_rrect(RRect::new_rect_radii(outer, &outer_radii), None, None);
+            if has_hole {
+                pb.add_rrect(RRect::new_rect_radii(inner, &inner_radii), None, None);
+            }
+        }
+        None => {
+            pb.add_rect(outer, None, None);
+            if has_hole {
+                pb.add_rect(inner, None, None);
+            }
+        }
+    }
+
+    let mut path = pb.detach();
+    path.set_fill_type(skia::PathFillType::EvenOdd);
+    canvas.draw_path(&path, &fill_paint);
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -710,6 +803,7 @@ fn strokes_share_geometry(strokes: &[&Stroke]) -> bool {
     strokes.windows(2).all(|pair| {
         pair[0].kind == pair[1].kind
             && pair[0].width == pair[1].width
+            && pair[0].widths == pair[1].widths
             && pair[0].style == pair[1].style
             && pair[0].cap_start == pair[1].cap_start
             && pair[0].cap_end == pair[1].cap_end

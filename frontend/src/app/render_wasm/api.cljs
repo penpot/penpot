@@ -886,6 +886,17 @@
                 :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
                 (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
 
+              ;; Per-side widths (rects/frames). Sides falling back to the
+              ;; uniform width; skipped when all sides end up equal, so the
+              ;; renderer keeps the uniform path (with dash/dot support).
+              (when (:stroke-per-side stroke)
+                (let [top    (or (:stroke-width-top stroke) width)
+                      right  (or (:stroke-width-right stroke) width)
+                      bottom (or (:stroke-width-bottom stroke) width)
+                      left   (or (:stroke-width-left stroke) width)]
+                  (when-not (= top right bottom left)
+                    (h/call wasm/internal-module "_set_shape_stroke_sides" top right bottom left))))
+
               (cond
                 (some? gradient)
                 (do

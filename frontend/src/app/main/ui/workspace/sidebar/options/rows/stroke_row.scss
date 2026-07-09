@@ -98,3 +98,33 @@
 .stroke-style-icon-select {
   --dropdown-width: var(--four-columns-width);
 }
+
+.per-side-toggle-selected {
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--color-accent-primary);
+}
+
+.stroke-options-tokens-with-toggle {
+  grid-template-columns:
+    1fr var(--grid-exception-input-width-small)
+    var(--grid-exception-input-width-small) auto;
+}
+
+.stroke-style-select-compact {
+  grid-column: span 2;
+}
+
+.stroke-sides-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: var(--sp-xs);
+  row-gap: var(--sp-xs);
+}
+
+.stroke-side-input {
+  @extend %input-element;
+  @include t.use-typography("body-small");
+
+  padding-inline-start: var(--sp-xs);
+}
