@@ -52,6 +52,7 @@ Diagnostics and validation:
 - Source-edit compile/hot-reload diagnostics: `mem:frontend/compile-diagnostics`.
 - Runtime crash recovery: `mem:frontend/handling-crashes`.
 - Tests and live verification: `mem:frontend/testing`.
+- Cross-cutting testing principles and anti-patterns: `mem:common/testing-principles`.
 - Real pointer/keyboard gesture reproduction: `mem:frontend/playwright-gestures`.
 
 ## Areas without focused memories
