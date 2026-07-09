@@ -7,7 +7,13 @@
 (ns backend-tests.auth-oidc-test
   (:require
    [app.auth.oidc :as oidc]
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.config :as cf]
+   [app.http.session :as session]
+   [app.setup :as-alias setup]
+   [app.tokens :as tokens]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]
    [yetti.response :as-alias yres]))
@@ -345,3 +351,153 @@
                   app.auth.oidc/get-id-token-claims (constantly mock-claims)]
       (let [result (#'oidc/get-info {} provider state code)]
         (t/is (= #uuid "00000000-0000-0000-0000-000000000001" (:sso-provider-id result)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; callback-handler tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private test-token-key
+  (byte-array (map byte (range 32))))
+
+(def ^:private base-cfg
+  {::setup/props {:tokens-key test-token-key}
+   ::session/manager (session/inmemory-manager)
+   :app.email/blacklist  #{"banned.com"}
+   :app.email/whitelist  #{"allowed.com"}})
+
+(def ^:private test-profile-id
+  #uuid "11111111-1111-1111-1111-111111111111")
+
+(def ^:private test-profile
+  {:id test-profile-id
+   :is-active true
+   :is-blocked false
+   :auth-backend "oidc"
+   :email "user@example.com"
+   :props {}})
+
+(defn- make-state-token
+  [cfg overrides]
+  (tokens/generate cfg (d/without-nils (merge {:iss "oidc" :provider "oidc"
+                                               :exp (ct/in-future {:hours 1})}
+                                              overrides))))
+
+(defn- default-request
+  [cfg & {:keys [state] :or {state "dummy"}}]
+  {:params {:state state :code "test-code"}
+   :method :get
+   :path "/api/auth/oidc/callback"
+   :headers {"user-agent" "TestAgent"
+             "x-forwarded-for" "127.0.0.1"}
+   :remote-addr "127.0.0.1"})
+
+(defn- redirect-location
+  "Extract the Location header from a handler response."
+  [result]
+  (get-in result [::yres/headers "location"]))
+
+(t/deftest callback-param-error-redirects-to-login
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        request {:params {:error "access_denied"}}]
+    (binding [cf/config {:public-uri "http://localhost:3449"}]
+      (let [result (#'oidc/callback-handler cfg request)
+            loc    (redirect-location result)]
+        (t/is (= 302 (::yres/status result)))
+        (t/is (.contains loc "error=unable-to-auth"))
+        (t/is (.contains loc "hint=access_denied"))))))
+
+(t/deftest callback-no-profile-registration-disabled
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=registration-disabled")))))))
+
+(t/deftest callback-profile-blocked
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly (assoc test-profile :is-blocked true))]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=profile-blocked")))))))
+
+(t/deftest callback-provider-mismatch
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly (assoc test-profile :auth-backend "gitlab"))]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "error=auth-provider-not-allowed")))))))
+
+(t/deftest callback-profile-inactive-redirects-to-register
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
+                                                                :backend "oidc" :email-verified false
+                                                                :props {}})
+                    app.auth.oidc/get-profile      (constantly (assoc test-profile :is-active false))]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "http://localhost:3449/#/auth/register/validate?"))
+          (t/is (.contains loc "token=")))))))
+
+(t/deftest callback-success-flow
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}
+              cf/flags #{:registration}]
+      (with-redefs [app.auth.oidc/resolve-provider      (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info              (constantly {:email "u@e.com" :fullname "U"
+                                                                     :backend "oidc" :email-verified false
+                                                                     :props {}})
+                    app.auth.oidc/get-profile           (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [cfg profile info] profile)
+                    app.loggers.audit/submit            (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "http://localhost:3449/#/auth/verify-token?"))
+          (t/is (.contains loc "token=")))))))
+
+(t/deftest callback-gracefully-handles-unable-to-retrieve-user-info
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"}]
+      (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info         (fn [& _]
+                                                     (ex/raise :type :internal
+                                                               :code :unable-to-retrieve-user-info
+                                                               :hint "unable to retrieve user info"
+                                                               :http-status 401
+                                                               :http-body "Bad credentials"))]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (= 302 (::yres/status result)))
+          (t/is (.contains loc "error=unable-to-auth")))))))
