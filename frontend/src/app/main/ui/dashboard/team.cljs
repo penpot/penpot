@@ -1538,8 +1538,9 @@
         can-change-organization? (mf/with-memo [all-organizations]
                                    (> (count all-organizations) 1))
 
-        can-add-to-organization? (mf/with-memo [organizations all-organizations]
-                                   (and (pos? (count all-organizations))
+        can-add-to-organization? (mf/with-memo [organizations all-organizations permissions]
+                                   (and (:is-owner permissions)
+                                        (pos? (count all-organizations))
                                         (not (:is-default team))))
 
         show-org-options-menu*
