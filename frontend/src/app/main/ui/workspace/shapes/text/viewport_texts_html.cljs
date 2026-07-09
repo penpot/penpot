@@ -35,8 +35,8 @@
   (if-let [modifiers (:modifiers shape)]
     (let [shape' (gsh/transform-shape shape modifiers)
 
-          old-sr (dm/get-prop shape :selrect)
-          new-sr (dm/get-prop shape' :selrect)
+          old-sr (ctm/safe-size-rect shape)
+          new-sr (ctm/safe-size-rect shape')
 
           ;; We need to remove the movement because the dynamic modifiers will have move it
           deltav (gpt/to-vec (gpt/point new-sr)
