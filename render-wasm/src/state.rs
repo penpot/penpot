@@ -68,6 +68,10 @@ impl State {
         get_render_state().render_from_cache(&self.shapes);
     }
 
+    pub fn present_frame(&mut self) {
+        get_render_state().present_frame(&self.shapes);
+    }
+
     pub fn render_ui_only(&mut self) {
         get_render_state().render_ui_only(&self.shapes);
     }

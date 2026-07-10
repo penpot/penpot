@@ -535,11 +535,17 @@ impl TextEditorState {
 
     pub fn set_caret_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.set_caret(*position);
+        // Restart the blink so the caret is solid right after it is placed,
+        // instead of keeping whatever phase it had (which can toggle off at the
+        // moment of the click and read as a flash). Mirrors the keyboard paths
+        // (`move_cursor`, `select_all`) which already reset the blink.
+        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
     pub fn extend_selection_from_position(&mut self, position: &TextPositionWithAffinity) {
         self.selection.extend_to(*position);
+        self.reset_blink();
         self.push_event(TextEditorEvent::SelectionChanged);
     }
 
