@@ -715,6 +715,24 @@
             (rx/of (set-temporary-selrect selrect)
                    (set-temporary-modifiers modifiers))))))))
 
+(defn bool-ids-children-first
+  "The bool ancestors of `ids`, ordered children before parents.
+
+   The order matters for the WASM path: it calculates a bool from the
+   STORED content of nested bool children (the CLJS fallback recomputes
+   them recursively), and update-shapes folds each update into the
+   objects seen by the next one — so a nested bool must be recomputed
+   before the outer bool reads its content (see issue #10647)."
+  [objects ids]
+  (->> ids
+       (into #{}
+             (comp
+              (mapcat (partial cfh/get-parents-with-self objects))
+              (filter cfh/bool-shape?)
+              (map :id)))
+       (sort-by #(- (count (cfh/get-parent-ids objects %))))
+       (vec)))
+
 (defn propagate-structure-modifiers
   [modif-tree objects]
   (letfn [(propagate-children
@@ -819,12 +837,7 @@
                       (ctm/apply-structure-modifiers modifiers))))
 
               bool-ids
-              (into #{}
-                    (comp
-                     (mapcat (partial cfh/get-parents-with-self objects))
-                     (filter cfh/bool-shape?)
-                     (map :id))
-                    ids)
+              (bool-ids-children-first objects ids)
 
               undo-id (js/Symbol)]
           (rx/concat
