@@ -27,6 +27,7 @@
    Async: each deftest uses `t/async`; `ftm/check` drives the store and calls
    `done` when finished."
   (:require
+   [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctst]
    [cljs.test :as t :include-macros true]
@@ -342,5 +343,52 @@
                          (doseq [i (range 3)]
                            (t/is (= (expected-at s i) (level-color s m i))
                                  (str "level " i)))))]))}))))
+
+(t/deftest case-n-geometry-sync-with-rotated-instances
+  ;; Regression sweep for #10109, with #13267's semantics as its complement: an
+  ;; instance root's transformation is inherited, overridable content —
+  ;; asymmetric to position, which is free per-instance placement.
+  ;;
+  ;; On the simple component-with-copy, sweep three axes: optionally rotate the
+  ;; COPY as a whole (an override of its root's placement — must not block
+  ;; propagation), optionally rotate the MAIN as a whole (inherited content —
+  ;; an untouched copy must follow it), and apply ONE of a property edit
+  ;; (fills) or a geometry edit (height) to the main child. In EVERY variant
+  ;; the chosen edit must arrive at the copy child; the copy's rotation is its
+  ;; own 45° if the copy was rotated (override wins), else the main's 45° if
+  ;; the main was rotated (clean copy follows), else 0; and only a rotated
+  ;; copy's ROOT is touched (:geometry-group) — its child merely follows and
+  ;; stays untouched.
+  (t/async
+    done
+    (let [rotate-copy (n/rotate :copy-root 45)
+          rotate-main (n/rotate :main-root 45)
+          edits       (tm/one-of
+                       [(n/change-attr :main-instance :fills red)
+                        (n/change-height :main-instance 80)])]
+      (ftm/check
+       done
+       {:setup     setup/simple-component-with-labeled-copy
+        :operation (tm/in-sequence [(tm/optional rotate-copy)
+                                    (tm/optional rotate-main)
+                                    edits])}
+       (fn [situation]
+         (let [chosen            (tm/get-choice situation edits)
+               copy-root         (setup/copy-root situation)
+               copy-child        (setup/copy-instance situation)
+               expected-rotation (cond
+                                   (tm/applied? situation rotate-copy) 45
+                                   (tm/applied? situation rotate-main) 45
+                                   :else                               0)]
+           ;; the chosen main edit arrived at the copy child, in every variant
+           (t/is (some? chosen))
+           (t/is (n/has-property-of chosen copy-child))
+           ;; the copy shows the expected rotation (own override > followed main > none)
+           (t/is (mth/close? (or (:rotation copy-root) 0) expected-rotation))
+           (t/is (mth/close? (or (:rotation copy-child) 0) expected-rotation))
+           ;; only a rotated copy's ROOT is an override; the child merely follows
+           (t/is (= (if (tm/applied? situation rotate-copy) #{:geometry-group} nil)
+                    (:touched copy-root)))
+           (t/is (nil? (:touched copy-child)))))))))
 
 

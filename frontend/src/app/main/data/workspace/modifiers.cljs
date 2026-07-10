@@ -117,28 +117,59 @@
 ;; geometric attributes of the shapes.
 
 (defn- check-delta
-  "If the shape is a component instance, check its relative position and rotation respect
-  the root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root]
-  (let [shape-delta
-        (when root
-          (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
-                     (- (gsh/top-bound shape) (gsh/top-bound root))))
+  "If the shape is a component instance, check whether the transformation is a
+  free change that must not mark the shape as touched.
 
-        transformed-shape-delta
-        (when transformed-root
-          (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
-                     (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
+  For the instance ROOT, position is free placement, but its rotation and flips
+  are inherited content: transforming the copy as a whole overrides them, so a
+  change there marks the root as touched.
+
+  For DESCENDANTS, position, size, rotation and flips are compared RELATIVE TO
+  THE ROOT: a transformation of the whole instance preserves them all and does
+  not mark the descendants as touched; editing an individual shape does."
+  [shape root transformed-shape transformed-root]
+  (let [is-root?     (and (some? root)
+                          (= (dm/get-prop shape :id) (dm/get-prop root :id)))
+
+        center       (fn [shape]
+                       (grc/rect->center (:selrect shape)))
+
+        rel-pos      (fn [shape root]
+                       (when root
+                         ;; vector from the root center to the shape center,
+                         ;; expressed in the root's local (untransformed) axes
+                         (-> (gpt/subtract (center shape) (center root))
+                             (gpt/transform (:transform-inverse root (gmt/matrix))))))
+
+        rel-rotation (fn [shape root]
+                       (if is-root?
+                         (d/nilv (:rotation shape) 0)
+                         (- (d/nilv (:rotation shape) 0)
+                            (d/nilv (:rotation root) 0))))
+
+        rel-flip     (fn [shape root attr]
+                       (if is-root?
+                         (true? (get shape attr))
+                         (not= (true? (get shape attr)) (true? (get root attr)))))
+
+        pos-before   (rel-pos shape root)
+        pos-after    (rel-pos transformed-shape transformed-root)
 
         distance
-        (if (and shape-delta transformed-shape-delta)
-          (gpt/distance-vector shape-delta transformed-shape-delta)
+        (if (and pos-before pos-after)
+          (gpt/distance-vector pos-before pos-after)
           (gpt/point 0 0))
 
         rotation-delta
-        (if (and (some? (:rotation shape)) (some? (:rotation shape)))
-          (- (:rotation transformed-shape) (:rotation shape))
-          0)
+        (-> (- (rel-rotation transformed-shape transformed-root)
+               (rel-rotation shape root))
+            (mod 360))
+
+        flips-equal?
+        (and (= (rel-flip shape root :flip-x)
+                (rel-flip transformed-shape transformed-root :flip-x))
+             (= (rel-flip shape root :flip-y)
+                (rel-flip transformed-shape transformed-root :flip-y)))
 
         selrect (:selrect shape)
         transformed-selrect (:selrect transformed-shape)]
@@ -152,7 +183,8 @@
     (and (and (< (:x distance) 1) (< (:y distance) 1))
          (mth/close? (:width selrect) (:width transformed-selrect))
          (mth/close? (:height selrect) (:height transformed-selrect))
-         (mth/close? rotation-delta 0))))
+         (or (mth/close? rotation-delta 0) (mth/close? rotation-delta 360))
+         flips-equal?)))
 
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
