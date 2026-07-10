@@ -717,9 +717,11 @@
                 (aget c5 0) (aget c5 1) (aget c5 2) (aget c5 3)))
 
       ;; Dynamic call for children > 5
-      (let [heap   (mem/get-heap-u32)
-            size   (mem/get-alloc-size children UUID-U8-SIZE)
-            offset (mem/alloc->offset-32 size)]
+      ;; NOTE: the heap view is fetched after the allocation: growing
+      ;; memory detaches previously captured views (see issue #10647)
+      (let [size   (mem/get-alloc-size children UUID-U8-SIZE)
+            offset (mem/alloc->offset-32 size)
+            heap   (mem/get-heap-u32)]
         (reduce
          (fn [offset id]
            (mem.h32/write-uuid offset heap id))
@@ -878,39 +880,45 @@
                   ;; FFI signature flat while letting the renderer fall back
                   ;; to its default dash pattern when no override is stored.
                   dash      (or (:stroke-dash stroke) -1)
-                  gap       (or (:stroke-gap stroke) -1)
-                  offset    (mem/alloc types.fills.impl/FILL-U8-SIZE)
-                  heap      (mem/get-heap-u8)
-                  dview     (js/DataView. (.-buffer heap))]
+                  gap       (or (:stroke-gap stroke) -1)]
               (case align
                 :inner (h/call wasm/internal-module "_add_shape_inner_stroke" width style cap-start cap-end dash gap)
                 :outer (h/call wasm/internal-module "_add_shape_outer_stroke" width style cap-start cap-end dash gap)
                 (h/call wasm/internal-module "_add_shape_center_stroke" width style cap-start cap-end dash gap))
 
-              (cond
-                (some? gradient)
-                (do
-                  (types.fills.impl/write-gradient-fill offset dview opacity gradient)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  nil)
+              ;; The staging buffer is allocated only when the stroke has a
+              ;; fill payload to upload (an unconsumed staged buffer fails
+              ;; the next allocation app-wide), and the heap view is created
+              ;; AFTER the stroke-push call above: that call can grow WASM
+              ;; memory, detaching previously captured views (issue #10647).
+              (when (or (some? gradient) (some? image) (some? color))
+                (let [offset (mem/alloc types.fills.impl/FILL-U8-SIZE)
+                      heap   (mem/get-heap-u8)
+                      dview  (js/DataView. (.-buffer heap))]
+                  (cond
+                    (some? gradient)
+                    (do
+                      (types.fills.impl/write-gradient-fill offset dview opacity gradient)
+                      (h/call wasm/internal-module "_add_shape_stroke_fill")
+                      nil)
 
-                (some? image)
-                (let [image-id      (get image :id)
-                      buffer        (uuid/get-u32 image-id)
-                      cached-image? (h/call wasm/internal-module "_is_image_cached"
-                                            (aget buffer 0) (aget buffer 1)
-                                            (aget buffer 2) (aget buffer 3)
-                                            thumbnail?)]
-                  (types.fills.impl/write-image-fill offset dview opacity image)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  (when (== cached-image? 0)
-                    (fetch-image shape-id image-id thumbnail?)))
+                    (some? image)
+                    (let [image-id (get image :id)]
+                      (types.fills.impl/write-image-fill offset dview opacity image)
+                      (h/call wasm/internal-module "_add_shape_stroke_fill")
+                      (let [buffer        (uuid/get-u32 image-id)
+                            cached-image? (h/call wasm/internal-module "_is_image_cached"
+                                                  (aget buffer 0) (aget buffer 1)
+                                                  (aget buffer 2) (aget buffer 3)
+                                                  thumbnail?)]
+                        (when (== cached-image? 0)
+                          (fetch-image shape-id image-id thumbnail?))))
 
-                (some? color)
-                (do
-                  (types.fills.impl/write-solid-fill offset dview opacity color)
-                  (h/call wasm/internal-module "_add_shape_stroke_fill")
-                  nil)))))
+                    :else
+                    (do
+                      (types.fills.impl/write-solid-fill offset dview opacity color)
+                      (h/call wasm/internal-module "_add_shape_stroke_fill")
+                      nil)))))))
 
         strokes))
 
@@ -932,17 +940,20 @@
         buffer (js/Uint8Array. padded-size)]
     (path/write-to content (.-buffer buffer) 0)
     (h/call wasm/internal-module "_start_shape_path_buffer")
-    (let [heapu32 (mem/get-heap-u32)]
-      (loop [offset 0]
-        (when (< offset padded-size)
-          (let [end (min padded-size (+ offset (* chunk-size 4)))
-                chunk (.subarray buffer offset end)
-                chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
-                offset-size (.-length chunk-u32)
-                heap-offset (mem/alloc->offset-32 (* 4 offset-size))]
-            (.set heapu32 chunk-u32 heap-offset)
-            (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
-            (recur end)))))
+    (loop [offset 0]
+      (when (< offset padded-size)
+        (let [end (min padded-size (+ offset (* chunk-size 4)))
+              chunk (.subarray buffer offset end)
+              chunk-u32 (js/Uint32Array. chunk.buffer chunk.byteOffset (quot (.-length chunk) 4))
+              offset-size (.-length chunk-u32)
+              heap-offset (mem/alloc->offset-32 (* 4 offset-size))
+              ;; the allocation (and the previous chunk upload) can grow
+              ;; WASM memory, detaching older views: fetch the heap after
+              ;; every allocating call (see issue #10647)
+              heapu32 (mem/get-heap-u32)]
+          (.set heapu32 chunk-u32 heap-offset)
+          (h/call wasm/internal-module "_set_shape_path_chunk_buffer")
+          (recur end))))
     (h/call wasm/internal-module "_set_shape_path_buffer")))
 
 (defn set-shape-svg-raw-content
@@ -1815,9 +1826,11 @@
 (defn set-focus-mode
   [entries]
   (when-not ^boolean (empty? entries)
+    ;; NOTE: the heap view is fetched after the allocation: growing
+    ;; memory detaches previously captured views (see issue #10647)
     (let [size   (mem/get-alloc-size entries UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
@@ -1838,10 +1851,12 @@
   Used for viewer fixed-scroll layers; does not change shape hidden flags."
   [shape-ids]
   (when (and (initialized?) (seq shape-ids))
+    ;; NOTE: the heap view is fetched after the allocation: growing
+    ;; memory detaches previously captured views (see issue #10647)
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
-          heap   (mem/get-heap-u32)
-          offset (mem/alloc->offset-32 size)]
+          offset (mem/alloc->offset-32 size)
+          heap   (mem/get-heap-u32)]
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
               offset
@@ -1872,10 +1887,14 @@
 (defn propagate-modifiers
   [entries pixel-precision]
   (when-not ^boolean (empty? entries)
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
-          offset  (mem/alloc->offset-32 size)]
+    ;; NOTE: heap views are (re)fetched after every allocating call:
+    ;; both _alloc_bytes and _propagate_modifiers (which allocates the
+    ;; result buffer) can grow WASM memory, and growth detaches any
+    ;; previously captured view (see issue #10647).
+    (let [size    (mem/get-alloc-size entries INPUT-MODIFIER-U8-SIZE)
+          offset  (mem/alloc->offset-32 size)
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)]
 
       (reduce (fn [offset [id data]]
                 (let [transform (:transform data)
@@ -1889,6 +1908,8 @@
 
       (let [offset     (-> (h/call wasm/internal-module "_propagate_modifiers" pixel-precision)
                            (mem/->offset-32))
+            heapf32    (mem/get-heap-f32)
+            heapu32    (mem/get-heap-u32)
             length     (aget heapu32 offset)
             max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))
             result     (loop [result (transient [])
@@ -1908,17 +1929,19 @@
   (when-not ^boolean (empty? entries)
     (let [size    (mem/get-alloc-size entries UUID-U8-SIZE)
           offset  (mem/alloc->offset-32 size)
-          heapu32 (mem/get-heap-u32)
-          heapf32 (mem/get-heap-f32)]
+          heapu32 (mem/get-heap-u32)]
 
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heapu32 id))
               offset
               entries)
 
-      (let [offset (-> (h/call wasm/internal-module "_get_selection_rect")
-                       (mem/->offset-32))
-            result (dr/read-selection-rect heapf32 offset)]
+      ;; the result buffer allocation can grow WASM memory: fetch the
+      ;; view after the call (see issue #10647)
+      (let [offset  (-> (h/call wasm/internal-module "_get_selection_rect")
+                        (mem/->offset-32))
+            heapf32 (mem/get-heap-f32)
+            result  (dr/read-selection-rect heapf32 offset)]
         (mem/free)
         result))))
 
@@ -2472,15 +2495,17 @@
   ;; buffer) can grow WASM memory, and growth detaches any previously
   ;; captured view (see issue #10647).
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
-        offset (mem/alloc->offset-32 size)
-        heap   (mem/get-heap-u32)]
-
-    (reduce (fn [offset id]
-              (mem.h32/write-uuid offset heap id))
-            offset
-            (rseq ids))
-
+        offset (mem/alloc->offset-32 size)]
+    ;; From this point the staging buffer is allocated on the wasm side:
+    ;; any failure must release it or the next _alloc_bytes anywhere in
+    ;; the app fails with "Bytes already allocated".
     (try
+      (let [heap (mem/get-heap-u32)]
+        (reduce (fn [offset id]
+                  (mem.h32/write-uuid offset heap id))
+                offset
+                (rseq ids)))
+
       (let [offset
             (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
                 (mem/->offset-32))
@@ -2494,37 +2519,65 @@
         (mem/free)
         content)
       (catch :default cause
-        (mem/free)
+        ;; best-effort cleanup: it must never mask the original failure
+        (try (mem/free) (catch :default _ nil))
         (throw cause)))))
 
 (defn calculate-bool
   [shape objects]
+  ;; The operands are normalized exactly like the CLJS fallback
+  ;; (calc-bool-content* in app.common.types.path): missing ids, hidden
+  ;; children and svg-raw children do not participate in the operation.
+  (let [ids (into []
+                  (comp (keep (d/getf objects))
+                        (remove :hidden)
+                        (remove cfh/svg-raw-shape?)
+                        (map :id))
+                  (get shape :shapes))]
+    (cond
+      ;; The hook in app.common.types.path is installed at boot, before
+      ;; the async module load finishes: compute through the CLJS
+      ;; fallback instead of calling into an unavailable module.
+      (not (initialized?))
+      (path/calc-bool-content shape objects)
 
-  ;; We need to be able to calculate the boolean data but we cannot
-  ;; depend on the serialization flow.
-  ;; start_temp_object / end_temp_object create a new shapes_pool
-  ;; temporary and then we serialize the objects needed to calculate the
-  ;; boolean object.
-  ;; After the content is returned we discard that temporary context
-  (h/call wasm/internal-module "_start_temp_objects")
+      ;; No effective operands: empty content, without paying the
+      ;; temporary-pool churn nor a zero-byte allocation.
+      (empty? ids)
+      (path.impl/path-data nil)
 
-  ;; NOTE: without the finally, a failure in the body leaves the
-  ;; temporary pool active and every subsequent call panics in
-  ;; _start_temp_objects (see issue #10647).
-  (try
-    (let [bool-type (get shape :bool-type)
-          ids (get shape :shapes)
-          all-children
-          (->> ids
-               (mapcat #(cfh/get-children-with-self objects %)))]
+      :else
+      (do
+        ;; We need to be able to calculate the boolean data but we cannot
+        ;; depend on the serialization flow.
+        ;; start_temp_object / end_temp_object create a new shapes_pool
+        ;; temporary and then we serialize the objects needed to calculate the
+        ;; boolean object.
+        ;; After the content is returned we discard that temporary context
+        (h/call wasm/internal-module "_start_temp_objects")
 
-      (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-      (run! set-object all-children)
+        ;; NOTE: the temporary pool must be discarded on every path: a
+        ;; failure that leaves it active makes every subsequent call
+        ;; panic in _start_temp_objects (see issue #10647). On the
+        ;; failure path the cleanup is best-effort so it never masks
+        ;; the original error.
+        (try
+          (let [bool-type (get shape :bool-type)
+                all-children
+                (->> ids
+                     (mapcat #(cfh/get-children-with-self objects %)))]
 
-      (-> (calculate-bool* bool-type ids)
-          (path.impl/path-data)))
-    (finally
-      (h/call wasm/internal-module "_end_temp_objects"))))
+            (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+            (run! set-object all-children)
+
+            (let [content (-> (calculate-bool* bool-type ids)
+                              (path.impl/path-data))]
+              (h/call wasm/internal-module "_end_temp_objects")
+              content))
+          (catch :default cause
+            (try (h/call wasm/internal-module "_end_temp_objects")
+                 (catch :default _ nil))
+            (throw cause)))))))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
@@ -2533,10 +2586,12 @@
   [shape]
   (when (initialized?)
     (use-shape (:id shape))
-    (let [heapf32 (mem/get-heap-f32)
-          heapu32 (mem/get-heap-u32)
-          offset (-> (h/call wasm/internal-module "_calculate_position_data")
+    ;; the result buffer allocation can grow WASM memory: fetch the
+    ;; views after the call (see issue #10647)
+    (let [offset (-> (h/call wasm/internal-module "_calculate_position_data")
                      (mem/->offset-32))
+          heapf32 (mem/get-heap-f32)
+          heapu32 (mem/get-heap-u32)
           length (aget heapu32 offset)
 
           max-offset (+ offset 1 (* length POSITION-DATA-U32-SIZE))

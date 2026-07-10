@@ -41,7 +41,12 @@ impl State {
     }
 
     // Creates a new temporary shapes pool.
-    // Will panic if a previous temporary pool exists.
+    // Errors if a previous temporary pool exists.
+    //
+    // NOTE: the pool is moved aside, not cloned: cloning the whole pool
+    // doubled memory usage on every boolean calculation (forcing memory
+    // growth on big files) and a failed allocation mid-clone left the
+    // state unrecoverable (see issue #10647).
     pub fn start_temp_objects(&mut self) -> Result<()> {
         if self.saved_shapes.is_some() {
             return Err(Error::CriticalError(
@@ -49,18 +54,16 @@ impl State {
                     .to_string(),
             ));
         }
-        self.saved_shapes = Some(self.shapes.clone());
-        self.shapes = ShapesPool::new();
+        self.saved_shapes = Some(std::mem::replace(&mut self.shapes, ShapesPool::new()));
         Ok(())
     }
 
-    // Disposes of the temporary shapes pool restoring the normal pool
-    // Will panic if a there is no temporary pool.
+    // Disposes of the temporary shapes pool restoring the normal pool.
+    // Errors if there is no temporary pool.
     pub fn end_temp_objects(&mut self) -> Result<()> {
-        self.shapes = self.saved_shapes.clone().ok_or(Error::CriticalError(
+        self.shapes = self.saved_shapes.take().ok_or(Error::CriticalError(
             "Tried to end temp objects but not content to be restored is present".to_string(),
         ))?;
-        self.saved_shapes = None;
         Ok(())
     }
 
@@ -311,5 +314,63 @@ impl State {
         if !self.loading {
             render_state.mark_touched(id);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_temp_objects_lifecycle_preserves_the_pool() {
+        let mut state = State::new();
+        let id = Uuid::new_v4();
+        state.shapes.add_shape(id);
+
+        state.start_temp_objects().expect("start should succeed");
+        assert_eq!(state.shapes.len(), 0, "temp pool starts empty");
+        assert!(state.saved_shapes.is_some(), "original pool saved");
+
+        state.end_temp_objects().expect("end should succeed");
+        assert!(state.shapes.has(&id), "original pool restored");
+        assert!(state.saved_shapes.is_none(), "no temp pool left");
+    }
+
+    #[test]
+    fn test_start_temp_objects_twice_fails_without_corrupting_state() {
+        let mut state = State::new();
+        let id = Uuid::new_v4();
+        state.shapes.add_shape(id);
+
+        state
+            .start_temp_objects()
+            .expect("first start should succeed");
+        assert!(
+            state.start_temp_objects().is_err(),
+            "second start must fail"
+        );
+
+        state.end_temp_objects().expect("end should still succeed");
+        assert!(
+            state.shapes.has(&id),
+            "original pool restored after the failed start"
+        );
+    }
+
+    #[test]
+    fn test_end_temp_objects_without_start_fails_and_state_stays_usable() {
+        let mut state = State::new();
+        let id = Uuid::new_v4();
+        state.shapes.add_shape(id);
+
+        assert!(
+            state.end_temp_objects().is_err(),
+            "end without start must fail"
+        );
+        assert!(state.shapes.has(&id), "pool untouched by the failed end");
+
+        state.start_temp_objects().expect("state remains usable");
+        state.end_temp_objects().expect("state remains usable");
+        assert!(state.shapes.has(&id));
     }
 }
