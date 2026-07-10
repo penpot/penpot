@@ -80,11 +80,15 @@
      offset (what a stale view would read after growth).
    - :die-on-calc?   — _calculate_bool throws after consuming the staged
      buffer (models a wasm-side failure).
+   - :die-before-consume? — _calculate_bool throws before consuming the
+     staged buffer (models a JS-side failure between the allocation and
+     the consuming call, e.g. a write through a stale view).
    - :dead-cleanup?  — _free_bytes and _end_temp_objects throw (models a
      module that cannot service further calls after a fatal failure).
    - :result-segments — PathData written as the _calculate_bool result
      (defaults to an empty result)."
-  [{:keys [grow-on-alloc? grow-on-calc? die-on-calc? dead-cleanup? result-segments]}]
+  [{:keys [grow-on-alloc? grow-on-calc? die-on-calc? die-before-consume?
+           dead-cleanup? result-segments]}]
   (let [temp-open?   (atom false)
         temp-starts  (atom 0)
         temp-ends    (atom 0)
@@ -140,6 +144,8 @@
 
     (unchecked-set module "_calculate_bool"
                    (fn [_bool-type]
+                     (when die-before-consume?
+                       (throw (js/Error. "failure before consumption")))
                      ;; capture what the caller actually wrote into the
                      ;; CURRENT heap view (the wasm side reads this memory)
                      (let [heap  (unchecked-get module "HEAPU32")
@@ -163,6 +169,9 @@
                          (aset heap result-off32 length)
                          (when result
                            (.set ^js heap result (inc result-off32)))))
+                     ;; writing the result stages a new buffer (write_vec):
+                     ;; the caller must release it after reading
+                     (reset! staged? true)
                      ;; byte offset of the result
                      (* 4 result-off32)))
 
@@ -266,6 +275,18 @@
           (t/is (some? (wasm.api/calculate-bool shape objects))
                 "subsequent calculations succeed"))))))
 
+(t/deftest staging-buffer-released-when-failure-precedes-consumption
+  "A failure BETWEEN the allocation and the consuming call (e.g. a write
+   through a stale view) leaves the staged input buffer allocated on the
+   wasm side: the catch-side cleanup must release it."
+  (let [{:keys [shape objects]} (make-bool-fixture)
+        {:keys [module staged? temp-open?]} (make-fake-module {:die-before-consume? true})]
+    (with-fake-wasm* module (fn [_shape] nil)
+      (fn []
+        (t/is (thrown? js/Error (wasm.api/calculate-bool shape objects)))
+        (t/is (false? @staged?) "staged input buffer released by the cleanup")
+        (t/is (false? @temp-open?) "temporary pool discarded")))))
+
 (t/deftest original-error-not-masked-by-failing-cleanup
   "When the module cannot service the cleanup calls after a failure
    (_free_bytes/_end_temp_objects also throw), the error surfaced to the
@@ -320,13 +341,15 @@
    the length word) must be read from the post-growth heap view."
   (let [{:keys [shape objects]} (make-bool-fixture)
         square (square-content 0 0 10)
-        {:keys [module]} (make-fake-module {:grow-on-calc? true
-                                            :result-segments square})]
+        {:keys [module staged?]} (make-fake-module {:grow-on-calc? true
+                                                    :result-segments square})]
     (with-fake-wasm* module (fn [_shape] nil)
       (fn []
         (let [content (wasm.api/calculate-bool shape objects)]
           (t/is (= 5 (count content)) "all segments read")
-          (t/is (= square content) "segment payload identical to what wasm wrote"))))))
+          (t/is (= square content) "segment payload identical to what wasm wrote")
+          (t/is (false? @staged?)
+                "the result buffer staged by the call was freed after reading"))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Operand normalization (parity with the CLJS fallback)

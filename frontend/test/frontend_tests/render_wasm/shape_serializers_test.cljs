@@ -211,6 +211,9 @@
                      (aset (unchecked-get module "HEAPU32") result-off32 9999)
                      (install-heap! module)
                      (aset (unchecked-get module "HEAPU32") result-off32 0)
+                     ;; writing the result stages a new buffer (write_vec):
+                     ;; the caller must release it after reading
+                     (reset! staged? true)
                      (* 4 result-off32)))
     {:module module :staged? staged? :received received}))
 
@@ -231,7 +234,78 @@
           (t/is (number? (:kind @received)))
           (t/is (= [] result)
                 "the (empty) result is read from the post-growth view")
-          (t/is (false? @staged?) "no staged buffer left behind"))))))
+          (t/is (false? @staged?)
+                "the result buffer staged by the call was freed after reading"))))))
+
+;; ---------------------------------------------------------------------------
+;; get-selection-rect / calculate-position-data (result reads across growth)
+;; ---------------------------------------------------------------------------
+
+(defn- make-result-read-module
+  "Fake module for wasm calls whose result must be read through a view
+   fetched after the call: `entry` names the export; `result-f32` are
+   the floats written at the result offset in the post-growth view. The
+   pre-growth view is poisoned at the same offset."
+  [entry result-f32]
+  (let [staged?      (atom false)
+        module       #js {}
+        result-off32 128]
+    (install-heap! module)
+    (unchecked-set module "_read_error_code" (fn [] 2))
+    (unchecked-set module "_free_bytes" (fn [] (reset! staged? false) js/undefined))
+    (unchecked-set module "_use_shape" (fn [_a _b _c _d] js/undefined))
+    (unchecked-set module "_alloc_bytes"
+                   (fn [_size]
+                     (when @staged?
+                       (throw (js/Error. "Bytes already allocated")))
+                     (reset! staged? true)
+                     (install-heap! module)
+                     0))
+    (unchecked-set module entry
+                   (fn [& _args]
+                     (reset! staged? false)
+                     (doseq [view ["HEAPU32" "HEAPF32"]]
+                       (aset (unchecked-get module view) result-off32 9999))
+                     (install-heap! module)
+                     (let [heapf32 (unchecked-get module "HEAPF32")]
+                       (dotimes [i (count result-f32)]
+                         (aset heapf32 (+ result-off32 i) (nth result-f32 i))))
+                     (reset! staged? true)
+                     (* 4 result-off32)))
+    {:module module :staged? staged?}))
+
+(t/deftest selection-rect-read-through-current-heap-view
+  "get-selection-rect must read the rect through a view fetched after
+   the call; the pre-call view holds garbage at the result offset."
+  (let [{:keys [module staged?]} (make-result-read-module
+                                  "_get_selection_rect"
+                                  [3 4 1.5 2 1 0 0 1 0 0])]
+    (with-module* module
+      (fn []
+        (let [result (wasm.api/get-selection-rect [(uuid/next)])]
+          (t/is (= 3 (:width result)) "width read from the post-growth view")
+          (t/is (= 4 (:height result)) "height read from the post-growth view")
+          (t/is (false? @staged?)
+                "the result buffer staged by the call was freed after reading"))))))
+
+(t/deftest position-data-read-through-current-heap-view
+  "calculate-position-data must read its result through views fetched
+   after the call; a zero-length result parses to no entries instead of
+   the garbage length in the stale view."
+  (let [{:keys [module staged?]} (make-result-read-module
+                                  "_calculate_position_data"
+                                  [0])
+        orig-initialized? wasm.api/initialized?]
+    (set! wasm.api/initialized? (constantly true))
+    (try
+      (with-module* module
+        (fn []
+          (let [result (wasm.api/calculate-position-data {:id (uuid/next) :content nil})]
+            (t/is (= [] result) "zero-length result parsed from the post-growth view")
+            (t/is (false? @staged?)
+                  "the result buffer staged by the call was freed after reading"))))
+      (finally
+        (set! wasm.api/initialized? orig-initialized?)))))
 
 (t/deftest fill-less-stroke-stages-no-buffer
   "A stroke without color/gradient/image has no fill payload to upload:
