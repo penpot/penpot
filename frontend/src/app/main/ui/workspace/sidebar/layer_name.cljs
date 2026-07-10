@@ -89,7 +89,7 @@
                      name       (str/trim (dom/get-value name-input))]
                  (on-stop-edit)
                  (reset! edition* false)
-                 (st/emit! (dw/end-rename-shape shape-id name))
+                 (st/emit! (dw/rename-shape-or-variant shape-id name))
                  (when (fn? on-tab-press)
                    (on-tab-press event)))))))
 

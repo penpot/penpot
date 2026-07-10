@@ -703,6 +703,10 @@
    (rename-shape-or-variant nil nil id name))
   ([file-id page-id id name]
    (ptk/reify ::rename-shape-or-variant
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :workspace-local dissoc :shape-for-rename))
+
      ptk/WatchEvent
      (watch [_ state _]
        (let [file-id (d/nilv file-id (:current-file-id state))
@@ -727,10 +731,7 @@
                   (dwva/update-error component-id))
 
            variant-name
-           (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties {})
-                  (dwva/remove-empty-properties variant-id)
-                  (dwva/update-error component-id name))
+           (rx/of (dwva/update-error component-id name))
 
            :else
            (rx/of (end-rename-shape id name))))))))
