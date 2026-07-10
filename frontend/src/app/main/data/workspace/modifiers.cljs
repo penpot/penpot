@@ -256,8 +256,8 @@
 
 (defn assoc-position-data
   [shape position-data old-shape]
-  (let [deltav (gpt/to-vec (gpt/point (:selrect old-shape))
-                           (gpt/point (:selrect shape)))
+  (let [deltav (gpt/to-vec (gpt/point (ctm/safe-size-rect old-shape))
+                           (gpt/point (ctm/safe-size-rect shape)))
         position-data
         (-> position-data
             (gsh/move-position-data deltav))]

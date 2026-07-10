@@ -66,7 +66,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.17.13
+ENV OPENCODE_VERSION=1.17.16
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

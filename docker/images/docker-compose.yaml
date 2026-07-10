@@ -197,10 +197,10 @@ services:
       - penpot
 
     environment:
-      << : [*penpot-secret-key]
+      << : [*penpot-secret-key, *penpot-public-uri]
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
-      PENPOT_PUBLIC_URI: http://penpot-frontend:8080
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
       ## Valkey (or previously Redis) is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-valkey/0
