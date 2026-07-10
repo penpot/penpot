@@ -20,6 +20,20 @@
 ;; Define in `app.plugins.shape` we do this way to prevent circular dependency
 (def shape-proxy? nil)
 
+(defn- update-padding
+  "Patch the layout padding and re-derive its `:simple`/`:multiple` type."
+  [this id patch]
+  (let [padding (merge (-> this u/proxy->shape :layout-padding) patch)]
+    (st/emit! (dwsl/update-layout #{id} {:layout-padding patch
+                                         :layout-padding-type (ctl/padding-type-for padding)}))))
+
+(defn- update-margin
+  "Patch the item margin and re-derive its `:simple`/`:multiple` type."
+  [this id patch]
+  (let [margin (merge (-> this u/proxy->shape :layout-item-margin) patch)]
+    (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin patch
+                                               :layout-item-margin-type (ctl/margin-type-for margin)}))))
+
 (defn flex-layout-proxy? [p]
   (obj/type-of? p "FlexLayoutProxy"))
 
@@ -185,7 +199,7 @@
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p1 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :verticalPadding value)
@@ -197,13 +211,13 @@
          (u/not-valid plugin-id :verticalPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}}))))}
+         (update-padding this id {:p1 value :p3 value})))}
 
     :horizontalPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p2 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :horizontalPadding value)
@@ -215,13 +229,13 @@
          (u/not-valid plugin-id :horizontalPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
+         (update-padding this id {:p2 value :p4 value})))}
 
     :topPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p1 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :topPadding value)
@@ -233,13 +247,13 @@
          (u/not-valid plugin-id :topPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value}}))))}
+         (update-padding this id {:p1 value})))}
 
     :rightPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p2 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :rightPadding value)
@@ -251,13 +265,13 @@
          (u/not-valid plugin-id :rightPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}}))))}
+         (update-padding this id {:p2 value})))}
 
     :bottomPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p3 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :bottomPadding value)
@@ -269,13 +283,13 @@
          (u/not-valid plugin-id :bottomPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}}))))}
+         (update-padding this id {:p3 value})))}
 
     :leftPadding
     {:this true
      :get #(-> % u/proxy->shape :layout-padding :p4 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :leftPadding value)
@@ -287,7 +301,27 @@
          (u/not-valid plugin-id :leftPadding "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}}))))}
+         (update-padding this id {:p4 value})))}
+
+    ;; `:simple` mirrors vertical/horizontal padding; `:multiple` honours each side.
+    :paddingType
+    {:this true
+     :get #(-> % u/proxy->shape :layout-padding-type (d/nilv :simple) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/padding-type value))
+           (u/not-valid plugin-id :paddingType value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :paddingType "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :paddingType "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout #{id} {:layout-padding-type value})))))}
 
     :remove
     (fn []
@@ -469,7 +503,7 @@
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m1 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :verticalMargin value)
@@ -481,13 +515,13 @@
          (u/not-valid plugin-id :verticalMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value :m3 value}}))))}
+         (update-margin this id {:m1 value :m3 value})))}
 
     :horizontalMargin
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m2 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :horizontalMargin value)
@@ -499,13 +533,13 @@
          (u/not-valid plugin-id :horizontalMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value :m4 value}}))))}
+         (update-margin this id {:m2 value :m4 value})))}
 
     :topMargin
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m1 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :topMargin value)
@@ -517,13 +551,13 @@
          (u/not-valid plugin-id :topMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value}}))))}
+         (update-margin this id {:m1 value})))}
 
     :rightMargin
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m2 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :rightMargin value)
@@ -535,13 +569,13 @@
          (u/not-valid plugin-id :rightMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value}}))))}
+         (update-margin this id {:m2 value})))}
 
     :bottomMargin
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m3 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :bottomMargin value)
@@ -553,13 +587,13 @@
          (u/not-valid plugin-id :bottomMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m3 value}}))))}
+         (update-margin this id {:m3 value})))}
 
     :leftMargin
     {:this true
      :get #(-> % u/proxy->shape :layout-item-margin :m4 (d/nilv 0))
      :set
-     (fn [_ value]
+     (fn [this value]
        (cond
          (not (sm/valid-safe-number? value))
          (u/not-valid plugin-id :leftMargin value)
@@ -571,7 +605,27 @@
          (u/not-valid plugin-id :leftMargin "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m4 value}}))))}
+         (update-margin this id {:m4 value})))}
+
+    ;; `:simple` mirrors vertical/horizontal margin; `:multiple` honours each side.
+    :marginType
+    {:this true
+     :get #(-> % u/proxy->shape :layout-item-margin-type (d/nilv :simple) d/name)
+     :set
+     (fn [_ value]
+       (let [value (keyword value)]
+         (cond
+           (not (contains? ctl/item-margin-types value))
+           (u/not-valid plugin-id :marginType value)
+
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :marginType "Plugin doesn't have 'content:write' permission")
+
+           (not (u/page-active? page-id))
+           (u/not-valid plugin-id :marginType "Cannot modify a page that is not currently active")
+
+           :else
+           (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin-type value})))))}
 
     :maxWidth
     {:this true
