@@ -575,6 +575,17 @@
            (wasm.api/push-ruler-theme-colors!)
            (wasm.api/request-render "rulers-colors-theme")))))
 
+    ;; Text-editor-wasm: push the theme colors (selection background, caret)
+    ;; into the WASM text editor so the selection follows the design tokens per
+    ;; theme (purple on light, teal on dark) instead of a hardcoded default.
+    (mf/with-effect [@canvas-init?]
+      (when @canvas-init?
+        (wasm.api/text-editor-apply-theme)
+        (theme/add-color-scheme-listener!
+         (fn []
+           (wasm.api/text-editor-apply-theme)
+           (wasm.api/request-render "text-editor-colors-theme")))))
+
     ;; Ruler overlay updates below only change the UI surface, not the shapes.
     ;; They use `render-from-cache!` (cached tiles + UI, atomic) instead of a full
     ;; `request-render`, which would kick off a progressive tile-by-tile shape

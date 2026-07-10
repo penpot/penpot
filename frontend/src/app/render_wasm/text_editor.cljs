@@ -15,7 +15,10 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
-   [app.render-wasm.wasm :as wasm]))
+   [app.render-wasm.serializers.color :as sr-clr]
+   [app.render-wasm.wasm :as wasm]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]))
 
 (def multiple-state-multiple (sr/translate-multiple-state :multiple))
 
@@ -123,6 +126,31 @@
                       :name "sample"}})
 
       nil)))
+
+(def ^:private selection-color-css-var "--text-editor-selection-background-color")
+(def ^:private caret-color-css-var "--text-editor-caret-color")
+
+(defn- resolve-theme-color
+  "Resolve a themed CSS color variable (read from the document body) into a
+   32-bit argb value for the WASM text editor, preserving the variable's alpha
+   channel."
+  [css-var]
+  (when-let [{:keys [color opacity]}
+             (uc/parse-css-color-opacity
+              (dom/get-css-variable css-var js/document.body))]
+    (sr-clr/hex->u32argb color opacity)))
+
+(defn text-editor-apply-theme
+  "Push the current theme's selection and caret colors (read from the CSS
+   custom properties on the document body) into the WASM text editor. The
+   editor theme is a persistent singleton, so call once after init and again
+   on every color-scheme change."
+  []
+  (when wasm/context-initialized?
+    (let [selection (resolve-theme-color selection-color-css-var)
+          caret     (resolve-theme-color caret-color-css-var)]
+      (when (and selection caret)
+        (h/call wasm/internal-module "_text_editor_apply_theme" selection caret)))))
 
 (defn text-editor-focus
   [id]
