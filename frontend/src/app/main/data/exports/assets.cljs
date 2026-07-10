@@ -179,6 +179,15 @@
   (and (wasm-export-enabled? state)
        (contains? wasm-export-types (:type export))))
 
+(defn- request-simple-export-wasm
+  [export]
+  (ptk/reify ::request-simple-export-wasm
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (case (:type export)
+        :pdf (wasm.exports/export-pdf export)
+        (wasm.exports/export-image export)))))
+
 (defn request-simple-export
   [{:keys [export]}]
   (ptk/reify ::request-simple-export
@@ -191,11 +200,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (if (use-wasm-export? state export)
-        (do
-          (case (:type export)
-            :pdf (wasm.exports/export-pdf export)
-            (wasm.exports/export-image export))
-          (rx/empty))
+        (rx/of (request-simple-export-wasm export))
         (let [profile-id (:profile-id state)
               params     {:exports [export]
                           :profile-id profile-id

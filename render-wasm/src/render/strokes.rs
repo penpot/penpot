@@ -8,6 +8,7 @@ use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{filters, RenderState, SurfaceId};
 use crate::error::{Error, Result};
+use crate::get_resources;
 use crate::render::filters::compose_filters;
 use crate::render::{get_dest_rect, get_source_rect};
 
@@ -467,7 +468,7 @@ fn draw_image_stroke_in_container(
     surface_id: SurfaceId,
 ) -> Result<()> {
     let scale = render_state.get_scale();
-    let Some(image) = render_state.images.get(&image_fill.id()) else {
+    let Some(image) = get_resources().images.get(&image_fill.id()) else {
         return Ok(());
     };
 
@@ -575,7 +576,7 @@ fn draw_image_stroke_in_container(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        render_state.sampling_options,
+        get_resources().sampling_options,
         &image_paint,
     );
 

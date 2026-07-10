@@ -4,8 +4,8 @@ use crate::error::Result;
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
-use super::vector::{self, VectorTarget};
-use super::RenderState;
+use super::vector;
+use super::RenderResources;
 
 /// Renders a shape tree to a PDF document and returns the raw PDF bytes.
 ///
@@ -16,7 +16,7 @@ use super::RenderState;
 /// pixel-based (blur, shadows with blur) are rasterised internally by Skia's
 /// PDF backend
 pub fn render_to_pdf(
-    shared: &mut RenderState,
+    shared: &mut RenderResources,
     id: &Uuid,
     tree: ShapesPoolRef,
     scale: f32,
@@ -24,7 +24,15 @@ pub fn render_to_pdf(
     let shape = tree
         .get(id)
         .ok_or_else(|| crate::error::Error::CriticalError("Shape not found for PDF".to_string()))?;
-    let bounds = shape.extrect(tree, scale);
+    // Boards export at their own bounds (like the classic exporter, which
+    // screenshots exactly the board box): content overflowing a board lands
+    // outside the page/surface and is cropped. Other shapes keep the extended
+    // rect so their own shadows/blur are included.
+    let bounds = if matches!(shape.shape_type, crate::shapes::Type::Frame(_)) {
+        shape.selrect()
+    } else {
+        shape.extrect(tree, scale)
+    };
 
     let page_w = bounds.width() * scale;
     let page_h = bounds.height() * scale;
@@ -45,7 +53,7 @@ pub fn render_to_pdf(
         let page_canvas = on_page.canvas();
         page_canvas.scale((scale, scale));
         page_canvas.translate((-bounds.left(), -bounds.top()));
-        vector::render_tree(shared, page_canvas, id, tree, scale, VectorTarget::Pdf)?;
+        vector::render_tree_pdf(shared, page_canvas, id, tree, scale, bounds)?;
     }
 
     let document = on_page.end_page();
