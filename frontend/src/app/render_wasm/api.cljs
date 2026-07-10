@@ -2554,7 +2554,7 @@
                  (when (and element element-text)
                    (let [text (subs element-text start-pos end-pos)]
                      (d/patch-object
-                      txt/default-text-attrs
+                      (txt/get-default-text-attrs)
                       (d/without-nils
                        {:x x
                         :y (+ y height)
