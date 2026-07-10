@@ -18,6 +18,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (def ^:private xf:options
@@ -229,8 +230,11 @@
         (partial ug/unlisten "penpot:context-menu:open" on-event)))
 
     (mf/with-effect [ids]
-      (tm/schedule-on-idle
-       #(dom/focus! (dom/get-element (first ids)))))
+      (let [handle (tm/schedule
+                    (fn []
+                      (some-> (dom/get-element (first ids))
+                              (dom/focus!))))]
+        #(rx/dispose! handle)))
 
     (when (some? levels)
       [:> dropdown-content* props
