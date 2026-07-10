@@ -44,7 +44,7 @@
   [val step min-val max-val]
   (mth/clamp (- val step) min-val max-val))
 
-(defn- parse-value
+(defn parse-value
   "Parses and clamps `raw-value` as a number within bounds;
    returns nil if invalid or empty."
   [raw-value last-value min-value max-value nillable]
@@ -188,10 +188,13 @@
         token-has-errors? (-> token-applied :errors seq boolean)
 
         is-multiple?    (= :multiple value)
+        ;; NOTE: from here on `value` is the committed value as a number,
+        ;; or nil when the selection has no single committed value (mixed
+        ;; selection, or an absent value).
         value           (cond
                           is-multiple? nil
                           (and nillable (nil? value)) nil
-                          :else (d/parse-double value default))
+                          :else (d/parse-double value (d/parse-double default)))
 
         ;; Default props
         nillable        (d/nilv nillable false)
@@ -234,6 +237,11 @@
 
         raw-value*      (mf/use-ref nil)
         last-value*     (mf/use-ref nil)
+        ;; Name of the token last applied through this input; dedups
+        ;; repeated applications of the same token (toggle-token would
+        ;; otherwise unapply it), while still emitting for a token whose
+        ;; resolved value equals the current committed value.
+        last-token-applied* (mf/use-ref nil)
 
         ;; Flag to prevent effect from overwriting token during selection
         ;; This prevents race condition between blur and token selection
@@ -292,7 +300,7 @@
 
         apply-value
         (mf/use-fn
-         (mf/deps on-change update-input value nillable min max)
+         (mf/deps on-change update-input value nillable min max default)
          (fn [raw-value]
            (let [raw-value (str/trim (str raw-value))]
              (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
@@ -315,21 +323,26 @@
                    (when (fn? on-change)
                      (on-change nil)))
 
-                 (let [fallback-value (or (mf/ref-val last-value*) default)]
-                   (mf/set-ref-val! raw-value* fallback-value)
-                   (mf/set-ref-val!  last-value* fallback-value)
+                 ;; Invalid input: restore the display to the last committed
+                 ;; value (or the default) WITHOUT emitting on-change — the
+                 ;; shapes still hold their previous values, so there is
+                 ;; nothing to commit. Emitting here leaked non-numeric
+                 ;; values into shape data (issue #10638).
+                 (let [fallback-value (or (mf/ref-val last-value*) default)
+                       fallback-text  (if (some? fallback-value)
+                                        (fmt/format-number fallback-value)
+                                        "")]
+                   (mf/set-ref-val! raw-value* fallback-text)
                    (reset! token-applied-name* nil)
-                   (update-input (fmt/format-number fallback-value))
-
-                   (when (and (fn? on-change) (not= fallback-value (str value)))
-                     (on-change fallback-value))))))))
+                   (update-input fallback-text)))))))
 
         apply-token
         (mf/use-fn
          (mf/deps min max nillable on-change tokens)
          (fn [value name]
            (let [parsed (parse-value value (mf/ref-val last-value*) min max nillable)]
-             (when-not (= parsed (mf/ref-val last-value*))
+             (when-not (= name (mf/ref-val last-token-applied*))
+               (mf/set-ref-val! last-token-applied* name)
                (mf/set-ref-val! last-value* parsed)
                (when (fn? on-change)
                  (on-change (get-token-op tokens name)))))))
@@ -462,8 +475,13 @@
                  (handle-blur event))
 
                esc?
-               (do
-                 (update-input (fmt/format-number (mf/ref-val last-value*)))
+               ;; Discard the typed text entirely: restore the display AND
+               ;; the pending raw value, and clear the dirty flag so the
+               ;; blur below does not commit the discarded text.
+               (let [restore-text (or (fmt/format-number (mf/ref-val last-value*)) "")]
+                 (update-input restore-text)
+                 (mf/set-ref-val! raw-value* restore-text)
+                 (mf/set-ref-val! dirty-ref false)
                  (reset! is-open* false)
                  (dom/blur! node))
 
@@ -641,6 +659,7 @@
            (when-not disabled
              (dom/prevent-default event)
              (dom/stop-propagation event)
+             (mf/set-ref-val! last-token-applied* nil)
              (reset! token-applied-name* nil)
              (reset! selected-id* nil)
              (reset! focused-id* nil)
@@ -706,7 +725,7 @@
                                 :placeholder (if is-multiple?
                                                (tr "labels.mixed-values")
                                                placeholder)
-                                :default-value (or (mf/ref-val last-value*) (fmt/format-number value))
+                                :default-value (fmt/format-number (or (mf/ref-val last-value*) value))
                                 :on-blur handle-blur
                                 :on-key-down on-key-down
                                 :on-focus on-focus
@@ -739,8 +758,7 @@
                                         (dm/str)))
                 label       (or (get token :name) applied-token-name)
                 token-value (or (get token :resolved-value)
-                                (or (mf/ref-val last-value*)
-                                    (fmt/format-number value)))
+                                (fmt/format-number (or (mf/ref-val last-value*) value)))
                 token-value (if (and (some? id) (= name :opacity))
                               (* 100 token-value)
                               token-value)]
@@ -783,13 +801,18 @@
                      ""
 
                      :else
-                     (fmt/format-number (d/parse-double value default)))]
+                     (fmt/format-number (d/nilv value default)))]
         (mf/set-ref-val! raw-value* value')
-        (mf/set-ref-val! last-value* value')
+        ;; Keep the committed NUMBER (or nil) in last-value*; only the DOM
+        ;; and raw-value* hold formatted strings. Storing the formatted
+        ;; string here made the invalid-input fallback leak strings into
+        ;; on-change (see issue #10638).
+        (mf/set-ref-val! last-value* value)
 
         ;; Only sync token state if not in the middle of a selection
         ;; This prevents race condition between blur and token selection
         (when-not (mf/ref-val token-selection-in-progress*)
+          (mf/set-ref-val! last-token-applied* applied-token-name)
           (reset! token-applied-name* applied-token-name)
           (if applied-token-name
             (let [token-id (:id (get-option-by-name dropdown-options applied-token-name))]

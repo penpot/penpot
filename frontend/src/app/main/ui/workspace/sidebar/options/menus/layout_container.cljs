@@ -1186,7 +1186,10 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           ;; The layout schema requires numbers: parse first so numeric
+           ;; strings never reach shape data (js/isFinite alone lets them
+           ;; through, see issue #10638).
+           (let [val (mth/finite (d/parse-double val) 0)]
              (cond
                ^boolean multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
@@ -1205,7 +1208,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [type prop val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val) 0)]
              (cond
                (and (= type :simple) (or (= prop :p1) (= prop #{:p1 :p3})))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
@@ -1427,7 +1430,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (let [val (mth/finite val 0)]
+           (let [val (mth/finite (d/parse-double val) 0)]
              (if multiple?
                (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
@@ -1441,7 +1444,7 @@
 
         on-padding-change
         (fn [type prop val]
-          (let [val (mth/finite val 0)]
+          (let [val (mth/finite (d/parse-double val) 0)]
             (cond
               (and (= type :simple) (= prop :p1))
               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
