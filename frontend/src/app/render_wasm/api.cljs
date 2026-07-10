@@ -2467,9 +2467,13 @@
 
 (defn calculate-bool*
   [bool-type ids]
+  ;; NOTE: heap views are (re)fetched after every allocating call:
+  ;; both _alloc_bytes and _calculate_bool (which allocates the result
+  ;; buffer) can grow WASM memory, and growth detaches any previously
+  ;; captured view (see issue #10647).
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
-        heap   (mem/get-heap-u32)
-        offset (mem/alloc->offset-32 size)]
+        offset (mem/alloc->offset-32 size)
+        heap   (mem/get-heap-u32)]
 
     (reduce (fn [offset id]
               (mem.h32/write-uuid offset heap id))
@@ -2481,6 +2485,7 @@
             (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
                 (mem/->offset-32))
 
+            heap    (mem/get-heap-u32)
             length  (aget heap offset)
             data    (mem/slice heap
                                (+ offset 1)
@@ -2503,19 +2508,23 @@
   ;; After the content is returned we discard that temporary context
   (h/call wasm/internal-module "_start_temp_objects")
 
-  (let [bool-type (get shape :bool-type)
-        ids (get shape :shapes)
-        all-children
-        (->> ids
-             (mapcat #(cfh/get-children-with-self objects %)))]
+  ;; NOTE: without the finally, a failure in the body leaves the
+  ;; temporary pool active and every subsequent call panics in
+  ;; _start_temp_objects (see issue #10647).
+  (try
+    (let [bool-type (get shape :bool-type)
+          ids (get shape :shapes)
+          all-children
+          (->> ids
+               (mapcat #(cfh/get-children-with-self objects %)))]
 
-    (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
-    (run! set-object all-children)
+      (h/call wasm/internal-module "_init_shapes_pool" (count all-children))
+      (run! set-object all-children)
 
-    (let [content (-> (calculate-bool* bool-type ids)
-                      (path.impl/path-data))]
-      (h/call wasm/internal-module "_end_temp_objects")
-      content)))
+      (-> (calculate-bool* bool-type ids)
+          (path.impl/path-data)))
+    (finally
+      (h/call wasm/internal-module "_end_temp_objects"))))
 
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
