@@ -699,6 +699,13 @@
   (when (some? node)
     (.setAttribute node attr value)))
 
+(defn focus-and-untabbable!
+  [^js node]
+  (when (some? node)
+    (set-attribute! node "tabindex" "0")
+    (focus! node)
+    (set-attribute! node "tabindex" "-1")))
+
 (defn set-style!
   [^js node ^string style value]
   (when (some? node)
