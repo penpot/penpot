@@ -5026,9 +5026,17 @@ msgstr "This token does not exist or has been deleted."
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
-#: src/app/plugins/utils.cljs:318
+#: src/app/plugins/utils.cljs:533
+msgid "plugins.validation.invalid-value"
+msgstr "expected %s, got %s (%s)"
+
+#: src/app/plugins/utils.cljs:547
 msgid "plugins.validation.message"
 msgstr "Field %s is invalid: %s"
+
+#: src/app/plugins/utils.cljs:536
+msgid "plugins.validation.received-value"
+msgstr "got %s (%s)"
 
 #: src/app/main/ui/auth/recovery.cljs:88
 msgid "profile.recovery.go-to-login"
