@@ -154,6 +154,356 @@
   (t/is (false? (boolean (ptok/token-attr? "not-a-real-attr"))))
   (t/is (false? (boolean (ptok/token-attr? nil)))))
 
+;; Regression coverage for issue #9290.
+;;
+;; The `properties` argument of `shape.applyToken`, `token.applyToShapes`
+;; and `token.applyToSelected` is documented as optional ("If omitted, the
+;; default properties will be applied"). The proxies collapsed a missing
+;; `properties` into an empty set before handing it to `toggle-token`,
+;; which distinguishes nil (apply the token type defaults) from a set of
+;; explicit attributes. For spacing tokens the nil case is the only one
+;; that splits the application (margins for layout children, gaps
+;; otherwise), so an omitted `properties` ended up applying nothing at
+;; all.
+
+(defn- setup-tokens-file
+  [set-id color-token-id spacing-token-id]
+  (-> (cthf/sample-file :file1 :page-label :page1)
+      (ctho/add-frame-with-child :frame1 :rect1 :frame-params {:layout :flex})
+      (ctht/add-tokens-lib)
+      (ctht/update-tokens-lib
+       #(-> %
+            (ctob/add-set
+             (ctob/make-token-set :id set-id
+                                  :name "tokens"))
+            (ctob/add-theme
+             (ctob/make-token-theme :name "theme"
+                                    :sets #{"tokens"}))
+            (ctob/set-active-themes #{"/theme"})
+            (ctob/add-token
+             set-id
+             (ctob/make-token :id color-token-id
+                              :name "palette.gold.50"
+                              :type :color
+                              :value "#ff0000"))
+            (ctob/add-token
+             set-id
+             (ctob/make-token :id spacing-token-id
+                              :name "spacing.medium"
+                              :type :spacing
+                              :value 16))))))
+
+(defn- applied-tokens
+  [store file shape-id]
+  (get-in @store [:files (:id file) :data :pages-index (cthf/current-page-id file)
+                  :objects shape-id :applied-tokens]))
+
+(t/deftest shape-apply-token-without-properties-applies-defaults
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :frame1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToken shape token)
+      (js/setTimeout
+       (fn []
+         (t/is (= "palette.gold.50" (.. shape -tokens -fill)))
+         (t/is (= "palette.gold.50"
+                  (:fill (applied-tokens store file (cthi/id :frame1)))))
+         (done))
+       0))))
+
+(t/deftest shape-apply-spacing-token-without-properties-applies-margins-to-layout-child
+  ;; Guards the nil-vs-empty-set distinction: `toggle-token` only splits
+  ;; spacing tokens (margins for layout children, gaps otherwise) when
+  ;; `attrs` is nil, so a missing `properties` must not be normalized to
+  ;; an empty set.
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str spacing-token-id))]
+      (.applyToken shape token)
+      (js/setTimeout
+       (fn []
+         (let [applied (applied-tokens store file (cthi/id :rect1))]
+           (t/is (= "spacing.medium" (:m1 applied)))
+           (t/is (= "spacing.medium" (:m4 applied)))
+           (t/is (nil? (:column-gap applied))))
+         (done))
+       0))))
+
+(t/deftest shape-apply-spacing-token-with-empty-properties-applies-defaults
+  ;; An empty `properties` array names no property, so it means the same
+  ;; as omitting the argument.
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str spacing-token-id))]
+      (.applyToken shape token #js [])
+      (js/setTimeout
+       (fn []
+         (t/is (= "spacing.medium" (:m1 (applied-tokens store file (cthi/id :rect1)))))
+         (done))
+       0))))
+
+(t/deftest token-apply-to-shapes-without-properties-applies-defaults
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToShapes token #js [shape])
+      (js/setTimeout
+       (fn []
+         (t/is (= "palette.gold.50" (.. shape -tokens -fill)))
+         (t/is (= "palette.gold.50"
+                  (:fill (applied-tokens store file (cthi/id :rect1)))))
+         (done))
+       0))))
+
+(t/deftest token-apply-to-selected-without-properties-applies-defaults
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          _                (ptk/emit! store
+                                      #(assoc-in % [:workspace-local :selected]
+                                                 #{(cthi/id :rect1)}))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToSelected token)
+      (js/setTimeout
+       (fn []
+         (t/is (= "palette.gold.50" (.. shape -tokens -fill)))
+         (t/is (= "palette.gold.50"
+                  (:fill (applied-tokens store file (cthi/id :rect1)))))
+         (done))
+       0))))
+
+;; `applyToken` / `applyToShapes` / `applyToSelected` are documented as
+;; applying a token, never as toggling it, and the Plugin API exposes no
+;; un-apply counterpart. Re-applying the same token must therefore be
+;; idempotent: a plugin that defensively re-applies (a sync loop, a retry,
+;; a user pressing the plugin's button twice) must not end up stripping
+;; the token — nor a sibling binding it never set, such as a stroke-color
+;; token that shares the color attribute set.
+
+(t/deftest shape-apply-token-twice-without-properties-keeps-it-applied
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToken shape token)
+      (js/setTimeout
+       (fn []
+         (.applyToken shape token)
+         (js/setTimeout
+          (fn []
+            (t/is (= "palette.gold.50"
+                     (:fill (applied-tokens store file (cthi/id :rect1)))))
+            (done))
+          0))
+       0))))
+
+(t/deftest shape-apply-token-twice-with-properties-keeps-it-applied
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToken shape token #js ["fill"])
+      (js/setTimeout
+       (fn []
+         (.applyToken shape token #js ["fill"])
+         (js/setTimeout
+          (fn []
+            (t/is (= "palette.gold.50"
+                     (:fill (applied-tokens store file (cthi/id :rect1)))))
+            (done))
+          0))
+       0))))
+
+(t/deftest shape-apply-token-without-properties-keeps-sibling-attribute-binding
+  ;; A color token's default attribute is `:fill`, but its attribute *set*
+  ;; also covers `:stroke-color`. Applying with omitted `properties` must
+  ;; never touch a `:stroke-color` binding the caller did not ask for.
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToken shape token #js ["stroke-color"])
+      (js/setTimeout
+       (fn []
+         (.applyToken shape token)
+         (js/setTimeout
+          (fn []
+            (let [applied (applied-tokens store file (cthi/id :rect1))]
+              (t/is (= "palette.gold.50" (:stroke-color applied)))
+              (t/is (= "palette.gold.50" (:fill applied))))
+            (done))
+          0))
+       0))))
+
+(t/deftest token-apply-to-shapes-twice-without-properties-keeps-it-applied
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str color-token-id))]
+      (.applyToShapes token #js [shape])
+      (js/setTimeout
+       (fn []
+         (.applyToShapes token #js [shape])
+         (js/setTimeout
+          (fn []
+            (t/is (= "palette.gold.50"
+                     (:fill (applied-tokens store file (cthi/id :rect1)))))
+            (done))
+          0))
+       0))))
+
+(t/deftest shape-apply-spacing-token-twice-without-properties-keeps-margins
+  (t/async
+    done
+    (let [set-id           (cthi/new-id! :token-set)
+          color-token-id   (cthi/new-id! :color-token)
+          spacing-token-id (cthi/new-id! :spacing-token)
+          file             (setup-tokens-file set-id color-token-id spacing-token-id)
+          store            (ths/setup-store file)
+          _                (set! st/state store)
+          _                (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :rect1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str spacing-token-id))]
+      (.applyToken shape token)
+      (js/setTimeout
+       (fn []
+         (.applyToken shape token)
+         (js/setTimeout
+          (fn []
+            (let [applied (applied-tokens store file (cthi/id :rect1))]
+              (t/is (= "spacing.medium" (:m1 applied)))
+              (t/is (= "spacing.medium" (:m4 applied))))
+            (done))
+          0))
+       0))))
+
 ;; Regression coverage for issue #10070.
 ;;
 ;; The Plugin API's `addToken` rejected reference tokens whose target
@@ -399,4 +749,5 @@
         (t/is (empty? @emitted))
         (t/is (= 2 (count @invalid)))
         (t/is (every? #(= :error (first %)) @invalid))))))
+
 
