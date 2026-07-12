@@ -54,20 +54,31 @@
 ;; validate data within the form state.
 
 (defn- resolve-value
-  [tokens prev-token _token-name value]
+  [tokens prev-token token-name value]
   (let [tmp-value (cto/split-font-family value)
-        tmp-name  "__PENPOT__FONT_FAMILY__PLACEHOLDER__"
 
-        ;; Create a temporary font-family token to validate the value
+        valid-token-name?
+        (and (string? token-name)
+             (not (str/blank? token-name))
+             (re-matches cto/token-name-validation-regex token-name))
+
+        ;; Create a temporary font-family token to validate the value. It's
+        ;; keyed under the name of the token being edited, so that a cycle
+        ;; closing back through it can be detected.
         token
-        {:name tmp-name
+        {:name (if valid-token-name?
+                 token-name
+                 "__PENPOT__FONT_FAMILY__PLACEHOLDER__")
          :type :font-family
          :value (if (= (:type prev-token) :typography)
                   (assoc (:value prev-token) :font-family tmp-value)
                   tmp-value)}
 
         tokens
-        (update tokens (:name token) #(ctob/make-token (merge % prev-token token)))]
+        (-> tokens
+            ;; Remove previous token when renaming a token
+            (dissoc (:name prev-token))
+            (update (:name token) #(ctob/make-token (merge % prev-token token))))]
     ;; TODO: Review this when tokenscript is fully integrated.
     (if (cfo/token-circular-reference? tokens (:name token))
       (rx/of {:error (wte/error-with-value :error.token/circular-reference nil)})

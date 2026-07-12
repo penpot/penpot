@@ -165,16 +165,21 @@
              (some (fn [[token-name _]]
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
-(defn find-refs [value]
-  (prn value)
+
+(defn find-refs
+  "Returns the token references found in `value`, recursing into the maps and
+   sequences that composite token values are made of (typography, shadow,
+   font-family)."
+  [value]
   (cond
     (string? value)
     (cto/find-token-value-references value)
 
     (map? value)
-    (->> (vals value)
-         (keep :reference)
-         (mapcat cto/find-token-value-references))
+    (mapcat find-refs (vals value))
+
+    (sequential? value)
+    (mapcat find-refs value)
 
     :else
     nil))
@@ -203,29 +208,43 @@
           (let [refs (find-refs (:value token))]
             (some visit refs)))))))
 
+(defn tokens-tree->tokens
+  "Flattens back a nested `tokens-tree` into a map of token name -> token."
+  [tokens-tree]
+  (reduce-kv (fn [result _ node]
+               (cond
+                 (:name node) (assoc result (:name node) node)
+                 (map? node)  (merge result (tokens-tree->tokens node))
+                 :else        result))
+             {} tokens-tree))
+
 (def schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
 (defn make-token-schema
   [tokens-tree token-type current-token-path]
-  [:and
-   (sm/merge
-    cto/schema:token-attrs
-    [:map
-     [:name (make-token-name-schema (-> tokens-tree
-                                        (d/dissoc-in current-token-path)))]
-     [:value (make-token-value-schema token-type)]
-     [:description {:optional true} schema:token-description]])
-   [:fn {:error/field :value
-         :error/fn #(tr "errors.tokens.circular-reference")}
-    (fn [{:keys [name]}]
-      (when name
-        (not (token-circular-reference? tokens-tree name))))]
-   [:fn {:error/field :value
-         :error/fn #(tr "errors.tokens.self-reference")}
-    (fn [{:keys [name value]}]
-      (when (and name value)
-        (not (cto/token-value-self-reference? name value))))]])
+  (let [tokens (tokens-tree->tokens tokens-tree)]
+    [:and
+     (sm/merge
+      cto/schema:token-attrs
+      [:map
+       [:name (make-token-name-schema (-> tokens-tree
+                                          (d/dissoc-in current-token-path)))]
+       [:value (make-token-value-schema token-type)]
+       [:description {:optional true} schema:token-description]])
+     [:fn {:error/field :value
+           :error/fn #(tr "errors.tokens.circular-reference")}
+      ;; The token is checked with the value currently being edited, so that a
+      ;; value that breaks an existing cycle is accepted, and a value that
+      ;; creates one is rejected.
+      (fn [{:keys [name value]}]
+        (when name
+          (not (token-circular-reference? (assoc tokens name {:value value}) name))))]
+     [:fn {:error/field :value
+           :error/fn #(tr "errors.tokens.self-reference")}
+      (fn [{:keys [name value]}]
+        (when (and name value)
+          (not (cto/token-value-self-reference? name value))))]]))
 
 (defn make-node-token-schema
   [active-tokens tokens-tree node]
