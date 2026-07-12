@@ -170,6 +170,49 @@
                   [:workspace-tokens :unfolded-token-types]
                   (make-unfolded-token-types-state file-id set-id #{}))))))
 
+(defn- get-token-types-by-set
+  "Returns a map of set id to the token types present on that set of `lib`."
+  [lib]
+  (reduce (fn [result token-set]
+            (let [set-id (ctob/get-id token-set)
+                  types  (into #{} (map :type) (vals (ctob/get-tokens lib set-id)))]
+              (cond-> result
+                (seq types) (assoc set-id types))))
+          {}
+          (ctob/get-sets lib)))
+
+(defn- unfold-token-types-in-storage
+  [file-id types-by-set]
+  (swap! storage/user update :app.main.ui.workspace.tokens/unfolded-token-types
+         (fn [stored]
+           (reduce-kv (fn [stored set-id types]
+                        (update-in stored [file-id set-id]
+                                   #(-> (set %) (into types) (vec))))
+                      stored
+                      types-by-set))))
+
+(defn unfold-token-types
+  "Unfolds all the token types present on every set of `lib`, keeping the ones
+  already unfolded. The token sections restore their fold state from the storage
+  on mount and on set selection, so it also needs to be persisted there."
+  [lib]
+  (ptk/reify ::unfold-token-types
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id  (:current-file-id state)
+            selected (get-in state [:workspace-tokens :selected-token-set-id])
+            ;; The panel keeps the selected set if it is part of the imported
+            ;; library, and falls back to its first set otherwise.
+            set-id   (or (some->> selected (ctob/get-set lib) (ctob/get-id))
+                         (some->> (ctob/get-sets lib) (first) (ctob/get-id)))]
+        (unfold-token-types-in-storage file-id (get-token-types-by-set lib))
+        (cond-> state
+          (some? set-id)
+          (assoc-in [:workspace-tokens :unfolded-token-types]
+                    (make-unfolded-token-types-state
+                     file-id set-id
+                     (get-unfolded-token-types-from-storage file-id set-id))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS TREE - Toggle tree nodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -417,6 +460,7 @@
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
         (rx/of (dch/commit-changes changes)
+               (unfold-token-types lib)
                (dwtp/propagate-workspace-tokens))))))
 
 (defn delete-token-set
