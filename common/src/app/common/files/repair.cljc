@@ -10,12 +10,14 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]))
 
 (log/set-level! :debug)
@@ -654,45 +656,141 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defn- get-variant-container
+  "Get the variant container that holds this variant shape, or nil if it
+  cannot be determined with confidence."
+  [file-data page-id shape]
+  (let [objects (-> (ctpl/get-page file-data page-id)
+                    (get :objects))
+        parent  (get objects (:parent-id shape))]
+    (when (ctk/is-variant-container? parent)
+      parent)))
+
 (defmethod repair-error :not-a-variant
-  [_ error file _]
+  [_ error _ _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  (pcb/empty-changes nil))
 
 (defmethod repair-error :invalid-variant-id
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [container (get-variant-container file-data page-id shape)
+
+        repair-shape
+        (fn [shape]
+          ;; Set the variant-id of the container that holds this variant
+          (log/debug :hint "  -> set :variant-id" :shape-id (:id shape))
+          (assoc shape :variant-id (:id container)))]
+
+    (log/dbg :hint "repairing shape :invalid-variant-id" :id (:id shape) :name (:name shape) :page-id page-id)
+    (if (some? container)
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] repair-shape))
+      (do
+        (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+        (pcb/empty-changes nil page-id)))))
 
 (defmethod repair-error :invalid-variant-properties
-  [_ error file _]
+  [_ error _ _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  (pcb/empty-changes nil))
 
 (defmethod repair-error :variant-not-main
-  [_ error file _]
+  [_ error _ _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  (pcb/empty-changes nil))
 
 (defmethod repair-error :parent-not-variant
-  [_ error file _]
+  [_ error _ _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  (pcb/empty-changes nil))
 
 (defmethod repair-error :variant-bad-name
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [container (get-variant-container file-data page-id shape)
+
+        repair-shape
+        (fn [shape]
+          ;; A variant is named after the container that holds it
+          (log/debug :hint "  -> set :name" :shape-id (:id shape))
+          (assoc shape :name (:name container)))]
+
+    (log/dbg :hint "repairing shape :variant-bad-name" :id (:id shape) :name (:name shape) :page-id page-id)
+    (if (some? container)
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] repair-shape))
+      (do
+        (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+        (pcb/empty-changes nil page-id)))))
 
 (defmethod repair-error :variant-bad-variant-name
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [component (ctkl/get-component file-data (:component-id shape) true)
+
+        repair-shape
+        (fn [shape]
+          ;; The variant-name is derived from the properties of its component
+          (log/debug :hint "  -> set :variant-name" :shape-id (:id shape))
+          (assoc shape :variant-name (ctv/properties-to-name (:variant-properties component))))]
+
+    (log/dbg :hint "repairing shape :variant-bad-variant-name" :id (:id shape) :name (:name shape) :page-id page-id)
+    (if (some? component)
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-file-data file-data)
+          (pcb/update-shapes [(:id shape)] repair-shape))
+      (do
+        (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+        (pcb/empty-changes nil page-id)))))
+
+(defn- split-container-name
+  "Split the name of a variant container into the [path name] of its components.
+
+  The name of a variant component is the merge of its path and its name, so the
+  split is only used when it can be merged back into the original string; if the
+  container name is not normalized, it is kept verbatim as the component name."
+  [container-name]
+  (let [[path name] (cpn/split-group-name container-name)]
+    (if (= container-name (cpn/merge-path-item path name))
+      [path name]
+      ["" container-name])))
+
+(defn- repair-variant-component
+  "Restore the attributes that a variant component derives from its container.
+
+  Both `:variant-component-bad-name` and `:variant-component-bad-id` may be
+  reported for the same component, and each `mod-component` change carries the
+  whole set of attributes, so both repairs need to generate the same result to
+  not overwrite each other."
+  [code {:keys [shape page-id]} file-data]
+  (let [container (get-variant-container file-data page-id shape)
+        component (ctkl/get-component file-data (:component-id shape) true)
+
+        repair-component
+        (fn [component]
+          (let [[path name] (split-container-name (:name container))]
+            (log/debug :hint "  -> set component :name, :path and :variant-id" :component-id (:id component))
+            (assoc component
+                   :name name
+                   :path path
+                   :variant-id (:id container))))]
+
+    (log/dbg :hint (str "repairing shape " code) :id (:id shape) :name (:name shape) :page-id page-id)
+    (if (and (some? container) (some? component))
+      (-> (pcb/empty-changes nil page-id)
+          (pcb/with-library-data file-data)
+          (pcb/update-component (:component-id shape) repair-component))
+      (do
+        (log/warn :hint "  -> CANNOT REPAIR THIS AUTOMATICALLY.")
+        (pcb/empty-changes nil page-id)))))
 
 (defmethod repair-error :variant-component-bad-name
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
+  [code error file-data _]
+  (repair-variant-component code error file-data))
+
+(defmethod repair-error :variant-component-bad-id
+  [code error file-data _]
+  (repair-variant-component code error file-data))
 
 (defmethod repair-error :default
   [_ error file _]
