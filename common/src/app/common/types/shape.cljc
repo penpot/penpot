@@ -692,6 +692,31 @@
     :r3
     :r4})
 
+(def ^:private text-extract-props
+  (into #{} cat [txt/root-attrs txt/paragraph-attrs txt/text-node-attrs]))
+
+(def ^:private layout-extract-props
+  (set ctsl/layout-attrs))
+
+;; Token attrs are not shape attrs (:fill token vs :fills attr, :m1..:m4 vs
+;; :layout-item-margin). A token may only travel with the value it resolves to,
+;; so its domain is derived from the props that are actually written. The attrs
+;; holding a map of edges are patched edge by edge, so only the edges present
+;; in the map are written.
+(defn- token-attrs
+  [props]
+  (reduce-kv (fn [result attr value]
+               (let [sub-attrs (when (map? value)
+                                 (not-empty (set (keys value))))]
+                 (into result
+                       (if (= :layout-gap attr)
+                         (if (some? sub-attrs)
+                           (filter cto/spacing-gap-keys sub-attrs)
+                           cto/spacing-gap-keys)
+                         (cto/shape-attr->token-attrs attr sub-attrs)))))
+             #{}
+             props))
+
 (defn extract-props
   "Retrieves an object with the 'pasteable' properties for a shape."
   [shape]
@@ -723,7 +748,15 @@
                   props)))
 
           (extract-layout-attrs [props shape]
-            (d/patch-object props (select-keys shape ctsl/layout-attrs)))]
+            (d/patch-object props (select-keys shape ctsl/layout-attrs)))
+
+          (extract-token-props [props shape]
+            (let [tokens (-> (:applied-tokens shape)
+                             (select-keys (token-attrs props))
+                             (not-empty))]
+              (cond-> props
+                (some? tokens)
+                (assoc :applied-tokens tokens))))]
 
     (let [;; For texts we don't extract the fill
           extract-props
@@ -731,7 +764,8 @@
       (-> shape
           (select-keys extract-props)
           (cond-> (cfh/text-shape? shape) (extract-text-props shape))
-          (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))))))
+          (cond-> (ctsl/any-layout? shape) (extract-layout-attrs shape))
+          (extract-token-props shape)))))
 
 (defn patch-props
   "Given the object of `extract-props` applies it to a shape. Adapt the shape if necessary"
@@ -759,12 +793,33 @@
             (let [shape (d/patch-object shape (select-keys props ctsl/layout-attrs))]
               (cond-> shape
                 (ctsl/grid-layout? shape)
-                (ctsl/assign-cells objects))))]
+                (ctsl/assign-cells objects))))
+
+          (patched-props [shape props]
+            (let [text?  (cfh/text-shape? shape)
+                  frame? (cfh/frame-shape? shape)]
+              (select-keys props
+                           (filter (fn [attr]
+                                     (or (contains? basic-extract-props attr)
+                                         (and text? (contains? text-extract-props attr))
+                                         (and frame? (contains? layout-extract-props attr))))
+                                   (keys props)))))
+
+          (patch-token-props [shape props]
+            (let [attrs  (token-attrs (patched-props shape props))
+                  tokens (-> (:applied-tokens shape)
+                             (d/without-keys attrs)
+                             (merge (select-keys (:applied-tokens props) attrs))
+                             (not-empty))]
+              (if (some? tokens)
+                (assoc shape :applied-tokens tokens)
+                (dissoc shape :applied-tokens))))]
 
     (-> shape
         (d/patch-object (select-keys props basic-extract-props))
         (cond-> (cfh/text-shape? shape) (patch-text-props props))
-        (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
+        (cond-> (cfh/frame-shape? shape) (patch-layout-props props))
+        (patch-token-props props))))
 
 
 

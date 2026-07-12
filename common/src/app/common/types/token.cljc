@@ -235,6 +235,8 @@
    [:row-gap {:optional true} schema:token-name]
    [:column-gap {:optional true} schema:token-name]])
 
+(def spacing-gap-keys (schema-keys schema:spacing-gap))
+
 (def ^:private schema:spacing-padding
   [:map {:title "SpacingPaddingTokenAttrs"}
    [:p1 {:optional true} schema:token-name]

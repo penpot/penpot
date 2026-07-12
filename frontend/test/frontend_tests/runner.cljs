@@ -47,6 +47,7 @@
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.svg-fills-test]
+   [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
@@ -121,6 +122,7 @@
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.svg-fills-test
+   'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
