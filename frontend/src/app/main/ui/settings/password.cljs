@@ -48,12 +48,14 @@
                   :on-error (partial on-error form)})]
     (st/emit! (udu/update-password params))))
 
-(def ^:private schema:password-form
+(def schema:password-form
   [:and
    [:map {:title "PasswordForm"}
     [:password-1 ::sm/password]
     [:password-2 ::sm/password]
-    [:password-old ::sm/password]]
+    ;; The old password is validated by the backend, so it only needs to be
+    ;; present here; it may predate the current minimum length policy.
+    [:password-old [::sm/text {:max 500}]]]
    [:fn {:error/code "errors.password-invalid-confirmation"
          :error/field :password-2}
     (fn [{:keys [password-1 password-2]}]
