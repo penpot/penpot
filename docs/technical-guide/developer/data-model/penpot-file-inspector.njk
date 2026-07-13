@@ -4,6 +4,14 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
 ---
 
 <style>
+  .main-container:has(.inspector-wrap) .sidebar {
+    display: none;
+  }
+  .main-content:has(.inspector-wrap) {
+    max-width: none;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
   .inspector-wrap {
     margin: 1rem 0 2rem;
     display: block;
@@ -36,36 +44,91 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   }
   .inspector-status.error { color: #b00020; }
 
-  .inspector-layout {
+  .inspector-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 6px;
+    background: var(--color-gray-light);
+  }
+  .inspector-picker input[type=text] {
+    flex: 1;
+    min-width: 240px;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--color-gray-medium);
+    border-radius: 4px;
+    font-family: 'Menlo', 'Consolas', monospace;
+    font-size: 0.85rem;
+    background: var(--white);
+  }
+  .inspector-picker button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--color-gray-medium);
+    background: var(--white);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .inspector-picker button:hover:not(:disabled) {
+    background: var(--advice);
+    border-color: var(--primarydark);
+  }
+  .inspector-picker button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .inspector-picker button.active {
+    background: var(--advice);
+    color: var(--primarydark);
+    border-color: var(--primarydark);
+    font-weight: 600;
+  }
+  .inspector-current-path {
+    font-family: 'Menlo', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: var(--graymedium);
+    margin-top: 0.5rem;
+    margin-left: 0.2rem;
+    min-height: 1.2em;
+    word-break: break-all;
+  }
+
+  .inspector-main {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
     gap: 1rem;
-    margin-top: 1.5rem;
-    min-height: 500px;
+    margin-top: 0.5rem;
   }
   @media (max-width: 900px) {
-    .inspector-layout { grid-template-columns: 1fr; }
-    .inspector-sidebar { max-height: 320px; }
+    .inspector-main { grid-template-columns: 1fr; }
   }
-
-  .inspector-sidebar {
-    grid-column: 1;
-    order: 1;
+  .inspector-tree-panel {
     border: 1px solid var(--color-gray-medium);
     border-radius: 6px;
     background: var(--white);
-    overflow: auto;
     padding: 0.6rem;
     font-size: 0.9rem;
+    max-height: 75vh;
+    overflow: auto;
+    position: sticky;
+    top: 1rem;
+    align-self: start;
   }
-  .inspector-search {
+  .inspector-tree-search {
     width: 100%;
     padding: 0.4rem 0.6rem;
     border: 1px solid var(--color-gray-medium);
     border-radius: 4px;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
     font-size: 0.85rem;
     font-family: inherit;
+    box-sizing: border-box;
   }
   .inspector-tree { list-style: none; padding: 0; margin: 0; }
   .inspector-tree ul {
@@ -85,13 +148,18 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     line-height: 1.4;
   }
   .inspector-tree-row:hover { background: var(--color-gray-light); }
-  .inspector-tree-row.active { background: var(--advice); color: var(--primarydark); font-weight: 500; }
+  .inspector-tree-row.active {
+    background: var(--advice);
+    color: var(--primarydark);
+    font-weight: 500;
+  }
   .inspector-tree-toggle {
     display: inline-block;
     width: 1em;
     text-align: center;
     color: var(--graymedium);
     flex-shrink: 0;
+    cursor: pointer;
   }
   .inspector-tree-toggle.leaf { visibility: hidden; }
   .inspector-tree-icon { flex-shrink: 0; font-size: 0.85em; }
@@ -101,13 +169,12 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   .inspector-search-empty { color: var(--graymedium); font-style: italic; padding: 0.4rem; }
 
   .inspector-content {
-    grid-column: 2;
-    order: 2;
     border: 1px solid var(--color-gray-medium);
     border-radius: 6px;
     background: var(--white);
     overflow: auto;
     padding: 1.2rem;
+    min-height: 75vh;
   }
 
   .inspector-empty { color: var(--graymedium); text-align: center; padding: 3rem 1rem; }
@@ -266,14 +333,23 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   </label>
   <div class="inspector-status" id="status"></div>
 
-  <div class="inspector-layout" id="app" hidden>
-    <aside class="inspector-sidebar">
-      <input type="search" class="inspector-search" id="tree-search" placeholder="Filter files..." />
-      <div class="inspector-tree" id="tree"></div>
-    </aside>
-    <main class="inspector-content" id="content">
-      <div class="inspector-empty">Select a file from the sidebar to inspect it.</div>
-    </main>
+  <div id="app" hidden>
+    <div class="inspector-picker">
+      <input type="text" list="file-list" id="file-picker-input" placeholder="Search files in archive..." />
+      <datalist id="file-list"></datalist>
+      <button id="file-picker-go" type="button">Open</button>
+      <button id="file-picker-back" type="button">&#8592; Overview</button>
+    </div>
+    <div class="inspector-current-path" id="current-path">File overview</div>
+    <div class="inspector-main">
+      <aside class="inspector-tree-panel">
+        <input type="search" class="inspector-tree-search" id="tree-search" placeholder="Filter files in tree..." />
+        <div class="inspector-tree" id="tree"></div>
+      </aside>
+      <main class="inspector-content" id="content">
+        <div class="inspector-empty">Upload a file to begin.</div>
+      </main>
+    </div>
   </div>
 </div>
 
@@ -330,8 +406,13 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   const fileInput = document.getElementById('file-input');
   const statusEl = document.getElementById('status');
   const appEl = document.getElementById('app');
-  const treeEl = document.getElementById('tree');
   const contentEl = document.getElementById('content');
+  const fileListEl = document.getElementById('file-list');
+  const filePickerInput = document.getElementById('file-picker-input');
+  const filePickerGo = document.getElementById('file-picker-go');
+  const filePickerBack = document.getElementById('file-picker-back');
+  const currentPathEl = document.getElementById('current-path');
+  const treeEl = document.getElementById('tree');
   const treeSearch = document.getElementById('tree-search');
 
   function setStatus(msg, isError) {
@@ -452,6 +533,7 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
       indexBacklinks();
       setStatus('Loaded ' + count + ' files from ' + file.name);
       appEl.hidden = false;
+      populateFileList();
       buildTree();
       showOverview();
     } catch (e) {
@@ -487,6 +569,16 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     }
   }
 
+  function populateFileList() {
+    fileListEl.innerHTML = '';
+    const names = currentFiles.map(f => f.name).sort();
+    for (const name of names) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      fileListEl.appendChild(opt);
+    }
+  }
+
   function buildTree() {
     treeEl.innerHTML = '';
     const root = { name: '', children: new Map(), isDir: true };
@@ -496,7 +588,7 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
         if (!cur.children.has(part)) {
-          cur.children.set(part, { name: part, children: new Map(), isDir: true, files: [] });
+          cur.children.set(part, { name: part, children: new Map(), isDir: true });
         }
         cur = cur.children.get(part);
       }
@@ -523,23 +615,22 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
       const li = document.createElement('li');
       const row = document.createElement('div');
       row.className = 'inspector-tree-row';
+      row.dataset.fullpath = child.fullPath || '';
       const toggle = document.createElement('span');
       toggle.className = 'inspector-tree-toggle';
       if (child.isDir) {
         toggle.textContent = '\u25BE';
-        let collapsed = false;
         const childUl = renderTreeNode(child, false);
-        childUl.style.display = '';
         toggle.addEventListener('click', (e) => {
           e.stopPropagation();
-          collapsed = !collapsed;
-          childUl.style.display = collapsed ? 'none' : '';
-          toggle.textContent = collapsed ? '\u25B8' : '\u25BE';
+          const collapsed = childUl.style.display === 'none';
+          childUl.style.display = collapsed ? '' : 'none';
+          toggle.textContent = collapsed ? '\u25BE' : '\u25B8';
         });
-        row.addEventListener('click', () => toggle.click());
         row.appendChild(toggle);
         row.appendChild(iconSpan(iconFor(child.name, true)));
         row.appendChild(labelSpan(child.name));
+        row.addEventListener('click', () => toggle.click());
         li.appendChild(row);
         li.appendChild(childUl);
       } else {
@@ -550,11 +641,8 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
         if (child.file.size != null) {
           row.appendChild(sizeSpan(formatSize(child.file.size)));
         }
-        row.addEventListener('click', () => selectFile(child.file.name, row));
-        row._fullPath = child.file.name;
+        row.addEventListener('click', () => selectFile(child.file.name));
         li.appendChild(row);
-        child._row = row;
-        child._name = child.name;
       }
       ul.appendChild(li);
     }
@@ -580,12 +668,48 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     return s;
   }
 
-  function selectFile(name, rowEl) {
+  function findTreeRow(name) {
+    const rows = treeEl.querySelectorAll('.inspector-tree-row');
+    for (const r of rows) {
+      if (r.dataset.fullpath === name) return r;
+    }
+    return null;
+  }
+
+  function expandTreeAncestors(row) {
+    let el = row;
+    while (el) {
+      if (el.tagName === 'UL' && el.style.display === 'none') {
+        el.style.display = '';
+        const prev = el.previousElementSibling;
+        if (prev) {
+          const toggle = prev.querySelector('.inspector-tree-toggle');
+          if (toggle) toggle.textContent = '\u25BE';
+        }
+      }
+      el = el.parentElement;
+    }
+  }
+
+  function updateTreeActive(name) {
+    treeEl.querySelectorAll('.inspector-tree-row.active').forEach(r => r.classList.remove('active'));
+    if (!name) return;
+    const row = findTreeRow(name);
+    if (!row) return;
+    row.classList.add('active');
+    expandTreeAncestors(row);
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function selectFile(name) {
     selectedName = name;
-    document.querySelectorAll('.inspector-tree-row.active').forEach(r => r.classList.remove('active'));
-    if (rowEl) rowEl.classList.add('active');
     const f = fileIndex.get(name);
-    if (!f) return;
+    if (!f) {
+      setStatus('File not found: ' + name, true);
+      return;
+    }
+    updatePickerState(name);
+    updateTreeActive(name);
     contentEl.innerHTML = '';
     if (f.json !== null && f.json !== undefined) {
       renderJsonContent(f);
@@ -601,6 +725,38 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     } else if (f.blob) {
       renderBinaryContent(f);
     }
+  }
+
+  function updatePickerState(name) {
+    if (name) {
+      filePickerInput.value = name;
+      currentPathEl.textContent = name;
+      filePickerBack.classList.remove('active');
+    } else {
+      filePickerInput.value = '';
+      currentPathEl.textContent = 'File overview';
+      filePickerBack.classList.add('active');
+      treeEl.querySelectorAll('.inspector-tree-row.active').forEach(r => r.classList.remove('active'));
+    }
+  }
+
+  function goToOverview() {
+    selectedName = null;
+    updatePickerState(null);
+    showOverview();
+  }
+
+  function goToFileFromPicker() {
+    const name = filePickerInput.value.trim();
+    if (!name) {
+      setStatus('Type or pick a file from the archive.', true);
+      return;
+    }
+    if (!fileIndex.has(name)) {
+      setStatus('No file matches "' + name + '".', true);
+      return;
+    }
+    selectFile(name);
   }
 
   function isShapeFile(name) {
@@ -828,35 +984,11 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
       else if (candidates.length > 0) target = candidates[0];
     }
     if (target) {
-      const row = findTreeRow(target.name);
-      if (row) {
-        expandAncestors(row);
-        selectFile(target.name, row);
-        row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
+      selectFile(target.name);
+      contentEl.scrollTop = 0;
     } else {
       setStatus('UUID ' + uuid + ' is referenced but no matching file was found in the archive.', true);
       setTimeout(() => setStatus('Loaded ' + currentFiles.length + ' files'), 3000);
-    }
-  }
-
-  function findTreeRow(name) {
-    const rows = document.querySelectorAll('.inspector-tree-row');
-    for (const r of rows) {
-      if (r._fullPath === name) return r;
-    }
-    return null;
-  }
-
-  function expandAncestors(row) {
-    let parent = row.parentElement;
-    while (parent) {
-      if (parent.classList && parent.classList.contains('jchildren')) {
-        parent.classList.remove('collapsed');
-        const t = parent.previousElementSibling?.querySelector?.('.jtoggle');
-        if (t) t.textContent = '\u25BE';
-      }
-      parent = parent.parentElement;
     }
   }
 
@@ -877,12 +1009,8 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
       const a = document.createElement('a');
       a.textContent = refFile;
       a.addEventListener('click', () => {
-        const row = findTreeRow(refFile);
-        if (row) {
-          expandAncestors(row);
-          selectFile(refFile, row);
-          row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+        selectFile(refFile);
+        contentEl.scrollTop = 0;
       });
       li.appendChild(a);
       ul.appendChild(li);
@@ -1050,8 +1178,8 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
         a.textContent = mediaJson.name;
         a.style.cursor = 'pointer';
         a.addEventListener('click', () => {
-          const row = findTreeRow(mediaJson.name);
-          if (row) { expandAncestors(row); selectFile(mediaJson.name, row); }
+          selectFile(mediaJson.name);
+          contentEl.scrollTop = 0;
         });
         note.appendChild(a);
         contentEl.appendChild(note);
@@ -1205,36 +1333,12 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     a.textContent = label;
     a.style.cursor = 'pointer';
     a.addEventListener('click', () => {
-      const row = findTreeRow(fileName);
-      if (row) { expandAncestors(row); selectFile(fileName, row); }
+      selectFile(fileName);
+      contentEl.scrollTop = 0;
     });
     li.appendChild(a);
     return li;
   }
-
-  treeSearch.addEventListener('input', () => {
-    const q = treeSearch.value.toLowerCase().trim();
-    const rows = document.querySelectorAll('.inspector-tree .inspector-tree-row');
-    if (!q) {
-      rows.forEach(r => r.classList.remove('hidden'));
-      document.querySelectorAll('.inspector-search-empty').forEach(e => e.remove());
-      return;
-    }
-    rows.forEach(r => {
-      const label = r.querySelector('.inspector-tree-label')?.textContent.toLowerCase() || '';
-      r.classList.toggle('hidden', !label.includes(q));
-    });
-    const empty = document.querySelector('.inspector-search-empty');
-    const anyVisible = Array.from(rows).some(r => !r.classList.contains('hidden'));
-    if (!anyVisible && !empty) {
-      const e = document.createElement('div');
-      e.className = 'inspector-search-empty';
-      e.textContent = 'No files match.';
-      treeEl.appendChild(e);
-    } else if (anyVisible && empty) {
-      empty.remove();
-    }
-  });
 
   dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -1251,6 +1355,39 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
     const f = e.target.files[0];
     if (f) handleFile(f);
     e.target.value = '';
+  });
+
+  filePickerGo.addEventListener('click', goToFileFromPicker);
+  filePickerInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); goToFileFromPicker(); }
+  });
+  filePickerInput.addEventListener('change', () => {
+    if (fileIndex.has(filePickerInput.value)) goToFileFromPicker();
+  });
+  filePickerBack.addEventListener('click', goToOverview);
+
+  treeSearch.addEventListener('input', () => {
+    const q = treeSearch.value.toLowerCase().trim();
+    const rows = treeEl.querySelectorAll('.inspector-tree-row');
+    if (!q) {
+      rows.forEach(r => r.classList.remove('hidden'));
+      treeEl.querySelectorAll('.inspector-search-empty').forEach(e => e.remove());
+      return;
+    }
+    rows.forEach(r => {
+      const label = r.querySelector('.inspector-tree-label')?.textContent.toLowerCase() || '';
+      r.classList.toggle('hidden', !label.includes(q));
+    });
+    const empty = treeEl.querySelector('.inspector-search-empty');
+    const anyVisible = Array.from(rows).some(r => !r.classList.contains('hidden'));
+    if (!anyVisible && !empty) {
+      const e = document.createElement('div');
+      e.className = 'inspector-search-empty';
+      e.textContent = 'No files match.';
+      treeEl.appendChild(e);
+    } else if (anyVisible && empty) {
+      empty.remove();
+    }
   });
 
   window.__inspector = { handleFile };
