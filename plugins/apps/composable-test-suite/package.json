@@ -1,0 +1,26 @@
+{
+    "name": "composable-test-suite",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "start": "vite build --watch",
+        "init": "pnpm run build && pnpm run start",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "bootstrap": "pnpm install --ignore-workspace && pnpm run build && pnpm run start",
+        "types:check": "tsc --noEmit",
+        "fmt": "prettier --write src index.html",
+        "clean": "rm -rf dist/"
+    },
+    "dependencies": {
+        "@penpot/plugin-styles": "1.4.1",
+        "@penpot/plugin-types": "1.4.1"
+    },
+    "devDependencies": {
+        "prettier": "^3.6.2",
+        "typescript": "^5.8.3",
+        "vite": "^7.0.8",
+        "vite-live-preview": "^0.3.2"
+    }
+}
