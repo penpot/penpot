@@ -27,6 +27,7 @@
    [app.features.file-snapshots :as fsnap]
    [app.graph.ingest :as graph.ingest]
    [app.graph.ladybug :as graph.ladybug]
+   [app.graph.report :as graph.report]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as main]
@@ -412,14 +413,27 @@
   [& {:keys [db-path] :or {db-path ":memory:"}}]
   (graph.ladybug/smoke-test! main/system :db-path db-path))
 
-(defn ingest-file-to-graph!
-  "Skeleton graph ingest for a Penpot file.
+(defn graph-query-test!
+  "Query Document count for a file's graph db (REPL diagnostic)."
+  [file-id & {:keys [db-path]}]
+  (let [file-id (h/parse-uuid file-id)
+        db-path (or db-path (graph.ladybug/db-path-for-file file-id))
+        stmt    "MATCH (n:Document) RETURN count(n) AS Document_c;"]
+    (graph.ladybug/query-scalar! main/system db-path stmt)))
 
-  Loads and realizes the file from the database, prepares the per-file
-  Ladybug database path, and (for now) runs the Ladybug smoke test.
-  Full document projection is not implemented yet."
-  [file-id & {:as opts}]
-  (graph.ingest/ingest-file! main/system file-id opts))
+(defn ingest-file-to-graph!
+  "Project a Penpot file into a per-file Ladybug database.
+
+  Loads and realizes the file from the database, ensures the slice schema,
+  projects Document/Page/shape nodes, and returns graph stats.
+
+  Options:
+  - `:db-path` path or `:memory:`
+  - `:reset-db?` delete any existing db first (default true)"
+  [file-id & opts]
+  (let [result (graph.ingest/ingest-file! main/system file-id opts)]
+    (graph.report/print-ingest! result)
+    result))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESSING
