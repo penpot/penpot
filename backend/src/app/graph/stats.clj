@@ -1,0 +1,34 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC Sucursal en España SL
+
+(ns app.graph.stats
+  (:require
+   [app.graph.ladybug :as ladybug]
+   [app.graph.schema :as schema]))
+
+(defn- node-label-for-match
+  [table]
+  (if (#{"Group" "Boolean"} table)
+    (str "`" table "`")
+    table))
+
+(defn- count-query
+  [system db-path statement]
+  (or (ladybug/query-scalar! system db-path statement) 0))
+
+(defn summarize
+  "Return node/edge counts from the graph database."
+  [system db-path]
+  {:nodes (into {}
+                (map (fn [{:keys [name]}]
+                       [name (count-query
+                              system db-path
+                              (str "MATCH (n:" (node-label-for-match name) ") "
+                                   "RETURN count(n) AS " name "_c;"))])
+                     schema/node-tables))
+   :edges {:IsChildOf (count-query
+                        system db-path
+                        "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})
