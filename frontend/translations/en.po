@@ -8779,6 +8779,9 @@ msgstr "Copy as CSS (nested layers)"
 msgid "workspace.shape.menu.copy-link"
 msgstr "Copy link"
 
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copy id"
+
 #: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Copy/Paste as ..."

@@ -149,9 +149,11 @@
   {::mf/private true}
   [{:keys [shapes]}]
   (let [multiple?         (> (count shapes) 1)
+        layout            (mf/deref refs/workspace-layout)
 
         do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
+        do-copy-id        #(st/emit! (dw/copy-id-to-clipboard (-> shapes first :id str)))
 
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
@@ -200,6 +202,10 @@
                    (reset! enabled-paste-props* false))))))]
 
     [:*
+     (when (and (not multiple?)
+                (contains? layout :debug-panel))
+       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-id")
+                        :on-click do-copy-id}])
      [:> menu-entry* {:title (tr "workspace.shape.menu.copy")
                       :shortcut (sc/get-tooltip :copy)
                       :on-click do-copy}]

@@ -1138,6 +1138,13 @@
     (watch [_ _ _]
       (clipboard/to-clipboard (rt/get-current-href)))))
 
+(defn copy-id-to-clipboard
+  [id]
+  (ptk/reify ::copy-id-to-clipboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (clipboard/to-clipboard id))))
+
 (defn copy-as-image
   []
   (ptk/reify ::copy-as-image
