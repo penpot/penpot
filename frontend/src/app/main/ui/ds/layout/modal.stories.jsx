@@ -7,15 +7,8 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const {
-  Modal,
-  ModalHeader,
-  ModalContent,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  IconButton,
-} = Components;
+const { Modal, ModalHeader, ModalContent, ModalFooter, Button, IconButton } =
+  Components;
 
 const ModalWrapper = ({ children, ...props }) => {
   const [open, setOpen] = React.useState(props.isOpen ?? false);

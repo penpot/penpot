@@ -58,26 +58,3 @@ export function Modal({
     </DialogTrigger>
   );
 }
-
-interface ModalCloseButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children?: ReactNode;
-}
-
-export function ModalCloseButton({
-  children,
-  className,
-  onClick,
-  ...props
-}: ModalCloseButtonProps) {
-  const close = useModalClose();
-  return (
-    <button
-      className={`${styles.closeButton} ${className ?? ''}`}
-      onClick={(e) => { close?.(); onClick?.(e); }}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
