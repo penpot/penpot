@@ -84,11 +84,11 @@
     :MilestoneGroup milestone-group*
     :Date date*
     :PanelTitle panel-title*
-     :Modal modal*
-     :ModalHeader modal-header*
-     :ModalContent modal-content*
-     :ModalBody modal-body*
-     :ModalFooter modal-footer*
+    :Modal modal*
+    :ModalHeader modal-header*
+    :ModalContent modal-content*
+    :ModalBody modal-body*
+    :ModalFooter modal-footer*
 
     :set-default-translations
     (fn [data]

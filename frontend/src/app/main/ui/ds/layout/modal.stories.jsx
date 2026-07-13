@@ -7,7 +7,15 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { Modal, ModalHeader, ModalContent, ModalFooter, ModalCloseButton, Button, IconButton } = Components;
+const {
+  Modal,
+  ModalHeader,
+  ModalContent,
+  ModalFooter,
+  ModalCloseButton,
+  Button,
+  IconButton,
+} = Components;
 
 const ModalWrapper = ({ children, ...props }) => {
   const [open, setOpen] = React.useState(props.isOpen ?? false);
@@ -19,11 +27,7 @@ const ModalWrapper = ({ children, ...props }) => {
   return (
     <>
       <Button onClick={() => setOpen(true)}>Open Modal</Button>
-      <Modal
-        {...props}
-        isOpen={open}
-        onOpenChange={setOpen}
-      >
+      <Modal {...props} isOpen={open} onOpenChange={setOpen}>
         {children}
       </Modal>
     </>
@@ -116,7 +120,10 @@ export const NonDismissable = {
       <>
         <ModalHeader title="Important" />
         <ModalContent>
-          <p>This modal cannot be closed by clicking the backdrop or pressing Escape.</p>
+          <p>
+            This modal cannot be closed by clicking the backdrop or pressing
+            Escape.
+          </p>
         </ModalContent>
         <ModalFooter>
           <Button variant="secondary">Cancel</Button>
