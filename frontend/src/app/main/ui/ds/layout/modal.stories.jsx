@@ -34,7 +34,7 @@ export default {
   title: "Layout/Modal",
   component: ModalWrapper,
   args: {
-    isOpen: true,
+    isOpen: false,
     size: "medium",
     isDismissable: true,
     children: (
@@ -121,24 +121,6 @@ export const NonDismissable = {
         <ModalFooter>
           <Button variant="secondary">Cancel</Button>
           <Button variant="primary">Confirm</Button>
-        </ModalFooter>
-      </>
-    ),
-  },
-};
-
-export const WithIconButton = {
-  args: {
-    children: (
-      <>
-        <ModalHeader title="With close button" />
-        <ModalContent>
-          <p>Modal with IconButton inside the content area.</p>
-        </ModalContent>
-        <ModalFooter>
-          <Button variant="secondary">Cancel</Button>
-          <Button variant="primary">Confirm</Button>
-          <IconButton icon="close" variant="ghost" aria-label="Close" />
         </ModalFooter>
       </>
     ),

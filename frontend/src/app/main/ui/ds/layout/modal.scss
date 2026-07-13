@@ -10,15 +10,30 @@
 .modal-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding-block: var(--sp-m);
   padding-inline: var(--sp-l);
   flex-shrink: 0;
 }
 
+.modal-header-title {
+  color: var(--color-foreground-primary);
+}
+
+.modal-header-close {
+  margin-inline-start: auto;
+}
+
 .modal-content {
   padding: var(--sp-l);
   overflow-block: auto;
+  color: var(--color-foreground-primary);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-block-size: 0;
 }
 
 .modal-footer {
@@ -29,4 +44,5 @@
   padding-block: var(--sp-m);
   padding-inline: var(--sp-l);
   flex-shrink: 0;
+  inline-size: 100%;
 }
