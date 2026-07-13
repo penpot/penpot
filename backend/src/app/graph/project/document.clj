@@ -13,6 +13,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.graph.ladybug :as ladybug]
+   [app.graph.project.specs :as specs]
    [clojure.string :as str]))
 
 (def root-frame-id
@@ -36,6 +37,10 @@
                                (str "`" (name k) "`: " (ladybug/format-value v)))
                              attrs))]
     (str "CREATE (n:`" table "` {" props "});")))
+
+(defn- validated-node-statement
+  [check-fn table attrs]
+  (create-node-statement table (check-fn attrs)))
 
 (defn- merge-edge-statement
   [from-table from-id to-table to-id position]
@@ -67,7 +72,8 @@
         root          (get objects root-frame-id)
         top-level-ids (when root (vec (reverse (:shapes root))))
         statements'   (conj statements
-                            (create-node-statement "Page" (page-attrs page position))
+                            (validated-node-statement specs/check-page "Page"
+                                                      (page-attrs page position))
                             (merge-edge-statement "Page" page-id "Document" doc-id position))
         stats'        (update stats :pages inc)]
     (if (seq top-level-ids)
@@ -76,8 +82,9 @@
           (if-let [shape (get objects shape-id)]
             (if-let [table (shape-table shape)]
               [(-> stmts
-                   (conj (create-node-statement table {:id   (:id shape)
-                                                       :name (:name shape)})
+                   (conj (validated-node-statement specs/check-shape-node table
+                                                   {:id   (:id shape)
+                                                    :name (:name shape)})
                          (merge-edge-statement table (:id shape)
                                                "Page" page-id shape-pos)))
                (update st :shapes inc)]
@@ -98,7 +105,8 @@
   [data file]
   (let [doc-id    (or (:id data) (:id file))
         pages     (seq (reverse (:pages data)))
-        initial   [(create-node-statement "Document" (document-attrs file data))]
+        initial   [(validated-node-statement specs/check-document "Document"
+                                              (document-attrs file data))]
         [statements stats]
         (if (empty? pages)
           [initial {:documents 1 :pages 0 :shapes 0}]
