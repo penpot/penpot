@@ -21,9 +21,7 @@ export function useModalClose(): (() => void) | null {
 interface ModalProps {
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  header?: ReactNode;
-  content?: ReactNode;
-  footer?: ReactNode;
+  children: ReactNode;
   trigger?: ReactNode;
   isDismissable?: boolean;
   size?: 'small' | 'medium' | 'large';
@@ -33,9 +31,7 @@ interface ModalProps {
 export function Modal({
   isOpen,
   onOpenChange,
-  header,
-  content,
-  footer,
+  children,
   trigger,
   isDismissable = true,
   size = 'medium',
@@ -53,9 +49,7 @@ export function Modal({
           <Dialog className={styles.dialog}>
             {({ close }) => (
               <ModalCloseContext.Provider value={close}>
-                {header}
-                {content}
-                {footer}
+                {children}
               </ModalCloseContext.Provider>
             )}
           </Dialog>
