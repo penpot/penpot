@@ -19,8 +19,11 @@
    [rumext.v2 :as mf]))
 
 (def ^:private no-reload-options
-  "Debug options that don't require a page reload to take effect."
-  #{:shape-panel})
+  "Debug options that don't require a page reload to take effect.
+  These options are handled reactively via okulary subscriptions."
+  #{:shape-panel
+    :show-ids
+    :show-touched})
 
 (mf/defc debug-panel*
   [{:keys [class]}]
