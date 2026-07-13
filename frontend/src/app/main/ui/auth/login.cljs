@@ -19,7 +19,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.layout.modal :refer [modal* modal-footer*]]
+   [app.main.ui.ds.layout.modal :refer [modal* modal-footer* modal-header* modal-content*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -301,13 +301,14 @@
       "Test Modal"]
 
      [:> modal* {:is-open modal-open?
-                 :on-open-change #(reset! modal-open* %)
-                 :heading "Test Dialog"
-                 :footer (mf/html [:> modal-footer* {}
-                                   [:> button* {:variant "secondary"
-                                                :on-click #(reset! modal-open* false)}
-                                    "Close"]
-                                   [:> button* {:variant "primary"
-                                                :on-click #(reset! modal-open* false)}
-                                    "Accept"]])}
-      [:> :p {} "Hello from the Modal! This is rendered with react-aria-components."]]]))
+                 :on-open-change #(reset! modal-open* %)}
+      [:> modal-header* {:title "Test Dialog"}]
+      [:> modal-content* {}
+       [:> :p {} "Hello from the Modal! This is rendered with react-aria-components."]]
+      [:> modal-footer* {}
+       [:> button* {:variant "secondary"
+                    :on-click #(reset! modal-open* false)}
+        "Close"]
+       [:> button* {:variant "primary"
+                    :on-click #(reset! modal-open* false)}
+        "Accept"]]]]))

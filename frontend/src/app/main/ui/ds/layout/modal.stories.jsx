@@ -37,20 +37,18 @@ export default {
     isOpen: true,
     size: "medium",
     isDismissable: true,
-    header: (
-      <ModalHeader title="Dialog Title" />
-    ),
-    content: (
-      <ModalContent>
-        <p>This is the default modal content.</p>
-        <p>You can put any React content inside.</p>
-      </ModalContent>
-    ),
-    footer: (
-      <ModalFooter>
-        <Button variant="secondary">Cancel</Button>
-        <Button variant="primary">Confirm</Button>
-      </ModalFooter>
+    children: (
+      <>
+        <ModalHeader title="Dialog Title" />
+        <ModalContent>
+          <p>This is the default modal content.</p>
+          <p>You can put any React content inside.</p>
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="primary">Confirm</Button>
+        </ModalFooter>
+      </>
     ),
   },
   argTypes: {
@@ -61,7 +59,7 @@ export default {
     isDismissable: { control: "boolean" },
   },
   parameters: {
-    controls: { exclude: ["isOpen", "onOpenChange", "children", "header", "content", "footer", "trigger"] },
+    controls: { exclude: ["isOpen", "onOpenChange", "children"] },
   },
   render: ({ ...args }) => <ModalWrapper {...args} />,
 };
@@ -70,9 +68,7 @@ export const Default = {};
 
 export const WithoutTitle = {
   args: {
-    heading: undefined,
-    header: undefined,
-    content: (
+    children: (
       <ModalContent>
         <p>This modal has no header or footer.</p>
       </ModalContent>
@@ -83,17 +79,17 @@ export const WithoutTitle = {
 export const Small = {
   args: {
     size: "small",
-    header: <ModalHeader title="Confirm" />,
-    content: (
-      <ModalContent>
-        <p>Are you sure you want to proceed?</p>
-      </ModalContent>
-    ),
-    footer: (
-      <ModalFooter>
-        <Button variant="secondary">Cancel</Button>
-        <Button variant="primary">Confirm</Button>
-      </ModalFooter>
+    children: (
+      <>
+        <ModalHeader title="Confirm" />
+        <ModalContent>
+          <p>Are you sure you want to proceed?</p>
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="primary">Confirm</Button>
+        </ModalFooter>
+      </>
     ),
   },
 };
@@ -101,31 +97,50 @@ export const Small = {
 export const Large = {
   args: {
     size: "large",
-    header: <ModalHeader title="Settings" />,
-    content: (
-      <ModalContent>
-        <p>This is the default modal content.</p>
-        <p>You can put any React content inside.</p>
-      </ModalContent>
+    children: (
+      <>
+        <ModalHeader title="Settings" />
+        <ModalContent>
+          <p>This is the default modal content.</p>
+          <p>You can put any React content inside.</p>
+        </ModalContent>
+      </>
     ),
-    footer: null,
   },
 };
 
 export const NonDismissable = {
   args: {
     isDismissable: false,
-    header: <ModalHeader title="Important" />,
-    content: (
-      <ModalContent>
-        <p>This modal cannot be closed by clicking the backdrop or pressing Escape.</p>
-      </ModalContent>
+    children: (
+      <>
+        <ModalHeader title="Important" />
+        <ModalContent>
+          <p>This modal cannot be closed by clicking the backdrop or pressing Escape.</p>
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="primary">Confirm</Button>
+        </ModalFooter>
+      </>
     ),
-    footer: (
-      <ModalFooter>
-        <Button variant="secondary">Cancel</Button>
-        <Button variant="primary">Confirm</Button>
-      </ModalFooter>
+  },
+};
+
+export const WithIconButton = {
+  args: {
+    children: (
+      <>
+        <ModalHeader title="With close button" />
+        <ModalContent>
+          <p>Modal with IconButton inside the content area.</p>
+        </ModalContent>
+        <ModalFooter>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="primary">Confirm</Button>
+          <IconButton icon="close" variant="ghost" aria-label="Close" />
+        </ModalFooter>
+      </>
     ),
   },
 };

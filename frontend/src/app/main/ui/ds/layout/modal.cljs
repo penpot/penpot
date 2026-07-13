@@ -9,6 +9,7 @@
    [app.main.style :as stl])
   (:require
    ["@penpot/ui" :as ui]
+   ["react-aria-components" :refer [Pressable]]
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
@@ -27,11 +28,13 @@
         props (mf/spread-props props
                                {:class [class (stl/css :modal-header)]})]
     [:> :div props
-     [:> heading* {:typography "title-small" :level 2} title]
+     (when title
+       [:> heading* {:typography "title-small" :level 2} title])
      children
-     [:> icon-button* {:icon "close" :variant "ghost"
-                       :aria-label (tr "labels.close")
-                       :on-click #(when close (close))}]]))
+     [:> Pressable {:on-press #(when close (close))}
+      [:> icon-button* {:icon "close"
+                        :variant "ghost"
+                        :aria-label (tr "labels.close")}]]]))
 
 (def ^:private schema:modal-content
   [:map
@@ -62,32 +65,19 @@
    [:class {:optional true} [:maybe :string]]
    [:is-open {:optional true} [:maybe :boolean]]
    [:on-open-change {:optional true} [:maybe fn?]]
-   [:heading {:optional true} [:maybe :any]]
-   [:header {:optional true} [:maybe :any]]
-   [:content {:optional true} [:maybe :any]]
-   [:footer {:optional true} [:maybe :any]]
    [:trigger {:optional true} [:maybe :any]]
    [:is-dismissable {:optional true} [:maybe :boolean]]
    [:size {:optional true} [:maybe [:enum "small" "medium" "large"]]]])
 
 (mf/defc modal*
   {::mf/schema schema:modal}
-  [{:keys [class is-open on-open-change heading header content footer trigger is-dismissable size children] :rest props}]
+  [{:keys [class is-open on-open-change trigger is-dismissable size children] :rest props}]
   (let [props
         (mf/spread-props props
                          {:class class
                           :is-open is-open
                           :on-open-change on-open-change
-                          :header (or (some-> header mf/html)
-                                      (when heading
-                                        (mf/html [:> modal-header*
-                                                  {:title heading}])))
-                           :content (or (some-> content mf/html)
-                                        (when children
-                                          (mf/html [:> modal-content* {}
-                                                     children])))
-                          :footer (some-> footer mf/html)
                           :trigger trigger
                           :is-dismissable (d/nilv is-dismissable true)
                           :size (d/nilv size "medium")})]
-    [:> ui/Modal props]))
+    [:> ui/Modal props children]))
