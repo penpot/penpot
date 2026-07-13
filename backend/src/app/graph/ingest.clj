@@ -40,12 +40,14 @@
           {:keys [statements stats]}
           (project.document/projection-statements data file)
           ingest-statements (conj (into ddl statements) "CHECKPOINT;")]
-      (ladybug/exec! db-path ingest-statements)
-      {:file-id        file-id
-       :revn           (:revn file)
-       :name           (or (:name data) (:name file))
-       :db-path        db-path
-       :schema-version schema/schema-version
-       :projection     {:stats stats}
-       :transforms     (project.transforms/apply-transforms! system db-path data file)
-       :stats          (stats/summarize db-path)})))
+      (ladybug/with-connection! db-path
+        (fn [conn]
+          (ladybug/exec-on-connection! conn ingest-statements)
+          {:file-id        file-id
+           :revn           (:revn file)
+           :name           (or (:name data) (:name file))
+           :db-path        db-path
+           :schema-version schema/schema-version
+           :projection     {:stats stats}
+           :transforms     (project.transforms/apply-transforms! system db-path data file)
+           :stats          (stats/summarize-connection conn)})))))
