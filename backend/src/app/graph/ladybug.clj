@@ -91,19 +91,7 @@
               :statement statement
               :err (.getErrorMessage result))))
 
-(defn- with-connection
-  [db-path f]
-  (let [^Database db (if (memory-db-path? db-path)
-                       (Database.)
-                       (Database. (str db-path)))]
-    (try
-      (let [^Connection conn (Connection. db)]
-        (try
-          (f conn)
-          (finally
-            (.close conn))))
-      (finally
-        (.close db)))))
+(def ^:private default-query-timeout-seconds 120)
 
 (defn- scalar-value
   [^Connection conn statement]
@@ -122,36 +110,64 @@
       (with-open [^QueryResult result (.query conn cypher)]
         (check-success! result cypher)))))
 
-(def ^:private default-query-timeout-seconds 120)
+(defn- ensure-db-path!
+  [db-path]
+  (when-not (memory-db-path? db-path)
+    (fs/create-dir (fs/parent db-path))))
+
+(defn with-connection!
+  "Open a Ladybug connection for `db-path` and invoke `(f conn)`.
+
+  For `:memory:`, the database only lives for the duration of this call;
+  all reads and writes must happen inside `f`."
+  [db-path f]
+  (ensure-db-path! db-path)
+  (let [^Database db (if (memory-db-path? db-path)
+                       (Database.)
+                       (Database. (str db-path)))]
+    (try
+      (let [^Connection conn (Connection. db)]
+        (try
+          (.setQueryTimeout conn default-query-timeout-seconds)
+          (f conn)
+          (finally
+            (.close conn))))
+      (finally
+        (.close db)))))
+
+(defn exec-on-connection!
+  "Execute Cypher statements on an open Ladybug connection."
+  [^Connection conn statements]
+  (assert (sequential? statements) "statements should be a sequential collection")
+  (run-statements! conn statements))
+
+(defn query-scalar-on-connection!
+  "Execute a query expected to return a single scalar value on `conn`."
+  [^Connection conn statement]
+  (scalar-value conn statement))
 
 (defn exec!
   "Execute Cypher statements against a Ladybug database.
 
   `db-path` is either `:memory:` or a filesystem path to a `.lbug` database."
   [db-path statements]
-  (assert (sequential? statements) "statements should be a sequential collection")
-  (when-not (memory-db-path? db-path)
-    (fs/create-dir (fs/parent db-path)))
-  (with-connection db-path
-    (fn [^Connection conn]
-      (.setQueryTimeout conn default-query-timeout-seconds)
-      (run-statements! conn statements))))
+  (with-connection! db-path
+    (fn [conn]
+      (exec-on-connection! conn statements))))
 
 (defn query-scalar!
   "Execute a query expected to return a single scalar value."
   [db-path statement]
-  (with-connection db-path
-    (fn [^Connection conn]
-      (.setQueryTimeout conn default-query-timeout-seconds)
-      (scalar-value conn statement))))
+  (with-connection! db-path
+    (fn [conn]
+      (query-scalar-on-connection! conn statement))))
 
 (defn smoke-test!
   "Run a minimal CREATE + count against Ladybug."
   [& {:keys [db-path] :or {db-path ":memory:"}}]
   (when-not (memory-db-path? db-path)
-    (reset-db-path! db-path)
-    (fs/create-dir (fs/parent db-path)))
-  (with-connection db-path
+    (reset-db-path! db-path))
+  (with-connection! db-path
     (fn [^Connection conn]
       (run-statements! conn
                        ["CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name));"
