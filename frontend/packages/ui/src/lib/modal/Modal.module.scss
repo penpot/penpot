@@ -1,0 +1,144 @@
+@use "ds/_borders" as *;
+@use "ds/_sizes" as *;
+@use "ds/_utils" as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-index-set);
+
+  &[data-entering] {
+    animation: overlay-fade-in 0.2s ease-out;
+  }
+
+  &[data-exiting] {
+    animation: overlay-fade-out 0.15s ease-in;
+  }
+}
+
+.modal {
+  position: relative;
+  inline-size: 100%;
+  margin: var(--sp-l);
+  background: var(--color-background-primary);
+  border-radius: $br-8;
+  box-shadow: var(--el-shadow-dark);
+  outline: none;
+  max-block-size: calc(100dvh - var(--sp-xxxl) * 2);
+  display: flex;
+  flex-direction: column;
+
+  &[data-entering] {
+    animation: modal-zoom-in 0.2s ease-out;
+  }
+
+  &[data-exiting] {
+    animation: modal-zoom-out 0.15s ease-in;
+  }
+}
+
+.modalSmall {
+  max-inline-size: $sz-400;
+}
+
+.modalMedium {
+  max-inline-size: $sz-512;
+}
+
+.modalLarge {
+  max-inline-size: px2rem(640);
+}
+
+.dialog {
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  max-block-size: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--sp-m);
+  padding-inline: var(--sp-l);
+  flex-shrink: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: $sz-24;
+  block-size: $sz-24;
+  padding: 0;
+  border: none;
+  border-radius: $br-4;
+  background: transparent;
+  color: var(--color-icon-default);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+  }
+
+  &:focus-visible {
+    outline: $b-2 solid var(--color-accent-primary);
+    outline-offset: px2rem(-2);
+  }
+}
+
+.content {
+  padding: var(--sp-l);
+  overflow-block: auto;
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modal-zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(0.95);
+  }
+  
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
