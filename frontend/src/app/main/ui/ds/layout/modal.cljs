@@ -9,9 +9,9 @@
    [app.main.style :as stl])
   (:require
    ["@penpot/ui" :as ui]
-   ["react-aria-components" :refer [Pressable]]
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -29,12 +29,16 @@
                                {:class [class (stl/css :modal-header)]})]
     [:> :div props
      (when title
-       [:> heading* {:typography "title-small" :level 2} title])
+       [:> heading* {:typography t/headline-medium
+                     :level 2
+                     :class (stl/css :modal-header-title)}
+        title])
      children
-     [:> Pressable {:on-press #(when close (close))}
+     [:div {:class (stl/css :modal-header-close)}
       [:> icon-button* {:icon "close"
                         :variant "ghost"
-                        :aria-label (tr "labels.close")}]]]))
+                        :aria-label (tr "labels.close")
+                        :on-click #(when close (close))}]]]))
 
 (def ^:private schema:modal-content
   [:map
@@ -45,6 +49,18 @@
   [{:keys [class children] :rest props}]
   (let [props (mf/spread-props props
                                {:class [class (stl/css :modal-content)]})]
+    [:> :div props
+     children]))
+
+(def ^:private schema:modal-body
+  [:map
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-body*
+  {::mf/schema schema:modal-body}
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props
+                               {:class [class (stl/css :modal-body)]})]
     [:> :div props
      children]))
 
