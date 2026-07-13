@@ -25,6 +25,8 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.graph.ingest :as graph.ingest]
+   [app.graph.ladybug :as graph.ladybug]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as main]
@@ -397,6 +399,27 @@
                       (if-let [explain (-> cause ex-data ::sm/explain)]
                         (println (sm/humanize-explain explain))
                         (ex/print-throwable cause))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GRAPH / LADYBUG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn graph-smoke-test!
+  "Execute a basic Ladybug smoke test (CREATE + MATCH).
+
+  Requires the `lbug` CLI on PATH, or set PENPOT_LBUG_BIN. Use :db-path
+  \":memory:\" (default) or a filesystem path such as /tmp/test.lbug."
+  [& {:keys [db-path] :or {db-path ":memory:"}}]
+  (graph.ladybug/smoke-test! main/system :db-path db-path))
+
+(defn ingest-file-to-graph!
+  "Skeleton graph ingest for a Penpot file.
+
+  Loads and realizes the file from the database, prepares the per-file
+  Ladybug database path, and (for now) runs the Ladybug smoke test.
+  Full document projection is not implemented yet."
+  [file-id & {:as opts}]
+  (graph.ingest/ingest-file! main/system file-id opts))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESSING
