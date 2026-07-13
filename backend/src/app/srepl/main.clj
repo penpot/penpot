@@ -406,12 +406,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn graph-smoke-test!
-  "Execute a basic Ladybug smoke test (CREATE + MATCH).
+  "Execute a basic Ladybug smoke test (CREATE + count).
 
-  Requires the `lbug` CLI on PATH, or set PENPOT_LBUG_BIN. Use :db-path
-  \":memory:\" (default) or a filesystem path such as /tmp/test.lbug."
+  Uses the embedded Ladybug Java API. Use :db-path \":memory:\" (default)
+  or a filesystem path such as /tmp/test.lbug."
   [& {:keys [db-path] :or {db-path ":memory:"}}]
-  (graph.ladybug/smoke-test! main/system :db-path db-path))
+  (graph.ladybug/smoke-test! :db-path db-path))
 
 (defn graph-query-test!
   "Query Document count for a file's graph db (REPL diagnostic)."
@@ -419,7 +419,7 @@
   (let [file-id (h/parse-uuid file-id)
         db-path (or db-path (graph.ladybug/db-path-for-file file-id))
         stmt    "MATCH (n:Document) RETURN count(n) AS Document_c;"]
-    (graph.ladybug/query-scalar! main/system db-path stmt)))
+    (graph.ladybug/query-scalar! db-path stmt)))
 
 (defn ingest-file-to-graph!
   "Project a Penpot file into a per-file Ladybug database.

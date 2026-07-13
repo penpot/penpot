@@ -16,19 +16,19 @@
     table))
 
 (defn- count-query
-  [system db-path statement]
-  (or (ladybug/query-scalar! system db-path statement) 0))
+  [db-path statement]
+  (or (ladybug/query-scalar! db-path statement) 0))
 
 (defn summarize
   "Return node/edge counts from the graph database."
-  [system db-path]
+  [db-path]
   {:nodes (into {}
                 (map (fn [{:keys [name]}]
                        [name (count-query
-                              system db-path
+                              db-path
                               (str "MATCH (n:" (node-label-for-match name) ") "
                                    "RETURN count(n) AS " name "_c;"))])
                      schema/node-tables))
    :edges {:IsChildOf (count-query
-                        system db-path
+                        db-path
                         "MATCH ()-[e:IsChildOf]->() RETURN count(e) AS IsChildOf_c;")}})

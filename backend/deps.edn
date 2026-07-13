@@ -64,7 +64,9 @@
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
   software.amazon.awssdk/s3 {:mvn/version "2.46.18"}
-  software.amazon.awssdk/sts {:mvn/version "2.46.18"}}
+  software.amazon.awssdk/sts {:mvn/version "2.46.18"}
+
+  com.ladybugdb/lbug {:mvn/version "0.18.0"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
