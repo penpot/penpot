@@ -15,7 +15,7 @@
   },
   "scripts": {
     "build:app:assets": "node ./scripts/build-app-assets.js",
-    "build:storybook": "pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",
+    "build:storybook": "(cd packages/ui && pnpm run build) && pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:wasm": "../render-wasm/build",
