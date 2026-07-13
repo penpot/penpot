@@ -10,6 +10,7 @@
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.types.file :as ctf]
    [app.db :as db]
    [app.graph.ladybug :as ladybug]
    [app.graph.project.document :as project.document]
@@ -28,6 +29,12 @@
       (ex/raise :type :not-found
                 :code :file-not-found
                 :file-id (str file-id)))
+    (when-not (:data file)
+      (ex/raise :type :validation
+                :code :file-without-data
+                :hint "file has no data to project"
+                :file-id (str file-id)))
+    (ctf/check-file-data (:data file))
     (when reset-db?
       (ladybug/reset-db-path! db-path))
     (l/inf :hint "graph ingest"
