@@ -6,9 +6,11 @@
 
 (ns app.rpc.commands.search
   (:require
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
 
@@ -66,11 +68,13 @@
 (def ^:private schema:search-files
   [:map {:title "search-files"}
    [:team-id ::sm/uuid]
-   [:search-term {:optional true} :string]])
+   [:search-term {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::search-files
   {::doc/added "1.17"
    ::doc/module :files
    ::sm/params schema:search-files}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id search-term]}]
-  (some->> search-term (search-files pool profile-id team-id)))
+  (dm/with-open [conn (db/open pool)]
+    (teams/check-read-permissions! conn profile-id team-id)
+    (some->> search-term (search-files conn profile-id team-id))))
