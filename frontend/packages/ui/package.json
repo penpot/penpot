@@ -32,6 +32,9 @@
     "storybook": "10.4.6",
     "vite-plugin-dts": "^5.0.3"
   },
+  "dependencies": {
+    "react-aria-components": "^1.19.0"
+  },
   "peerDependencies": {
     "react": ">=19.2",
     "react-dom": ">=19.2"
