@@ -431,7 +431,7 @@
   - `:db-path` path or `:memory:`
   - `:reset-db?` delete any existing db first (default true)"
   [file-id & opts]
-  (let [result (graph.ingest/ingest-file! main/system file-id opts)]
+  (let [result (apply graph.ingest/ingest-file! main/system file-id opts)]
     (graph.report/print-ingest! result)
     result))
 
