@@ -18,6 +18,8 @@
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.layout.modal :refer [modal* modal-footer*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -263,7 +265,12 @@
   [{:keys [params]}]
   (let [go-register
         (mf/use-fn
-         #(st/emit! (rt/nav :auth-register params)))]
+         #(st/emit! (rt/nav :auth-register params)))
+
+        modal-open*
+        (mf/use-state false)
+        modal-open?
+        (deref modal-open*)]
 
     [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)
@@ -287,4 +294,20 @@
          [:> lk/link* {:action go-register
                        :class (stl/css :register-link)
                        :data-testid "register-submit"}
-          (tr "auth.register-submit")]])]]))
+          (tr "auth.register-submit")]])]
+
+     [:> button* {:variant "primary"
+                  :on-click #(reset! modal-open* true)}
+      "Test Modal"]
+
+     [:> modal* {:is-open modal-open?
+                 :on-open-change #(reset! modal-open* %)
+                 :heading "Test Dialog"
+                 :footer (mf/html [:> modal-footer* {}
+                                   [:> button* {:variant "secondary"
+                                                :on-click #(reset! modal-open* false)}
+                                    "Close"]
+                                   [:> button* {:variant "primary"
+                                                :on-click #(reset! modal-open* false)}
+                                    "Accept"]])}
+      [:> :p {} "Hello from the Modal! This is rendered with react-aria-components."]]]))

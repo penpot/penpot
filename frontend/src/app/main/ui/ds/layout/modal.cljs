@@ -5,6 +5,8 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.ds.layout.modal
+  (:require-macros
+   [app.main.style :as stl])
   (:require
    ["@penpot/ui" :as ui]
    [app.common.data :as d]
@@ -13,29 +15,79 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(def ^:private schema:modal-header
+  [:map
+   [:title {:optional true} [:maybe :string]]
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-header*
+  {::mf/schema schema:modal-header}
+  [{:keys [title class children] :rest props}]
+  (let [close (ui/useModalClose)
+        props (mf/spread-props props
+                               {:class [class (stl/css :modal-header)]})]
+    [:> :div props
+     [:> heading* {:typography "title-small" :level 2} title]
+     children
+     [:> icon-button* {:icon "close" :variant "ghost"
+                       :aria-label (tr "labels.close")
+                       :on-click #(when close (close))}]]))
+
+(def ^:private schema:modal-content
+  [:map
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-content*
+  {::mf/schema schema:modal-content}
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props
+                               {:class [class (stl/css :modal-content)]})]
+    [:> :div props
+     children]))
+
+(def ^:private schema:modal-footer
+  [:map
+   [:class {:optional true} [:maybe :string]]])
+
+(mf/defc modal-footer*
+  {::mf/schema schema:modal-footer}
+  [{:keys [class children] :rest props}]
+  (let [props (mf/spread-props props
+                               {:class [class (stl/css :modal-footer)]})]
+    [:> :div props
+     children]))
+
 (def ^:private schema:modal
   [:map
    [:class {:optional true} [:maybe :string]]
    [:is-open {:optional true} [:maybe :boolean]]
    [:on-open-change {:optional true} [:maybe fn?]]
-   [:title {:optional true} [:maybe :string]]
+   [:heading {:optional true} [:maybe :any]]
+   [:header {:optional true} [:maybe :any]]
+   [:content {:optional true} [:maybe :any]]
+   [:footer {:optional true} [:maybe :any]]
    [:trigger {:optional true} [:maybe :any]]
    [:is-dismissable {:optional true} [:maybe :boolean]]
    [:size {:optional true} [:maybe [:enum "small" "medium" "large"]]]])
 
 (mf/defc modal*
   {::mf/schema schema:modal}
-  [{:keys [class is-open on-open-change trigger is-dismissable size children title] :rest props}]
+  [{:keys [class is-open on-open-change heading header content footer trigger is-dismissable size children] :rest props}]
   (let [props
         (mf/spread-props props
                          {:class class
                           :is-open is-open
                           :on-open-change on-open-change
-
+                          :header (or (some-> header mf/html)
+                                      (when heading
+                                        (mf/html [:> modal-header*
+                                                  {:title heading}])))
+                           :content (or (some-> content mf/html)
+                                        (when children
+                                          (mf/html [:> modal-content* {}
+                                                     children])))
+                          :footer (some-> footer mf/html)
                           :trigger trigger
                           :is-dismissable (d/nilv is-dismissable true)
-                          :size (d/nilv size "medium")
-                          :heading (mf/html [:> heading* {:typography "title-small" :level 2} title])
-                          :close-button (mf/html [:> icon-button* {:icon "close" :variant "ghost"
-                                                                   :aria-label (tr "labels.close")}])})]
-    [:> ui/Modal props children]))
+                          :size (d/nilv size "medium")})]
+    [:> ui/Modal props]))
