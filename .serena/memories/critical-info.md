@@ -6,6 +6,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - A section's top-level memory is `<section>/core`. When a section is relevant, read the core memory
    before focused memories.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
+- Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
 
 # Development workflow
 
