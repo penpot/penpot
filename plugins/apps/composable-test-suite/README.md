@@ -161,6 +161,38 @@ manual reload step. Note that the reload resets the panel completely: all
 checkboxes are cleared and previous results are gone, so re-select what you want
 to run after changing code.
 
+## Running in CI (headless, mocked backend)
+
+The suite can run fully headless, without the panel and without a running
+Penpot instance. From the `plugins/` directory:
+
+```
+pnpm --filter composable-test-suite run test:ci
+```
+
+This builds the in-sandbox entry (`src/ci/headless.ts`) as a single
+self-executing bundle and hands it to the driver (`ci/run-ci.ts`), which
+serves the prebuilt frontend bundle via the frontend e2e static server,
+intercepts every backend RPC with Playwright fixtures (no backend, no login),
+opens the mocked workspace file, injects the bundle directly into the plugin
+sandbox, and streams each test's result from the page console — failing the
+process if any test fails. The mocked backend is not a limitation here:
+everything the suite asserts is frontend store logic executed in memory; the
+backend's only role is persistence, which the mock answers with a canned
+response.
+
+Prerequisites: the frontend bundle must exist at `frontend/resources/public`
+(the devenv watch build suffices; CI builds it via `frontend/scripts/build`),
+and the Playwright browser must be installed
+(`pnpm --filter composable-test-suite exec playwright install chromium`).
+
+Options via environment variables:
+
+- `TEST_FILTER` — run only tests whose composite identifier contains the
+  given substring (case-insensitive), e.g. `TEST_FILTER=MainEditSyncs` for a
+  whole case or `TEST_FILTER=MainEditSyncs-2` for a single variant.
+- `CI_TIMEOUT_MS` — overall timeout waiting for results (default 600000).
+
 ## Adding a test
 
 A new test is a composition of operations over a starting configuration, added to

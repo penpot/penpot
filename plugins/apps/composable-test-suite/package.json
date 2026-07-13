@@ -7,10 +7,12 @@
         "start": "vite build --watch",
         "init": "pnpm run build && pnpm run start",
         "build": "tsc && vite build",
+        "build:headless": "vite build --config vite.config.headless.ts",
+        "test:ci": "pnpm run build:headless && tsx ci/run-ci.ts",
         "preview": "vite preview",
         "bootstrap": "pnpm install --ignore-workspace && pnpm run build && pnpm run start",
         "types:check": "tsc --noEmit",
-        "fmt": "prettier --write src index.html",
+        "fmt": "prettier --write src ci index.html",
         "clean": "rm -rf dist/"
     },
     "dependencies": {
@@ -18,6 +20,7 @@
         "@penpot/plugin-types": "1.4.1"
     },
     "devDependencies": {
+        "playwright": "^1.61.1",
         "prettier": "^3.6.2",
         "typescript": "^5.8.3",
         "vite": "^7.0.8",
