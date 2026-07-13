@@ -276,11 +276,12 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   .inspector-media-info { font-size: 0.85rem; }
   .inspector-media-info dt { color: var(--graymedium); }
 
-  .inspector-jtree { font-family: 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.5; }
-  .inspector-jtree .jrow { display: flex; align-items: flex-start; }
+  .inspector-jtree { font-family: 'Menlo', 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; }
+  .inspector-jtree .jrow { display: flex; align-items: flex-start; padding: 0.05rem 0; }
   .inspector-jtree .jtoggle {
     display: inline-block;
-    width: 1em;
+    width: 1.2em;
+    text-align: center;
     cursor: pointer;
     color: var(--graymedium);
     user-select: none;
@@ -293,10 +294,15 @@ desc: Interactive browser-based inspector for .penpot (v3) files. Upload a file 
   .inspector-jtree .jbool { color: #7b3aa3; }
   .inspector-jtree .jnull { color: var(--graymedium); font-style: italic; }
   .inspector-jtree .jmeta { color: var(--graymedium); margin-left: 0.4em; }
+  .inspector-jtree .jchildren {
+    padding-left: 1.2rem;
+    border-left: 1px dotted #d0d0d0;
+    margin-left: 0.1em;
+  }
+  .inspector-jtree .jchildren.collapsed { display: none; }
   .inspector-jtree .jrow.match > .jkey,
   .inspector-jtree .jrow.match > .jstr,
   .inspector-jtree .jrow.match > .jnum { background: #fff3a3; }
-  .inspector-jtree .jchildren.collapsed { display: none; }
   .inspector-jtree .juuid { color: #1d6fb8; text-decoration: underline dotted; cursor: pointer; }
   .inspector-jtree .juuid:hover { background: var(--advice); }
 
