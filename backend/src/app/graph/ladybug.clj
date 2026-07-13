@@ -5,24 +5,21 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.graph.ladybug
-  "Thin Ladybug CLI access layer for graph-backed Penpot."
+  "Ladybug access layer for graph-backed Penpot.
+
+  Uses the embedded Java API (`com.ladybugdb/lbug`)."
   (:require
    [app.common.exceptions :as ex]
-   [app.util.shell :as shell]
    [clojure.string :as str]
    [datoteka.fs :as fs])
   (:import
-   java.util.concurrent.TimeUnit
-   org.apache.commons.io.IOUtils))
+   com.ladybugdb.Connection
+   com.ladybugdb.Database
+   com.ladybugdb.FlatTuple
+   com.ladybugdb.QueryResult
+   com.ladybugdb.Value))
 
-(defn lbug-bin
-  "Resolved Ladybug CLI path (`PENPOT_LBUG_BIN`, `./lbug`, or `lbug`)."
-  []
-  (or (System/getenv "PENPOT_LBUG_BIN")
-      (let [local (java.io.File. "lbug")]
-        (when (.exists local)
-          (.getAbsolutePath local)))
-      "lbug"))
+(set! *warn-on-reflection* true)
 
 (defn default-graph-dir
   []
@@ -32,9 +29,13 @@
   [file-id]
   (str (fs/path (default-graph-dir) (str file-id ".lbug"))))
 
+(defn- memory-db-path?
+  [db-path]
+  (= db-path ":memory:"))
+
 (defn reset-db-path!
   [db-path]
-  (when-not (= db-path ":memory:")
+  (when-not (memory-db-path? db-path)
     (when (fs/exists? db-path)
       (fs/delete db-path))))
 
@@ -71,127 +72,91 @@
   (let [s (str/trim (str statement))]
     (if (str/ends-with? s ";") s (str s ";"))))
 
-(defn- script-content
-  [statements]
-  (str (str/join "\n" (map ensure-semicolon statements)) "\n"))
+(defn- value->clj
+  [^Value value]
+  (when-not (.isNull value)
+    (let [v (.getValue value)]
+      (cond
+        (instance? Long v)    v
+        (instance? Integer v) (long v)
+        (instance? Double v)  v
+        :else                 v))))
 
-(defn- shell-quote
-  [s]
-  (str "\"" (str/replace s "\"" "\\\"") "\""))
+(defn- check-success!
+  [^QueryResult result statement]
+  (when-not (.isSuccess result)
+    (ex/raise :type :internal
+              :code :ladybug-query-failed
+              :hint "Ladybug query failed"
+              :statement statement
+              :err (.getErrorMessage result))))
 
-(defn- shell-single-quote
-  [s]
-  (str "'" (str/replace s "'" "'\\''") "'"))
+(defn- with-connection
+  [db-path f]
+  (let [^Database db (if (memory-db-path? db-path)
+                       (Database.)
+                       (Database. (str db-path)))]
+    (try
+      (let [^Connection conn (Connection. db)]
+        (try
+          (f conn)
+          (finally
+            (.close conn))))
+      (finally
+        (.close db)))))
 
-(defn- exec-sh-sync!
-  "Run `sh -c` synchronously on the calling thread.
+(defn- scalar-value
+  [^Connection conn statement]
+  (let [cypher (ensure-semicolon statement)]
+    (with-open [^QueryResult result (.query conn cypher)]
+      (check-success! result cypher)
+      (when (.hasNext result)
+        (with-open [^FlatTuple tuple (.getNext result)]
+          (with-open [^Value value (.getValue tuple 0)]
+            (value->clj value)))))))
 
-  `shell/exec!` can return empty stdout for very fast pipelines when used from
-  the REPL executor; this path reads the merged stream before `waitFor` returns."
-  [shell-cmd & {:keys [timeout] :or {timeout 120}}]
-  (let [^Process proc (.start (doto (ProcessBuilder. (into-array String ["sh" "-c" shell-cmd]))
-                               (.redirectErrorStream true)))
-        out        (IOUtils/toString (.getInputStream proc) "UTF-8")]
-    (when-not (.waitFor proc (long timeout) TimeUnit/SECONDS)
-      (.destroyForcibly proc)
-      (ex/raise :type :internal
-                :code :ladybug-timeout
-                :hint "Ladybug query timed out"
-                :shell-cmd shell-cmd
-                :timeout timeout))
-    {:exit (.exitValue proc)
-     :out  out
-     :err  ""}))
+(defn- run-statements!
+  [^Connection conn statements]
+  (doseq [statement statements]
+    (let [cypher (ensure-semicolon statement)]
+      (with-open [^QueryResult result (.query conn cypher)]
+        (check-success! result cypher)))))
 
-(defn- run-script!
-  "Run `lbug` with Cypher on stdin.
-
-  Writes use a heredoc via `shell/exec!`. Queries use `printf ... | lbug`
-  via a synchronous shell invocation (matches the working manual command)."
-  [system db-path flags script & {:keys [timeout] :or {timeout 120}}]
-  (let [cmd       (into [(lbug-bin) db-path] flags)
-        query?    (some #{"line"} flags)
-        shell-cmd (if query?
-                    (str "printf " (shell-single-quote script)
-                         " | " (str/join " " (map shell-quote cmd)))
-                    (str (str/join " " (map shell-quote cmd))
-                         " <<'LBUG_EOF'\n" script "\nLBUG_EOF"))]
-    (if query?
-      (exec-sh-sync! shell-cmd :timeout timeout)
-      (shell/exec! system {:cmd ["sh" "-c" shell-cmd] :timeout timeout}))))
+(def ^:private default-query-timeout-seconds 120)
 
 (defn exec!
-  "Execute Cypher statements. `:mode` is `:write` (default) or `:query`."
-  [system db-path statements & {:keys [timeout mode] :or {timeout 120 mode :write}}]
+  "Execute Cypher statements against a Ladybug database.
+
+  `db-path` is either `:memory:` or a filesystem path to a `.lbug` database."
+  [db-path statements]
   (assert (sequential? statements) "statements should be a sequential collection")
-  (when-not (= db-path ":memory:")
+  (when-not (memory-db-path? db-path)
     (fs/create-dir (fs/parent db-path)))
-  (let [flags  (if (= mode :query)
-                 ["-m" "line" "-s"]
-                 ["-m" "trash" "-s" "-b"])
-        script (if (= mode :query)
-                 (str ":singleline\n" (script-content statements))
-                 (script-content statements))
-        result (run-script! system db-path flags script :timeout timeout)]
-    (when (not= 0 (:exit result))
-      (ex/raise :type :internal
-                :code :ladybug-exec-failed
-                :hint "Ladybug execution failed"
-                :db-path db-path
-                :exit (:exit result)
-                :out (:out result)
-                :err (:err result)))
-    result))
-
-(defn- lbug-noise-line?
-  [line]
-  (or (str/blank? line)
-      (str/starts-with? line "--")
-      (str/starts-with? line ":singleline")
-      (str/includes? line "Single line mode")
-      (str/includes? line "usage hints")
-      (str/includes? line "Processing:")
-      (str/includes? line "Pipeline")
-      (str/includes? line "Progress:")))
-
-(defn- data-lines
-  [out]
-  (->> (str/split-lines (str out))
-       (map str/trim)
-       (remove lbug-noise-line?)))
-
-(defn- parse-scalar-line
-  [line]
-  (let [line (str/trim line)]
-    (cond
-      (re-matches #"-?\d+" line) (Long/parseLong line)
-      :else (some->> (re-seq #"-?\d+" line) last Long/parseLong))))
-
-(defn- parse-equality-value
-  "Last `label = 123` tuple in output (results come after pipeline noise)."
-  [out]
-  (some->> (re-seq #"([A-Za-z][A-Za-z0-9_]*)\s*=\s*(-?\d+)" (str out))
-           (remove (fn [[_ label _]]
-                     (or (str/includes? label "Pipeline")
-                         (str/includes? label "Progress"))))
-           last
-           (nth 2)
-           Long/parseLong))
+  (with-connection db-path
+    (fn [^Connection conn]
+      (.setQueryTimeout conn default-query-timeout-seconds)
+      (run-statements! conn statements))))
 
 (defn query-scalar!
-  [system db-path statement & {:keys [timeout] :or {timeout 120}}]
-  (let [out (:out (exec! system db-path [statement] :timeout timeout :mode :query))]
-    (or (some parse-scalar-line (data-lines out))
-        (parse-equality-value out))))
-
-(defn smoke-test-statements
-  []
-  ["CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name));"
-   "CREATE (:Person {name: 'Alice', age: 25});"
-   "CREATE (:Person {name: 'Bob', age: 30});"
-   "MATCH (a:Person) RETURN a.name AS NAME, a.age AS AGE ORDER BY NAME;"])
+  "Execute a query expected to return a single scalar value."
+  [db-path statement]
+  (with-connection db-path
+    (fn [^Connection conn]
+      (.setQueryTimeout conn default-query-timeout-seconds)
+      (scalar-value conn statement))))
 
 (defn smoke-test!
-  [system & {:keys [db-path] :or {db-path ":memory:"}}]
-  {:db-path db-path
-   :out     (:out (exec! system db-path (smoke-test-statements)))})
+  "Run a minimal CREATE + count against Ladybug."
+  [& {:keys [db-path] :or {db-path ":memory:"}}]
+  (when-not (memory-db-path? db-path)
+    (reset-db-path! db-path)
+    (fs/create-dir (fs/parent db-path)))
+  (with-connection db-path
+    (fn [^Connection conn]
+      (run-statements! conn
+                       ["CREATE NODE TABLE Person(name STRING, age INT64, PRIMARY KEY(name));"
+                        "CREATE (:Person {name: 'Alice', age: 25});"
+                        "CREATE (:Person {name: 'Bob', age: 30});"])
+      {:db-path      db-path
+       :person-count (scalar-value conn
+                                   "MATCH (a:Person) RETURN count(a) AS c;")})))
