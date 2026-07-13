@@ -1,0 +1,123 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC Sucursal en España SL */ }
+
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+import * as Modal from "./modal.stories";
+
+
+<Meta title= "Layout/Modal" />
+
+# Modal
+
+Modals are overlays that require the user's attention, 
+displaying critical information or actions while blocking interaction with the rest of the page.
+
+## Variants
+
+**Default**, a modal with a title, content, and dismissable backdrop.
+<Canvas of={Modal.Default} />
+
+**Without title**, a modal with no header or close button.
+<Canvas of={Modal.WithoutTitle} />
+
+**Small**, used for confirmations and simple actions.
+<Canvas of={Modal.Small} />
+
+**Large**, used for forms or content-heavy dialogs.
+<Canvas of={Modal.Large} />
+
+**Non dismissable**, the user must interact with the modal to close it.
+<Canvas of={Modal.NonDismissable} />
+
+**With icon button**, DS IconButton used alongside other components inside the modal.
+<Canvas of={Modal.WithIconButton} />
+
+## Technical notes
+
+### Controlled usage
+
+The modal is controlled via `is-open` and `on-open-change` props.
+
+```clojure
+(let [open*  (mf/use-state false)
+      open?  (deref open*)
+      toggle (mf/use-fn #(reset! open* (not open?)))]
+  [:> modal* {:is-open open?
+              :on-open-change #(reset! open* %)
+              :title "Dialog Title"}
+   [:> :p {} "Content"]
+   [:> button* {:on-click toggle} "Close"]])
+```
+
+### With trigger element
+
+Pass a `trigger` element to let the modal manage its own open state:
+
+```clojure
+[:> modal* {:title "Settings"
+            :trigger [:> button* {} "Open"]}
+  [:> :p {} "Content"]]
+```
+
+### Custom close button
+
+Pass any React element as `close-button` to replace the default close icon:
+
+```clojure
+[:> modal* {:title "Dialog"
+            :close-button [:> icon-button* {:icon "close" :variant "ghost"}]}
+  [:> :p {} "Content"]]
+```
+
+### Sizes
+
+| Prop value | Width |
+|------------|-------|
+| `"small"`  | 400px |
+| `"medium"` | 512px |
+| `"large"`  | 640px |
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `is-open` | boolean | — | Controls modal visibility |
+| `on-open-change` | fn | — | Called when modal opens/closes |
+| `title` | string | — | Dialog title shown in the header |
+| `trigger` | element | — | Element that opens the modal |
+| `is-dismissable` | boolean | `true` | Close on backdrop click or Escape |
+| `size` | `"small" \| "medium" \| "large"` | `"medium"` | Modal width |
+| `close-button` | element | — | Custom close button |
+
+### Accessibility
+
+The modal uses `react-aria-components` under the hood, providing:
+- Focus trapping within the modal
+- Escape key to dismiss
+- ARIA `dialog` role and `aria-modal`
+- Focus restoration on close
+- Backdrop click dismiss (configurable)
+
+## Usage guidelines (design)
+
+### Where to use
+
+When you need to interrupt the user's current task with critical information,
+a required decision, or a focused workflow that must be completed before returning
+to the main interface.
+
+### When to use
+
+- Confirmations before destructive actions
+- Forms that require immediate completion
+- Displaying critical information
+- Wizards or multi-step flows within a single context
+
+### When not to use
+
+- For non-critical information that can be dismissed (use a toast or notification instead)
+- For complex navigation (use a new page or a panel)
+- When the content is too long (consider a slide-over or dedicated page)
