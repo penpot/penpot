@@ -18,15 +18,25 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(def ^:private no-reload-options
+  "Debug options that don't require a page reload to take effect."
+  #{:shape-panel})
+
 (mf/defc debug-panel*
   [{:keys [class]}]
-  (let [on-toggle-enabled
+  (let [;; dbg/state is an okulary atom; deref'ing it makes this component
+        ;; re-render whenever any debug option is toggled, so checkboxes
+        ;; reflect the current state without a page reload.
+        _dbg   (mf/deref dbg/state)
+
+        on-toggle-enabled
         (mf/use-fn
          (fn [event option]
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (dbg/toggle! option)
-           (js* "app.main.reinit(true)")))
+           (when-not (contains? no-reload-options option)
+             (js* "app.main.reinit(true)"))))
 
         handle-close
         (mf/use-fn

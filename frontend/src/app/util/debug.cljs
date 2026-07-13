@@ -6,9 +6,10 @@
 
 (ns app.util.debug
   (:require
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [okulary.core :as l]))
 
-(defonce state (atom #{#_:events}))
+(defonce state (l/atom #{#_:events}))
 
 (def options
   #{;; Displays the bounding box for the shapes

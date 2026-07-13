@@ -33,7 +33,6 @@
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
-   [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox*]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
@@ -41,7 +40,6 @@
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
-   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -286,17 +284,14 @@
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
 
-        dbg-shape-panel? (dbg/enabled? :shape-panel)
-
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)
 
         can-be-expanded?
-        (or dbg-shape-panel?
-            (and (not is-comments?)
-                 (not is-history?)
-                 is-inspect?
-                 (= current-section :code)))
+        (and (not is-comments?)
+             (not is-history?)
+             is-inspect?
+             (= current-section :code))
 
         {on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
@@ -348,9 +343,6 @@
 
        [:div {:class (stl/css :settings-bar-inside)}
         (cond
-          dbg-shape-panel?
-          [:> debug-shape-info*]
-
           is-comments?
           [:> comments-sidebar* {}]
 
