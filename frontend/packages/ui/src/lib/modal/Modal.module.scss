@@ -60,44 +60,6 @@
   max-block-size: inherit;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-block: var(--sp-m);
-  padding-inline: var(--sp-l);
-  flex-shrink: 0;
-}
-
-.closeButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: $sz-24;
-  block-size: $sz-24;
-  padding: 0;
-  border: none;
-  border-radius: $br-4;
-  background: transparent;
-  color: var(--color-icon-default);
-  cursor: pointer;
-  flex-shrink: 0;
-
-  &:hover {
-    background: var(--color-background-tertiary);
-    color: var(--color-foreground-primary);
-  }
-
-  &:focus-visible {
-    outline: $b-2 solid var(--color-accent-primary);
-    outline-offset: px2rem(-2);
-  }
-}
-
-.content {
-  padding: var(--sp-l);
-  overflow-block: auto;
-}
 
 @keyframes overlay-fade-in {
   from {

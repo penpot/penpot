@@ -268,7 +268,12 @@
   [{:keys [params]}]
   (let [go-register
         (mf/use-fn
-         #(st/emit! (rt/nav :auth-register params)))]
+         #(st/emit! (rt/nav :auth-register params)))
+
+        modal-open*
+        (mf/use-state false)
+        modal-open?
+        (deref modal-open*)]
 
     [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)

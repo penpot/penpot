@@ -1,2 +1,2 @@
 export * from './lib/example/Example';
-export { Modal, ModalCloseButton } from './lib/modal/Modal';
+export { Modal, ModalCloseButton, useModalClose } from './lib/modal/Modal';

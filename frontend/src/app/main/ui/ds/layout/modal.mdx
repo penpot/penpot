@@ -17,10 +17,10 @@ displaying critical information or actions while blocking interaction with the r
 
 ## Variants
 
-**Default**, a modal with a title, content, and dismissable backdrop.
+**Default**, a modal with header, content, and footer.
 <Canvas of={Modal.Default} />
 
-**Without title**, a modal with no header or close button.
+**Without title**, a modal with no header or footer.
 <Canvas of={Modal.WithoutTitle} />
 
 **Small**, used for confirmations and simple actions.
@@ -32,53 +32,46 @@ displaying critical information or actions while blocking interaction with the r
 **Non dismissable**, the user must interact with the modal to close it.
 <Canvas of={Modal.NonDismissable} />
 
-**With icon button**, DS IconButton used alongside other components inside the modal.
+**With icon button**, DS IconButton used inside the modal.
 <Canvas of={Modal.WithIconButton} />
 
 ## Technical notes
 
-### Controlled usage
+### Composition
 
-The modal is controlled via `is-open` and `on-open-change` props.
-
-```clojure
-(let [open*  (mf/use-state false)
-      open?  (deref open*)
-      toggle (mf/use-fn #(reset! open* (not open?)))]
-  [:> modal* {:is-open open?
-              :on-open-change #(reset! open* %)
-              :title "Dialog Title"}
-   [:> :p {} "Content"]
-   [:> button* {:on-click toggle} "Close"]])
-```
-
-### With trigger element
-
-Pass a `trigger` element to let the modal manage its own open state:
+The Modal provides three named slots: `header`, `content`, `footer`.
+Use the CLJS sub-components or pass custom content to each slot:
 
 ```clojure
-[:> modal* {:title "Settings"
-            :trigger [:> button* {} "Open"]}
-  [:> :p {} "Content"]]
+;; Using the :heading shortcut (string → renders heading* + close button)
+[:> modal* {:is-open open?
+            :on-open-change #(reset! open* %)
+            :heading "Dialog Title"}
+  [:> modal-content* {}
+    [:> :p {} "Content"]]
+  [:> modal-footer* {}
+    [:> button* {:variant "primary"} "Save"]]]
 ```
-
-### Custom close button
-
-Pass any React element as `close-button` to replace the default close icon:
 
 ```clojure
-[:> modal* {:title "Dialog"
-            :close-button [:> icon-button* {:icon "close" :variant "ghost"}]}
-  [:> :p {} "Content"]]
+;; Full control via explicit slots
+[:> modal* {:is-open open?
+            :on-open-change #(reset! open* %)
+            :header [:> modal-header* {:title "Dialog Title"}]
+            :content [:> modal-content* {} [:> :p {} "Content"]]
+            :footer [:> modal-footer* {}
+                      [:> button* {:variant "secondary"} "Cancel"]
+                      [:> button* {:variant "primary"} "Save"]]}]
 ```
 
-### Sizes
+### Slot components
 
-| Prop value | Width |
-|------------|-------|
-| `"small"`  | 400px |
-| `"medium"` | 512px |
-| `"large"`  | 640px |
+| Component | Description |
+|-----------|-------------|
+| `modal-header*` | Renders `heading*` + `ModalCloseButton` in a flex container |
+| `modal-content*` | Scrollable body container |
+| `modal-footer*` | Actions container with gap and flex-end alignment |
+| `ModalCloseButton` | Button that closes the modal via context (available as `ui/ModalCloseButton`) |
 
 ### Props
 
@@ -86,11 +79,13 @@ Pass any React element as `close-button` to replace the default close icon:
 |------|------|---------|-------------|
 | `is-open` | boolean | — | Controls modal visibility |
 | `on-open-change` | fn | — | Called when modal opens/closes |
-| `title` | string | — | Dialog title shown in the header |
+| `heading` | string \| element | — | Shortcut for header slot (string → heading* component with close button) |
+| `header` | element | — | Custom header content |
+| `content` | element | — | Custom content (defaults to children wrapped in modal-content*) |
+| `footer` | element | — | Custom footer content |
 | `trigger` | element | — | Element that opens the modal |
 | `is-dismissable` | boolean | `true` | Close on backdrop click or Escape |
 | `size` | `"small" \| "medium" \| "large"` | `"medium"` | Modal width |
-| `close-button` | element | — | Custom close button |
 
 ### Accessibility
 

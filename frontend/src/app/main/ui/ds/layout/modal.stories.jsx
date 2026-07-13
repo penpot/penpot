@@ -7,12 +7,7 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { Modal, Button, IconButton } = Components;
-const { icons } = Components.meta;
-
-const iconList = Object.entries(icons)
-  .map(([_, value]) => value)
-  .sort();
+const { Modal, ModalHeader, ModalContent, ModalFooter, ModalCloseButton, Button, IconButton } = Components;
 
 const ModalWrapper = ({ children, ...props }) => {
   const [open, setOpen] = React.useState(props.isOpen ?? false);
@@ -29,50 +24,33 @@ const ModalWrapper = ({ children, ...props }) => {
         isOpen={open}
         onOpenChange={setOpen}
       >
-        {children ?? (
-          <div>
-            <p>Modal content goes here.</p>
-          </div>
-        )}
+        {children}
       </Modal>
     </>
   );
 };
 
-const DefaultContent = (
-  <div>
-    <p>This is the default modal content.</p>
-    <p>You can put any React content inside.</p>
-  </div>
-);
-
-const FooterContent = (
-  <div
-    style={{
-      marginTop: "1rem",
-      display: "flex",
-      gap: "0.5rem",
-      justifyContent: "flex-end",
-    }}
-  >
-    <Button variant="secondary">Cancel</Button>
-    <Button variant="primary">Confirm</Button>
-  </div>
-);
-
 export default {
   title: "Layout/Modal",
   component: ModalWrapper,
   args: {
-    heading: <h2 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.3, color: "var(--color-foreground-primary)" }}>Dialog Title</h2>,
     isOpen: true,
     size: "medium",
     isDismissable: true,
-    children: (
-      <>
-        {DefaultContent}
-        {FooterContent}
-      </>
+    header: (
+      <ModalHeader title="Dialog Title" />
+    ),
+    content: (
+      <ModalContent>
+        <p>This is the default modal content.</p>
+        <p>You can put any React content inside.</p>
+      </ModalContent>
+    ),
+    footer: (
+      <ModalFooter>
+        <Button variant="secondary">Cancel</Button>
+        <Button variant="primary">Confirm</Button>
+      </ModalFooter>
     ),
   },
   argTypes: {
@@ -83,7 +61,7 @@ export default {
     isDismissable: { control: "boolean" },
   },
   parameters: {
-    controls: { exclude: ["isOpen", "onOpenChange", "children", "trigger", "heading", "closeButton"] },
+    controls: { exclude: ["isOpen", "onOpenChange", "children", "header", "content", "footer", "trigger"] },
   },
   render: ({ ...args }) => <ModalWrapper {...args} />,
 };
@@ -93,19 +71,29 @@ export const Default = {};
 export const WithoutTitle = {
   args: {
     heading: undefined,
-    children: DefaultContent,
+    header: undefined,
+    content: (
+      <ModalContent>
+        <p>This modal has no header or footer.</p>
+      </ModalContent>
+    ),
   },
 };
 
 export const Small = {
   args: {
     size: "small",
-    heading: <h2 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.3, color: "var(--color-foreground-primary)" }}>Confirm</h2>,
-    children: (
-      <>
+    header: <ModalHeader title="Confirm" />,
+    content: (
+      <ModalContent>
         <p>Are you sure you want to proceed?</p>
-        {FooterContent}
-      </>
+      </ModalContent>
+    ),
+    footer: (
+      <ModalFooter>
+        <Button variant="secondary">Cancel</Button>
+        <Button variant="primary">Confirm</Button>
+      </ModalFooter>
     ),
   },
 };
@@ -113,51 +101,31 @@ export const Small = {
 export const Large = {
   args: {
     size: "large",
-    heading: <h2 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.3, color: "var(--color-foreground-primary)" }}>Settings</h2>,
-    children: DefaultContent,
+    header: <ModalHeader title="Settings" />,
+    content: (
+      <ModalContent>
+        <p>This is the default modal content.</p>
+        <p>You can put any React content inside.</p>
+      </ModalContent>
+    ),
+    footer: null,
   },
 };
 
 export const NonDismissable = {
   args: {
     isDismissable: false,
-    heading: <h2 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.3, color: "var(--color-foreground-primary)" }}>Important</h2>,
-    children: (
-      <>
-        <p>
-          This modal cannot be closed by clicking the backdrop or pressing
-          Escape.
-        </p>
-        {FooterContent}
-      </>
+    header: <ModalHeader title="Important" />,
+    content: (
+      <ModalContent>
+        <p>This modal cannot be closed by clicking the backdrop or pressing Escape.</p>
+      </ModalContent>
     ),
-  },
-};
-
-const IconFooterContent = (
-  <div
-    style={{
-      marginTop: "1rem",
-      display: "flex",
-      gap: "0.5rem",
-      justifyContent: "flex-end",
-      alignItems: "center",
-    }}
-  >
-    <Button variant="secondary">Cancel</Button>
-    <Button variant="primary">Confirm</Button>
-    <IconButton icon="close" variant="ghost" aria-label="Close" />
-  </div>
-);
-
-export const WithIconButton = {
-  args: {
-    heading: <h2 style={{ margin: 0, fontSize: "0.875rem", fontWeight: 500, lineHeight: 1.3, color: "var(--color-foreground-primary)" }}>With close button</h2>,
-    children: (
-      <>
-        <p>Modal showing a DS IconButton inside the content area.</p>
-        {IconFooterContent}
-      </>
+    footer: (
+      <ModalFooter>
+        <Button variant="secondary">Cancel</Button>
+        <Button variant="primary">Confirm</Button>
+      </ModalFooter>
     ),
   },
 };

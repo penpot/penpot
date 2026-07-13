@@ -7,26 +7,24 @@ import {
 import {
   createContext,
   useContext,
-  cloneElement,
   type ReactNode,
-  type ReactElement,
   type ButtonHTMLAttributes,
 } from 'react';
 import styles from './Modal.module.scss';
 
 const ModalCloseContext = createContext<(() => void) | null>(null);
 
-function useModalClose(): (() => void) | null {
+export function useModalClose(): (() => void) | null {
   return useContext(ModalCloseContext);
 }
 
 interface ModalProps {
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  children: ReactNode;
+  header?: ReactNode;
+  content?: ReactNode;
+  footer?: ReactNode;
   trigger?: ReactNode;
-  heading?: ReactNode;
-  closeButton?: ReactElement;
   isDismissable?: boolean;
   size?: 'small' | 'medium' | 'large';
   className?: string;
@@ -35,10 +33,10 @@ interface ModalProps {
 export function Modal({
   isOpen,
   onOpenChange,
-  children,
+  header,
+  content,
+  footer,
   trigger,
-  heading,
-  closeButton,
   isDismissable = true,
   size = 'medium',
   className,
@@ -55,17 +53,9 @@ export function Modal({
           <Dialog className={styles.dialog}>
             {({ close }) => (
               <ModalCloseContext.Provider value={close}>
-                {(heading || closeButton) && (
-                  <div className={styles.header}>
-                    {heading}
-                    {closeButton
-                      ? cloneElement(closeButton as ReactElement<{ onClick: () => void }>, { onClick: close })
-                      : null}
-                  </div>
-                )}
-                <div className={styles.content}>
-                  {children}
-                </div>
+                {header}
+                {content}
+                {footer}
               </ModalCloseContext.Provider>
             )}
           </Dialog>
